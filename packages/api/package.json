@@ -1,0 +1,30 @@
+{
+  "name": "@taskin/api",
+  "version": "0.1.0",
+  "private": true,
+  "motivation": "To provide a dedicated API layer for Taskin.",
+  "solve": "Decouples the frontend and other clients from the core business logic, allowing for multiple interfaces (e.g., HTTP, gRPC).",
+  "scope": "api",
+  "status": "planned",
+  "since": "2025-11-05",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist coverage .turbo",
+    "dev": "tsc --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@taskin/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3",
+    "vitest": "^1.6.0",
+    "eslint": "^8.57.0"
+  }
+}

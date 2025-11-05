@@ -1,0 +1,7 @@
+# Ignorar arquivos e diretórios que não fazem sentido para o Prettier
+**/coverage/**
+**/dist/**
+**/node_modules/**
+**/build/**
+**/.turbo/**
+pnpm-lock.yaml

@@ -1,0 +1,16 @@
+{
+  "name": "@taskin/n8n-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "motivation": "To integrate Taskin with the n8n automation platform.",
+  "solve": "Enables creating automated workflows involving Taskin and other services supported by n8n.",
+  "scope": "integration",
+  "status": "planned",
+  "since": "2025-11-05",
+  "scripts": {
+    "build": "echo 'build script'",
+    "test": "echo 'test script'",
+    "lint": "echo 'lint script'",
+    "dev": "echo 'dev script'"
+  }
+}

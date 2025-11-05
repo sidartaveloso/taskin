@@ -1,0 +1,29 @@
+{
+  "name": "@taskin/utils",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Utility functions for Taskin",
+  "motivation": "To provide reusable utility functions across the Taskin monorepo.",
+  "solve": "Centralizes common utilities like UI helpers, formatting, and shared helper functions.",
+  "scope": "internal",
+  "status": "active",
+  "since": "2025-11-05",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist coverage .turbo",
+    "dev": "tsc --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

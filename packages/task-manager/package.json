@@ -1,0 +1,30 @@
+{
+  "name": "@taskin/task-manager",
+  "version": "0.1.0",
+  "private": true,
+  "motivation": "To manage the lifecycle of tasks, including creation, status updates, and retrieval.",
+  "solve": "Provides a structured API for interacting with task data, abstracting the underlying storage mechanism.",
+  "scope": "core",
+  "status": "active",
+  "since": "2025-11-05",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist coverage .turbo",
+    "dev": "tsc --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@taskin/types-ts": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3"
+  }
+}

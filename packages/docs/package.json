@@ -1,0 +1,19 @@
+{
+  "name": "@taskin/docs",
+  "version": "0.1.0",
+  "private": true,
+  "motivation": "To provide comprehensive documentation for the Taskin project.",
+  "solve": "Makes it easier for developers and users to understand and use Taskin.",
+  "scope": "docs",
+  "status": "planned",
+  "since": "2025-11-05",
+  "scripts": {
+    "build": "vitepress build docs",
+    "dev": "vitepress dev docs",
+    "lint": "echo 'lint script'",
+    "test": "echo 'test script'"
+  },
+  "devDependencies": {
+    "vitepress": "^1.2.3"
+  }
+}

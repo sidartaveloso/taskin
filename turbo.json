@@ -1,0 +1,65 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [".env", ".env.local"],
+  "globalEnv": ["NODE_ENV", "PORT"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
+      "outputs": ["dist/**", "build/**", "generated/**"]
+    },
+    "clean": {
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "format": {
+      "inputs": ["src/**/*.{ts,js,tsx,jsx,json}", "package.json"],
+      "outputs": []
+    },
+    "format:check": {
+      "inputs": ["src/**/*.{ts,js,tsx,jsx,json}", "package.json"],
+      "outputs": []
+    },
+    "generate": {
+      "dependsOn": ["^generate:schemas"],
+      "outputs": ["generated/**"]
+    },
+    "generate:schemas": {
+      "dependsOn": [],
+      "outputs": ["dist/schema/**"]
+    },
+    "lint": {
+      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
+      "outputs": []
+    },
+    "lint:fix": {
+      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "src/**/*.{ts,js,tsx,jsx}",
+        "**/*.test.{ts,js}",
+        "package.json"
+      ],
+      "outputs": ["coverage/**"]
+    },
+    "test:coverage": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "src/**/*.{ts,js,tsx,jsx}",
+        "**/*.test.{ts,js}",
+        "package.json"
+      ],
+      "outputs": ["coverage/**"]
+    },
+    "typecheck": {
+      "inputs": ["src/**/*.{ts,tsx}", "package.json", "tsconfig.json"],
+      "outputs": []
+    }
+  }
+}

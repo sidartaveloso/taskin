@@ -1,0 +1,17 @@
+{
+  "name": "dev-scripts",
+  "version": "0.1.0",
+  "private": true,
+  "motivation": "To house internal development scripts for the monorepo.",
+  "solve": "Centralizes scripts for tasks like linting, code generation, and validation, keeping the root clean.",
+  "scope": "dev",
+  "status": "active",
+  "since": "2025-11-05",
+  "scripts": {
+    "lint:manifests": "tsx ./scripts/lint-manifests.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.16.2",
+    "@types/node": "^20.14.10"
+  }
+}

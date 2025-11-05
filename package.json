@@ -1,0 +1,48 @@
+{
+  "name": "taskin-monorepo",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Taskin monorepo for task management and automation",
+  "packageManager": "pnpm@9.5.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.5.0"
+  },
+  "scripts": {
+    "lint:manifests": "tsx dev/scripts/lint-manifests.ts",
+    "lint": "turbo run lint && pnpm run lint:manifests",
+    "lint:fix": "turbo run lint:fix",
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "format": "run-p format:root format:turbo",
+    "format:turbo": "turbo run format",
+    "format:root": "prettier --write \"./*.{js,ts,tsx,jsx,vue,md,json,css,scss,html}\" \"./TASKS/**/*.md\" \"./dev/**/*.ts\"",
+    "format:check": "turbo run format:check",
+    "typecheck": "turbo run typecheck",
+    "ci": "pnpm typecheck && pnpm lint && pnpm test",
+    "clean": "turbo run clean",
+    "pnpm:update": "pnpm install pnpm@latest -Dw",
+    "generate:py-types": "pnpm --filter @taskin/types-py run generate"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
+    "eslint": "^9.39.1",
+    "eslint-plugin-sort-keys-fix": "^1.1.2",
+    "eslint-plugin-typescript-sort-keys": "^3.3.0",
+    "globals": "^16.5.0",
+    "npm-run-all2": "^8.0.4",
+    "prettier": "^3.6.2",
+    "prettier-plugin-organize-attributes": "^1.0.0",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-sort-json": "^4.1.1",
+    "tsx": "^4.20.6",
+    "turbo": "^2.6.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.7"
+  }
+}

@@ -1,0 +1,54 @@
+# Configuração Python para o monorepo Taskin
+# Ruff: linter e formatter rápido para Python
+
+[tool.ruff]
+line-length = 88
+exclude = [".venv", "dist", "build", "node_modules", ".turbo"]
+
+[tool.ruff.lint]
+extend-select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "ISC", # flake8-implicit-str-concat
+    "RUF", # ruff-specific rules
+]
+ignore = ["E501"] # Ignora linhas longas, já que ruff format cuida disso
+dummy-variable-rgx = "^_"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.mypy]
+strict = true
+exclude = [".venv", "dist", "build"]
+
+[tool.pytest.ini_options]
+testpaths = ["packages/*/tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["--strict-markers", "--strict-config", "-ra"]
+
+[tool.coverage.run]
+source = ["packages"]
+omit = ["*/tests/*", "*/__pycache__/*", "*/node_modules/*", "*/.venv/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

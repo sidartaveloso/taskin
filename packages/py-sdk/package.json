@@ -1,0 +1,16 @@
+{
+  "name": "@taskin/py-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "motivation": "To provide a Python SDK for interacting with the Taskin API.",
+  "solve": "Simplifies the development of Python-based integrations and scripts that use Taskin.",
+  "scope": "sdk",
+  "status": "planned",
+  "since": "2025-11-05",
+  "scripts": {
+    "build": "echo 'build script'",
+    "test": "echo 'test script'",
+    "lint": "echo 'lint script'",
+    "dev": "echo 'dev script'"
+  }
+}

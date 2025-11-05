@@ -1,0 +1,16 @@
+{
+  "name": "@taskin/chatbot",
+  "version": "0.1.0",
+  "private": true,
+  "motivation": "To provide chatbot integrations for Taskin.",
+  "solve": "Allows users to interact with Taskin through messaging platforms like WhatsApp and Telegram.",
+  "scope": "integration",
+  "status": "planned",
+  "since": "2025-11-05",
+  "scripts": {
+    "build": "echo 'build script'",
+    "test": "echo 'test script'",
+    "lint": "echo 'lint script'",
+    "dev": "echo 'dev script'"
+  }
+}

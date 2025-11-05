@@ -1,0 +1,32 @@
+{
+  "name": "@taskin/core",
+  "version": "0.1.0",
+  "private": true,
+  "motivation": "To contain the core business logic of Taskin.",
+  "solve": "Provides a central place for business rules, services, and domain models, ensuring consistency.",
+  "scope": "core",
+  "status": "active",
+  "since": "2025-11-05",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist coverage .turbo",
+    "dev": "tsc --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@taskin/types-ts": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3",
+    "vitest": "^1.6.0",
+    "eslint": "^8.57.0"
+  }
+}

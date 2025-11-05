@@ -1,0 +1,14 @@
+[project]
+name = "taskin-types"
+version = "0.1.0"
+description = "Python models auto-generated from Taskin TypeScript schemas"
+requires-python = ">=3.10"
+
+[tool.datamodel-codegen]
+target-python-version = "3.10"
+output-model-type = "pydantic_v2.BaseModel"
+
+[project.optional-dependencies]
+dev = [
+    "datamodel-code-generator"
+]
