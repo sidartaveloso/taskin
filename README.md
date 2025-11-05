@@ -1,46 +1,155 @@
 # Taskin Monorepo
 
-This repository contains the source code for Taskin, a modular developer tool for task management and automation.
+A modular, type-safe task management and automation system built with TypeScript and Python.
+
+## 📦 Packages
+
+### TypeScript Packages
+
+- **@taskin/core** - Core task management logic and abstractions
+- **@taskin/types-ts** - Shared TypeScript type definitions using Zod
+- **@taskin/task-manager** - Task lifecycle management and orchestration
+- **@taskin/fs-task-provider** - File system-based task provider
+- **@taskin/git-utils** - Git utilities and integrations
+- **@taskin/cli** - Command-line interface for task management
+- **@taskin/api** - REST API for task management
+- **@taskin/utils** - Shared utility functions
+
+### Python Packages
+
+- **@taskin/types-py** - Auto-generated Pydantic v2 models from TypeScript schemas
+- **@taskin/py-sdk** - Python SDK for Taskin
+
+### Integration Packages
+
+- **@taskin/directus-extension** - Directus CMS extension
+- **@taskin/n8n-plugin** - n8n workflow automation plugin
+- **@taskin/chatbot** - Chatbot integrations
 
 ## 🚀 Getting Started
 
-This is a monorepo managed by **pnpm** and **Turborepo**.
+This monorepo uses **pnpm workspaces** with **Turborepo** for efficient task orchestration and caching.
 
 ### Prerequisites
 
-- [ASDF](https://asdf-vm.com/)
-- [Node.js](https://nodejs.org/) (managed by ASDF)
-- [pnpm](https://pnpm.io/) (managed by ASDF)
-- [Python](https://www.python.org/) (managed by ASDF)
-- [UV](https://github.com/astral-sh/uv) (managed by ASDF)
+Ensure you have [ASDF](https://asdf-vm.com/) installed to manage runtime versions:
+
+- **Node.js** ≥20.0.0
+- **pnpm** ≥9.5.0
+- **Python** ≥3.10
+- **uv** - Fast Python package installer
 
 ### Installation
 
-1.  Clone the repository.
-2.  Install the correct tool versions:
-    ```bash
-    asdf install
-    ```
-3.  Install dependencies:
-    ```bash
-    pnpm install
-    ```
-4.  Setup the Python virtual environment and install Python dependencies:
-    ```bash
-    uv venv
-    uv pip install -e ./packages/types-py[dev]
-    ```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/taskin.git
+   cd taskin
+   ```
 
-To sync with the lock file in the future, run:
+2. Install runtime versions:
+   ```bash
+   asdf install
+   ```
 
-```bash
-uv pip sync uv.lock
-```
+3. Install Node.js dependencies:
+   ```bash
+   pnpm install
+   ```
+
+4. Build all packages:
+   ```bash
+   pnpm build
+   ```
+
+5. (Optional) Set up Python environment for types-py package:
+   ```bash
+   cd packages/types-py
+   uv sync --extra dev
+   ```
+
+## 🛠️ Development
 
 ### Available Commands
 
-- `pnpm run build`: Build all packages.
-- `pnpm run dev`: Run all packages in development mode.
-- `pnpm run lint`: Lint all packages.
-- `pnpm run test`: Run tests for all packages.
-- `pnpm run lint:manifests`: Validate all `package.json` manifests.
+#### Build & Development
+- `pnpm build` - Build all packages with Turbo caching
+- `pnpm dev` - Run all packages in watch mode
+- `pnpm clean` - Remove build artifacts and caches
+- `pnpm typecheck` - Type-check all TypeScript packages
+
+#### Code Quality
+- `pnpm lint` - Lint all packages (ESLint + manifest validation)
+- `pnpm lint:fix` - Auto-fix linting issues
+- `pnpm format` - Format code with Prettier
+- `pnpm format:check` - Check code formatting
+- `pnpm lint:manifests` - Validate package.json files
+
+#### Testing
+- `pnpm test` - Run all tests
+- `pnpm test:coverage` - Run tests with coverage reports
+
+#### CI/CD
+- `pnpm ci` - Run full CI pipeline (typecheck + lint + test)
+
+### Type Generation Workflow
+
+1. **TypeScript → JSON Schema**: Zod schemas in `types-ts` are converted to JSON Schema
+2. **JSON Schema → Python**: Python Pydantic v2 models are auto-generated in `types-py`
+
+This ensures type safety across the entire stack!
+
+## 🏗️ Architecture
+
+### Monorepo Structure
+
+```
+taskin/
+├── packages/           # All packages
+│   ├── core/          # Core abstractions
+│   ├── types-ts/      # TypeScript types (source of truth)
+│   ├── types-py/      # Generated Python types
+│   ├── task-manager/  # Task orchestration
+│   └── ...
+├── eslint/            # Shared ESLint configs
+├── dev/               # Development tools
+└── TASKS/             # Project tasks
+```
+
+### Technology Stack
+
+- **Language**: TypeScript (ES Modules), Python
+- **Package Manager**: pnpm with workspaces
+- **Build System**: Turborepo for monorepo orchestration
+- **Type Safety**: Zod (runtime validation) + TypeScript
+- **Testing**: Vitest
+- **Linting**: ESLint 9 (flat config)
+- **Formatting**: Prettier with plugins
+- **Python Tooling**: uv, Ruff, mypy, pytest
+
+### Code Quality
+
+- ✅ **Strict TypeScript** - No `any` types allowed
+- ✅ **Sorted imports** - Automatic import organization
+- ✅ **Sorted keys** - Consistent object property ordering
+- ✅ **Composite projects** - TypeScript project references for fast builds
+- ✅ **Format on save** - VSCode integration configured
+
+## 📝 Contributing
+
+1. Create a feature branch from `main`
+2. Make your changes following the existing patterns
+3. Run `pnpm ci` to ensure everything passes
+4. Submit a pull request
+
+## 📄 License
+
+MIT
+
+## 👥 Authors
+
+**OpenTask** - [opentask.com.br](https://opentask.com.br)
+
+### Contributors
+
+- **Sidarta Veloso** - [GitHub](https://github.com/sidartaveloso) | [LinkedIn](https://www.linkedin.com/in/sidartaveloso)
