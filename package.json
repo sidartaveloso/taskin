@@ -9,6 +9,18 @@
     "node": ">=20.0.0",
     "pnpm": ">=9.5.0"
   },
+  "author": {
+    "name": "OpenTask",
+    "url": "https://opentask.com.br"
+  },
+  "contributors": [
+    {
+      "name": "Sidarta Veloso",
+      "github": "https://github.com/sidartaveloso",
+      "gitlab": "https://gitlab.com/sidartaveloso",
+      "linkedin": "https://www.linkedin.com/in/sidartaveloso"
+    }
+  ],
   "scripts": {
     "lint:manifests": "tsx dev/scripts/lint-manifests.ts",
     "lint": "turbo run lint && pnpm run lint:manifests",
