@@ -9,8 +9,11 @@
   "since": "2025-11-05",
   "scripts": {
     "build": "pnpm run generate",
-    "generate": "bash -c 'mkdir -p generated && for file in ../types-ts/dist/schema/*.json; do uv run datamodel-codegen --input \"$file\" --output \"generated/$(basename \"$file\" .schema.json).py\"; done'",
+    "generate": "bash -c 'mkdir -p generated && for file in ../types-ts/dist/schema/*.json; do uv run python -m datamodel_code_generator --input \"$file\" --output \"generated/$(basename \"$file\" .schema.json).py\"; done'",
     "lint": "echo 'No linting for types-py'",
     "test": "echo 'No tests for types-py'"
+  },
+  "dependencies": {
+    "@taskin/types-ts": "workspace:*"
   }
 }
