@@ -1,31 +1,18 @@
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskManager } from './task-manager';
-import type { ITaskProvider, TaskFile } from './task.types';
-
-const mockTask: TaskFile = {
-  createdAt: new Date().toISOString(),
-  content: '# Task 001 - Implement feature',
-  description: 'A test feature',
-  filePath: '/tasks/task-001.md',
-  id: 'task-001',
-  status: 'pending',
-  title: 'Implement feature',
-  type: 'feat',
-  userId: 'user-123',
-};
-
-const mockTaskProvider: ITaskProvider = {
-  findTask: vi.fn(),
-  getAllTasks: vi.fn(),
-  updateTask: vi.fn(),
-};
+import { createMockTask, createMockTaskProvider } from './task-manager.mock';
+import type { ITaskProvider, TaskFile } from './task-manager.types';
 
 describe('TaskManager', () => {
   let taskManager: TaskManager;
+  let mockTaskProvider: ITaskProvider;
+  let mockTask: TaskFile;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTaskProvider = createMockTaskProvider();
+    mockTask = createMockTask();
     taskManager = new TaskManager(mockTaskProvider);
   });
 

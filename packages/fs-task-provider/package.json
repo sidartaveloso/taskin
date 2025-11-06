@@ -2,6 +2,7 @@
   "name": "@taskin/fs-task-provider",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "motivation": "To provide a file-system-based implementation for task storage.",
   "solve": "Reads and writes task data from and to markdown files in the `TASKS` directory.",
   "scope": "internal",
@@ -9,6 +10,12 @@
   "since": "2025-11-05",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",

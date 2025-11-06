@@ -42,22 +42,26 @@ Ensure you have [ASDF](https://asdf-vm.com/) installed to manage runtime version
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/taskin.git
    cd taskin
    ```
 
 2. Install runtime versions:
+
    ```bash
    asdf install
    ```
 
 3. Install Node.js dependencies:
+
    ```bash
    pnpm install
    ```
 
 4. Build all packages:
+
    ```bash
    pnpm build
    ```
@@ -73,12 +77,14 @@ Ensure you have [ASDF](https://asdf-vm.com/) installed to manage runtime version
 ### Available Commands
 
 #### Build & Development
+
 - `pnpm build` - Build all packages with Turbo caching
 - `pnpm dev` - Run all packages in watch mode
 - `pnpm clean` - Remove build artifacts and caches
 - `pnpm typecheck` - Type-check all TypeScript packages
 
 #### Code Quality
+
 - `pnpm lint` - Lint all packages (ESLint + manifest validation)
 - `pnpm lint:fix` - Auto-fix linting issues
 - `pnpm format` - Format code with Prettier
@@ -86,10 +92,12 @@ Ensure you have [ASDF](https://asdf-vm.com/) installed to manage runtime version
 - `pnpm lint:manifests` - Validate package.json files
 
 #### Testing
+
 - `pnpm test` - Run all tests
 - `pnpm test:coverage` - Run tests with coverage reports
 
 #### CI/CD
+
 - `pnpm ci` - Run full CI pipeline (typecheck + lint + test)
 
 ### Type Generation Workflow

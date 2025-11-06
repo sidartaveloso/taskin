@@ -1,6 +1,10 @@
-import type { ITaskProvider, TaskFile } from './task.types';
+import type {
+  ITaskManager,
+  ITaskProvider,
+  TaskFile,
+} from './task-manager.types';
 
-export class TaskManager {
+export class TaskManager implements ITaskManager {
   constructor(private taskProvider: ITaskProvider) {}
 
   async startTask(taskId: string): Promise<TaskFile> {

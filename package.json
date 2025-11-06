@@ -37,7 +37,8 @@
     "ci": "pnpm typecheck && pnpm lint && pnpm test",
     "clean": "turbo run clean",
     "pnpm:update": "pnpm install pnpm@latest -Dw",
-    "generate:py-types": "pnpm --filter @taskin/types-py run generate"
+    "generate:py-types": "pnpm --filter @taskin/types-py run generate",
+    "taskin": "tsx packages/cli/src/index.ts"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

@@ -1,26 +1,49 @@
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { TaskSchema, UserSchema } from '../src/index.js';
 
-const schemasDir = join(__dirname, '../dist/schema');
+/**
+ * Generates JSON Schema files from Zod schemas.
+ * Used for validation in non-TypeScript environments (Python, OpenAPI, etc.).
+ */
+function generateSchemas(): void {
+  const schemasDir = join(__dirname, '../dist/schema');
 
-// Create schemas directory
-mkdirSync(schemasDir, { recursive: true });
+  try {
+    // Ensure output directory exists
+    mkdirSync(schemasDir, { recursive: true });
 
-// Generate JSON schemas
-const taskJsonSchema = zodToJsonSchema(TaskSchema, 'Task');
-const userJsonSchema = zodToJsonSchema(UserSchema, 'User');
+    // Define schemas to generate
+    const schemas = [
+      {
+        name: 'Task',
+        outputFile: 'task.schema.json',
+        schema: TaskSchema,
+      },
+      {
+        name: 'User',
+        outputFile: 'user.schema.json',
+        schema: UserSchema,
+      },
+    ];
 
-// Write to files
-writeFileSync(
-  join(schemasDir, 'task.schema.json'),
-  JSON.stringify(taskJsonSchema, null, 2)
-);
+    // Generate each schema
+    for (const { name, outputFile, schema } of schemas) {
+      const jsonSchema = zodToJsonSchema(schema, name);
+      const outputPath = join(schemasDir, outputFile);
 
-writeFileSync(
-  join(schemasDir, 'user.schema.json'),
-  JSON.stringify(userJsonSchema, null, 2)
-);
+      writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2), 'utf-8');
 
-console.log('✅ JSON schemas generated successfully');
+      console.log(`  ✓ Generated ${outputFile}`);
+    }
+
+    console.log(`\n✅ Successfully generated ${schemas.length} JSON schema(s)`);
+  } catch (error) {
+    console.error('❌ Failed to generate JSON schemas:', error);
+    process.exit(1);
+  }
+}
+
+// Run the generator
+generateSchemas();

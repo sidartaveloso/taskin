@@ -1,6 +1,7 @@
 {
   "name": "@taskin/task-manager",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "motivation": "To manage the lifecycle of tasks, including creation, status updates, and retrieval.",
   "solve": "Provides a structured API for interacting with task data, abstracting the underlying storage mechanism.",
@@ -9,6 +10,12 @@
   "since": "2025-11-05",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
