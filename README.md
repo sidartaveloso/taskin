@@ -39,6 +39,33 @@ Ensure you have [ASDF](https://asdf-vm.com/) installed to manage runtime version
 - **Python** ≥3.10
 - **uv** - Fast Python package installer
 
+### Quick Start - CLI
+
+The Taskin CLI is the fastest way to start managing tasks:
+
+```bash
+# Install globally
+npm install -g taskin
+
+# Or use with npx (no installation)
+npx taskin list
+
+# View all commands
+taskin --help
+```
+
+**🔍 Task Linter** - Validate your task markdown files (language-agnostic):
+
+```bash
+# Validate TASKS/ directory
+taskin lint
+
+# Validate custom directory
+taskin lint --path ./my-project/TASKS
+```
+
+📚 [Full Linter Documentation](./docs/TASK_LINTER_USAGE.md) - Includes examples for Python, Ruby, Rust, CI/CD integration, and more.
+
 ### Installation
 
 1. Clone the repository:
@@ -85,8 +112,9 @@ Ensure you have [ASDF](https://asdf-vm.com/) installed to manage runtime version
 
 #### Code Quality
 
-- `pnpm lint` - Lint all packages (ESLint + manifest validation)
+- `pnpm lint` - Lint all packages (ESLint + manifest + task validation)
 - `pnpm lint:fix` - Auto-fix linting issues
+- `pnpm lint:tasks` - Validate task markdown files
 - `pnpm format` - Format code with Prettier
 - `pnpm format:check` - Check code formatting
 - `pnpm lint:manifests` - Validate package.json files

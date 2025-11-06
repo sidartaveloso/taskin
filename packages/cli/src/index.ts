@@ -7,6 +7,7 @@
 
 import { Command } from 'commander';
 import { finishCommand } from './commands/finish.js';
+import { lintCommand } from './commands/lint.js';
 import { listCommand } from './commands/list.js';
 import { pauseCommand } from './commands/pause.js';
 import { startCommand } from './commands/start.js';
@@ -27,6 +28,13 @@ listCommand(program);
 startCommand(program);
 pauseCommand(program);
 finishCommand(program);
+
+// Lint command
+program
+  .command('lint')
+  .description('🔍 Validate task markdown files')
+  .option('-p, --path <directory>', 'Path to TASKS directory', 'TASKS')
+  .action(lintCommand);
 
 // Show custom help if no command provided
 if (process.argv.length <= 2) {
