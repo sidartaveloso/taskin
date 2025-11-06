@@ -8,6 +8,11 @@ requires-python = ">=3.10"
 target-python-version = "3.10"
 output-model-type = "pydantic_v2.BaseModel"
 
+[dependency-groups]
+dev = [
+    "datamodel-code-generator>=0.35.0",
+]
+
 [project.optional-dependencies]
 dev = [
     "datamodel-code-generator"
