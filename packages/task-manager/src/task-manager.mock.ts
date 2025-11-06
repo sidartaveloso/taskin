@@ -1,3 +1,4 @@
+import type { TaskId } from '@taskin/types-ts';
 import { vi } from 'vitest';
 import type { ITaskProvider, TaskFile } from './task-manager.types';
 
@@ -6,7 +7,7 @@ export const createMockTask = (overrides?: Partial<TaskFile>): TaskFile => ({
   createdAt: new Date().toISOString(),
   description: 'A test feature',
   filePath: '/tasks/task-001.md',
-  id: 'task-001',
+  id: 'task-001' satisfies string as TaskId,
   status: 'pending',
   title: 'Implement feature',
   type: 'feat',

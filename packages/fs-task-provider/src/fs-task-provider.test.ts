@@ -1,4 +1,5 @@
 import type { TaskFile } from '@taskin/task-manager';
+import type { TaskId } from '@taskin/types-ts';
 import { promises as fs } from 'fs';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -51,7 +52,7 @@ describe('FileSystemTaskProvider', () => {
         content: 'new content',
         createdAt: new Date().toISOString(),
         filePath: '/fake/tasks/task-001.md',
-        id: '001',
+        id: '001' satisfies string as TaskId,
         status: 'pending',
         title: 'Test Task',
         type: 'feat',

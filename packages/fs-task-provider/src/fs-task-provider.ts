@@ -1,5 +1,5 @@
 import type { ITaskProvider, TaskFile } from '@taskin/task-manager';
-import type { TaskStatus, TaskType } from '@taskin/types-ts';
+import type { TaskId, TaskStatus, TaskType } from '@taskin/types-ts';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -24,7 +24,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
     const title = titleMatch ? titleMatch[1] : 'Untitled';
 
     const task: TaskFile = {
-      id: taskId,
+      id: taskId satisfies string as TaskId,
       title,
       content,
       filePath,
@@ -70,7 +70,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
       const userMatch = headerSection.match(/^Assignee:\s*(.+)$/im);
 
       const task: TaskFile = {
-        id: taskId,
+        id: taskId satisfies string as TaskId,
         title,
         content,
         filePath,

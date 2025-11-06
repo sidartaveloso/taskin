@@ -1,2 +1,2 @@
-export * from './types-ts.schemas';
-export * from './types-ts.types';
+export * from './taskin.schemas.js';
+export * from './taskin.types.js';

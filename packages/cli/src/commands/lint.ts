@@ -1,26 +1,37 @@
+/**
+ * Lint command - Validate task markdown files
+ */
+
+import type { LintTasksOptions } from '@taskin/types-ts';
 import { join } from 'path';
-import { TaskLinter } from '../lib/task-linter.js';
+import { FileSystemTaskLinter } from '../lib/file-system-task-linter/index.js';
+import { defineCommand } from './define-command/index.js';
 
-interface LintOptions {
-  path?: string;
-}
+export const lintCommand = defineCommand({
+  name: 'lint',
+  description: '🔍 Validate task markdown files',
+  options: [
+    {
+      flags: '-p, --path <directory>',
+      description: 'Path to TASKS directory',
+      defaultValue: 'TASKS',
+    },
+  ],
+  handler: async (options: LintTasksOptions) => {
+    await executeLint(options);
+  },
+});
 
-export async function lintCommand(options: LintOptions): Promise<void> {
+async function executeLint(options: LintTasksOptions): Promise<void> {
   const tasksDir = options.path || join(process.cwd(), 'TASKS');
 
   console.log(`📋 Linting task files in: ${tasksDir}\n`);
 
-  const linter = new TaskLinter();
+  const linter = new FileSystemTaskLinter();
+  const result = await linter.lintDirectory(tasksDir);
+  FileSystemTaskLinter.printResults(result);
 
-  try {
-    const result = await linter.lint(tasksDir);
-    TaskLinter.printResults(result);
-
-    if (!result.valid) {
-      process.exit(1);
-    }
-  } catch (error) {
-    console.error('❌ Error:', error);
+  if (!result.valid) {
     process.exit(1);
   }
 }

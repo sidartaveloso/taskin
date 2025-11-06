@@ -4,35 +4,29 @@
 
 import { FileSystemTaskProvider } from '@taskin/fs-task-provider';
 import { TaskManager } from '@taskin/task-manager';
-import type { Command } from 'commander';
+import type { FinishTaskOptions } from '@taskin/types-ts';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { defineCommand } from './define-command/index.js';
 
-interface FinishOptions {
-  skipUpdate?: boolean;
-}
-
-export function finishCommand(program: Command): void {
-  program
-    .command('finish <task-id>')
-    .alias('done')
-    .description('✅ Complete a task')
-    .option('-s, --skip-update', 'Skip updating task status')
-    .action(async (taskId: string, options: FinishOptions) => {
-      try {
-        await finishTask(taskId, options);
-      } catch (err) {
-        error(
-          `Failed to finish task: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        process.exit(1);
-      }
-    });
-}
+export const finishCommand = defineCommand({
+  name: 'finish <task-id>',
+  description: '✅ Complete a task',
+  alias: 'done',
+  options: [
+    {
+      flags: '-s, --skip-update',
+      description: 'Skip updating task status',
+    },
+  ],
+  handler: async (taskId: string, options: FinishTaskOptions) => {
+    await finishTask(taskId, options);
+  },
+});
 
 async function finishTask(
   taskId: string,
-  options: FinishOptions,
+  options: FinishTaskOptions,
 ): Promise<void> {
   printHeader(`Finishing Task ${taskId}`, '✅');
 
