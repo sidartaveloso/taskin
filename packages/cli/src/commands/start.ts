@@ -4,40 +4,33 @@
 
 import { FileSystemTaskProvider } from '@taskin/fs-task-provider';
 import { TaskManager } from '@taskin/task-manager';
-import type { Command } from 'commander';
+import type { StartTaskOptions } from '@taskin/types-ts';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { defineCommand } from './define-command/index.js';
 
-interface StartOptions {
-  base?: string;
-  force?: boolean;
-}
-
-export function startCommand(program: Command): void {
-  program
-    .command('start <task-id>')
-    .alias('begin')
-    .description('🚀 Start working on a task')
-    .option('-f, --force', 'Force start even with uncommitted changes')
-    .option(
-      '-b, --base <branch>',
-      'Base branch to create from (default: current)',
-    )
-    .action(async (taskId: string, options: StartOptions) => {
-      try {
-        await startTask(taskId, options);
-      } catch (err) {
-        error(
-          `Failed to start task: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        process.exit(1);
-      }
-    });
-}
+export const startCommand = defineCommand({
+  name: 'start <task-id>',
+  description: '🚀 Start working on a task',
+  alias: 'begin',
+  options: [
+    {
+      flags: '-f, --force',
+      description: 'Force start even with uncommitted changes',
+    },
+    {
+      flags: '-b, --base <branch>',
+      description: 'Base branch to create from (default: current)',
+    },
+  ],
+  handler: async (taskId: string, options: StartTaskOptions) => {
+    await startTask(taskId, options);
+  },
+});
 
 async function startTask(
   taskId: string,
-  _options: StartOptions,
+  _options: StartTaskOptions,
 ): Promise<void> {
   printHeader(`Starting Task ${taskId}`, '🚀');
 

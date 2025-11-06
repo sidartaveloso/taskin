@@ -3,35 +3,34 @@
  */
 
 import { FileSystemTaskProvider } from '@taskin/fs-task-provider';
-import type { Command } from 'commander';
+import type { PauseTaskOptions } from '@taskin/types-ts';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { defineCommand } from './define-command/index.js';
 
-interface PauseOptions {
-  message?: string;
-  skipCommit?: boolean;
-}
+export const pauseCommand = defineCommand({
+  name: 'pause <task-id>',
+  description: '⏸️  Pause work on a task',
+  alias: 'stop',
+  options: [
+    {
+      flags: '-m, --message <message>',
+      description: 'Custom commit message',
+    },
+    {
+      flags: '-s, --skip-commit',
+      description: 'Skip commit (just show what would be done)',
+    },
+  ],
+  handler: async (taskId: string, options: PauseTaskOptions) => {
+    await pauseTask(taskId, options);
+  },
+});
 
-export function pauseCommand(program: Command): void {
-  program
-    .command('pause <task-id>')
-    .alias('stop')
-    .description('⏸️  Pause work on a task')
-    .option('-m, --message <message>', 'Custom commit message')
-    .option('-s, --skip-commit', 'Skip commit (just show what would be done)')
-    .action(async (taskId: string, options: PauseOptions) => {
-      try {
-        await pauseTask(taskId, options);
-      } catch (err) {
-        error(
-          `Failed to pause task: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        process.exit(1);
-      }
-    });
-}
-
-async function pauseTask(taskId: string, options: PauseOptions): Promise<void> {
+async function pauseTask(
+  taskId: string,
+  options: PauseTaskOptions,
+): Promise<void> {
   printHeader(`Pausing Task ${taskId}`, '⏸️');
 
   // Normalize task ID

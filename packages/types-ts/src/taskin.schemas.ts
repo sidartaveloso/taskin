@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
 /**
+ * Task identifier schema.
+ * Represents a unique identifier for a task (UUID format).
+ *
+ * @public
+ */
+export const TaskIdSchema = z.string().uuid().brand('TaskId');
+
+/**
  * All possible task status values.
  * Use this for runtime operations like iteration, mapping, or validation.
  *
@@ -76,9 +84,11 @@ export const TaskTypeSchema = z.enum(TASK_TYPES);
  */
 export const TaskSchema = z.object({
   createdAt: z.string().datetime(),
-  id: z.string().uuid(),
+  id: TaskIdSchema,
   status: TaskStatusSchema,
   title: z.string(),
+  type: TaskTypeSchema,
+  assignee: z.string().optional(),
   completed: z.boolean().optional(),
   description: z.string().optional(),
   userId: z.string().optional(),

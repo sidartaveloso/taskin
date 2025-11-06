@@ -3,46 +3,37 @@
  */
 
 import { FileSystemTaskProvider } from '@taskin/fs-task-provider';
-import type { TaskStatus, TaskType } from '@taskin/types-ts';
-import type { Command } from 'commander';
+import type { ListTasksOptions, TaskStatus, TaskType } from '@taskin/types-ts';
 import path from 'path';
-import { colors, error, printHeader } from '../lib/colors.js';
+import { colors, printHeader } from '../lib/colors.js';
+import { defineCommand } from './define-command/index.js';
 
-interface ListOptions {
-  status?: TaskStatus;
-  type?: TaskType;
-  user?: string;
-}
-
-export function listCommand(program: Command): void {
-  program
-    .command('list [filter]')
-    .alias('ls')
-    .description('📊 List all tasks in the project')
-    .option(
-      '-s, --status <status>',
-      'Filter by status (pending, in-progress, done, blocked)',
-    )
-    .option(
-      '-t, --type <type>',
-      'Filter by type (feat, fix, refactor, docs, test, chore)',
-    )
-    .option('-u, --user <user>', 'Filter by user')
-    .action(async (filter: string | undefined, options: ListOptions) => {
-      try {
-        await listTasks(filter, options);
-      } catch (err) {
-        error(
-          `Failed to list tasks: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        process.exit(1);
-      }
-    });
-}
+export const listCommand = defineCommand({
+  name: 'list [filter]',
+  description: '📊 List all tasks in the project',
+  alias: 'ls',
+  options: [
+    {
+      flags: '-s, --status <status>',
+      description: 'Filter by status (pending, in-progress, done, blocked)',
+    },
+    {
+      flags: '-t, --type <type>',
+      description: 'Filter by type (feat, fix, refactor, docs, test, chore)',
+    },
+    {
+      flags: '-u, --user <user>',
+      description: 'Filter by user',
+    },
+  ],
+  handler: async (filter: string | undefined, options: ListTasksOptions) => {
+    await listTasks(filter, options);
+  },
+});
 
 async function listTasks(
   filter: string | undefined,
-  options: ListOptions,
+  options: ListTasksOptions,
 ): Promise<void> {
   printHeader('Task List', '📊');
 
@@ -71,9 +62,9 @@ async function listTasks(
     filteredTasks = filteredTasks.filter((t) => t.type === options.type);
   }
 
-  if (options.user) {
+  if (options.assignee) {
     filteredTasks = filteredTasks.filter((t) =>
-      t.userId?.toLowerCase().includes(options.user!.toLowerCase()),
+      t.userId?.toLowerCase().includes(options.assignee!.toLowerCase()),
     );
   }
 

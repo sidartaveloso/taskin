@@ -1,32 +1,22 @@
 import chalk from 'chalk';
 import { readdir, readFile } from 'fs/promises';
 import { join } from 'path';
-
-export interface ValidationError {
-  file: string;
-  message: string;
-  severity: 'error' | 'warning';
-  line?: number;
-}
-
-export interface TaskMetadata {
-  assignee?: string;
-  status?: string;
-  type?: string;
-}
-
-export interface LintResult {
-  errors: ValidationError[];
-  filesChecked: number;
-  valid: boolean;
-  warnings: ValidationError[];
-}
+import type {
+  FileLintResult,
+  FileValidationError,
+  IFileSystemTaskLinter,
+  TaskMetadata,
+} from './file-system-task-linter.types.js';
 
 const VALID_STATUSES = ['pending', 'in-progress', 'done', 'blocked'];
 const VALID_TYPES = ['feat', 'fix', 'chore', 'docs', 'refactor', 'test'];
 
-export class TaskLinter {
-  private errors: ValidationError[] = [];
+/**
+ * FileSystem-specific task linter implementation
+ * Validates task markdown files in the local filesystem
+ */
+export class FileSystemTaskLinter implements IFileSystemTaskLinter {
+  private errors: FileValidationError[] = [];
 
   private addError(
     file: string,
@@ -37,9 +27,19 @@ export class TaskLinter {
     this.errors.push({ file, message, severity, line });
   }
 
-  private validateFilename(filename: string): boolean {
+  /**
+   * Validate task file name format (FileSystem-specific)
+   */
+  validateFileName(fileName: string): FileValidationError | null {
     const pattern = /^task-\d{2,3}-[a-z0-9-]+\.md$/;
-    return pattern.test(filename);
+    if (!pattern.test(fileName)) {
+      return {
+        file: fileName,
+        message: 'Invalid filename. Expected: task-NNN-kebab-case-title.md',
+        severity: 'error',
+      };
+    }
+    return null;
   }
 
   private extractMetadata(content: string): TaskMetadata {
@@ -53,6 +53,54 @@ export class TaskLinter {
       type: typeMatch?.[1]?.trim().toLowerCase(),
       assignee: assigneeMatch?.[1]?.trim(),
     };
+  }
+
+  /**
+   * Validate task metadata (FileSystem-specific)
+   */
+  validateMetadata(
+    metadata: TaskMetadata,
+    filePath: string,
+  ): FileValidationError[] {
+    const errors: FileValidationError[] = [];
+
+    if (!metadata.status) {
+      errors.push({
+        file: filePath,
+        message: 'Missing required metadata: Status',
+        severity: 'error',
+      });
+    } else if (!VALID_STATUSES.includes(metadata.status)) {
+      errors.push({
+        file: filePath,
+        message: `Invalid status "${metadata.status}". Valid: ${VALID_STATUSES.join(', ')}`,
+        severity: 'error',
+      });
+    }
+
+    if (!metadata.type) {
+      errors.push({
+        file: filePath,
+        message: 'Missing required metadata: Type',
+        severity: 'error',
+      });
+    } else if (!VALID_TYPES.includes(metadata.type)) {
+      errors.push({
+        file: filePath,
+        message: `Invalid type "${metadata.type}". Valid: ${VALID_TYPES.join(', ')}`,
+        severity: 'error',
+      });
+    }
+
+    if (!metadata.assignee) {
+      errors.push({
+        file: filePath,
+        message: 'Missing recommended metadata: Assignee',
+        severity: 'warning',
+      });
+    }
+
+    return errors;
   }
 
   private validateContent(filename: string, content: string): void {
@@ -79,34 +127,10 @@ export class TaskLinter {
     }
 
     const metadata = this.extractMetadata(content);
-
-    if (!metadata.status) {
-      this.addError(filename, 'Missing required metadata: Status', 'error');
-    } else if (!VALID_STATUSES.includes(metadata.status)) {
-      this.addError(
-        filename,
-        `Invalid status "${metadata.status}". Valid: ${VALID_STATUSES.join(', ')}`,
-        'error',
-      );
-    }
-
-    if (!metadata.type) {
-      this.addError(filename, 'Missing required metadata: Type', 'error');
-    } else if (!VALID_TYPES.includes(metadata.type)) {
-      this.addError(
-        filename,
-        `Invalid type "${metadata.type}". Valid: ${VALID_TYPES.join(', ')}`,
-        'error',
-      );
-    }
-
-    if (!metadata.assignee) {
-      this.addError(
-        filename,
-        'Missing recommended metadata: Assignee',
-        'warning',
-      );
-    }
+    const metadataErrors = this.validateMetadata(metadata, filename);
+    metadataErrors.forEach((error) => {
+      this.addError(error.file, error.message, error.severity, error.line);
+    });
 
     const h2Sections = content.match(/^##\s+.+$/gm);
     if (!h2Sections || h2Sections.length === 0) {
@@ -134,7 +158,40 @@ export class TaskLinter {
     }
   }
 
-  async lint(tasksDir: string): Promise<LintResult> {
+  /**
+   * Lint a single task file (FileSystem-specific)
+   */
+  async lintFile(filePath: string): Promise<FileValidationError[]> {
+    const errors: FileValidationError[] = [];
+
+    // Validate filename
+    const fileName = filePath.split('/').pop() || filePath;
+    const fileNameError = this.validateFileName(fileName);
+    if (fileNameError) {
+      errors.push(fileNameError);
+    }
+
+    // Read and validate content
+    try {
+      const content = await readFile(filePath, 'utf-8');
+      this.errors = [];
+      this.validateContent(fileName, content);
+      errors.push(...this.errors);
+    } catch (error) {
+      errors.push({
+        file: fileName,
+        message: `Failed to read file: ${error}`,
+        severity: 'error',
+      });
+    }
+
+    return errors;
+  }
+
+  /**
+   * Lint all task files in the specified directory (FileSystem-specific)
+   */
+  async lintDirectory(tasksDir: string): Promise<FileLintResult> {
     this.errors = [];
 
     try {
@@ -142,12 +199,9 @@ export class TaskLinter {
       const taskFiles = files.filter((f) => f.endsWith('.md'));
 
       for (const file of taskFiles) {
-        if (!this.validateFilename(file)) {
-          this.addError(
-            file,
-            'Invalid filename. Expected: task-NNN-kebab-case-title.md',
-            'error',
-          );
+        const fileNameError = this.validateFileName(file);
+        if (fileNameError) {
+          this.addError(file, fileNameError.message, fileNameError.severity);
         }
 
         const content = await readFile(join(tasksDir, file), 'utf-8');
@@ -168,7 +222,7 @@ export class TaskLinter {
     }
   }
 
-  static printResults(result: LintResult): void {
+  static printResults(result: FileLintResult): void {
     if (result.errors.length === 0 && result.warnings.length === 0) {
       console.log(
         chalk.green(`✅ All ${result.filesChecked} task files are valid!\n`),
@@ -182,7 +236,7 @@ export class TaskLinter {
       ),
     );
 
-    const errorsByFile = new Map<string, ValidationError[]>();
+    const errorsByFile = new Map<string, FileValidationError[]>();
     [...result.errors, ...result.warnings].forEach((error) => {
       if (!errorsByFile.has(error.file)) {
         errorsByFile.set(error.file, []);

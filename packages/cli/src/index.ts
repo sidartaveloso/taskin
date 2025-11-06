@@ -7,6 +7,7 @@
 
 import { Command } from 'commander';
 import { finishCommand } from './commands/finish.js';
+import { initCommand } from './commands/init.js';
 import { lintCommand } from './commands/lint.js';
 import { listCommand } from './commands/list.js';
 import { pauseCommand } from './commands/pause.js';
@@ -24,17 +25,12 @@ program
   });
 
 // Register commands
+initCommand(program);
 listCommand(program);
 startCommand(program);
 pauseCommand(program);
 finishCommand(program);
-
-// Lint command
-program
-  .command('lint')
-  .description('🔍 Validate task markdown files')
-  .option('-p, --path <directory>', 'Path to TASKS directory', 'TASKS')
-  .action(lintCommand);
+lintCommand(program);
 
 // Show custom help if no command provided
 if (process.argv.length <= 2) {
@@ -44,3 +40,8 @@ if (process.argv.length <= 2) {
 
 // Parse arguments
 program.parse();
+
+// Export for programmatic usage
+export type { ITaskin } from '@taskin/types-ts';
+export { createTaskin, getTaskin } from './main.js';
+export { Taskin } from './taskin.js';
