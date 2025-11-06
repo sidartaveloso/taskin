@@ -49,6 +49,17 @@ export function showCustomHelp(): string {
       examples: ['taskin finish 001', 'taskin done task-001'],
       icon: '✅',
     },
+    {
+      name: colors.highlight('taskin lint') + colors.normal(' [options]'),
+      alias: colors.secondary('Options: -p, --path <directory>'),
+      description: 'Validate task markdown files',
+      examples: [
+        'taskin lint',
+        'taskin lint --path ./TASKS',
+        'taskin lint -p /path/to/tasks',
+      ],
+      icon: '🔍',
+    },
   ];
 
   commands.forEach((cmd, index) => {

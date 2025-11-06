@@ -23,7 +23,8 @@
   ],
   "scripts": {
     "lint:manifests": "tsx dev/scripts/lint-manifests.ts",
-    "lint": "turbo run lint && pnpm run lint:manifests",
+    "lint:tasks": "tsx dev/scripts/lint-tasks.ts",
+    "lint": "turbo run lint && pnpm run lint:manifests && pnpm run lint:tasks",
     "lint:fix": "turbo run lint:fix",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
