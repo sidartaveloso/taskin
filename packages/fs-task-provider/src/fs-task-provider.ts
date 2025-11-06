@@ -1,4 +1,5 @@
 import type { ITaskProvider, TaskFile } from '@taskin/task-manager';
+import type { TaskStatus, TaskType } from '@taskin/types-ts';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -43,7 +44,49 @@ export class FileSystemTaskProvider implements ITaskProvider {
   }
 
   async getAllTasks(): Promise<TaskFile[]> {
-    // Implementation for getting all tasks would go here.
-    return [];
+    const files = await fs.readdir(this.tasksDirectory);
+    const taskFiles = files.filter(
+      (file) => file.startsWith('task-') && file.endsWith('.md'),
+    );
+
+    const tasks: TaskFile[] = [];
+
+    for (const file of taskFiles) {
+      const filePath = path.join(this.tasksDirectory, file);
+      const content = await fs.readFile(filePath, 'utf-8');
+
+      // Extract task ID from filename: task-001-title.md -> 001
+      const idMatch = file.match(/^task-(\d+)-/);
+      const taskId = idMatch ? idMatch[1] : 'unknown';
+
+      // Extract title from first heading
+      const titleMatch = content.match(/^# .*Task.*?[—-]\s*(.+)$/im);
+      const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
+
+      // Try to extract metadata from the header section (before first ##)
+      const headerSection = content.split(/^##/m)[0];
+      const statusMatch = headerSection.match(/^Status:\s*(.+)$/im);
+      const typeMatch = headerSection.match(/^Type:\s*(.+)$/im);
+      const userMatch = headerSection.match(/^Assignee:\s*(.+)$/im);
+
+      const task: TaskFile = {
+        id: taskId,
+        title,
+        content,
+        filePath,
+        userId: userMatch ? userMatch[1].trim() : undefined,
+        status: (statusMatch
+          ? statusMatch[1].trim().toLowerCase()
+          : 'pending') as TaskStatus,
+        type: (typeMatch
+          ? typeMatch[1].trim().toLowerCase()
+          : 'feat') as TaskType,
+        createdAt: new Date().toISOString(),
+      };
+
+      tasks.push(task);
+    }
+
+    return tasks;
   }
 }

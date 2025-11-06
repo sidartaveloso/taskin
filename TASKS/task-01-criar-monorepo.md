@@ -1,5 +1,9 @@
 # 🧩 Task 001 — Create the **Taskin** Monorepo Structure
 
+Status: done
+Type: feat
+Assignee: sidarta
+
 ## 🎯 Objective
 
 Set up the **base monorepo structure** for the **Taskin** project, using **Turborepo** and **pnpm**.  

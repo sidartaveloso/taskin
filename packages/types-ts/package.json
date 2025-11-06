@@ -7,13 +7,13 @@
   "status": "active",
   "since": "2025-11-05",
   "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && pnpm run generate:schemas",
     "dev": "tsc --watch",
     "generate:schemas": "tsx scripts/generate-schemas.ts",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "echo 'No tests for types-ts (only type definitions)'"
   },
   "dependencies": {
     "zod": "^3.23.8"

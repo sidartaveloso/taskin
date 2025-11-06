@@ -6,7 +6,12 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
-      "outputs": ["dist/**", "build/**", "generated/**", "docs/.vitepress/dist/**"]
+      "outputs": [
+        "dist/**",
+        "build/**",
+        "generated/**",
+        "docs/.vitepress/dist/**"
+      ]
     },
     "clean": {
       "cache": false

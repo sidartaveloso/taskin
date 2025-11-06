@@ -2,11 +2,15 @@
   "name": "@taskin/cli",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "motivation": "Provide a unified CLI for developers to manage Taskin tasks directly from the terminal.",
   "solve": "Simplifies task creation and tracking workflows inside Git-based projects.",
   "scope": "cli",
   "status": "active",
   "since": "2025-11-05",
+  "bin": {
+    "taskin": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
@@ -15,16 +19,24 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "vitest run",
+    "test": "echo 'No tests for cli yet'",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@taskin/core": "workspace:*"
+    "@taskin/core": "workspace:*",
+    "@taskin/fs-task-provider": "workspace:*",
+    "@taskin/git-utils": "workspace:*",
+    "@taskin/task-manager": "workspace:*",
+    "@taskin/types-ts": "workspace:*",
+    "@taskin/utils": "workspace:*",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0"
   },
   "devDependencies": {
+    "@types/node": "^20.14.10",
+    "eslint": "^8.57.0",
     "typescript": "^5.5.3",
-    "vitest": "^1.6.0",
-    "eslint": "^8.57.0"
+    "vitest": "^1.6.0"
   }
 }
