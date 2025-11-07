@@ -2,8 +2,12 @@
  * List command - Display all tasks
  */
 
-import { FileSystemTaskProvider } from '@taskin/fs-task-provider';
-import type { ListTasksOptions, TaskStatus, TaskType } from '@taskin/types-ts';
+import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import type {
+  ListTasksOptions,
+  TaskStatus,
+  TaskType,
+} from '@opentask/taskin-types';
 import path from 'path';
 import { colors, printHeader } from '../lib/colors.js';
 import { defineCommand } from './define-command/index.js';

@@ -1,5 +1,5 @@
 {
-  "name": "@taskin/task-manager",
+  "name": "@opentask/taskin-task-manager",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@taskin/types-ts": "workspace:*"
+    "@opentask/taskin-types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.5.3"

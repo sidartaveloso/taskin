@@ -9,14 +9,12 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "paths": {
-      "@taskin/api": ["packages/api/src"],
-      "@taskin/cli": ["packages/cli/src"],
-      "@taskin/core": ["packages/core/src"],
-      "@taskin/fs-task-provider": ["packages/fs-task-provider/src"],
-      "@taskin/git-utils": ["packages/git-utils/src"],
-      "@taskin/task-manager": ["packages/task-manager/src"],
-      "@taskin/types-ts": ["packages/types-ts/src"],
-      "@taskin/utils": ["packages/utils/src"]
+      "@opentask/taskin-core": ["packages/core/src"],
+      "@opentask/taskin-fs-provider": ["packages/fs-task-provider/src"],
+      "@opentask/taskin-git-utils": ["packages/git-utils/src"],
+      "@opentask/taskin-task-manager": ["packages/task-manager/src"],
+      "@opentask/taskin-types": ["packages/types-ts/src"],
+      "@opentask/taskin-utils": ["packages/utils/src"]
     },
     "skipLibCheck": true,
     "sourceMap": true,

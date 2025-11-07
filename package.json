@@ -4,10 +4,10 @@
   "type": "module",
   "version": "0.1.0",
   "description": "Taskin monorepo for task management and automation",
-  "packageManager": "pnpm@9.5.0",
+  "packageManager": "pnpm@10.20.0",
   "engines": {
     "node": ">=20.0.0",
-    "pnpm": ">=9.5.0"
+    "pnpm": ">=10.20.0"
   },
   "author": {
     "name": "OpenTask",
@@ -39,7 +39,10 @@
     "clean": "turbo run clean",
     "pnpm:update": "pnpm install pnpm@latest -Dw",
     "generate:py-types": "pnpm --filter @taskin/types-py run generate",
-    "taskin": "tsx packages/cli/src/index.ts"
+    "taskin": "tsx packages/cli/src/index.ts",
+    "publish:packages": "node scripts/publish-packages.js",
+    "publish:beta": "node scripts/publish-packages.js --tag beta",
+    "publish:latest": "node scripts/publish-packages.js --tag latest"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

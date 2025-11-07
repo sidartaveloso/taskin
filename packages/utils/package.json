@@ -1,5 +1,5 @@
 {
-  "name": "@taskin/utils",
+  "name": "@opentask/taskin-utils",
   "version": "0.1.0",
   "private": true,
   "description": "Utility functions for Taskin",

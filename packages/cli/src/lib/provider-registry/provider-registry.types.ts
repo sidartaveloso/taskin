@@ -1,6 +1,6 @@
 /**
  * Provider registry types
- * Re-exports from @taskin/types-ts for convenience
+ * Re-exports from @opentask/taskin-types for convenience
  */
 
-export type { ProviderInfo } from '@taskin/types-ts';
+export type { ProviderInfo } from '@opentask/taskin-types';

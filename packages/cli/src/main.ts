@@ -3,8 +3,8 @@
  * Handles dependency injection and initialization
  */
 
-import { FileSystemTaskProvider } from '@taskin/fs-task-provider';
-import { TaskManager } from '@taskin/task-manager';
+import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import { TaskManager } from '@opentask/taskin-task-manager';
 import { join } from 'path';
 import { FileSystemTaskLinter } from './lib/file-system-task-linter/index.js';
 import { Taskin } from './taskin.js';

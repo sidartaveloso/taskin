@@ -1,4 +1,4 @@
-import type { TaskId } from '@taskin/types-ts';
+import type { TaskId } from '@opentask/taskin-types';
 import { vi } from 'vitest';
 import type { ITaskProvider, TaskFile } from './task-manager.types';
 

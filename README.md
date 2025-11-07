@@ -35,7 +35,7 @@ This monorepo uses **pnpm workspaces** with **Turborepo** for efficient task orc
 Ensure you have [ASDF](https://asdf-vm.com/) installed to manage runtime versions:
 
 - **Node.js** ≥20.0.0
-- **pnpm** ≥9.5.0
+- **pnpm** ≥10.20.0
 - **Python** ≥3.10
 - **uv** - Fast Python package installer
 

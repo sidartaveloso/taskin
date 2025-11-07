@@ -1,11 +1,11 @@
 /**
  * FileSystem task linter types
- * Re-exports from @taskin/types-ts + FileSystem-specific extensions
+ * Re-exports from @opentask/taskin-types + FileSystem-specific extensions
  */
 
-import type { TaskValidationIssue } from '@taskin/types-ts';
+import type { TaskValidationIssue } from '@opentask/taskin-types';
 
-export type { TaskMetadata, TaskValidationIssue } from '@taskin/types-ts';
+export type { TaskMetadata, TaskValidationIssue } from '@opentask/taskin-types';
 
 /**
  * FileSystem-specific validation error

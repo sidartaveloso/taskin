@@ -1,5 +1,5 @@
 {
-  "name": "@taskin/core",
+  "name": "@opentask/taskin-core",
   "version": "0.1.0",
   "private": true,
   "motivation": "To contain the core business logic of Taskin.",
@@ -28,7 +28,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@taskin/types-ts": "workspace:*"
+    "@opentask/taskin-types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.5.3",

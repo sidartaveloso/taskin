@@ -23,6 +23,7 @@ interface InitOptions {
 
 export const initCommand = defineCommand({
   name: 'init',
+  alias: 'setup',
   description: '🎯 Initialize Taskin in your project',
   options: [
     {

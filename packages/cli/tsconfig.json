@@ -1,17 +1,10 @@
 {
   "compilerOptions": {
+    "composite": false,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "outDir": "./dist"
   },
   "extends": "../../tsconfig.base.json",
-  "include": ["src/**/*"],
-  "references": [
-    { "path": "../fs-task-provider" },
-    { "path": "../git-utils" },
-    { "path": "../task-manager" },
-    { "path": "../types-ts" },
-    { "path": "../utils" }
-  ]
+  "include": ["src"]
 }

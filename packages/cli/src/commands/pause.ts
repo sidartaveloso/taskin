@@ -2,8 +2,8 @@
  * Pause command - Pause work on a task
  */
 
-import { FileSystemTaskProvider } from '@taskin/fs-task-provider';
-import type { PauseTaskOptions } from '@taskin/types-ts';
+import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import type { PauseTaskOptions } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { defineCommand } from './define-command/index.js';

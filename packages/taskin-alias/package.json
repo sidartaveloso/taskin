@@ -1,0 +1,57 @@
+{
+  "name": "@opentask/taskin",
+  "version": "0.1.0-beta.3",
+  "description": "Task management system integrated with Git workflows (alias for taskin)",
+  "keywords": [
+    "task",
+    "management",
+    "git",
+    "workflow",
+    "cli",
+    "productivity",
+    "task-tracker",
+    "project-management",
+    "developer-tools",
+    "taskin",
+    "opentask"
+  ],
+  "homepage": "https://opentask.com.br",
+  "bugs": {
+    "url": "https://github.com/sidartaveloso/taskin/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sidartaveloso/taskin.git",
+    "directory": "packages/taskin-alias"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "OpenTask",
+    "email": "contato@opentask.com.br",
+    "url": "https://opentask.com.br"
+  },
+  "contributors": [
+    {
+      "name": "Sidarta Veloso",
+      "email": "sidartaveloso@gmail.com"
+    }
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "bin": {
+    "taskin": "bin/taskin.js",
+    "opentask": "bin/opentask.js"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "dependencies": {
+    "taskin": "0.1.0-beta.2"
+  },
+  "peerDependencies": {
+    "taskin": "^0.1.0-beta.2"
+  }
+}

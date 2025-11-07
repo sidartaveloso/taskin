@@ -10,7 +10,7 @@ export const AVAILABLE_PROVIDERS: ProviderInfo[] = [
     id: 'fs',
     name: '📁 File System',
     description: 'Store tasks as Markdown files in a local TASKS/ directory',
-    packageName: '@taskin/fs-task-provider',
+    packageName: '@opentask/taskin-fs-provider',
     configSchema: {
       required: ['tasksDir'],
       properties: {
@@ -26,7 +26,7 @@ export const AVAILABLE_PROVIDERS: ProviderInfo[] = [
     id: 'redmine',
     name: '🔴 Redmine',
     description: 'Sync tasks with Redmine issues via REST API',
-    packageName: '@taskin/redmine-task-provider',
+    packageName: '@opentask/taskin-redmine-provider',
     configSchema: {
       required: ['apiUrl', 'apiKey', 'projectId'],
       properties: {
@@ -51,7 +51,7 @@ export const AVAILABLE_PROVIDERS: ProviderInfo[] = [
     id: 'jira',
     name: '🔵 Jira',
     description: 'Sync tasks with Jira issues via REST API',
-    packageName: '@taskin/jira-task-provider',
+    packageName: '@opentask/taskin-jira-provider',
     configSchema: {
       required: ['apiUrl', 'email', 'apiToken', 'projectKey'],
       properties: {
@@ -80,7 +80,7 @@ export const AVAILABLE_PROVIDERS: ProviderInfo[] = [
     id: 'github',
     name: '🐙 GitHub Issues',
     description: 'Sync tasks with GitHub Issues',
-    packageName: '@taskin/github-task-provider',
+    packageName: '@opentask/taskin-github-provider',
     configSchema: {
       required: ['owner', 'repo', 'token'],
       properties: {

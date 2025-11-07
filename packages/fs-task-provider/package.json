@@ -1,11 +1,12 @@
 {
-  "name": "@taskin/fs-task-provider",
+  "name": "@opentask/taskin-fs-provider",
   "version": "0.1.0",
   "private": true,
+  "description": "File system task provider for Taskin",
   "type": "module",
   "motivation": "To provide a file-system-based implementation for task storage.",
   "solve": "Reads and writes task data from and to markdown files in the `TASKS` directory.",
-  "scope": "internal",
+  "scope": "provider",
   "status": "active",
   "since": "2025-11-05",
   "main": "./dist/index.js",
@@ -15,6 +16,37 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "taskin",
+    "provider",
+    "filesystem",
+    "markdown",
+    "task-management"
+  ],
+  "author": {
+    "name": "OpenTask",
+    "email": "contato@opentask.com.br",
+    "url": "https://opentask.com.br"
+  },
+  "contributors": [
+    {
+      "name": "Sidarta Veloso",
+      "email": "sidartaveloso@gmail.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sidartaveloso/taskin.git",
+    "directory": "packages/fs-task-provider"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc",
@@ -29,7 +61,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@taskin/task-manager": "workspace:*"
+    "@opentask/taskin-task-manager": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.5.3"
