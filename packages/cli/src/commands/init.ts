@@ -86,8 +86,11 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
   info(`Setting up task provider: ${colors.highlight(selectedProvider.name)}`);
   console.log();
 
-  // Ensure provider is installed
-  await ensureProviderInstalled(selectedProvider);
+  // Ensure provider is installed (skip for bundled providers)
+  const bundledProviders = ['fs']; // FileSystem provider is bundled in CLI
+  if (!bundledProviders.includes(selectedProvider.id)) {
+    await ensureProviderInstalled(selectedProvider);
+  }
 
   // Setup provider configuration
   const providerConfig = await setupProviderConfig(selectedProvider, cwd);

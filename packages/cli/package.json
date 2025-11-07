@@ -1,6 +1,6 @@
 {
   "name": "taskin",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "description": "Task management system integrated with Git workflows",
   "keywords": [
     "task",
