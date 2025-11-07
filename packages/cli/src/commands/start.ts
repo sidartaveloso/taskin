@@ -2,9 +2,9 @@
  * Start command - Begin working on a task
  */
 
-import { FileSystemTaskProvider } from '@taskin/fs-task-provider';
-import { TaskManager } from '@taskin/task-manager';
-import type { StartTaskOptions } from '@taskin/types-ts';
+import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import { TaskManager } from '@opentask/taskin-task-manager';
+import type { StartTaskOptions } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { defineCommand } from './define-command/index.js';

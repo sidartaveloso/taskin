@@ -68,7 +68,7 @@ importers:
 
   packages/api:
     dependencies:
-      '@taskin/core':
+      '@opentask/taskin-core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -120,7 +120,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@taskin/types-ts':
+      '@opentask/taskin-types':
         specifier: workspace:*
         version: link:../types-ts
     devDependencies:
@@ -144,7 +144,7 @@ importers:
 
   packages/fs-task-provider:
     dependencies:
-      '@taskin/task-manager':
+      '@opentask/taskin-task-manager':
         specifier: workspace:*
         version: link:../task-manager
     devDependencies:
@@ -164,7 +164,7 @@ importers:
 
   packages/task-manager:
     dependencies:
-      '@taskin/types-ts':
+      '@opentask/taskin-types':
         specifier: workspace:*
         version: link:../types-ts
     devDependencies:
@@ -174,7 +174,7 @@ importers:
 
   packages/types-py:
     dependencies:
-      '@taskin/types-ts':
+      '@opentask/taskin-types':
         specifier: workspace:*
         version: link:../types-ts
 

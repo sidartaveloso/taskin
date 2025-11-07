@@ -1,5 +1,5 @@
-import type { TaskFile } from '@taskin/task-manager';
-import type { TaskId } from '@taskin/types-ts';
+import type { TaskFile } from '@opentask/taskin-task-manager';
+import type { TaskId } from '@opentask/taskin-types';
 import { promises as fs } from 'fs';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

@@ -13,6 +13,13 @@ export function showCustomHelp(): string {
 
   const commands = [
     {
+      name: colors.highlight('taskin init'),
+      alias: colors.secondary('Alias: setup'),
+      description: 'Initialize Taskin in your project',
+      examples: ['taskin init', 'taskin setup'],
+      icon: '🎯',
+    },
+    {
       name: colors.highlight('taskin list') + colors.normal(' [filter]'),
       alias: colors.secondary('Alias: ls'),
       description: 'List all tasks in the project',

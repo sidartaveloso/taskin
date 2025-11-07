@@ -3,8 +3,8 @@
  * Main class that implements task management with dependency injection
  */
 
-import type { FileSystemTaskProvider } from '@taskin/fs-task-provider';
-import type { TaskManager } from '@taskin/task-manager';
+import type { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import type { TaskManager } from '@opentask/taskin-task-manager';
 import type {
   FinishTaskOptions,
   ITaskin,
@@ -15,7 +15,7 @@ import type {
   StartTaskOptions,
   Task,
   TaskId,
-} from '@taskin/types-ts';
+} from '@opentask/taskin-types';
 import type { FileSystemTaskLinter } from './lib/file-system-task-linter/file-system-task-linter.js';
 
 export class Taskin implements ITaskin {

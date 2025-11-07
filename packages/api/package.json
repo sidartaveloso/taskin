@@ -20,7 +20,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@taskin/core": "workspace:*"
+    "@opentask/taskin-core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.5.3",

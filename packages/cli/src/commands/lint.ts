@@ -2,7 +2,7 @@
  * Lint command - Validate task markdown files
  */
 
-import type { LintTasksOptions } from '@taskin/types-ts';
+import type { LintTasksOptions } from '@opentask/taskin-types';
 import { join } from 'path';
 import { FileSystemTaskLinter } from '../lib/file-system-task-linter/index.js';
 import { defineCommand } from './define-command/index.js';

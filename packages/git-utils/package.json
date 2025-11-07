@@ -1,5 +1,5 @@
 {
-  "name": "@taskin/git-utils",
+  "name": "@opentask/taskin-git-utils",
   "version": "0.1.0",
   "private": true,
   "motivation": "To provide a set of utilities for interacting with Git repositories.",

@@ -3,18 +3,23 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
-  dts: false,
+  dts: {
+    resolve: true,
+    // Only generate types for the entry point exports
+    entry: './src/index.ts',
+  },
   bundle: true,
   splitting: false,
   clean: true,
   minify: false,
+  shims: true,
   external: ['chalk', 'commander', 'inquirer', '@types/inquirer', 'zod'],
   noExternal: [
-    '@taskin/core',
-    '@taskin/fs-task-provider',
-    '@taskin/git-utils',
-    '@taskin/task-manager',
-    '@taskin/types-ts',
-    '@taskin/utils',
+    '@opentask/taskin-core',
+    '@opentask/taskin-fs-provider',
+    '@opentask/taskin-git-utils',
+    '@opentask/taskin-task-manager',
+    '@opentask/taskin-types',
+    '@opentask/taskin-utils',
   ],
 });

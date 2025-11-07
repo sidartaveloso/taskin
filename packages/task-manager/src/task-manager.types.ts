@@ -1,4 +1,4 @@
-import type { Task, TaskType, User } from '@taskin/types-ts';
+import type { Task, TaskType, User } from '@opentask/taskin-types';
 
 /**
  * A task with additional file system metadata.

@@ -1,13 +1,53 @@
 {
-  "name": "@taskin/types-ts",
+  "name": "@opentask/taskin-types",
   "version": "0.1.0",
+  "description": "TypeScript types and Zod schemas for Taskin",
   "motivation": "Provide a single source of truth for Taskin entity definitions.",
   "solve": "Ensures consistent data types across all Taskin packages and languages.",
   "scope": "types",
   "status": "active",
   "since": "2025-11-05",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "taskin",
+    "types",
+    "typescript",
+    "zod",
+    "validation",
+    "task-management"
+  ],
+  "author": {
+    "name": "OpenTask",
+    "email": "contato@opentask.com.br",
+    "url": "https://opentask.com.br"
+  },
+  "contributors": [
+    {
+      "name": "Sidarta Veloso",
+      "email": "sidartaveloso@gmail.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sidartaveloso/taskin.git",
+    "directory": "packages/types-ts"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc && pnpm run generate:schemas",
     "dev": "tsc --watch",

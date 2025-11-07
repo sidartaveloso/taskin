@@ -1,5 +1,5 @@
-import type { ITaskProvider, TaskFile } from '@taskin/task-manager';
-import type { TaskId, TaskStatus, TaskType } from '@taskin/types-ts';
+import type { ITaskProvider, TaskFile } from '@opentask/taskin-task-manager';
+import type { TaskId, TaskStatus, TaskType } from '@opentask/taskin-types';
 import { promises as fs } from 'fs';
 import path from 'path';
 
