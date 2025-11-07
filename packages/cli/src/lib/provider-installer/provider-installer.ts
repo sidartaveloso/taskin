@@ -24,9 +24,28 @@ export function detectPackageManager(): PackageManager {
 }
 
 /**
- * Check if a package is installed
+ * Check if provider is bundled in the CLI
+ */
+function isBundledProvider(packageName: string): boolean {
+  const bundledProviders = [
+    '@opentask/taskin-fs-provider',
+    '@opentask/taskin-core',
+    '@opentask/taskin-task-manager',
+    '@opentask/taskin-git-utils',
+    '@opentask/taskin-utils',
+  ];
+  return bundledProviders.includes(packageName);
+}
+
+/**
+ * Check if a provider package is installed
  */
 export function isProviderInstalled(packageName: string): boolean {
+  // Bundled providers are always "installed"
+  if (isBundledProvider(packageName)) {
+    return true;
+  }
+
   try {
     // Try to resolve the package
     require.resolve(packageName);
