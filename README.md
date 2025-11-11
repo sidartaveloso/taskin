@@ -52,6 +52,9 @@ npx taskin list
 
 # View all commands
 taskin --help
+
+# Create a new task
+taskin new -t feat -T "Add login feature" -u "Developer"
 ```
 
 **🔍 Task Linter** - Validate your task markdown files (language-agnostic):
