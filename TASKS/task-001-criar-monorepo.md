@@ -2,7 +2,7 @@
 
 Status: done
 Type: feat
-Assignee: sidarta
+Assignee: Sidarta Veloso
 
 ## 🎯 Objective
 

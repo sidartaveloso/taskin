@@ -2,7 +2,7 @@
 
 Status: in-progress
 Type: chore
-Assignee: sidarta
+Assignee: Sidarta Veloso
 
 ## Description
 
