@@ -47,20 +47,44 @@ describe('FileSystemTaskProvider', () => {
   });
 
   describe('updateTask', () => {
-    it('should write updated content to the file', async () => {
+    it('should update the Status field in the file', async () => {
+      const originalContent = `# Task 001 — Test Task
+
+Status: pending
+Type: feat
+Assignee: Test User
+
+## Description
+Test description`;
+
+      const expectedContent = `# Task 001 — Test Task
+
+Status: in-progress
+Type: feat
+Assignee: Test User
+
+## Description
+Test description`;
+
+      (fs.readFile as Mock).mockResolvedValue(originalContent);
+
       const mockTask: TaskFile = {
-        content: 'new content',
+        content: 'not used in updateTask',
         createdAt: new Date().toISOString(),
         filePath: '/fake/tasks/task-001.md',
         id: '001' satisfies string as TaskId,
-        status: 'pending',
+        status: 'in-progress',
         title: 'Test Task',
         type: 'feat',
       };
+
       await provider.updateTask(mockTask);
+
+      expect(fs.readFile).toHaveBeenCalledWith(mockTask.filePath, 'utf-8');
       expect(fs.writeFile).toHaveBeenCalledWith(
         mockTask.filePath,
-        mockTask.content,
+        expectedContent,
+        'utf-8',
       );
     });
   });
