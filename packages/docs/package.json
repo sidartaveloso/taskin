@@ -1,6 +1,6 @@
 {
   "name": "@taskin/docs",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "motivation": "To provide comprehensive documentation for the Taskin project.",
   "solve": "Makes it easier for developers and users to understand and use Taskin.",

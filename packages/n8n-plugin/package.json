@@ -1,6 +1,6 @@
 {
   "name": "@taskin/n8n-plugin",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "motivation": "To integrate Taskin with the n8n automation platform.",
   "solve": "Enables creating automated workflows involving Taskin and other services supported by n8n.",

@@ -1,6 +1,6 @@
 {
   "name": "@taskin/chatbot",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "motivation": "To provide chatbot integrations for Taskin.",
   "solve": "Allows users to interact with Taskin through messaging platforms like WhatsApp and Telegram.",
