@@ -10,6 +10,7 @@ import { finishCommand } from './commands/finish.js';
 import { initCommand } from './commands/init.js';
 import { lintCommand } from './commands/lint.js';
 import { listCommand } from './commands/list.js';
+import { createCommand } from './commands/new.js';
 import { pauseCommand } from './commands/pause.js';
 import { startCommand } from './commands/start.js';
 import { showCustomHelp } from './lib/help.js';
@@ -28,6 +29,7 @@ program
 // Register commands
 initCommand(program);
 listCommand(program);
+createCommand(program);
 startCommand(program);
 pauseCommand(program);
 finishCommand(program);

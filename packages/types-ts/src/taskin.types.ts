@@ -18,6 +18,13 @@ export interface ListTasksOptions {
   type?: string;
 }
 
+export interface CreateTaskOptions {
+  description?: string;
+  title?: string;
+  type?: string;
+  user?: string;
+}
+
 export interface StartTaskOptions {
   base?: string;
   force?: boolean;
