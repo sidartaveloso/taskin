@@ -1,6 +1,6 @@
 {
   "name": "@taskin/directus-extension",
-  "version": "0.1.0",
+  "version": "1.0.3",
   "private": true,
   "motivation": "To integrate Taskin with the Directus data platform.",
   "solve": "Allows managing Taskin data through the Directus admin panel and leveraging its API capabilities.",

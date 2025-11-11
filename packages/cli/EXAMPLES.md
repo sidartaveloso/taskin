@@ -96,7 +96,7 @@ npm install @taskin/redmine-task-provider
     },
     "type": "fs"
   },
-  "version": "0.1.0"
+  "version": "1.0.3"
 }
 ```
 
@@ -112,7 +112,7 @@ npm install @taskin/redmine-task-provider
     },
     "type": "redmine"
   },
-  "version": "0.1.0"
+  "version": "1.0.3"
 }
 ```
 
@@ -129,7 +129,7 @@ npm install @taskin/redmine-task-provider
     },
     "type": "jira"
   },
-  "version": "0.1.0"
+  "version": "1.0.3"
 }
 ```
 

@@ -1,6 +1,6 @@
 [project]
 name = "taskin-types"
-version = "0.1.0"
+version = "1.0.3"
 description = "Python models auto-generated from Taskin TypeScript schemas"
 requires-python = ">=3.10"
 
