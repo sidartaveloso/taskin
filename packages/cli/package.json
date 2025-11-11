@@ -1,6 +1,6 @@
 {
   "name": "taskin",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Task management system integrated with Git workflows",
   "motivation": "Provide a CLI tool for task management integrated with Git workflows",
   "solve": "Simplifies task tracking and management directly from the command line",
@@ -57,6 +57,7 @@
   },
   "files": [
     "dist",
+    "sounds",
     "README.md",
     "LICENSE"
   ],
@@ -75,14 +76,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opentask/taskin-fs-provider": "workspace:*",
-    "@opentask/taskin-task-manager": "workspace:*",
-    "@opentask/taskin-types": "workspace:*",
-    "@opentask/taskin-utils": "workspace:*",
     "@types/inquirer": "^9.0.9",
+    "@types/play-sound": "^1.1.2",
     "chalk": "^5.6.2",
     "commander": "^12.1.0",
     "inquirer": "^12.11.0",
+    "play-sound": "^1.1.6",
     "zod": "^3.25.76"
   },
   "devDependencies": {

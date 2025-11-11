@@ -33,6 +33,7 @@ export interface StartTaskOptions {
 export interface PauseTaskOptions {
   message?: string;
   skipCommit?: boolean;
+  sound?: boolean;
 }
 
 export interface FinishTaskOptions {

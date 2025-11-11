@@ -4,10 +4,16 @@
 
 import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
-import type { FinishTaskOptions } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { requireTaskinProject } from '../lib/project-check.js';
+import { playSound } from '../lib/sound-player.js';
 import { defineCommand } from './define-command/index.js';
+
+interface FinishTaskOptions {
+  skipUpdate?: boolean;
+  sound?: boolean;
+}
 
 export const finishCommand = defineCommand({
   name: 'finish <task-id>',
@@ -17,6 +23,10 @@ export const finishCommand = defineCommand({
     {
       flags: '-s, --skip-update',
       description: 'Skip updating task status',
+    },
+    {
+      flags: '--no-sound',
+      description: 'Disable finish sound',
     },
   ],
   handler: async (taskId: string, options: FinishTaskOptions) => {
@@ -28,6 +38,9 @@ async function finishTask(
   taskId: string,
   options: FinishTaskOptions,
 ): Promise<void> {
+  // Check if project is initialized
+  requireTaskinProject();
+
   printHeader(`Finishing Task ${taskId}`, '✅');
 
   // Normalize task ID
@@ -83,4 +96,9 @@ async function finishTask(
 
   success('Great work! 🚀');
   console.log();
+
+  // Play finish sound if not disabled
+  if (options.sound !== false) {
+    playSound('finish');
+  }
 }

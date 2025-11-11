@@ -10,6 +10,7 @@ import type {
 } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, printHeader } from '../lib/colors.js';
+import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
 
 export const listCommand = defineCommand({
@@ -39,6 +40,9 @@ async function listTasks(
   filter: string | undefined,
   options: ListTasksOptions,
 ): Promise<void> {
+  // Check if project is initialized
+  requireTaskinProject();
+
   printHeader('Task List', '📊');
 
   // Find TASKS directory

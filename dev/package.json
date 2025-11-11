@@ -1,6 +1,6 @@
 {
   "name": "dev-scripts",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "motivation": "To house internal development scripts for the monorepo.",
   "solve": "Centralizes scripts for tasks like linting, code generation, and validation, keeping the root clean.",
