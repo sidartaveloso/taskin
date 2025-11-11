@@ -1,6 +1,6 @@
 {
   "name": "@taskin/api",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "type": "module",
   "motivation": "To provide a dedicated API layer for Taskin.",
