@@ -1,6 +1,6 @@
 # Task 004 — Add New Command
 
-Status: pending
+Status: in-progress
 Type: feat
 Assignee: Sidarta Veloso
 
