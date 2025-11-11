@@ -19,6 +19,7 @@ import { defineCommand } from './define-command/index.js';
 
 interface InitOptions {
   force?: boolean;
+  provider?: string;
 }
 
 export const initCommand = defineCommand({
@@ -29,6 +30,11 @@ export const initCommand = defineCommand({
     {
       flags: '-f, --force',
       description: 'Force initialization (overwrite existing configuration)',
+    },
+    {
+      flags: '-p, --provider <provider>',
+      description:
+        'Provider to use (fs, redmine, jira, github) - skips interactive prompt',
     },
   ],
   handler: async (options: InitOptions) => {
@@ -65,16 +71,30 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
     };
   });
 
-  // Ask user to select provider
-  const { providerId } = await inquirer.prompt<{ providerId: string }>([
-    {
-      type: 'list',
-      name: 'providerId',
-      message: 'Select a task provider:',
-      choices,
-      default: 'fs',
-    },
-  ]);
+  // Ask user to select provider (or use provided option)
+  let providerId: string;
+
+  if (options.provider) {
+    // Use provider from command line option
+    providerId = options.provider;
+    info(`Using provider from command line: ${colors.highlight(providerId)}`);
+  } else if (process.env.CI === 'true') {
+    // In CI environment, default to fs provider
+    providerId = 'fs';
+    info('CI environment detected, using default provider: fs');
+  } else {
+    // Interactive prompt
+    const response = await inquirer.prompt<{ providerId: string }>([
+      {
+        type: 'list',
+        name: 'providerId',
+        message: 'Select a task provider:',
+        choices,
+        default: 'fs',
+      },
+    ]);
+    providerId = response.providerId;
+  }
 
   const selectedProvider = getProviderById(providerId);
   if (!selectedProvider) {
@@ -131,7 +151,7 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
   console.log(
     colors.secondary(
       selectedProvider.id === 'fs'
-        ? '  2. Edit or create tasks in TASKS/'
+        ? '  2. Create a new task: taskin new (interactive mode)'
         : `  2. Tasks will be synced with ${selectedProvider.name}`,
     ),
   );
@@ -194,6 +214,7 @@ async function setupFileSystemProvider(
     success(`✓ Created ${colors.highlight('TASKS/')} directory`);
   } else {
     info(`${colors.highlight('TASKS/')} directory already exists`);
+    success('✓ Directory is ready to use');
   }
 
   // Create a sample task
