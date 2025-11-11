@@ -1,6 +1,6 @@
 {
   "name": "taskin",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Task management system integrated with Git workflows",
   "motivation": "Provide a CLI tool for task management integrated with Git workflows",
   "solve": "Simplifies task tracking and management directly from the command line",
@@ -21,11 +21,11 @@
   ],
   "homepage": "https://opentask.com.br",
   "bugs": {
-    "url": "https://github.com/opentask-app/taskin/issues"
+    "url": "https://github.com/sidartaveloso/taskin/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/opentask-app/taskin.git",
+    "url": "git+https://github.com/sidartaveloso/taskin.git",
     "directory": "packages/cli"
   },
   "license": "MIT",

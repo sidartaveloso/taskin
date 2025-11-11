@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-fs-provider",
-  "version": "0.1.0",
+  "version": "1.0.3",
   "private": true,
   "description": "File system task provider for Taskin",
   "type": "module",
