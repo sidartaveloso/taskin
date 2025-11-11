@@ -32,6 +32,17 @@ export function showCustomHelp(): string {
       icon: '📊',
     },
     {
+      name: colors.highlight('taskin new'),
+      alias: colors.secondary('Alias: create'),
+      description: 'Create a new task',
+      examples: [
+        'taskin new -t feat -T "Add login" -d "Implement user authentication"',
+        'taskin new --type fix --title "Fix bug" --user "John"',
+        'taskin create -t docs -T "Update README"',
+      ],
+      icon: '📝',
+    },
+    {
       name: colors.highlight('taskin start') + colors.normal(' <task-id>'),
       alias: colors.secondary('Alias: begin'),
       description: 'Start working on a task',

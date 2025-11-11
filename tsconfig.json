@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "composite": false,
+    "outDir": "./dist"
+  },
+  "extends": "./tsconfig.base.json",
+  "include": ["vitest.workspace.ts"],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/cli" },
+    { "path": "./packages/api" },
+    { "path": "./packages/types-ts" },
+    { "path": "./packages/utils" },
+    { "path": "./packages/git-utils" },
+    { "path": "./packages/task-manager" },
+    { "path": "./packages/fs-task-provider" },
+    { "path": "./dev" }
+  ]
+}
