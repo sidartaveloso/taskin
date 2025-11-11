@@ -3,11 +3,19 @@
  */
 
 import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
-import type { CreateTaskOptions } from '@opentask/taskin-types';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import inquirer from 'inquirer';
 import path from 'path';
-import { colors, error, printHeader, success } from '../lib/colors.js';
+import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
+
+interface CreateTaskOptions {
+  type?: string;
+  title?: string;
+  description?: string;
+  user?: string;
+}
 
 export const createCommand = defineCommand({
   name: 'new',
@@ -37,7 +45,71 @@ export const createCommand = defineCommand({
 });
 
 async function createTask(options: CreateTaskOptions): Promise<void> {
+  // Check if project is initialized
+  requireTaskinProject();
+
   printHeader('Create New Task', '➕');
+
+  // Validate task type values
+  const validTypes = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'];
+
+  // If no options provided, enter interactive mode
+  if (!options.type && !options.title) {
+    info('Interactive mode - Answer the questions below:');
+    console.log();
+
+    const answers = await inquirer.prompt<{
+      title: string;
+      type: string;
+      description?: string;
+      user?: string;
+    }>([
+      {
+        type: 'list',
+        name: 'type',
+        message: 'Select task type:',
+        choices: [
+          { name: '✨ feat - New feature', value: 'feat' },
+          { name: '🐛 fix - Bug fix', value: 'fix' },
+          { name: '♻️  refactor - Code refactoring', value: 'refactor' },
+          { name: '📝 docs - Documentation', value: 'docs' },
+          { name: '✅ test - Tests', value: 'test' },
+          { name: '🔧 chore - Maintenance', value: 'chore' },
+        ],
+        default: 'feat',
+      },
+      {
+        type: 'input',
+        name: 'title',
+        message: 'Task title:',
+        validate: (input: string) => {
+          if (input.trim().length === 0) {
+            return 'Title is required';
+          }
+          return true;
+        },
+      },
+      {
+        type: 'input',
+        name: 'description',
+        message: 'Task description (optional):',
+      },
+      {
+        type: 'input',
+        name: 'user',
+        message: 'Assignee (optional):',
+        default: 'A definir',
+      },
+    ]);
+
+    // Merge answers into options
+    options.type = answers.type;
+    options.title = answers.title;
+    options.description = answers.description;
+    options.user = answers.user;
+
+    console.log();
+  }
 
   // Validate required options
   if (!options.type) {
@@ -51,7 +123,6 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
   }
 
   // Validate task type
-  const validTypes = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'];
   if (!validTypes.includes(options.type)) {
     error(
       `Invalid task type: ${options.type}. Must be one of: ${validTypes.join(', ')}`,
@@ -80,7 +151,7 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
     .filter((num) => !isNaN(num));
 
   const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
-  const taskId = String(nextNumber).padStart(2, '0');
+  const taskId = String(nextNumber).padStart(3, '0');
 
   // Create task file name
   const titleSlug = options.title

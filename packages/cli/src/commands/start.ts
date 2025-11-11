@@ -4,10 +4,17 @@
 
 import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
-import type { StartTaskOptions } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { requireTaskinProject } from '../lib/project-check.js';
+import { playSound } from '../lib/sound-player.js';
 import { defineCommand } from './define-command/index.js';
+
+interface StartTaskOptions {
+  force?: boolean;
+  base?: string;
+  sound?: boolean;
+}
 
 export const startCommand = defineCommand({
   name: 'start <task-id>',
@@ -22,6 +29,10 @@ export const startCommand = defineCommand({
       flags: '-b, --base <branch>',
       description: 'Base branch to create from (default: current)',
     },
+    {
+      flags: '--no-sound',
+      description: 'Disable start sound',
+    },
   ],
   handler: async (taskId: string, options: StartTaskOptions) => {
     await startTask(taskId, options);
@@ -32,6 +43,9 @@ async function startTask(
   taskId: string,
   _options: StartTaskOptions,
 ): Promise<void> {
+  // Check if project is initialized
+  requireTaskinProject();
+
   printHeader(`Starting Task ${taskId}`, '🚀');
 
   // Normalize task ID
@@ -83,4 +97,9 @@ async function startTask(
   console.log(colors.secondary('  2. Start coding! 💻'));
   console.log(colors.secondary('  3. Use "taskin pause" to save progress'));
   console.log();
+
+  // Play start sound if not disabled
+  if (_options.sound !== false) {
+    playSound('start');
+  }
 }

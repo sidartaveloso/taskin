@@ -155,9 +155,28 @@ Taskin uses a **plugin-based architecture** with dynamic provider loading:
 
 📚 See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical documentation.
 
-## � Creating Tasks
+## 📝 Creating Tasks
 
 Use the `taskin new` command to create new task files:
+
+### Interactive Mode (Recommended)
+
+Simply run without arguments for a guided experience:
+
+```bash
+taskin new
+```
+
+You'll be prompted to select:
+
+- Task type (feat, fix, refactor, docs, test, chore)
+- Title
+- Description (optional)
+- Assignee (optional)
+
+### Command-line Mode
+
+Or provide all options directly:
 
 ```bash
 # Create a new feature task
@@ -173,7 +192,7 @@ taskin create -t docs -T "Update README"
 **Options:**
 
 - `-t, --type <type>` - Task type: feat, fix, refactor, docs, test, chore
-- `-T, --title <title>` - Task title (required)
+- `-T, --title <title>` - Task title (required in command-line mode)
 - `-d, --description <description>` - Task description
 - `-u, --user <user>` - Assigned user
 

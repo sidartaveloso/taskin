@@ -45,6 +45,5 @@ if (process.argv.length <= 2) {
 program.parse();
 
 // Export for programmatic usage
-export type { ITaskin } from '@opentask/taskin-types';
 export { createTaskin, getTaskin } from './main.js';
 export { Taskin } from './taskin.js';
