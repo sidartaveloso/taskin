@@ -7,6 +7,10 @@ export default defineConfig({
     resolve: true,
     // Only generate types for the entry point exports
     entry: './src/index.ts',
+    compilerOptions: {
+      composite: false,
+      skipLibCheck: true,
+    },
   },
   bundle: true,
   splitting: false,
