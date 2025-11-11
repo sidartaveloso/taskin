@@ -98,6 +98,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 
 - `taskin init` - Initialize Taskin in your project with interactive setup
 - `taskin list` - List all tasks
+- `taskin new` - Create a new task (alias: `create`)
 - `taskin start <id>` - Start working on a task
 - `taskin pause <id>` - Pause work on a task
 - `taskin finish <id>` - Complete a task
@@ -154,7 +155,36 @@ Taskin uses a **plugin-based architecture** with dynamic provider loading:
 
 📚 See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical documentation.
 
-## 📖 Examples
+## � Creating Tasks
+
+Use the `taskin new` command to create new task files:
+
+```bash
+# Create a new feature task
+taskin new -t feat -T "Add user authentication" -d "Implement JWT-based auth" -u "John Doe"
+
+# Create a bug fix task
+taskin new --type fix --title "Fix login error" --user "Developer"
+
+# Using the 'create' alias
+taskin create -t docs -T "Update README"
+```
+
+**Options:**
+
+- `-t, --type <type>` - Task type: feat, fix, refactor, docs, test, chore
+- `-T, --title <title>` - Task title (required)
+- `-d, --description <description>` - Task description
+- `-u, --user <user>` - Assigned user
+
+The command will:
+
+1. Auto-generate a task number (e.g., 05)
+2. Create a markdown file in `TASKS/` directory
+3. Use a slug from the title for the filename
+4. Pre-populate with a standard template
+
+## �📖 Examples
 
 See [EXAMPLES.md](./EXAMPLES.md) for detailed usage examples and workflows.
 
