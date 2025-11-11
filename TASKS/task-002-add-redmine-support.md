@@ -2,7 +2,7 @@
 
 Status: pending
 Type: feat
-Assignee: developer
+Assignee: Sidarta Veloso
 
 ## Description
 
