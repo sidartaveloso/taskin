@@ -1,7 +1,7 @@
 # Task 004 — Add New Command
 
 Status: pending
-Type: feature
+Type: feat
 Assignee: Sidarta Veloso
 
 ## Description
