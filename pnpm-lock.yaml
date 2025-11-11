@@ -175,8 +175,8 @@ importers:
   packages/taskin-alias:
     dependencies:
       taskin:
-        specifier: 0.1.0-beta.2
-        version: 0.1.0-beta.2(@types/node@24.10.0)
+        specifier: 1.0.2
+        version: 1.0.2(@types/node@24.10.0)
 
   packages/types-py:
     dependencies:
@@ -2202,8 +2202,8 @@ packages:
   tabbable@6.3.0:
     resolution: {integrity: sha512-EIHvdY5bPLuWForiR/AN2Bxngzpuwn1is4asboytXtpTgsArc+WmSJKVLlhdh71u7jFcryDqB2A8lQvj78MkyQ==}
 
-  taskin@0.1.0-beta.2:
-    resolution: {integrity: sha512-eNSg9E2/U8aZBDZwfX3OXgIhUwagJ1tH4Gzo3YBUIV4uyXI2PcIRcYk5Nii2IAxCw9Q+39H6IuBi0Y+uvD2zJg==}
+  taskin@1.0.2:
+    resolution: {integrity: sha512-/V/BejZvB11tEL2D3yRGmfFC95ssYLEV+5emCpKh2aZuBjg4Fr/9k2UlyLCe9f+babF5jAk9IMoW05yOvatwnw==}
     hasBin: true
 
   thenify-all@1.6.0:
@@ -4621,7 +4621,7 @@ snapshots:
 
   tabbable@6.3.0: {}
 
-  taskin@0.1.0-beta.2(@types/node@24.10.0):
+  taskin@1.0.2(@types/node@24.10.0):
     dependencies:
       '@types/inquirer': 9.0.9
       chalk: 5.6.2

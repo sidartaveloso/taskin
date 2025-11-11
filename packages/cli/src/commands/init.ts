@@ -97,7 +97,7 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
 
   // Create .taskin.json configuration
   const config = {
-    version: '0.1.0',
+    version: '1.0.3',
     provider: {
       type: selectedProvider.id,
       config: providerConfig,
