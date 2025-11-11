@@ -38,9 +38,17 @@ export class FileSystemTaskProvider implements ITaskProvider {
   }
 
   async updateTask(task: TaskFile): Promise<void> {
-    // In a real implementation, we would parse the content, update the status,
-    // and then write it back to the file.
-    await fs.writeFile(task.filePath, task.content);
+    // Read the current file content
+    const currentContent = await fs.readFile(task.filePath, 'utf-8');
+
+    // Update the Status field in the content
+    const updatedContent = currentContent.replace(
+      /^Status:\s*.+$/im,
+      `Status: ${task.status}`,
+    );
+
+    // Write the updated content back to the file
+    await fs.writeFile(task.filePath, updatedContent, 'utf-8');
   }
 
   async getAllTasks(): Promise<TaskFile[]> {
