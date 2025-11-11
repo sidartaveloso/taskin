@@ -2,6 +2,7 @@
   "name": "@opentask/taskin-git-utils",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "motivation": "To provide a set of utilities for interacting with Git repositories.",
   "solve": "Encapsulates Git logic, making it reusable for other packages like the CLI.",
   "scope": "internal",
@@ -28,6 +29,6 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "typescript": "^5.5.3"
+    "typescript": "^5.9.3"
   }
 }

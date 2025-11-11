@@ -64,6 +64,6 @@
     "@opentask/taskin-task-manager": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.5.3"
+    "typescript": "^5.9.3"
   }
 }

@@ -1,7 +1,12 @@
 {
   "name": "@opentask/taskin",
-  "version": "0.1.0-beta.3",
+  "version": "0.1.0",
   "description": "Task management system integrated with Git workflows (alias for taskin)",
+  "motivation": "Provide an alias package for users who prefer the @opentask scope",
+  "solve": "Allows installation via both 'taskin' and '@opentask/taskin' names",
+  "scope": "cli",
+  "status": "active",
+  "since": "2025-11-06",
   "keywords": [
     "task",
     "management",

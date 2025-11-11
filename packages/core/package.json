@@ -2,6 +2,7 @@
   "name": "@opentask/taskin-core",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "motivation": "To contain the core business logic of Taskin.",
   "solve": "Provides a central place for business rules, services, and domain models, ensuring consistency.",
   "scope": "core",
@@ -31,8 +32,8 @@
     "@opentask/taskin-types": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.5.3",
-    "vitest": "^1.6.0",
-    "eslint": "^8.57.0"
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.1"
   }
 }
