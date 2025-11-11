@@ -86,6 +86,18 @@ importers:
 
   packages/cli:
     dependencies:
+      '@opentask/taskin-fs-provider':
+        specifier: workspace:*
+        version: link:../fs-task-provider
+      '@opentask/taskin-task-manager':
+        specifier: workspace:*
+        version: link:../task-manager
+      '@opentask/taskin-types':
+        specifier: workspace:*
+        version: link:../types-ts
+      '@opentask/taskin-utils':
+        specifier: workspace:*
+        version: link:../utils
       '@types/inquirer':
         specifier: ^9.0.9
         version: 9.0.9
@@ -175,8 +187,8 @@ importers:
   packages/taskin-alias:
     dependencies:
       taskin:
-        specifier: 1.0.2
-        version: 1.0.2(@types/node@24.10.0)
+        specifier: 1.0.3
+        version: 1.0.3(@types/node@24.10.0)
 
   packages/types-py:
     dependencies:
@@ -2202,8 +2214,8 @@ packages:
   tabbable@6.3.0:
     resolution: {integrity: sha512-EIHvdY5bPLuWForiR/AN2Bxngzpuwn1is4asboytXtpTgsArc+WmSJKVLlhdh71u7jFcryDqB2A8lQvj78MkyQ==}
 
-  taskin@1.0.2:
-    resolution: {integrity: sha512-/V/BejZvB11tEL2D3yRGmfFC95ssYLEV+5emCpKh2aZuBjg4Fr/9k2UlyLCe9f+babF5jAk9IMoW05yOvatwnw==}
+  taskin@1.0.3:
+    resolution: {integrity: sha512-Dk9Epc8ndoB4Xw+zGToQ+tSadXFPqYg2UMl2AWsDUD7NY5v2YWjZY75Nns5b0He/fPAprjKNn2iLdKArVRucdg==}
     hasBin: true
 
   thenify-all@1.6.0:
@@ -4621,7 +4633,7 @@ snapshots:
 
   tabbable@6.3.0: {}
 
-  taskin@1.0.2(@types/node@24.10.0):
+  taskin@1.0.3(@types/node@24.10.0):
     dependencies:
       '@types/inquirer': 9.0.9
       chalk: 5.6.2

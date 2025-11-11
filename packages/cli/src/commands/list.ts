@@ -1,5 +1,5 @@
 /**
- * List command - Display all tasks
+ * List command - List all tasks
  */
 
 import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
