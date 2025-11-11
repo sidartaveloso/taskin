@@ -40,6 +40,7 @@
     "pnpm:update": "pnpm install pnpm@latest -Dw",
     "generate:py-types": "pnpm --filter @taskin/types-py run generate",
     "taskin": "tsx packages/cli/src/index.ts",
+    "sync:versions": "node scripts/sync-versions.js",
     "publish:packages": "node scripts/publish-packages.js",
     "publish:beta": "node scripts/publish-packages.js --tag beta",
     "publish:latest": "node scripts/publish-packages.js --tag latest"

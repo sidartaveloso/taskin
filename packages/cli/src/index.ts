@@ -13,13 +13,14 @@ import { listCommand } from './commands/list.js';
 import { pauseCommand } from './commands/pause.js';
 import { startCommand } from './commands/start.js';
 import { showCustomHelp } from './lib/help.js';
+import { getVersion } from './version.js';
 
 const program = new Command();
 
 program
   .name('taskin')
   .description('🚀 Task Management System')
-  .version('0.1.0')
+  .version(getVersion())
   .configureHelp({
     formatHelp: () => showCustomHelp(),
   });

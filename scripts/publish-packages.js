@@ -7,7 +7,7 @@
 
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,13 +15,13 @@ const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
 
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
   blue: '\x1b[34m',
+  bright: '\x1b[1m',
   cyan: '\x1b[36m',
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  reset: '\x1b[0m',
+  yellow: '\x1b[33m',
 };
 
 function log(message, color = colors.reset) {
@@ -31,10 +31,10 @@ function log(message, color = colors.reset) {
 function exec(command, cwd) {
   log(`\n> ${command}`, colors.cyan);
   try {
-    execSync(command, { 
-      cwd, 
+    execSync(command, {
+      cwd,
+      env: { ...process.env },
       stdio: 'inherit',
-      env: { ...process.env }
     });
     return true;
   } catch (error) {
@@ -44,7 +44,9 @@ function exec(command, cwd) {
 }
 
 function getPackageVersion(packagePath) {
-  const pkg = JSON.parse(readFileSync(join(packagePath, 'package.json'), 'utf-8'));
+  const pkg = JSON.parse(
+    readFileSync(join(packagePath, 'package.json'), 'utf-8'),
+  );
   return { name: pkg.name, version: pkg.version };
 }
 
@@ -88,15 +90,20 @@ async function publishPackage(packageName, packagePath, tag = 'latest') {
 
 async function main() {
   const args = process.argv.slice(2);
-  const tag = args.includes('--tag') 
-    ? args[args.indexOf('--tag') + 1] 
-    : 'beta';
-  
+  const tag = args.includes('--tag') ? args[args.indexOf('--tag') + 1] : 'beta';
+
   const skipConfirm = args.includes('--yes') || args.includes('-y');
 
   log('\n' + '='.repeat(60), colors.bright);
   log('🚀 Taskin Package Publisher', colors.bright);
   log('='.repeat(60), colors.bright);
+
+  // Sync versions first
+  log('\n🔄 Syncing package versions...', colors.yellow);
+  if (!exec('node scripts/sync-versions.js', rootDir)) {
+    log('✗ Failed to sync versions', colors.red);
+    process.exit(1);
+  }
 
   const packages = [
     {
@@ -117,8 +124,11 @@ async function main() {
   }
 
   if (!skipConfirm) {
-    log('\n⚠️  Press Ctrl+C to cancel, or press Enter to continue...', colors.yellow);
-    await new Promise(resolve => {
+    log(
+      '\n⚠️  Press Ctrl+C to cancel, or press Enter to continue...',
+      colors.yellow,
+    );
+    await new Promise((resolve) => {
       process.stdin.once('data', () => resolve());
     });
   }
@@ -142,7 +152,7 @@ async function main() {
     log(`${icon} ${name}@${version}`, color);
   }
 
-  const allSuccess = results.every(r => r.success);
+  const allSuccess = results.every((r) => r.success);
   if (allSuccess) {
     log('\n🎉 All packages published successfully!', colors.green);
     log('\nTest installation:', colors.cyan);
@@ -154,7 +164,7 @@ async function main() {
   }
 }
 
-main().catch(error => {
+main().catch((error) => {
   log(`\n✗ Error: ${error.message}`, colors.red);
   process.exit(1);
 });
