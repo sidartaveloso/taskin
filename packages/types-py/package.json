@@ -1,6 +1,6 @@
 {
   "name": "@taskin/types-py",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "motivation": "Provide automatically generated Python models from the TypeScript type definitions.",
   "solve": "Allows Python packages to consume the same type definitions without duplication.",

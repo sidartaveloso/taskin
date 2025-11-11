@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-manager",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "private": true,
   "motivation": "To manage the lifecycle of tasks, including creation, status updates, and retrieval.",

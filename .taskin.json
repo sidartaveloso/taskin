@@ -1,0 +1,9 @@
+{
+  "provider": {
+    "config": {
+      "tasksDir": "TASKS"
+    },
+    "type": "fs"
+  },
+  "version": "1.0.3"
+}

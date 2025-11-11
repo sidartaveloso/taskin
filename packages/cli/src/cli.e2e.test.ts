@@ -58,6 +58,22 @@ describe.sequential('Taskin CLI E2E Tests', () => {
 
       expect(files.stdout).toContain('task-001');
     }, 60000);
+
+    it('should detect existing TASKS directory and inform user', async () => {
+      // Create TASKS directory manually before init
+      const tasksDir = join(TEST_DIR, 'TASKS');
+      mkdirSync(tasksDir, { recursive: true });
+
+      const { stdout } = await execAsync(`node ${CLI_PATH} init`, {
+        cwd: TEST_DIR,
+        env: { ...process.env, CI: 'true' },
+      });
+
+      expect(stdout).toContain('TASKS');
+      expect(stdout).toContain('already exists');
+      expect(stdout).toContain('initialized successfully');
+      expect(existsSync(join(TEST_DIR, '.taskin.json'))).toBe(true);
+    }, 60000);
   });
 
   describe.sequential('taskin list', () => {
@@ -112,8 +128,9 @@ describe.sequential('Taskin CLI E2E Tests', () => {
         await execAsync(`node ${CLI_PATH} lint`, {
           cwd: TEST_DIR,
         });
-      } catch (error: any) {
-        expect(error.stdout || error.stderr).toContain('error');
+      } catch (error: unknown) {
+        const err = error as { stderr?: string; stdout?: string };
+        expect(err.stdout || err.stderr).toContain('error');
       }
     }, 60000);
   });
@@ -164,8 +181,9 @@ describe.sequential('Taskin CLI E2E Tests', () => {
       try {
         await execAsync(`node ${CLI_PATH} start 999`, { cwd: TEST_DIR });
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.code).toBe(1);
+      } catch (error: unknown) {
+        const err = error as { code?: number };
+        expect(err.code).toBe(1);
       }
     }, 60000);
   });
@@ -201,16 +219,15 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
 
     it('should fail if task is not in progress', async () => {
-      await execAsync(`node ${CLI_PATH} init`, {
-        cwd: TEST_DIR,
-        env: { ...process.env, CI: 'true' },
-      });
+      // Finish the task first to make it not in-progress
+      await execAsync(`node ${CLI_PATH} finish 001`, { cwd: TEST_DIR });
 
       try {
         await execAsync(`node ${CLI_PATH} pause 001`, { cwd: TEST_DIR });
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.stderr || error.stdout).toContain('not in progress');
+      } catch (error: unknown) {
+        const err = error as { stderr?: string; stdout?: string };
+        expect(err.stderr || err.stdout).toContain('not in progress');
       }
     }, 60000);
   });
