@@ -102,7 +102,7 @@ Every package must contain **semantic metadata** for documentation and lint vali
   "since": "2025-10-30",
   "solve": "Simplifies task creation and tracking workflows inside Git-based projects.",
   "status": "active",
-  "version": "0.1.0"
+  "version": "1.0.3"
 }
 ```
 
@@ -216,7 +216,7 @@ export type Task = z.infer<typeof TaskSchema>;
   },
   "solve": "Ensures consistent data types across all Taskin packages and languages.",
   "status": "active",
-  "version": "0.1.0"
+  "version": "1.0.3"
 }
 ```
 
@@ -264,7 +264,7 @@ packages/types-py/
 ```toml
 [project]
 name = "taskin-types"
-version = "0.1.0"
+version = "1.0.3"
 description = "Python models auto-generated from Taskin TypeScript schemas"
 requires-python = ">=3.10"
 

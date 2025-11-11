@@ -38,7 +38,7 @@ pnpm add -g taskin
 yarn global add taskin
 \`\`\`
 
-> **Note:** This is a beta version. Please report any issues on [GitHub](https://github.com/opentask-app/taskin/issues).
+> **Note:** This is a beta version. Please report any issues on [GitHub](https://github.com/sidartaveloso/taskin/issues).
 
 ## 📦 Available Packages
 
@@ -180,7 +180,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 🐛 Issues
 
-Found a bug? Have a feature request? Please [open an issue](https://github.com/opentask-app/taskin/issues).
+Found a bug? Have a feature request? Please [open an issue](https://github.com/sidartaveloso/taskin/issues).
 
 ## � Team
 
