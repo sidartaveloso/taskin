@@ -30,45 +30,48 @@ const badgeStyle = computed(() => {
 </script>
 
 <style scoped>
+@import '../../styles/variables.css';
+
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  line-height: 1.5;
+  padding: var(--badge-padding-y) var(--badge-padding-x);
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family);
 }
 
 .badge--default {
-  background-color: #e5e7eb;
-  color: #374151;
+  background-color: var(--bg-badge);
+  color: var(--text-primary);
 }
 
 .badge--primary {
-  background-color: #3b82f6;
-  color: #ffffff;
+  background-color: var(--status-progress-bg);
+  color: var(--status-progress-text);
 }
 
 .badge--success {
-  background-color: #10b981;
-  color: #ffffff;
+  background-color: var(--status-success-bg);
+  color: var(--status-success-text);
 }
 
 .badge--warning {
-  background-color: #f59e0b;
-  color: #ffffff;
+  background-color: var(--status-paused-bg);
+  color: var(--status-paused-text);
 }
 
 .badge--danger {
-  background-color: #ef4444;
-  color: #ffffff;
+  background-color: var(--status-warning-bg);
+  color: var(--status-warning-text);
 }
 
 .badge--info {
-  background-color: #06b6d4;
-  color: #ffffff;
+  background-color: var(--bg-header);
+  color: var(--text-white);
 }
 </style>

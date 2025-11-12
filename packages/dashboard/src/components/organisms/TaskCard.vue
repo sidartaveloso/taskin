@@ -220,46 +220,50 @@ const formatDate = (date: Date | string): string => {
 </template>
 
 <style scoped>
+@import '../../styles/variables.css';
+
 .task-card {
-  background: #ffffff;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
+  background: var(--bg-card);
+  border: 3px solid var(--border-muted);
+  border-radius: var(--radius-lg);
+  padding: var(--card-padding);
+  transition: all var(--transition-base);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  gap: var(--spacing-md);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-family);
+  position: relative;
 }
 
 .task-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-card), 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 /* Status variants */
 .task-card--in-progress {
-  border-color: #1a73e8;
+  border-color: var(--status-progress-bg);
 }
 
 .task-card--blocked {
-  border-color: #d32f2f;
-  background: #fff5f5;
+  border-color: var(--status-warning-bg);
+  background: var(--bg-section-error);
 }
 
 .task-card--done {
-  border-color: #2e7d32;
+  border-color: var(--status-success-bg);
   opacity: 0.85;
 }
 
 .task-card--paused {
-  border-color: #f57c00;
+  border-color: var(--status-paused-bg);
 }
 
 /* Warning state */
 .task-card--has-warnings {
-  border-color: #f57c00;
-  box-shadow: 0 0 0 3px rgba(245, 124, 0, 0.1);
+  border-color: var(--status-warning-bg);
+  box-shadow: var(--shadow-card), 0 0 0 3px var(--status-warning-bg);
 }
 
 /* Header */
@@ -267,25 +271,26 @@ const formatDate = (date: Date | string): string => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
 .task-card__header-left {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   align-items: center;
   flex-wrap: wrap;
 }
 
 /* Title */
 .task-card__title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
   margin: 0;
-  line-height: 1.4;
+  line-height: var(--line-height-tight);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -297,97 +302,100 @@ const formatDate = (date: Date | string): string => {
 
 /* Progress */
 .task-card__progress {
-  margin: 0.5rem 0;
+  margin: var(--spacing-sm) 0;
 }
 
 /* Estimates */
 .task-card__estimates {
-  padding: 0.75rem;
-  background: #f5f5f5;
-  border-radius: 8px;
+  padding: var(--spacing-md);
+  background: var(--bg-section-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-section-light);
 }
 
 /* Daily Progress */
 .task-card__days {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .task-card__days-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #666;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
   margin: 0;
 }
 
 .task-card__days-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 /* Dates */
 .task-card__dates {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-md);
   flex-wrap: wrap;
-  padding: 0.75rem;
-  background: #fafafa;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  padding: var(--spacing-md);
+  background: var(--bg-section-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
 }
 
 .task-card__date {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .task-card__date-label {
-  color: #666;
-  font-weight: 500;
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
 }
 
 .task-card__date-value {
-  color: #1a1a1a;
-  font-weight: 600;
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Tags */
 .task-card__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 /* Warnings */
 .task-card__warnings {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background: #fff3cd;
-  border: 1px solid #f57c00;
-  border-radius: 6px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--bg-section-warning);
+  border: 2px solid var(--status-warning-bg);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-section-warning);
 }
 
 .task-card__warning {
-  font-size: 0.875rem;
-  color: #663c00;
+  font-size: var(--font-size-sm);
+  color: var(--text-warning-dark);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 /* Compact variant */
 .task-card--compact {
-  padding: 1rem;
-  gap: 0.75rem;
+  padding: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .task-card--compact .task-card__title {
-  font-size: 1rem;
+  font-size: var(--font-size-md);
   -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 
 .task-card--compact .task-card__days {
@@ -397,8 +405,8 @@ const formatDate = (date: Date | string): string => {
 /* Responsive */
 @media (max-width: 768px) {
   .task-card {
-    padding: 1rem;
-    gap: 0.75rem;
+    padding: var(--spacing-md);
+    gap: var(--spacing-sm);
   }
 
   .task-card__header {
@@ -407,7 +415,7 @@ const formatDate = (date: Date | string): string => {
   }
 
   .task-card__title {
-    font-size: 1rem;
+    font-size: var(--font-size-md);
   }
 }
 </style>
