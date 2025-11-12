@@ -1,0 +1,14 @@
+/* Global Storybook Styles */
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+* {
+  font-family: 'Ubuntu', 'Roboto', Arial, sans-serif !important;
+}
+
+body {
+  font-family: 'Ubuntu', 'Roboto', Arial, sans-serif !important;
+}
+
+#storybook-root {
+  font-family: 'Ubuntu', 'Roboto', Arial, sans-serif !important;
+}
