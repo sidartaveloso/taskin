@@ -40,6 +40,10 @@
   "peerDependencies": {
     "vue": "^3.5.0"
   },
+  "dependencies": {
+    "pinia": "^2.2.8",
+    "@opentask/taskin-task-provider-pinia": "workspace:*"
+  },
   "devDependencies": {
     "@storybook/addon-docs": "^10.0.7",
     "@storybook/addon-onboarding": "^10.0.7",

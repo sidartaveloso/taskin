@@ -6,10 +6,12 @@
  */
 
 import { Command } from 'commander';
+import { dashboardCommand } from './commands/dashboard.js';
 import { finishCommand } from './commands/finish.js';
 import { initCommand } from './commands/init.js';
 import { lintCommand } from './commands/lint.js';
 import { listCommand } from './commands/list.js';
+import { mcpServerCommand } from './commands/mcp-server.js';
 import { createCommand } from './commands/new.js';
 import { pauseCommand } from './commands/pause.js';
 import { startCommand } from './commands/start.js';
@@ -34,6 +36,8 @@ startCommand(program);
 pauseCommand(program);
 finishCommand(program);
 lintCommand(program);
+dashboardCommand(program);
+mcpServerCommand(program);
 
 // Show custom help if no command provided
 if (process.argv.length <= 2) {

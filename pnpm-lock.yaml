@@ -86,6 +86,18 @@ importers:
 
   packages/cli:
     dependencies:
+      '@opentask/taskin-fs-provider':
+        specifier: workspace:*
+        version: link:../fs-task-provider
+      '@opentask/taskin-task-manager':
+        specifier: workspace:*
+        version: link:../task-manager
+      '@opentask/taskin-task-server-mcp':
+        specifier: workspace:*
+        version: link:../task-server-mcp
+      '@opentask/taskin-task-server-ws':
+        specifier: workspace:*
+        version: link:../task-server-ws
       '@types/inquirer':
         specifier: ^9.0.9
         version: 9.0.9
@@ -141,6 +153,13 @@ importers:
         version: 1.6.1(@types/node@24.10.1)(@vitest/ui@1.6.1)(jsdom@25.0.1)
 
   packages/dashboard:
+    dependencies:
+      '@opentask/taskin-task-provider-pinia':
+        specifier: workspace:*
+        version: link:../task-provider-pinia
+      pinia:
+        specifier: ^2.2.8
+        version: 2.3.1(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3))
     devDependencies:
       '@storybook/addon-docs':
         specifier: ^10.0.7
