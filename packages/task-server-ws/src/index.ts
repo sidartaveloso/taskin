@@ -1,3 +1,3 @@
-export * from './task-server-ws';
-export * from './task-server-ws.mock';
-export * from './task-server-ws.types';
+export * from './task-server-ws.js';
+export * from './task-server-ws.mock.js';
+export * from './task-server-ws.types.js';

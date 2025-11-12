@@ -11,7 +11,7 @@ import type {
   TaskServerConfig,
   WebSocketServerOptions,
   WSMessage,
-} from './task-server-ws.types';
+} from './task-server-ws.types.js';
 
 /**
  * WebSocket server for real-time task management

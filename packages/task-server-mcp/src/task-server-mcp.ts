@@ -21,7 +21,7 @@ import type {
   MCPTool,
   MCPToolCallParams,
   MCPToolCallResult,
-} from './task-server-mcp.types';
+} from './task-server-mcp.types.js';
 
 /**
  * MCP Server for task management integration with LLMs

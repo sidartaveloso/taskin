@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { ProjectPath, Task, TaskProgress, TaskStatus, TimeEstimate as TimeEstimateType, User } from '../../types';
+import type {
+  ProjectPath,
+  Task,
+  TaskProgress,
+  TaskStatus,
+  TimeEstimate as TimeEstimateType,
+  User,
+} from '../../types';
 import Badge from '../atoms/Badge.vue';
 import ProgressBar from '../atoms/ProgressBar.vue';
 import DayBar from '../molecules/DayBar.vue';
@@ -68,8 +75,18 @@ const computedTask = computed((): Task => {
     warnings: props.warnings || [],
     dates: {
       created: new Date(),
-      ...(props.dueDate && { dueDate: typeof props.dueDate === 'string' ? new Date(props.dueDate) : props.dueDate }),
-      ...(props.startDate && { started: typeof props.startDate === 'string' ? new Date(props.startDate) : props.startDate }),
+      ...(props.dueDate && {
+        dueDate:
+          typeof props.dueDate === 'string'
+            ? new Date(props.dueDate)
+            : props.dueDate,
+      }),
+      ...(props.startDate && {
+        started:
+          typeof props.startDate === 'string'
+            ? new Date(props.startDate)
+            : props.startDate,
+      }),
     },
   };
 });
@@ -108,7 +125,9 @@ const statusLabel = computed(() => {
 });
 
 // Check if task has warnings
-const hasWarnings = computed(() => computedTask.value.warnings && computedTask.value.warnings.length > 0);
+const hasWarnings = computed(
+  () => computedTask.value.warnings && computedTask.value.warnings.length > 0,
+);
 
 // Format date
 const formatDate = (date: Date | string): string => {
@@ -123,7 +142,7 @@ const formatDate = (date: Date | string): string => {
     :class="[
       `task-card--${variant}`,
       `task-card--${computedTask.status}`,
-      { 'task-card--has-warnings': hasWarnings }
+      { 'task-card--has-warnings': hasWarnings },
     ]"
   >
     <!-- Header -->
@@ -137,7 +156,11 @@ const formatDate = (date: Date | string): string => {
         </Badge>
       </div>
 
-      <TaskHeader :assignee="computedTask.assignee" size="sm" />
+      <TaskHeader
+        v-if="computedTask.assignee"
+        :assignee="computedTask.assignee"
+        size="sm"
+      />
     </div>
 
     <!-- Title -->
@@ -145,14 +168,14 @@ const formatDate = (date: Date | string): string => {
 
     <!-- Project Path -->
     <ProjectBreadcrumb
+      class="task-card__project"
       v-if="computedTask.project"
       :project="computedTask.project"
       :max-segments="3"
-      class="task-card__project"
     />
 
     <!-- Progress -->
-    <div v-if="computedTask.progress" class="task-card__progress">
+    <div class="task-card__progress" v-if="computedTask.progress">
       <ProgressBar
         :percentage="computedTask.progress.percentage"
         :variant="progressVariant"
@@ -162,14 +185,20 @@ const formatDate = (date: Date | string): string => {
 
     <!-- Time Estimates -->
     <TimeEstimate
+      class="task-card__estimates"
       v-if="computedTask.estimates"
       :estimate="computedTask.estimates"
       variant="compact"
-      class="task-card__estimates"
     />
 
     <!-- Daily Progress -->
-    <div v-if="computedTask.progress?.dayLogs && computedTask.progress.dayLogs.length > 0" class="task-card__days">
+    <div
+      class="task-card__days"
+      v-if="
+        computedTask.progress?.dayLogs &&
+        computedTask.progress.dayLogs.length > 0
+      "
+    >
       <h4 class="task-card__days-title">Progresso Diário</h4>
       <div class="task-card__days-list">
         <DayBar
@@ -183,19 +212,26 @@ const formatDate = (date: Date | string): string => {
     </div>
 
     <!-- Dates -->
-    <div v-if="computedTask.dates" class="task-card__dates">
-      <div v-if="computedTask.dates.dueDate" class="task-card__date">
+    <div class="task-card__dates" v-if="computedTask.dates">
+      <div class="task-card__date" v-if="computedTask.dates.dueDate">
         <span class="task-card__date-label">Prazo:</span>
-        <span class="task-card__date-value">{{ formatDate(computedTask.dates.dueDate) }}</span>
+        <span class="task-card__date-value">{{
+          formatDate(computedTask.dates.dueDate)
+        }}</span>
       </div>
-      <div v-if="computedTask.dates.started" class="task-card__date">
+      <div class="task-card__date" v-if="computedTask.dates.started">
         <span class="task-card__date-label">Início:</span>
-        <span class="task-card__date-value">{{ formatDate(computedTask.dates.started) }}</span>
+        <span class="task-card__date-value">{{
+          formatDate(computedTask.dates.started)
+        }}</span>
       </div>
     </div>
 
     <!-- Tags -->
-    <div v-if="computedTask.tags && computedTask.tags.length > 0" class="task-card__tags">
+    <div
+      class="task-card__tags"
+      v-if="computedTask.tags && computedTask.tags.length > 0"
+    >
       <Badge
         v-for="tag in computedTask.tags"
         :key="tag"
@@ -207,11 +243,11 @@ const formatDate = (date: Date | string): string => {
     </div>
 
     <!-- Warnings -->
-    <div v-if="hasWarnings" class="task-card__warnings">
+    <div class="task-card__warnings" v-if="hasWarnings">
       <div
+        class="task-card__warning"
         v-for="(warning, index) in computedTask.warnings"
         :key="index"
-        class="task-card__warning"
       >
         ⚠️ {{ warning }}
       </div>
@@ -238,7 +274,9 @@ const formatDate = (date: Date | string): string => {
 
 .task-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-card), 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    var(--shadow-card),
+    0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 /* Status variants */
@@ -263,7 +301,9 @@ const formatDate = (date: Date | string): string => {
 /* Warning state */
 .task-card--has-warnings {
   border-color: var(--status-warning-bg);
-  box-shadow: var(--shadow-card), 0 0 0 3px var(--status-warning-bg);
+  box-shadow:
+    var(--shadow-card),
+    0 0 0 3px var(--status-warning-bg);
 }
 
 /* Header */
