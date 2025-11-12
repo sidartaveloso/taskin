@@ -68,3 +68,6 @@ tmp/
 
 # OS
 Thumbs.db
+
+*storybook.log
+storybook-static
