@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/vue3-vite';
+import './preview.css'; // Import global styles
 
 const preview: Preview = {
   parameters: {
@@ -63,7 +64,8 @@ const preview: Preview = {
   decorators: [
     (story: any) => ({
       components: { story },
-      template: '<div style="padding: 1rem;"><story /></div>',
+      template:
+        "<div style=\"padding: 1rem; font-family: 'Ubuntu', 'Roboto', Arial, sans-serif;\"><story /></div>",
     }),
   ],
 

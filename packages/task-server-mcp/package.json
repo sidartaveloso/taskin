@@ -1,0 +1,58 @@
+{
+  "name": "@opentask/taskin-task-server-mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol (MCP) server for task management integration with LLMs",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "type-check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --fix"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@opentask/taskin-task-manager": "workspace:*",
+    "@opentask/taskin-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitest/ui": "^2.1.8",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "taskin",
+    "mcp",
+    "model-context-protocol",
+    "llm",
+    "ai",
+    "task-management"
+  ],
+  "author": {
+    "name": "OpenTask",
+    "url": "https://opentask.com.br"
+  },
+  "contributors": [
+    {
+      "name": "Sidarta Veloso",
+      "url": "https://github.com/sidartaveloso"
+    }
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sidartaveloso/taskin.git",
+    "directory": "packages/task-server-mcp"
+  }
+}

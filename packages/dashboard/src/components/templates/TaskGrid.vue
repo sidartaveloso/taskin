@@ -117,11 +117,15 @@ const statusCounts = computed(() => ({
 </template>
 
 <style scoped>
+@import '../../styles/variables.css';
+
 .task-grid-container {
   width: 100%;
   max-width: 1920px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: var(--container-padding);
+  background: var(--bg-body);
+  font-family: var(--font-family);
 }
 
 /* Header */
@@ -129,22 +133,22 @@ const statusCounts = computed(() => ({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  gap: 1.5rem;
+  margin-bottom: var(--spacing-2xl);
+  gap: var(--spacing-xl);
   flex-wrap: wrap;
 }
 
 .task-grid-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
   margin: 0;
 }
 
 /* Stats */
 .task-grid-stats {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-md);
   flex-wrap: wrap;
 }
 
@@ -152,57 +156,58 @@ const statusCounts = computed(() => ({
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
-  background: #f5f5f5;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
   min-width: 80px;
+  box-shadow: var(--shadow-card);
 }
 
 .stat__value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  line-height: 1;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
 }
 
 .stat__label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #666;
-  margin-top: 0.25rem;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+  margin-top: var(--spacing-xs);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .stat--total {
-  background: #e3f2fd;
+  background: var(--bg-section-light);
 }
 
 .stat--total .stat__value {
-  color: #1976d2;
+  color: var(--text-header-link);
 }
 
 .stat--in-progress {
-  background: #e8f5e9;
+  background: var(--bg-section-light);
 }
 
 .stat--in-progress .stat__value {
-  color: #4caf50;
+  color: var(--status-progress-bg);
 }
 
 .stat--blocked {
-  background: #ffebee;
+  background: var(--bg-section-error);
 }
 
 .stat--blocked .stat__value {
-  color: #f44336;
+  color: var(--status-warning-text);
 }
 
 .stat--paused {
-  background: #fff3e0;
+  background: var(--bg-section-warning);
 }
 
 .stat--paused .stat__value {
-  color: #ff9800;
+  color: var(--status-paused-bg);
 }
 
 /* Grid */
@@ -214,15 +219,15 @@ const statusCounts = computed(() => ({
 
 /* Gap variants */
 .task-grid--gap-sm {
-  --grid-gap: 1rem;
+  --grid-gap: var(--spacing-md);
 }
 
 .task-grid--gap-md {
-  --grid-gap: 1.5rem;
+  --grid-gap: var(--grid-gap-horizontal);
 }
 
 .task-grid--gap-lg {
-  --grid-gap: 2rem;
+  --grid-gap: var(--spacing-xl);
 }
 
 /* Column variants - Desktop first */
@@ -258,17 +263,17 @@ const statusCounts = computed(() => ({
 
 @media (max-width: 768px) {
   .task-grid-container {
-    padding: 1rem;
+    padding: var(--spacing-md);
   }
 
   .task-grid-header {
     flex-direction: column;
     align-items: flex-start;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--spacing-xl);
   }
 
   .task-grid-title {
-    font-size: 1.5rem;
+    font-size: var(--font-size-xl);
   }
 
   .task-grid-stats {
@@ -279,15 +284,15 @@ const statusCounts = computed(() => ({
   .stat {
     flex: 1;
     min-width: 70px;
-    padding: 0.5rem 0.75rem;
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 
   .stat__value {
-    font-size: 1.5rem;
+    font-size: var(--font-size-xl);
   }
 
   .stat__label {
-    font-size: 0.65rem;
+    font-size: var(--font-size-xs);
   }
 
   .task-grid--cols-2,
@@ -303,18 +308,18 @@ const statusCounts = computed(() => ({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
-  color: #666;
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  color: var(--text-muted);
 }
 
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
-  border-radius: 50%;
+  border: 4px solid var(--bg-progress);
+  border-top: 4px solid var(--status-progress-bg);
+  border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 @keyframes spin {
@@ -323,7 +328,7 @@ const statusCounts = computed(() => ({
 }
 
 .task-grid-loading p {
-  font-size: 1rem;
+  font-size: var(--font-size-md);
   margin: 0;
 }
 
@@ -333,54 +338,54 @@ const statusCounts = computed(() => ({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: var(--spacing-3xl) var(--spacing-xl);
   text-align: center;
 }
 
 .empty-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--spacing-md);
   opacity: 0.5;
 }
 
 .empty-message {
-  font-size: 1.125rem;
-  color: #666;
-  margin: 0 0 1.5rem;
+  font-size: var(--font-size-lg);
+  color: var(--text-muted);
+  margin: 0 0 var(--spacing-xl);
 }
 
 /* Footer */
 .task-grid-footer {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e0e0e0;
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-xl);
+  border-top: 2px solid var(--border-muted);
 }
 
 /* TV Display optimization (for large screens) */
 @media (min-width: 1920px) {
   .task-grid-container {
-    padding: 2rem;
+    padding: var(--spacing-2xl);
   }
 
   .task-grid-header {
-    margin-bottom: 2.5rem;
+    margin-bottom: var(--spacing-3xl);
   }
 
   .task-grid-title {
-    font-size: 2.5rem;
+    font-size: var(--font-size-3xl);
   }
 
   .stat {
-    padding: 1rem 1.5rem;
+    padding: var(--spacing-lg) var(--spacing-xl);
     min-width: 100px;
   }
 
   .stat__value {
-    font-size: 2rem;
+    font-size: var(--font-size-2xl);
   }
 
   .stat__label {
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
   }
 }
 
