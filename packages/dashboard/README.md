@@ -1,16 +1,59 @@
 # @opentask/taskin-dashboard
 
-> Vue 3 dashboard components for Taskin - provider-agnostic task visualization
+> Vue 3 dashboard components for Taskin - provider-agnostic task visualization with real-time WebSocket sync
 
 ## 📦 Installation
 
 ```bash
-npm install @opentask/taskin-dashboard
+npm install @opentask/taskin-dashboard pinia @opentask/taskin-task-provider-pinia
 # or
-pnpm add @opentask/taskin-dashboard
+pnpm add @opentask/taskin-dashboard pinia @opentask/taskin-task-provider-pinia
 ```
 
 ## 🚀 Quick Start
+
+### Standalone App with WebSocket
+
+```typescript
+// main.ts
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './App.vue';
+import '@opentask/taskin-dashboard/style.css';
+
+const app = createApp(App);
+app.use(createPinia());
+app.mount('#app');
+```
+
+```vue
+<!-- App.vue -->
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted } from 'vue';
+import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
+import { TaskGrid } from '@opentask/taskin-dashboard';
+
+const taskStore = usePiniaTaskProvider();
+const tasks = computed(() => taskStore.tasks);
+
+onMounted(() => {
+  taskStore.connect({
+    url: 'ws://localhost:3001',
+    reconnect: true,
+  });
+});
+
+onUnmounted(() => {
+  taskStore.disconnect();
+});
+</script>
+
+<template>
+  <TaskGrid :tasks="tasks" />
+</template>
+```
+
+### Using Components Only
 
 ```vue
 <script setup>
@@ -30,6 +73,21 @@ const tasks = await fetchTasks();
 </template>
 ```
 
+## 🌐 Real-Time Synchronization
+
+The dashboard integrates with `@opentask/taskin-task-provider-pinia` for real-time WebSocket updates:
+
+- 🔄 **Auto-reconnect** - Handles connection drops gracefully
+- 💓 **Heartbeat** - Keeps connection alive with ping/pong
+- 📡 **Live updates** - Tasks sync in real-time across all clients
+- 💾 **Offline cache** - Works with cached data when offline
+
+**Environment Variables:**
+
+```env
+VITE_WS_URL=ws://localhost:3001
+```
+
 **TaskGrid Features:**
 
 - 📊 **Statistics header** - Shows total, in-progress, blocked, paused counts
@@ -37,6 +95,7 @@ const tasks = await fetchTasks();
 - ⏳ **Loading state** - Built-in spinner for async data
 - 📋 **Empty state** - Customizable message when no tasks
 - 🎨 **Flexible** - Configurable columns, gaps, and card variants
+- 🔌 **Connection status** - Shows WebSocket connection state
 
 ## 🎯 Philosophy
 

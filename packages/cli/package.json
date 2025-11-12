@@ -76,6 +76,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@opentask/taskin-task-server-ws": "workspace:*",
+    "@opentask/taskin-task-server-mcp": "workspace:*",
+    "@opentask/taskin-task-manager": "workspace:*",
+    "@opentask/taskin-fs-provider": "workspace:*",
     "@types/inquirer": "^9.0.9",
     "@types/play-sound": "^1.1.2",
     "chalk": "^5.6.2",

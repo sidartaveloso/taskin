@@ -4,7 +4,7 @@ import type {
   PiniaTaskProviderConfig,
   PiniaTaskStoreState,
   WebSocketMessage,
-} from './pinia-task-provider.types';
+} from './pinia-task-provider.types.js';
 
 // WebSocket instance storage (outside Pinia store)
 const wsInstances = new Map<string, WebSocket>();

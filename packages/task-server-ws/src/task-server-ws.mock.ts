@@ -7,7 +7,7 @@ import type { TaskId } from '@opentask/taskin-types';
 import type {
   TaskServerConfig,
   WebSocketServerOptions,
-} from './task-server-ws.types';
+} from './task-server-ws.types.js';
 
 /**
  * Mock TaskManager for testing

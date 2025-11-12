@@ -1,6 +1,6 @@
 import type { ITaskManager, TaskFile } from '@opentask/taskin-task-manager';
 import type { TaskId } from '@opentask/taskin-types';
-import type { MCPServerConfig } from './task-server-mcp.types';
+import type { MCPServerConfig } from './task-server-mcp.types.js';
 
 /**
  * Mock TaskManager for MCP testing
