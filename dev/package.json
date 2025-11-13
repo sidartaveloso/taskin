@@ -8,7 +8,8 @@
   "status": "active",
   "since": "2025-11-05",
   "scripts": {
-    "lint:manifests": "tsx ./scripts/lint-manifests.ts"
+    "lint:manifests": "tsx ./scripts/lint-manifests.ts",
+    "lint:tasks": "tsx ./scripts/lint-tasks.ts"
   },
   "devDependencies": {
     "@types/node": "^20.19.24",

@@ -15,6 +15,9 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+type CustomRenderStory = Omit<Story, 'args'> & {
+  args?: Partial<Story['args']>;
+};
 
 export const Default: Story = {
   args: {
@@ -49,7 +52,7 @@ export const WithAvatar: Story = {
   },
 };
 
-export const AllSizes: Story = {
+export const AllSizes: CustomRenderStory = {
   render: () => ({
     components: { TaskHeader },
     template: `

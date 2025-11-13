@@ -1,8 +1,16 @@
 # 🧩 Task 001 — Create the **Taskin** Monorepo Structure
 
-Status: done
-Type: feat
-Assignee: Sidarta Veloso
+## Status
+
+done
+
+## Type
+
+feat
+
+## Assignee
+
+Sidarta Veloso
 
 ## 🎯 Objective
 

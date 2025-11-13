@@ -25,7 +25,6 @@ const config: StorybookConfig = {
 
   // Storybook 10 features
   docs: {
-    autodocs: 'tag', // Generate docs automatically for stories with 'autodocs' tag
     defaultName: 'Documentation',
   },
 

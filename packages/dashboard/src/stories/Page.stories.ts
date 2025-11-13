@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-
-import { expect, userEvent, within } from 'storybook/test';
+// Uncomment when adding interaction tests:
+// import { expect, userEvent, within } from 'storybook/test';
 
 import MyPage from './Page.vue';
 
@@ -23,7 +23,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // More on component testing: https://storybook.js.org/docs/writing-tests/interaction-testing
-export const LoggedIn: Story = {
-};
+export const LoggedIn: Story = {};
 
 export const LoggedOut: Story = {};

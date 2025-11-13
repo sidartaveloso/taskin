@@ -220,6 +220,9 @@ importers:
       vitepress:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.43.0)(@types/node@24.10.1)(postcss@8.5.6)(search-insights@2.17.3)(typescript@5.9.3)
+      vue:
+        specifier: ^3.5.13
+        version: 3.5.24(typescript@5.9.3)
 
   packages/fs-task-provider:
     dependencies:
@@ -5269,7 +5272,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@24.10.1)(@vitest/ui@1.6.1)(jsdom@25.0.1)
+      vitest: 1.6.1(@types/node@20.19.24)(@vitest/ui@1.6.1)(jsdom@25.0.1)
 
   '@vitest/ui@2.1.9(vitest@2.1.9)':
     dependencies:
