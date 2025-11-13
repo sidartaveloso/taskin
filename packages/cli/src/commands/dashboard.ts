@@ -2,7 +2,10 @@
  * Dashboard command - Start WebSocket server and Vite dev server
  */
 
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import {
+  FileSystemTaskProvider,
+  UserRegistry,
+} from '@opentask/taskin-fs-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { TaskWebSocketServer } from '@opentask/taskin-task-server-ws';
 import chalk from 'chalk';
@@ -85,7 +88,15 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     }
 
     info(`Using tasks directory: ${tasksDir}`);
-    const provider = new FileSystemTaskProvider(tasksDir);
+
+    // Initialize UserRegistry and load users
+    const monorepoRoot = path.dirname(tasksDir);
+    const taskinDir = path.join(monorepoRoot, '.taskin');
+    const userRegistry = new UserRegistry({ taskinDir });
+    await userRegistry.load();
+
+    // Create provider with injected UserRegistry
+    const provider = new FileSystemTaskProvider(tasksDir, userRegistry);
     const manager = new TaskManager(provider);
 
     // Start WebSocket server
@@ -105,8 +116,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     // Start Vite dev server
     info(`Starting Vite dev server on http://${host}:${port}...`);
 
-    // Use the same root directory where we found TASKS
-    const monorepoRoot = path.dirname(tasksDir);
+    // Use the monorepoRoot already calculated above
     const dashboardPath = path.join(monorepoRoot, 'packages', 'dashboard');
 
     // Build vite command

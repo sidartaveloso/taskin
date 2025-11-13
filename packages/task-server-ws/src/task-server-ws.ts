@@ -305,6 +305,13 @@ export class TaskWebSocketServer implements ITaskServer {
     message: WSMessage,
   ): Promise<void> {
     const tasks = await this.taskProvider.getAllTasks();
+
+    // Debug log
+    if (tasks.length > 0) {
+      console.log('[WS Server] Sending', tasks.length, 'tasks');
+      console.log('[WS Server] First task assignee:', tasks[0].assignee);
+    }
+
     this.sendToClient(client.id, {
       type: 'tasks',
       payload: tasks,
