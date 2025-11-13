@@ -6,7 +6,7 @@ import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { TaskWebSocketServer } from '@opentask/taskin-task-server-ws';
 import chalk from 'chalk';
-import { spawn } from 'child_process';
+import { exec } from 'child_process';
 import path from 'path';
 import { error, info, printHeader, success } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
@@ -62,7 +62,29 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
   try {
     // Initialize task provider and manager
     info('Initializing task provider...');
-    const tasksDir = path.join(process.cwd(), 'TASKS');
+
+    // Find monorepo root by looking for pnpm-workspace.yaml
+    let currentDir = process.cwd();
+    let tasksDir = path.join(currentDir, 'TASKS');
+
+    // If TASKS doesn't exist in current dir, try to find monorepo root
+    try {
+      await import('fs').then((fs) => fs.promises.access(tasksDir));
+    } catch {
+      // Look for pnpm-workspace.yaml to find monorepo root
+      while (currentDir !== path.dirname(currentDir)) {
+        const workspaceFile = path.join(currentDir, 'pnpm-workspace.yaml');
+        try {
+          await import('fs').then((fs) => fs.promises.access(workspaceFile));
+          tasksDir = path.join(currentDir, 'TASKS');
+          break;
+        } catch {
+          currentDir = path.dirname(currentDir);
+        }
+      }
+    }
+
+    info(`Using tasks directory: ${tasksDir}`);
     const provider = new FileSystemTaskProvider(tasksDir);
     const manager = new TaskManager(provider);
 
@@ -83,34 +105,33 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     // Start Vite dev server
     info(`Starting Vite dev server on http://${host}:${port}...`);
 
-    const dashboardPath = path.join(
-      process.cwd(),
-      'node_modules',
-      '@opentask',
-      'taskin-dashboard',
-    );
+    // Use the same root directory where we found TASKS
+    const monorepoRoot = path.dirname(tasksDir);
+    const dashboardPath = path.join(monorepoRoot, 'packages', 'dashboard');
 
-    const viteArgs = [
-      'vite',
-      '--port',
-      port.toString(),
-      '--host',
-      host,
-      '--strictPort',
-    ];
-
+    // Build vite command
+    let viteCommand = `cd "${dashboardPath}" && pnpm exec vite`;
+    viteCommand += ` --port ${port}`;
+    viteCommand += ` --host ${host}`;
+    viteCommand += ' --strictPort';
     if (options.open) {
-      viteArgs.push('--open');
+      viteCommand += ' --open';
     }
 
-    const viteProcess = spawn('npx', viteArgs, {
-      cwd: dashboardPath,
-      stdio: 'inherit',
+    const viteProcess = exec(viteCommand, {
       env: {
         ...process.env,
         VITE_WS_URL: `ws://${host}:${wsPort}`,
       },
     });
+
+    // Pipe vite output
+    if (viteProcess.stdout) {
+      viteProcess.stdout.pipe(process.stdout);
+    }
+    if (viteProcess.stderr) {
+      viteProcess.stderr.pipe(process.stderr);
+    }
 
     success(`✓ Dashboard available at http://${host}:${port}`);
     info('');
