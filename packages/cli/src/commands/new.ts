@@ -2,8 +2,13 @@
  * New command - Create a new task
  */
 
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import {
+  FileSystemTaskProvider,
+  UserRegistry,
+} from '@opentask/taskin-fs-provider';
+import { TaskManager } from '@opentask/taskin-task-manager';
+import type { TaskType } from '@opentask/taskin-types';
+import { existsSync, mkdirSync } from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
@@ -138,91 +143,47 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
     mkdirSync(tasksDir, { recursive: true });
   }
 
-  // Initialize task provider to get existing tasks
-  const taskProvider = new FileSystemTaskProvider(tasksDir);
-  const allTasks = await taskProvider.getAllTasks();
-
-  // Generate next task number
-  const taskNumbers = allTasks
-    .map((task) => {
-      const match = task.id.match(/^(\d+)$/);
-      return match ? parseInt(match[1], 10) : 0;
-    })
-    .filter((num) => !isNaN(num));
-
-  const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
-  const taskId = String(nextNumber).padStart(3, '0');
-
-  // Create task file name
-  const titleSlug = options.title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
-  const fileName = `task-${taskId}-${titleSlug}.md`;
-  const filePath = path.join(tasksDir, fileName);
-
-  // Check if file already exists
-  if (existsSync(filePath)) {
-    error(`Task file already exists: ${fileName}`);
-    return;
-  }
-
-  // Create task content
-  const taskContent = generateTaskMarkdown({
-    id: taskId,
-    type: options.type,
-    title: options.title,
-    description: options.description || '',
-    user: options.user || 'A definir',
+  // Initialize user registry, task provider, and task manager
+  const userRegistry = new UserRegistry({
+    taskinDir: path.join(process.cwd(), '.taskin'),
   });
 
-  // Write task file
-  writeFileSync(filePath, taskContent, 'utf-8');
+  try {
+    // load registry if present (optional)
+    await userRegistry.load();
+  } catch {
+    // ignore load errors for interactive creation
+  }
 
-  // Show success message
-  console.log();
-  success(`Task ${taskId} created successfully!`);
-  console.log(colors.secondary(`📄 File: ${fileName}`));
-  console.log(colors.secondary(`📁 Path: ${filePath}`));
-  console.log();
-  console.log(colors.info('Next steps:'));
-  console.log(colors.normal(`  1. Edit the task file to add more details`));
-  console.log(
-    colors.normal(
-      `  2. Run ${colors.highlight('taskin start ' + taskId)} to begin working on it`,
-    ),
-  );
-  console.log();
-}
+  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
+  const taskManager = new TaskManager(taskProvider);
 
-interface TaskData {
-  description: string;
-  id: string;
-  title: string;
-  type: string;
-  user: string;
-}
+  // Create task using TaskManager
+  try {
+    const result = await taskManager.createTask({
+      title: options.title,
+      type: options.type as TaskType,
+      description: options.description,
+      assignee: options.user,
+    });
 
-function generateTaskMarkdown(data: TaskData): string {
-  return `# Task ${data.id} — ${data.title}
-
-Status: pending
-Type: ${data.type}
-Assignee: ${data.user}
-
-## Description
-
-${data.description || 'Add task description here...'}
-
-## Tasks
-
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
-
-## Notes
-
-Add any relevant notes or links here.
-`;
+    // Show success message
+    console.log();
+    success(`Task ${result.taskId} created successfully!`);
+    console.log(colors.secondary(`📄 File: ${path.basename(result.filePath)}`));
+    console.log(colors.secondary(`📁 Path: ${result.filePath}`));
+    console.log();
+    console.log(colors.info('Next steps:'));
+    console.log(colors.normal(`  1. Edit the task file to add more details`));
+    console.log(
+      colors.normal(
+        `  2. Run ${colors.highlight('taskin start ' + result.taskId)} to begin working on it`,
+      ),
+    );
+    console.log();
+  } catch (err) {
+    error(
+      `Failed to create task: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }

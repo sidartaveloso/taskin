@@ -1,0 +1,266 @@
+import { promises as fs } from 'fs';
+import type { Mock } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fixTaskFile, validateTaskFile } from './task-validator';
+
+vi.mock('fs', () => ({
+  promises: {
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
+  },
+}));
+
+describe('task-validator', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('validateTaskFile', () => {
+    it('should accept valid section-based format with valid status', async () => {
+      const content = `# Task 001 — Valid Task
+
+## Status
+todo
+
+## Type
+feat
+
+## Assignee
+John Doe
+
+## Description
+This is a valid task description.`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile('/tasks/task-001-valid-task.md');
+      const errors = result.filter((issue) => issue.severity === 'error');
+      expect(errors).toHaveLength(0);
+    });
+
+    it('should reject inline metadata format', async () => {
+      const content = `# Task 001 — Invalid Task
+
+Status: pending
+Type: feat
+Assignee: John Doe
+
+## Description
+This task uses inline metadata.`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile('/tasks/task-001-invalid-task.md');
+      expect(result.length).toBeGreaterThan(0);
+      expect(result.some((issue) => issue.message.includes('inline'))).toBe(
+        true,
+      );
+    });
+
+    it('should detect missing Status section', async () => {
+      const content = `# Task 001 — Missing Status
+
+## Type
+feat
+
+## Description
+This task is missing the Status section.`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile(
+        '/tasks/task-001-missing-status.md',
+      );
+      expect(result.length).toBeGreaterThan(0);
+      expect(
+        result.some(
+          (issue) =>
+            issue.message.includes('Status') ||
+            issue.message.includes('status'),
+        ),
+      ).toBe(true);
+    });
+
+    it('should detect invalid status value', async () => {
+      const content = `# Task 001 — Invalid Status
+
+## Status
+invalid-status
+
+## Description
+This task has an invalid status.`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile(
+        '/tasks/task-001-invalid-status.md',
+      );
+      expect(result.length).toBeGreaterThan(0);
+      expect(
+        result.some(
+          (issue) =>
+            issue.message.includes('Status') &&
+            issue.message.includes('todo, in-progress, done'),
+        ),
+      ).toBe(true);
+    });
+
+    it('should accept Portuguese section names', async () => {
+      const content = `# Task 001 — Tarefa em Português
+
+## Status
+pending
+
+## Tipo
+feat
+
+## Responsável
+João Silva
+
+## Descrição
+Esta é uma tarefa válida em português.`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile(
+        '/tasks/task-001-tarefa-em-portugues.md',
+      );
+      const errors = result.filter((issue) => issue.severity === 'error');
+      expect(errors).toHaveLength(0);
+    });
+
+    it('should warn about missing description section', async () => {
+      const content = `# Task 001 — No Description
+
+## Status
+todo`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile(
+        '/tasks/task-001-no-description.md',
+      );
+      expect(result.length).toBeGreaterThan(0);
+      expect(
+        result.some(
+          (issue) =>
+            issue.severity === 'warning' &&
+            issue.message.includes('description'),
+        ),
+      ).toBe(true);
+    });
+
+    it('should warn about invalid filename pattern', async () => {
+      const content = `# Task 001 — Valid Content
+
+## Status
+todo
+
+## Description
+Valid content but bad filename.`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile('/tasks/invalid-filename.md');
+      expect(result.length).toBeGreaterThan(0);
+      expect(
+        result.some(
+          (issue) =>
+            issue.severity === 'warning' && issue.message.includes('filename'),
+        ),
+      ).toBe(true);
+    });
+  });
+
+  describe('fixTaskFile', () => {
+    it('should convert inline metadata to section format', async () => {
+      const content = `# Task 001 — Test Task
+
+Status: pending
+Type: feat
+Assignee: John Doe
+
+## Description
+Test description`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      (fs.writeFile as Mock).mockResolvedValue(undefined);
+
+      const result = await fixTaskFile('/tasks/task-001.md');
+
+      expect(result).toBe(true);
+      expect(fs.writeFile).toHaveBeenCalled();
+
+      const writtenContent = (fs.writeFile as Mock).mock.calls[0][1];
+      expect(writtenContent).toContain('## Status');
+      expect(writtenContent).toContain('## Type');
+      expect(writtenContent).toContain('## Assignee');
+      expect(writtenContent).not.toContain('Status:');
+      expect(writtenContent).not.toContain('Type:');
+      expect(writtenContent).not.toContain('Assignee:');
+    });
+
+    it('should return false if no inline metadata found', async () => {
+      const content = `# Task 001 — Already Fixed
+
+## Status
+done
+
+## Type
+feat
+
+## Assignee
+John Doe
+
+## Description
+Already in section format.`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+
+      const result = await fixTaskFile('/tasks/task-001.md');
+
+      expect(result).toBe(false);
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it('should handle partial inline metadata', async () => {
+      const content = `# Task 001 — Partial Inline
+
+Status: pending
+
+## Description
+Only status is inline.`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      (fs.writeFile as Mock).mockResolvedValue(undefined);
+
+      const result = await fixTaskFile('/tasks/task-001.md');
+
+      expect(result).toBe(true);
+      expect(fs.writeFile).toHaveBeenCalled();
+
+      const writtenContent = (fs.writeFile as Mock).mock.calls[0][1];
+      expect(writtenContent).toContain('## Status');
+      expect(writtenContent).not.toContain('Status:');
+    });
+
+    it('should preserve existing sections when fixing inline metadata', async () => {
+      const content = `# Task 001 — Mixed Format
+
+Status: pending
+Type: feat
+
+## Description
+This is the description.
+
+## Notes
+These are notes.`;
+
+      (fs.readFile as Mock).mockResolvedValue(content);
+      (fs.writeFile as Mock).mockResolvedValue(undefined);
+
+      const result = await fixTaskFile('/tasks/task-001.md');
+
+      expect(result).toBe(true);
+
+      const writtenContent = (fs.writeFile as Mock).mock.calls[0][1];
+      expect(writtenContent).toContain('## Description');
+      expect(writtenContent).toContain('This is the description.');
+      expect(writtenContent).toContain('## Notes');
+      expect(writtenContent).toContain('These are notes.');
+    });
+  });
+});

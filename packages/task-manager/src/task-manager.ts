@@ -1,6 +1,9 @@
 import type {
+  CreateTaskOptions,
+  CreateTaskResult,
   ITaskManager,
   ITaskProvider,
+  LintResult,
   TaskFile,
 } from './task-manager.types';
 
@@ -39,5 +42,13 @@ export class TaskManager implements ITaskManager {
     await this.taskProvider.updateTask(updatedTask);
 
     return updatedTask;
+  }
+
+  async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
+    return this.taskProvider.createTask(options);
+  }
+
+  async lint(fix?: boolean): Promise<LintResult> {
+    return this.taskProvider.lint(fix);
   }
 }

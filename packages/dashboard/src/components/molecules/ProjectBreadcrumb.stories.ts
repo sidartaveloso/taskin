@@ -17,6 +17,9 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+type CustomRenderStory = Omit<Story, 'args'> & {
+  args?: Partial<Story['args']>;
+};
 
 export const Short: Story = {
   args: {
@@ -60,7 +63,7 @@ export const CustomSeparator: Story = {
   },
 };
 
-export const AllVariants: Story = {
+export const AllVariants: CustomRenderStory = {
   render: () => ({
     components: { ProjectBreadcrumb },
     template: `

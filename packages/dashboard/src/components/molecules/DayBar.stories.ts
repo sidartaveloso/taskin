@@ -18,6 +18,9 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+type CustomRenderStory = Omit<Story, 'args'> & {
+  args?: Partial<Story['args']>;
+};
 
 export const Today: Story = {
   args: {
@@ -74,7 +77,7 @@ export const Compact: Story = {
   },
 };
 
-export const WeekProgress: Story = {
+export const WeekProgress: CustomRenderStory = {
   render: () => ({
     components: { DayBar },
     template: `
@@ -110,7 +113,7 @@ export const WeekProgress: Story = {
   }),
 };
 
-export const CompactWeek: Story = {
+export const CompactWeek: CustomRenderStory = {
   render: () => ({
     components: { DayBar },
     template: `
