@@ -1,6 +1,6 @@
 # Taskin
 
-> Plataforma modular de gerenciamento de tarefas com sincronização em tempo real e integração com LLMs
+> Modular task management platform with real-time synchronization and LLM integration
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
@@ -11,30 +11,60 @@
 
 ## ✨ Features
 
-- 🎯 **Provider-Agnostic**: Arquitetura baseada em interfaces (`ITaskProvider`, `ITaskManager`)
-- 🔄 **Real-Time Sync**: Sincronização bidirecional via WebSocket com auto-reconnect
-- 🤖 **LLM Integration**: Model Context Protocol (MCP) para Claude, GPT-4 e outros
-- 🎨 **Modern UI**: Dashboard Vue 3 + Vite + Pinia com design system completo
-- 📱 **Responsive**: Interface otimizada para desktop, tablet e mobile
-- 💾 **Offline-First**: Cache local com sincronização automática ao reconectar
+- 🎯 **Provider-Agnostic**: Interface-based architecture (`ITaskProvider`, `ITaskManager`)
+- 🔄 **Real-Time Sync**: Bidirectional WebSocket synchronization with auto-reconnect
+- 🤖 **LLM Integration**: Model Context Protocol (MCP) for Claude, GPT-4, and others
+- 🎨 **Modern UI**: Vue 3 + Vite + Pinia dashboard with complete design system
+- 📱 **Responsive**: Optimized interface for desktop, tablet, and mobile
+- 💾 **Offline-First**: Local cache with automatic sync on reconnect
 - 🔧 **Type-Safe**: TypeScript strict mode + Zod schemas
-- 📦 **Monorepo**: pnpm workspaces com builds otimizados
-- 🎭 **Storybook**: 30+ stories interativas com autodocs
+- 📦 **Monorepo**: pnpm workspaces with optimized builds
+- 🎭 **Storybook**: 30+ interactive stories with autodocs
+- 🔒 **Security-First**: Zod validations, injection protection, secure HTTP headers
+
+## 🔒 Security Features
+
+Taskin implements multiple layers of security to protect against common attacks:
+
+### Input Validation (Layer 1)
+- **Host Validation**: Rejects malicious hosts (`;`, `&&`, `|`, `../`, etc.)
+- **Port Validation**: Validates ports 1-65535, rejects strings with injected commands
+- **IPv4 Validation**: Checks each octet (0-255), rejects malformed IPs (256.1.1.1)
+- **Path Validation**: Blocks path traversal (`../`, `~/`, absolute paths)
+- **WebSocket URL**: Validates ws:// and wss:// protocols only
+
+### Output Escaping (Layer 2)
+- **HTML Escaping**: Escapes `<`, `>`, `&`, `"`, `'` before injecting into HTML
+- **XSS Prevention**: Protects against `<script>`, `<img onerror>`, `<iframe>`
+
+### HTTP Security Headers (Layer 3)
+- **X-Frame-Options: DENY** - Prevents clickjacking
+- **X-Content-Type-Options: nosniff** - Prevents MIME type sniffing
+- **X-XSS-Protection: 1; mode=block** - Enables browser XSS protection
+- **Content-Security-Policy** - Restricts script and style sources
+- **X-Powered-By: disabled** - Removes Express fingerprinting
+
+### Testing
+- 46 unit tests covering injection attacks, XSS, path traversal
+- TDD revealed and fixed 3 validation bugs before production
+- Continuous integration with security validation
 
 ## 🚀 Quick Start
 
-### Instalação
+### Installation
 
 ```bash
-# Clone o repositório
+# Clone the repository
 git clone https://github.com/opentask/taskin.git
 cd taskin
 
-# Instale as dependências
+# Install dependencies
 pnpm install
 
-# Build todos os pacotes
+# Build all packages
 pnpm -r build
+
+# List tasks
 npx taskin list
 
 # View all commands
@@ -47,46 +77,47 @@ taskin new -t feat -T "Add login feature" -u "Developer"
 **🔍 Task Linter** - Validate your task markdown files (language-agnostic):
 
 ```bash
-
+taskin lint
+taskin lint --path ./TASKS
 ```
 
-### Uso Básico
+### Basic Usage
 
 #### 1. CLI Task Management
 
 ```bash
-# Inicializar projeto
+# Initialize project
 taskin init
 
-# Criar nova tarefa
-taskin new "Implementar autenticação"
+# Create new task
+taskin new "Implement authentication"
 
-# Listar tarefas
+# List tasks
 taskin list
 
-# Gerenciar tarefas
+# Manage tasks
 taskin start task-01
 taskin pause task-01
 taskin finish task-01
 ```
 
-#### 2. Dashboard com WebSocket
+#### 2. Dashboard with WebSocket
 
 ```bash
-# Iniciar servidor WebSocket + dashboard web
+# Start WebSocket server + web dashboard
 taskin dashboard
 
-# Acesse: http://localhost:5173
+# Access: http://localhost:5173
 # WebSocket: ws://localhost:3001
 ```
 
-#### 3. Integração com LLMs (Claude, GPT-4)
+#### 3. LLM Integration (Claude, GPT-4)
 
 ```bash
-# Iniciar servidor MCP
+# Start MCP server
 taskin mcp-server
 
-# Configure no Claude Desktop (claude_desktop_config.json):
+# Configure in Claude Desktop (claude_desktop_config.json):
 {
   "mcpServers": {
     "taskin": {
@@ -101,40 +132,40 @@ taskin mcp-server
 
 ### Core Packages
 
-- **@opentask/taskin-core** - Abstrações e lógica central
-- **@opentask/taskin-types-ts** - Schemas Zod e tipos TypeScript
-- **@opentask/taskin-task-manager** - Orquestração de lifecycle de tarefas
-- **@opentask/taskin-fs-provider** - Provider baseado em filesystem
+- **@opentask/taskin-core** - Core abstractions and logic
+- **@opentask/taskin-types-ts** - Zod schemas and TypeScript types
+- **@opentask/taskin-task-manager** - Task lifecycle orchestration
+- **@opentask/taskin-fs-provider** - Filesystem-based provider
 
 ### Server Packages
 
-- **@opentask/taskin-task-server-ws** - Servidor WebSocket multi-client
-- **@opentask/taskin-task-server-mcp** - Servidor Model Context Protocol
-- **@opentask/taskin-api** - REST API (planejado)
+- **@opentask/taskin-task-server-ws** - Multi-client WebSocket server
+- **@opentask/taskin-task-server-mcp** - Model Context Protocol server
+- **@opentask/taskin-api** - REST API (planned)
 
 ### Frontend Packages
 
-- **@opentask/taskin-task-provider-pinia** - Pinia store com WebSocket sync
-- **@opentask/taskin-dashboard** - Dashboard Vue 3 + Vite
+- **@opentask/taskin-task-provider-pinia** - Pinia store with WebSocket sync
+- **@opentask/taskin-dashboard** - Vue 3 + Vite dashboard
 
 ### CLI & Utils
 
-- **@opentask/taskin-cli** - Interface de linha de comando
-- **@opentask/taskin-git-utils** - Utilitários Git
-- **@opentask/taskin-utils** - Funções compartilhadas
+- **@opentask/taskin-cli** - Command-line interface
+- **@opentask/taskin-git-utils** - Git utilities
+- **@opentask/taskin-utils** - Shared functions
 
-### Integration Packages (Planejado)
+### Integration Packages (Planned)
 
-- **@opentask/taskin-directus-extension** - Extensão Directus CMS
-- **@opentask/taskin-n8n-plugin** - Plugin n8n
-- **@opentask/taskin-chatbot** - Integrações chatbot
+- **@opentask/taskin-directus-extension** - Directus CMS extension
+- **@opentask/taskin-n8n-plugin** - n8n plugin
+- **@opentask/taskin-chatbot** - Chatbot integrations
 
-### Python Packages (Planejado)
+### Python Packages (Planned)
 
-- **@opentask/taskin-types-py** - Modelos Pydantic gerados
-- **@opentask/taskin-py-sdk** - SDK Python
+- **@opentask/taskin-types-py** - Generated Pydantic models
+- **@opentask/taskin-py-sdk** - Python SDK
 
-## 🏗️ Arquitetura
+## 🏗️ Architecture
 
 ```
 Vue Dashboard (Pinia)
@@ -152,7 +183,7 @@ TaskMCPServer
 TaskManager ← → TaskProvider
 ```
 
-📚 [Documentação Completa de Arquitetura](./docs/ARCHITECTURE.md)
+📚 [Complete Architecture Documentation](./docs/ARCHITECTURE.md)
 
 ## 🛠️ Development
 
@@ -180,22 +211,22 @@ pnpm -r build
 
 #### Build & Development
 
-- `pnpm build` - Build todos os pacotes
+- `pnpm build` - Build all packages
 - `pnpm dev` - Watch mode
-- `pnpm clean` - Limpar builds
-- `pnpm typecheck` - Verificar tipos TypeScript
-- `pnpm lint` - ESLint + validação de manifests
-- `pnpm test` - Rodar testes
-- `pnpm test:coverage` - Testes com coverage
+- `pnpm clean` - Clean builds
+- `pnpm typecheck` - Check TypeScript types
+- `pnpm lint` - ESLint + manifest validation
+- `pnpm test` - Run tests
+- `pnpm test:coverage` - Tests with coverage
 
-### Estrutura de Tarefas
+### Task Structure
 
-Cada tarefa é um arquivo Markdown com YAML frontmatter:
+Each task is a Markdown file with YAML frontmatter:
 
 ```markdown
 ---
 id: task-01
-title: Implementar autenticação
+title: Implement authentication
 status: in-progress
 priority: high
 tags: [backend, security]
@@ -203,60 +234,60 @@ assignee: sidarta
 created: 2024-01-15T10:00:00Z
 ---
 
-## Descrição
+## Description
 
-Implementar sistema de autenticação JWT.
+Implement JWT authentication system.
 
 ## Checklist
 
-- [x] Criar schema
-- [ ] Implementar login
+- [x] Create schema
+- [ ] Implement login
 ```
 
-## 📚 Documentação
+## 📚 Documentation
 
-- 📖 [Guia de Início Rápido](./docs/QUICKSTART.md)
-- 🏗️ [Arquitetura Detalhada](./docs/ARCHITECTURE.md)
+- 📖 [Quick Start Guide](./docs/QUICKSTART.md)
+- 🏗️ [Detailed Architecture](./docs/ARCHITECTURE.md)
 - 🎨 [Design System](./packages/dashboard/docs/design-specifications.md)
 - 🔌 [WebSocket Examples](./packages/task-server-ws/EXAMPLES.md)
 - 🤖 [MCP Server Guide](./packages/task-server-mcp/README.md)
 - 📦 [Pinia Provider](./packages/task-provider-pinia/README.md)
 
-## 🤝 Contribuindo
+## 🤝 Contributing
 
-Contribuições são bem-vindas! Por favor:
+Contributions are welcome! Please:
 
-1. Fork o repositório
-2. Crie um branch para sua feature (`git checkout -b feature/amazing-feature`)
-3. Commit suas mudanças (`git commit -m 'Add amazing feature'`)
-4. Push para o branch (`git push origin feature/amazing-feature`)
-5. Abra um Pull Request
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Desenvolvimento
+### Development
 
 ```bash
-# Criar novo package
-mkdir -p packages/novo-package/src
-cd packages/novo-package
+# Create new package
+mkdir -p packages/new-package/src
+cd packages/new-package
 
-# Seguir padrão do monorepo
-# Ver docs/QUICKSTART.md para detalhes
+# Follow monorepo patterns
+# See docs/QUICKSTART.md for details
 ```
 
-## 📄 Licença
+## 📄 License
 
-MIT License - veja [LICENSE](LICENSE) para detalhes.
+MIT License - see [LICENSE](LICENSE) for details.
 
-## 👥 Autores
+## 👥 Authors
 
 - **OpenTask** - [https://opentask.com.br](https://opentask.com.br)
-- **Sidarta Veloso** - Contribuidor Principal
+- **Sidarta Veloso** - Lead Contributor
 
-## 🙏 Agradecimentos
+## 🙏 Acknowledgments
 
-- Design system inspirado no [Redmine](https://example.com)
-- Model Context Protocol por [Anthropic](https://github.com/anthropic-ai/model-context-protocol)
-- Vue.js, Pinia, Vite e todo o ecossistema Vue
+- Design system inspired by [Redmine](https://example.com)
+- Model Context Protocol by [Anthropic](https://github.com/anthropic-ai/model-context-protocol)
+- Vue.js, Pinia, Vite and the entire Vue ecosystem
 
 ## 🔗 Links
 
@@ -266,8 +297,8 @@ MIT License - veja [LICENSE](LICENSE) para detalhes.
 
 ---
 
-**Status**: Em desenvolvimento ativo 🚧
+**Status**: Active development 🚧
 
-**Versão**: 0.1.0
+**Version**: 0.1.0
 
 Made with ❤️ by OpenTask
