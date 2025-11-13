@@ -53,7 +53,7 @@ type Story = StoryObj<typeof TaskCard>;
 const mockTask: Task = {
   id: '1',
   number: 42,
-  title: 'Implementar painel de visualização de tarefas em TV',
+  title: 'Implement task visualization panel on TV',
   status: 'in-progress',
   assignee: {
     id: '1',
@@ -125,7 +125,7 @@ export const Blocked: Story = {
         percentage: 30,
       },
       warnings: [
-        'Dependência externa não disponível',
+        'External dependency not available',
         'Aguardando aprovação do time de infra',
       ],
     },
@@ -146,7 +146,7 @@ export const Done: Story = {
       ...mockTask,
       id: '3',
       number: 41,
-      title: 'Configurar estrutura do projeto monorepo',
+      title: 'Configure monorepo project structure',
       status: 'done',
       progress: {
         percentage: 100,
@@ -179,7 +179,7 @@ export const Paused: Story = {
       progress: {
         percentage: 40,
       },
-      warnings: ['Pausada temporariamente para priorizar outras tarefas'],
+      warnings: ['Paused temporarily to prioritize other tasks'],
     },
     variant: 'default',
   },
@@ -198,7 +198,7 @@ export const WithoutEstimates: Story = {
     task: {
       id: '5',
       number: 45,
-      title: 'Tarefa sem estimativas de tempo',
+      title: 'Task without time estimates',
       status: 'pending',
       assignee: {
         id: '2',
@@ -248,7 +248,7 @@ export const AllStatuses: Story = {
           ...mockTask,
           id: '1',
           number: 41,
-          title: 'Tarefa Pendente',
+          title: 'Pending Task',
           status: 'pending',
           progress: { percentage: 0 },
         },
@@ -256,7 +256,7 @@ export const AllStatuses: Story = {
           ...mockTask,
           id: '2',
           number: 42,
-          title: 'Tarefa Em Progresso',
+          title: 'In Progress Task',
           status: 'in-progress',
           progress: { percentage: 50 },
         },
@@ -264,7 +264,7 @@ export const AllStatuses: Story = {
           ...mockTask,
           id: '3',
           number: 43,
-          title: 'Tarefa Pausada',
+          title: 'Paused Task',
           status: 'paused',
           progress: { percentage: 30 },
         },
@@ -272,7 +272,7 @@ export const AllStatuses: Story = {
           ...mockTask,
           id: '4',
           number: 44,
-          title: 'Tarefa Bloqueada',
+          title: 'Blocked Task',
           status: 'blocked',
           progress: { percentage: 20 },
           warnings: ['Bloqueio crítico'],
@@ -281,7 +281,7 @@ export const AllStatuses: Story = {
           ...mockTask,
           id: '5',
           number: 45,
-          title: 'Tarefa Concluída',
+          title: 'Completed Task',
           status: 'done',
           progress: { percentage: 100 },
         },
@@ -315,7 +315,7 @@ export const WithIndividualProps: Story = {
   args: {
     id: '999',
     number: 999,
-    title: 'Tarefa criada com props individuais',
+    title: 'Task created with individual props',
     status: 'in-progress',
     assignee: {
       id: '10',
