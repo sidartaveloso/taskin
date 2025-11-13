@@ -60,7 +60,7 @@ export interface Task {
   dates: TaskDates;
   progress?: TaskProgress;
   tags?: string[];
-  warnings?: string[]; // Alert messages (e.g., "Sem tarefa em andamento", "Task bloqueada")
+  warnings?: string[]; // Alert messages (e.g., "No task in progress", "Task blocked")
 }
 
 export interface DashboardConfig {

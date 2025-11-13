@@ -1,5 +1,5 @@
 /**
- * Dashboard command - Start WebSocket server and Vite dev server
+ * Dashboard command - Start WebSocket server and HTTP server for dashboard
  */
 
 import {
@@ -8,12 +8,18 @@ import {
 } from '@opentask/taskin-fs-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { TaskWebSocketServer } from '@opentask/taskin-task-server-ws';
+import { escapeHtml, isValidHost, isValidPort } from '@opentask/taskin-utils';
 import chalk from 'chalk';
-import { exec } from 'child_process';
+import express from 'express';
+import { createServer } from 'http';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { error, info, printHeader, success } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface DashboardOptions {
   port?: number;
@@ -56,9 +62,52 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
-  const port = options.port || 5173;
-  const wsPort = options.wsPort || 3001;
   const host = options.host || 'localhost';
+
+  // Security: Validate host before any parsing
+  if (!isValidHost(host)) {
+    error('Security validation failed');
+    error(
+      `Invalid host: ${host}. Must be localhost, a valid IPv4 address, or hostname.`,
+    );
+    process.exit(1);
+  }
+
+  // Security: Validate port strings before parsing
+  if (typeof options.port === 'string' && !isValidPort(options.port)) {
+    error('Security validation failed');
+    error(`Invalid port: ${options.port}. Must be between 1 and 65535.`);
+    process.exit(1);
+  }
+  if (typeof options.wsPort === 'string' && !isValidPort(options.wsPort)) {
+    error('Security validation failed');
+    error(
+      `Invalid WebSocket port: ${options.wsPort}. Must be between 1 and 65535.`,
+    );
+    process.exit(1);
+  }
+
+  // Parse port values (Commander may pass them as strings)
+  const port =
+    typeof options.port === 'string'
+      ? parseInt(options.port, 10)
+      : options.port || 5173;
+  const wsPort =
+    typeof options.wsPort === 'string'
+      ? parseInt(options.wsPort, 10)
+      : options.wsPort || 3001;
+
+  if (!isValidPort(port)) {
+    error('Security validation failed');
+    error(`Invalid port: ${port}. Must be between 1 and 65535.`);
+    process.exit(1);
+  }
+
+  if (!isValidPort(wsPort)) {
+    error('Security validation failed');
+    error(`Invalid WebSocket port: ${wsPort}. Must be between 1 and 65535.`);
+    process.exit(1);
+  }
 
   printHeader('Starting Taskin Dashboard', '📊');
 
@@ -113,37 +162,107 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     await wsServer.start();
     success(`✓ WebSocket server running on ws://${host}:${wsPort}`);
 
-    // Start Vite dev server
-    info(`Starting Vite dev server on http://${host}:${port}...`);
+    // Start HTTP server for dashboard
+    info(`Starting dashboard server on http://${host}:${port}...`);
 
-    // Use the monorepoRoot already calculated above
-    const dashboardPath = path.join(monorepoRoot, 'packages', 'dashboard');
+    // Find dashboard dist directory (relative to CLI dist folder)
+    const dashboardDist = path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      'dashboard-dist',
+    );
 
-    // Build vite command
-    let viteCommand = `cd "${dashboardPath}" && pnpm exec vite`;
-    viteCommand += ` --port ${port}`;
-    viteCommand += ` --host ${host}`;
-    viteCommand += ' --strictPort';
-    if (options.open) {
-      viteCommand += ' --open';
-    }
+    const app = express();
 
-    const viteProcess = exec(viteCommand, {
-      env: {
-        ...process.env,
-        VITE_WS_URL: `ws://${host}:${wsPort}`,
-      },
+    // Security: Disable X-Powered-By header
+    app.disable('x-powered-by');
+
+    // Security: Set security headers
+    app.use((req, res, next) => {
+      // Prevent clickjacking
+      res.setHeader('X-Frame-Options', 'DENY');
+      // Prevent MIME sniffing
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      // Enable XSS protection
+      res.setHeader('X-XSS-Protection', '1; mode=block');
+      // Content Security Policy - only allow same origin
+      res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:;",
+      );
+      next();
     });
 
-    // Pipe vite output
-    if (viteProcess.stdout) {
-      viteProcess.stdout.pipe(process.stdout);
-    }
-    if (viteProcess.stderr) {
-      viteProcess.stderr.pipe(process.stderr);
-    }
+    // Inject WebSocket URL into HTML
+    app.use((req, res, next) => {
+      if (req.path === '/' || req.path === '/index.html') {
+        import('fs')
+          .then((fs) =>
+            fs.promises.readFile(
+              path.join(dashboardDist, 'index.html'),
+              'utf-8',
+            ),
+          )
+          .then((html) => {
+            // Security: Escape values before injecting into HTML to prevent XSS
+            const safeHost = escapeHtml(host);
+            const safeWsPort = escapeHtml(String(wsPort));
+
+            // Inject WebSocket URL as environment variable
+            const injectedHtml = html.replace(
+              '</head>',
+              `<script>window.VITE_WS_URL = 'ws://${safeHost}:${safeWsPort}';</script></head>`,
+            );
+            res.send(injectedHtml);
+          })
+          .catch((err) => {
+            console.error('Failed to read index.html:', err);
+            res.status(500).send('Internal Server Error');
+          });
+      } else {
+        next();
+      }
+    });
+
+    // Security: Serve static files with options to prevent path traversal
+    app.use(
+      express.static(dashboardDist, {
+        dotfiles: 'deny', // Deny access to dotfiles
+        index: false, // Don't serve index.html here (handled above)
+        redirect: false, // Don't redirect to trailing slash
+      }),
+    );
+
+    // Security: Catch-all for undefined routes (prevent information disclosure)
+    app.use((req, res) => {
+      res.status(404).send('Not Found');
+    });
+
+    const httpServer = createServer(app);
+    await new Promise<void>((resolve) => {
+      httpServer.listen(port, host, () => {
+        resolve();
+      });
+    });
 
     success(`✓ Dashboard available at http://${host}:${port}`);
+
+    // Open browser if requested
+    if (options.open) {
+      const url = `http://${host}:${port}`;
+      await import('child_process').then((cp) => {
+        const cmd =
+          process.platform === 'darwin'
+            ? 'open'
+            : process.platform === 'win32'
+              ? 'start'
+              : 'xdg-open';
+        cp.exec(`${cmd} ${url}`);
+      });
+    }
+
     info('');
     info(chalk.bold('Dashboard Controls:'));
     info(`  • Dashboard: ${chalk.cyan(`http://${host}:${port}`)}`);
@@ -154,7 +273,9 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     // Handle process termination
     const cleanup = async () => {
       info('\nShutting down servers...');
-      viteProcess.kill();
+      await new Promise<void>((resolve) => {
+        httpServer.close(() => resolve());
+      });
       await wsServer.stop();
       success('✓ Servers stopped');
       process.exit(0);
@@ -162,15 +283,6 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
 
     process.on('SIGINT', cleanup);
     process.on('SIGTERM', cleanup);
-
-    // Wait for Vite process to exit
-    viteProcess.on('exit', async (code) => {
-      if (code !== 0) {
-        error(`Vite dev server exited with code ${code}`);
-      }
-      await wsServer.stop();
-      process.exit(code || 0);
-    });
   } catch (err) {
     error('Failed to start dashboard');
     if (err instanceof Error) {
