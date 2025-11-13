@@ -2,9 +2,13 @@ import type { ITaskProvider, TaskFile } from '@opentask/taskin-task-manager';
 import type { TaskId, TaskStatus, TaskType } from '@opentask/taskin-types';
 import { promises as fs } from 'fs';
 import path from 'path';
+import type { UserRegistry } from './user-registry.js';
 
 export class FileSystemTaskProvider implements ITaskProvider {
-  constructor(private tasksDirectory: string) {}
+  constructor(
+    private tasksDirectory: string,
+    private userRegistry: UserRegistry,
+  ) {}
 
   async findTask(taskId: string): Promise<TaskFile | undefined> {
     const files = await fs.readdir(this.tasksDirectory);
@@ -27,14 +31,30 @@ export class FileSystemTaskProvider implements ITaskProvider {
     const headerSection = content.split(/^##/m)[0];
     const statusMatch = headerSection.match(/^Status:\s*(.+)$/im);
     const typeMatch = headerSection.match(/^Type:\s*(.+)$/im);
-    const userMatch = headerSection.match(/^Assignee:\s*(.+)$/im);
+    const assigneeMatch = headerSection.match(/^Assignee:\s*(.+)$/im);
+
+    // Resolve assignee from registry
+    let assignee;
+    if (assigneeMatch) {
+      const assigneeValue = assigneeMatch[1].trim();
+      // Try to resolve from registry
+      assignee = this.userRegistry.resolveUser(assigneeValue);
+
+      // Fallback: create temporary user if not in registry
+      if (!assignee) {
+        console.warn(
+          `[FS Provider] User "${assigneeValue}" not found in registry, creating temporary user`,
+        );
+        assignee = this.userRegistry.createTemporaryUser(assigneeValue);
+      }
+    }
 
     const task: TaskFile = {
       id: taskId satisfies string as TaskId,
       title,
       content,
       filePath,
-      userId: userMatch ? userMatch[1].trim() : undefined,
+      assignee,
       status: (statusMatch
         ? statusMatch[1].trim().toLowerCase()
         : 'pending') as TaskStatus,
@@ -85,14 +105,27 @@ export class FileSystemTaskProvider implements ITaskProvider {
       const headerSection = content.split(/^##/m)[0];
       const statusMatch = headerSection.match(/^Status:\s*(.+)$/im);
       const typeMatch = headerSection.match(/^Type:\s*(.+)$/im);
-      const userMatch = headerSection.match(/^Assignee:\s*(.+)$/im);
+      const assigneeMatch = headerSection.match(/^Assignee:\s*(.+)$/im);
+
+      // Resolve assignee from registry
+      let assignee;
+      if (assigneeMatch) {
+        const assigneeValue = assigneeMatch[1].trim();
+        // Try to resolve from registry
+        assignee = this.userRegistry.resolveUser(assigneeValue);
+
+        // Fallback: create temporary user if not in registry
+        if (!assignee) {
+          assignee = this.userRegistry.createTemporaryUser(assigneeValue);
+        }
+      }
 
       const task: TaskFile = {
         id: taskId satisfies string as TaskId,
         title,
         content,
         filePath,
-        userId: userMatch ? userMatch[1].trim() : undefined,
+        assignee,
         status: (statusMatch
           ? statusMatch[1].trim().toLowerCase()
           : 'pending') as TaskStatus,

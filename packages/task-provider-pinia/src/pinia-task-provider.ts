@@ -187,6 +187,14 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
         case 'tasks':
           // Full task list received
           this.tasks = (message.payload as TaskFile[]) || [];
+          this._log('Received tasks:', this.tasks.length);
+          // Debug first task
+          if (this.tasks.length > 0) {
+            this._log(
+              'First task sample:',
+              JSON.stringify(this.tasks[0], null, 2),
+            );
+          }
           this.lastSync = Date.now();
           this.loading = false;
           break;
