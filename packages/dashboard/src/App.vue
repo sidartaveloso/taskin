@@ -5,7 +5,11 @@ import TaskGrid from './components/templates/TaskGrid.vue';
 import type { Task } from './types';
 
 // WebSocket configuration
-const wsUrl = ref(import.meta.env.VITE_WS_URL || 'ws://localhost:3001');
+const wsUrl = ref(
+  (window as any).VITE_WS_URL ||
+    import.meta.env.VITE_WS_URL ||
+    'ws://localhost:3001',
+);
 const reconnectDelay = ref(5000);
 
 // Initialize Pinia task store

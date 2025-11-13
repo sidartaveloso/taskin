@@ -57,11 +57,11 @@ type Story = StoryObj<typeof TaskGrid>;
 const createMockTask = (id: number, overrides: Partial<Task> = {}): Task => ({
   id: String(id),
   number: 40 + id,
-  title: `Tarefa ${id}: Implementar funcionalidade`,
+  title: `Task ${id}: Implement feature`,
   status: 'in-progress',
   assignee: {
     id: String(id),
-    name: `Desenvolvedor ${id}`,
+    name: `Developer ${id}`,
     email: `dev${id}@example.com`,
     avatar: `https://i.pravatar.cc/150?img=${id}`,
   },
@@ -104,7 +104,7 @@ const mockTasks: Task[] = [
   createMockTask(2, { status: 'in-progress', progress: { percentage: 75 } }),
   createMockTask(3, {
     status: 'blocked',
-    warnings: ['Dependência externa não disponível'],
+    warnings: ['External dependency not available'],
     progress: { percentage: 40 },
   }),
   createMockTask(4, { status: 'paused', progress: { percentage: 50 } }),
@@ -204,7 +204,7 @@ export const Empty: Story = {
   args: {
     tasks: [],
     loading: false,
-    emptyMessage: 'Nenhuma tarefa em andamento no momento',
+    emptyMessage: 'No tasks in progress at the moment',
     columns: 3,
   },
   parameters: {
