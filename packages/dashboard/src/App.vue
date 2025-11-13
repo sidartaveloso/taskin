@@ -22,8 +22,8 @@ const isLoading = computed(() => taskStore.loading);
 // Connect on mount
 onMounted(() => {
   taskStore.connect({
-    url: wsUrl.value,
-    reconnect: true,
+    wsUrl: wsUrl.value,
+    autoReconnect: true,
     reconnectDelay: reconnectDelay.value,
   });
 });
