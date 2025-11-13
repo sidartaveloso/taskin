@@ -2,6 +2,7 @@
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import TaskGrid from './components/templates/TaskGrid.vue';
+import type { Task } from './types';
 
 // WebSocket configuration
 const wsUrl = ref(import.meta.env.VITE_WS_URL || 'ws://localhost:3001');
@@ -15,8 +16,54 @@ const connectionStatus = computed(() => taskStore.connectionStatus);
 const isConnected = computed(() => connectionStatus.value.connected);
 const connectionError = computed(() => connectionStatus.value.error);
 
-// Tasks
-const tasks = computed(() => taskStore.tasks);
+// Map TaskFile[] to Task[] for the dashboard
+const tasks = computed<Task[]>(() => {
+  const mapped = taskStore.tasks.map((taskFile: any) => {
+    // Calculate progress based on status
+    let progressPercentage = 0;
+    switch (taskFile.status) {
+      case 'done':
+        progressPercentage = 100;
+        break;
+      case 'in-progress':
+        progressPercentage = 50;
+        break;
+      case 'paused':
+        progressPercentage = 30;
+        break;
+      case 'pending':
+        progressPercentage = 0;
+        break;
+      case 'blocked':
+        progressPercentage = 20;
+        break;
+    }
+
+    const task: Task = {
+      id: taskFile.id,
+      number: parseInt(taskFile.id, 10) || 0,
+      title: taskFile.title,
+      description: taskFile.content,
+      status: taskFile.status,
+      assignee: taskFile.assignee,
+      dates: {
+        created: taskFile.createdAt || new Date().toISOString(),
+      },
+      tags: taskFile.type ? [taskFile.type] : [],
+      progress: {
+        percentage: progressPercentage,
+      },
+    };
+
+    // Debug log
+    console.log('Mapped task:', task.id, 'assignee:', task.assignee);
+
+    return task;
+  });
+
+  return mapped;
+});
+
 const isLoading = computed(() => taskStore.loading);
 
 // Connect on mount
