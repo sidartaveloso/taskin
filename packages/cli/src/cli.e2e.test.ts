@@ -161,8 +161,9 @@ describe.sequential('Taskin CLI E2E Tests', () => {
       const taskPath = join(TEST_DIR, 'TASKS', taskFile!);
       const content = readFileSync(taskPath, 'utf-8');
 
-      expect(content).toContain('Status: in-progress');
-      expect(content).not.toContain('Status: pending');
+      expect(content).toContain('## Status');
+      expect(content).toContain('in-progress');
+      expect(content).not.toContain('pending');
     }, 60000);
 
     it('should reflect status change in list command', async () => {
@@ -259,9 +260,10 @@ describe.sequential('Taskin CLI E2E Tests', () => {
       const taskPath = join(TEST_DIR, 'TASKS', taskFile!);
       const content = readFileSync(taskPath, 'utf-8');
 
-      expect(content).toContain('Status: done');
-      expect(content).not.toContain('Status: in-progress');
-      expect(content).not.toContain('Status: pending');
+      expect(content).toContain('## Status');
+      expect(content).toContain('done');
+      expect(content).not.toContain('in-progress');
+      expect(content).not.toContain('pending');
     }, 60000);
 
     it('should reflect status change in list command', async () => {

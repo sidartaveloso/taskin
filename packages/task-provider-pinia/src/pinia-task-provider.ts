@@ -457,5 +457,17 @@ export function createPiniaTaskProvider(
     findTask: (taskId: string) => store.findTask(taskId),
     getAllTasks: () => store.getAllTasks(),
     updateTask: (task: TaskFile) => store.updateTask(task),
+    createTask: async () => {
+      throw new Error(
+        'createTask not supported in Pinia provider (WebSocket-based)',
+      );
+    },
+    lint: async () => ({
+      valid: true,
+      issues: [],
+      errorCount: 0,
+      warningCount: 0,
+      infoCount: 0,
+    }),
   };
 }
