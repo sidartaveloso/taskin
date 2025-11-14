@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileSystemTaskProvider } from './fs-task-provider';
+import { UserRegistry } from './user-registry';
 
 vi.mock('fs', () => ({
   promises: {
@@ -13,13 +14,28 @@ vi.mock('fs', () => ({
   },
 }));
 
+vi.mock('./user-registry', () => ({
+  UserRegistry: vi.fn(function(this: any) {
+    this.load = vi.fn().mockResolvedValue(undefined);
+    this.resolveUser = vi.fn().mockReturnValue(undefined);
+    this.createTemporaryUser = vi.fn((name: string) => ({
+      id: name.toLowerCase().replace(/\s+/g, '-'),
+      name,
+      email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+    }));
+    return this;
+  }),
+}));
+
 describe('FileSystemTaskProvider', () => {
   let provider: FileSystemTaskProvider;
+  let mockUserRegistry: any;
   const TASKS_DIR = '/fake/tasks';
 
   beforeEach(() => {
     vi.clearAllMocks();
-    provider = new FileSystemTaskProvider(TASKS_DIR);
+    mockUserRegistry = new UserRegistry({ taskinDir: '/fake/.taskin' });
+    provider = new FileSystemTaskProvider(TASKS_DIR, mockUserRegistry);
   });
 
   describe('findTask', () => {

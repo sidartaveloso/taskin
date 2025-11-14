@@ -1,0 +1,64 @@
+{
+  "name": "@opentask/taskin-dashboard",
+  "version": "0.1.0",
+  "description": "Vue 3 dashboard components for Taskin - provider-agnostic task visualization",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vue-tsc --emitDeclarationOnly",
+    "build:app": "vite build --config vite.config.app.ts",
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "keywords": [
+    "taskin",
+    "dashboard",
+    "vue3",
+    "components",
+    "task-management",
+    "visualization"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "pinia": "^2.2.8",
+    "@opentask/taskin-task-provider-pinia": "workspace:*"
+  },
+  "devDependencies": {
+    "@storybook/addon-docs": "^10.0.7",
+    "@storybook/addon-onboarding": "^10.0.7",
+    "@storybook/vue3-vite": "^10.0.7",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitest/ui": "^1.6.1",
+    "@vue/test-utils": "^2.4.6",
+    "eslint-plugin-storybook": "^10.0.7",
+    "jsdom": "^25.0.1",
+    "storybook": "^10.0.7",
+    "typescript": "^5.9.3",
+    "vite": "^6.0.7",
+    "vitest": "^1.6.1",
+    "vue": "^3.5.13",
+    "vue-tsc": "^2.2.0"
+  }
+}

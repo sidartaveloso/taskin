@@ -1,0 +1,75 @@
+# 🎨 Taskin Dashboard
+
+> Componentes Vue 3 para visualização de tarefas - agnóstico de provedor
+
+## 📖 Sobre
+
+O **@opentask/taskin-dashboard** é uma biblioteca de componentes Vue 3 projetada para criar dashboards de visualização de tarefas que funcionam independente do provedor (filesystem, Redmine, Jira, etc.).
+
+### ✨ Filosofia
+
+Esta biblioteca segue o princípio de **provider-agnostic** (agnóstico de provedor):
+- ✅ Componentes recebem dados via **props tipadas**
+- ✅ Sem acoplamento com APIs específicas
+- ✅ Interfaces TypeScript bem definidas
+- ✅ Fácil integração com qualquer backend
+
+## 🏗️ Arquitetura
+
+Utilizamos o padrão **Atomic Design** para organizar os componentes:
+
+### 🔹 Atoms (Átomos)
+Componentes básicos e reutilizáveis:
+- `Badge` - Números de tarefas, tags, indicadores
+- `Avatar` - Avatares de usuários com fallback de iniciais
+- `ProgressBar` - Barra de progresso visual
+
+### 🔸 Molecules (Moléculas)
+Combinações de atoms com funcionalidade específica:
+- `TaskHeader` - Cabeçalho com avatar e informações do responsável
+- `TimeEstimate` - Display de horas estimadas/gastas/restantes
+- `ProjectBreadcrumb` - Caminho do projeto com ellipsis
+- `DayBar` - Barra de progresso diário
+
+### 🔷 Organisms (Organismos)
+Componentes complexos que combinam molecules:
+- `TaskCard` - Card completo de tarefa (em desenvolvimento)
+
+### 🔶 Templates
+Layouts responsivos para organização:
+- `TaskGrid` - Grid responsivo de cards (planejado)
+
+## 🎯 Viewports
+
+Este Storybook está configurado com viewports específicos para diferentes dispositivos:
+
+- **Mobile** (375x667) - Smartphones
+- **Tablet** (768x1024) - Tablets
+- **Desktop** (1920x1080) - Desktops
+- **TV Display** (1920x1080) - TVs (caso de uso principal)
+
+Use o controle de viewport na toolbar para testar diferentes tamanhos!
+
+## 🚀 Como usar
+
+```bash
+# Instalar
+pnpm add @opentask/taskin-dashboard
+
+# Importar componentes
+import { Badge, TaskCard } from '@opentask/taskin-dashboard';
+```
+
+## 📚 Navegação
+
+Use a barra lateral para explorar:
+- **Atoms** - Componentes básicos
+- **Molecules** - Componentes intermediários
+- **Organisms** - Componentes complexos (em breve)
+- **Templates** - Layouts (em breve)
+
+Cada componente tem:
+- 📖 **Docs** - Documentação automática
+- 🎮 **Canvas** - Área de visualização interativa
+- ⚙️ **Controls** - Controles para testar props
+- 🎨 **Backgrounds** - Teste em diferentes fundos
