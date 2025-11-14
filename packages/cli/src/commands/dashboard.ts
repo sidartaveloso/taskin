@@ -165,14 +165,13 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     // Start HTTP server for dashboard
     info(`Starting dashboard server on http://${host}:${port}...`);
 
-    // Find dashboard dist directory (relative to CLI dist folder)
-    const dashboardDist = path.join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'dashboard-dist',
-    );
+    // Find dashboard dist directory
+    // In dev (tsx): __dirname = src/commands -> need ../../dashboard-dist
+    // In prod (built): __dirname = dist -> need ../dashboard-dist
+    const isDev = __dirname.includes('/src/');
+    const dashboardDist = isDev
+      ? path.join(__dirname, '..', '..', 'dashboard-dist')
+      : path.join(__dirname, '..', 'dashboard-dist');
 
     const app = express();
 
