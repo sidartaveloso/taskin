@@ -220,6 +220,9 @@ importers:
       vitepress:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.43.0)(@types/node@24.10.1)(postcss@8.5.6)(search-insights@2.17.3)(typescript@5.9.3)
+      vue:
+        specifier: ^3.5.24
+        version: 3.5.24(typescript@5.9.3)
 
   packages/fs-task-provider:
     dependencies:
