@@ -66,6 +66,18 @@ export const TaskStatusSchema = z.enum(TASK_STATUSES);
 export const TaskTypeSchema = z.enum(TASK_TYPES);
 
 /**
+ * Runtime validator for user objects.
+ * Use this to parse and validate user data from external sources.
+ *
+ * @public
+ */
+export const UserSchema = z.object({
+  email: z.string().email(),
+  id: z.string(),
+  name: z.string(),
+});
+
+/**
  * Runtime validator for task objects.
  * Use this to parse and validate task data from external sources (API, database, forms).
  *
@@ -88,20 +100,8 @@ export const TaskSchema = z.object({
   status: TaskStatusSchema,
   title: z.string(),
   type: TaskTypeSchema,
-  assignee: z.string().optional(),
+  assignee: UserSchema.optional(),
   completed: z.boolean().optional(),
   description: z.string().optional(),
   userId: z.string().optional(),
-});
-
-/**
- * Runtime validator for user objects.
- * Use this to parse and validate user data from external sources.
- *
- * @public
- */
-export const UserSchema = z.object({
-  email: z.string().email(),
-  id: z.string().uuid(),
-  name: z.string(),
 });
