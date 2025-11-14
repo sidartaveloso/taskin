@@ -15,7 +15,7 @@ vi.mock('fs', () => ({
 }));
 
 vi.mock('./user-registry', () => ({
-  UserRegistry: vi.fn(function(this: any) {
+  UserRegistry: vi.fn(function (this: any) {
     this.load = vi.fn().mockResolvedValue(undefined);
     this.resolveUser = vi.fn().mockReturnValue(undefined);
     this.createTemporaryUser = vi.fn((name: string) => ({
