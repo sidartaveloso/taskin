@@ -1,6 +1,9 @@
 import type {
+  CreateTaskOptions,
+  CreateTaskResult,
   ITaskManager,
   ITaskProvider,
+  LintResult,
   TaskFile,
 } from '@opentask/taskin-task-manager';
 import type { TaskId } from '@opentask/taskin-types';
@@ -37,6 +40,34 @@ export class MockTaskManager implements ITaskManager {
       createdAt: new Date().toISOString(),
     };
     return task;
+  }
+
+  async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
+    const taskId = '001';
+    const task: TaskFile = {
+      id: taskId as TaskId,
+      title: options.title,
+      status: 'pending',
+      type: options.type,
+      filePath: `./TASKS/task-${taskId}.md`,
+      content: `# Task ${taskId}`,
+      createdAt: new Date().toISOString(),
+    };
+    return {
+      task,
+      taskId,
+      filePath: task.filePath,
+    };
+  }
+
+  async lint(): Promise<LintResult> {
+    return {
+      valid: true,
+      issues: [],
+      errorCount: 0,
+      warningCount: 0,
+      infoCount: 0,
+    };
   }
 }
 
@@ -86,6 +117,35 @@ export class MockTaskProvider implements ITaskProvider {
    */
   getTasks(): TaskFile[] {
     return this.tasks;
+  }
+
+  async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
+    const taskId = String(this.tasks.length + 1).padStart(3, '0');
+    const task: TaskFile = {
+      id: taskId as TaskId,
+      title: options.title,
+      status: 'pending',
+      type: options.type,
+      filePath: `./TASKS/task-${taskId}.md`,
+      content: `# Task ${taskId}`,
+      createdAt: new Date().toISOString(),
+    };
+    this.tasks.push(task);
+    return {
+      task,
+      taskId,
+      filePath: task.filePath,
+    };
+  }
+
+  async lint(): Promise<LintResult> {
+    return {
+      valid: true,
+      issues: [],
+      errorCount: 0,
+      warningCount: 0,
+      infoCount: 0,
+    };
   }
 }
 

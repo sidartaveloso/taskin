@@ -69,8 +69,9 @@ Test task`;
       // Read file and check status
       const content = readTaskFile();
 
-      expect(content).toContain('Status: in-progress');
-      expect(content).not.toContain('Status: pending');
+      expect(content).toContain('## Status');
+      expect(content).toContain('in-progress');
+      expect(content).not.toContain('pending');
     } finally {
       cleanup();
     }
@@ -97,9 +98,10 @@ Test task`;
       // Read file and check status
       const content = readTaskFile();
 
-      expect(content).toContain('Status: done');
-      expect(content).not.toContain('Status: in-progress');
-      expect(content).not.toContain('Status: pending');
+      expect(content).toContain('## Status');
+      expect(content).toContain('done');
+      expect(content).not.toContain('in-progress');
+      expect(content).not.toContain('pending');
     } finally {
       cleanup();
     }

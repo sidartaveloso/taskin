@@ -1,4 +1,10 @@
-import type { ITaskManager, TaskFile } from '@opentask/taskin-task-manager';
+import type {
+  CreateTaskOptions,
+  CreateTaskResult,
+  ITaskManager,
+  LintResult,
+  TaskFile,
+} from '@opentask/taskin-task-manager';
 import type { TaskId } from '@opentask/taskin-types';
 import type { MCPServerConfig } from './task-server-mcp.types.js';
 
@@ -61,6 +67,35 @@ export class MockMCPTaskManager implements ITaskManager {
     task.status = 'done';
     this.tasks.set(taskId, task);
     return task;
+  }
+
+  async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
+    const taskId = String(this.tasks.size + 1).padStart(3, '0');
+    const task: TaskFile = {
+      id: taskId as TaskId,
+      title: options.title,
+      status: 'pending',
+      type: options.type,
+      filePath: `./TASKS/task-${taskId}.md`,
+      content: `# Task ${taskId}`,
+      createdAt: new Date().toISOString(),
+    };
+    this.tasks.set(taskId, task);
+    return {
+      task,
+      taskId,
+      filePath: task.filePath,
+    };
+  }
+
+  async lint(): Promise<LintResult> {
+    return {
+      valid: true,
+      issues: [],
+      errorCount: 0,
+      warningCount: 0,
+      infoCount: 0,
+    };
   }
 
   /**
