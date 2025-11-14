@@ -15,15 +15,16 @@ vi.mock('fs', () => ({
 }));
 
 vi.mock('./user-registry', () => ({
-  UserRegistry: vi.fn().mockImplementation(() => ({
-    load: vi.fn().mockResolvedValue(undefined),
-    resolveUser: vi.fn().mockReturnValue(undefined),
-    createTemporaryUser: vi.fn((name: string) => ({
+  UserRegistry: vi.fn(function(this: any) {
+    this.load = vi.fn().mockResolvedValue(undefined);
+    this.resolveUser = vi.fn().mockReturnValue(undefined);
+    this.createTemporaryUser = vi.fn((name: string) => ({
       id: name.toLowerCase().replace(/\s+/g, '-'),
       name,
       email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-    })),
-  })),
+    }));
+    return this;
+  }),
 }));
 
 describe('FileSystemTaskProvider', () => {
