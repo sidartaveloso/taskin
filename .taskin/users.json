@@ -1,0 +1,15 @@
+{
+  "$schema": "../packages/types-ts/dist/user.schema.json",
+  "users": {
+    "developer": {
+      "email": "developer@example.com",
+      "id": "developer",
+      "name": "Developer"
+    },
+    "sidarta-veloso": {
+      "email": "sidarta.veloso@opentask.com.br",
+      "id": "sidarta-veloso",
+      "name": "Sidarta Veloso"
+    }
+  }
+}
