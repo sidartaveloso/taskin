@@ -1,8 +1,16 @@
 {
   "compilerOptions": {
+    "composite": false,
+    "downlevelIteration": true,
     "outDir": "./dist",
-    "rootDir": "./"
+    "rootDir": "./",
+    "skipLibCheck": true
   },
   "extends": "../tsconfig.base.json",
-  "include": ["scripts/**/*"]
+  "include": ["scripts/**/*"],
+  "references": [
+    { "path": "../packages/types-ts" },
+    { "path": "../packages/task-manager" },
+    { "path": "../packages/fs-task-provider" }
+  ]
 }
