@@ -1,13 +1,11 @@
-import { promises as fs } from 'fs';
+import * as fsp from 'node:fs/promises';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fixTaskFile, validateTaskFile } from './task-validator';
 
-vi.mock('fs', () => ({
-  promises: {
-    readFile: vi.fn(),
-    writeFile: vi.fn(),
-  },
+vi.mock('node:fs/promises', () => ({
+  readFile: vi.fn(),
+  writeFile: vi.fn(),
 }));
 
 describe('task-validator', () => {
@@ -31,12 +29,11 @@ John Doe
 ## Description
 This is a valid task description.`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
+      (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile('/tasks/task-001-valid-task.md');
       const errors = result.filter((issue) => issue.severity === 'error');
       expect(errors).toHaveLength(0);
     });
-
     it('should reject inline metadata format', async () => {
       const content = `# Task 001 — Invalid Task
 
@@ -47,12 +44,12 @@ Assignee: John Doe
 ## Description
 This task uses inline metadata.`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
+      (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile('/tasks/task-001-invalid-task.md');
       expect(result.length).toBeGreaterThan(0);
-      expect(result.some((issue) => issue.message.includes('inline'))).toBe(
-        true,
-      );
+      expect(
+        result.some((issue) => issue.message.toLowerCase().includes('inline')),
+      ).toBe(true);
     });
 
     it('should detect missing Status section', async () => {
@@ -64,7 +61,7 @@ feat
 ## Description
 This task is missing the Status section.`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
+      (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile(
         '/tasks/task-001-missing-status.md',
       );
@@ -87,7 +84,7 @@ invalid-status
 ## Description
 This task has an invalid status.`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
+      (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile(
         '/tasks/task-001-invalid-status.md',
       );
@@ -116,7 +113,7 @@ João Silva
 ## Descrição
 Esta é uma tarefa válida em português.`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
+      (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile(
         '/tasks/task-001-tarefa-em-portugues.md',
       );
@@ -130,7 +127,7 @@ Esta é uma tarefa válida em português.`;
 ## Status
 todo`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
+      (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile(
         '/tasks/task-001-no-description.md',
       );
@@ -153,7 +150,7 @@ todo
 ## Description
 Valid content but bad filename.`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
+      (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile('/tasks/invalid-filename.md');
       expect(result.length).toBeGreaterThan(0);
       expect(
@@ -176,15 +173,15 @@ Assignee: John Doe
 ## Description
 Test description`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
-      (fs.writeFile as Mock).mockResolvedValue(undefined);
+      (fsp.readFile as Mock).mockResolvedValue(content);
+      (fsp.writeFile as Mock).mockResolvedValue(undefined);
 
       const result = await fixTaskFile('/tasks/task-001.md');
 
       expect(result).toBe(true);
-      expect(fs.writeFile).toHaveBeenCalled();
+      expect(fsp.writeFile).toHaveBeenCalled();
 
-      const writtenContent = (fs.writeFile as Mock).mock.calls[0][1];
+      const writtenContent = (fsp.writeFile as Mock).mock.calls[0][1];
       expect(writtenContent).toContain('## Status');
       expect(writtenContent).toContain('## Type');
       expect(writtenContent).toContain('## Assignee');
@@ -208,12 +205,12 @@ John Doe
 ## Description
 Already in section format.`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
+      (fsp.readFile as Mock).mockResolvedValue(content);
 
       const result = await fixTaskFile('/tasks/task-001.md');
 
       expect(result).toBe(false);
-      expect(fs.writeFile).not.toHaveBeenCalled();
+      expect(fsp.writeFile).not.toHaveBeenCalled();
     });
 
     it('should handle partial inline metadata', async () => {
@@ -224,15 +221,15 @@ Status: pending
 ## Description
 Only status is inline.`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
-      (fs.writeFile as Mock).mockResolvedValue(undefined);
+      (fsp.readFile as Mock).mockResolvedValue(content);
+      (fsp.writeFile as Mock).mockResolvedValue(undefined);
 
       const result = await fixTaskFile('/tasks/task-001.md');
 
       expect(result).toBe(true);
-      expect(fs.writeFile).toHaveBeenCalled();
+      expect(fsp.writeFile).toHaveBeenCalled();
 
-      const writtenContent = (fs.writeFile as Mock).mock.calls[0][1];
+      const writtenContent = (fsp.writeFile as Mock).mock.calls[0][1];
       expect(writtenContent).toContain('## Status');
       expect(writtenContent).not.toContain('Status:');
     });
@@ -249,14 +246,14 @@ This is the description.
 ## Notes
 These are notes.`;
 
-      (fs.readFile as Mock).mockResolvedValue(content);
-      (fs.writeFile as Mock).mockResolvedValue(undefined);
+      (fsp.readFile as Mock).mockResolvedValue(content);
+      (fsp.writeFile as Mock).mockResolvedValue(undefined);
 
       const result = await fixTaskFile('/tasks/task-001.md');
 
       expect(result).toBe(true);
 
-      const writtenContent = (fs.writeFile as Mock).mock.calls[0][1];
+      const writtenContent = (fsp.writeFile as Mock).mock.calls[0][1];
       expect(writtenContent).toContain('## Description');
       expect(writtenContent).toContain('This is the description.');
       expect(writtenContent).toContain('## Notes');

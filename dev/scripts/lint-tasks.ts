@@ -9,11 +9,28 @@
  *   pnpm lint:tasks --fix  - Validate and auto-fix issues
  */
 
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
-import type { ValidationIssue } from '@opentask/taskin-task-manager';
+import type {
+  ITaskProvider,
+  ValidationIssue,
+} from '@opentask/taskin-task-manager';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { join } from 'path';
 import { exit } from 'process';
+
+// Dynamic import to avoid TypeScript rootDir issues
+async function createProvider(tasksDir: string): Promise<ITaskProvider> {
+  const { FileSystemTaskProvider, UserRegistry } = await import(
+    '@opentask/taskin-fs-provider'
+  );
+
+  // Create a simple user registry (empty for linting purposes)
+  const userRegistry = new UserRegistry({
+    taskinDir: join(tasksDir, '.taskin'),
+  });
+  await userRegistry.load();
+
+  return new FileSystemTaskProvider(tasksDir, userRegistry);
+}
 
 function printResults(
   issues: ValidationIssue[],
@@ -74,8 +91,11 @@ async function main(): Promise<void> {
     // Check for --fix flag
     const shouldFix = process.argv.includes('--fix');
 
-    // Find the monorepo root (parent of dev/)
-    const monorepoRoot = join(process.cwd(), '..');
+    // When running from monorepo root via pnpm, cwd is monorepo root
+    // When running from dev/, need to go up one level
+    const cwd = process.cwd();
+    const isInDev = cwd.endsWith('/dev');
+    const monorepoRoot = isInDev ? join(cwd, '..') : cwd;
     const tasksDir = join(monorepoRoot, 'TASKS');
 
     if (shouldFix) {
@@ -84,14 +104,8 @@ async function main(): Promise<void> {
       console.log(`📋 Linting task files in ${tasksDir}...\n`);
     }
 
-    // Create a simple user registry (empty for linting purposes)
-    const userRegistry = {
-      resolveUser: () => undefined,
-      createTemporaryUser: (name: string) => ({ id: 'temp', name, email: '' }),
-    };
-
-    // Create provider and manager
-    const provider = new FileSystemTaskProvider(tasksDir, userRegistry);
+    // Create provider using dynamic import
+    const provider = await createProvider(tasksDir);
     const taskManager = new TaskManager(provider);
 
     // Run lint with optional fix
