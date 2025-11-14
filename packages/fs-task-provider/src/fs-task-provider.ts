@@ -107,21 +107,32 @@ export class FileSystemTaskProvider implements ITaskProvider {
   }
 
   async updateTask(task: TaskFile): Promise<void> {
-    // Read the current file content
+    // First, ensure file is migrated to section-based format if needed
     const currentContent = await fs.readFile(task.filePath, 'utf-8');
+    const hasInlineMetadata = /^(Status|Type|Assignee):\s*.+$/im.test(
+      currentContent,
+    );
+
+    if (hasInlineMetadata) {
+      const { fixTaskFile } = await import('./task-validator.js');
+      await fixTaskFile(task.filePath);
+    }
+
+    // Re-read after potential migration
+    const content = await fs.readFile(task.filePath, 'utf-8');
 
     // Update the Status section in the content (section-based format)
     let updatedContent: string;
 
-    if (/##\s*Status/i.test(currentContent)) {
+    if (/##\s*Status/i.test(content)) {
       // Replace the line immediately after the '## Status' heading
-      updatedContent = currentContent.replace(
+      updatedContent = content.replace(
         /(##\s*Status\s*\n\s*)([^\n\r]*)/i,
         `$1${task.status}`,
       );
     } else {
       // If no Status section exists, insert it after the H1 title
-      updatedContent = currentContent.replace(
+      updatedContent = content.replace(
         /(^#.*\n)/,
         `$1\n## Status\n${task.status}\n`,
       );
