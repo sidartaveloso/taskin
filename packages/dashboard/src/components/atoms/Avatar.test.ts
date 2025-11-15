@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
-import Avatar from './Avatar.vue'
+import { mount } from '@vue/test-utils';
+import { describe, expect, it } from 'vitest';
+import Avatar from './Avatar.vue';
 
 describe('Avatar', () => {
   it('should render with name', () => {
@@ -8,18 +8,18 @@ describe('Avatar', () => {
       props: {
         name: 'John Doe',
       },
-    })
-    expect(wrapper.exists()).toBe(true)
-  })
+    });
+    expect(wrapper.exists()).toBe(true);
+  });
 
   it('should display initials from name', () => {
     const wrapper = mount(Avatar, {
       props: {
         name: 'John Doe',
       },
-    })
-    expect(wrapper.text()).toContain('JD')
-  })
+    });
+    expect(wrapper.text()).toContain('JD');
+  });
 
   it('should render with image when src is provided', () => {
     const wrapper = mount(Avatar, {
@@ -27,9 +27,9 @@ describe('Avatar', () => {
         name: 'John Doe',
         src: 'https://example.com/avatar.jpg',
       },
-    })
-    const img = wrapper.find('img')
-    expect(img.exists()).toBe(true)
-    expect(img.attributes('src')).toBe('https://example.com/avatar.jpg')
-  })
-})
+    });
+    const img = wrapper.find('img');
+    expect(img.exists()).toBe(true);
+    expect(img.attributes('src')).toBe('https://example.com/avatar.jpg');
+  });
+});

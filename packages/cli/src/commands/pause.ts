@@ -1,8 +1,11 @@
 /**
- * Pause command - Pause a task in progress
+ * pause command - Pause an in-progress task
  */
 
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import {
+  FileSystemTaskProvider,
+  UserRegistry,
+} from '@opentask/taskin-fs-provider';
 import type { PauseTaskOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -49,8 +52,14 @@ async function pauseTask(
   // Find TASKS directory
   const tasksDir = path.join(process.cwd(), 'TASKS');
 
+  // Initialize UserRegistry
+  const monorepoRoot = path.dirname(tasksDir);
+  const taskinDir = path.join(monorepoRoot, '.taskin');
+  const userRegistry = new UserRegistry({ taskinDir });
+  await userRegistry.load();
+
   // Initialize task provider
-  const taskProvider = new FileSystemTaskProvider(tasksDir);
+  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
 
   // Find task
   const task = await taskProvider.findTask(normalizedId);
