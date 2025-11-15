@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { DayProgress } from '../../types'
 
-interface Props {
+export interface Props {
   day: DayProgress
   maxHours?: number
   variant?: 'default' | 'compact'

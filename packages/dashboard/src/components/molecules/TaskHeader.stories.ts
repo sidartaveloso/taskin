@@ -50,6 +50,7 @@ export const WithAvatar: Story = {
 };
 
 export const AllSizes: Story = {
+  args: {} as any,
   render: () => ({
     components: { TaskHeader },
     template: `
