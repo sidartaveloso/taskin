@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TimeEstimate as TimeEstimateType } from '../../types';
 
-interface Props {
+export interface Props {
   estimate: TimeEstimateType
   variant?: 'default' | 'compact'
 }

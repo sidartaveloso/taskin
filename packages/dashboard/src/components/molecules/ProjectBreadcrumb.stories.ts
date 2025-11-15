@@ -61,6 +61,7 @@ export const CustomSeparator: Story = {
 };
 
 export const AllVariants: Story = {
+  args: {} as any,
   render: () => ({
     components: { ProjectBreadcrumb },
     template: `
