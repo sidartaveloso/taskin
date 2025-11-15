@@ -22,9 +22,12 @@ describe('TaskWebSocketServer', () => {
       finishTask: async () => {},
     };
 
-    expect(() => new TaskWebSocketServer({ 
-      taskProvider: mockProvider,
-      taskManager: mockManager as any,
-    })).not.toThrow();
+    expect(
+      () =>
+        new TaskWebSocketServer({
+          taskProvider: mockProvider,
+          taskManager: mockManager as any,
+        }),
+    ).not.toThrow();
   });
 });

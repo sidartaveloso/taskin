@@ -1,8 +1,11 @@
 /**
- * List command - List all tasks
+ * list command - List all tasks in the project
  */
 
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import {
+  FileSystemTaskProvider,
+  UserRegistry,
+} from '@opentask/taskin-fs-provider';
 import type {
   ListTasksOptions,
   TaskStatus,
@@ -48,8 +51,14 @@ async function listTasks(
   // Find TASKS directory
   const tasksDir = path.join(process.cwd(), 'TASKS');
 
+  // Initialize UserRegistry
+  const monorepoRoot = path.dirname(tasksDir);
+  const taskinDir = path.join(monorepoRoot, '.taskin');
+  const userRegistry = new UserRegistry({ taskinDir });
+  await userRegistry.load();
+
   // Initialize task provider
-  const taskProvider = new FileSystemTaskProvider(tasksDir);
+  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
 
   // Get all tasks
   const tasks = await taskProvider.getAllTasks();
