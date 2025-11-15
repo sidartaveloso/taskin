@@ -1,8 +1,11 @@
 /**
- * Start command - Begin working on a task
+ * start command - Start a task
  */
 
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import {
+  FileSystemTaskProvider,
+  UserRegistry,
+} from '@opentask/taskin-fs-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
@@ -54,8 +57,14 @@ async function startTask(
   // Find TASKS directory
   const tasksDir = path.join(process.cwd(), 'TASKS');
 
+  // Initialize UserRegistry
+  const monorepoRoot = path.dirname(tasksDir);
+  const taskinDir = path.join(monorepoRoot, '.taskin');
+  const userRegistry = new UserRegistry({ taskinDir });
+  await userRegistry.load();
+
   // Initialize task manager
-  const taskProvider = new FileSystemTaskProvider(tasksDir);
+  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
   const taskManager = new TaskManager(taskProvider);
 
   // Find task
