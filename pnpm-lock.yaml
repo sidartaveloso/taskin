@@ -290,6 +290,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.4
         version: 1.21.1
+      '@opentask/taskin-fs-provider':
+        specifier: workspace:*
+        version: link:../fs-task-provider
       '@opentask/taskin-task-manager':
         specifier: workspace:*
         version: link:../task-manager

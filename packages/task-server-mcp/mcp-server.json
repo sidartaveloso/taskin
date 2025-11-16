@@ -1,0 +1,13 @@
+{
+  "$schema": "https://github.com/modelcontextprotocol/specification/raw/main/schema/mcp.schema.json",
+  "mcpServers": {
+    "taskin": {
+      "args": ["-y", "@opentask/taskin-task-server-mcp"],
+      "command": "npx",
+      "description": "Task management system with MCP integration",
+      "env": {
+        "TASKIN_CWD": "${workspaceFolder}"
+      }
+    }
+  }
+}
