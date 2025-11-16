@@ -1,4 +1,4 @@
-# @opentask/taskin-task-server-mcp
+# @opentask/taskin-mcp
 
 Model Context Protocol (MCP) server for task management integration with LLMs like Claude, GPT-4, and GitHub Copilot.
 
@@ -19,7 +19,7 @@ Model Context Protocol (MCP) server for task management integration with LLMs li
 The server will appear automatically in VS Code's MCP server list after installation:
 
 ```bash
-npm install -g @opentask/taskin-task-server-mcp
+npm install -g @opentask/taskin-mcp
 ```
 
 Then in VS Code:
@@ -61,13 +61,13 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ### Global (Recommended)
 
 ```bash
-npm install -g @opentask/taskin-task-server-mcp
+npm install -g @opentask/taskin-mcp
 ```
 
 ### Project-specific
 
 ```bash
-pnpm add @opentask/taskin-task-server-mcp
+pnpm add @opentask/taskin-mcp
 ```
 
 ## Programmatic Usage

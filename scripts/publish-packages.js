@@ -114,6 +114,10 @@ async function main() {
       name: '@opentask/taskin (Alias)',
       path: join(rootDir, 'packages/taskin-alias'),
     },
+    {
+      name: '@opentask/taskin-mcp (MCP Server)',
+      path: join(rootDir, 'packages/mcp'),
+    },
   ];
 
   // Show what will be published
