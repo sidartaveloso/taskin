@@ -98,6 +98,9 @@ importers:
       '@opentask/taskin-task-server-ws':
         specifier: workspace:*
         version: link:../task-server-ws
+      '@opentask/taskin-types':
+        specifier: workspace:*
+        version: link:../types-ts
       '@opentask/taskin-utils':
         specifier: workspace:*
         version: link:../utils
