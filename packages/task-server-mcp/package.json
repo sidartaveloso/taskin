@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
+    "@opentask/taskin-fs-provider": "workspace:*",
     "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-types": "workspace:*"
   },
@@ -54,5 +55,10 @@
     "type": "git",
     "url": "https://github.com/sidartaveloso/taskin.git",
     "directory": "packages/task-server-mcp"
-  }
+  },
+  "files": [
+    "dist",
+    "mcp-server.json",
+    "README.md"
+  ]
 }

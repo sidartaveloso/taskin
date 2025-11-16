@@ -12,5 +12,9 @@
   "exclude": ["node_modules", "dist", "**/*.test.ts"],
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*"],
-  "references": [{ "path": "../task-manager" }, { "path": "../types-ts" }]
+  "references": [
+    { "path": "../fs-task-provider" },
+    { "path": "../task-manager" },
+    { "path": "../types-ts" }
+  ]
 }

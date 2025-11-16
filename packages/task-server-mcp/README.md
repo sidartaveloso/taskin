@@ -1,6 +1,6 @@
 # @opentask/taskin-task-server-mcp
 
-Model Context Protocol (MCP) server for task management integration with LLMs like Claude, GPT-4, and others.
+Model Context Protocol (MCP) server for task management integration with LLMs like Claude, GPT-4, and GitHub Copilot.
 
 ## Features
 
@@ -10,14 +10,67 @@ Model Context Protocol (MCP) server for task management integration with LLMs li
 - ✅ Task templates via MCP prompts
 - ✅ Real-time task updates
 - ✅ TypeScript support
+- ✅ Auto-discovery in VS Code and Claude Desktop
+
+## Quick Start
+
+### VS Code (GitHub Copilot)
+
+The server will appear automatically in VS Code's MCP server list after installation:
+
+```bash
+npm install -g @opentask/taskin-task-server-mcp
+```
+
+Then in VS Code:
+
+1. Open Command Palette (`Cmd+Shift+P`)
+2. Search for "Configure Tools"
+3. Find "taskin" in the MCP servers list
+4. Enable it
+
+Or add manually to your `settings.json`:
+
+```json
+{
+  "github.copilot.chat.mcpServers": {
+    "taskin": {
+      "command": "taskin-mcp-server"
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "taskin": {
+      "args": ["-y", "@opentask/taskin-task-server-mcp"],
+      "command": "npx"
+    }
+  }
+}
+```
 
 ## Installation
+
+### Global (Recommended)
+
+```bash
+npm install -g @opentask/taskin-task-server-mcp
+```
+
+### Project-specific
 
 ```bash
 pnpm add @opentask/taskin-task-server-mcp
 ```
 
-## Usage
+## Programmatic Usage
 
 ```typescript
 import { createTaskManager } from '@opentask/taskin-task-manager';
