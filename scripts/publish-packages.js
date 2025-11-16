@@ -72,7 +72,9 @@ async function publishPackage(packageName, packagePath, tag = 'latest') {
 
   // Dry run first
   log('\n🧪 Dry run...', colors.yellow);
-  if (!exec(`pnpm publish --tag ${tag} --dry-run --no-git-checks`, packagePath)) {
+  if (
+    !exec(`pnpm publish --tag ${tag} --dry-run --no-git-checks`, packagePath)
+  ) {
     log(`✗ Dry run failed for ${name}`, colors.red);
     return false;
   }
