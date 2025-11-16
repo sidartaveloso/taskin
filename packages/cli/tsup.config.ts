@@ -9,7 +9,9 @@ export default defineConfig({
   clean: true,
   minify: false,
   shims: true,
-  external: ['chalk', 'commander', 'inquirer', '@types/inquirer', 'zod'],
+  platform: 'node',
+  target: 'node20',
+  external: ['chalk', 'commander', 'inquirer', '@types/inquirer', 'zod', 'ws', 'express'],
   noExternal: [
     '@opentask/taskin-core',
     '@opentask/taskin-fs-provider',
