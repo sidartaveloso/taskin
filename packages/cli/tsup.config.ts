@@ -11,7 +11,15 @@ export default defineConfig({
   shims: true,
   platform: 'node',
   target: 'node20',
-  external: ['chalk', 'commander', 'inquirer', '@types/inquirer', 'zod', 'ws', 'express'],
+  external: [
+    'chalk',
+    'commander',
+    'inquirer',
+    '@types/inquirer',
+    'zod',
+    'ws',
+    'express',
+  ],
   noExternal: [
     '@opentask/taskin-core',
     '@opentask/taskin-fs-provider',
