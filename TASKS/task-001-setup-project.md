@@ -1,8 +1,16 @@
 # Task 001 — Setup Project
 
-Status: pending
-Type: chore
-Assignee: developer
+## Status
+
+pending
+
+## Type
+
+chore
+
+## Assignee
+
+developer
 
 ## Description
 
