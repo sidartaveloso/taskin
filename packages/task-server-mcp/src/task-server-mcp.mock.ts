@@ -5,7 +5,6 @@ import type {
   LintResult,
   TaskFile,
 } from '@opentask/taskin-task-manager';
-import type { TaskId } from '@opentask/taskin-types';
 import type { MCPServerConfig } from './task-server-mcp.types.js';
 
 /**
@@ -17,7 +16,7 @@ export class MockMCPTaskManager implements ITaskManager {
   constructor() {
     // Add some mock tasks
     this.tasks.set('550e8400-e29b-41d4-a716-446655440001', {
-      id: '550e8400-e29b-41d4-a716-446655440001' as TaskId,
+      id: '550e8400-e29b-41d4-a716-446655440001',
       title: 'Implement user authentication',
       description: 'Add JWT-based authentication',
       status: 'pending',
