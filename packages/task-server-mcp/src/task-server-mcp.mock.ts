@@ -16,7 +16,7 @@ export class MockMCPTaskManager implements ITaskManager {
   constructor() {
     // Add some mock tasks
     this.tasks.set('550e8400-e29b-41d4-a716-446655440001', {
-      id: '550e8400-e29b-41d4-a716-446655440001',
+      id: '550e8400-e29b-41d4-a716-446655440001' as any,
       title: 'Implement user authentication',
       description: 'Add JWT-based authentication',
       status: 'pending',
@@ -27,7 +27,7 @@ export class MockMCPTaskManager implements ITaskManager {
     });
 
     this.tasks.set('550e8400-e29b-41d4-a716-446655440002', {
-      id: '550e8400-e29b-41d4-a716-446655440002' as TaskId,
+      id: '550e8400-e29b-41d4-a716-446655440002' as any,
       title: 'Fix login bug',
       description: 'Users cannot login with special characters',
       status: 'in-progress',
@@ -71,7 +71,7 @@ export class MockMCPTaskManager implements ITaskManager {
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
     const taskId = String(this.tasks.size + 1).padStart(3, '0');
     const task: TaskFile = {
-      id: taskId as TaskId,
+      id: taskId as any,
       title: options.title,
       status: 'pending',
       type: options.type,
