@@ -16,11 +16,11 @@ Press `Cmd+Shift+P` → "Preferences: Open User Settings (JSON)"
 {
   "github.copilot.chat.mcpServers": {
     "taskin": {
-      "command": "node",
       "args": [
         "/Users/sidarta/repositorios/taskin/packages/cli/dist/index.js",
         "mcp-server"
       ],
+      "command": "node",
       "cwd": "/Users/sidarta/repositorios/taskin"
     }
   }
@@ -35,11 +35,8 @@ Create `.vscode/settings.json` in your project:
 {
   "github.copilot.chat.mcpServers": {
     "taskin": {
+      "args": ["${workspaceFolder}/packages/cli/dist/index.js", "mcp-server"],
       "command": "node",
-      "args": [
-        "${workspaceFolder}/packages/cli/dist/index.js",
-        "mcp-server"
-      ],
       "cwd": "${workspaceFolder}"
     }
   }
@@ -54,11 +51,11 @@ If you want all projects to have access to Taskin:
 {
   "github.copilot.chat.mcpServers": {
     "taskin": {
-      "command": "node",
       "args": [
         "/caminho/global/para/taskin/packages/cli/dist/index.js",
         "mcp-server"
       ],
+      "command": "node",
       "cwd": "${workspaceFolder}"
     }
   }
@@ -74,31 +71,37 @@ After configuration, you can use GitHub Copilot Chat to manage tasks:
 ### Command examples
 
 **List tasks:**
+
 ```
 @workspace List all my tasks
 ```
 
 **Start a task:**
+
 ```
 @workspace Start task 001
 ```
 
 **Finish a task:**
+
 ```
 @workspace Finish task 001
 ```
 
 **Pause a task:**
+
 ```
 @workspace Pause task 001 in progress
 ```
 
 **Get details:**
+
 ```
 @workspace Show details of task 002
 ```
 
 **Validate tasks:**
+
 ```
 @workspace Validate all project tasks
 ```
@@ -107,14 +110,14 @@ After configuration, you can use GitHub Copilot Chat to manage tasks:
 
 Taskin's MCP server exposes the following tools to Copilot:
 
-| Tool | Description |
-|------|-------------|
-| `start_task` | Starts a task (changes status to in-progress) |
-| `finish_task` | Finishes a task (changes status to done) |
-| `pause_task` | Pauses a task in progress |
-| `list_tasks` | Lists all tasks with optional filters |
-| `get_task` | Gets complete details of a task |
-| `lint_tasks` | Validates task formatting and content |
+| Tool          | Description                                   |
+| ------------- | --------------------------------------------- |
+| `start_task`  | Starts a task (changes status to in-progress) |
+| `finish_task` | Finishes a task (changes status to done)      |
+| `pause_task`  | Pauses a task in progress                     |
+| `list_tasks`  | Lists all tasks with optional filters         |
+| `get_task`    | Gets complete details of a task               |
+| `lint_tasks`  | Validates task formatting and content         |
 
 ## Verifying it's working
 
@@ -125,16 +128,19 @@ Taskin's MCP server exposes the following tools to Copilot:
 ## Troubleshooting
 
 ### Server doesn't appear
+
 - Check if GitHub Copilot is active and updated
 - Reload the window: `Cmd+Shift+P` → "Developer: Reload Window"
 - Verify the CLI path in settings.json
 
 ### Error starting server
+
 - Make sure the CLI was built: `pnpm build --filter=taskin`
 - Check if Node.js is in PATH
 - View logs: `Cmd+Shift+P` → "Developer: Show Logs" → Extension Host
 
 ### Server doesn't find TASKS/
+
 - Check the `cwd` in settings.json
 - Use `${workspaceFolder}` to point to the project directory
 - Run `taskin init` in the project if not yet initialized
@@ -149,11 +155,8 @@ For the entire team to use Taskin via MCP:
 {
   "github.copilot.chat.mcpServers": {
     "taskin": {
+      "args": ["taskin", "mcp-server"],
       "command": "npx",
-      "args": [
-        "taskin",
-        "mcp-server"
-      ],
       "cwd": "${workspaceFolder}"
     }
   }
@@ -164,10 +167,7 @@ For the entire team to use Taskin via MCP:
 
 ```json
 {
-  "recommendations": [
-    "github.copilot",
-    "github.copilot-chat"
-  ]
+  "recommendations": ["github.copilot", "github.copilot-chat"]
 }
 ```
 
