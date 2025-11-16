@@ -1,8 +1,16 @@
 # Task 004 — Add New Command
 
-Status: done
-Type: feat
-Assignee: Sidarta Veloso
+## Status
+
+done
+
+## Type
+
+feat
+
+## Assignee
+
+Sidarta Veloso
 
 ## Description
 
