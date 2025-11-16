@@ -78,6 +78,24 @@ export function showCustomHelp(): string {
       ],
       icon: '🔍',
     },
+    {
+      name: colors.highlight('taskin dashboard') + colors.normal(' [options]'),
+      alias: colors.secondary('Options: --host, --port'),
+      description: 'Start the web dashboard',
+      examples: [
+        'taskin dashboard',
+        'taskin dashboard --port 3000',
+        'taskin dashboard --host 0.0.0.0',
+      ],
+      icon: '📊',
+    },
+    {
+      name: colors.highlight('taskin mcp-server'),
+      alias: colors.secondary('Alias: mcp'),
+      description: 'Start MCP server for Claude Desktop integration',
+      examples: ['taskin mcp-server', 'taskin mcp'],
+      icon: '🤖',
+    },
   ];
 
   commands.forEach((cmd, index) => {
