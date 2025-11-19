@@ -16,6 +16,7 @@ const meta = {
         'happy',
         'annoyed',
         'sarcastic',
+        'crying',
       ] as TaskinMood[],
     },
     size: { control: { type: 'number' } },
@@ -113,4 +114,26 @@ export const Neutral: Story = {
       </div>
     `,
   }),
+};
+
+export const Crying: Story = {
+  render: (args: any) => ({
+    components: { TaskinMascot },
+    setup() {
+      return { args };
+    },
+    template: `
+      <div style="padding: 2rem; background: #f0f0f0;">
+        <TaskinMascot v-bind="args" />
+        <p style="margin-top: 1rem; text-align: center; color: #666;">
+          Don't cry, Taskin! 😢
+        </p>
+      </div>
+    `,
+  }),
+  args: {
+    mood: 'crying',
+    size: 300,
+    idleAnimation: false,
+  },
 };
