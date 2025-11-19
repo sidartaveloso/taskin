@@ -61,6 +61,7 @@ export const Compact: Story = {
 };
 
 export const AllVariants: Story = {
+  args: {} as any,
   render: () => ({
     components: { TimeEstimate },
     template: `

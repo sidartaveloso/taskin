@@ -2,6 +2,10 @@
   "name": "@opentask/taskin-task-server-mcp",
   "version": "0.1.0",
   "description": "Model Context Protocol (MCP) server for task management integration with LLMs",
+  "motivation": "Enable LLMs to interact with task management systems",
+  "solve": "Provides MCP server implementation for task operations",
+  "scope": "mcp-server",
+  "status": "active",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -14,7 +18,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
     "type-check": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
@@ -22,6 +26,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
+    "@opentask/taskin-fs-provider": "workspace:*",
     "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-types": "workspace:*"
   },
@@ -54,5 +59,10 @@
     "type": "git",
     "url": "https://github.com/sidartaveloso/taskin.git",
     "directory": "packages/task-server-mcp"
-  }
+  },
+  "files": [
+    "dist",
+    "mcp-server.json",
+    "README.md"
+  ]
 }

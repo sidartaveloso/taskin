@@ -2,7 +2,10 @@
  * MCP Server command - Start Model Context Protocol server
  */
 
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import {
+  FileSystemTaskProvider,
+  UserRegistry,
+} from '@opentask/taskin-fs-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { MCPTransportType } from '@opentask/taskin-task-server-mcp';
 import { TaskMCPServer } from '@opentask/taskin-task-server-mcp';
@@ -50,7 +53,14 @@ async function startMCPServer(options: MCPServerOptions): Promise<void> {
     // Initialize task provider and manager
     info('Initializing task manager...');
     const tasksDir = path.join(process.cwd(), 'TASKS');
-    const provider = new FileSystemTaskProvider(tasksDir);
+
+    // Initialize UserRegistry
+    const monorepoRoot = path.dirname(tasksDir);
+    const taskinDir = path.join(monorepoRoot, '.taskin');
+    const userRegistry = new UserRegistry({ taskinDir });
+    await userRegistry.load();
+
+    const provider = new FileSystemTaskProvider(tasksDir, userRegistry);
     const manager = new TaskManager(provider);
 
     // Create MCP server
