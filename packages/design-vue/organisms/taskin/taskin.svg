@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  id="taskin-root"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 320 260"
+>
+  <!-- sombra -->
+  <ellipse id="shadow" cx="160" cy="230" rx="70" ry="14" fill="#d8e2f0" />
+
+  <!-- corpo -->
+  <g id="body">
+    <circle cx="160" cy="110" r="65" fill="#1f7acb" />
+    <circle cx="160" cy="105" r="62" fill="#2090e0" />
+  </g>
+
+  <!-- ========================= -->
+  <!-- 6 TENTÁCULOS ADICIONAIS   -->
+  <!-- ========================= -->
+
+  <!-- tentáculo 1 (frontal esq) -->
+  <path
+    id="tentacle-front-left"
+    d="M130 165 C95 180 85 210 103 225 C120 238 145 225 140 210"
+    fill="none"
+    stroke="#1f7acb"
+    stroke-width="14"
+    stroke-linecap="round"
+  />
+
+  <!-- tentáculo 2 (frontal dir) -->
+  <path
+    id="tentacle-front-right"
+    d="M190 165 C225 180 235 210 217 225 C200 238 175 225 180 210"
+    fill="none"
+    stroke="#1f7acb"
+    stroke-width="14"
+    stroke-linecap="round"
+  />
+
+  <!-- tentáculo 3 (lateral esq) -->
+  <path
+    id="tentacle-side-left"
+    d="M110 160 C80 165 60 185 72 205 C84 222 108 215 112 205"
+    fill="none"
+    stroke="#1f7acb"
+    stroke-width="13"
+    stroke-linecap="round"
+  />
+
+  <!-- tentáculo 4 (lateral dir) -->
+  <path
+    id="tentacle-side-right"
+    d="M210 160 C240 165 260 185 247 205 C235 222 212 215 208 205"
+    fill="none"
+    stroke="#1f7acb"
+    stroke-width="13"
+    stroke-linecap="round"
+  />
+
+  <!-- tentáculo 5 (traseiro esq) -->
+  <path
+    id="tentacle-back-left"
+    d="M150 170 C125 185 120 210 135 225 C145 235 160 228 158 215"
+    fill="none"
+    stroke="#1f7acb"
+    stroke-width="12"
+    stroke-linecap="round"
+  />
+
+  <!-- tentáculo 6 (traseiro dir) -->
+  <path
+    id="tentacle-back-right"
+    d="M170 170 C195 185 200 210 185 225 C175 235 160 228 162 215"
+    fill="none"
+    stroke="#1f7acb"
+    stroke-width="12"
+    stroke-linecap="round"
+  />
+
+
+  <!-- ========================= -->
+  <!-- BRAÇOS (MÃOS HUMANAS)     -->
+  <!-- ========================= -->
+
+  <!-- braço esquerdo -->
+  <g id="arm-left">
+    <path
+      d="M135 120 C105 115 90 100 87 80"
+      fill="none"
+      stroke="#1f7acb"
+      stroke-width="11"
+      stroke-linecap="round"
+    />
+    <circle cx="85" cy="75" r="11" fill="#ffffff" stroke="#1f7acb" stroke-width="3" />
+  </g>
+
+  <!-- braço direito -->
+  <g id="arm-right">
+    <path
+      d="M185 120 C215 115 230 100 233 80"
+      fill="none"
+      stroke="#1f7acb"
+      stroke-width="11"
+      stroke-linecap="round"
+    />
+    <rect
+      x="228"
+      y="67"
+      width="20"
+      height="13"
+      rx="3"
+      fill="#ffffff"
+      stroke="#1f7acb"
+      stroke-width="3"
+    />
+  </g>
+
+  <!-- ========================= -->
+  <!-- capacete -->
+  <!-- ========================= -->
+  <g id="helmet">
+    <path
+      d="M110 55 C118 25 140 12 160 12 C180 12 202 25 210 55"
+      fill="#ffc94a"
+      stroke="#e0a321"
+      stroke-width="4"
+      stroke-linecap="round"
+    />
+
+    <path
+      d="M110 55 Q160 45 210 55 L210 68 Q160 78 110 68 Z"
+      fill="#ffdb6e"
+      stroke="#e0a321"
+      stroke-width="4"
+      stroke-linejoin="round"
+    />
+
+    <path d="M145 17 L145 48" stroke="#e0a321" stroke-width="4" stroke-linecap="round" />
+    <path d="M160 15 L160 47" stroke="#e0a321" stroke-width="4" stroke-linecap="round" />
+    <path d="M175 17 L175 48" stroke="#e0a321" stroke-width="4" stroke-linecap="round" />
+  </g>
+
+  <!-- olhos -->
+  <g id="eyes">
+    <g id="eye-left">
+      <ellipse cx="145" cy="100" rx="11" ry="14" fill="#ffffff" />
+      <circle id="pupil-left" cx="148" cy="103" r="5" fill="#264470" />
+    </g>
+    <g id="eye-right">
+      <ellipse cx="175" cy="100" rx="11" ry="14" fill="#ffffff" />
+      <circle id="pupil-right" cx="172" cy="103" r="5" fill="#264470" />
+    </g>
+  </g>
+
+  <!-- bocas -->
+  <path
+    id="mouth-neutral"
+    d="M145 128 Q160 132 175 128"
+    fill="none"
+    stroke="#1a456f"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+
+  <path
+    id="mouth-smile"
+    d="M145 128 Q160 145 175 128"
+    fill="none"
+    stroke="#1a456f"
+    stroke-width="4"
+    stroke-linecap="round"
+    opacity="0"
+  />
+
+  <!-- sobrancelhas (sarcasmo) -->
+  <g id="brows">
+    <path
+      id="brow-left"
+      d="M135 90 Q150 82 160 86"
+      fill="none"
+      stroke="#1a456f"
+      stroke-width="4"
+      stroke-linecap="round"
+    />
+    <path
+      id="brow-right"
+      d="M160 86 Q170 82 185 90"
+      fill="none"
+      stroke="#1a456f"
+      stroke-width="4"
+      stroke-linecap="round"
+    />
+  </g>
+</svg>
