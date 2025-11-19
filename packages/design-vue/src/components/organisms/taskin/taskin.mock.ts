@@ -1,4 +1,4 @@
-import type { TaskinProps, TaskinController } from './taskin.types';
+import type { TaskinController, TaskinProps } from './taskin.types';
 
 export const defaultTaskinProps: TaskinProps = {
   size: 220,
@@ -50,6 +50,14 @@ export const fakeTaskinController: TaskinController = {
   },
   wiggleAllTentacles() {
     console.log('[TaskinMock] wiggleAllTentacles');
+    return this;
+  },
+  addTears() {
+    console.log('[TaskinMock] addTears');
+    return this;
+  },
+  removeTears() {
+    console.log('[TaskinMock] removeTears');
     return this;
   },
 };
