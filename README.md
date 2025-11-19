@@ -27,6 +27,7 @@
 Taskin implements multiple layers of security to protect against common attacks:
 
 ### Input Validation (Layer 1)
+
 - **Host Validation**: Rejects malicious hosts (`;`, `&&`, `|`, `../`, etc.)
 - **Port Validation**: Validates ports 1-65535, rejects strings with injected commands
 - **IPv4 Validation**: Checks each octet (0-255), rejects malformed IPs (256.1.1.1)
@@ -34,10 +35,12 @@ Taskin implements multiple layers of security to protect against common attacks:
 - **WebSocket URL**: Validates ws:// and wss:// protocols only
 
 ### Output Escaping (Layer 2)
+
 - **HTML Escaping**: Escapes `<`, `>`, `&`, `"`, `'` before injecting into HTML
 - **XSS Prevention**: Protects against `<script>`, `<img onerror>`, `<iframe>`
 
 ### HTTP Security Headers (Layer 3)
+
 - **X-Frame-Options: DENY** - Prevents clickjacking
 - **X-Content-Type-Options: nosniff** - Prevents MIME type sniffing
 - **X-XSS-Protection: 1; mode=block** - Enables browser XSS protection
@@ -45,6 +48,7 @@ Taskin implements multiple layers of security to protect against common attacks:
 - **X-Powered-By: disabled** - Removes Express fingerprinting
 
 ### Testing
+
 - 46 unit tests covering injection attacks, XSS, path traversal
 - TDD revealed and fixed 3 validation bugs before production
 - Continuous integration with security validation
@@ -146,7 +150,8 @@ taskin mcp-server
 ### Frontend Packages
 
 - **@opentask/taskin-task-provider-pinia** - Pinia store with WebSocket sync
-- **@opentask/taskin-dashboard** - Vue 3 + Vite dashboard
+- **@opentask/taskin-dashboard** - Vue 3 + Vite dashboard with complete UI components
+- **@opentask/taskin-design-vue** - Vue 3 design system with Taskin mascot and UI elements
 
 ### CLI & Utils
 
@@ -249,6 +254,7 @@ Implement JWT authentication system.
 - 📖 [Quick Start Guide](./docs/QUICKSTART.md)
 - 🏗️ [Detailed Architecture](./docs/ARCHITECTURE.md)
 - 🎨 [Design System](./packages/dashboard/docs/design-specifications.md)
+- 🎭 [Taskin Design Vue](./packages/design-vue/README.md) - Mascot and UI components
 - 🔌 [WebSocket Examples](./packages/task-server-ws/EXAMPLES.md)
 - 🤖 [MCP Server Guide](./packages/task-server-mcp/README.md)
 - 📦 [Pinia Provider](./packages/task-provider-pinia/README.md)
