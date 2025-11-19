@@ -19,5 +19,5 @@
   },
   "exclude": ["node_modules", "dist", "storybook-static"],
   "extends": "../../tsconfig.base.json",
-  "include": ["src/**/*", "organisms/**/*", ".storybook/**/*"]
+  "include": ["src/**/*", "src/components/organisms/**/*", ".storybook/**/*"]
 }

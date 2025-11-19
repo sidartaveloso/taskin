@@ -7,7 +7,8 @@ export type TaskinMood =
   | 'smirk'
   | 'happy'
   | 'annoyed'
-  | 'sarcastic';
+  | 'sarcastic'
+  | 'crying';
 
 export type TaskinTentacleId =
   | 'tentacle-front-left'
@@ -40,14 +41,21 @@ export interface TaskinProps {
 }
 
 export interface TaskinController {
-  raiseArm(side: TaskinArmSide, angleDeg?: number, durationMs?: number): TaskinController;
+  raiseArm(
+    side: TaskinArmSide,
+    angleDeg?: number,
+    durationMs?: number,
+  ): TaskinController;
   lowerArms(durationMs?: number): TaskinController;
 
   smile(durationMs?: number): TaskinController;
   neutralMouth(): TaskinController;
 
   blink(durationMs?: number): TaskinController;
-  look(direction: 'left' | 'right' | 'center', amount?: number): TaskinController;
+  look(
+    direction: 'left' | 'right' | 'center',
+    amount?: number,
+  ): TaskinController;
 
   setMood(mood: TaskinMood): TaskinController;
 
@@ -58,12 +66,29 @@ export interface TaskinController {
   /**
    * Wiggle a specific tentacle by id.
    */
-  wiggleTentacle(id: TaskinTentacleId, intensityDeg?: number, durationMs?: number): TaskinController;
+  wiggleTentacle(
+    id: TaskinTentacleId,
+    intensityDeg?: number,
+    durationMs?: number,
+  ): TaskinController;
 
   /**
    * Wiggle all tentacles with a small delay between them.
    */
-  wiggleAllTentacles(intensityDeg?: number, durationMs?: number): TaskinController;
+  wiggleAllTentacles(
+    intensityDeg?: number,
+    durationMs?: number,
+  ): TaskinController;
+
+  /**
+   * Add animated tears (for crying mood).
+   */
+  addTears(): TaskinController;
+
+  /**
+   * Remove tears.
+   */
+  removeTears(): TaskinController;
 }
 
 export interface TaskinExpose {

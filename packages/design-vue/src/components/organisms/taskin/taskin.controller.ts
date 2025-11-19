@@ -40,7 +40,10 @@ export function createTaskinController(
         arm,
         [
           { transform: 'rotate(0deg)', transformOrigin: '160px 110px' },
-          { transform: `rotate(${angleDeg}deg)`, transformOrigin: '160px 110px' },
+          {
+            transform: `rotate(${angleDeg}deg)`,
+            transformOrigin: '160px 110px',
+          },
         ],
         { duration: durationMs, fill: 'forwards', easing: 'ease-out' },
         animationsEnabled,
@@ -112,7 +115,8 @@ export function createTaskinController(
       const pupilRight = getElement(svg, 'pupil-right');
       if (!pupilLeft || !pupilRight) return controller;
 
-      const offset = direction === 'left' ? -amount : direction === 'right' ? amount : 0;
+      const offset =
+        direction === 'left' ? -amount : direction === 'right' ? amount : 0;
 
       [pupilLeft, pupilRight].forEach((p) => {
         p.setAttribute('transform', `translate(${offset}, 0)`);
@@ -124,6 +128,7 @@ export function createTaskinController(
     setMood(mood: TaskinMood) {
       const browLeft = getElement(svg, 'brow-left');
       const browRight = getElement(svg, 'brow-right');
+      const mouth = getElement(svg, 'mouth');
 
       if (!browLeft || !browRight) return controller;
 
@@ -143,14 +148,78 @@ export function createTaskinController(
           browLeft.setAttribute('d', 'M135 90 Q150 84 160 86');
           browRight.setAttribute('d', 'M160 86 Q170 88 185 90');
           break;
+        case 'crying':
+          // Sobrancelhas anguladas para cima (expressão triste)
+          browLeft.setAttribute('d', 'M135 95 Q150 88 160 86');
+          browRight.setAttribute('d', 'M160 86 Q170 88 185 95');
+          // Boca invertida (frown)
+          if (mouth) {
+            mouth.setAttribute('d', 'M145 125 Q160 118 175 125');
+          }
+          // Adicionar lágrimas com animação
+          controller.addTears();
+          break;
         case 'neutral':
         default:
           controller.neutralMouth();
           browLeft.setAttribute('d', 'M135 90 Q150 82 160 86');
           browRight.setAttribute('d', 'M160 86 Q170 82 185 90');
+          // Remove tears if present
+          controller.removeTears();
           break;
       }
 
+      return controller;
+    },
+
+    addTears() {
+      // Adiciona lágrimas animadas
+      const leftEye = getElement(svg, 'eye-left');
+      const rightEye = getElement(svg, 'eye-right');
+
+      if (!leftEye || !rightEye) return controller;
+
+      // Remove lágrimas existentes
+      controller.removeTears();
+
+      // Criar lágrimas como círculos azuis
+      const createTear = (x: number, y: number, id: string) => {
+        const tear = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'circle',
+        );
+        tear.setAttribute('id', id);
+        tear.setAttribute('cx', x.toString());
+        tear.setAttribute('cy', y.toString());
+        tear.setAttribute('r', '2');
+        tear.setAttribute('fill', '#4A90E2');
+        tear.setAttribute('opacity', '0.8');
+        svg.appendChild(tear);
+
+        // Animar lágrima caindo
+        animateTransform(
+          tear,
+          [
+            { transform: 'translate(0, 0)', opacity: '0.8' },
+            { transform: 'translate(0, 30)', opacity: '0' },
+          ],
+          { duration: 1500, iterations: Infinity, easing: 'ease-in' },
+          animationsEnabled,
+        );
+      };
+
+      // Criar lágrimas nos dois olhos
+      createTear(148, 105, 'tear-left');
+      createTear(172, 105, 'tear-right');
+
+      return controller;
+    },
+
+    removeTears() {
+      const tearLeft = getElement(svg, 'tear-left');
+      const tearRight = getElement(svg, 'tear-right');
+      if (tearLeft) tearLeft.remove();
+      if (tearRight) tearRight.remove();
       return controller;
     },
 
@@ -177,8 +246,14 @@ export function createTaskinController(
         tentacle,
         [
           { transform: 'rotate(0deg)', transformOrigin: '160px 170px' },
-          { transform: `rotate(${intensityDeg}deg)`, transformOrigin: '160px 170px' },
-          { transform: `rotate(${-intensityDeg}deg)`, transformOrigin: '160px 170px' },
+          {
+            transform: `rotate(${intensityDeg}deg)`,
+            transformOrigin: '160px 170px',
+          },
+          {
+            transform: `rotate(${-intensityDeg}deg)`,
+            transformOrigin: '160px 170px',
+          },
           { transform: 'rotate(0deg)', transformOrigin: '160px 170px' },
         ],
         {
