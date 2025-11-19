@@ -1,6 +1,6 @@
 {
   "name": "taskin",
-  "version": "1.0.5",
+  "version": "1.0.9",
   "description": "Task management system integrated with Git workflows",
   "motivation": "Provide a CLI tool for task management integrated with Git workflows",
   "solve": "Simplifies task tracking and management directly from the command line",
@@ -83,11 +83,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opentask/taskin-fs-provider": "workspace:*",
-    "@opentask/taskin-task-manager": "workspace:*",
-    "@opentask/taskin-task-server-mcp": "workspace:*",
-    "@opentask/taskin-task-server-ws": "workspace:*",
-    "@opentask/taskin-utils": "workspace:*",
     "@types/express": "^5.0.5",
     "@types/inquirer": "^9.0.9",
     "@types/play-sound": "^1.1.2",
@@ -96,9 +91,16 @@
     "express": "^4.21.2",
     "inquirer": "^12.11.0",
     "play-sound": "^1.1.6",
+    "ws": "^8.18.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@opentask/taskin-fs-provider": "workspace:*",
+    "@opentask/taskin-task-manager": "workspace:*",
+    "@opentask/taskin-task-server-mcp": "workspace:*",
+    "@opentask/taskin-task-server-ws": "workspace:*",
+    "@opentask/taskin-types": "workspace:*",
+    "@opentask/taskin-utils": "workspace:*",
     "@types/node": "^20.19.24",
     "eslint": "^9.39.1",
     "tsup": "^8.5.0",

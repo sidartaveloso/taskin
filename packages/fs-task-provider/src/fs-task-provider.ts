@@ -95,11 +95,9 @@ export class FileSystemTaskProvider implements ITaskProvider {
       filePath,
       assignee,
       status: (statusMatch
-        ? statusMatch[1].trim().toLowerCase()
+        ? statusMatch.trim().toLowerCase()
         : 'pending') as TaskStatus,
-      type: (typeMatch
-        ? typeMatch[1].trim().toLowerCase()
-        : 'feat') as TaskType,
+      type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
       createdAt: new Date().toISOString(),
     };
 

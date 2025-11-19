@@ -2,12 +2,12 @@
   "name": "taskin-monorepo",
   "private": true,
   "type": "module",
-  "version": "1.0.5",
+  "version": "1.0.9",
   "description": "Taskin monorepo for task management and automation",
-  "packageManager": "pnpm@10.20.0",
+  "packageManager": "pnpm@10.22.0",
   "engines": {
     "node": ">=20.0.0",
-    "pnpm": ">=10.20.0"
+    "pnpm": ">=10.22.0"
   },
   "author": {
     "name": "OpenTask",

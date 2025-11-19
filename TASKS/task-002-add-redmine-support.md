@@ -1,8 +1,16 @@
 # Task 002 — Add Redmine Task Provider Support
 
-Status: in-progress
-Type: feat
-Assignee: Sidarta Veloso
+## Status
+
+in-progress
+
+## Type
+
+feat
+
+## Assignee
+
+Sidarta Veloso
 
 ## Description
 

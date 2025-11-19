@@ -2,7 +2,10 @@
  * New command - Create a new task
  */
 
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import {
+  FileSystemTaskProvider,
+  UserRegistry,
+} from '@opentask/taskin-fs-provider';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';
@@ -138,8 +141,14 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
     mkdirSync(tasksDir, { recursive: true });
   }
 
+  // Initialize UserRegistry
+  const monorepoRoot = path.dirname(tasksDir);
+  const taskinDir = path.join(monorepoRoot, '.taskin');
+  const userRegistry = new UserRegistry({ taskinDir });
+  await userRegistry.load();
+
   // Initialize task provider to get existing tasks
-  const taskProvider = new FileSystemTaskProvider(tasksDir);
+  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
   const allTasks = await taskProvider.getAllTasks();
 
   // Generate next task number

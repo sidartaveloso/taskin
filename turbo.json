@@ -51,7 +51,7 @@
         "**/*.test.{ts,js}",
         "package.json"
       ],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**", ".turbo/**"]
     },
     "test:coverage": {
       "dependsOn": ["build"],

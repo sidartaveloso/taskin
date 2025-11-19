@@ -103,6 +103,59 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin pause <id>` - Pause work on a task
 - `taskin finish <id>` - Complete a task
 - `taskin lint` - Validate task files
+- `taskin dashboard` - Start the web dashboard
+- `taskin mcp-server` - Start MCP server for Claude Desktop integration (alias: `mcp`)
+
+## 🤖 MCP Server (Model Context Protocol)
+
+Taskin includes an MCP server that allows AI assistants like Claude Desktop to interact with your tasks:
+
+```bash
+taskin mcp-server
+```
+
+### Integration with Claude Desktop
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "taskin": {
+      "args": ["taskin@beta", "mcp-server"],
+      "command": "npx"
+    }
+  }
+}
+```
+
+Or if installed globally:
+
+```json
+{
+  "mcpServers": {
+    "taskin": {
+      "args": ["mcp-server"],
+      "command": "taskin"
+    }
+  }
+}
+```
+
+**Available MCP Tools:**
+
+- `start_task` - Start working on a task
+- `finish_task` - Mark a task as finished
+
+**Available MCP Prompts:**
+
+- `start-task-workflow` - Guide for starting tasks
+- `finish-task-workflow` - Guide for finishing tasks
+- `task-summary` - Get task summary and insights
+
+**Available MCP Resources:**
+
+- `taskin://tasks` - Access all tasks
 
 ## 📦 Programmatic Usage
 

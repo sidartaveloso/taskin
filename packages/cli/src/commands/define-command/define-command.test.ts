@@ -111,7 +111,6 @@ describe('defineCommand', () => {
     const handler = vi.fn().mockRejectedValue(error);
     const exitSpy = vi
       .spyOn(process, 'exit')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation((() => {}) as any);
 
     const commandReg = defineCommand({
@@ -136,7 +135,6 @@ describe('defineCommand', () => {
     });
     const exitSpy = vi
       .spyOn(process, 'exit')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation((() => {}) as any);
 
     const commandReg = defineCommand({
