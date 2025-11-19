@@ -3,6 +3,24 @@ import tsConfig from '../../eslint/typescript.js';
 export default [
   ...tsConfig,
   {
-    ignores: ['dist/**', 'vitest.config.ts', '*.config.js', '*.config.ts'],
+    files: ['**/*.test.ts', '**/*.spec.ts', '**/*.e2e.test.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: null,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
+    ignores: [
+      'dist/**',
+      'dashboard-dist/**',
+      'vitest.config.ts',
+      'vitest.e2e.config.ts',
+      '*.config.js',
+      '*.config.ts',
+    ],
   },
 ];

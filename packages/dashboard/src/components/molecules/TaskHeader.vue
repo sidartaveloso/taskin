@@ -2,7 +2,7 @@
 import type { User } from '../../types';
 import Avatar from '../atoms/Avatar.vue';
 
-interface Props {
+export interface Props {
   assignee: User
   size?: 'sm' | 'md' | 'lg'
 }

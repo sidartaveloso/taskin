@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { ProjectPath } from '../../types'
 
-interface Props {
+export interface Props {
   project: ProjectPath
   maxSegments?: number
   separator?: string

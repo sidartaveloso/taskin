@@ -1,7 +1,11 @@
 {
   "name": "@opentask/taskin-task-provider-pinia",
   "version": "0.1.0",
-  "description": "Pinia-based task provider with WebSocket synchronization",
+  "description": "Pinia store for task management integration with Taskin",
+  "motivation": "Provide Vue 3 reactive state management for tasks",
+  "solve": "Integrates Pinia with Taskin task providers",
+  "scope": "vue-integration",
+  "status": "active",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -14,7 +18,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
     "type-check": "tsc --noEmit",
     "typecheck": "tsc --noEmit",

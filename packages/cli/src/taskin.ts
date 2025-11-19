@@ -38,7 +38,7 @@ export class Taskin implements ITaskin {
           status: taskFile.status,
           title: taskFile.title,
           type: taskFile.type,
-          assignee: taskFile.userId, // Map userId to assignee
+          ...(taskFile.userId && { userId: taskFile.userId }), // Keep userId if present
         };
         return task;
       })
@@ -49,7 +49,7 @@ export class Taskin implements ITaskin {
         if (options?.type && task.type !== options.type) {
           return false;
         }
-        if (options?.assignee && task.assignee !== options.assignee) {
+        if (options?.assignee && task.userId !== options.assignee) {
           return false;
         }
         return true;

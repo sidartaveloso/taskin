@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "taskin": {
+      "args": [
+        "/Users/sidarta/repositorios/taskin/packages/cli/dist/index.js",
+        "mcp-server"
+      ],
+      "command": "node",
+      "cwd": "/Users/sidarta/repositorios/taskin"
+    }
+  }
+}
