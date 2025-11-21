@@ -8,7 +8,18 @@ export type TaskinMood =
   | 'happy'
   | 'annoyed'
   | 'sarcastic'
-  | 'crying';
+  | 'crying'
+  | 'cold'
+  | 'hot'
+  | 'dancing'
+  | 'furious'
+  | 'sleeping'
+  | 'in-love'
+  | 'tired'
+  | 'thoughtful'
+  | 'vomiting'
+  | 'taking-selfie'
+  | 'farting';
 
 export type TaskinTentacleId =
   | 'tentacle-front-left'
@@ -89,6 +100,90 @@ export interface TaskinController {
    * Remove tears.
    */
   removeTears(): TaskinController;
+
+  /**
+   * Change the octopus color (for mood-based camouflage).
+   */
+  changeColor(
+    bodyColor: string,
+    bodyHighlight: string,
+    tentacleColor: string,
+  ): TaskinController;
+
+  /**
+   * Add shiver animation (for cold mood).
+   */
+  shiver(): TaskinController;
+
+  /**
+   * Add panting animation (for hot mood).
+   */
+  pant(): TaskinController;
+
+  /**
+   * Dance animation.
+   */
+  dance(): TaskinController;
+
+  /**
+   * Add hearts (for in-love mood).
+   */
+  addHearts(): TaskinController;
+
+  /**
+   * Remove hearts.
+   */
+  removeHearts(): TaskinController;
+
+  /**
+   * Add Z's for sleeping.
+   */
+  addZzz(): TaskinController;
+
+  /**
+   * Remove Z's.
+   */
+  removeZzz(): TaskinController;
+
+  /**
+   * Angry shake animation.
+   */
+  angryShake(): TaskinController;
+
+  /**
+   * Add thought bubble (for thoughtful mood).
+   */
+  addThoughtBubble(): TaskinController;
+
+  /**
+   * Remove thought bubble.
+   */
+  removeThoughtBubble(): TaskinController;
+
+  /**
+   * Add vomit animation.
+   */
+  vomit(): TaskinController;
+
+  /**
+   * Add phone for selfie.
+   */
+  addPhone(): TaskinController;
+
+  /**
+   * Remove phone.
+   */
+  removePhone(): TaskinController;
+
+  /**
+   * Add fart cloud animation.
+   */
+  addFartCloud(): TaskinController;
+
+  /**
+   * Remove fart cloud.
+   */
+  removeFartCloud(): TaskinController;
 }
 
 export interface TaskinExpose {
