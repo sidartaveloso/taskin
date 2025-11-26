@@ -56,6 +56,90 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const AllVariations: Story = {
+  render: () => ({
+    setup() {
+      const variations = [
+        { name: 'Default', color: '#1f7acb', count: 4 },
+        { name: 'Pink', color: '#FF6B9D', count: 4 },
+        { name: 'Purple', color: '#9D6BFF', count: 4 },
+        { name: 'Many (6)', color: '#6BFF9D', count: 6, spacing: 15 },
+        { name: 'Fast 2x', color: '#1f7acb', speed: 2, count: 4 },
+        { name: 'Slow 0.5x', color: '#FFD66B', speed: 0.5, count: 4 },
+        {
+          name: 'Custom Sway',
+          color: '#FFD66B',
+          animationKeyframes: swayKeyframes,
+          count: 4,
+        },
+        {
+          name: 'No Animation',
+          color: '#9B59B6',
+          animationsEnabled: false,
+          count: 4,
+        },
+      ];
+
+      return () =>
+        h(
+          'div',
+          {
+            style: {
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '1rem',
+              padding: '1rem',
+            },
+          },
+          variations.map((variation) =>
+            h(
+              'div',
+              {
+                key: variation.name,
+                style: { textAlign: 'center' },
+              },
+              [
+                h(
+                  'svg',
+                  {
+                    xmlns: 'http://www.w3.org/2000/svg',
+                    viewBox: '-100 -10 200 100',
+                    width: '180',
+                    height: '100',
+                    style: {
+                      border: '1px solid #e0e0e0',
+                      background: '#f5f5f5',
+                    },
+                  },
+                  [h(TaskinTentaclesFluid, variation)],
+                ),
+                h(
+                  'p',
+                  {
+                    style: {
+                      margin: '0.5rem 0 0',
+                      fontSize: '0.9rem',
+                      fontWeight: 500,
+                    },
+                  },
+                  variation.name,
+                ),
+              ],
+            ),
+          ),
+        );
+    },
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Overview of all fluid tentacles variations - colors, counts, speeds, and animation modes',
+      },
+    },
+  },
+};
+
 export const Default: Story = {
   args: {},
   parameters: {

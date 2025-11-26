@@ -320,7 +320,9 @@ export default {
     idleAnimation: boolean;
     animationsEnabled: boolean;
   }) {
-    const config = computed(() => MOOD_CONFIGS[props.mood]);
+    const config = computed(
+      () => MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral,
+    );
     const idleTimer = ref<number | null>(null);
     const blinkEyes = ref(false);
     const wiggleTentacles = ref(false);

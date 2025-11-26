@@ -37,10 +37,19 @@ const config: StorybookConfig = {
   // Core configuration
   core: {
     disableTelemetry: true, // Disable telemetry for better performance
+    disableWhatsNewNotifications: true, // Minimize distractions
   },
 
   // Static dirs for assets
   staticDirs: ['../public'],
+
+  // Storybook 10.1 experimental features
+  experimental_rsc: false, // We're not using React Server Components
+
+  // Component manifest for MCP (AI code generation)
+  features: {
+    componentManifest: true, // Enable component manifest generation for MCP
+  },
 };
 
 export default config;

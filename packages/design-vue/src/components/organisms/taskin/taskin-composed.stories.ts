@@ -19,12 +19,12 @@ const meta = {
     mood: {
       control: 'select',
       options: [
-        'default',
+        'neutral',
+        'smirk',
         'happy',
-        'sad',
-        'angry',
-        'thinking',
-        'excited',
+        'annoyed',
+        'sarcastic',
+        'crying',
         'cold',
         'hot',
         'dancing',
@@ -53,7 +53,7 @@ const meta = {
     },
   },
   args: {
-    mood: 'default',
+    mood: 'neutral',
     size: 200,
     animationsEnabled: true,
     idleAnimation: true,
@@ -63,9 +63,46 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const AllMoods: Story = {
+  render: () => ({
+    components: { TaskinComposed },
+    template: `
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px;">
+        <div v-for="mood in moods" :key="mood" style="text-align: center;">
+          <TaskinComposed :mood="mood" :size="150" />
+          <p style="margin-top: 10px; font-size: 12px;">{{ mood }}</p>
+        </div>
+      </div>
+    `,
+    data() {
+      return {
+        moods: [
+          'neutral',
+          'smirk',
+          'happy',
+          'annoyed',
+          'sarcastic',
+          'crying',
+          'cold',
+          'hot',
+          'dancing',
+          'furious',
+          'sleeping',
+          'in-love',
+          'tired',
+          'thoughtful',
+          'vomiting',
+          'taking-selfie',
+          'farting',
+        ],
+      };
+    },
+  }),
+};
+
 export const Default: Story = {
   args: {
-    mood: 'default',
+    mood: 'neutral',
   },
 };
 
@@ -78,18 +115,18 @@ export const Happy: Story = {
   },
 };
 
-export const Sad: Story = {
+export const Crying: Story = {
   args: {
-    mood: 'sad',
+    mood: 'crying',
   },
   parameters: {
     backgrounds: { default: 'blue' },
   },
 };
 
-export const Angry: Story = {
+export const Furious: Story = {
   args: {
-    mood: 'angry',
+    mood: 'furious',
   },
   parameters: {
     backgrounds: { default: 'red' },
@@ -98,16 +135,16 @@ export const Angry: Story = {
 
 export const Thinking: Story = {
   args: {
-    mood: 'thinking',
+    mood: 'thoughtful',
   },
 };
 
-export const Excited: Story = {
+export const Annoyed: Story = {
   args: {
-    mood: 'excited',
+    mood: 'annoyed',
   },
   parameters: {
-    backgrounds: { default: 'orange' },
+    backgrounds: { default: 'gray' },
   },
 };
 
@@ -135,15 +172,6 @@ export const Dancing: Story = {
   },
   parameters: {
     backgrounds: { default: 'purple' },
-  },
-};
-
-export const Furious: Story = {
-  args: {
-    mood: 'furious',
-  },
-  parameters: {
-    backgrounds: { default: 'dark-red' },
   },
 };
 
@@ -212,7 +240,7 @@ export const Farting: Story = {
 
 export const WithIdleAnimations: Story = {
   args: {
-    mood: 'default',
+    mood: 'neutral',
     animationsEnabled: true,
     idleAnimation: true,
   },
@@ -240,41 +268,4 @@ export const WithoutAnimations: Story = {
       },
     },
   },
-};
-
-export const AllMoods: Story = {
-  render: () => ({
-    components: { TaskinComposed },
-    template: `
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px;">
-        <div v-for="mood in moods" :key="mood" style="text-align: center;">
-          <TaskinComposed :mood="mood" :size="150" />
-          <p style="margin-top: 10px; font-size: 12px;">{{ mood }}</p>
-        </div>
-      </div>
-    `,
-    data() {
-      return {
-        moods: [
-          'default',
-          'happy',
-          'sad',
-          'angry',
-          'thinking',
-          'excited',
-          'cold',
-          'hot',
-          'dancing',
-          'furious',
-          'sleeping',
-          'in-love',
-          'tired',
-          'thoughtful',
-          'vomiting',
-          'taking-selfie',
-          'farting',
-        ],
-      };
-    },
-  }),
 };
