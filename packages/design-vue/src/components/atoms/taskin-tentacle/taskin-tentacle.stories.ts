@@ -58,6 +58,95 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const AllVariations: Story = {
+  render: () => ({
+    setup() {
+      const variations = [
+        {
+          name: 'Static',
+          color: '#1f7acb',
+          d: 'M 0,0 C -5,15 -10,30 0,45 C 10,60 5,75 0,80',
+          fluid: false,
+        },
+        { name: 'Fluid', color: '#FF6B9D', fluid: true },
+        { name: 'Fast', color: '#9D6BFF', fluid: true, speed: 2 },
+        { name: 'Slow', color: '#6BFF9D', fluid: true, speed: 0.5 },
+        {
+          name: 'Wiggle',
+          color: '#1f7acb',
+          d: 'M 0,0 C -5,15 -10,30 0,45 C 10,60 5,75 0,80',
+          wiggle: true,
+        },
+        {
+          name: 'Dance',
+          color: '#DA70D6',
+          d: 'M 0,0 C -5,15 -10,30 0,45 C 10,60 5,75 0,80',
+          dance: true,
+        },
+        { name: 'Curl', color: '#9B59B6', curl: true },
+        { name: 'Uncurl', color: '#27AE60', uncurl: true },
+      ];
+
+      return () =>
+        h(
+          'div',
+          {
+            style: {
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '1rem',
+              padding: '1rem',
+            },
+          },
+          variations.map((variation) =>
+            h(
+              'div',
+              {
+                key: variation.name,
+                style: { textAlign: 'center' },
+              },
+              [
+                h(
+                  'svg',
+                  {
+                    xmlns: 'http://www.w3.org/2000/svg',
+                    viewBox: '-50 -10 100 100',
+                    width: '120',
+                    height: '120',
+                    style: {
+                      border: '1px solid #e0e0e0',
+                      background: '#f5f5f5',
+                    },
+                  },
+                  [h(TaskinTentacle, { ...variation, strokeWidth: 10 })],
+                ),
+                h(
+                  'p',
+                  {
+                    style: {
+                      margin: '0.5rem 0 0',
+                      fontSize: '0.9rem',
+                      fontWeight: 500,
+                    },
+                  },
+                  variation.name,
+                ),
+              ],
+            ),
+          ),
+        );
+    },
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Overview of all tentacle variations - static, fluid, animations, and special effects',
+      },
+    },
+  },
+};
+
 export const StaticTentacle: Story = {
   args: {
     color: '#1f7acb',
