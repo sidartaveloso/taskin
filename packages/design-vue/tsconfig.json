@@ -17,7 +17,12 @@
     "target": "ES2022",
     "types": ["vite/client", "vitest/globals"]
   },
-  "exclude": ["node_modules", "dist", "storybook-static"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "storybook-static",
+    "src/**/*.stories.ts"
+  ],
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*", "src/components/organisms/**/*", ".storybook/**/*"]
 }
