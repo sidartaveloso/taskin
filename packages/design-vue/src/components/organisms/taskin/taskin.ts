@@ -1,23 +1,15 @@
-import {
-  defineComponent,
-  h,
-  onMounted,
-  onUnmounted,
-  ref,
-  watch,
-  type PropType,
-  type SetupContext,
-} from 'vue';
+import { h, onMounted, onUnmounted, ref, watch, type PropType } from 'vue';
 import { createTaskinController } from './taskin.controller';
 import svgRaw from './taskin.svg?raw';
 import type {
   TaskinController,
   TaskinExpose,
+  TaskinMood,
   TaskinProps,
   TaskinReadyPayload,
 } from './taskin.types';
 
-export default defineComponent({
+export default {
   name: 'TaskinMascot',
   props: {
     size: {
@@ -38,7 +30,21 @@ export default defineComponent({
     },
   },
   emits: ['ready'],
-  setup(props, { emit, expose }: SetupContext<['ready']>) {
+  setup(
+    props: {
+      size: number;
+      mood: TaskinMood;
+      idleAnimation: boolean;
+      animationsEnabled: boolean;
+    },
+    {
+      emit,
+      expose,
+    }: {
+      emit: (event: 'ready', payload: TaskinReadyPayload) => void;
+      expose: (exposed: TaskinExpose) => void;
+    },
+  ) {
     const containerRef = ref<HTMLElement | null>(null);
     const svgContent = ref<string>(svgRaw);
     const controllerRef = ref<TaskinController | null>(null);
@@ -143,4 +149,4 @@ export default defineComponent({
         style: { display: 'inline-block' },
       });
   },
-});
+};

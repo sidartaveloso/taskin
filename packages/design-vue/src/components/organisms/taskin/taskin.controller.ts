@@ -798,12 +798,16 @@ export function createTaskinController(
     addPhone() {
       controller.removePhone();
 
-      // Create phone group attached to right arm
+      // Create phone group that will be positioned relative to the raised arm
       const phone = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       phone.setAttribute('id', 'phone');
-      // Position phone at the hand location when arm is raised (around x=233, y=80)
-      // Rotate it to match the selfie angle
-      phone.setAttribute('transform', 'translate(233, 65) rotate(-15)');
+
+      // When arm is raised at -45deg from origin (160, 110),
+      // the hand at original position (238, 74) moves to approximately (253, 45)
+      // We need to calculate the rotated position
+      // Original hand center: (238, 74), rotation origin: (160, 110)
+      // After -45° rotation: approximately (253, 45)
+      phone.setAttribute('transform', 'translate(253, 45) rotate(-45)');
 
       // Phone body
       const body = document.createElementNS(

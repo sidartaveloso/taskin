@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import TaskinMascot from './taskin';
 import { defaultTaskinProps } from './taskin.mock';

@@ -17,10 +17,7 @@ const config: StorybookConfig = {
     '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
 
-  addons: [
-    getAbsolutePath('@storybook/addon-docs'),
-    getAbsolutePath('@storybook/addon-onboarding'),
-  ],
+  addons: [getAbsolutePath('@storybook/addon-docs')],
 
   framework: {
     name: getAbsolutePath('@storybook/vue3-vite'),
