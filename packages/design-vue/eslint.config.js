@@ -7,7 +7,15 @@ import vueParser from 'vue-eslint-parser';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'storybook-static/**', 'node_modules/**'],
+    ignores: [
+      'dist/**',
+      'storybook-static/**',
+      'node_modules/**',
+      'vite.config.ts',
+      'vitest.config.ts',
+      'vite.config.app.ts',
+      '**/*.stories.ts',
+    ],
   },
   ...tseslint.configs.recommended,
   ...vuePlugin.configs['flat/recommended'],
@@ -25,7 +33,14 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       'vue/multi-word-component-names': 'off',
+      'storybook/no-renderer-packages': 'off',
     },
   },
-  storybook.configs['flat/recommended'],
+  ...storybook.configs['flat/recommended'],
+  {
+    files: ['**/*.stories.ts'],
+    rules: {
+      'storybook/no-renderer-packages': 'off',
+    },
+  },
 );
