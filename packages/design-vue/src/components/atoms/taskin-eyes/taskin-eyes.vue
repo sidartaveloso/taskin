@@ -1,9 +1,6 @@
 <template>
   <g id="eyes">
-    <g
-      id="left-eye"
-      :transform="leftEyeTransform"
-    >
+    <g id="left-eye" :transform="leftEyeTransform">
       <ellipse
         cx="135"
         cy="90"
@@ -21,10 +18,7 @@
       />
     </g>
 
-    <g
-      id="right-eye"
-      :transform="rightEyeTransform"
-    >
+    <g id="right-eye" :transform="rightEyeTransform">
       <ellipse
         cx="185"
         cy="90"

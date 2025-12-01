@@ -1,4 +1,5 @@
 import { h } from 'vue';
+import TaskinPhone from '../../atoms/taskin-phone/taskin-phone.vue';
 
 export default {
   name: 'TaskinEffectPhone',
@@ -19,30 +20,7 @@ export default {
             : '',
         },
         [
-          h('rect', {
-            x: '230',
-            y: '47.5',
-            width: '20',
-            height: '35',
-            rx: '3',
-            fill: '#2C3E50',
-            stroke: '#34495E',
-            'stroke-width': '1',
-          }),
-          h('rect', {
-            x: '232',
-            y: '50.5',
-            width: '16',
-            height: '25',
-            rx: '1',
-            fill: '#3498DB',
-          }),
-          h('circle', {
-            cx: '240',
-            cy: '49',
-            r: '1.5',
-            fill: '#FFD700',
-          }),
+          h(TaskinPhone, { animationsEnabled: props.animationsEnabled }),
           h(
             'style',
             `
