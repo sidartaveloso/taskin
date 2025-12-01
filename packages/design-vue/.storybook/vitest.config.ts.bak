@@ -1,0 +1,10 @@
+import { storybookTest } from '@storybook/vitest/plugin';
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  plugins: [storybookTest()],
+  test: {
+    name: 'storybook',
+    setupFiles: ['./.storybook/vitest.setup.ts'],
+  },
+});

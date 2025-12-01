@@ -127,26 +127,29 @@ export default {
       default: false,
     },
   },
-  setup(props: {
-    color?: string;
-    x: number;
-    y: number;
-    side: 'left' | 'right';
-    index: number;
-    animationsEnabled?: boolean;
-    d?: string;
-    strokeWidth: number;
-    animationDelay: number;
-    speed: number;
-    pathGenerator?: (progress: number) => string;
-    animationKeyframes?: Record<string, string>;
-    length: number;
-    fluid?: boolean;
-    wiggle?: boolean;
-    dance?: boolean;
-    curl?: boolean;
-    uncurl?: boolean;
-  }) {
+  setup(
+    props: {
+      color?: string;
+      x: number;
+      y: number;
+      side: 'left' | 'right';
+      index: number;
+      animationsEnabled?: boolean;
+      d?: string;
+      strokeWidth: number;
+      animationDelay: number;
+      speed: number;
+      pathGenerator?: (progress: number) => string;
+      animationKeyframes?: Record<string, string>;
+      length: number;
+      fluid?: boolean;
+      wiggle?: boolean;
+      dance?: boolean;
+      curl?: boolean;
+      uncurl?: boolean;
+    },
+    { slots }: any,
+  ) {
     return () => {
       const animationDuration =
         props.animationsEnabled && props.speed > 0
@@ -222,6 +225,57 @@ export default {
             d: path("M 0,0 L 0,60");
           }
         }
+        @keyframes tentacle-tip-curl-${props.x}-${props.y} {
+          0% {
+            transform: translate(0px, 60px) rotate(0deg);
+          }
+          20% {
+            transform: translate(0px, 60px) rotate(10deg);
+          }
+          40% {
+            transform: translate(12px, 13px) rotate(80deg);
+          }
+          60% {
+            transform: translate(16px, 13px) rotate(120deg);
+          }
+          80% {
+            transform: translate(13px, 12px) rotate(150deg);
+          }
+          100% {
+            transform: translate(11px, 7px) rotate(180deg);
+          }
+        }
+        @keyframes tentacle-tip-uncurl-${props.x}-${props.y} {
+          0% {
+            transform: translate(11px, 7px) rotate(180deg);
+          }
+          20% {
+            transform: translate(13px, 12px) rotate(150deg);
+          }
+          40% {
+            transform: translate(16px, 13px) rotate(120deg);
+          }
+          60% {
+            transform: translate(12px, 13px) rotate(80deg);
+          }
+          80% {
+            transform: translate(0px, 60px) rotate(10deg);
+          }
+          100% {
+            transform: translate(0px, 60px) rotate(0deg);
+          }
+        }
+        @keyframes tentacle-tip-dance-${props.x}-${props.y} {
+          0%, 100% {
+            transform: translate(0, 60px) rotate(0deg);
+          }
+          25% {
+            transform: translate(0, 58px) rotate(-2deg);
+          }
+          75% {
+            transform: translate(0, 62px) rotate(2deg);
+          }
+        }
         ${
           isFluid && props.animationsEnabled && props.speed > 0
             ? `
@@ -230,16 +284,16 @@ export default {
         }
         @keyframes tentacle-tip-${props.x}-${props.y} {
           0%, 100% {
-            transform: translate(0, 0) rotate(0deg);
+            transform: translate(0, 60px) rotate(0deg);
           }
           25% {
-            transform: translate(-3px, 0) rotate(-10deg);
+            transform: translate(-3px, 60px) rotate(-10deg);
           }
           50% {
-            transform: translate(0, 0) rotate(0deg);
+            transform: translate(0, 60px) rotate(0deg);
           }
           75% {
-            transform: translate(3px, 0) rotate(10deg);
+            transform: translate(3px, 60px) rotate(10deg);
           }
         }
         `
@@ -253,11 +307,20 @@ export default {
           animation: tentacle-wave-${props.x}-${props.y} 1s ease-in-out infinite;
           transform-origin: 0 0;
         }
+        .tentacle-dance .tentacle-tip {
+          animation: tentacle-tip-dance-${props.x}-${props.y} 1s ease-in-out infinite;
+        }
         .tentacle-curl path {
           animation: tentacle-curl-${props.x}-${props.y} 3s ease-in-out forwards;
         }
+        .tentacle-curl .tentacle-tip {
+          animation: tentacle-tip-curl-${props.x}-${props.y} 3s ease-in-out forwards;
+        }
         .tentacle-uncurl path {
           animation: tentacle-uncurl-${props.x}-${props.y} 3s ease-in-out forwards;
+        }
+        .tentacle-uncurl .tentacle-tip {
+          animation: tentacle-tip-uncurl-${props.x}-${props.y} 3s ease-in-out forwards;
         }
       `,
       );
@@ -286,33 +349,47 @@ export default {
         }),
       );
 
-      // Fluid tentacle tip
-      if (isFluid) {
-        elements.push(
-          h(
-            'g',
-            {
-              transform: `translate(0, ${props.length})`,
-              style:
-                props.animationsEnabled && props.speed > 0
-                  ? {
-                      animation: `tentacle-tip-${props.x}-${props.y} ${animationDuration} ease-in-out infinite`,
-                      'transform-origin': '0 0',
-                    }
-                  : undefined,
-            },
-            [
-              h('circle', {
-                cx: 0,
-                cy: 0,
-                r: props.strokeWidth * 0.625,
-                fill: props.color,
-              }),
-            ],
-          ),
-        );
+      // Tentacle tip anchor point (always rendered for item attachment)
+      // For fluid: animated with wave motion
+      // For curl/uncurl/dance: animated via CSS class selectors
+      // For static: fixed at end point
+      const tipAnimation = (() => {
+        // curl, uncurl, and dance are handled by CSS class selectors
+        if (
+          !props.animationsEnabled ||
+          props.curl ||
+          props.uncurl ||
+          props.dance
+        ) {
+          return undefined;
+        }
 
-        // Inner highlights for depth
+        if (isFluid && props.speed > 0) {
+          return `tentacle-tip-${props.x}-${props.y} ${animationDuration} ease-in-out infinite`;
+        }
+
+        return undefined;
+      })();
+
+      elements.push(
+        h(
+          'g',
+          {
+            class: 'tentacle-tip',
+            transform: `translate(0, 0)`,
+            style: tipAnimation
+              ? {
+                  animation: tipAnimation,
+                  'transform-origin': '0 0',
+                }
+              : undefined,
+          },
+          slots.tip ? slots.tip() : [],
+        ),
+      );
+
+      // Fluid inner highlights for depth
+      if (isFluid) {
         elements.push(
           h('path', {
             d: `M 0,5 Q ${props.strokeWidth * 0.375},12 0,20 Q ${-props.strokeWidth * 0.375},28 0,35 Q ${props.strokeWidth * 0.375},42 0,${Math.min(50, props.length - 10)}`,

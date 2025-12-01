@@ -8,14 +8,14 @@ import type {
 import TaskinEyes from '../../atoms/taskin-eyes/taskin-eyes.vue';
 import type { MouthExpression } from '../../atoms/taskin-mouth/taskin-mouth.types';
 import TaskinMouth from '../../atoms/taskin-mouth/taskin-mouth.vue';
-import TaskinTentacle from '../../atoms/taskin-tentacle/taskin-tentacle';
+import TaskinArmWithPhone from '../../molecules/taskin-arm-with-phone/taskin-arm-with-phone.vue';
 import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/taskin-effect-fart-cloud';
 import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/taskin-effect-hearts';
-import TaskinEffectPhone from '../../molecules/taskin-effect-phone/taskin-effect-phone';
 import TaskinEffectTears from '../../molecules/taskin-effect-tears/taskin-effect-tears';
 import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/taskin-effect-thought-bubble';
 import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/taskin-effect-vomit';
 import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/taskin-effect-zzz';
+import TaskinTentacleWithItem from '../../molecules/taskin-tentacle-with-item/taskin-tentacle-with-item.vue';
 import type { TaskinMood } from './taskin.types';
 
 interface MoodConfig {
@@ -377,8 +377,8 @@ export default {
         }),
         // Fluid Tentacles (back layer) - connected to body bottom
         h('g', { transform: 'translate(160, 168)' }, [
-          h(TaskinTentacle, {
-            color: config.value.tentacleColor,
+          h(TaskinTentacleWithItem, {
+            tentacleColor: config.value.tentacleColor,
             animationsEnabled: props.animationsEnabled,
             speed:
               props.mood === 'dancing'
@@ -389,12 +389,11 @@ export default {
                     ? 0
                     : 1,
             fluid: true,
-            x: -30,
-            y: 0,
-            strokeWidth: 8,
+            translateX: -30,
+            translateY: 0,
           }),
-          h(TaskinTentacle, {
-            color: config.value.tentacleColor,
+          h(TaskinTentacleWithItem, {
+            tentacleColor: config.value.tentacleColor,
             animationsEnabled: props.animationsEnabled,
             speed:
               props.mood === 'dancing'
@@ -405,12 +404,11 @@ export default {
                     ? 0
                     : 1.1,
             fluid: true,
-            x: -10,
-            y: 0,
-            strokeWidth: 8,
+            translateX: -10,
+            translateY: 0,
           }),
-          h(TaskinTentacle, {
-            color: config.value.tentacleColor,
+          h(TaskinTentacleWithItem, {
+            tentacleColor: config.value.tentacleColor,
             animationsEnabled: props.animationsEnabled,
             speed:
               props.mood === 'dancing'
@@ -421,12 +419,11 @@ export default {
                     ? 0
                     : 0.9,
             fluid: true,
-            x: 10,
-            y: 0,
-            strokeWidth: 8,
+            translateX: 10,
+            translateY: 0,
           }),
-          h(TaskinTentacle, {
-            color: config.value.tentacleColor,
+          h(TaskinTentacleWithItem, {
+            tentacleColor: config.value.tentacleColor,
             animationsEnabled: props.animationsEnabled && wiggleTentacles.value,
             speed:
               props.mood === 'dancing'
@@ -437,9 +434,8 @@ export default {
                     ? 0
                     : 1.0,
             fluid: true,
-            x: 30,
-            y: 0,
-            strokeWidth: 8,
+            translateX: 30,
+            translateY: 0,
           }),
         ]),
         // Body
@@ -453,11 +449,17 @@ export default {
           float: props.mood === 'in-love',
           sway: props.mood === 'tired',
         }),
-        // Arms
-        h(TaskinArms, {
-          color: config.value.tentacleColor,
-          animationsEnabled: props.animationsEnabled,
-        }),
+        // Arms - use TaskinArmWithPhone when taking selfie
+        config.value.showPhone
+          ? h(TaskinArmWithPhone, {
+              color: config.value.tentacleColor,
+              animationsEnabled: props.animationsEnabled,
+              itemOnRight: true,
+            })
+          : h(TaskinArms, {
+              color: config.value.tentacleColor,
+              animationsEnabled: props.animationsEnabled,
+            }),
         // Eyes
         h(TaskinEyes, {
           state: blinkEyes.value ? 'closed' : config.value.eyeState,
@@ -484,15 +486,11 @@ export default {
           }),
         config.value.showThoughtBubble &&
           h(TaskinEffectThoughtBubble, {
-            text: config.value.thoughtBubbleText,
+            text: config.value.thoughtBubbleText || '?',
             animationsEnabled: props.animationsEnabled,
           }),
         config.value.showVomit &&
           h(TaskinEffectVomit, {
-            animationsEnabled: props.animationsEnabled,
-          }),
-        config.value.showPhone &&
-          h(TaskinEffectPhone, {
             animationsEnabled: props.animationsEnabled,
           }),
         config.value.showFartCloud &&

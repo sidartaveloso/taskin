@@ -95,7 +95,7 @@ export const Documentation: Story = {
                     },
                   },
                   [
-                    h(effect.component, {
+                    h(effect.component as any, {
                       animationsEnabled: true,
                       ...effect.props,
                     }),
