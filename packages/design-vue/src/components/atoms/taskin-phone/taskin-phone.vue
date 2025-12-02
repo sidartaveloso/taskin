@@ -1,8 +1,9 @@
 <template>
   <g id="phone">
+    <!-- Phone body centered at (0,0) -->
     <rect
-      :x="x"
-      :y="y"
+      :x="-width / 2"
+      :y="-height / 2"
       :width="width"
       :height="height"
       :rx="cornerRadius"
@@ -10,17 +11,19 @@
       :stroke="phoneStroke"
       :stroke-width="strokeWidth"
     />
+    <!-- Screen -->
     <rect
-      :x="x + 2"
-      :y="y + 3"
+      :x="-width / 2 + 2"
+      :y="-height / 2 + 3"
       :width="width - 4"
       :height="height - 10"
       :rx="1"
       :fill="screenColor"
     />
+    <!-- Speaker -->
     <circle
-      :cx="x + width / 2"
-      :cy="y + 1.5"
+      :cx="0"
+      :cy="-height / 2 + 1.5"
       :r="speakerRadius"
       :fill="speakerColor"
     />
@@ -29,8 +32,6 @@
 
 <script setup lang="ts">
 export interface Props {
-  x?: number;
-  y?: number;
   width?: number;
   height?: number;
   cornerRadius?: number;
@@ -44,8 +45,6 @@ export interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  x: 230,
-  y: 47.5,
   width: 20,
   height: 35,
   cornerRadius: 3,

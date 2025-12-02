@@ -147,8 +147,6 @@ export const AllVariations: Story = {
                         ? {
                             item: () =>
                               h(TaskinPhone, {
-                                x: -10,
-                                y: -12,
                                 width: 15,
                                 height: 25,
                               }),
@@ -196,8 +194,6 @@ export const WithPhone: Story = {
             h(TaskinTentacleWithItem, args, {
               item: () =>
                 h(TaskinPhone, {
-                  x: -10,
-                  y: -12,
                   width: 15,
                   height: 25,
                   phoneColor: '#2C3E50',
@@ -232,8 +228,6 @@ export const RotatedWithItem: Story = {
             h(TaskinTentacleWithItem, args, {
               item: () =>
                 h(TaskinPhone, {
-                  x: -10,
-                  y: -12,
                   width: 15,
                   height: 25,
                   phoneColor: '#9D6BFF',
