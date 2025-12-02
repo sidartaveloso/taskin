@@ -8,14 +8,6 @@ const meta = {
   component: TaskinPhone,
   tags: ['autodocs'],
   argTypes: {
-    x: {
-      control: { type: 'number' },
-      description: 'X position',
-    },
-    y: {
-      control: { type: 'number' },
-      description: 'Y position',
-    },
     width: {
       control: { type: 'number', min: 10, max: 50 },
       description: 'Phone width',
@@ -48,7 +40,7 @@ const meta = {
           'svg',
           {
             xmlns: 'http://www.w3.org/2000/svg',
-            viewBox: '0 0 320 200',
+            viewBox: '-30 -40 60 80',
             width: '320',
             height: '200',
             style: { border: '1px solid #e0e0e0', background: '#f5f5f5' },
@@ -114,7 +106,7 @@ export const AllVariations: Story = {
                   'svg',
                   {
                     xmlns: 'http://www.w3.org/2000/svg',
-                    viewBox: '0 0 320 200',
+                    viewBox: '-30 -40 60 80',
                     width: '200',
                     height: '125',
                     style: {

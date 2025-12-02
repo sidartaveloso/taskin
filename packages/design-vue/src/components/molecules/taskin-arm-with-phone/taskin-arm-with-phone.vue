@@ -19,13 +19,13 @@
       >
         <slot name="left-item">
           <!-- Item padrão se nenhum for fornecido -->
-          <TaskinPhone
-            :x="55"
-            :y="135"
-            :phone-color="defaultPhoneColor"
-            :screen-color="defaultScreenColor"
-            :animations-enabled="animationsEnabled"
-          />
+          <g transform="translate(65, 145)">
+            <TaskinPhone
+              :phone-color="defaultPhoneColor"
+              :screen-color="defaultScreenColor"
+              :animations-enabled="animationsEnabled"
+            />
+          </g>
         </slot>
       </g>
     </g>
@@ -49,13 +49,13 @@
       >
         <slot name="right-item">
           <!-- Item padrão se nenhum for fornecido -->
-          <TaskinPhone
-            :x="245"
-            :y="135"
-            :phone-color="defaultPhoneColor"
-            :screen-color="defaultScreenColor"
-            :animations-enabled="animationsEnabled"
-          />
+          <g transform="translate(255, 145)">
+            <TaskinPhone
+              :phone-color="defaultPhoneColor"
+              :screen-color="defaultScreenColor"
+              :animations-enabled="animationsEnabled"
+            />
+          </g>
         </slot>
       </g>
     </g>
