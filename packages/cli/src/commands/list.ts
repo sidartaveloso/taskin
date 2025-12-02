@@ -80,8 +80,12 @@ async function listTasks(
   }
 
   if (options.assignee) {
-    filteredTasks = filteredTasks.filter((t) =>
-      t.userId?.toLowerCase().includes(options.assignee!.toLowerCase()),
+    filteredTasks = filteredTasks.filter(
+      (t) =>
+        t.assignee?.name
+          .toLowerCase()
+          .includes(options.assignee!.toLowerCase()) ||
+        t.assignee?.id.toLowerCase().includes(options.assignee!.toLowerCase()),
     );
   }
 
@@ -92,7 +96,8 @@ async function listTasks(
         t.id.includes(lowerFilter) ||
         t.title.toLowerCase().includes(lowerFilter) ||
         t.status.toLowerCase().includes(lowerFilter) ||
-        t.userId?.toLowerCase().includes(lowerFilter),
+        t.assignee?.name.toLowerCase().includes(lowerFilter) ||
+        t.assignee?.id.toLowerCase().includes(lowerFilter),
     );
   }
 
@@ -114,7 +119,7 @@ async function listTasks(
     const typeColor = getTypeColor(task.type);
 
     console.log(
-      `${colors.info(task.id.padEnd(15))} ${statusColor(task.status.padEnd(15))} ${typeColor(task.type.padEnd(12))} ${colors.secondary((task.userId || 'unknown').padEnd(15))} ${colors.normal(task.title)}`,
+      `${colors.info(task.id.padEnd(15))} ${statusColor(task.status.padEnd(15))} ${typeColor(task.type.padEnd(12))} ${colors.secondary((task.assignee?.name || 'unassigned').padEnd(15))} ${colors.normal(task.title)}`,
     );
   });
 
