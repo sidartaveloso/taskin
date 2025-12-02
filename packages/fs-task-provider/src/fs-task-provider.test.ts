@@ -201,4 +201,235 @@ Test description`;
       expect(written).toContain('## Responsável');
     });
   });
+
+  describe('getAllTasks', () => {
+    it('should return empty array when no task files exist', async () => {
+      (fs.readdir as Mock).mockResolvedValue([]);
+
+      const tasks = await provider.getAllTasks();
+
+      expect(tasks).toEqual([]);
+      expect(fs.readdir).toHaveBeenCalledWith(TASKS_DIR);
+    });
+
+    it('should parse all task files with correct metadata', async () => {
+      const taskFiles = ['task-001-first-task.md', 'task-002-second-task.md'];
+
+      const task1Content = `# Task 001 — First Task
+
+## Status
+in-progress
+
+## Type
+feat
+
+## Assignee
+John Doe
+
+## Description
+First task description`;
+
+      const task2Content = `# Task 002 — Second Task
+
+## Status
+done
+
+## Type
+fix
+
+## Assignee
+Jane Smith
+
+## Description
+Second task description`;
+
+      (fs.readdir as Mock).mockResolvedValue(taskFiles);
+      (fs.readFile as Mock)
+        .mockResolvedValueOnce(task1Content)
+        .mockResolvedValueOnce(task2Content);
+
+      (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
+        (name: string) => ({
+          id: name.toLowerCase().replace(/\s+/g, '-'),
+          name,
+          email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+        }),
+      );
+
+      const tasks = await provider.getAllTasks();
+
+      expect(tasks).toHaveLength(2);
+
+      // Verify first task
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe('First Task');
+      expect(tasks[0].status).toBe('in-progress');
+      expect(tasks[0].type).toBe('feat');
+      expect(tasks[0].assignee).toEqual({
+        id: 'john-doe',
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+      });
+      expect(tasks[0].filePath).toBe('/fake/tasks/task-001-first-task.md');
+      expect(tasks[0].content).toBe(task1Content);
+
+      // Verify second task
+      expect(tasks[1].id).toBe('002');
+      expect(tasks[1].title).toBe('Second Task');
+      expect(tasks[1].status).toBe('done');
+      expect(tasks[1].type).toBe('fix');
+      expect(tasks[1].assignee).toEqual({
+        id: 'jane-smith',
+        name: 'Jane Smith',
+        email: 'jane.smith@example.com',
+      });
+      expect(tasks[1].filePath).toBe('/fake/tasks/task-002-second-task.md');
+      expect(tasks[1].content).toBe(task2Content);
+    });
+
+    it('should handle tasks without assignee', async () => {
+      const taskContent = `# Task 001 — Task Without Assignee
+
+## Status
+pending
+
+## Type
+feat
+
+## Description
+Task without assignee`;
+
+      (fs.readdir as Mock).mockResolvedValue(['task-001-no-assignee.md']);
+      (fs.readFile as Mock).mockResolvedValue(taskContent);
+
+      const tasks = await provider.getAllTasks();
+
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe('Task Without Assignee');
+      expect(tasks[0].status).toBe('pending');
+      expect(tasks[0].type).toBe('feat');
+      expect(tasks[0].assignee).toBeUndefined();
+    });
+
+    it('should use default values for missing status and type', async () => {
+      const taskContent = `# Task 001 — Minimal Task
+
+## Description
+Minimal task with no status or type`;
+
+      (fs.readdir as Mock).mockResolvedValue(['task-001-minimal.md']);
+      (fs.readFile as Mock).mockResolvedValue(taskContent);
+
+      const tasks = await provider.getAllTasks();
+
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].status).toBe('pending');
+      expect(tasks[0].type).toBe('feat');
+    });
+
+    it('should parse pt-BR localized task files', async () => {
+      const taskContentPT = `# Task 001 — Tarefa em Português
+
+## Status
+em-progresso
+
+## Tipo
+feat
+
+## Responsável
+João Silva
+
+## Descrição
+Descrição da tarefa`;
+
+      (fs.readdir as Mock).mockResolvedValue(['task-001-tarefa.md']);
+      (fs.readFile as Mock).mockResolvedValue(taskContentPT);
+
+      (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
+        (name: string) => ({
+          id: name.toLowerCase().replace(/\s+/g, '-'),
+          name,
+          email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+        }),
+      );
+
+      const tasks = await provider.getAllTasks();
+
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe('Tarefa em Português');
+      expect(tasks[0].status).toBe('em-progresso');
+      expect(tasks[0].type).toBe('feat');
+      expect(tasks[0].assignee).toEqual({
+        id: 'joão-silva',
+        name: 'João Silva',
+        email: 'joão.silva@example.com',
+      });
+    });
+
+    it('should resolve assignee from user registry when available', async () => {
+      const taskContent = `# Task 001 — Task With Registered User
+
+## Status
+in-progress
+
+## Type
+feat
+
+## Assignee
+registereduser
+
+## Description
+Task with registered user`;
+
+      const registeredUser = {
+        id: 'user-123',
+        name: 'Registered User',
+        email: 'registered@example.com',
+      };
+
+      (fs.readdir as Mock).mockResolvedValue(['task-001-registered.md']);
+      (fs.readFile as Mock).mockResolvedValue(taskContent);
+      (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(
+        registeredUser,
+      );
+
+      const tasks = await provider.getAllTasks();
+
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].assignee).toEqual(registeredUser);
+      expect(mockUserRegistryInstance.resolveUser).toHaveBeenCalledWith(
+        'registereduser',
+      );
+    });
+
+    it('should filter out non-task files', async () => {
+      const files = [
+        'task-001-valid.md',
+        'README.md',
+        'notes.txt',
+        'task-002-another.md',
+        '.gitignore',
+      ];
+
+      const task1Content = `# Task 001 — Valid Task\n\n## Status\npending`;
+      const task2Content = `# Task 002 — Another Task\n\n## Status\npending`;
+
+      (fs.readdir as Mock).mockResolvedValue(files);
+      (fs.readFile as Mock)
+        .mockResolvedValueOnce(task1Content)
+        .mockResolvedValueOnce(task2Content);
+
+      const tasks = await provider.getAllTasks();
+
+      expect(tasks).toHaveLength(2);
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[1].id).toBe('002');
+      expect(fs.readFile).toHaveBeenCalledTimes(2);
+    });
+  });
 });
