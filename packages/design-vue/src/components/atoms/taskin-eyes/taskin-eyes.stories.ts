@@ -1,7 +1,7 @@
 // @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { h } from 'vue';
-import type { EyeState, LookDirection } from './taskin-eyes.types';
+import { h, onMounted, onUnmounted, ref } from 'vue';
+import type { EyeState } from './taskin-eyes.types';
 import TaskinEyes from './taskin-eyes.vue';
 
 const meta = {
@@ -14,14 +14,24 @@ const meta = {
       options: ['normal', 'closed', 'squint', 'wide'],
       description: 'Eye state/expression',
     },
+    trackingMode: {
+      control: { type: 'select' },
+      options: ['none', 'mouse', 'element', 'custom'],
+      description: 'Tracking mode',
+    },
     lookDirection: {
       control: { type: 'select' },
       options: ['center', 'left', 'right', 'up', 'down'],
-      description: 'Direction the eyes are looking',
+      description: 'Manual look direction (only when trackingMode is "none")',
+      if: { arg: 'trackingMode', eq: 'none' },
     },
     animationsEnabled: {
       control: { type: 'boolean' },
       description: 'Enable/disable animations',
+    },
+    trackingBounds: {
+      control: { type: 'range', min: 1, max: 15, step: 1 },
+      description: 'Maximum pupil movement in pixels',
     },
   },
   render: (args: any) => ({
@@ -53,17 +63,6 @@ export const AllVariations: Story = {
         { name: 'Closed', state: 'closed' },
         { name: 'Squint', state: 'squint' },
         { name: 'Wide', state: 'wide' },
-      ];
-
-      const lookVariations: Array<{
-        name: string;
-        lookDirection: LookDirection;
-      }> = [
-        { name: 'Center', lookDirection: 'center' },
-        { name: 'Left', lookDirection: 'left' },
-        { name: 'Right', lookDirection: 'right' },
-        { name: 'Up', lookDirection: 'up' },
-        { name: 'Down', lookDirection: 'down' },
       ];
 
       return () =>
@@ -121,53 +120,6 @@ export const AllVariations: Story = {
                 ),
               ),
             ]),
-            h('div', [
-              h('h3', { style: { marginBottom: '1rem' } }, 'Look Directions'),
-              h(
-                'div',
-                {
-                  style: {
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(5, 1fr)',
-                    gap: '1rem',
-                  },
-                },
-                lookVariations.map((variant) =>
-                  h(
-                    'div',
-                    {
-                      style: {
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                      },
-                    },
-                    [
-                      h('strong', variant.name),
-                      h(
-                        'svg',
-                        {
-                          xmlns: 'http://www.w3.org/2000/svg',
-                          viewBox: '0 0 320 200',
-                          width: '150',
-                          height: '95',
-                          style: {
-                            border: '1px solid #e0e0e0',
-                            background: '#f5f5f5',
-                          },
-                        },
-                        [
-                          h(TaskinEyes, {
-                            lookDirection: variant.lookDirection,
-                          }),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ]),
           ],
         );
     },
@@ -175,7 +127,7 @@ export const AllVariations: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Overview of all available eye states and look directions.',
+        story: 'Overview of all available eye states.',
       },
     },
   },
@@ -184,38 +136,218 @@ export const AllVariations: Story = {
 export const Default: Story = {
   args: {
     state: 'normal',
+    trackingMode: 'none',
     lookDirection: 'center',
     animationsEnabled: true,
   },
 };
 
-export const Closed: Story = {
+// Mouse Tracking Stories
+export const MouseTracking: Story = {
   args: {
-    state: 'closed',
-    lookDirection: 'center',
-    animationsEnabled: true,
+    state: 'normal',
+    trackingMode: 'mouse',
+    trackingBounds: 6,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: '🖱️ Move your mouse around to see the eyes follow the cursor!',
+      },
+    },
   },
 };
 
-export const Squint: Story = {
-  args: {
-    state: 'squint',
-    lookDirection: 'center',
-    animationsEnabled: true,
-  },
-};
-
-export const Wide: Story = {
+export const MouseTrackingWideEyes: Story = {
   args: {
     state: 'wide',
-    lookDirection: 'center',
-    animationsEnabled: true,
+    trackingMode: 'mouse',
+    trackingBounds: 8,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: '👀 Wide eyes following the mouse with larger tracking bounds.',
+      },
+    },
   },
 };
 
+// Element Tracking Story
+export const ElementTracking: Story = {
+  render: () => ({
+    setup() {
+      return () =>
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2rem',
+              padding: '2rem',
+              alignItems: 'center',
+            },
+          },
+          [
+            h('p', '👇 The eyes follow this button!'),
+            h(
+              'button',
+              {
+                id: 'tracking-target',
+                style: {
+                  padding: '1rem 2rem',
+                  fontSize: '1.2rem',
+                  cursor: 'pointer',
+                  background: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                },
+                onMouseMove: (e: MouseEvent) => {
+                  e.currentTarget.style.transform = `translate(${Math.sin(Date.now() / 500) * 50}px, ${Math.cos(Date.now() / 300) * 30}px)`;
+                },
+              },
+              'Move me! 🎯',
+            ),
+            h(
+              'svg',
+              {
+                xmlns: 'http://www.w3.org/2000/svg',
+                viewBox: '0 0 320 200',
+                width: '320',
+                height: '200',
+                style: { border: '1px solid #e0e0e0', background: '#f5f5f5' },
+              },
+              [
+                h(TaskinEyes, {
+                  state: 'normal',
+                  trackingMode: 'element',
+                  targetElement: '#tracking-target',
+                  trackingBounds: 8,
+                }),
+              ],
+            ),
+          ],
+        );
+    },
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '🎯 Eyes track a specific element on the page. Hover over the button to see it move!',
+      },
+    },
+  },
+};
+
+// Custom Position Tracking Story
+export const CustomPositionTracking: Story = {
+  render: () => ({
+    setup() {
+      const customPos = ref({ x: 400, y: 300 });
+      let animationId: number;
+
+      onMounted(() => {
+        const animate = () => {
+          const time = Date.now() / 1000;
+          customPos.value = {
+            x: 400 + Math.sin(time) * 200,
+            y: 300 + Math.cos(time * 1.5) * 150,
+          };
+          animationId = requestAnimationFrame(animate);
+        };
+        animate();
+      });
+
+      onUnmounted(() => {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+      });
+
+      return () =>
+        h(
+          'div',
+          {
+            style: {
+              position: 'relative',
+              width: '800px',
+              height: '600px',
+              background: '#f0f0f0',
+              border: '2px solid #ccc',
+            },
+          },
+          [
+            h(
+              'div',
+              {
+                style: {
+                  position: 'absolute',
+                  left: `${customPos.value.x}px`,
+                  top: `${customPos.value.y}px`,
+                  width: '20px',
+                  height: '20px',
+                  background: 'red',
+                  borderRadius: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  transition: 'all 0.05s linear',
+                },
+              },
+              '🎯',
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                },
+              },
+              h(
+                'svg',
+                {
+                  xmlns: 'http://www.w3.org/2000/svg',
+                  viewBox: '0 0 320 200',
+                  width: '320',
+                  height: '200',
+                  style: {
+                    border: '1px solid #e0e0e0',
+                    background: '#f5f5f5',
+                  },
+                },
+                [
+                  h(TaskinEyes, {
+                    state: 'normal',
+                    trackingMode: 'custom',
+                    customPosition: customPos.value,
+                    trackingBounds: 10,
+                  }),
+                ],
+              ),
+            ),
+          ],
+        );
+    },
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '🎮 Eyes track a custom position (simulating webcam or game data). The red target moves programmatically.',
+      },
+    },
+  },
+};
+
+// Manual Control Stories
 export const LookingLeft: Story = {
   args: {
     state: 'normal',
+    trackingMode: 'none',
     lookDirection: 'left',
     animationsEnabled: true,
   },
@@ -224,6 +356,7 @@ export const LookingLeft: Story = {
 export const LookingRight: Story = {
   args: {
     state: 'normal',
+    trackingMode: 'none',
     lookDirection: 'right',
     animationsEnabled: true,
   },
@@ -232,6 +365,7 @@ export const LookingRight: Story = {
 export const LookingUp: Story = {
   args: {
     state: 'normal',
+    trackingMode: 'none',
     lookDirection: 'up',
     animationsEnabled: true,
   },
@@ -240,7 +374,35 @@ export const LookingUp: Story = {
 export const LookingDown: Story = {
   args: {
     state: 'normal',
+    trackingMode: 'none',
     lookDirection: 'down',
+    animationsEnabled: true,
+  },
+};
+
+export const Closed: Story = {
+  args: {
+    state: 'closed',
+    trackingMode: 'none',
+    lookDirection: 'center',
+    animationsEnabled: true,
+  },
+};
+
+export const Squint: Story = {
+  args: {
+    state: 'squint',
+    trackingMode: 'none',
+    lookDirection: 'center',
+    animationsEnabled: true,
+  },
+};
+
+export const Wide: Story = {
+  args: {
+    state: 'wide',
+    trackingMode: 'none',
+    lookDirection: 'center',
     animationsEnabled: true,
   },
 };

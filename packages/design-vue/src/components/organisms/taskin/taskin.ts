@@ -28,6 +28,26 @@ export default {
       type: Boolean as PropType<boolean>,
       default: true,
     },
+    eyeTrackingMode: {
+      type: String as PropType<TaskinProps['eyeTrackingMode']>,
+      default: undefined,
+    },
+    eyeTrackingBounds: {
+      type: Number as PropType<TaskinProps['eyeTrackingBounds']>,
+      default: undefined,
+    },
+    eyeLookDirection: {
+      type: String as PropType<TaskinProps['eyeLookDirection']>,
+      default: undefined,
+    },
+    eyeTargetElement: {
+      type: [Object, String] as PropType<TaskinProps['eyeTargetElement']>,
+      default: undefined,
+    },
+    eyeCustomPosition: {
+      type: Object as PropType<TaskinProps['eyeCustomPosition']>,
+      default: undefined,
+    },
   },
   emits: ['ready'],
   setup(
@@ -36,6 +56,11 @@ export default {
       mood: TaskinMood;
       idleAnimation: boolean;
       animationsEnabled: boolean;
+      eyeTrackingMode?: TaskinProps['eyeTrackingMode'];
+      eyeTrackingBounds?: TaskinProps['eyeTrackingBounds'];
+      eyeLookDirection?: TaskinProps['eyeLookDirection'];
+      eyeTargetElement?: TaskinProps['eyeTargetElement'];
+      eyeCustomPosition?: TaskinProps['eyeCustomPosition'];
     },
     {
       emit,

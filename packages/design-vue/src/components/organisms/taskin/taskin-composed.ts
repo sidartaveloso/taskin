@@ -1,10 +1,7 @@
 import { computed, h, onMounted, onUnmounted, ref, type PropType } from 'vue';
 import TaskinArms from '../../atoms/taskin-arms/taskin-arms.vue';
 import TaskinBody from '../../atoms/taskin-body/taskin-body.vue';
-import type {
-  EyeState,
-  LookDirection,
-} from '../../atoms/taskin-eyes/taskin-eyes.types';
+import type { EyeState } from '../../atoms/taskin-eyes/taskin-eyes.types';
 import TaskinEyes from '../../atoms/taskin-eyes/taskin-eyes.vue';
 import type { MouthExpression } from '../../atoms/taskin-mouth/taskin-mouth.types';
 import TaskinMouth from '../../atoms/taskin-mouth/taskin-mouth.vue';
@@ -17,6 +14,8 @@ import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/taskin-effect
 import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/taskin-effect-zzz';
 import TaskinTentacleWithItem from '../../molecules/taskin-tentacle-with-item/taskin-tentacle-with-item.vue';
 import type { TaskinMood } from './taskin.types';
+
+type LookDirection = 'center' | 'left' | 'right' | 'up' | 'down';
 
 interface MoodConfig {
   bodyColor: string;
@@ -313,12 +312,42 @@ export default {
       type: Boolean,
       default: true,
     },
+    eyeTrackingMode: {
+      type: String as PropType<'none' | 'mouse' | 'element' | 'custom'>,
+      default: undefined,
+    },
+    eyeTrackingBounds: {
+      type: Number,
+      default: undefined,
+    },
+    eyeLookDirection: {
+      type: String as PropType<'center' | 'left' | 'right' | 'up' | 'down'>,
+      default: undefined,
+    },
+    eyeTargetElement: {
+      type: [Object, String] as PropType<HTMLElement | string>,
+      default: undefined,
+    },
+    eyeCustomPosition: {
+      type: Object as PropType<{ x: number; y: number }>,
+      default: undefined,
+    },
+    eyeState: {
+      type: String as PropType<'normal' | 'closed' | 'squint' | 'wide'>,
+      default: undefined,
+    },
   },
   setup(props: {
     mood: TaskinMood;
     size: number;
     idleAnimation: boolean;
     animationsEnabled: boolean;
+    eyeTrackingMode?: 'none' | 'mouse' | 'element' | 'custom';
+    eyeTrackingBounds?: number;
+    eyeLookDirection?: 'center' | 'left' | 'right' | 'up' | 'down';
+    eyeTargetElement?: HTMLElement | string;
+    eyeCustomPosition?: { x: number; y: number };
+    eyeState?: 'normal' | 'closed' | 'squint' | 'wide';
   }) {
     const config = computed(
       () => MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral,
@@ -462,8 +491,14 @@ export default {
             }),
         // Eyes
         h(TaskinEyes, {
-          state: blinkEyes.value ? 'closed' : config.value.eyeState,
-          lookDirection: config.value.lookDirection,
+          state:
+            props.eyeState ??
+            (blinkEyes.value ? 'closed' : config.value.eyeState),
+          trackingMode: props.eyeTrackingMode ?? 'none',
+          trackingBounds: props.eyeTrackingBounds,
+          lookDirection: props.eyeLookDirection ?? config.value.lookDirection,
+          targetElement: props.eyeTargetElement,
+          customPosition: props.eyeCustomPosition,
           animationsEnabled: props.animationsEnabled,
         }),
         // Mouth
