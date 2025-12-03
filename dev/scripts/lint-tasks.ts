@@ -19,9 +19,8 @@ import { exit } from 'process';
 
 // Dynamic import to avoid TypeScript rootDir issues
 async function createProvider(tasksDir: string): Promise<ITaskProvider> {
-  const { FileSystemTaskProvider, UserRegistry } = await import(
-    '@opentask/taskin-fs-provider'
-  );
+  const { FileSystemTaskProvider, UserRegistry } =
+    await import('@opentask/taskin-fs-provider');
 
   // Create a simple user registry (empty for linting purposes)
   const userRegistry = new UserRegistry({

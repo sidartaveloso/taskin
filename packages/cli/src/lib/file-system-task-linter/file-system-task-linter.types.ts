@@ -11,8 +11,10 @@ export type { TaskMetadata, TaskValidationIssue } from '@opentask/taskin-types';
  * FileSystem-specific validation error
  * Extends TaskValidationIssue with file-specific information
  */
-export interface FileValidationError
-  extends Omit<TaskValidationIssue, 'taskId'> {
+export interface FileValidationError extends Omit<
+  TaskValidationIssue,
+  'taskId'
+> {
   file: string;
 }
 
