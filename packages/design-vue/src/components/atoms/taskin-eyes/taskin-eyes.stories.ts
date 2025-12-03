@@ -311,16 +311,28 @@ export const ElementTracking: Story = {
 export const CustomPositionTracking: Story = {
   render: () => ({
     setup() {
+      const containerRef = ref<HTMLDivElement | null>(null);
       const customPos = ref({ x: 400, y: 300 });
+      const absolutePos = ref({ x: 0, y: 0 });
       let animationId: number;
 
       onMounted(() => {
         const animate = () => {
           const time = Date.now() / 1000;
-          customPos.value = {
-            x: 400 + Math.sin(time) * 200,
-            y: 300 + Math.cos(time * 1.5) * 150,
-          };
+          const relativeX = 400 + Math.sin(time) * 200;
+          const relativeY = 300 + Math.cos(time * 1.5) * 150;
+          
+          customPos.value = { x: relativeX, y: relativeY };
+          
+          // Converte para coordenadas absolutas da viewport
+          if (containerRef.value) {
+            const containerRect = containerRef.value.getBoundingClientRect();
+            absolutePos.value = {
+              x: containerRect.left + relativeX,
+              y: containerRect.top + relativeY,
+            };
+          }
+          
           animationId = requestAnimationFrame(animate);
         };
         animate();
@@ -336,6 +348,7 @@ export const CustomPositionTracking: Story = {
         h(
           'div',
           {
+            ref: containerRef,
             style: {
               position: 'relative',
               width: '800px',
@@ -388,7 +401,7 @@ export const CustomPositionTracking: Story = {
                   h(TaskinEyes, {
                     state: 'normal',
                     trackingMode: 'custom',
-                    customPosition: customPos.value,
+                    customPosition: absolutePos.value,
                     trackingBounds: 10,
                   }),
                 ],
