@@ -321,9 +321,9 @@ export const CustomPositionTracking: Story = {
           const time = Date.now() / 1000;
           const relativeX = 400 + Math.sin(time) * 200;
           const relativeY = 300 + Math.cos(time * 1.5) * 150;
-          
+
           customPos.value = { x: relativeX, y: relativeY };
-          
+
           // Converte para coordenadas absolutas da viewport
           if (containerRef.value) {
             const containerRect = containerRef.value.getBoundingClientRect();
@@ -332,7 +332,7 @@ export const CustomPositionTracking: Story = {
               y: containerRect.top + relativeY,
             };
           }
-          
+
           animationId = requestAnimationFrame(animate);
         };
         animate();
