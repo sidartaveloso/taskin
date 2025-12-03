@@ -68,6 +68,11 @@ generated/
 .temp/
 tmp/
 
+# VitePress
+.vitepress/cache/
+.vitepress/dist/
+packages/docs/content/
+
 # OS
 Thumbs.db
 
