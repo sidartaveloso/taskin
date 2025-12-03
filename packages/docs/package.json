@@ -8,8 +8,8 @@
   "status": "planned",
   "since": "2025-11-05",
   "scripts": {
-    "build": "vitepress build docs",
-    "dev": "vitepress dev docs",
+    "build": "vitepress build content",
+    "dev": "vitepress dev content",
     "lint": "echo 'lint script'",
     "test": "echo 'test script'"
   },

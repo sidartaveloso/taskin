@@ -10,7 +10,7 @@
         "dist/**",
         "build/**",
         "generated/**",
-        "docs/.vitepress/dist/**"
+        "content/.vitepress/dist/**"
       ]
     },
     "clean": {
@@ -65,6 +65,24 @@
     "typecheck": {
       "inputs": ["src/**/*.{ts,tsx}", "package.json", "tsconfig.json"],
       "outputs": []
+    },
+    "@taskin/chatbot#build": {
+      "outputs": []
+    },
+    "@taskin/directus-extension#build": {
+      "outputs": []
+    },
+    "@taskin/n8n-plugin#build": {
+      "outputs": []
+    },
+    "@taskin/py-sdk#build": {
+      "outputs": []
+    },
+    "@opentask/taskin#build": {
+      "outputs": []
+    },
+    "@taskin/docs#build": {
+      "outputs": ["content/.vitepress/dist/**"]
     }
   }
 }
