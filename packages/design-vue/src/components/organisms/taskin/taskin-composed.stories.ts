@@ -51,6 +51,20 @@ const meta = {
       control: 'boolean',
       description: 'Enable idle animations (blink, wiggle tentacles)',
     },
+    eyeTrackingMode: {
+      control: 'select',
+      options: ['none', 'mouse', 'element', 'custom'],
+      description: 'Eye tracking mode',
+    },
+    eyeTrackingBounds: {
+      control: { type: 'number', min: 1, max: 20, step: 1 },
+      description: 'How far the pupils can move from center',
+    },
+    eyeLookDirection: {
+      control: 'select',
+      options: ['center', 'left', 'right', 'up', 'down'],
+      description: 'Manual look direction (when eyeTrackingMode is "none")',
+    },
   },
   args: {
     mood: 'neutral',
@@ -265,6 +279,112 @@ export const WithoutAnimations: Story = {
       description: {
         story:
           'Taskin with all animations disabled, including mood-specific and idle animations.',
+      },
+    },
+  },
+};
+
+export const EyeTrackingMouse: Story = {
+  args: {
+    mood: 'neutral',
+    eyeTrackingMode: 'mouse',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Taskin with eyes following the mouse cursor. Move your mouse around to see the eyes track it.',
+      },
+    },
+  },
+};
+
+export const EyeTrackingElement: Story = {
+  render: () => ({
+    components: { TaskinComposed },
+    template: `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 40px;">
+        <button
+          ref="targetButton"
+          style="padding: 10px 20px; background: #1f7acb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;"
+        >
+          I'm the target!
+        </button>
+        <TaskinComposed
+          mood="neutral"
+          :size="200"
+          eye-tracking-mode="element"
+          :eye-target-element="targetElement"
+        />
+      </div>
+    `,
+    data() {
+      return {
+        targetElement: null as HTMLElement | null,
+      };
+    },
+    mounted() {
+      this.targetElement = this.$refs.targetButton as HTMLElement;
+    },
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Taskin with eyes following a specific HTML element (the button above).',
+      },
+    },
+  },
+};
+
+export const EyeTrackingCustomPosition: Story = {
+  render: () => ({
+    components: { TaskinComposed },
+    template: `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <p style="margin-bottom: 10px;">Click anywhere in the box below to set eye target position</p>
+          <div
+            @click="setTargetPosition"
+            style="width: 400px; height: 300px; border: 2px dashed #1f7acb; position: relative; cursor: crosshair; display: flex; align-items: center; justify-content: center; background: #f5f5f5;"
+          >
+            <div
+              v-if="customPosition"
+              style="position: absolute; width: 10px; height: 10px; background: red; border-radius: 50%; pointer-events: none;"
+              :style="{ left: customPosition.x + 'px', top: customPosition.y + 'px', transform: 'translate(-5px, -5px)' }"
+            ></div>
+            <TaskinComposed
+              mood="neutral"
+              :size="150"
+              eye-tracking-mode="custom"
+              :eye-custom-position="customPosition"
+            />
+          </div>
+        </div>
+      </div>
+    `,
+    data() {
+      return {
+        customPosition: { x: 200, y: 150 },
+      };
+    },
+    methods: {
+      setTargetPosition(event: MouseEvent) {
+        const rect = (
+          event.currentTarget as HTMLElement
+        ).getBoundingClientRect();
+        this.customPosition = {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        };
+      },
+    },
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Taskin with eyes following a custom position. Click anywhere in the box to set the target position.',
       },
     },
   },

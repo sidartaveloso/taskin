@@ -69,5 +69,8 @@
     "vue": "^3.5.13",
     "vue-eslint-parser": "^10.2.0",
     "vue-tsc": "^2.2.0"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.22-rc.20250304"
   }
 }

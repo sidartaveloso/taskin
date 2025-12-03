@@ -34,6 +34,8 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
       'vue/multi-word-component-names': 'off',
       'vue/max-attributes-per-line': 'off',
+      'vue/attributes-order': 'off', // Conflita com prettier-plugin-organize-attributes
+      'vue/html-self-closing': 'off', // Conflita com Prettier
       'storybook/no-renderer-packages': 'off',
     },
   },

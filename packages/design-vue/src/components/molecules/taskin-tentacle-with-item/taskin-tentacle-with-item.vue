@@ -22,7 +22,7 @@
         <!-- Slot para item na ponta do tentáculo -->
         <slot name="item">
           <!-- Item padrão se nenhum for fornecido -->
-          <circle cx="0" cy="0" r="5" fill="#FFD700" />
+          <!-- <circle cx="0" cy="0" r="5" fill="#FFD700" /> -->
         </slot>
       </template>
     </TaskinTentacle>

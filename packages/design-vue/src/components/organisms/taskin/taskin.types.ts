@@ -1,4 +1,5 @@
 import type { Ref } from 'vue';
+import type { TaskinEyesProps } from '../../atoms/taskin-eyes/taskin-eyes.types';
 
 export type TaskinArmSide = 'left' | 'right';
 
@@ -49,6 +50,51 @@ export interface TaskinProps {
    * Master switch for animations.
    */
   animationsEnabled?: boolean;
+
+  /**
+   * Eye tracking mode configuration
+   */
+  eyeTrackingMode?: TaskinEyesProps['trackingMode'];
+
+  /**
+   * Eye tracking bounds (how far pupils can move)
+   */
+  eyeTrackingBounds?: TaskinEyesProps['trackingBounds'];
+
+  /**
+   * Manual look direction (used when eyeTrackingMode='none')
+   */
+  eyeLookDirection?: TaskinEyesProps['lookDirection'];
+
+  /**
+   * Target element to track (used when eyeTrackingMode='element')
+   */
+  eyeTargetElement?: TaskinEyesProps['targetElement'];
+
+  /**
+   * Custom position to track (used when eyeTrackingMode='custom')
+   */
+  eyeCustomPosition?: TaskinEyesProps['customPosition'];
+
+  /**
+   * Enable face landmark detection to control Taskin expressions
+   */
+  enableFaceLandmarker?: boolean;
+
+  /**
+   * Sync mouth with detected face (requires enableFaceLandmarker)
+   */
+  syncMouth?: boolean;
+
+  /**
+   * Sync eyes with detected face (requires enableFaceLandmarker)
+   */
+  syncEyes?: boolean;
+
+  /**
+   * Sync expressions with detected face (requires enableFaceLandmarker)
+   */
+  syncExpressions?: boolean;
 }
 
 export interface TaskinController {

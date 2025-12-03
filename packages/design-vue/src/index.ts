@@ -3,7 +3,11 @@ export {
   TaskinMascot,
   default as TaskinMascotDefault,
 } from './components/organisms/taskin';
+export { default as TaskinWithFaceTracking } from './components/organisms/taskin/taskin-with-face-tracking.vue';
 export type * from './components/organisms/taskin/taskin.types';
 
 // Re-export everything from organisms
 export * from './components/organisms/taskin';
+
+// Export composables
+export * from './composables';
