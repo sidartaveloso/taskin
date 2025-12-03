@@ -15,6 +15,7 @@ export default tseslint.config(
       'vitest.config.ts',
       'vite.config.app.ts',
       '**/*.stories.ts',
+      'vitest.shims.d.ts',
     ],
   },
   ...tseslint.configs.recommended,

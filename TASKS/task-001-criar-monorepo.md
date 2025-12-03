@@ -12,6 +12,8 @@ feat
 
 Sidarta Veloso
 
+## Description
+
 ## 🎯 Objective
 
 Set up the **base monorepo structure** for the **Taskin** project, using **Turborepo** and **pnpm**.  
