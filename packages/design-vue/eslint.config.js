@@ -33,6 +33,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       'vue/multi-word-component-names': 'off',
+      'vue/max-attributes-per-line': 'off',
       'storybook/no-renderer-packages': 'off',
     },
   },
