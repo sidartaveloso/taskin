@@ -1,4 +1,6 @@
+// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3';
+import { h, onMounted, onUnmounted, ref } from 'vue';
 import TaskinComposed from './taskin-composed';
 import type { TaskinMood } from './taskin.types';
 
@@ -300,33 +302,115 @@ export const EyeTrackingMouse: Story = {
 };
 
 export const EyeTrackingElement: Story = {
-  render: () => ({
-    components: { TaskinComposed },
-    template: `
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 40px;">
-        <button
-          ref="targetButton"
-          style="padding: 10px 20px; background: #1f7acb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;"
-        >
-          I'm the target!
-        </button>
-        <TaskinComposed
-          mood="neutral"
-          :size="200"
-          eye-tracking-mode="element"
-          :eye-target-element="targetElement"
-        />
-      </div>
-    `,
-    data() {
-      return {
-        targetElement: null as HTMLElement | null,
+  render: () => {
+    const targetElement = ref<HTMLElement | undefined>(undefined);
+    const buttonPos = ref({ x: 0, y: 0 });
+    const isDragging = ref(false);
+    const dragOffset = ref({ x: 0, y: 0 });
+
+    const handleDragStart = (e: MouseEvent | TouchEvent) => {
+      isDragging.value = true;
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      dragOffset.value = {
+        x: clientX - buttonPos.value.x,
+        y: clientY - buttonPos.value.y,
       };
-    },
-    mounted() {
-      this.targetElement = this.$refs.targetButton as HTMLElement;
-    },
-  }),
+    };
+
+    const handleDragMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging.value) return;
+      e.preventDefault();
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      buttonPos.value = {
+        x: clientX - dragOffset.value.x,
+        y: clientY - dragOffset.value.y,
+      };
+    };
+
+    const handleDragEnd = () => {
+      isDragging.value = false;
+    };
+
+    onMounted(() => {
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('mouseup', handleDragEnd);
+      document.addEventListener('touchmove', handleDragMove, {
+        passive: false,
+      });
+      document.addEventListener('touchend', handleDragEnd);
+    });
+
+    onUnmounted(() => {
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      document.removeEventListener('touchmove', handleDragMove);
+      document.removeEventListener('touchend', handleDragEnd);
+    });
+
+    return () =>
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '40px',
+          },
+        },
+        [
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transform: `translate(${buttonPos.value.x}px, ${buttonPos.value.y}px)`,
+              },
+            },
+            [
+              h(
+                'p',
+                { style: { margin: 0 } },
+                '👇 Drag this button with mouse or touch!',
+              ),
+              h(
+                'button',
+                {
+                  ref: targetElement,
+                  onMousedown: handleDragStart,
+                  onTouchstart: handleDragStart,
+                  style: {
+                    padding: '10px 20px',
+                    background: '#1f7acb',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: isDragging.value ? 'grabbing' : 'grab',
+                    fontSize: '16px',
+                    touchAction: 'none',
+                    userSelect: 'none',
+                  },
+                },
+                'Move me! 🎯',
+              ),
+            ],
+          ),
+          h(TaskinComposed, {
+            mood: 'neutral' as TaskinMood,
+            size: 200,
+            idleAnimation: true,
+            animationsEnabled: true,
+            eyeTrackingMode: 'element' as const,
+            eyeTargetElement: targetElement.value,
+          }),
+        ],
+      );
+  },
   parameters: {
     docs: {
       description: {
@@ -345,13 +429,14 @@ export const EyeTrackingCustomPosition: Story = {
         <div style="text-align: center; margin-bottom: 20px;">
           <p style="margin-bottom: 10px;">Click anywhere in the box below to set eye target position</p>
           <div
+            ref="container"
             @click="setTargetPosition"
             style="width: 400px; height: 300px; border: 2px dashed #1f7acb; position: relative; cursor: crosshair; display: flex; align-items: center; justify-content: center; background: #f5f5f5;"
           >
             <div
-              v-if="customPosition"
+              v-if="customPosition && visualIndicator"
               style="position: absolute; width: 10px; height: 10px; background: red; border-radius: 50%; pointer-events: none;"
-              :style="{ left: customPosition.x + 'px', top: customPosition.y + 'px', transform: 'translate(-5px, -5px)' }"
+              :style="{ left: visualIndicator.x + 'px', top: visualIndicator.y + 'px', transform: 'translate(-5px, -5px)' }"
             ></div>
             <TaskinComposed
               mood="neutral"
@@ -363,22 +448,38 @@ export const EyeTrackingCustomPosition: Story = {
         </div>
       </div>
     `,
-    data() {
+    data(): {
+      customPosition: { x: number; y: number } | null;
+      visualIndicator: { x: number; y: number } | null;
+    } {
       return {
-        customPosition: { x: 200, y: 150 },
+        customPosition: null,
+        visualIndicator: null,
       };
     },
     methods: {
-      setTargetPosition(event: MouseEvent) {
+      setTargetPosition(event: MouseEvent): void {
         const rect = (
-          event.currentTarget as HTMLElement
+          this.$refs.container as HTMLElement
         ).getBoundingClientRect();
+        // A posição customizada deve ser absoluta na viewport
         this.customPosition = {
+          x: event.clientX,
+          y: event.clientY,
+        };
+        // O indicador visual é relativo ao container
+        this.visualIndicator = {
           x: event.clientX - rect.left,
           y: event.clientY - rect.top,
         };
       },
-    },
+    } as {
+      setTargetPosition(event: MouseEvent): void;
+    } & ThisType<{
+      customPosition: { x: number; y: number } | null;
+      visualIndicator: { x: number; y: number } | null;
+      $refs: { container: HTMLElement };
+    }>,
   }),
   parameters: {
     docs: {

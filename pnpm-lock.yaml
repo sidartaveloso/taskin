@@ -444,8 +444,8 @@ importers:
   packages/taskin-alias:
     dependencies:
       taskin:
-        specifier: 1.0.9
-        version: 1.0.9(@types/node@24.10.1)
+        specifier: 1.0.11
+        version: 1.0.11(@types/node@24.10.1)
 
   packages/types-py:
     dependencies:
@@ -4033,8 +4033,8 @@ packages:
   tabbable@6.3.0:
     resolution: {integrity: sha512-EIHvdY5bPLuWForiR/AN2Bxngzpuwn1is4asboytXtpTgsArc+WmSJKVLlhdh71u7jFcryDqB2A8lQvj78MkyQ==}
 
-  taskin@1.0.9:
-    resolution: {integrity: sha512-E38OLpvR54/iHeunWuVU7KC8Uv/JmWffhbAQuIH6/d/mBNPJYyiKHVkpVKqOgdo+AaO2xl0NJU1P9gPHE6L4AA==}
+  taskin@1.0.11:
+    resolution: {integrity: sha512-04vGg+Xjd4yH3zshArEay5I1DotEbIYxt4gLOwhtsE+F1M61fsenKsqJeEjfuxrqHKyrGTx3LBCVVPfHNFfX6A==}
     hasBin: true
 
   thenify-all@1.6.0:
@@ -6423,7 +6423,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@24.10.1)(@vitest/browser@4.0.15(vite@7.2.6(@types/node@24.10.1)(tsx@4.21.0))(vitest@4.0.15))(@vitest/ui@1.6.1)(jsdom@25.0.1)
+      vitest: 1.6.1(@types/node@20.19.24)(@vitest/browser@4.0.15(vite@7.2.6(@types/node@24.10.1)(tsx@4.21.0))(vitest@4.0.15))(@vitest/ui@1.6.1)(jsdom@25.0.1)
 
   '@vitest/ui@2.1.9(vitest@2.1.9)':
     dependencies:
@@ -8742,7 +8742,7 @@ snapshots:
 
   tabbable@6.3.0: {}
 
-  taskin@1.0.9(@types/node@24.10.1):
+  taskin@1.0.11(@types/node@24.10.1):
     dependencies:
       '@types/express': 5.0.5
       '@types/inquirer': 9.0.9
@@ -9310,7 +9310,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.10.1
-      '@vitest/browser-playwright': 4.0.15(playwright@1.57.0)(vite@6.4.1(@types/node@24.10.1)(tsx@4.21.0))(vitest@4.0.15)
+      '@vitest/browser-playwright': 4.0.15(playwright@1.57.0)(vite@7.2.6(@types/node@24.10.1)(tsx@4.21.0))(vitest@4.0.15)
       '@vitest/ui': 4.0.15(vitest@4.0.15)
       jsdom: 25.0.1
     transitivePeerDependencies:

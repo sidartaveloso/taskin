@@ -3,6 +3,24 @@
   "globalDependencies": [".env", ".env.local"],
   "globalEnv": ["NODE_ENV", "PORT"],
   "tasks": {
+    "@opentask/taskin#build": {
+      "outputs": []
+    },
+    "@taskin/chatbot#build": {
+      "outputs": []
+    },
+    "@taskin/directus-extension#build": {
+      "outputs": []
+    },
+    "@taskin/docs#build": {
+      "outputs": ["content/.vitepress/dist/**"]
+    },
+    "@taskin/n8n-plugin#build": {
+      "outputs": []
+    },
+    "@taskin/py-sdk#build": {
+      "outputs": []
+    },
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
@@ -65,24 +83,6 @@
     "typecheck": {
       "inputs": ["src/**/*.{ts,tsx}", "package.json", "tsconfig.json"],
       "outputs": []
-    },
-    "@taskin/chatbot#build": {
-      "outputs": []
-    },
-    "@taskin/directus-extension#build": {
-      "outputs": []
-    },
-    "@taskin/n8n-plugin#build": {
-      "outputs": []
-    },
-    "@taskin/py-sdk#build": {
-      "outputs": []
-    },
-    "@opentask/taskin#build": {
-      "outputs": []
-    },
-    "@taskin/docs#build": {
-      "outputs": ["content/.vitepress/dist/**"]
     }
   }
 }
