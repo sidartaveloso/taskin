@@ -51,7 +51,7 @@
     </div>
 
     <!-- Taskin Mascot -->
-    <div class="mascot-container">
+    <div class="mascot-container" ref="mascotContainer">
       <TaskinComposed
         :mood="currentMood"
         :size="mascotSize"
@@ -90,6 +90,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Refs
 const videoElement = ref<HTMLVideoElement | null>(null);
+const mascotContainer = ref<HTMLDivElement | null>(null);
 const showWebcam = ref(props.showWebcam);
 const syncEyes = ref(true);
 const syncMouth = ref(true);
@@ -121,7 +122,7 @@ const toggleTracking = () => {
 watch(
   () => faceLandmarker.state.value.blendShapes,
   (blendShapes) => {
-    if (!blendShapes || !syncEyes.value) {
+    if (!blendShapes || !syncEyes.value || !mascotContainer.value) {
       eyeTrackingMode.value = 'none';
       eyeState.value = 'normal';
       return;
@@ -129,11 +130,15 @@ watch(
 
     eyeTrackingMode.value = 'custom';
 
-    // Movimento dos olhos
+    // Movimento dos olhos - converte para coordenadas absolutas da viewport
     const eyeLook = faceLandmarker.getEyeLookDirection();
+    const mascotRect = mascotContainer.value.getBoundingClientRect();
+    const mascotCenterX = mascotRect.left + mascotRect.width / 2;
+    const mascotCenterY = mascotRect.top + mascotRect.height / 2;
+
     eyePosition.value = {
-      x: eyeLook.x * 3, // Amplifica o movimento
-      y: eyeLook.y * 3,
+      x: mascotCenterX + eyeLook.x * 3, // Amplifica o movimento relativo ao centro do mascote
+      y: mascotCenterY + eyeLook.y * 3,
     };
 
     // Estado dos olhos (aberto/fechado/arregalado)
