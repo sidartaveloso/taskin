@@ -22,11 +22,12 @@
     "README.md"
   ],
   "scripts": {
-    "dev": "vite",
+    "dev": "storybook dev -p 6007",
+    "dev:vite": "vite",
     "build": "vite build && vue-tsc --emitDeclarationOnly",
+    "build:storybook": "storybook build",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6007",
-    "build-storybook": "storybook build",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:ui": "vitest --ui",

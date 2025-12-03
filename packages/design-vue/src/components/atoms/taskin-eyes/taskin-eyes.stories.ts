@@ -177,6 +177,51 @@ export const MouseTrackingWideEyes: Story = {
 export const ElementTracking: Story = {
   render: () => ({
     setup() {
+      const buttonPos = ref({ x: 0, y: 0 });
+      const isDragging = ref(false);
+      const dragOffset = ref({ x: 0, y: 0 });
+
+      const handleDragStart = (e: MouseEvent | TouchEvent) => {
+        isDragging.value = true;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        dragOffset.value = {
+          x: clientX - buttonPos.value.x,
+          y: clientY - buttonPos.value.y,
+        };
+      };
+
+      const handleDragMove = (e: MouseEvent | TouchEvent) => {
+        if (!isDragging.value) return;
+        e.preventDefault();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        buttonPos.value = {
+          x: clientX - dragOffset.value.x,
+          y: clientY - dragOffset.value.y,
+        };
+      };
+
+      const handleDragEnd = () => {
+        isDragging.value = false;
+      };
+
+      onMounted(() => {
+        document.addEventListener('mousemove', handleDragMove);
+        document.addEventListener('mouseup', handleDragEnd);
+        document.addEventListener('touchmove', handleDragMove, {
+          passive: false,
+        });
+        document.addEventListener('touchend', handleDragEnd);
+      });
+
+      onUnmounted(() => {
+        document.removeEventListener('mousemove', handleDragMove);
+        document.removeEventListener('mouseup', handleDragEnd);
+        document.removeEventListener('touchmove', handleDragMove);
+        document.removeEventListener('touchend', handleDragEnd);
+      });
+
       return () =>
         h(
           'div',
@@ -190,25 +235,45 @@ export const ElementTracking: Story = {
             },
           },
           [
-            h('p', '👇 The eyes follow this button!'),
             h(
-              'button',
+              'div',
               {
-                id: 'tracking-target',
                 style: {
-                  padding: '1rem 2rem',
-                  fontSize: '1.2rem',
-                  cursor: 'pointer',
-                  background: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                },
-                onMouseMove: (e: MouseEvent) => {
-                  e.currentTarget.style.transform = `translate(${Math.sin(Date.now() / 500) * 50}px, ${Math.cos(Date.now() / 300) * 30}px)`;
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  position: 'relative',
+                  transform: `translate(${buttonPos.value.x}px, ${buttonPos.value.y}px)`,
                 },
               },
-              'Move me! 🎯',
+              [
+                h(
+                  'p',
+                  { style: { margin: 0 } },
+                  '👇 Drag this button with mouse or touch!',
+                ),
+                h(
+                  'button',
+                  {
+                    id: 'tracking-target',
+                    style: {
+                      padding: '1rem 2rem',
+                      fontSize: '1.2rem',
+                      cursor: isDragging.value ? 'grabbing' : 'grab',
+                      background: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      touchAction: 'none',
+                      userSelect: 'none',
+                    },
+                    onMousedown: handleDragStart,
+                    onTouchstart: handleDragStart,
+                  },
+                  'Move me! 🎯',
+                ),
+              ],
             ),
             h(
               'svg',
