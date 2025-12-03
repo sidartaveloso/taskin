@@ -91,7 +91,7 @@ export const TaskinTentaclesFluid = {
         const speedVariation = 0.8 + i * 0.1; // Slight speed variation per tentacle
 
         tentacles.push(
-          h(TaskinTentacle, {
+          h(TaskinTentacle as any, {
             key: `tentacle-${i}`,
             color: props.color,
             animationsEnabled: props.animationsEnabled,
