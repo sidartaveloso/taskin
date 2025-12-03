@@ -9,6 +9,8 @@ coverage/
 
 # Build outputs
 dist/
+dist-app/
+dashboard-dist/
 build/
 *.tsbuildinfo
 
