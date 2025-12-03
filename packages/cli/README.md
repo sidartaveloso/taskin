@@ -19,7 +19,7 @@ Taskin is a command-line tool that helps you manage tasks directly from your ter
 
 ## 🚀 Installation
 
-\`\`\`bash
+```bash
 
 # Using npx (recommended - no installation needed!)
 
@@ -36,9 +36,9 @@ pnpm add -g taskin
 # Or with yarn
 
 yarn global add taskin
-\`\`\`
+```
 
-> **Note:** This is a beta version. Please report any issues on [GitHub](https://github.com/sidartaveloso/taskin/issues).
+> **Note:** Please report any issues on [GitHub](https://github.com/sidartaveloso/taskin/issues).
 
 ## 📦 Available Packages
 
