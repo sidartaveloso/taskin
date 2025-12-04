@@ -18,10 +18,8 @@ export default [
       parser: tsParser, // Define o parser do TypeScript
       parserOptions: {
         ecmaVersion: 'latest',
-        // Tipo de módulo (ESM)
-        project: './tsconfig.json',
-        // Versão do ECMAScript
-        sourceType: 'module', // Caminho para o tsconfig.json
+        projectService: true,
+        sourceType: 'module',
       },
     },
     plugins: {
