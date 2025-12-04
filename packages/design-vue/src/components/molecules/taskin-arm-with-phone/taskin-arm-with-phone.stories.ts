@@ -249,6 +249,7 @@ export const FaceTracking: Story = {
         enableBlendshapes: true,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,
+        mirrorEyeTracking: true,
       });
 
       const toggleTracking = () => {
@@ -266,9 +267,12 @@ export const FaceTracking: Story = {
         unwatchBlendShapes.value = watch(
           () => faceLandmarker.state.value.blendShapes,
           (blendShapes) => {
-            if (!blendShapes || !syncExpressions.value) {
-              leftArmRotation.value = 0;
-              rightArmRotation.value = 0;
+            if (!blendShapes) {
+              return;
+            }
+
+            // Se não está sincronizando, mantém os valores atuais (congelados)
+            if (!syncExpressions.value) {
               return;
             }
 

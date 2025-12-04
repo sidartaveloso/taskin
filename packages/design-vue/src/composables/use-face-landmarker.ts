@@ -48,6 +48,7 @@ export interface UseFaceLandmarkerOptions {
   enableBlendshapes?: boolean;
   minDetectionConfidence?: number;
   minTrackingConfidence?: number;
+  mirrorEyeTracking?: boolean;
   onDetection?: (result: FaceLandmarkerResult) => void;
 }
 
@@ -263,23 +264,35 @@ export function useFaceLandmarker(
 
     const bs = state.value.blendShapes;
 
-    // Horizontal: esquerda (negativo) vs direita (positivo)
-    const horizontal =
-      (bs.eyeLookOutRight + bs.eyeLookOutLeft) / 2 -
-      (bs.eyeLookInRight + bs.eyeLookInLeft) / 2;
+    // Horizontal:
+    // - eyeLookInLeft + eyeLookOutRight = olhando para a esquerda (negativo)
+    // - eyeLookOutLeft + eyeLookInRight = olhando para a direita (positivo)
+    let horizontal =
+      (bs.eyeLookOutLeft + bs.eyeLookInRight) / 2 -
+      (bs.eyeLookInLeft + bs.eyeLookOutRight) / 2;
 
     // Vertical: cima (negativo) vs baixo (positivo)
-    const vertical =
+    let vertical =
       (bs.eyeLookDownLeft + bs.eyeLookDownRight) / 2 -
       (bs.eyeLookUpLeft + bs.eyeLookUpRight) / 2;
+
+    // Se mirrorEyeTracking está habilitado, inverte o horizontal
+    // para que o Taskin olhe na mesma direção que você (efeito espelho)
+    if (options.mirrorEyeTracking) {
+      horizontal = -horizontal;
+    }
+
+    // Amplifica mais o movimento para cima (valores negativos)
+    // para compensar a limitação dos blendshapes
+    if (vertical < 0) {
+      vertical = vertical * 1.5; // 50% mais movimento quando olha para cima
+    }
 
     return {
       x: horizontal * 100, // Escala para pixels
       y: vertical * 100,
     };
-  };
-
-  /**
+  }; /**
    * Calcula o quanto os olhos estão abertos (0 = fechado, 1 = aberto)
    */
   const getEyeOpenness = (): { left: number; right: number } => {

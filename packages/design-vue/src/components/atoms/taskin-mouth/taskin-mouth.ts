@@ -21,7 +21,8 @@ export default {
         case 'frown':
           return 'M145 125 Q160 118 175 125';
         case 'open':
-          return 'M145 125 Q160 135 175 125';
+          // Forma oval/arredondada para boca aberta
+          return 'M150 120 Q160 130 170 120 Q160 128 150 120 Z';
         case 'neutral':
         default:
           return 'M145 125 Q160 130 175 125';
@@ -32,7 +33,7 @@ export default {
       h('path', {
         id: 'mouth',
         d: getMouthPath(),
-        fill: 'none',
+        fill: props.expression === 'open' ? '#2C3E50' : 'none',
         stroke: '#2C3E50',
         'stroke-width': '3',
         'stroke-linecap': 'round',

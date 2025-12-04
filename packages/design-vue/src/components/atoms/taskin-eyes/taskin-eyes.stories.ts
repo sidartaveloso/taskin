@@ -498,6 +498,9 @@ export const FaceTracking: Story = {
       const videoElement = ref<HTMLVideoElement | null>(null);
       const showWebcam = ref(false);
       const syncEyes = ref(true);
+      const eyeTrackingMode = ref<'none' | 'mouse' | 'element' | 'custom'>(
+        'none',
+      );
       const eyeState = ref<EyeState>('normal');
       const eyePosition = ref({ x: 0, y: 0 });
 
@@ -511,6 +514,7 @@ export const FaceTracking: Story = {
         enableBlendshapes: true,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,
+        mirrorEyeTracking: true,
       });
 
       const toggleTracking = () => {
@@ -521,6 +525,13 @@ export const FaceTracking: Story = {
         }
       };
 
+      // Watch para syncEyes - garante que o tracking mode seja mantido
+      watch(syncEyes, (enabled) => {
+        if (enabled && faceLandmarker.state.value.isDetecting) {
+          eyeTrackingMode.value = 'custom';
+        }
+      });
+
       // Sincronização dos olhos
       const unwatchBlendShapes = ref<(() => void) | null>(null);
 
@@ -528,10 +539,16 @@ export const FaceTracking: Story = {
         unwatchBlendShapes.value = watch(
           () => faceLandmarker.state.value.blendShapes,
           (blendShapes) => {
-            if (!blendShapes || !syncEyes.value || !eyesContainerRef.value) {
-              eyeState.value = 'normal';
+            if (!blendShapes || !eyesContainerRef.value) {
               return;
             }
+
+            // Se não está sincronizando, mantém os valores atuais (congelados)
+            if (!syncEyes.value) {
+              return;
+            }
+
+            eyeTrackingMode.value = 'custom';
 
             // Movimento dos olhos
             const eyeLook = faceLandmarker.getEyeLookDirection();
@@ -652,7 +669,7 @@ export const FaceTracking: Story = {
                 [
                   h(TaskinEyes, {
                     state: eyeState.value,
-                    trackingMode: syncEyes.value ? 'custom' : 'none',
+                    trackingMode: eyeTrackingMode.value,
                     customPosition: eyePosition.value,
                     trackingBounds: 8,
                   }),

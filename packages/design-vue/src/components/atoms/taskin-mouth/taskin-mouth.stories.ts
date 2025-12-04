@@ -11,7 +11,16 @@ const meta = {
   argTypes: {
     expression: {
       control: { type: 'select' },
-      options: ['neutral', 'smile', 'frown', 'open'],
+      options: [
+        'neutral',
+        'smile',
+        'frown',
+        'open',
+        'wide-open',
+        'o-shape',
+        'smirk',
+        'surprised',
+      ],
       description: 'Mouth expression',
     },
     animationsEnabled: {
@@ -48,6 +57,10 @@ export const AllVariations: Story = {
         { name: 'Smile', expression: 'smile' },
         { name: 'Frown', expression: 'frown' },
         { name: 'Open', expression: 'open' },
+        { name: 'Wide Open', expression: 'wide-open' },
+        { name: 'O Shape', expression: 'o-shape' },
+        { name: 'Smirk', expression: 'smirk' },
+        { name: 'Surprised', expression: 'surprised' },
       ];
 
       return () =>
@@ -127,6 +140,34 @@ export const Frown: Story = {
 export const Open: Story = {
   args: {
     expression: 'open',
+    animationsEnabled: true,
+  },
+};
+
+export const WideOpen: Story = {
+  args: {
+    expression: 'wide-open',
+    animationsEnabled: true,
+  },
+};
+
+export const OShape: Story = {
+  args: {
+    expression: 'o-shape',
+    animationsEnabled: true,
+  },
+};
+
+export const Smirk: Story = {
+  args: {
+    expression: 'smirk',
+    animationsEnabled: true,
+  },
+};
+
+export const Surprised: Story = {
+  args: {
+    expression: 'surprised',
     animationsEnabled: true,
   },
 };

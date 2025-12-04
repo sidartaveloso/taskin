@@ -91,6 +91,7 @@ const faceLandmarker = useFaceLandmarker(videoElement, {
   enableBlendshapes: true,
   minDetectionConfidence: 0.5,
   minTrackingConfidence: 0.5,
+  mirrorEyeTracking: true,
 });
 
 // Estado do Taskin
@@ -108,13 +109,23 @@ const toggleTracking = () => {
   }
 };
 
+// Watch para syncEyes - garante que o tracking mode seja mantido
+watch(syncEyes, (enabled) => {
+  if (enabled && faceLandmarker.state.value.isDetecting) {
+    eyeTrackingMode.value = 'custom';
+  }
+});
+
 // Sincronização dos olhos
 watch(
   () => faceLandmarker.state.value.blendShapes,
   (blendShapes) => {
-    if (!blendShapes || !syncEyes.value || !mascotContainer.value) {
-      eyeTrackingMode.value = 'none';
-      eyeState.value = 'normal';
+    if (!blendShapes || !mascotContainer.value) {
+      return;
+    }
+
+    // Se não está sincronizando, mantém os valores atuais (congelados)
+    if (!syncEyes.value) {
       return;
     }
 
@@ -153,30 +164,33 @@ watch(
   (blendShapes) => {
     if (!blendShapes) return;
 
-    if (syncExpressions.value) {
-      const smileIntensity = faceLandmarker.getSmileIntensity();
-      const frownIntensity = faceLandmarker.getFrownIntensity();
-      const mouthOpenness = faceLandmarker.getMouthOpenness();
-      const isWide = faceLandmarker.isEyesWide();
+    // Se não está sincronizando, mantém os valores atuais (congelados)
+    if (!syncExpressions.value) {
+      return;
+    }
 
-      // Determina o mood baseado nas expressões
-      // Prioridade: sorriso > franzir > boca aberta > olhos arregalados
-      if (smileIntensity > 0.5) {
-        currentMood.value = 'happy';
-      } else if (smileIntensity > 0.3) {
-        currentMood.value = 'smirk';
-      } else if (frownIntensity > 0.4) {
-        currentMood.value = 'annoyed';
-      } else if (mouthOpenness > 0.6) {
-        currentMood.value = 'sarcastic';
-      } else if (isWide) {
-        currentMood.value = 'furious';
-      } else if (mouthOpenness > 0.3) {
-        // Boca meio aberta = neutro falando
-        currentMood.value = 'neutral';
-      } else {
-        currentMood.value = 'neutral';
-      }
+    const smileIntensity = faceLandmarker.getSmileIntensity();
+    const frownIntensity = faceLandmarker.getFrownIntensity();
+    const mouthOpenness = faceLandmarker.getMouthOpenness();
+    const isWide = faceLandmarker.isEyesWide();
+
+    // Determina o mood baseado nas expressões
+    // Prioridade: sorriso > franzir > boca aberta > olhos arregalados
+    if (smileIntensity > 0.5) {
+      currentMood.value = 'happy';
+    } else if (smileIntensity > 0.3) {
+      currentMood.value = 'smirk';
+    } else if (frownIntensity > 0.4) {
+      currentMood.value = 'annoyed';
+    } else if (mouthOpenness > 0.6) {
+      currentMood.value = 'sarcastic';
+    } else if (isWide) {
+      currentMood.value = 'furious';
+    } else if (mouthOpenness > 0.3) {
+      // Boca meio aberta = neutro falando
+      currentMood.value = 'neutral';
+    } else {
+      currentMood.value = 'neutral';
     }
   },
 );
