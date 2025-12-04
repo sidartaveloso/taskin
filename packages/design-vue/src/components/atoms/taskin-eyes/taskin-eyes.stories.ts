@@ -1,6 +1,10 @@
 // @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { h, onMounted, onUnmounted, ref } from 'vue';
+import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
+import FaceTrackingControls from '../../molecules/face-tracking-controls';
+import FaceTrackingDebug from '../../molecules/face-tracking-debug';
+import WebcamVideo from '../webcam-video';
 import type { EyeState } from './taskin-eyes.types';
 import TaskinEyes from './taskin-eyes.vue';
 
@@ -482,5 +486,194 @@ export const Wide: Story = {
     trackingMode: 'none',
     lookDirection: 'center',
     animationsEnabled: true,
+  },
+};
+
+// Face Tracking Story
+export const FaceTracking: Story = {
+  render: () => ({
+    setup() {
+      const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
+      const eyesContainerRef = ref<HTMLDivElement | null>(null);
+      const videoElement = ref<HTMLVideoElement | null>(null);
+      const showWebcam = ref(false);
+      const syncEyes = ref(true);
+      const eyeState = ref<EyeState>('normal');
+      const eyePosition = ref({ x: 0, y: 0 });
+
+      onMounted(() => {
+        if (webcamVideoRef.value) {
+          videoElement.value = webcamVideoRef.value.videoElement;
+        }
+      });
+
+      const faceLandmarker = useFaceLandmarker(videoElement, {
+        enableBlendshapes: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+
+      const toggleTracking = () => {
+        if (faceLandmarker.state.value.isDetecting) {
+          faceLandmarker.stopDetection();
+        } else {
+          faceLandmarker.startDetection();
+        }
+      };
+
+      // Sincronização dos olhos
+      const unwatchBlendShapes = ref<(() => void) | null>(null);
+
+      onMounted(() => {
+        unwatchBlendShapes.value = watch(
+          () => faceLandmarker.state.value.blendShapes,
+          (blendShapes) => {
+            if (!blendShapes || !syncEyes.value || !eyesContainerRef.value) {
+              eyeState.value = 'normal';
+              return;
+            }
+
+            // Movimento dos olhos
+            const eyeLook = faceLandmarker.getEyeLookDirection();
+            const eyesRect = eyesContainerRef.value.getBoundingClientRect();
+            const eyesCenterX = eyesRect.left + eyesRect.width / 2;
+            const eyesCenterY = eyesRect.top + eyesRect.height / 2;
+
+            eyePosition.value = {
+              x: eyesCenterX + eyeLook.x * 2,
+              y: eyesCenterY + eyeLook.y * 2,
+            };
+
+            // Estado dos olhos
+            const eyeOpenness = faceLandmarker.getEyeOpenness();
+            const avgOpenness = (eyeOpenness.left + eyeOpenness.right) / 2;
+
+            if (faceLandmarker.isEyesWide()) {
+              eyeState.value = 'wide';
+            } else if (avgOpenness < 0.3) {
+              eyeState.value = 'closed';
+            } else if (avgOpenness < 0.6) {
+              eyeState.value = 'squint';
+            } else {
+              eyeState.value = 'normal';
+            }
+          },
+        );
+      });
+
+      onUnmounted(() => {
+        if (unwatchBlendShapes.value) {
+          unwatchBlendShapes.value();
+        }
+        faceLandmarker.stopDetection();
+      });
+
+      const debugInfo = computed(() => {
+        const bs = faceLandmarker.state.value.blendShapes;
+        if (!bs) return null;
+
+        const eyeLook = faceLandmarker.getEyeLookDirection();
+        const eyeOpenness = faceLandmarker.getEyeOpenness();
+        return {
+          eyeLook: {
+            x: (eyeLook.x >= 0 ? '+' : '') + eyeLook.x.toFixed(15),
+            y: (eyeLook.y >= 0 ? '+' : '') + eyeLook.y.toFixed(15),
+          },
+          eyeOpenness: {
+            left:
+              (eyeOpenness.left >= 0 ? '+' : '') + eyeOpenness.left.toFixed(10),
+            right:
+              (eyeOpenness.right >= 0 ? '+' : '') +
+              eyeOpenness.right.toFixed(10),
+          },
+          eyeState: eyeState.value,
+        };
+      });
+
+      return () =>
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px',
+              padding: '20px',
+              position: 'relative',
+            },
+          },
+          [
+            h(WebcamVideo, {
+              ref: webcamVideoRef,
+              visible: showWebcam.value,
+              width: 320,
+              height: 240,
+              mirrored: true,
+            }),
+            h(FaceTrackingControls, {
+              isDetecting: faceLandmarker.state.value.isDetecting,
+              error: faceLandmarker.state.value.error,
+              showWebcam: showWebcam.value,
+              syncEyes: syncEyes.value,
+              syncMouth: false,
+              syncExpressions: false,
+              disabled: faceLandmarker.state.value.error !== null,
+              'onToggle-tracking': toggleTracking,
+              'onUpdate:showWebcam': (value: boolean) => {
+                showWebcam.value = value;
+              },
+              'onUpdate:syncEyes': (value: boolean) => {
+                syncEyes.value = value;
+              },
+            }),
+            h(
+              'div',
+              {
+                ref: eyesContainerRef,
+                style: {
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                },
+              },
+              h(
+                'svg',
+                {
+                  xmlns: 'http://www.w3.org/2000/svg',
+                  viewBox: '0 0 320 200',
+                  width: '320',
+                  height: '200',
+                  style: {
+                    border: '1px solid #e0e0e0',
+                    background: '#f5f5f5',
+                  },
+                },
+                [
+                  h(TaskinEyes, {
+                    state: eyeState.value,
+                    trackingMode: syncEyes.value ? 'custom' : 'none',
+                    customPosition: eyePosition.value,
+                    trackingBounds: 8,
+                  }),
+                ],
+              ),
+            ),
+            h(FaceTrackingDebug, {
+              data: debugInfo.value,
+              title: 'Eyes Tracking',
+              position: 'top-right',
+            }),
+          ],
+        );
+    },
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '📹 Eyes track your face using webcam! Click "Iniciar Detecção" to start.',
+      },
+    },
   },
 };
