@@ -1,54 +1,29 @@
 <template>
   <div class="taskin-face-tracking">
-    <!-- Webcam (oculta) -->
-    <video
-      class="webcam-feed"
-      ref="videoElement"
-      :class="{ visible: showWebcam }"
-      autoplay
-      playsinline
+    <!-- Webcam -->
+    <WebcamVideo
+      ref="webcamVideoRef"
+      :visible="showWebcam"
+      :width="320"
+      :height="240"
+      :mirrored="true"
     />
 
     <!-- Controles -->
-    <div class="controls">
-      <button
-        class="control-button"
-        :disabled="faceLandmarker.state.value.error !== null"
-        @click="toggleTracking"
-      >
-        {{ faceLandmarker.state.value.isDetecting ? 'Parar' : 'Iniciar' }}
-        Detecção
-      </button>
-
-      <label class="control-checkbox">
-        <input v-model="showWebcam" type="checkbox" />
-        Mostrar Webcam
-      </label>
-
-      <label class="control-checkbox">
-        <input v-model="syncEyes" type="checkbox" />
-        Sincronizar Olhos
-      </label>
-
-      <label class="control-checkbox">
-        <input v-model="syncMouth" type="checkbox" />
-        Sincronizar Boca
-      </label>
-
-      <label class="control-checkbox">
-        <input v-model="syncExpressions" type="checkbox" />
-        Sincronizar Expressões
-      </label>
-
-      <div class="error" v-if="faceLandmarker.state.value.error">
-        {{ faceLandmarker.state.value.error }}
-      </div>
-
-      <div class="status" v-if="faceLandmarker.state.value.isDetecting">
-        <span class="status-indicator" />
-        Detectando...
-      </div>
-    </div>
+    <FaceTrackingControls
+      :is-detecting="faceLandmarker.state.value.isDetecting"
+      :error="faceLandmarker.state.value.error"
+      :show-webcam="showWebcam"
+      :sync-eyes="syncEyes"
+      :sync-mouth="syncMouth"
+      :sync-expressions="syncExpressions"
+      :disabled="faceLandmarker.state.value.error !== null"
+      @toggle-tracking="toggleTracking"
+      @update:show-webcam="showWebcam = $event"
+      @update:sync-eyes="syncEyes = $event"
+      @update:sync-mouth="syncMouth = $event"
+      @update:sync-expressions="syncExpressions = $event"
+    />
 
     <!-- Taskin Mascot -->
     <div class="mascot-container" ref="mascotContainer">
@@ -63,16 +38,21 @@
     </div>
 
     <!-- Debug Info -->
-    <div class="debug-info" v-if="showDebug">
-      <h4>BlendShapes:</h4>
-      <pre>{{ debugInfo }}</pre>
-    </div>
+    <FaceTrackingDebug
+      v-if="showDebug"
+      :data="debugInfo"
+      title="BlendShapes"
+      position="top-right"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
+import WebcamVideo from '../../atoms/webcam-video';
+import FaceTrackingControls from '../../molecules/face-tracking-controls';
+import FaceTrackingDebug from '../../molecules/face-tracking-debug';
 import TaskinComposed from './taskin-composed';
 import type { TaskinMood } from './taskin.types';
 
@@ -89,12 +69,22 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 // Refs
-const videoElement = ref<HTMLVideoElement | null>(null);
+const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
 const mascotContainer = ref<HTMLDivElement | null>(null);
 const showWebcam = ref(props.showWebcam);
 const syncEyes = ref(true);
 const syncMouth = ref(true);
 const syncExpressions = ref(true);
+
+// Video element do WebcamVideo
+const videoElement = ref<HTMLVideoElement | null>(null);
+
+// Após montar, obtém a referência do vídeo
+onMounted(() => {
+  if (webcamVideoRef.value) {
+    videoElement.value = webcamVideoRef.value.videoElement;
+  }
+});
 
 // Face Landmarker
 const faceLandmarker = useFaceLandmarker(videoElement, {
@@ -196,13 +186,22 @@ const debugInfo = computed(() => {
   const bs = faceLandmarker.state.value.blendShapes;
   if (!bs) return null;
 
+  const eyeLook = faceLandmarker.getEyeLookDirection();
+  const eyeOpenness = faceLandmarker.getEyeOpenness();
   return {
     smile: faceLandmarker.getSmileIntensity().toFixed(2),
     frown: faceLandmarker.getFrownIntensity().toFixed(2),
     mouthOpen: faceLandmarker.getMouthOpenness().toFixed(2),
     eyesWide: faceLandmarker.isEyesWide(),
-    eyeLook: faceLandmarker.getEyeLookDirection(),
-    eyeOpenness: faceLandmarker.getEyeOpenness(),
+    eyeLook: {
+      x: (eyeLook.x >= 0 ? '+' : '') + eyeLook.x.toFixed(15),
+      y: (eyeLook.y >= 0 ? '+' : '') + eyeLook.y.toFixed(15),
+    },
+    eyeOpenness: {
+      left: (eyeOpenness.left >= 0 ? '+' : '') + eyeOpenness.left.toFixed(10),
+      right:
+        (eyeOpenness.right >= 0 ? '+' : '') + eyeOpenness.right.toFixed(10),
+    },
   };
 });
 </script>
@@ -223,128 +222,10 @@ export default {
   position: relative;
 }
 
-.webcam-feed {
-  display: none;
-  width: 320px;
-  height: 240px;
-  border: 2px solid #1f7acb;
-  border-radius: 8px;
-  transform: scaleX(-1); /* Efeito espelho */
-}
-
-.webcam-feed.visible {
-  display: block;
-}
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  align-items: center;
-  justify-content: center;
-  padding: 15px;
-  background: #f5f5f5;
-  border-radius: 8px;
-}
-
-.control-button {
-  padding: 10px 20px;
-  background: #1f7acb;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  transition: background 0.2s;
-}
-
-.control-button:hover:not(:disabled) {
-  background: #1a6bb0;
-}
-
-.control-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.control-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.control-checkbox input {
-  cursor: pointer;
-}
-
-.error {
-  color: #d32f2f;
-  padding: 10px;
-  background: #ffebee;
-  border-radius: 4px;
-  width: 100%;
-  text-align: center;
-}
-
-.status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #2e7d32;
-  font-weight: 500;
-}
-
-.status-indicator {
-  width: 10px;
-  height: 10px;
-  background: #4caf50;
-  border-radius: 50%;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 .mascot-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 400px;
-}
-
-.debug-info {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 15px;
-  border-radius: 8px;
-  font-family: monospace;
-  font-size: 12px;
-  max-width: 300px;
-  max-height: 400px;
-  overflow: auto;
-}
-
-.debug-info h4 {
-  margin: 0 0 10px 0;
-  font-size: 14px;
-}
-
-.debug-info pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-wrap: break-word;
 }
 </style>
