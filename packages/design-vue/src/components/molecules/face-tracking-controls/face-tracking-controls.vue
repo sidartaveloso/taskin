@@ -55,6 +55,17 @@
       Sincronizar Expressões
     </label>
 
+    <label class="control-checkbox">
+      <input
+        type="checkbox"
+        :checked="syncArms"
+        @change="
+          emit('update:syncArms', ($event.target as HTMLInputElement).checked)
+        "
+      />
+      Sincronizar Braços
+    </label>
+
     <div class="error" v-if="error">
       {{ error }}
     </div>
