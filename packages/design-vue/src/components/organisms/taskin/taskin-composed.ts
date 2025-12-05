@@ -336,6 +336,10 @@ export default {
       type: String as PropType<'normal' | 'closed' | 'squint' | 'wide'>,
       default: undefined,
     },
+    mouthExpression: {
+      type: String as PropType<MouthExpression>,
+      default: undefined,
+    },
   },
   setup(props: {
     mood: TaskinMood;
@@ -348,6 +352,7 @@ export default {
     eyeTargetElement?: HTMLElement | string;
     eyeCustomPosition?: { x: number; y: number };
     eyeState?: 'normal' | 'closed' | 'squint' | 'wide';
+    mouthExpression?: MouthExpression;
   }) {
     const config = computed(
       () => MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral,
@@ -503,7 +508,10 @@ export default {
         }),
         // Mouth
         h(TaskinMouth, {
-          expression: config.value.mouthExpression,
+          expression:
+            props.mouthExpression !== undefined
+              ? props.mouthExpression
+              : config.value.mouthExpression,
           animationsEnabled: props.animationsEnabled,
         }),
         // Effects

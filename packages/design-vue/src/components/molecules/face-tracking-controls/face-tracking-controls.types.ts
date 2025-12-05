@@ -30,6 +30,11 @@ export interface FaceTrackingControlsProps {
   syncExpressions?: boolean;
 
   /**
+   * Sync arms with pose tracking
+   */
+  syncArms?: boolean;
+
+  /**
    * Disable start/stop button
    */
   disabled?: boolean;
@@ -41,4 +46,5 @@ export interface FaceTrackingControlsEmits {
   (event: 'update:syncEyes', value: boolean): void;
   (event: 'update:syncMouth', value: boolean): void;
   (event: 'update:syncExpressions', value: boolean): void;
+  (event: 'update:syncArms', value: boolean): void;
 }

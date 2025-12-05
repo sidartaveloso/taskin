@@ -33,6 +33,7 @@
         :eye-tracking-mode="eyeTrackingMode"
         :eye-custom-position="eyePosition"
         :eye-state="eyeState"
+        :mouth-expression="mouthExpression"
         :animations-enabled="true"
       />
     </div>
@@ -99,6 +100,16 @@ const currentMood = ref<TaskinMood>('neutral');
 const eyeTrackingMode = ref<'none' | 'mouse' | 'element' | 'custom'>('none');
 const eyePosition = ref<{ x: number; y: number }>({ x: 0, y: 0 });
 const eyeState = ref<'normal' | 'closed' | 'squint' | 'wide'>('normal');
+const mouthExpression = ref<
+  | 'neutral'
+  | 'smile'
+  | 'frown'
+  | 'open'
+  | 'wide-open'
+  | 'o-shape'
+  | 'smirk'
+  | 'surprised'
+>('neutral');
 
 // Controle
 const toggleTracking = () => {
@@ -165,7 +176,7 @@ watch(
     if (!blendShapes) return;
 
     // Se não está sincronizando, mantém os valores atuais (congelados)
-    if (!syncExpressions.value) {
+    if (!syncMouth.value && !syncExpressions.value) {
       return;
     }
 
@@ -174,23 +185,45 @@ watch(
     const mouthOpenness = faceLandmarker.getMouthOpenness();
     const isWide = faceLandmarker.isEyesWide();
 
-    // Determina o mood baseado nas expressões
-    // Prioridade: sorriso > franzir > boca aberta > olhos arregalados
-    if (smileIntensity > 0.5) {
-      currentMood.value = 'happy';
-    } else if (smileIntensity > 0.3) {
-      currentMood.value = 'smirk';
-    } else if (frownIntensity > 0.4) {
-      currentMood.value = 'annoyed';
-    } else if (mouthOpenness > 0.6) {
-      currentMood.value = 'sarcastic';
-    } else if (isWide) {
-      currentMood.value = 'furious';
-    } else if (mouthOpenness > 0.3) {
-      // Boca meio aberta = neutro falando
-      currentMood.value = 'neutral';
-    } else {
-      currentMood.value = 'neutral';
+    // Sincroniza a expressão da boca baseado na abertura
+    if (syncMouth.value) {
+      if (mouthOpenness > 0.7) {
+        mouthExpression.value = 'wide-open';
+      } else if (mouthOpenness > 0.4) {
+        mouthExpression.value = 'open';
+      } else if (mouthOpenness > 0.2) {
+        mouthExpression.value = 'o-shape';
+      } else if (smileIntensity > 0.5) {
+        mouthExpression.value = 'smile';
+      } else if (smileIntensity > 0.3) {
+        mouthExpression.value = 'smirk';
+      } else if (frownIntensity > 0.4) {
+        mouthExpression.value = 'frown';
+      } else {
+        mouthExpression.value = 'neutral';
+      }
+    }
+
+    // Sincroniza o mood geral (expressões faciais completas)
+    if (syncExpressions.value) {
+      // Determina o mood baseado nas expressões
+      // Prioridade: sorriso > franzir > boca aberta > olhos arregalados
+      if (smileIntensity > 0.5) {
+        currentMood.value = 'happy';
+      } else if (smileIntensity > 0.3) {
+        currentMood.value = 'smirk';
+      } else if (frownIntensity > 0.4) {
+        currentMood.value = 'annoyed';
+      } else if (mouthOpenness > 0.6) {
+        currentMood.value = 'sarcastic';
+      } else if (isWide) {
+        currentMood.value = 'furious';
+      } else if (mouthOpenness > 0.3) {
+        // Boca meio aberta = neutro falando
+        currentMood.value = 'neutral';
+      } else {
+        currentMood.value = 'neutral';
+      }
     }
   },
 );
@@ -206,6 +239,7 @@ const debugInfo = computed(() => {
     smile: faceLandmarker.getSmileIntensity().toFixed(2),
     frown: faceLandmarker.getFrownIntensity().toFixed(2),
     mouthOpen: faceLandmarker.getMouthOpenness().toFixed(2),
+    mouthExpression: mouthExpression.value,
     eyesWide: faceLandmarker.isEyesWide(),
     eyeLook: {
       x: (eyeLook.x >= 0 ? '+' : '') + eyeLook.x.toFixed(15),
