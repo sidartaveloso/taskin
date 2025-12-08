@@ -125,6 +125,14 @@ export function useFaceLandmarker(
 
       if (videoElement.value) {
         videoElement.value.srcObject = stream;
+        // Aguarda o vídeo estar pronto antes de dar play
+        await new Promise<void>((resolve) => {
+          if (videoElement.value) {
+            videoElement.value.onloadedmetadata = () => {
+              resolve();
+            };
+          }
+        });
         await videoElement.value.play();
       }
     } catch (error) {
