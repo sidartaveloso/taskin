@@ -5,6 +5,7 @@
 All commit messages must follow the Conventional Commits specification and be written in English:
 
 ### Format
+
 ```
 <type>(<scope>): <subject>
 
@@ -14,6 +15,7 @@ All commit messages must follow the Conventional Commits specification and be wr
 ```
 
 ### Types
+
 - **feat**: A new feature
 - **fix**: A bug fix
 - **docs**: Documentation only changes
@@ -27,7 +29,9 @@ All commit messages must follow the Conventional Commits specification and be wr
 - **revert**: Reverts a previous commit
 
 ### Scope
+
 Use the package or component name when applicable:
+
 - `design-vue`
 - `core`
 - `cli`
@@ -36,6 +40,7 @@ Use the package or component name when applicable:
 - Or specific component names like `taskin-eyes`, `taskin-arms`, etc.
 
 ### Examples
+
 ```
 feat(design-vue): add pose tracking for Taskin arms
 
@@ -65,6 +70,7 @@ maintainability and testability.
 ```
 
 ### Rules
+
 1. Use imperative mood in the subject line (e.g., "add" not "added" or "adds")
 2. Capitalize the first letter of the subject
 3. Do not end the subject line with a period
