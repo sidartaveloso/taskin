@@ -36,6 +36,7 @@ describe('FileSystemTaskProvider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     provider = new FileSystemTaskProvider(
       TASKS_DIR,
       mockUserRegistryInstance as unknown as UserRegistry,
@@ -430,6 +431,172 @@ Task with registered user`;
       expect(tasks[0].id).toBe('001');
       expect(tasks[1].id).toBe('002');
       expect(fs.readFile).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('complete task lifecycle', () => {
+    it('should handle full workflow: create -> list -> start -> pause -> resume -> finish', async () => {
+      const title = 'Lifecycle Test Task';
+
+      // Step 1: Create task (ID will be auto-generated as '001')
+      (fs.access as Mock).mockRejectedValue(new Error('not found'));
+      (fs.mkdir as Mock).mockResolvedValue(undefined);
+
+      // Mock readdir for creation flow (getAllTasks check, then findTask)
+      (fs.readdir as Mock)
+        .mockResolvedValueOnce([]) // getAllTasks returns empty initially
+        .mockResolvedValue(['task-001-lifecycle-test-task.md']); // findTask finds the created file
+
+      // Reset user registry mocks
+      (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
+        (name: string) => ({
+          id: name.toLowerCase().replace(/\s+/g, '-'),
+          name,
+          email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+        }),
+      );
+
+      // Use the ACTUAL content written by createTask (captured from writeFile mock)
+      let currentFileContent = '';
+      (fs.writeFile as Mock).mockImplementation(
+        async (_path: string, content: string) => {
+          currentFileContent = content;
+        },
+      );
+      (fs.readFile as Mock).mockImplementation(async () => currentFileContent);
+
+      const result = await provider.createTask({
+        title,
+        type: 'feat',
+        assignee: 'Test User',
+        description: 'Test lifecycle',
+      });
+
+      const taskId = result.taskId;
+      expect(taskId).toBe('001');
+      expect(result.task.title).toBe(title);
+      expect(result.task.status).toBe('pending');
+      expect(fs.writeFile).toHaveBeenCalledTimes(1);
+
+      // Step 2: List tasks - verify data consistency
+      let tasks = await provider.getAllTasks();
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe(title);
+      expect(tasks[0].status).toBe('pending');
+      expect(tasks[0].type).toBe('feat');
+      expect(tasks[0].assignee?.name).toBe('Test User');
+
+      // Step 3: Start task (pending -> in-progress)
+      const taskToStart = await provider.findTask(taskId);
+      await provider.updateTask({ ...taskToStart!, status: 'in-progress' });
+      expect(fs.writeFile).toHaveBeenCalledTimes(2);
+
+      // Step 4: List tasks - verify status changed but other data preserved
+      tasks = await provider.getAllTasks();
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe(title);
+      expect(tasks[0].status).toBe('in-progress');
+      expect(tasks[0].type).toBe('feat');
+      expect(tasks[0].assignee?.name).toBe('Test User');
+
+      // Step 5: Pause task (in-progress -> blocked)
+      const taskToPause = await provider.findTask(taskId);
+      await provider.updateTask({ ...taskToPause!, status: 'blocked' });
+      expect(fs.writeFile).toHaveBeenCalledTimes(3);
+
+      // Step 6: List tasks - verify status changed but other data preserved
+      tasks = await provider.getAllTasks();
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe(title);
+      expect(tasks[0].status).toBe('blocked');
+      expect(tasks[0].type).toBe('feat');
+      expect(tasks[0].assignee?.name).toBe('Test User');
+
+      // Step 7: Resume task (blocked -> in-progress)
+      const taskToResume = await provider.findTask(taskId);
+      await provider.updateTask({ ...taskToResume!, status: 'in-progress' });
+      expect(fs.writeFile).toHaveBeenCalledTimes(4);
+
+      // Step 8: List tasks - verify status changed but other data preserved
+      tasks = await provider.getAllTasks();
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe(title);
+      expect(tasks[0].status).toBe('in-progress');
+      expect(tasks[0].type).toBe('feat');
+      expect(tasks[0].assignee?.name).toBe('Test User');
+
+      // Step 9: Finish task (in-progress -> done)
+      const taskToFinish = await provider.findTask(taskId);
+      await provider.updateTask({ ...taskToFinish!, status: 'done' });
+      expect(fs.writeFile).toHaveBeenCalledTimes(5);
+
+      // Step 10: Final verification - all original data preserved
+      tasks = await provider.getAllTasks();
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe(title);
+      expect(tasks[0].status).toBe('done');
+      expect(tasks[0].type).toBe('feat');
+      expect(tasks[0].assignee?.name).toBe('Test User');
+    });
+
+    it('should handle direct transitions: create -> start -> finish', async () => {
+      const title = 'Quick Task';
+
+      // Create task (ID will be auto-generated as '001')
+      (fs.access as Mock).mockRejectedValue(new Error('not found'));
+      (fs.mkdir as Mock).mockResolvedValue(undefined);
+      (fs.readdir as Mock)
+        .mockResolvedValueOnce([])
+        .mockResolvedValue(['task-001-quick-task.md']);
+
+      // Capture the actual written content
+      let currentFileContent = '';
+      (fs.writeFile as Mock).mockImplementation(
+        async (_path: string, content: string) => {
+          currentFileContent = content;
+        },
+      );
+      (fs.readFile as Mock).mockImplementation(async () => currentFileContent);
+
+      const result = await provider.createTask({
+        title,
+        type: 'fix',
+        assignee: 'Dev',
+        description: 'Quick fix',
+      });
+
+      const taskId = result.taskId;
+      expect(result.task.status).toBe('pending');
+      expect(result.task.title).toBe(title);
+      expect(result.task.type).toBe('fix');
+      expect(result.task.assignee?.name).toBe('Dev');
+
+      // Start immediately
+      const taskToStart = await provider.findTask(taskId);
+      await provider.updateTask({ ...taskToStart!, status: 'in-progress' });
+
+      let tasks = await provider.getAllTasks();
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe(title);
+      expect(tasks[0].status).toBe('in-progress');
+      expect(tasks[0].type).toBe('fix');
+      expect(tasks[0].assignee?.name).toBe('Dev');
+
+      // Finish directly
+      const taskToFinish = await provider.findTask(taskId);
+      await provider.updateTask({ ...taskToFinish!, status: 'done' });
+
+      tasks = await provider.getAllTasks();
+      expect(tasks[0].id).toBe('001');
+      expect(tasks[0].title).toBe(title);
+      expect(tasks[0].status).toBe('done');
+      expect(tasks[0].type).toBe('fix');
+      expect(tasks[0].assignee?.name).toBe('Dev');
+
+      // Verify only 3 writes: create, start, finish
+      expect(fs.writeFile).toHaveBeenCalledTimes(3);
     });
   });
 });
