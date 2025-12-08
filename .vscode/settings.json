@@ -54,5 +54,14 @@
   "vue.inlayHints.inlineHandlerLeading": true,
   "vue.inlayHints.missingProps": true,
   "vue.inlayHints.optionsWrapper": true,
-  "vue.inlayHints.vBindShorthand": true
+  "vue.inlayHints.vBindShorthand": true,
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Write commit messages in English following Conventional Commits format: <type>(<scope>): <subject>. Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore. Use imperative mood. Capitalize first letter. Max 72 chars for subject. Scope should be package name (design-vue, core, cli, etc) or component name."
+    }
+  ],
+  "github.copilot.editor.enableAutoCompletions": true,
+  "scm.defaultViewMode": "tree",
+  "git.inputValidationLength": 72,
+  "git.inputValidationSubjectLength": 72
 }
