@@ -14,17 +14,11 @@ describe('task-validator', () => {
   });
 
   describe('validateTaskFile', () => {
-    it('should accept valid section-based format with valid status', async () => {
+    it('should accept valid inline format with valid status', async () => {
       const content = `# Task 001 — Valid Task
-
-## Status
-todo
-
-## Type
-feat
-
-## Assignee
-John Doe
+Status: todo
+Type: feat
+Assignee: John Doe
 
 ## Description
 This is a valid task description.`;
@@ -34,32 +28,35 @@ This is a valid task description.`;
       const errors = result.filter((issue) => issue.severity === 'error');
       expect(errors).toHaveLength(0);
     });
-    it('should reject inline metadata format', async () => {
+    it('should reject section-based metadata format', async () => {
       const content = `# Task 001 — Invalid Task
 
-Status: pending
-Type: feat
-Assignee: John Doe
+## Status
+pending
+
+## Type
+feat
+
+## Assignee
+John Doe
 
 ## Description
-This task uses inline metadata.`;
+This task uses section-based metadata.`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile('/tasks/task-001-invalid-task.md');
       expect(result.length).toBeGreaterThan(0);
       expect(
-        result.some((issue) => issue.message.toLowerCase().includes('inline')),
+        result.some((issue) => issue.message.toLowerCase().includes('section')),
       ).toBe(true);
     });
 
-    it('should detect missing Status section', async () => {
+    it('should detect missing Status field', async () => {
       const content = `# Task 001 — Missing Status
-
-## Type
-feat
+Type: feat
 
 ## Description
-This task is missing the Status section.`;
+This task is missing the Status field.`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile(
@@ -77,9 +74,7 @@ This task is missing the Status section.`;
 
     it('should detect invalid status value', async () => {
       const content = `# Task 001 — Invalid Status
-
-## Status
-invalid-status
+Status: invalid-status
 
 ## Description
 This task has an invalid status.`;
@@ -93,22 +88,16 @@ This task has an invalid status.`;
         result.some(
           (issue) =>
             issue.message.includes('Status') &&
-            issue.message.includes('todo, in-progress, done'),
+            (issue.message.includes('todo') || issue.message.includes('pending')),
         ),
       ).toBe(true);
     });
 
-    it('should accept Portuguese section names', async () => {
+    it('should accept Portuguese inline format', async () => {
       const content = `# Task 001 — Tarefa em Português
-
-## Status
-pending
-
-## Tipo
-feat
-
-## Responsável
-João Silva
+Status: pending
+Tipo: feat
+Responsável: João Silva
 
 ## Descrição
 Esta é uma tarefa válida em português.`;
@@ -123,9 +112,7 @@ Esta é uma tarefa válida em português.`;
 
     it('should warn about missing description section', async () => {
       const content = `# Task 001 — No Description
-
-## Status
-todo`;
+Status: todo`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile(
@@ -143,9 +130,7 @@ todo`;
 
     it('should warn about invalid filename pattern', async () => {
       const content = `# Task 001 — Valid Content
-
-## Status
-todo
+Status: todo
 
 ## Description
 Valid content but bad filename.`;
@@ -163,12 +148,17 @@ Valid content but bad filename.`;
   });
 
   describe('fixTaskFile', () => {
-    it('should convert inline metadata to section format', async () => {
+    it('should convert section metadata to inline format', async () => {
       const content = `# Task 001 — Test Task
 
-Status: pending
-Type: feat
-Assignee: John Doe
+## Status
+pending
+
+## Type
+feat
+
+## Assignee
+John Doe
 
 ## Description
 Test description`;
@@ -182,28 +172,22 @@ Test description`;
       expect(fsp.writeFile).toHaveBeenCalled();
 
       const writtenContent = (fsp.writeFile as Mock).mock.calls[0][1];
-      expect(writtenContent).toContain('## Status');
-      expect(writtenContent).toContain('## Type');
-      expect(writtenContent).toContain('## Assignee');
-      expect(writtenContent).not.toContain('Status:');
-      expect(writtenContent).not.toContain('Type:');
-      expect(writtenContent).not.toContain('Assignee:');
+      expect(writtenContent).toContain('Status:');
+      expect(writtenContent).toContain('Type:');
+      expect(writtenContent).toContain('Assignee:');
+      expect(writtenContent).not.toMatch(/## Status\n/);
+      expect(writtenContent).not.toMatch(/## Type\n/);
+      expect(writtenContent).not.toMatch(/## Assignee\n/);
     });
 
-    it('should return false if no inline metadata found', async () => {
+    it('should return false if no section metadata found', async () => {
       const content = `# Task 001 — Already Fixed
-
-## Status
-done
-
-## Type
-feat
-
-## Assignee
-John Doe
+Status: done
+Type: feat
+Assignee: John Doe
 
 ## Description
-Already in section format.`;
+Already in inline format.`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
 
@@ -213,13 +197,14 @@ Already in section format.`;
       expect(fsp.writeFile).not.toHaveBeenCalled();
     });
 
-    it('should handle partial inline metadata', async () => {
-      const content = `# Task 001 — Partial Inline
+    it('should handle partial section metadata', async () => {
+      const content = `# Task 001 — Partial Section
 
-Status: pending
+## Status
+pending
 
 ## Description
-Only status is inline.`;
+Only status is in section format.`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
       (fsp.writeFile as Mock).mockResolvedValue(undefined);
@@ -230,15 +215,18 @@ Only status is inline.`;
       expect(fsp.writeFile).toHaveBeenCalled();
 
       const writtenContent = (fsp.writeFile as Mock).mock.calls[0][1];
-      expect(writtenContent).toContain('## Status');
-      expect(writtenContent).not.toContain('Status:');
+      expect(writtenContent).toContain('Status:');
+      expect(writtenContent).not.toMatch(/## Status\n/);
     });
 
-    it('should preserve existing sections when fixing inline metadata', async () => {
+    it('should preserve existing sections when fixing section metadata', async () => {
       const content = `# Task 001 — Mixed Format
 
-Status: pending
-Type: feat
+## Status
+pending
+
+## Type
+feat
 
 ## Description
 This is the description.
