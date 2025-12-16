@@ -88,16 +88,17 @@ This task has an invalid status.`;
         result.some(
           (issue) =>
             issue.message.includes('Status') &&
-            (issue.message.includes('todo') || issue.message.includes('pending')),
+            (issue.message.includes('todo') ||
+              issue.message.includes('pending')),
         ),
       ).toBe(true);
     });
 
-    it('should accept Portuguese inline format', async () => {
+    it('should accept Portuguese content with English inline metadata', async () => {
       const content = `# Task 001 — Tarefa em Português
 Status: pending
-Tipo: feat
-Responsável: João Silva
+Type: feat
+Assignee: João Silva
 
 ## Descrição
 Esta é uma tarefa válida em português.`;
@@ -246,6 +247,141 @@ These are notes.`;
       expect(writtenContent).toContain('This is the description.');
       expect(writtenContent).toContain('## Notes');
       expect(writtenContent).toContain('These are notes.');
+    });
+
+    it('should convert Portuguese section metadata to inline format', async () => {
+      const content = `# Task 001 — Tarefa em Português
+
+## Status
+in-progress
+
+## Tipo
+feat
+
+## Responsável
+João Silva
+
+## Descrição
+Descrição da tarefa`;
+
+      (fsp.readFile as Mock).mockResolvedValue(content);
+      (fsp.writeFile as Mock).mockResolvedValue(undefined);
+
+      const result = await fixTaskFile('/tasks/task-001.md');
+
+      expect(result).toBe(true);
+      expect(fsp.writeFile).toHaveBeenCalled();
+
+      const writtenContent = (fsp.writeFile as Mock).mock.calls[0][1];
+      // Should convert to inline format (English keys)
+      expect(writtenContent).toContain('Status: in-progress');
+      expect(writtenContent).toContain('Type: feat');
+      expect(writtenContent).toContain('Assignee: João Silva');
+      // Should preserve Portuguese section
+      expect(writtenContent).toContain('## Descrição');
+      // Should remove Portuguese section-based metadata
+      expect(writtenContent).not.toMatch(/## Status\n/);
+      expect(writtenContent).not.toMatch(/## Tipo\n/);
+      expect(writtenContent).not.toMatch(/## Responsável\n/);
+    });
+
+    it('should handle mixed English and Portuguese sections', async () => {
+      const content = `# Task 001 — Mixed Language Task
+
+## Status
+pending
+
+## Tipo
+fix
+
+## Descrição
+Tarefa mista`;
+
+      (fsp.readFile as Mock).mockResolvedValue(content);
+      (fsp.writeFile as Mock).mockResolvedValue(undefined);
+
+      const result = await fixTaskFile('/tasks/task-001.md');
+
+      expect(result).toBe(true);
+
+      const writtenContent = (fsp.writeFile as Mock).mock.calls[0][1];
+      expect(writtenContent).toContain('Status: pending');
+      expect(writtenContent).toContain('Type: fix');
+      expect(writtenContent).toContain('## Descrição');
+    });
+  });
+
+  describe('multi-language validation', () => {
+    it('should accept Portuguese content with English inline metadata', async () => {
+      const content = `# Task 001 — Tarefa em Português
+Status: in-progress
+Type: feat
+Assignee: João Silva
+
+## Descrição
+Descrição da tarefa`;
+
+      (fsp.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile('/tasks/task-001-pt.md');
+      const errors = result.filter((issue) => issue.severity === 'error');
+      expect(errors).toHaveLength(0);
+    });
+
+    it('should reject Portuguese section-based format', async () => {
+      const content = `# Task 001 — Tarefa em Português
+
+## Status
+em-progresso
+
+## Tipo
+feat
+
+## Descrição
+Descrição da tarefa`;
+
+      (fsp.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile('/tasks/task-001-pt.md');
+      expect(result.length).toBeGreaterThan(0);
+      expect(
+        result.some(
+          (issue) =>
+            issue.severity === 'error' &&
+            issue.message.toLowerCase().includes('section'),
+        ),
+      ).toBe(true);
+    });
+
+    it('should validate status values in Portuguese format', async () => {
+      const content = `# Task 001 — Tarefa Inválida
+Status: status-invalido
+Tipo: feat
+
+## Descrição
+Tarefa com status inválido`;
+
+      (fsp.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile('/tasks/task-001-pt.md');
+      const statusErrors = result.filter(
+        (issue) =>
+          issue.severity === 'error' && issue.message.includes('Status'),
+      );
+      expect(statusErrors.length).toBeGreaterThan(0);
+    });
+
+    it('should provide localized suggestions for Portuguese files', async () => {
+      const content = `# Task 001 — Tarefa sem Status
+
+## Descrição
+Tarefa sem metadados`;
+
+      (fsp.readFile as Mock).mockResolvedValue(content);
+      const result = await validateTaskFile('/tasks/task-001-pt.md');
+      const statusIssue = result.find((issue) =>
+        issue.message.includes('Status'),
+      );
+      
+      // Should suggest Portuguese field name since content is in Portuguese
+      expect(statusIssue?.suggestion).toContain('Status:');
     });
   });
 });

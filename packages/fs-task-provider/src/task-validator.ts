@@ -3,6 +3,7 @@ import type {
   ValidationIssue,
 } from '@opentask/taskin-task-manager';
 import { readFile, writeFile } from 'node:fs/promises';
+import { detectLocale, getI18n } from './i18n.js';
 
 /**
  * Fixes section-based metadata by converting to inline format
@@ -11,30 +12,48 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
   try {
     const content = await readFile(filePath, 'utf-8');
 
+    // Auto-detect locale from content
+    const locale = detectLocale(content);
+    const i18n = getI18n(locale);
+
+    // Build regex patterns for both English and localized names
+    const statusPattern = new RegExp(
+      `##\\s*(?:Status|${i18n.status})\\s*\\n\\s*([^\\n\\r]+)`,
+      'i',
+    );
+    const typePattern = new RegExp(
+      `##\\s*(?:Type|${i18n.type})\\s*\\n\\s*([^\\n\\r]+)`,
+      'i',
+    );
+    const assigneePattern = new RegExp(
+      `##\\s*(?:Assignee|${i18n.assignee})\\s*\\n\\s*([^\\n\\r]+)`,
+      'i',
+    );
+
     // Check if file has section-based metadata
-    const hasSectionStatus = /##\s*Status\s*\n\s*([^\n\r]+)/i.test(content);
-    const hasSectionType = /##\s*Type\s*\n\s*([^\n\r]+)/i.test(content);
-    const hasSectionAssignee = /##\s*Assignee\s*\n\s*([^\n\r]+)/i.test(content);
+    const hasSectionStatus = statusPattern.test(content);
+    const hasSectionType = typePattern.test(content);
+    const hasSectionAssignee = assigneePattern.test(content);
 
     if (!hasSectionStatus && !hasSectionType && !hasSectionAssignee) {
       return false; // Nothing to fix
     }
 
     // Extract section-based metadata
-    const statusMatch = content.match(/##\s*Status\s*\n\s*([^\n\r]+)/i);
-    const typeMatch = content.match(/##\s*Type\s*\n\s*([^\n\r]+)/i);
-    const assigneeMatch = content.match(/##\s*Assignee\s*\n\s*([^\n\r]+)/i);
+    const statusMatch = content.match(statusPattern);
+    const typeMatch = content.match(typePattern);
+    const assigneeMatch = content.match(assigneePattern);
 
     // Remove section-based metadata
     let newContent = content;
     if (statusMatch) {
-      newContent = newContent.replace(/##\s*Status\s*\n\s*[^\n\r]+/i, '');
+      newContent = newContent.replace(statusPattern, '');
     }
     if (typeMatch) {
-      newContent = newContent.replace(/##\s*Type\s*\n\s*[^\n\r]+/i, '');
+      newContent = newContent.replace(typePattern, '');
     }
     if (assigneeMatch) {
-      newContent = newContent.replace(/##\s*Assignee\s*\n\s*[^\n\r]+/i, '');
+      newContent = newContent.replace(assigneePattern, '');
     }
 
     // Clean up extra blank lines
@@ -68,7 +87,9 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     }
 
     // Reconstruct file
-    const fixed = [...beforeTitle, ...inlineMetadata, '', ...afterTitle].join('\n');
+    const fixed = [...beforeTitle, ...inlineMetadata, '', ...afterTitle].join(
+      '\n',
+    );
 
     // Clean up extra blank lines again
     const finalContent = fixed.replace(/\n{3,}/g, '\n\n').trim() + '\n';
@@ -93,12 +114,26 @@ export async function validateTaskFile(
     const content = await readFile(filePath, 'utf-8');
     const lines = content.split('\n');
 
+    // Auto-detect locale from content
+    const locale = detectLocale(content);
+    const i18n = getI18n(locale);
+
     // Check for required sections
     const hasTitleSection = lines.some((line) => line.trim().startsWith('# '));
 
+    // Build regex patterns for both English and localized names
+    const inlineStatusPattern = new RegExp(
+      `^(?:Status|${i18n.status}):\\s*.+$`,
+      'im',
+    );
+    const sectionStatusPattern = new RegExp(
+      `##\\s*(?:Status|${i18n.status})`,
+      'i',
+    );
+
     // Enforce inline metadata only (no section-based '## Status')
-    const hasInlineStatus = /^Status:\s*.+$/im.test(content);
-    const hasSectionStatus = /##\s*Status/i.test(content);
+    const hasInlineStatus = inlineStatusPattern.test(content);
+    const hasSectionStatus = sectionStatusPattern.test(content);
     const hasDescriptionSection =
       content.includes('## Description') || content.includes('## Descrição');
 
@@ -115,7 +150,7 @@ export async function validateTaskFile(
     // Reject section-based metadata: we only accept the inline format
     if (hasSectionStatus) {
       const statusLineIdx = lines.findIndex((line) =>
-        /^## Status/i.test(line.trim()),
+        sectionStatusPattern.test(line.trim()),
       );
       issues.push({
         file: filePath,
@@ -123,8 +158,7 @@ export async function validateTaskFile(
         message:
           'Section-based metadata ("## Status") is not allowed. Use inline format instead.',
         severity: 'error',
-        suggestion:
-          'Replace section with inline metadata:\nStatus: <todo|in-progress|done>',
+        suggestion: `Replace section with inline metadata:\n${i18n.status}: <todo|in-progress|done>`,
       });
     }
 
@@ -134,23 +168,35 @@ export async function validateTaskFile(
         file: filePath,
         message: 'Task file must have a Status field',
         severity: 'error',
-        suggestion: 'Add inline metadata after title:\nStatus: <todo|in-progress|done>',
+        suggestion: `Add inline metadata after title:\n${i18n.status}: <todo|in-progress|done>`,
       });
     } else {
-      const statusMatch = content.match(/^Status:\s*(.+)$/im);
+      const statusMatch = content.match(inlineStatusPattern);
+      // Extract value after colon
       const statusValue = statusMatch
-        ? statusMatch[1].trim().toLowerCase()
+        ? statusMatch[0].split(':')[1]?.trim().toLowerCase() || ''
         : '';
-      if (!['todo', 'in-progress', 'done', 'pending', 'blocked', 'canceled'].includes(statusValue)) {
-        const statusLineIdx = lines.findIndex(
-          (line) => /^Status:/i.test(line.trim()),
+      if (
+        ![
+          'todo',
+          'in-progress',
+          'done',
+          'pending',
+          'blocked',
+          'canceled',
+        ].includes(statusValue)
+      ) {
+        const statusLineIdx = lines.findIndex((line) =>
+          inlineStatusPattern.test(line.trim()),
         );
         issues.push({
           file: filePath,
           line: statusLineIdx >= 0 ? statusLineIdx + 1 : undefined,
-          message: 'Status must be one of: todo, in-progress, done, pending, blocked, canceled',
+          message:
+            'Status must be one of: todo, in-progress, done, pending, blocked, canceled',
           severity: 'error',
-          suggestion: 'Set status to: todo, in-progress, done, pending, blocked, or canceled',
+          suggestion:
+            'Set status to: todo, in-progress, done, pending, blocked, or canceled',
         });
       }
     }
