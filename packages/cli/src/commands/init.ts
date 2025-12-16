@@ -217,9 +217,20 @@ async function setupFileSystemProvider(
     success('✓ Directory is ready to use');
   }
 
-  // Create a sample task
-  const sampleTaskFile = join(tasksDir, 'task-001-setup-project.md');
-  if (!existsSync(sampleTaskFile)) {
+  // Check if any task-001-*.md file already exists
+  const fs = require('fs');
+  const existingTask001 = fs
+    .readdirSync(tasksDir)
+    .find(
+      (file: string) => file.startsWith('task-001-') && file.endsWith('.md'),
+    );
+
+  if (existingTask001) {
+    info(`Sample task already exists: ${colors.highlight(existingTask001)}`);
+    info('Skipping sample task creation (users already know the pattern)');
+  } else {
+    // Create a sample task
+    const sampleTaskFile = join(tasksDir, 'task-001-setup-project.md');
     info('Creating sample task...');
     const sampleTask = `# Task 001 — Setup Project
 

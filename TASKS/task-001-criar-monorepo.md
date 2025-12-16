@@ -1,16 +1,8 @@
 # 🧩 Task 001 — Create the **Taskin** Monorepo Structure
 
-## Status
-
-done
-
-## Type
-
-feat
-
-## Assignee
-
-Sidarta Veloso
+Status: done  
+Type: feat  
+Assignee: Sidarta Veloso
 
 ## Description
 
@@ -80,7 +72,7 @@ taskin/
 ├─ dev/
 │   ├─ scripts/
 │   │   └─ lint-manifests.ts   ✅ Custom manifest linter
-│   └─ readme.md
+│   └─ README.md
 ├─ turbo.json
 ├─ pnpm-workspace.yaml
 ├─ package.json

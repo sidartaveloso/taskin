@@ -181,7 +181,7 @@ Test description`;
       expect(writtenContent).not.toMatch(/## Assignee\n/);
     });
 
-    it('should return false if no section metadata found', async () => {
+    it('should return false if no section metadata found and inline has trailing spaces', async () => {
       const content = `# Task 001 — Already Fixed
 Status: done
 Type: feat
@@ -196,6 +196,37 @@ Already in inline format.`;
 
       expect(result).toBe(false);
       expect(fsp.writeFile).not.toHaveBeenCalled();
+    });
+
+    it('should add trailing spaces to inline metadata if missing', async () => {
+      const content = `# Task 001 — Needs Spaces
+Status: done
+Type: feat
+Assignee: John Doe
+
+## Description
+Missing trailing spaces.`;
+
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      const result = await fixTaskFile('/tasks/task-001.md');
+
+      expect(result).toBe(true);
+      expect(fsp.writeFile).toHaveBeenCalledWith(
+        '/tasks/task-001.md',
+        expect.stringContaining('Status: done  '),
+        'utf-8',
+      );
+      expect(fsp.writeFile).toHaveBeenCalledWith(
+        '/tasks/task-001.md',
+        expect.stringContaining('Type: feat  '),
+        'utf-8',
+      );
+      expect(fsp.writeFile).toHaveBeenCalledWith(
+        '/tasks/task-001.md',
+        expect.stringContaining('Assignee: John Doe  '),
+        'utf-8',
+      );
     });
 
     it('should handle partial section metadata', async () => {

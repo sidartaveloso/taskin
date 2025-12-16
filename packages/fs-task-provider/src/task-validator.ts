@@ -35,67 +35,121 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     const hasSectionType = typePattern.test(content);
     const hasSectionAssignee = assigneePattern.test(content);
 
-    if (!hasSectionStatus && !hasSectionType && !hasSectionAssignee) {
+    // Check if inline metadata is missing trailing spaces (for markdown line breaks)
+    const inlineStatusPattern = /^(Status|Tipo):\s*(.+?)(\s*)$/im;
+    const inlineTypePattern = /^(Type|Tipo):\s*(.+?)(\s*)$/im;
+    const inlineAssigneePattern = /^(Assignee|Responsável):\s*(.+?)(\s*)$/im;
+
+    const hasInlineStatus = inlineStatusPattern.test(content);
+    const hasInlineType = inlineTypePattern.test(content);
+    const hasInlineAssignee = inlineAssigneePattern.test(content);
+
+    const needsSpaceFix =
+      (hasInlineStatus && !/^(?:Status|Tipo):.+  $/im.test(content)) ||
+      (hasInlineType && !/^(?:Type|Tipo):.+  $/im.test(content)) ||
+      (hasInlineAssignee && !/^(?:Assignee|Responsável):.+  $/im.test(content));
+
+    if (
+      !hasSectionStatus &&
+      !hasSectionType &&
+      !hasSectionAssignee &&
+      !needsSpaceFix
+    ) {
       return false; // Nothing to fix
     }
 
-    // Extract section-based metadata
-    const statusMatch = content.match(statusPattern);
-    const typeMatch = content.match(typePattern);
-    const assigneeMatch = content.match(assigneePattern);
-
-    // Remove section-based metadata
     let newContent = content;
-    if (statusMatch) {
-      newContent = newContent.replace(statusPattern, '');
+    let wasModified = false;
+
+    // Fix section-based metadata if present
+    if (hasSectionStatus || hasSectionType || hasSectionAssignee) {
+      // Extract section-based metadata
+      const statusMatch = content.match(statusPattern);
+      const typeMatch = content.match(typePattern);
+      const assigneeMatch = content.match(assigneePattern);
+
+      // Remove section-based metadata
+      if (statusMatch) {
+        newContent = newContent.replace(statusPattern, '');
+      }
+      if (typeMatch) {
+        newContent = newContent.replace(typePattern, '');
+      }
+      if (assigneeMatch) {
+        newContent = newContent.replace(assigneePattern, '');
+      }
+
+      // Clean up extra blank lines
+      newContent = newContent.replace(/\n{3,}/g, '\n\n');
+
+      // Find the title line (first # heading)
+      const titleLineIdx = newContent
+        .split('\n')
+        .findIndex((line) => line.trim().startsWith('# '));
+      if (titleLineIdx === -1) {
+        return false; // No title found, can't fix
+      }
+
+      const contentLines = newContent.split('\n');
+      const beforeTitle = contentLines.slice(0, titleLineIdx + 1);
+      const afterTitle = contentLines.slice(titleLineIdx + 1);
+
+      // Build inline metadata to insert after title
+      const inlineMetadata: string[] = [];
+
+      if (statusMatch) {
+        inlineMetadata.push(`Status: ${statusMatch[1].trim()}  `);
+      }
+
+      if (typeMatch) {
+        inlineMetadata.push(`Type: ${typeMatch[1].trim()}  `);
+      }
+
+      if (assigneeMatch) {
+        inlineMetadata.push(`Assignee: ${assigneeMatch[1].trim()}  `);
+      }
+
+      // Reconstruct file
+      newContent = [
+        ...beforeTitle,
+        '',
+        ...inlineMetadata,
+        '',
+        ...afterTitle,
+      ].join('\n');
+
+      wasModified = true;
     }
-    if (typeMatch) {
-      newContent = newContent.replace(typePattern, '');
-    }
-    if (assigneeMatch) {
-      newContent = newContent.replace(assigneePattern, '');
-    }
 
-    // Clean up extra blank lines
-    newContent = newContent.replace(/\n{3,}/g, '\n\n');
+    // Fix inline metadata missing trailing spaces
+    if (needsSpaceFix) {
+      // Also ensure there's a blank line after the title
+      newContent = newContent.replace(/^(# .+)\n([^#\n])/m, '$1\n\n$2');
 
-    // Find the title line (first # heading)
-    const titleLineIdx = newContent
-      .split('\n')
-      .findIndex((line) => line.trim().startsWith('# '));
-    if (titleLineIdx === -1) {
-      return false; // No title found, can't fix
-    }
-
-    const contentLines = newContent.split('\n');
-    const beforeTitle = contentLines.slice(0, titleLineIdx + 1);
-    const afterTitle = contentLines.slice(titleLineIdx + 1);
-
-    // Build inline metadata to insert after title
-    const inlineMetadata: string[] = [];
-
-    if (statusMatch) {
-      inlineMetadata.push(`Status: ${statusMatch[1].trim()}`);
+      newContent = newContent.replace(
+        /^(Status|Tipo):\s*(.+?)(\s*)$/im,
+        (_, key, value) => `${key}: ${value.trim()}  `,
+      );
+      newContent = newContent.replace(
+        /^(Type|Tipo):\s*(.+?)(\s*)$/im,
+        (_, key, value) => `${key}: ${value.trim()}  `,
+      );
+      newContent = newContent.replace(
+        /^(Assignee|Responsável):\s*(.+?)(\s*)$/im,
+        (_, key, value) => `${key}: ${value.trim()}  `,
+      );
+      wasModified = true;
     }
 
-    if (typeMatch) {
-      inlineMetadata.push(`Type: ${typeMatch[1].trim()}`);
+    if (wasModified) {
+      // Clean up extra blank lines again
+      const finalContent = newContent.replace(/\n{3,}/g, '\n\n').trim() + '\n';
+
+      await writeFile(filePath, finalContent, 'utf-8');
+      return true;
     }
 
-    if (assigneeMatch) {
-      inlineMetadata.push(`Assignee: ${assigneeMatch[1].trim()}`);
-    }
-
-    // Reconstruct file
-    const fixed = [...beforeTitle, ...inlineMetadata, '', ...afterTitle].join(
-      '\n',
-    );
-
-    // Clean up extra blank lines again
-    const finalContent = fixed.replace(/\n{3,}/g, '\n\n').trim() + '\n';
-
-    await writeFile(filePath, finalContent, 'utf-8');
-    return true;
+    return false;
   } catch (error) {
     console.error(`Failed to fix ${filePath}:`, error);
     return false;

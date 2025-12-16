@@ -184,10 +184,14 @@ Test description`;
         'utf-8',
       );
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
-      // Ensure the generated content uses Portuguese inline metadata
+      // Inline metadata keys use the locale-specific names
       expect(written).toContain('Status:');
       expect(written).toContain('Tipo:');
       expect(written).toContain('Responsável:');
+      // Section headers are also in Portuguese
+      expect(written).toContain('## Descrição');
+      expect(written).toContain('## Tarefas');
+      expect(written).toContain('## Notas');
     });
   });
 
@@ -594,6 +598,358 @@ Task with registered user`;
       expect(writtenContent).not.toMatch(/## Status\n/);
       expect(writtenContent).not.toMatch(/## Type\n/);
       expect(writtenContent).not.toMatch(/## Assignee\n/);
+    });
+  });
+
+  describe('locale preservation', () => {
+    it('should preserve Portuguese section headers when updating task status', async () => {
+      const originalContent = `# 🧩 Task 001 — Tarefa em Português
+Status: pending
+Tipo: feat
+Responsável: João Silva
+
+## Descrição
+Descrição da tarefa em português
+
+## Tarefas
+- [ ] Tarefa 1
+- [ ] Tarefa 2
+
+## Notas
+Notas em português`;
+
+      const expectedContent = `# 🧩 Task 001 — Tarefa em Português
+Status: in-progress
+Tipo: feat
+Responsável: João Silva
+
+## Descrição
+Descrição da tarefa em português
+
+## Tarefas
+- [ ] Tarefa 1
+- [ ] Tarefa 2
+
+## Notas
+Notas em português`;
+
+      (fs.readFile as Mock).mockResolvedValue(originalContent);
+
+      const mockTask: TaskFile = {
+        content: originalContent,
+        createdAt: new Date().toISOString(),
+        filePath: '/fake/tasks/task-001-tarefa.md',
+        id: '001' satisfies string as TaskId,
+        status: 'in-progress',
+        title: 'Tarefa em Português',
+        type: 'feat',
+      };
+
+      await provider.updateTask(mockTask);
+
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        mockTask.filePath,
+        expectedContent,
+        'utf-8',
+      );
+    });
+
+    it('should preserve English section headers when updating task status', async () => {
+      const originalContent = `# 🧩 Task 002 — English Task
+Status: pending
+Type: fix
+Assignee: John Doe
+
+## Description
+Task description in English
+
+## Tasks
+- [ ] Task 1
+- [ ] Task 2
+
+## Notes
+Notes in English`;
+
+      const expectedContent = `# 🧩 Task 002 — English Task
+Status: done
+Type: fix
+Assignee: John Doe
+
+## Description
+Task description in English
+
+## Tasks
+- [ ] Task 1
+- [ ] Task 2
+
+## Notes
+Notes in English`;
+
+      (fs.readFile as Mock).mockResolvedValue(originalContent);
+
+      const mockTask: TaskFile = {
+        content: originalContent,
+        createdAt: new Date().toISOString(),
+        filePath: '/fake/tasks/task-002-english.md',
+        id: '002' satisfies string as TaskId,
+        status: 'done',
+        title: 'English Task',
+        type: 'fix',
+      };
+
+      await provider.updateTask(mockTask);
+
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        mockTask.filePath,
+        expectedContent,
+        'utf-8',
+      );
+    });
+
+    it('should detect locale from existing tasks when creating new task', async () => {
+      const existingTaskPT = `# 🧩 Task 001 — Tarefa Existente
+Status: done
+Type: feat
+Assignee: João
+
+## Descrição
+Tarefa em português`;
+
+      // Create provider with pt-BR locale (should use this for new tasks)
+      const providerPT = new FileSystemTaskProvider(
+        TASKS_DIR,
+        mockUserRegistryInstance as unknown as UserRegistry,
+        'pt-BR',
+      );
+
+      let capturedContent = '';
+      let capturedPath = '';
+
+      // Mock writeFile to capture content and path
+      (fs.writeFile as Mock).mockImplementation(
+        async (path: string, content: string) => {
+          capturedContent = content;
+          capturedPath = path;
+        },
+      );
+
+      // Mock readdir to return both existing and newly created task
+      (fs.readdir as Mock).mockImplementation(async () => {
+        if (capturedPath) {
+          return [
+            'task-001-tarefa-existente.md',
+            capturedPath.split('/').pop(),
+          ];
+        }
+        return ['task-001-tarefa-existente.md'];
+      });
+
+      // Mock readFile to return appropriate content based on filename
+      (fs.readFile as Mock).mockImplementation(
+        async (path: string): Promise<string> => {
+          if (path === capturedPath) {
+            return capturedContent;
+          }
+          if (path.includes('task-001')) {
+            return existingTaskPT;
+          }
+          throw new Error('File not found');
+        },
+      );
+
+      (fs.access as Mock).mockRejectedValue(new Error('not found'));
+
+      await providerPT.createTask({
+        title: 'Nova Tarefa',
+        type: 'feat',
+        assignee: 'Maria',
+        description: 'Nova descrição',
+      });
+
+      // Verify new task uses Portuguese section headers and metadata keys
+      expect(capturedContent).toContain('## Descrição');
+      expect(capturedContent).toContain('## Tarefas');
+      expect(capturedContent).toContain('## Notas');
+      // Inline metadata keys should also be in Portuguese
+      expect(capturedContent).toMatch(/^Status: pending/m);
+      expect(capturedContent).toMatch(/^Tipo: feat/m);
+      expect(capturedContent).toMatch(/^Responsável: Maria/m);
+    });
+
+    it('should inherit locale from existing tasks even with English provider', async () => {
+      // Existing task in Portuguese
+      const existingTaskPT = `# 🧩 Task 001 — Primeira Tarefa
+Status: done
+Tipo: feat
+Responsável: João
+
+## Descrição
+Primeira tarefa em português`;
+
+      // Create provider with en-US locale
+      const providerEN = new FileSystemTaskProvider(
+        TASKS_DIR,
+        mockUserRegistryInstance as unknown as UserRegistry,
+        'en-US',
+      );
+
+      let capturedContent = '';
+      let capturedPath = '';
+
+      (fs.writeFile as Mock).mockImplementation(
+        async (path: string, content: string) => {
+          capturedContent = content;
+          capturedPath = path;
+        },
+      );
+
+      (fs.readdir as Mock).mockImplementation(async () => {
+        if (capturedPath) {
+          return ['task-001-primeira-tarefa.md', capturedPath.split('/').pop()];
+        }
+        return ['task-001-primeira-tarefa.md'];
+      });
+
+      (fs.readFile as Mock).mockImplementation(
+        async (path: string): Promise<string> => {
+          if (path === capturedPath) {
+            return capturedContent;
+          }
+          if (path.includes('task-001')) {
+            return existingTaskPT;
+          }
+          throw new Error('File not found');
+        },
+      );
+
+      (fs.access as Mock).mockRejectedValue(new Error('not found'));
+
+      await providerEN.createTask({
+        title: 'Segunda Tarefa',
+        type: 'fix',
+        assignee: 'Maria',
+        description: 'Segunda descrição',
+      });
+
+      // Should use Portuguese from existing task, not English from provider
+      expect(capturedContent).toContain('## Descrição');
+      expect(capturedContent).toContain('## Tarefas');
+      expect(capturedContent).toContain('## Notas');
+      expect(capturedContent).toMatch(/^Status: pending/m);
+      expect(capturedContent).toMatch(/^Tipo: fix/m);
+      expect(capturedContent).toMatch(/^Responsável: Maria/m);
+
+      // Should NOT contain English headers
+      expect(capturedContent).not.toContain('## Description');
+      expect(capturedContent).not.toContain('## Tasks');
+      expect(capturedContent).not.toContain('Type:');
+      expect(capturedContent).not.toContain('Assignee:');
+    });
+
+    it('should use English headers by default when no locale specified', async () => {
+      let capturedContent = '';
+      let capturedPath = '';
+
+      // Mock writeFile to capture content and path
+      (fs.writeFile as Mock).mockImplementation(
+        async (path: string, content: string) => {
+          capturedContent = content;
+          capturedPath = path;
+        },
+      );
+
+      // Mock readdir to return newly created task
+      (fs.readdir as Mock).mockImplementation(async () => {
+        if (capturedPath) {
+          return [capturedPath.split('/').pop()];
+        }
+        return [];
+      });
+
+      // Mock readFile to return captured content
+      (fs.readFile as Mock).mockImplementation(
+        async (path: string): Promise<string> => {
+          if (path === capturedPath) {
+            return capturedContent;
+          }
+          throw new Error('File not found');
+        },
+      );
+
+      (fs.access as Mock).mockRejectedValue(new Error('not found'));
+
+      await provider.createTask({
+        title: 'New Task',
+        type: 'feat',
+        assignee: 'John',
+        description: 'Task description',
+      });
+
+      // Verify new task uses English section headers
+      expect(capturedContent).toContain('## Description');
+      expect(capturedContent).toContain('## Tasks');
+      expect(capturedContent).toContain('## Notes');
+      // Inline metadata keys always in English
+      expect(capturedContent).toMatch(/^Status: pending/m);
+      expect(capturedContent).toMatch(/^Type: feat/m);
+      expect(capturedContent).toMatch(/^Assignee: John/m);
+    });
+
+    it('should not corrupt Portuguese content during multiple status changes', async () => {
+      const taskContentPT = `# 🧩 Task 003 — Tarefa Complexa
+Status: pending
+Tipo: feat
+Responsável: José
+
+## Descrição
+Esta é uma descrição com **markdown** e [links](https://example.com).
+
+Múltiplos parágrafos são preservados.
+
+## Tarefas
+- [x] Tarefa concluída
+- [ ] Tarefa pendente
+- [ ] Outra tarefa
+
+## Notas
+Notas importantes:
+- Item 1
+- Item 2`;
+
+      (fs.readFile as Mock).mockResolvedValue(taskContentPT);
+
+      const mockTask: TaskFile = {
+        content: taskContentPT,
+        createdAt: new Date().toISOString(),
+        filePath: '/fake/tasks/task-003-tarefa.md',
+        id: '003' satisfies string as TaskId,
+        status: 'in-progress',
+        title: 'Tarefa Complexa',
+        type: 'feat',
+      };
+
+      // First update: pending -> in-progress
+      await provider.updateTask(mockTask);
+      let writtenContent = (fs.writeFile as Mock).mock.calls[0][1];
+
+      // Verify Portuguese sections are intact
+      expect(writtenContent).toContain('## Descrição');
+      expect(writtenContent).toContain('## Tarefas');
+      expect(writtenContent).toContain('## Notas');
+      expect(writtenContent).toContain('Esta é uma descrição com **markdown**');
+      expect(writtenContent).toContain('- [x] Tarefa concluída');
+      expect(writtenContent).toContain('Notas importantes:');
+
+      // Second update: in-progress -> done
+      (fs.readFile as Mock).mockResolvedValue(writtenContent);
+      mockTask.status = 'done';
+      await provider.updateTask(mockTask);
+      writtenContent = (fs.writeFile as Mock).mock.calls[1][1];
+
+      // Verify content still intact after second update
+      expect(writtenContent).toContain('## Descrição');
+      expect(writtenContent).toContain('Esta é uma descrição com **markdown**');
+      expect(writtenContent).toMatch(/^Status: done/m);
     });
   });
 });

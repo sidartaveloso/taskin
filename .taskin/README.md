@@ -51,12 +51,18 @@ Nas tasks (arquivos `.md`), use apenas o ID do usuário:
 ```markdown
 # Task 001 — Title
 
-Status: done
-Type: feat
+Status: done  
+Type: feat  
 Assignee: sidarta-veloso
+
+## Description
+
+...
 ```
 
 O FileSystemTaskProvider resolverá automaticamente as informações completas do usuário a partir do `users.json`.
+
+> **Nota**: Use dois espaços ao final de cada linha de metadados para garantir quebras de linha corretas no preview Markdown.
 
 ## Git
 

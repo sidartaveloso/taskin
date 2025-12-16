@@ -27,6 +27,7 @@ pnpm --filter @opentask/taskin-dev run lint:tasks
 ## 🔧 Development
 
 This package uses:
+
 - **TypeScript** for type safety
 - **Node.js** native APIs for file operations
 - **Monorepo patterns** for cross-package validation
@@ -36,4 +37,3 @@ This package uses:
 - Scripts run in the context of the monorepo root
 - Used for enforcing consistency across packages
 - Not included in production builds or published packages
-

@@ -230,8 +230,9 @@ Tasks are Markdown files with inline metadata (compact and readable):
 
 ```markdown
 # 🧩 Task 001 — Implement authentication
-Status: in-progress
-Type: feat
+
+Status: in-progress  
+Type: feat  
 Assignee: sidarta
 
 ## Description
@@ -239,19 +240,22 @@ Assignee: sidarta
 Implement JWT authentication system with secure token generation.
 
 ## Tasks
+
 - [x] Create user schema
 - [x] Implement login endpoint
 - [ ] Add token refresh logic
 - [ ] Write integration tests
 
 ## Notes
+
 Using bcrypt for password hashing.
 Token expiration: 24h.
 ```
 
 #### Metadata Format
 
-- **Inline metadata** (Status, Type, Assignee) uses English keys
+- **Inline metadata** (Status, Type, Assignee) uses two trailing spaces for line breaks
+- **Blank lines** after title and before description improve readability
 - **Section headers** (Description, Tasks, Notes) can be localized
 - **Multi-language support**: English and Portuguese (automatically detected)
 - **Status values**: `pending`, `in-progress`, `done`, `blocked`, `canceled`
@@ -265,6 +269,9 @@ The built-in linter validates format and converts legacy section-based metadata:
 # Validate all tasks
 taskin lint
 
+# Auto-fix format issues (adds trailing spaces, blank lines)
+taskin lint --fix
+
 # Auto-fix format issues
 taskin lint --fix
 
@@ -273,6 +280,7 @@ taskin lint --path ./custom-tasks
 ```
 
 **Linter features:**
+
 - ✅ Validates inline metadata format
 - ✅ Detects and converts section-based format (`## Status\nvalue`)
 - ✅ Multi-language support (English, Portuguese)
