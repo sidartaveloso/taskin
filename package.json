@@ -2,7 +2,7 @@
   "name": "taskin-monorepo",
   "private": true,
   "type": "module",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "description": "Taskin monorepo for task management and automation",
   "packageManager": "pnpm@10.24.0",
   "engines": {
