@@ -33,9 +33,9 @@ Automatically builds and deploys the `@opentask/taskin-design-vue` Storybook to 
 #### Output
 
 - **Production**: `https://sidartaveloso.github.io/taskin/` (from `main` branch)
-- **Beta**: `https://sidartaveloso.github.io/taskin/` (from `develop` branch)
+- **Beta**: `https://sidartaveloso.github.io/taskin/beta/` (from `develop` branch)
 
-> **Note**: Both versions deploy to the same URL. The latest push to either `main` or `develop` will be live. For separate environments, consider using different repositories or subdirectories.
+> **Note**: Beta deploys to `/beta/` subdirectory, production deploys to root. Both versions coexist without overwriting each other.
 
 #### Local Testing
 

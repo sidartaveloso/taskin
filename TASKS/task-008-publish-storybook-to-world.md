@@ -33,8 +33,9 @@ Must run after commit in main (generationg production version ant publish in a l
 
 ## Output URL
 
-- Production/Beta: `https://sidartaveloso.github.io/taskin/`
+- **Production**: `https://sidartaveloso.github.io/taskin/` (from `main` branch)
+- **Beta**: `https://sidartaveloso.github.io/taskin/beta/` (from `develop` branch)
 
 ## Notes
 
-Both environments deploy to same URL (latest push wins). For separate URLs, consider subdirectories or different repos.
+Beta version deploys to `/beta/` subdirectory, production deploys to root directory. Both versions coexist without overwriting each other.
