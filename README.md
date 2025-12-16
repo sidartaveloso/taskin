@@ -329,7 +329,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 🙏 Acknowledgments
 
-- Design system inspired by [Redmine](https://example.com)
 - Model Context Protocol by [Anthropic](https://github.com/anthropic-ai/model-context-protocol)
 - Vue.js, Pinia, Vite and the entire Vue ecosystem
 

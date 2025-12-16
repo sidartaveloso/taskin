@@ -4,10 +4,10 @@
   "type": "module",
   "version": "1.0.10",
   "description": "Taskin monorepo for task management and automation",
-  "packageManager": "pnpm@10.24.0",
+  "packageManager": "pnpm@10.26.0",
   "engines": {
     "node": ">=20.0.0",
-    "pnpm": ">=10.24.0"
+    "pnpm": ">=10.26.0"
   },
   "author": {
     "name": "OpenTask",
