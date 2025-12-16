@@ -68,31 +68,19 @@ describe('FileSystemTaskProvider', () => {
   });
 
   describe('updateTask', () => {
-    it('should update the Status section in the file', async () => {
+    it('should update the Status inline metadata', async () => {
       const originalContent = `# Task 001 — Test Task
-
-## Status
-pending
-
-## Type
-feat
-
-## Assignee
-Test User
+Status: pending
+Type: feat
+Assignee: Test User
 
 ## Description
 Test description`;
 
       const expectedContent = `# Task 001 — Test Task
-
-## Status
-in-progress
-
-## Type
-feat
-
-## Assignee
-Test User
+Status: in-progress
+Type: feat
+Assignee: Test User
 
 ## Description
 Test description`;
@@ -133,7 +121,7 @@ Test description`;
       (fs.writeFile as Mock).mockResolvedValue(undefined);
 
       // After creation, findTask will read the file
-      const createdContent = `# 🧩 Task 001 — ${title}\n\n## Status\n\npending`;
+      const createdContent = `# 🧩 Task 001 — ${title}\nStatus: pending`;
       (fs.readFile as Mock).mockResolvedValue(createdContent);
 
       (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
@@ -150,11 +138,11 @@ Test description`;
         expect.any(String),
         'utf-8',
       );
-      // Ensure the generated content uses English section names
+      // Ensure the generated content uses English inline metadata
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
-      expect(written).toContain('## Status');
-      expect(written).toContain('## Type');
-      expect(written).toContain('## Assignee');
+      expect(written).toContain('Status:');
+      expect(written).toContain('Type:');
+      expect(written).toContain('Assignee:');
     });
 
     it('should create a task file using pt-BR i18n', async () => {
@@ -178,7 +166,7 @@ Test description`;
       (fs.access as Mock).mockRejectedValue(new Error('not found'));
       (fs.writeFile as Mock).mockResolvedValue(undefined);
 
-      const createdContent = `# 🧩 Task 001 — ${title}\n\n## Status\n\npending`;
+      const createdContent = `# 🧩 Task 001 — ${title}\nStatus: pending`;
       (fs.readFile as Mock).mockResolvedValue(createdContent);
 
       (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
@@ -196,10 +184,10 @@ Test description`;
         'utf-8',
       );
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
-      // Ensure the generated content uses Portuguese section names
-      expect(written).toContain('## Status');
-      expect(written).toContain('## Tipo');
-      expect(written).toContain('## Responsável');
+      // Ensure the generated content uses Portuguese inline metadata
+      expect(written).toContain('Status:');
+      expect(written).toContain('Tipo:');
+      expect(written).toContain('Responsável:');
     });
   });
 
@@ -217,29 +205,17 @@ Test description`;
       const taskFiles = ['task-001-first-task.md', 'task-002-second-task.md'];
 
       const task1Content = `# Task 001 — First Task
-
-## Status
-in-progress
-
-## Type
-feat
-
-## Assignee
-John Doe
+Status: in-progress
+Type: feat
+Assignee: John Doe
 
 ## Description
 First task description`;
 
       const task2Content = `# Task 002 — Second Task
-
-## Status
-done
-
-## Type
-fix
-
-## Assignee
-Jane Smith
+Status: done
+Type: fix
+Assignee: Jane Smith
 
 ## Description
 Second task description`;
@@ -291,12 +267,8 @@ Second task description`;
 
     it('should handle tasks without assignee', async () => {
       const taskContent = `# Task 001 — Task Without Assignee
-
-## Status
-pending
-
-## Type
-feat
+Status: pending
+Type: feat
 
 ## Description
 Task without assignee`;
@@ -333,15 +305,9 @@ Minimal task with no status or type`;
 
     it('should parse pt-BR localized task files', async () => {
       const taskContentPT = `# Task 001 — Tarefa em Português
-
-## Status
-em-progresso
-
-## Tipo
-feat
-
-## Responsável
-João Silva
+Status: em-progresso
+Tipo: feat
+Responsável: João Silva
 
 ## Descrição
 Descrição da tarefa`;
@@ -374,15 +340,9 @@ Descrição da tarefa`;
 
     it('should resolve assignee from user registry when available', async () => {
       const taskContent = `# Task 001 — Task With Registered User
-
-## Status
-in-progress
-
-## Type
-feat
-
-## Assignee
-registereduser
+Status: in-progress
+Type: feat
+Assignee: registereduser
 
 ## Description
 Task with registered user`;
@@ -417,8 +377,8 @@ Task with registered user`;
         '.gitignore',
       ];
 
-      const task1Content = `# Task 001 — Valid Task\n\n## Status\npending`;
-      const task2Content = `# Task 002 — Another Task\n\n## Status\npending`;
+      const task1Content = `# Task 001 — Valid Task\nStatus: pending`;
+      const task2Content = `# Task 002 — Another Task\nStatus: pending`;
 
       (fs.readdir as Mock).mockResolvedValue(files);
       (fs.readFile as Mock)
@@ -597,6 +557,43 @@ Task with registered user`;
 
       // Verify only 3 writes: create, start, finish
       expect(fs.writeFile).toHaveBeenCalledTimes(3);
+    });
+
+    it('should generate markdown with inline metadata format', async () => {
+      const title = 'Format Test';
+
+      (fs.access as Mock).mockRejectedValue(new Error('not found'));
+      (fs.mkdir as Mock).mockResolvedValue(undefined);
+      (fs.readdir as Mock)
+        .mockResolvedValueOnce([])
+        .mockResolvedValue(['task-001-format-test.md']);
+
+      let writtenContent = '';
+      (fs.writeFile as Mock).mockImplementation(
+        async (_path: string, content: string) => {
+          writtenContent = content;
+        },
+      );
+      (fs.readFile as Mock).mockImplementation(async () => writtenContent);
+
+      await provider.createTask({
+        title,
+        type: 'feat',
+        assignee: 'Test',
+        description: 'Test description',
+      });
+
+      // Verify format: inline metadata (Key: value)
+      expect(writtenContent).toMatch(/Status: pending/);
+      expect(writtenContent).toMatch(/Type: feat/);
+      expect(writtenContent).toMatch(/Assignee: Test/);
+      expect(writtenContent).toMatch(/## Description/);
+      expect(writtenContent).toMatch(/Test description/);
+
+      // Verify format does NOT have section-based metadata
+      expect(writtenContent).not.toMatch(/## Status\n/);
+      expect(writtenContent).not.toMatch(/## Type\n/);
+      expect(writtenContent).not.toMatch(/## Assignee\n/);
     });
   });
 });

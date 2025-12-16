@@ -5,36 +5,36 @@ import type {
 import { readFile, writeFile } from 'node:fs/promises';
 
 /**
- * Fixes inline metadata by converting to section-based format
+ * Fixes section-based metadata by converting to inline format
  */
 export async function fixTaskFile(filePath: string): Promise<boolean> {
   try {
     const content = await readFile(filePath, 'utf-8');
 
-    // Check if file has inline metadata
-    const hasInlineStatus = /^Status:\s*.+$/im.test(content);
-    const hasInlineType = /^Type:\s*.+$/im.test(content);
-    const hasInlineAssignee = /^Assignee:\s*.+$/im.test(content);
+    // Check if file has section-based metadata
+    const hasSectionStatus = /##\s*Status\s*\n\s*([^\n\r]+)/i.test(content);
+    const hasSectionType = /##\s*Type\s*\n\s*([^\n\r]+)/i.test(content);
+    const hasSectionAssignee = /##\s*Assignee\s*\n\s*([^\n\r]+)/i.test(content);
 
-    if (!hasInlineStatus && !hasInlineType && !hasInlineAssignee) {
+    if (!hasSectionStatus && !hasSectionType && !hasSectionAssignee) {
       return false; // Nothing to fix
     }
 
-    // Extract inline metadata
-    const statusMatch = content.match(/^Status:\s*(.+)$/im);
-    const typeMatch = content.match(/^Type:\s*(.+)$/im);
-    const assigneeMatch = content.match(/^Assignee:\s*(.+)$/im);
+    // Extract section-based metadata
+    const statusMatch = content.match(/##\s*Status\s*\n\s*([^\n\r]+)/i);
+    const typeMatch = content.match(/##\s*Type\s*\n\s*([^\n\r]+)/i);
+    const assigneeMatch = content.match(/##\s*Assignee\s*\n\s*([^\n\r]+)/i);
 
-    // Remove inline metadata lines
+    // Remove section-based metadata
     let newContent = content;
     if (statusMatch) {
-      newContent = newContent.replace(/^Status:\s*.+$/im, '');
+      newContent = newContent.replace(/##\s*Status\s*\n\s*[^\n\r]+/i, '');
     }
     if (typeMatch) {
-      newContent = newContent.replace(/^Type:\s*.+$/im, '');
+      newContent = newContent.replace(/##\s*Type\s*\n\s*[^\n\r]+/i, '');
     }
     if (assigneeMatch) {
-      newContent = newContent.replace(/^Assignee:\s*.+$/im, '');
+      newContent = newContent.replace(/##\s*Assignee\s*\n\s*[^\n\r]+/i, '');
     }
 
     // Clean up extra blank lines
@@ -52,23 +52,23 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     const beforeTitle = contentLines.slice(0, titleLineIdx + 1);
     const afterTitle = contentLines.slice(titleLineIdx + 1);
 
-    // Build sections to insert after title
-    const sections: string[] = [];
+    // Build inline metadata to insert after title
+    const inlineMetadata: string[] = [];
 
     if (statusMatch) {
-      sections.push('', '## Status', '', statusMatch[1].trim());
+      inlineMetadata.push(`Status: ${statusMatch[1].trim()}`);
     }
 
     if (typeMatch) {
-      sections.push('', '## Type', '', typeMatch[1].trim());
+      inlineMetadata.push(`Type: ${typeMatch[1].trim()}`);
     }
 
     if (assigneeMatch) {
-      sections.push('', '## Assignee', '', assigneeMatch[1].trim());
+      inlineMetadata.push(`Assignee: ${assigneeMatch[1].trim()}`);
     }
 
     // Reconstruct file
-    const fixed = [...beforeTitle, ...sections, '', ...afterTitle].join('\n');
+    const fixed = [...beforeTitle, ...inlineMetadata, '', ...afterTitle].join('\n');
 
     // Clean up extra blank lines again
     const finalContent = fixed.replace(/\n{3,}/g, '\n\n').trim() + '\n';
@@ -96,9 +96,9 @@ export async function validateTaskFile(
     // Check for required sections
     const hasTitleSection = lines.some((line) => line.trim().startsWith('# '));
 
-    // Enforce section-based metadata only (no inline 'Status: ...')
-    const hasStatusSection = content.includes('## Status');
+    // Enforce inline metadata only (no section-based '## Status')
     const hasInlineStatus = /^Status:\s*.+$/im.test(content);
+    const hasSectionStatus = /##\s*Status/i.test(content);
     const hasDescriptionSection =
       content.includes('## Description') || content.includes('## Descrição');
 
@@ -112,45 +112,45 @@ export async function validateTaskFile(
       });
     }
 
-    // Reject inline metadata: we only accept the section-based format
-    if (hasInlineStatus) {
+    // Reject section-based metadata: we only accept the inline format
+    if (hasSectionStatus) {
       const statusLineIdx = lines.findIndex((line) =>
-        /^Status:/i.test(line.trim()),
+        /^## Status/i.test(line.trim()),
       );
       issues.push({
         file: filePath,
         line: statusLineIdx >= 0 ? statusLineIdx + 1 : undefined,
         message:
-          'Inline metadata ("Status: ...") is not allowed. Use a "## Status" section instead.',
+          'Section-based metadata ("## Status") is not allowed. Use inline format instead.',
         severity: 'error',
         suggestion:
-          'Replace inline metadata with a section:\n## Status\n<todo|in-progress|done>',
+          'Replace section with inline metadata:\nStatus: <todo|in-progress|done>',
       });
     }
 
-    // Ensure section-based status exists and is valid
-    if (!hasStatusSection) {
+    // Ensure inline status exists and is valid
+    if (!hasInlineStatus) {
       issues.push({
         file: filePath,
-        message: 'Task file must have a ## Status section',
+        message: 'Task file must have a Status field',
         severity: 'error',
-        suggestion: 'Add a section:\n## Status\n<todo|in-progress|done>',
+        suggestion: 'Add inline metadata after title:\nStatus: <todo|in-progress|done>',
       });
     } else {
-      const statusMatch = content.match(/## Status\s*\n\s*([^\n\r]+)/i);
+      const statusMatch = content.match(/^Status:\s*(.+)$/im);
       const statusValue = statusMatch
         ? statusMatch[1].trim().toLowerCase()
         : '';
-      if (!['todo', 'in-progress', 'done', 'pending'].includes(statusValue)) {
+      if (!['todo', 'in-progress', 'done', 'pending', 'blocked', 'canceled'].includes(statusValue)) {
         const statusLineIdx = lines.findIndex(
-          (line) => line.trim() === '## Status',
+          (line) => /^Status:/i.test(line.trim()),
         );
         issues.push({
           file: filePath,
-          line: statusLineIdx >= 0 ? statusLineIdx + 2 : undefined,
-          message: 'Status must be one of: todo, in-progress, done, pending',
+          line: statusLineIdx >= 0 ? statusLineIdx + 1 : undefined,
+          message: 'Status must be one of: todo, in-progress, done, pending, blocked, canceled',
           severity: 'error',
-          suggestion: 'Set status to: todo, in-progress, done, or pending',
+          suggestion: 'Set status to: todo, in-progress, done, pending, blocked, or canceled',
         });
       }
     }

@@ -48,9 +48,9 @@ export class FileSystemTaskProvider implements ITaskProvider {
     const contentLocale = detectLocale(content);
     const i18n = getI18n(contentLocale);
 
-    // Extract metadata from section format (## Status, ## Type, ## Assignee)
-    // Support both English and localized section names
-    const extractSection = (
+    // Extract metadata from inline format (Status: value)
+    // Support both English and localized field names
+    const extractInline = (
       name: string,
       localizedName?: string,
     ): string | null => {
@@ -61,16 +61,18 @@ export class FileSystemTaskProvider implements ITaskProvider {
           : [name];
 
       for (const n of names) {
-        const rx = new RegExp(`##\\s*${n}\\s*\\n\\s*([^\\n\\r]+)`, 'i');
+        // Escape special regex characters in field name
+        const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
         const m = content.match(rx);
         if (m) return m[1].trim();
       }
       return null;
     };
 
-    const statusMatch = extractSection('Status', i18n.status);
-    const typeMatch = extractSection('Type', i18n.type);
-    const assigneeMatch = extractSection('Assignee', i18n.assignee);
+    const statusMatch = extractInline('Status', i18n.status);
+    const typeMatch = extractInline('Type', i18n.type);
+    const assigneeMatch = extractInline('Assignee', i18n.assignee);
 
     // Resolve assignee from registry
     let assignee;
@@ -105,13 +107,13 @@ export class FileSystemTaskProvider implements ITaskProvider {
   }
 
   async updateTask(task: TaskFile): Promise<void> {
-    // First, ensure file is migrated to section-based format if needed
+    // First, ensure file is migrated to inline format if needed
     const currentContent = await fs.readFile(task.filePath, 'utf-8');
-    const hasInlineMetadata = /^(Status|Type|Assignee):\s*.+$/im.test(
+    const hasSectionMetadata = /##\s*(Status|Type|Assignee)/i.test(
       currentContent,
     );
 
-    if (hasInlineMetadata) {
+    if (hasSectionMetadata) {
       const { fixTaskFile } = await import('./task-validator.js');
       await fixTaskFile(task.filePath);
     }
@@ -119,20 +121,20 @@ export class FileSystemTaskProvider implements ITaskProvider {
     // Re-read after potential migration
     const content = await fs.readFile(task.filePath, 'utf-8');
 
-    // Update the Status section in the content (section-based format)
+    // Update the Status inline metadata
     let updatedContent: string;
 
-    if (/##\s*Status/i.test(content)) {
-      // Replace the line immediately after the '## Status' heading
+    if (/^Status:\s*.+$/im.test(content)) {
+      // Replace existing Status line
       updatedContent = content.replace(
-        /(##\s*Status\s*\n\s*)([^\n\r]*)/i,
-        `$1${task.status}`,
+        /^Status:\s*.+$/im,
+        `Status: ${task.status}`,
       );
     } else {
-      // If no Status section exists, insert it after the H1 title
+      // If no Status field exists, insert it after the H1 title
       updatedContent = content.replace(
         /(^#.*\n)/,
-        `$1\n## Status\n${task.status}\n`,
+        `$1Status: ${task.status}\n`,
       );
     }
 
@@ -164,9 +166,9 @@ export class FileSystemTaskProvider implements ITaskProvider {
       const contentLocale = detectLocale(content);
       const i18n = getI18n(contentLocale);
 
-      // Extract metadata from section format (## Status, ## Type, ## Assignee)
-      // Support both English and localized section names
-      const extractSection = (
+      // Extract metadata from inline format (Status: value)
+      // Support both English and localized field names
+      const extractInline = (
         name: string,
         localizedName?: string,
       ): string | null => {
@@ -177,16 +179,18 @@ export class FileSystemTaskProvider implements ITaskProvider {
             : [name];
 
         for (const n of names) {
-          const rx = new RegExp(`##\\s*${n}\\s*\\n\\s*([^\\n\\r]+)`, 'i');
+          // Escape special regex characters in field name
+          const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
           const m = content.match(rx);
           if (m) return m[1].trim();
         }
         return null;
       };
 
-      const statusMatch = extractSection('Status', i18n.status);
-      const typeMatch = extractSection('Type', i18n.type);
-      const assigneeMatch = extractSection('Assignee', i18n.assignee);
+      const statusMatch = extractInline('Status', i18n.status);
+      const typeMatch = extractInline('Type', i18n.type);
+      const assigneeMatch = extractInline('Assignee', i18n.assignee);
 
       // Resolve assignee from registry
       let assignee;
@@ -301,31 +305,19 @@ export class FileSystemTaskProvider implements ITaskProvider {
     const { id, title, type, description, assignee, i18n } = data;
 
     return `# 🧩 Task ${id} — ${title}
-
-## ${i18n.status}
-
-pending
-
-## ${i18n.type}
-
-${type}
-
-## ${i18n.assignee}
-
-${assignee}
+${i18n.status}: pending
+${i18n.type}: ${type}
+${i18n.assignee}: ${assignee}
 
 ## ${i18n.description}
-
 ${description || i18n.descriptionPlaceholder}
 
 ## ${i18n.tasks}
-
 - [ ] Task 1
 - [ ] Task 2
 - [ ] Task 3
 
 ## ${i18n.notes}
-
 ${i18n.notesPlaceholder}
 `;
   }
