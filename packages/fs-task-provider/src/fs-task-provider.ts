@@ -125,16 +125,16 @@ export class FileSystemTaskProvider implements ITaskProvider {
     let updatedContent: string;
 
     if (/^Status:\s*.+$/im.test(content)) {
-      // Replace existing Status line
+      // Replace existing Status line (preserve trailing spaces for markdown line break)
       updatedContent = content.replace(
         /^Status:\s*.+$/im,
-        `Status: ${task.status}`,
+        `Status: ${task.status}  `,
       );
     } else {
       // If no Status field exists, insert it after the H1 title
       updatedContent = content.replace(
         /(^#.*\n)/,
-        `$1Status: ${task.status}\n`,
+        `$1Status: ${task.status}  \n`,
       );
     }
 
@@ -225,10 +225,19 @@ export class FileSystemTaskProvider implements ITaskProvider {
   }
 
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
-    const i18n = getI18n(this.locale);
-
-    // Get all existing tasks to determine next ID
+    // Get all existing tasks to determine next ID and detect locale
     const allTasks = await this.getAllTasks();
+
+    // Detect locale from existing tasks, fallback to provider's locale
+    let detectedLocale = this.locale;
+    if (allTasks.length > 0) {
+      // Get the most recent task (last one in the list)
+      const lastTask = allTasks[allTasks.length - 1];
+      detectedLocale = detectLocale(lastTask.content);
+    }
+
+    const i18n = getI18n(detectedLocale);
+
     const taskNumbers = allTasks
       .map((task) => {
         const match = task.id.match(/^(\d+)$/);
@@ -305,6 +314,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
     const { id, title, type, description, assignee, i18n } = data;
 
     return `# 🧩 Task ${id} — ${title}
+
 ${i18n.status}: pending
 ${i18n.type}: ${type}
 ${i18n.assignee}: ${assignee}
