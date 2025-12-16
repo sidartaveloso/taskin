@@ -379,7 +379,7 @@ Tarefa sem metadados`;
       const statusIssue = result.find((issue) =>
         issue.message.includes('Status'),
       );
-      
+
       // Should suggest Portuguese field name since content is in Portuguese
       expect(statusIssue?.suggestion).toContain('Status:');
     });
