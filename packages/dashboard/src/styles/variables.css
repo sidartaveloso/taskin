@@ -1,6 +1,5 @@
 /**
  * Design Variables - Taskin Dashboard
- * Baseado no painel de referência Redmine Geocontrol
  */
 
 :root {
@@ -54,7 +53,7 @@
   --status-paused-text: rgb(255, 255, 255);
 
   /* ==================== SHADOWS ==================== */
-  --shadow-header: 
+  --shadow-header:
     rgb(0, 0, 0) 0px -2px 10px 4px,
     rgb(19, 85, 146) 0px -4px 14px -4px inset,
     rgb(24, 96, 162) 0px -6px 50px 0px inset;
@@ -135,7 +134,7 @@
 
 /* ==================== DARK MODE SUPPORT (FUTURE) ==================== */
 @media (prefers-color-scheme: dark) {
-  /* 
+  /*
    * Placeholder para suporte a dark mode no futuro
    * Manter comentado por enquanto
    */
