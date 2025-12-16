@@ -226,28 +226,58 @@ pnpm -r build
 
 ### Task Structure
 
-Each task is a Markdown file with YAML frontmatter:
+Tasks are Markdown files with inline metadata (compact and readable):
 
 ```markdown
----
-id: task-01
-title: Implement authentication
-status: in-progress
-priority: high
-tags: [backend, security]
-assignee: sidarta
-created: 2024-01-15T10:00:00Z
----
+# 🧩 Task 001 — Implement authentication
+Status: in-progress
+Type: feat
+Assignee: sidarta
 
 ## Description
 
-Implement JWT authentication system.
+Implement JWT authentication system with secure token generation.
 
-## Checklist
+## Tasks
+- [x] Create user schema
+- [x] Implement login endpoint
+- [ ] Add token refresh logic
+- [ ] Write integration tests
 
-- [x] Create schema
-- [ ] Implement login
+## Notes
+Using bcrypt for password hashing.
+Token expiration: 24h.
 ```
+
+#### Metadata Format
+
+- **Inline metadata** (Status, Type, Assignee) uses English keys
+- **Section headers** (Description, Tasks, Notes) can be localized
+- **Multi-language support**: English and Portuguese (automatically detected)
+- **Status values**: `pending`, `in-progress`, `done`, `blocked`, `canceled`
+- **Type values**: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+
+#### Task Linter
+
+The built-in linter validates format and converts legacy section-based metadata:
+
+```bash
+# Validate all tasks
+taskin lint
+
+# Auto-fix format issues
+taskin lint --fix
+
+# Validate specific directory
+taskin lint --path ./custom-tasks
+```
+
+**Linter features:**
+- ✅ Validates inline metadata format
+- ✅ Detects and converts section-based format (`## Status\nvalue`)
+- ✅ Multi-language support (English, Portuguese)
+- ✅ Preserves localized content sections
+- ✅ Enforces consistent formatting
 
 ## 📚 Documentation
 
