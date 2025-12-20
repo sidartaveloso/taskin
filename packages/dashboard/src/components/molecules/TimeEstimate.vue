@@ -28,14 +28,27 @@ const getStatus = (estimate: TimeEstimateType): 'ok' | 'warning' | 'danger' => {
 </script>
 
 <template>
-  <div class="time-estimate" :class="[`time-estimate--${variant}`, `time-estimate--${getStatus(estimate)}`]">
+  <div
+    class="time-estimate"
+    :class="[`time-estimate--${variant}`, `time-estimate--${getStatus(estimate)}`]"
+  >
     <div class="time-estimate__item">
       <span class="time-estimate__label">Estimado</span>
       <span class="time-estimate__value">{{ formatHours(estimate.estimated) }}</span>
     </div>
 
-    <div class="time-estimate__separator" v-if="variant === 'default'">→</div>
-    <div class="time-estimate__separator" v-else>/</div>
+    <div
+      v-if="variant === 'default'"
+      class="time-estimate__separator"
+    >
+      →
+    </div>
+    <div
+      v-else
+      class="time-estimate__separator"
+    >
+      /
+    </div>
 
     <div class="time-estimate__item">
       <span class="time-estimate__label">Gasto</span>
@@ -44,8 +57,18 @@ const getStatus = (estimate: TimeEstimateType): 'ok' | 'warning' | 'danger' => {
       </span>
     </div>
 
-    <div class="time-estimate__separator" v-if="variant === 'default'">→</div>
-    <div class="time-estimate__separator" v-else>/</div>
+    <div
+      v-if="variant === 'default'"
+      class="time-estimate__separator"
+    >
+      →
+    </div>
+    <div
+      v-else
+      class="time-estimate__separator"
+    >
+      /
+    </div>
 
     <div class="time-estimate__item">
       <span class="time-estimate__label">Restante</span>

@@ -109,20 +109,22 @@ const statusText = computed(() => {
     <!-- Header with connection status -->
     <header class="app-header">
       <div class="header-content">
-        <h1 class="app-title">Taskin Dashboard</h1>
+        <h1 class="app-title">
+          Taskin Dashboard
+        </h1>
 
         <div class="connection-status">
           <span
             class="status-indicator"
             :style="{ backgroundColor: statusColor }"
-          ></span>
+          />
           <span class="status-text">{{ statusText }}</span>
 
           <button
-            class="retry-button"
             v-if="connectionError"
-            @click="handleRefresh"
+            class="retry-button"
             :disabled="isLoading"
+            @click="handleRefresh"
           >
             {{ isLoading ? 'Reconectando...' : 'Tentar novamente' }}
           </button>
@@ -130,7 +132,10 @@ const statusText = computed(() => {
       </div>
 
       <!-- Error message -->
-      <div class="error-banner" v-if="connectionError">
+      <div
+        v-if="connectionError"
+        class="error-banner"
+      >
         <span class="error-icon">⚠️</span>
         <span class="error-message">{{ connectionError }}</span>
       </div>
@@ -139,20 +144,31 @@ const statusText = computed(() => {
     <!-- Main content -->
     <main class="app-main">
       <!-- Loading state -->
-      <div class="loading-state" v-if="isLoading && tasks.length === 0">
-        <div class="spinner"></div>
+      <div
+        v-if="isLoading && tasks.length === 0"
+        class="loading-state"
+      >
+        <div class="spinner" />
         <p>Carregando tarefas...</p>
       </div>
 
       <!-- Empty state -->
-      <div class="empty-state" v-else-if="!isLoading && tasks.length === 0">
-        <p class="empty-icon">📋</p>
+      <div
+        v-else-if="!isLoading && tasks.length === 0"
+        class="empty-state"
+      >
+        <p class="empty-icon">
+          📋
+        </p>
         <h2>Nenhuma tarefa encontrada</h2>
         <p>Conecte-se ao servidor para visualizar suas tarefas.</p>
       </div>
 
       <!-- Task grid -->
-      <TaskGrid v-else :tasks="tasks" />
+      <TaskGrid
+        v-else
+        :tasks="tasks"
+      />
     </main>
   </div>
 </template>

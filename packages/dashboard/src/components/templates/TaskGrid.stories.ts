@@ -218,7 +218,7 @@ export const Empty: Story = {
 };
 
 export const WithCustomTitle: Story = {
-  render: (args) => ({
+  render: (args: any) => ({
     components: { TaskGrid },
     setup() {
       return { args, tasks: mockTasks };
@@ -245,7 +245,7 @@ export const WithCustomTitle: Story = {
 };
 
 export const WithFooter: Story = {
-  render: (args) => ({
+  render: (args: any) => ({
     components: { TaskGrid },
     setup() {
       return { args, tasks: mockTasks };

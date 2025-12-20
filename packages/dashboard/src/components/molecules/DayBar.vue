@@ -48,7 +48,10 @@ const getVariant = computed(() => {
 </script>
 
 <template>
-  <div class="day-bar" :class="`day-bar--${variant}`">
+  <div
+    class="day-bar"
+    :class="`day-bar--${variant}`"
+  >
     <div class="day-bar__header">
       <span class="day-bar__date">{{ formatDate(day.date) }}</span>
       <span class="day-bar__hours">{{ day.hours }}h</span>
@@ -62,7 +65,10 @@ const getVariant = computed(() => {
       />
     </div>
 
-    <p v-if="variant === 'default' && day.description" class="day-bar__description">
+    <p
+      v-if="variant === 'default' && day.description"
+      class="day-bar__description"
+    >
       {{ day.description }}
     </p>
   </div>

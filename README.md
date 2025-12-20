@@ -152,6 +152,7 @@ taskin mcp-server
 - **@opentask/taskin-task-provider-pinia** - Pinia store with WebSocket sync
 - **@opentask/taskin-dashboard** - Vue 3 + Vite dashboard with complete UI components
 - **@opentask/taskin-design-vue** - Vue 3 design system with Taskin mascot and UI elements
+  - 🎨 [**Live Storybook →**](https://sidartaveloso.github.io/taskin/) Interactive component showcase with 30+ stories
 
 ### CLI & Utils
 
@@ -334,9 +335,13 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 🔗 Links
 
-- [Issues](https://github.com/opentask/taskin/issues)
-- [Pull Requests](https://github.com/opentask/taskin/pulls)
-- [Changelog](./CHANGELOG.md)
+- 🎨 [**Storybook (Design System)**](https://sidartaveloso.github.io/taskin/) - Interactive component showcase
+- 📦 [npm: taskin](https://www.npmjs.com/package/taskin) - CLI package
+- 📦 [npm: @opentask/taskin](https://www.npmjs.com/package/@opentask/taskin) - Alias package
+- 💻 [GitHub Repository](https://github.com/sidartaveloso/taskin) - Source code
+- 🐛 [Issues](https://github.com/sidartaveloso/taskin/issues) - Bug reports and feature requests
+- 🔀 [Pull Requests](https://github.com/sidartaveloso/taskin/pulls) - Contributions
+- 📝 [Changelog](./CHANGELOG.md) - Version history
 
 ---
 

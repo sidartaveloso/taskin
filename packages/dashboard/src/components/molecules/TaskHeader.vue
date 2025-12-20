@@ -13,7 +13,10 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div class="task-header" :class="`task-header--${size}`">
+  <div
+    class="task-header"
+    :class="`task-header--${size}`"
+  >
     <Avatar
       :name="assignee.name"
       :src="assignee.avatar"
@@ -21,7 +24,10 @@ withDefaults(defineProps<Props>(), {
     />
     <div class="task-header__info">
       <span class="task-header__name">{{ assignee.name }}</span>
-      <span v-if="assignee.email" class="task-header__email">{{ assignee.email }}</span>
+      <span
+        v-if="assignee.email"
+        class="task-header__email"
+      >{{ assignee.email }}</span>
     </div>
   </div>
 </template>
