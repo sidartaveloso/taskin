@@ -2,9 +2,6 @@ import type { Preview } from '@storybook/vue3-vite';
 import './preview.css'; // Import global styles
 
 const preview: Preview = {
-  // Initial route - opens the Composed documentation by default
-  initialRoute: '/docs/organisms-taskin-composed--docs',
-
   parameters: {
     // Actions configuration
     actions: { argTypesRegex: '^on[A-Z].*' },
