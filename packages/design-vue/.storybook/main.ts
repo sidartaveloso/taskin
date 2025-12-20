@@ -1,12 +1,20 @@
 import type { StorybookConfig } from '@storybook/vue3-vite';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Read version from package.json
+const packageJson = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../package.json'), 'utf-8')
+);
+const version = packageJson.version;
 
 /**
  * This function is used to resolve the absolute path of a package.
  * It is needed in projects that use Yarn PnP or are set up within a monorepo.
  */
-function getAbsolutePath(value: string): any {
+function getAbsolutePath(value: string): string {
   return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
 }
 
@@ -42,6 +50,24 @@ const config: StorybookConfig = {
 
   // Static dirs for assets
   staticDirs: ['../public'],
+
+  // Manager configuration
+  managerHead: (head) => `
+    ${head}
+    <style>
+      .sidebar-header::after {
+        content: 'v${version}';
+        display: inline-block;
+        margin-left: 8px;
+        padding: 2px 6px;
+        background: #ff4785;
+        color: white;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+      }
+    </style>
+  `,
 };
 
 export default config;
