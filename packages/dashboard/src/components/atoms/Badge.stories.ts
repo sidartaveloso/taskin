@@ -43,7 +43,7 @@ export const Default: Story = {
     variant: 'default',
     size: 'md',
   },
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { Badge },
     setup() {
       return { args };
@@ -64,7 +64,7 @@ export const TaskNumber: Story = {
     variant: 'primary',
     size: 'md',
   },
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { Badge },
     setup() {
       return { args };

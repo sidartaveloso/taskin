@@ -92,7 +92,7 @@ const computedTask = computed((): Task => {
 });
 
 // Status badge variant mapping
-const statusVariantMap: Record<TaskStatus, any> = {
+const statusVariantMap: Record<TaskStatus, 'default' | 'primary' | 'warning' | 'success' | 'danger'> = {
   pending: 'default',
   'in-progress': 'primary',
   paused: 'warning',

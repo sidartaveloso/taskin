@@ -60,8 +60,8 @@ export const Compact: Story = {
   },
 };
 
-export const AllVariants: Story = {
-  args: {} as any,
+export const Interactive: Story = {
+  args: {},
   render: () => ({
     components: { TimeEstimate },
     template: `

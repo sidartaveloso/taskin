@@ -62,7 +62,7 @@ const preview: Preview = {
 
   // Global decorators
   decorators: [
-    (story: any) => ({
+    (story: () => unknown) => ({
       components: { story },
       template:
         "<div style=\"padding: 1rem; font-family: 'Ubuntu', 'Roboto', Arial, sans-serif;\"><story /></div>",
