@@ -70,9 +70,6 @@ const config: StorybookConfig = {
       }
     </style>
   `,
-
-  // Set initial route to Composed documentation
-  initialRoute: '/docs/organisms-taskin-composed--docs',
 };
 
 export default config;
