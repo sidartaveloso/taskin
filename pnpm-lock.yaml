@@ -447,8 +447,8 @@ importers:
   packages/taskin-alias:
     dependencies:
       taskin:
-        specifier: 1.0.11
-        version: 1.0.11(@types/node@24.10.4)
+        specifier: 1.0.12
+        version: 1.0.12(@types/node@24.10.4)
 
   packages/types-py:
     dependencies:
@@ -3729,8 +3729,8 @@ packages:
   tabbable@6.3.0:
     resolution: {integrity: sha512-EIHvdY5bPLuWForiR/AN2Bxngzpuwn1is4asboytXtpTgsArc+WmSJKVLlhdh71u7jFcryDqB2A8lQvj78MkyQ==}
 
-  taskin@1.0.11:
-    resolution: {integrity: sha512-04vGg+Xjd4yH3zshArEay5I1DotEbIYxt4gLOwhtsE+F1M61fsenKsqJeEjfuxrqHKyrGTx3LBCVVPfHNFfX6A==}
+  taskin@1.0.12:
+    resolution: {integrity: sha512-kjk6xDx38I3/9idAOd0TH2wKQCMmkVmdVplvOOJuLax2JogtYyVxuAN7pTgl22wmv0xqXNyzgGRz5bzAwm7ZRg==}
     hasBin: true
 
   thenify-all@1.6.0:
@@ -4192,8 +4192,8 @@ packages:
   vue-component-type-helpers@2.2.12:
     resolution: {integrity: sha512-YbGqHZ5/eW4SnkPNR44mKVc6ZKQoRs/Rux1sxC6rdwXb4qpbOSYfDr9DsTHolOTGmIKgM9j141mZbBeg05R1pw==}
 
-  vue-component-type-helpers@3.1.8:
-    resolution: {integrity: sha512-oaowlmEM6BaYY+8o+9D9cuzxpWQWHqHTMKakMxXu0E+UCIOMTljyIPO15jcnaCwJtZu/zWDotK7mOIHvWD9mcw==}
+  vue-component-type-helpers@3.2.0:
+    resolution: {integrity: sha512-6o41sHNIAzqSjmXz+5nXjBCCVfjVB3qTfUJQslH979mTnPw0TKl/j3PfArKOwyP/nJKT/QhppfQE7zUgrCeBWA==}
 
   vue-demi@0.14.10:
     resolution: {integrity: sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==}
@@ -5297,7 +5297,7 @@ snapshots:
       storybook: 10.1.9(@testing-library/dom@10.4.1)(prettier@3.7.4)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       type-fest: 2.19.0
       vue: 3.5.25(typescript@5.9.3)
-      vue-component-type-helpers: 3.1.8
+      vue-component-type-helpers: 3.2.0
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -7901,7 +7901,7 @@ snapshots:
 
   tabbable@6.3.0: {}
 
-  taskin@1.0.11(@types/node@24.10.4):
+  taskin@1.0.12(@types/node@24.10.4):
     dependencies:
       '@types/express': 5.0.6
       '@types/inquirer': 9.0.9
@@ -8458,7 +8458,7 @@ snapshots:
 
   vue-component-type-helpers@2.2.12: {}
 
-  vue-component-type-helpers@3.1.8: {}
+  vue-component-type-helpers@3.2.0: {}
 
   vue-demi@0.14.10(vue@3.5.25(typescript@5.9.3)):
     dependencies:

@@ -63,7 +63,9 @@ const statusCounts = computed(() => ({
     <!-- Header with stats -->
     <div class="task-grid-header">
       <h2 class="task-grid-title">
-        <slot name="title">Tarefas em Andamento</slot>
+        <slot name="title">
+          Tarefas em Andamento
+        </slot>
       </h2>
 
       <div class="task-grid-stats">
@@ -71,15 +73,24 @@ const statusCounts = computed(() => ({
           <span class="stat__value">{{ statusCounts.total }}</span>
           <span class="stat__label">Total</span>
         </div>
-        <div v-if="statusCounts.inProgress > 0" class="stat stat--in-progress">
+        <div
+          v-if="statusCounts.inProgress > 0"
+          class="stat stat--in-progress"
+        >
           <span class="stat__value">{{ statusCounts.inProgress }}</span>
           <span class="stat__label">Em Progresso</span>
         </div>
-        <div v-if="statusCounts.blocked > 0" class="stat stat--blocked">
+        <div
+          v-if="statusCounts.blocked > 0"
+          class="stat stat--blocked"
+        >
           <span class="stat__value">{{ statusCounts.blocked }}</span>
           <span class="stat__label">Bloqueadas</span>
         </div>
-        <div v-if="statusCounts.paused > 0" class="stat stat--paused">
+        <div
+          v-if="statusCounts.paused > 0"
+          class="stat stat--paused"
+        >
           <span class="stat__value">{{ statusCounts.paused }}</span>
           <span class="stat__label">Pausadas</span>
         </div>
@@ -87,20 +98,33 @@ const statusCounts = computed(() => ({
     </div>
 
     <!-- Loading state -->
-    <div v-if="loading" class="task-grid-loading">
-      <div class="spinner"></div>
+    <div
+      v-if="loading"
+      class="task-grid-loading"
+    >
+      <div class="spinner" />
       <p>Carregando tarefas...</p>
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="tasks.length === 0" class="task-grid-empty">
-      <div class="empty-icon">📋</div>
-      <p class="empty-message">{{ emptyMessage }}</p>
-      <slot name="empty-action"></slot>
+    <div
+      v-else-if="tasks.length === 0"
+      class="task-grid-empty"
+    >
+      <div class="empty-icon">
+        📋
+      </div>
+      <p class="empty-message">
+        {{ emptyMessage }}
+      </p>
+      <slot name="empty-action" />
     </div>
 
     <!-- Task grid -->
-    <div v-else :class="gridClasses">
+    <div
+      v-else
+      :class="gridClasses"
+    >
       <TaskCard
         v-for="task in tasks"
         :key="task.id"
@@ -110,8 +134,11 @@ const statusCounts = computed(() => ({
     </div>
 
     <!-- Footer slot -->
-    <div v-if="$slots.footer" class="task-grid-footer">
-      <slot name="footer"></slot>
+    <div
+      v-if="$slots.footer"
+      class="task-grid-footer"
+    >
+      <slot name="footer" />
     </div>
   </div>
 </template>

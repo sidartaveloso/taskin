@@ -1,5 +1,8 @@
 <template>
-  <span :class="['badge', `badge--${variant}`]" :style="badgeStyle">
+  <span
+    :class="['badge', `badge--${variant}`]"
+    :style="badgeStyle"
+  >
     <slot />
   </span>
 </template>
