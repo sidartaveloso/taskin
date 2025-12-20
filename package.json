@@ -60,7 +60,7 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-sort-json": "^4.1.1",
     "tsx": "^4.21.0",
-    "turbo": "^2.6.3",
+    "turbo": "^2.7.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
   }

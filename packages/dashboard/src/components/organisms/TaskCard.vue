@@ -92,7 +92,10 @@ const computedTask = computed((): Task => {
 });
 
 // Status badge variant mapping
-const statusVariantMap: Record<TaskStatus, 'default' | 'primary' | 'warning' | 'success' | 'danger'> = {
+const statusVariantMap: Record<
+  TaskStatus,
+  'default' | 'primary' | 'warning' | 'success' | 'danger'
+> = {
   pending: 'default',
   'in-progress': 'primary',
   paused: 'warning',
@@ -148,16 +151,10 @@ const formatDate = (date: Date | string): string => {
     <!-- Header -->
     <div class="task-card__header">
       <div class="task-card__header-left">
-        <Badge
-          :variant="statusVariantMap[computedTask.status]"
-          size="md"
-        >
+        <Badge :variant="statusVariantMap[computedTask.status]" size="md">
           #{{ computedTask.number }}
         </Badge>
-        <Badge
-          variant="info"
-          size="sm"
-        >
+        <Badge variant="info" size="sm">
           {{ statusLabel }}
         </Badge>
       </div>
@@ -176,17 +173,14 @@ const formatDate = (date: Date | string): string => {
 
     <!-- Project Path -->
     <ProjectBreadcrumb
-      v-if="computedTask.project"
       class="task-card__project"
+      v-if="computedTask.project"
       :project="computedTask.project"
       :max-segments="3"
     />
 
     <!-- Progress -->
-    <div
-      v-if="computedTask.progress"
-      class="task-card__progress"
-    >
+    <div class="task-card__progress" v-if="computedTask.progress">
       <ProgressBar
         :percentage="computedTask.progress.percentage"
         :variant="progressVariant"
@@ -196,23 +190,21 @@ const formatDate = (date: Date | string): string => {
 
     <!-- Time Estimates -->
     <TimeEstimate
-      v-if="computedTask.estimates"
       class="task-card__estimates"
+      v-if="computedTask.estimates"
       :estimate="computedTask.estimates"
       variant="compact"
     />
 
     <!-- Daily Progress -->
     <div
+      class="task-card__days"
       v-if="
         computedTask.progress?.dayLogs &&
-          computedTask.progress.dayLogs.length > 0
+        computedTask.progress.dayLogs.length > 0
       "
-      class="task-card__days"
     >
-      <h4 class="task-card__days-title">
-        Progresso Diário
-      </h4>
+      <h4 class="task-card__days-title">Progresso Diário</h4>
       <div class="task-card__days-list">
         <DayBar
           v-for="(day, index) in computedTask.progress.dayLogs.slice(-3)"
@@ -225,23 +217,14 @@ const formatDate = (date: Date | string): string => {
     </div>
 
     <!-- Dates -->
-    <div
-      v-if="computedTask.dates"
-      class="task-card__dates"
-    >
-      <div
-        v-if="computedTask.dates.dueDate"
-        class="task-card__date"
-      >
+    <div class="task-card__dates" v-if="computedTask.dates">
+      <div class="task-card__date" v-if="computedTask.dates.dueDate">
         <span class="task-card__date-label">Prazo:</span>
         <span class="task-card__date-value">{{
           formatDate(computedTask.dates.dueDate)
         }}</span>
       </div>
-      <div
-        v-if="computedTask.dates.started"
-        class="task-card__date"
-      >
+      <div class="task-card__date" v-if="computedTask.dates.started">
         <span class="task-card__date-label">Início:</span>
         <span class="task-card__date-value">{{
           formatDate(computedTask.dates.started)
@@ -251,8 +234,8 @@ const formatDate = (date: Date | string): string => {
 
     <!-- Tags -->
     <div
-      v-if="computedTask.tags && computedTask.tags.length > 0"
       class="task-card__tags"
+      v-if="computedTask.tags && computedTask.tags.length > 0"
     >
       <Badge
         v-for="tag in computedTask.tags"
@@ -265,14 +248,11 @@ const formatDate = (date: Date | string): string => {
     </div>
 
     <!-- Warnings -->
-    <div
-      v-if="hasWarnings"
-      class="task-card__warnings"
-    >
+    <div class="task-card__warnings" v-if="hasWarnings">
       <div
+        class="task-card__warning"
         v-for="(warning, index) in computedTask.warnings"
         :key="index"
-        class="task-card__warning"
       >
         ⚠️ {{ warning }}
       </div>
