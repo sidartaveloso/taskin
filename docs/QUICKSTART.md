@@ -68,7 +68,6 @@ O dashboard estará disponível em:
 - 📊 Grade responsiva com todas as tarefas
 - 🔄 Atualizações em tempo real via WebSocket
 - ⚡ Status de conexão (conectado/desconectado/reconectando)
-- 🎨 Design system baseado no Redmine Geocontrol
 - 📱 Interface responsiva
 
 ### 3. Integração com LLMs (Claude, GPT-4)
