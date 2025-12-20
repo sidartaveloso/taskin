@@ -74,8 +74,8 @@ export const Compact: Story = {
   },
 };
 
-export const WeekProgress: Story = {
-  args: {} as any,
+export const MonthProgress: Story = {
+  args: {},
   render: () => ({
     components: { DayBar },
     template: `
@@ -112,7 +112,7 @@ export const WeekProgress: Story = {
 };
 
 export const CompactWeek: Story = {
-  args: {} as any,
+  args: {},
   render: () => ({
     components: { DayBar },
     template: `

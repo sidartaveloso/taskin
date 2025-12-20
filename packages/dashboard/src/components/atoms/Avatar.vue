@@ -27,6 +27,7 @@ export interface AvatarProps {
 
 const props = withDefaults(defineProps<AvatarProps>(), {
   size: 'md',
+  src: undefined,
 });
 
 const initials = computed(() => {

@@ -33,7 +33,11 @@ const props = withDefaults(
      */
     backgroundColor?: string;
   }>(),
-  { primary: false }
+  { 
+    primary: false,
+    size: 'medium',
+    backgroundColor: undefined,
+  }
 );
 
 const emit = defineEmits<{

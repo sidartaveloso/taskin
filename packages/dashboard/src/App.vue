@@ -2,11 +2,11 @@
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import TaskGrid from './components/templates/TaskGrid.vue';
-import type { Task } from './types';
+import type { Task, TaskStatus } from './types';
 
 // WebSocket configuration
 const wsUrl = ref(
-  (window as any).VITE_WS_URL ||
+  (window as Window & { VITE_WS_URL?: string }).VITE_WS_URL ||
     import.meta.env.VITE_WS_URL ||
     'ws://localhost:3001',
 );
@@ -22,7 +22,15 @@ const connectionError = computed(() => connectionStatus.value.error);
 
 // Map TaskFile[] to Task[] for the dashboard
 const tasks = computed<Task[]>(() => {
-  const mapped = taskStore.tasks.map((taskFile: any) => {
+  const mapped = taskStore.tasks.map((taskFile: {
+    status: string;
+    id: string;
+    title: string;
+    content: string;
+    createdAt: string;
+    type?: string;
+    assignee?: { id: string; name: string };
+  }) => {
     // Calculate progress based on status
     let progressPercentage = 0;
     switch (taskFile.status) {
@@ -48,8 +56,10 @@ const tasks = computed<Task[]>(() => {
       number: parseInt(taskFile.id, 10) || 0,
       title: taskFile.title,
       description: taskFile.content,
-      status: taskFile.status,
-      assignee: taskFile.assignee,
+      status: taskFile.status as TaskStatus,
+      assignee: taskFile.assignee
+        ? { id: taskFile.assignee.id, name: taskFile.assignee.name }
+        : undefined,
       dates: {
         created: taskFile.createdAt || new Date().toISOString(),
       },

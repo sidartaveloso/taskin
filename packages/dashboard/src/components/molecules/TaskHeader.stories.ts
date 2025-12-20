@@ -49,8 +49,8 @@ export const WithAvatar: Story = {
   },
 };
 
-export const AllSizes: Story = {
-  args: {} as any,
+export const Interactive: Story = {
+  args: {},
   render: () => ({
     components: { TaskHeader },
     template: `
