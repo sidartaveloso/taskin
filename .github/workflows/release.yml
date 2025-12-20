@@ -35,6 +35,12 @@ jobs:
         with:
           node-version: ${{ steps.tool-versions.outputs.node-version }}
 
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: '3.11'
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
