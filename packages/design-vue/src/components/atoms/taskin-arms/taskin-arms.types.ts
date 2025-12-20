@@ -13,8 +13,8 @@ export type ArmSide = 'left' | 'right';
 
 // Default neutral position
 export const NEUTRAL_ARM_POSITION: ArmPosition = {
-  shoulderAngle: -45, // Arms slightly down and out
-  elbowAngle: 165, // Slight bend
+  shoulderAngle: 35, // Arms angled down and out
+  elbowAngle: 30, // Very strong bend for highly curved appearance
   wristAngle: -45,
 };
 

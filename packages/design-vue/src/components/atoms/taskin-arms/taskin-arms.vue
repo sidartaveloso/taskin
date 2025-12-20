@@ -64,11 +64,10 @@ const generateArmPath = (
   // Calculate wrist position
   const wristX =
     elbowX +
-    Math.cos(shoulderRad + (elbowRad / 180) * Math.PI) *
+    Math.cos(shoulderRad - elbowRad) *
       forearmLength *
       (side === 'left' ? -1 : 1);
-  const wristY =
-    elbowY + Math.sin(shoulderRad + (elbowRad / 180) * Math.PI) * forearmLength;
+  const wristY = elbowY + Math.sin(shoulderRad - elbowRad) * forearmLength;
 
   // Create smooth curve using quadratic bezier
   return `M${shoulder.x} ${shoulder.y} Q${elbowX} ${elbowY} ${wristX} ${wristY}`;

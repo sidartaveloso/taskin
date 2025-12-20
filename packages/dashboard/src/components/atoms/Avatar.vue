@@ -1,18 +1,7 @@
 <template>
-  <div
-    :class="['avatar', `avatar--${size}`]"
-    :title="name"
-  >
-    <img
-      v-if="src"
-      :src="src"
-      :alt="name"
-      class="avatar__image"
-    >
-    <span
-      v-else
-      class="avatar__initials"
-    >{{ initials }}</span>
+  <div :class="['avatar', `avatar--${size}`]" :title="name">
+    <img class="avatar__image" v-if="src" :src="src" :alt="name" />
+    <span class="avatar__initials" v-else>{{ initials }}</span>
   </div>
 </template>
 
