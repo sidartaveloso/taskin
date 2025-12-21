@@ -1,37 +1,37 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { ProjectPath } from '../../types'
+import { computed } from 'vue';
+import type { ProjectPath } from '../../types';
 
 export interface Props {
-  project: ProjectPath
-  maxSegments?: number
-  separator?: string
+  project: ProjectPath;
+  maxSegments?: number;
+  separator?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   maxSegments: 3,
-  separator: '/'
-})
+  separator: '/',
+});
 
 const displaySegments = computed(() => {
   if (props.project.segments.length <= props.maxSegments) {
-    return props.project.segments
+    return props.project.segments;
   }
 
   return [
     props.project.segments[0],
     '...',
-    ...props.project.segments.slice(-props.maxSegments + 1)
-  ]
-})
+    ...props.project.segments.slice(-props.maxSegments + 1),
+  ];
+});
 </script>
 
 <template>
   <div class="project-breadcrumb">
     <span
+      class="project-breadcrumb__item"
       v-for="(segment, index) in displaySegments"
       :key="`segment-${index}`"
-      class="project-breadcrumb__item"
     >
       <span
         class="project-breadcrumb__segment"
@@ -40,8 +40,8 @@ const displaySegments = computed(() => {
         {{ segment }}
       </span>
       <span
-        v-if="index < displaySegments.length - 1"
         class="project-breadcrumb__separator"
+        v-if="index < displaySegments.length - 1"
       >
         {{ separator }}
       </span>

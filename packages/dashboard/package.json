@@ -46,6 +46,7 @@
     "vue": "^3.5.0"
   },
   "dependencies": {
+    "@opentask/taskin-design-vue": "workspace:*",
     "@opentask/taskin-task-provider-pinia": "workspace:*",
     "pinia": "^2.2.8"
   },

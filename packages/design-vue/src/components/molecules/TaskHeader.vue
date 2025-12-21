@@ -1,33 +1,25 @@
 <script setup lang="ts">
 import type { User } from '../../types';
-import Avatar from '../atoms/Avatar.vue';
+import { Avatar } from '../atoms';
 
 export interface Props {
-  assignee: User
-  size?: 'sm' | 'md' | 'lg'
+  assignee: User;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 withDefaults(defineProps<Props>(), {
-  size: 'md'
-})
+  size: 'md',
+});
 </script>
 
 <template>
-  <div
-    class="task-header"
-    :class="`task-header--${size}`"
-  >
-    <Avatar
-      :name="assignee.name"
-      :src="assignee.avatar"
-      :size="size"
-    />
+  <div class="task-header" :class="`task-header--${size}`">
+    <Avatar :name="assignee.name" :src="assignee.avatar" :size="size" />
     <div class="task-header__info">
       <span class="task-header__name">{{ assignee.name }}</span>
-      <span
-        v-if="assignee.email"
-        class="task-header__email"
-      >{{ assignee.email }}</span>
+      <span class="task-header__email" v-if="assignee.email">{{
+        assignee.email
+      }}</span>
     </div>
   </div>
 </template>

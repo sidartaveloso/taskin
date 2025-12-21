@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Task } from '../../types';
-import TaskCard from '../organisms/TaskCard.vue';
+import { TaskCard } from '../organisms';
 
 interface Props {
   tasks: Task[];
@@ -39,11 +39,11 @@ const gridClasses = computed(() => {
 // Separate tasks by status for better organization
 const tasksByStatus = computed(() => {
   return {
-    inProgress: props.tasks.filter(t => t.status === 'in-progress'),
-    blocked: props.tasks.filter(t => t.status === 'blocked'),
-    paused: props.tasks.filter(t => t.status === 'paused'),
-    pending: props.tasks.filter(t => t.status === 'pending'),
-    done: props.tasks.filter(t => t.status === 'done'),
+    inProgress: props.tasks.filter((t) => t.status === 'in-progress'),
+    blocked: props.tasks.filter((t) => t.status === 'blocked'),
+    paused: props.tasks.filter((t) => t.status === 'paused'),
+    pending: props.tasks.filter((t) => t.status === 'pending'),
+    done: props.tasks.filter((t) => t.status === 'done'),
   };
 });
 
@@ -63,9 +63,7 @@ const statusCounts = computed(() => ({
     <!-- Header with stats -->
     <div class="task-grid-header">
       <h2 class="task-grid-title">
-        <slot name="title">
-          Tarefas em Andamento
-        </slot>
+        <slot name="title"> Tarefas em Andamento </slot>
       </h2>
 
       <div class="task-grid-stats">
@@ -73,24 +71,15 @@ const statusCounts = computed(() => ({
           <span class="stat__value">{{ statusCounts.total }}</span>
           <span class="stat__label">Total</span>
         </div>
-        <div
-          v-if="statusCounts.inProgress > 0"
-          class="stat stat--in-progress"
-        >
+        <div class="stat stat--in-progress" v-if="statusCounts.inProgress > 0">
           <span class="stat__value">{{ statusCounts.inProgress }}</span>
           <span class="stat__label">Em Progresso</span>
         </div>
-        <div
-          v-if="statusCounts.blocked > 0"
-          class="stat stat--blocked"
-        >
+        <div class="stat stat--blocked" v-if="statusCounts.blocked > 0">
           <span class="stat__value">{{ statusCounts.blocked }}</span>
           <span class="stat__label">Bloqueadas</span>
         </div>
-        <div
-          v-if="statusCounts.paused > 0"
-          class="stat stat--paused"
-        >
+        <div class="stat stat--paused" v-if="statusCounts.paused > 0">
           <span class="stat__value">{{ statusCounts.paused }}</span>
           <span class="stat__label">Pausadas</span>
         </div>
@@ -98,22 +87,14 @@ const statusCounts = computed(() => ({
     </div>
 
     <!-- Loading state -->
-    <div
-      v-if="loading"
-      class="task-grid-loading"
-    >
+    <div class="task-grid-loading" v-if="loading">
       <div class="spinner" />
       <p>Carregando tarefas...</p>
     </div>
 
     <!-- Empty state -->
-    <div
-      v-else-if="tasks.length === 0"
-      class="task-grid-empty"
-    >
-      <div class="empty-icon">
-        📋
-      </div>
+    <div class="task-grid-empty" v-else-if="tasks.length === 0">
+      <div class="empty-icon">📋</div>
       <p class="empty-message">
         {{ emptyMessage }}
       </p>
@@ -121,10 +102,7 @@ const statusCounts = computed(() => ({
     </div>
 
     <!-- Task grid -->
-    <div
-      v-else
-      :class="gridClasses"
-    >
+    <div v-else :class="gridClasses">
       <TaskCard
         v-for="task in tasks"
         :key="task.id"
@@ -134,10 +112,7 @@ const statusCounts = computed(() => ({
     </div>
 
     <!-- Footer slot -->
-    <div
-      v-if="$slots.footer"
-      class="task-grid-footer"
-    >
+    <div class="task-grid-footer" v-if="$slots.footer">
       <slot name="footer" />
     </div>
   </div>
@@ -350,8 +325,12 @@ const statusCounts = computed(() => ({
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .task-grid-loading p {

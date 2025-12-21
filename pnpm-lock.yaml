@@ -178,6 +178,9 @@ importers:
 
   packages/dashboard:
     dependencies:
+      '@opentask/taskin-design-vue':
+        specifier: workspace:*
+        version: link:../design-vue
       '@opentask/taskin-task-provider-pinia':
         specifier: workspace:*
         version: link:../task-provider-pinia

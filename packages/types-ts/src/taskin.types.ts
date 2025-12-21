@@ -43,6 +43,7 @@ export interface FinishTaskOptions {
 
 export interface LintTasksOptions {
   path?: string;
+  fix?: boolean;
 }
 
 /**
