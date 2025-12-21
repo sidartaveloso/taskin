@@ -10,6 +10,8 @@
   "scripts": {
     "build": "pnpm run generate",
     "generate": "bash -c 'mkdir -p generated && for file in ../types-ts/dist/schema/*.json; do uv run python -m datamodel_code_generator --input \"$file\" --output \"generated/$(basename \"$file\" .schema.json).py\"; done'",
+    "publish:pypi": "uv build && uv publish",
+    "publish:pypi:check": "uv build && echo 'Build successful. Ready to publish to PyPI.'",
     "lint": "echo 'No linting for types-py'",
     "test": "echo 'No tests for types-py'"
   },

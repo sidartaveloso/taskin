@@ -1,10 +1,29 @@
-# @taskin/types-py
+# taskin-types
 
-This package contains Python models automatically generated from the JSON schemas defined in `@taskin/types-ts`.
+Python models automatically generated from Taskin TypeScript schemas.
+
+## Installation
+
+```bash
+pip install taskin-types
+```
+
+## Usage
+
+```python
+from taskin_types import Task, User
+
+# Use the Pydantic models
+task = Task(
+    id="task-001",
+    title="Example Task",
+    status="todo"
+)
+```
 
 ## Motivation
 
-To enable Python packages within the monorepo to use the same data structures as the TypeScript packages, ensuring consistency.
+To enable Python packages to use the same data structures as the TypeScript packages, ensuring consistency across the Taskin ecosystem.
 
 ## Purpose
 

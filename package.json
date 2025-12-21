@@ -44,6 +44,8 @@
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm build && changeset publish",
+    "publish:pypi": "turbo run publish:pypi",
+    "publish:pypi:check": "turbo run publish:pypi:check",
     "publish:packages": "node scripts/publish-packages.js",
     "publish:beta": "node scripts/publish-packages.js --tag beta",
     "publish:latest": "node scripts/publish-packages.js --tag latest"
