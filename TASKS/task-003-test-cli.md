@@ -1,6 +1,6 @@
 # Task 002 — Test CLI Implementation
 
-Status: in-progress  
+Status: done  
 Type: chore  
 Assignee: Sidarta Veloso
 
