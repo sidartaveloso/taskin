@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { TaskGrid } from '@opentask/taskin-design-vue';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import TaskGrid from './components/templates/TaskGrid.vue';
 import type { Task, TaskStatus } from './types';
 
 // WebSocket configuration

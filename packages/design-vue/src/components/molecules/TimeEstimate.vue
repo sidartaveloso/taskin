@@ -2,53 +2,48 @@
 import type { TimeEstimate as TimeEstimateType } from '../../types';
 
 export interface Props {
-  estimate: TimeEstimateType
-  variant?: 'default' | 'compact'
+  estimate: TimeEstimateType;
+  variant?: 'default' | 'compact';
 }
 
 withDefaults(defineProps<Props>(), {
-  variant: 'default'
-})
+  variant: 'default',
+});
 
 const formatHours = (hours: number): string => {
-  return `${hours}h`
-}
+  return `${hours}h`;
+};
 
 const getPercentage = (estimate: TimeEstimateType): number => {
-  if (estimate.estimated === 0) return 0
-  return Math.round((estimate.spent / estimate.estimated) * 100)
-}
+  if (estimate.estimated === 0) return 0;
+  return Math.round((estimate.spent / estimate.estimated) * 100);
+};
 
 const getStatus = (estimate: TimeEstimateType): 'ok' | 'warning' | 'danger' => {
-  const percentage = getPercentage(estimate)
-  if (percentage >= 100) return 'danger'
-  if (percentage >= 80) return 'warning'
-  return 'ok'
-}
+  const percentage = getPercentage(estimate);
+  if (percentage >= 100) return 'danger';
+  if (percentage >= 80) return 'warning';
+  return 'ok';
+};
 </script>
 
 <template>
   <div
     class="time-estimate"
-    :class="[`time-estimate--${variant}`, `time-estimate--${getStatus(estimate)}`]"
+    :class="[
+      `time-estimate--${variant}`,
+      `time-estimate--${getStatus(estimate)}`,
+    ]"
   >
     <div class="time-estimate__item">
       <span class="time-estimate__label">Estimado</span>
-      <span class="time-estimate__value">{{ formatHours(estimate.estimated) }}</span>
+      <span class="time-estimate__value">{{
+        formatHours(estimate.estimated)
+      }}</span>
     </div>
 
-    <div
-      v-if="variant === 'default'"
-      class="time-estimate__separator"
-    >
-      →
-    </div>
-    <div
-      v-else
-      class="time-estimate__separator"
-    >
-      /
-    </div>
+    <div class="time-estimate__separator" v-if="variant === 'default'">→</div>
+    <div class="time-estimate__separator" v-else>/</div>
 
     <div class="time-estimate__item">
       <span class="time-estimate__label">Gasto</span>
@@ -57,18 +52,8 @@ const getStatus = (estimate: TimeEstimateType): 'ok' | 'warning' | 'danger' => {
       </span>
     </div>
 
-    <div
-      v-if="variant === 'default'"
-      class="time-estimate__separator"
-    >
-      →
-    </div>
-    <div
-      v-else
-      class="time-estimate__separator"
-    >
-      /
-    </div>
+    <div class="time-estimate__separator" v-if="variant === 'default'">→</div>
+    <div class="time-estimate__separator" v-else>/</div>
 
     <div class="time-estimate__item">
       <span class="time-estimate__label">Restante</span>

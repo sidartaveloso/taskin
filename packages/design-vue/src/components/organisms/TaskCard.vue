@@ -8,12 +8,13 @@ import type {
   TimeEstimate as TimeEstimateType,
   User,
 } from '../../types';
-import Badge from '../atoms/Badge.vue';
-import ProgressBar from '../atoms/ProgressBar.vue';
-import DayBar from '../molecules/DayBar.vue';
-import ProjectBreadcrumb from '../molecules/ProjectBreadcrumb.vue';
-import TaskHeader from '../molecules/TaskHeader.vue';
-import TimeEstimate from '../molecules/TimeEstimate.vue';
+import { Badge, ProgressBar } from '../atoms';
+import {
+  DayBar,
+  ProjectBreadcrumb,
+  TaskHeader,
+  TimeEstimate,
+} from '../molecules';
 
 interface Props {
   // Hybrid approach: accept full Task object OR individual props

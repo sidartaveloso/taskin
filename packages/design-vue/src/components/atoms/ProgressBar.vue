@@ -6,10 +6,9 @@
         :class="`progress-bar__fill--${variant}`"
         :style="{ width: `${percentage}%` }"
       >
-        <span
-          v-if="showLabel"
-          class="progress-bar__label"
-        >{{ percentage }}%</span>
+        <span class="progress-bar__label" v-if="showLabel"
+          >{{ percentage }}%</span
+        >
       </div>
     </div>
   </div>

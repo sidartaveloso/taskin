@@ -1,0 +1,148 @@
+/**
+ * Design Variables - Taskin Dashboard
+ */
+
+:root {
+  /* ==================== COLORS - BACKGROUNDS ==================== */
+  --bg-body: rgb(229, 239, 249);
+  --bg-card: rgb(255, 255, 255);
+  --bg-header: rgb(39, 110, 173);
+  --bg-header-dark: rgb(14, 58, 102);
+  --bg-alert-error: rgb(230, 128, 128);
+  --bg-section-light: rgb(232, 242, 252);
+  --bg-section-warning: rgb(240, 235, 213);
+  --bg-section-error: rgb(249, 233, 233);
+  --bg-progress: rgb(200, 217, 232);
+  --bg-badge: rgb(176, 199, 219);
+  --overlay: rgba(255, 255, 255, 0.5);
+  --shadow-base: rgba(0, 0, 0, 0.15);
+
+  /* ==================== COLORS - TEXT ==================== */
+  --text-primary: rgb(0, 0, 0);
+  --text-link: rgb(13, 68, 119);
+  --text-link-light: rgb(182, 205, 227);
+  --text-error: rgb(255, 0, 0);
+  --text-error-bg: rgb(253, 241, 241);
+  --text-secondary: rgb(45, 48, 56);
+  --text-muted: rgb(108, 153, 195);
+  --text-warning: rgb(187, 128, 71);
+  --text-warning-light: rgb(202, 156, 96);
+  --text-danger: rgb(196, 92, 92);
+  --text-danger-alt: rgb(210, 92, 92);
+  --text-info: rgb(76, 120, 152);
+  --text-white: rgb(255, 255, 255);
+  --text-header: rgb(11, 45, 80);
+  --text-header-link: rgb(10, 78, 149);
+  --text-success: rgb(0, 146, 19);
+  --text-warning-dark: rgb(182, 120, 14);
+  --text-error-dark: rgb(208, 58, 58);
+
+  /* ==================== COLORS - BORDERS ==================== */
+  --border-default: rgb(128, 128, 128);
+  --border-link: rgb(13, 68, 119);
+  --border-muted: rgb(182, 205, 227);
+
+  /* ==================== COLORS - STATUS ==================== */
+  --status-progress-bg: rgb(39, 110, 173);
+  --status-progress-text: rgb(255, 255, 255);
+  --status-warning-bg: rgb(230, 128, 128);
+  --status-warning-text: rgb(196, 92, 92);
+  --status-success-bg: rgb(0, 146, 19);
+  --status-success-text: rgb(255, 255, 255);
+  --status-paused-bg: rgb(187, 128, 71);
+  --status-paused-text: rgb(255, 255, 255);
+
+  /* ==================== SHADOWS ==================== */
+  --shadow-header:
+    rgb(0, 0, 0) 0px -2px 10px 4px, rgb(19, 85, 146) 0px -4px 14px -4px inset,
+    rgb(24, 96, 162) 0px -6px 50px 0px inset;
+  --shadow-card: rgba(0, 0, 0, 0.5) 0px 0px 15px 0px;
+  --shadow-section-light: rgb(232, 242, 252) -3.55px -21.3px 28.4px 0px inset;
+  --shadow-section-warning: rgb(240, 235, 213) -3.55px -21.3px 28.4px 0px inset;
+  --shadow-section-error: rgb(249, 233, 233) -3.55px -21.3px 28.4px 0px inset;
+
+  /* ==================== TYPOGRAPHY ==================== */
+  --font-family: 'Ubuntu', 'Roboto', Arial, sans-serif;
+  --font-size-xs: 12.78px;
+  --font-size-sm: 13.5px;
+  --font-size-base: 14.2px;
+  --font-size-md: 16px;
+  --font-size-lg: 18.46px;
+  --font-size-xl: 21.3px;
+  --font-size-2xl: 24.14px;
+  --font-size-3xl: 28.4px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ==================== SPACING ==================== */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+
+  /* ==================== BORDER RADIUS ==================== */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-full: 50%;
+
+  /* ==================== LAYOUT ==================== */
+  --card-padding: var(--spacing-lg);
+  --card-gap: var(--spacing-lg);
+  --grid-gap-horizontal: var(--spacing-lg);
+  --grid-gap-vertical: var(--spacing-xl);
+  --container-padding: var(--spacing-xl);
+
+  /* ==================== SIZES ==================== */
+  --avatar-sm: 40px;
+  --avatar-md: 60px;
+  --avatar-lg: 80px;
+  --avatar-xl: 100px;
+
+  --badge-padding-x: var(--spacing-lg);
+  --badge-padding-y: var(--spacing-sm);
+
+  --progress-height: 28px;
+
+  /* ==================== Z-INDEX ==================== */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+
+  /* ==================== TRANSITIONS ==================== */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+}
+
+/* ==================== DARK MODE SUPPORT (FUTURE) ==================== */
+@media (prefers-color-scheme: dark) {
+  /*
+   * Placeholder para suporte a dark mode no futuro
+   * Manter comentado por enquanto
+   */
+}
+
+/* ==================== PRINT STYLES ==================== */
+@media print {
+  :root {
+    --shadow-card: none;
+    --shadow-header: none;
+  }
+}
