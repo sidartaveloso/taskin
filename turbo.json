@@ -21,6 +21,10 @@
     "@taskin/py-sdk#build": {
       "outputs": []
     },
+    "@taskin/types-py#publish:pypi": {
+      "cache": false,
+      "dependsOn": ["build"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
