@@ -2,7 +2,6 @@ import '@opentask/taskin-design-vue/dist/index.css';
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 import App from './App.vue';
-import './styles/variables.css';
 
 const app = createApp(App);
 const pinia = createPinia();

@@ -1,5 +1,8 @@
 /* Global styles for Storybook */
 
+/* Import design variables */
+@import '../src/styles/variables.css';
+
 * {
   box-sizing: border-box;
   margin: 0;
