@@ -448,20 +448,158 @@ const formatDate = (date: Date | string): string => {
   display: none;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ============================================
+   RESPONSIVE DESIGN - Mobile First
+   ============================================ */
+
+/* Smartwatch (< 240px) - Ultra compact */
+@media (max-width: 239px) {
+  .task-card {
+    padding: var(--spacing-xs);
+    gap: var(--spacing-xs);
+    border-width: 2px;
+  }
+
+  .task-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .task-card__header-left {
+    gap: var(--spacing-xs);
+  }
+
+  .task-card__title {
+    font-size: var(--font-size-xs);
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  .task-card__project,
+  .task-card__days,
+  .task-card__dates,
+  .task-card__tags {
+    display: none;
+  }
+
+  .task-card__estimates {
+    padding: var(--spacing-xs);
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Small Mobile (240px - 374px) - Very compact */
+@media (min-width: 240px) and (max-width: 374px) {
+  .task-card {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
+    border-width: 2px;
+  }
+
+  .task-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .task-card__title {
+    font-size: var(--font-size-sm);
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .task-card__project {
+    font-size: var(--font-size-xs);
+  }
+
+  .task-card__days,
+  .task-card__tags {
+    display: none;
+  }
+
+  .task-card__estimates {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+
+  .task-card__dates {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Mobile (375px - 767px) - Standard mobile */
+@media (min-width: 375px) and (max-width: 767px) {
   .task-card {
     padding: var(--spacing-md);
     gap: var(--spacing-sm);
   }
 
   .task-card__header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
   }
 
   .task-card__title {
     font-size: var(--font-size-md);
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .task-card__days-list {
+    gap: var(--spacing-xs);
+  }
+
+  .task-card__estimates {
+    padding: var(--spacing-sm);
+  }
+}
+
+/* Tablet Portrait (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .task-card {
+    padding: var(--spacing-lg);
+    gap: var(--spacing-md);
+  }
+
+  .task-card__title {
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* Tablet Landscape & Desktop (1024px+) - Full features */
+@media (min-width: 1024px) {
+  .task-card {
+    padding: var(--card-padding);
+    gap: var(--spacing-md);
+  }
+
+  .task-card__title {
+    font-size: var(--font-size-lg);
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
+/* Large Desktop (1440px+) - Enhanced spacing */
+@media (min-width: 1440px) {
+  .task-card {
+    padding: var(--spacing-xl);
+    gap: var(--spacing-lg);
+  }
+
+  .task-card__title {
+    font-size: var(--font-size-xl);
+  }
+}
+
+/* Ultra-wide (1920px+) - Maximum comfort */
+@media (min-width: 1920px) {
+  .task-card {
+    padding: calc(var(--spacing-xl) * 1.2);
   }
 }
 </style>
