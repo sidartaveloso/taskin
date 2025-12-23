@@ -1,3 +1,6 @@
+// Import global CSS variables (unscoped)
+import './styles/variables.css';
+
 // Export types first to avoid naming conflicts
 export type * from './types';
 export type {

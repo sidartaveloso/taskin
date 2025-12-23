@@ -123,11 +123,12 @@ const statusCounts = computed(() => ({
 
 .task-grid-container {
   width: 100%;
-  max-width: 1920px;
+  max-width: 100%;
   margin: 0 auto;
   padding: var(--container-padding);
   background: var(--bg-body);
   font-family: var(--font-family);
+  box-sizing: border-box;
 }
 
 /* Header */

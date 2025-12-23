@@ -1,8 +1,36 @@
+<template>
+  <DashboardLayout
+    title="Taskin Dashboard"
+    :connection-status="connectionStatusType"
+    :status-text="statusText"
+    :error-message="connectionError || ''"
+    :show-retry="!!connectionError"
+    :is-retrying="isLoading"
+    @retry="handleRefresh"
+  >
+    <!-- Loading state -->
+    <div class="loading-state" v-if="isLoading && tasks.length === 0">
+      <div class="spinner" />
+      <p>Carregando tarefas...</p>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" v-else-if="!isLoading && tasks.length === 0">
+      <p class="empty-icon">📋</p>
+      <h2>Nenhuma tarefa encontrada</h2>
+      <p>Conecte-se ao servidor para visualizar suas tarefas.</p>
+    </div>
+
+    <!-- Task grid -->
+    <TaskGrid v-else :tasks="tasks" />
+  </DashboardLayout>
+</template>
+
 <script setup lang="ts">
-import { TaskGrid } from '@opentask/taskin-design-vue';
+import type { Task, TaskStatus } from '@opentask/taskin-design-vue';
+import { DashboardLayout, TaskGrid } from '@opentask/taskin-design-vue';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import type { Task, TaskStatus } from './types';
 
 // WebSocket configuration
 const wsUrl = ref(
@@ -101,11 +129,13 @@ const handleRefresh = () => {
   taskStore.getAllTasks();
 };
 
-// Connection status color
-const statusColor = computed(() => {
-  if (isConnected.value) return 'var(--color-success)';
-  if (connectionError.value) return 'var(--color-error)';
-  return 'var(--color-warning)';
+// Connection status type for header component
+const connectionStatusType = computed<
+  'connected' | 'disconnected' | 'connecting' | 'error'
+>(() => {
+  if (isConnected.value) return 'connected';
+  if (connectionError.value) return 'error';
+  return 'connecting';
 });
 
 // Connection status text
@@ -116,169 +146,25 @@ const statusText = computed(() => {
 });
 </script>
 
-<template>
-  <div class="app">
-    <!-- Header with connection status -->
-    <header class="app-header">
-      <div class="header-content">
-        <h1 class="app-title">Taskin Dashboard</h1>
+<style>
+/* Global styles - apply design-vue variables to body */
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-body);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
 
-        <div class="connection-status">
-          <span
-            class="status-indicator"
-            :style="{ backgroundColor: statusColor }"
-          />
-          <span class="status-text">{{ statusText }}</span>
-
-          <button
-            class="retry-button"
-            v-if="connectionError"
-            :disabled="isLoading"
-            @click="handleRefresh"
-          >
-            {{ isLoading ? 'Reconectando...' : 'Tentar novamente' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Error message -->
-      <div class="error-banner" v-if="connectionError">
-        <span class="error-icon">⚠️</span>
-        <span class="error-message">{{ connectionError }}</span>
-      </div>
-    </header>
-
-    <!-- Main content -->
-    <main class="app-main">
-      <!-- Loading state -->
-      <div class="loading-state" v-if="isLoading && tasks.length === 0">
-        <div class="spinner" />
-        <p>Carregando tarefas...</p>
-      </div>
-
-      <!-- Empty state -->
-      <div class="empty-state" v-else-if="!isLoading && tasks.length === 0">
-        <p class="empty-icon">📋</p>
-        <h2>Nenhuma tarefa encontrada</h2>
-        <p>Conecte-se ao servidor para visualizar suas tarefas.</p>
-      </div>
-
-      <!-- Task grid -->
-      <TaskGrid v-else :tasks="tasks" />
-    </main>
-  </div>
-</template>
+#app {
+  min-height: 100vh;
+}
+</style>
 
 <style scoped>
-.app {
-  min-height: 100vh;
-  background: var(--color-background, #f5f5f5);
-  font-family: var(--font-family-base, 'Ubuntu', system-ui, sans-serif);
-}
-
-.app-header {
-  background: white;
-  border-bottom: 1px solid var(--color-border, #e5e5e5);
-  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
-}
-
-.app-title {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: var(--color-text-primary, #212529);
-}
-
-.connection-status {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.status-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.status-text {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-secondary, #495057);
-}
-
-.retry-button {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: white;
-  background: var(--color-primary, #169bd7);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.retry-button:hover:not(:disabled) {
-  background: var(--color-primary-dark, #0d7eb9);
-  transform: translateY(-1px);
-}
-
-.retry-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.error-banner {
-  background: var(--color-error-bg, #fff5f5);
-  border-top: 1px solid var(--color-error-border, #feb2b2);
-  padding: 0.75rem 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.error-icon {
-  font-size: 1.25rem;
-}
-
-.error-message {
-  font-size: 0.875rem;
-  color: var(--color-error, #c92a2a);
-}
-
-.app-main {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem;
-}
-
+/* Page-specific styles */
 .loading-state,
 .empty-state {
   text-align: center;
