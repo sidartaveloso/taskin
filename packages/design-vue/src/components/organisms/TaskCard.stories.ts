@@ -340,3 +340,104 @@ export const WithIndividualProps: Story = {
     },
   },
 };
+
+// Responsive Design: All viewport sizes
+export const ResponsiveViewports: Story = {
+  render: () => ({
+    components: { TaskCard },
+    setup() {
+      return { mockTask };
+    },
+    template: `
+      <div style="font-family: var(--font-family);">
+        <h2 style="margin-bottom: 2rem;">📱 Responsive Design - All Viewports</h2>
+        <p style="margin-bottom: 2rem; color: var(--text-muted);">
+          O TaskCard se adapta automaticamente a todos os tamanhos de tela.
+          Use o controle de viewport do Storybook para testar!
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+          <!-- Smartwatch Example -->
+          <div>
+            <h3 style="margin-bottom: 0.5rem;">⌚ Smartwatch (&lt; 240px)</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Ultra compacto - apenas informações essenciais
+            </p>
+            <div style="max-width: 220px; border: 2px dashed #ccc; padding: 0.5rem;">
+              <TaskCard :task="mockTask" />
+            </div>
+          </div>
+
+          <!-- Small Mobile Example -->
+          <div>
+            <h3 style="margin-bottom: 0.5rem;">📱 Small Mobile (240px - 374px)</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Muito compacto - informações principais visíveis
+            </p>
+            <div style="max-width: 320px; border: 2px dashed #ccc; padding: 0.5rem;">
+              <TaskCard :task="mockTask" />
+            </div>
+          </div>
+
+          <!-- Mobile Example -->
+          <div>
+            <h3 style="margin-bottom: 0.5rem;">📱 Mobile (375px - 767px)</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Mobile padrão - todas as informações importantes
+            </p>
+            <div style="max-width: 390px; border: 2px dashed #ccc; padding: 0.5rem;">
+              <TaskCard :task="mockTask" />
+            </div>
+          </div>
+
+          <!-- Tablet Example -->
+          <div>
+            <h3 style="margin-bottom: 0.5rem;">📱 Tablet (768px - 1023px)</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Tablet - espaçamento confortável
+            </p>
+            <div style="max-width: 768px; border: 2px dashed #ccc; padding: 0.5rem;">
+              <TaskCard :task="mockTask" />
+            </div>
+          </div>
+
+          <!-- Desktop Example -->
+          <div>
+            <h3 style="margin-bottom: 0.5rem;">💻 Desktop (1024px+)</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Desktop - todas as funcionalidades
+            </p>
+            <div style="max-width: 400px; border: 2px dashed #ccc; padding: 0.5rem;">
+              <TaskCard :task="mockTask" />
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-section-light); border-radius: 8px;">
+          <h3 style="margin-bottom: 1rem;">💡 Breakpoints Implementados</h3>
+          <ul style="margin: 0; padding-left: 1.5rem; line-height: 1.8;">
+            <li><strong>Smartwatch:</strong> &lt; 240px - Ultra compacto</li>
+            <li><strong>Small Mobile:</strong> 240px - 374px - Muito compacto</li>
+            <li><strong>Mobile:</strong> 375px - 767px - Mobile padrão</li>
+            <li><strong>Tablet Portrait:</strong> 768px - 1023px - Espaçamento médio</li>
+            <li><strong>Tablet Landscape/Desktop:</strong> 1024px+ - Completo</li>
+            <li><strong>Large Desktop:</strong> 1440px+ - Espaçamento aumentado</li>
+            <li><strong>Ultra-wide:</strong> 1920px+ - Máximo conforto</li>
+          </ul>
+        </div>
+      </div>
+    `,
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '📱 **Design Responsivo Completo**: O TaskCard foi projetado para funcionar perfeitamente em todos os dispositivos, desde smartwatches até monitores ultra-wide. Use o seletor de viewport do Storybook ou redimensione o navegador para ver a adaptação em tempo real.',
+      },
+    },
+    controls: { disable: true },
+    viewport: {
+      defaultViewport: 'responsive',
+    },
+  },
+};
