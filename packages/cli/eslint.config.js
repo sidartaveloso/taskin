@@ -2,6 +2,15 @@ import tsConfig from '../../eslint/typescript.js';
 
 export default [
   ...tsConfig,
+  // Ensure parser resolves the package tsconfig correctly
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   {
     files: ['**/*.test.ts', '**/*.spec.ts', '**/*.e2e.test.ts'],
     languageOptions: {
