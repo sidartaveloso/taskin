@@ -1,6 +1,6 @@
 # Task 005 — painel-tasks
 
-Status: in-progress  
+Status: done  
 Type: feat  
 Assignee: Sidarta Veloso
 
