@@ -2,7 +2,7 @@
 import './styles/variables.css';
 
 // Export types first to avoid naming conflicts
-export type * from './types';
+export * from './types';
 export type {
   DashboardConfig,
   DayProgress,
@@ -44,7 +44,7 @@ export {
   default as TaskinMascotDefault,
 } from './components/organisms/taskin';
 export { default as TaskinWithFaceTracking } from './components/organisms/taskin/taskin-with-face-tracking.vue';
-export type * from './components/organisms/taskin/taskin.types';
+export * from './components/organisms/taskin/taskin.types';
 
 // Export composables
 export * from './composables';

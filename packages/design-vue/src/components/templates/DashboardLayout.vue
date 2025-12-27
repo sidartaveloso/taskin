@@ -44,7 +44,7 @@ defineEmits<{
 
 <style scoped>
 .dashboard-layout {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--bg-body, #f5f5f5);

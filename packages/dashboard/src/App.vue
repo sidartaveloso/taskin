@@ -1,34 +1,20 @@
 <template>
-  <DashboardLayout
+  <Dashboard
     title="Taskin Dashboard"
     :connection-status="connectionStatusType"
     :status-text="statusText"
     :error-message="connectionError || ''"
     :show-retry="!!connectionError"
     :is-retrying="isLoading"
+    :is-loading="isLoading"
+    :tasks="tasks"
     @retry="handleRefresh"
-  >
-    <!-- Loading state -->
-    <div class="loading-state" v-if="isLoading && tasks.length === 0">
-      <div class="spinner" />
-      <p>Carregando tarefas...</p>
-    </div>
-
-    <!-- Empty state -->
-    <div class="empty-state" v-else-if="!isLoading && tasks.length === 0">
-      <p class="empty-icon">📋</p>
-      <h2>Nenhuma tarefa encontrada</h2>
-      <p>Conecte-se ao servidor para visualizar suas tarefas.</p>
-    </div>
-
-    <!-- Task grid -->
-    <TaskGrid v-else :tasks="tasks" />
-  </DashboardLayout>
+  />
 </template>
 
 <script setup lang="ts">
 import type { Task, TaskStatus } from '@opentask/taskin-design-vue';
-import { DashboardLayout, TaskGrid } from '@opentask/taskin-design-vue';
+import { Dashboard } from '@opentask/taskin-design-vue';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 

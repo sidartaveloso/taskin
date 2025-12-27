@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "declaration": true,
+    "declarationDir": "./dist",
     "declarationMap": true,
     "jsx": "preserve",
     "jsxImportSource": "vue",
