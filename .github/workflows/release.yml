@@ -40,6 +40,9 @@ jobs:
         with:
           enable-cache: true
           python-version: "3.11"
+          cache-dependency-glob: |
+            .tool-versions
+            pyproject.toml
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
