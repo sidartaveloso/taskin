@@ -2,7 +2,13 @@
  * Init command - Initialize Taskin in the current project
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'fs';
 import inquirer from 'inquirer';
 import { join } from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
@@ -218,10 +224,9 @@ async function setupFileSystemProvider(
   }
 
   // Check if any task-001-*.md file already exists
-  const existingTask001 = readdirSync(tasksDir)
-    .find(
-      (file: string) => file.startsWith('task-001-') && file.endsWith('.md'),
-    );
+  const existingTask001 = readdirSync(tasksDir).find(
+    (file: string) => file.startsWith('task-001-') && file.endsWith('.md'),
+  );
 
   if (existingTask001) {
     info(`Sample task already exists: ${colors.highlight(existingTask001)}`);
