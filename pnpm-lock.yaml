@@ -211,7 +211,7 @@ importers:
         version: 10.1.9(eslint@9.39.2)(storybook@10.1.9(@testing-library/dom@10.4.1)(prettier@3.7.4)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)
       eslint-plugin-vue:
         specifier: ^10.5.1
-        version: 10.6.2(@typescript-eslint/parser@8.52.0(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(vue-eslint-parser@10.2.0(eslint@9.39.2))
+        version: 10.6.2(@typescript-eslint/parser@8.50.0(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(vue-eslint-parser@10.2.0(eslint@9.39.2))
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -287,7 +287,7 @@ importers:
         version: 10.1.10(eslint@9.39.2)(storybook@10.1.10(@testing-library/dom@10.4.1)(prettier@3.7.4)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)
       eslint-plugin-vue:
         specifier: ^10.6.2
-        version: 10.6.2(@typescript-eslint/parser@8.50.0(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(vue-eslint-parser@10.2.0(eslint@9.39.2))
+        version: 10.6.2(@typescript-eslint/parser@8.52.0(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(vue-eslint-parser@10.2.0(eslint@9.39.2))
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -453,8 +453,8 @@ importers:
   packages/taskin-alias:
     dependencies:
       taskin:
-        specifier: 1.0.12
-        version: 1.0.12(@types/node@24.10.4)
+        specifier: 1.0.13
+        version: 1.0.13(@types/node@24.10.4)
 
   packages/types-py:
     dependencies:
@@ -4518,8 +4518,8 @@ packages:
   tabbable@6.3.0:
     resolution: {integrity: sha512-EIHvdY5bPLuWForiR/AN2Bxngzpuwn1is4asboytXtpTgsArc+WmSJKVLlhdh71u7jFcryDqB2A8lQvj78MkyQ==}
 
-  taskin@1.0.12:
-    resolution: {integrity: sha512-kjk6xDx38I3/9idAOd0TH2wKQCMmkVmdVplvOOJuLax2JogtYyVxuAN7pTgl22wmv0xqXNyzgGRz5bzAwm7ZRg==}
+  taskin@1.0.13:
+    resolution: {integrity: sha512-EHAkQTjIdx2spzF1HDiyEWUhP+kmQgQAU6sfCQzFBqWQmpAnI+dKUiHNb3a9xUY0rUdAuSqWArUKGqCQLa6XNg==}
     hasBin: true
 
   term-size@2.2.1:
@@ -9680,7 +9680,7 @@ snapshots:
 
   tabbable@6.3.0: {}
 
-  taskin@1.0.12(@types/node@24.10.4):
+  taskin@1.0.13(@types/node@24.10.4):
     dependencies:
       '@types/express': 5.0.6
       '@types/inquirer': 9.0.9
