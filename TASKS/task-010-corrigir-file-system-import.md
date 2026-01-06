@@ -1,6 +1,6 @@
 # Task 010 — corrigir file-system import
 
-Status: pending
+Status: in-progress  
 Type: fix
 Assignee: Sidarta Veloso
 
