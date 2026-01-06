@@ -1,6 +1,6 @@
 # Task 010 — corrigir file-system import
 
-Status: in-progress  
+Status: done  
 Type: fix
 Assignee: Sidarta Veloso
 
@@ -22,8 +22,8 @@ Failed to execute command: Dynamic require of "fs" is not supported
 
 ## Tasks
 
-- [ ] Identificar onde o `require('fs')` dinâmico está sendo usado no código do filesystem provider
-- [ ] Substituir `require()` dinâmico por `import` estático do módulo `fs` (ou `fs/promises` se usar async)
-- [ ] Construir a biblioteca (`pnpm build`) e verificar se não há erros de compilação
-- [ ] Testar o comando `taskin init` localmente e selecionar o provider "filesystem"
-- [ ] Verificar se a inicialização completa sem erros e cria os arquivos/diretórios esperados
+- [x] Identificar onde o `require('fs')` dinâmico está sendo usado no código do filesystem provider
+- [x] Substituir `require()` dinâmico por `import` estático do módulo `fs` (ou `fs/promises` se usar async)
+- [x] Construir a biblioteca (`pnpm build`) e verificar se não há erros de compilação
+- [x] Testar o comando `taskin init` localmente e selecionar o provider "filesystem"
+- [x] Verificar se a inicialização completa sem erros e cria os arquivos/diretórios esperados
