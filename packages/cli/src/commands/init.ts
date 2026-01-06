@@ -2,7 +2,7 @@
  * Init command - Initialize Taskin in the current project
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import { join } from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
@@ -131,7 +131,7 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
   // Add .taskin.json to .gitignore if it exists
   const gitignorePath = join(cwd, '.gitignore');
   if (existsSync(gitignorePath)) {
-    const gitignoreContent = require('fs').readFileSync(gitignorePath, 'utf-8');
+    const gitignoreContent = readFileSync(gitignorePath, 'utf-8');
     if (!gitignoreContent.includes('.taskin.json')) {
       info('Adding .taskin.json to .gitignore...');
       writeFileSync(
@@ -218,9 +218,7 @@ async function setupFileSystemProvider(
   }
 
   // Check if any task-001-*.md file already exists
-  const fs = require('fs');
-  const existingTask001 = fs
-    .readdirSync(tasksDir)
+  const existingTask001 = readdirSync(tasksDir)
     .find(
       (file: string) => file.startsWith('task-001-') && file.endsWith('.md'),
     );
