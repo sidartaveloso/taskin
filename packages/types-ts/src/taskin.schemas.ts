@@ -115,13 +115,25 @@ export const TaskSchema = z.object({
  * Time period for filtering stats
  * @public
  */
-export const StatsPeriodSchema = z.enum(['day', 'week', 'month', 'quarter', 'year', 'all']);
+export const StatsPeriodSchema = z.enum([
+  'day',
+  'week',
+  'month',
+  'quarter',
+  'year',
+  'all',
+]);
 
 /**
  * Time of day categories for productivity analysis
  * @public
  */
-export const TimeOfDaySchema = z.enum(['morning', 'afternoon', 'evening', 'night']);
+export const TimeOfDaySchema = z.enum([
+  'morning',
+  'afternoon',
+  'evening',
+  'night',
+]);
 
 /**
  * Day of week (0 = Sunday, 6 = Saturday)
@@ -195,7 +207,10 @@ export const ContributionMetricsSchema = z.object({
   totalCommits: z.number().int().nonnegative(),
   tasksCompleted: z.number().int().nonnegative(),
   averageCompletionTime: z.number().nonnegative(), // in days
-  taskTypeDistribution: z.record(TaskTypeSchema, z.number().int().nonnegative()),
+  taskTypeDistribution: z.record(
+    TaskTypeSchema,
+    z.number().int().nonnegative(),
+  ),
   activityFrequency: z.number().nonnegative(), // commits per day
 });
 
@@ -225,11 +240,13 @@ export const TaskStatsSchema = z.object({
   firstCommit: z.string().datetime().optional(),
   lastCommit: z.string().datetime().optional(),
   statusChangedToDone: z.string().datetime().optional(),
-  contributors: z.array(z.object({
-    name: z.string(),
-    commits: z.number().int().nonnegative(),
-    isCoAuthor: z.boolean().optional(),
-  })),
+  contributors: z.array(
+    z.object({
+      name: z.string(),
+      commits: z.number().int().nonnegative(),
+      isCoAuthor: z.boolean().optional(),
+    }),
+  ),
   codeMetrics: CodeMetricsSchema,
   refactoringMetrics: RefactoringMetricsSchema.optional(),
   temporalMetrics: TemporalMetricsSchema,
@@ -266,11 +283,15 @@ export const UserStatsSchema = z.object({
   contributionMetrics: ContributionMetricsSchema,
   engagementMetrics: EngagementMetricsSchema,
   refactoringMetrics: RefactoringMetricsSchema.optional(),
-  topTasks: z.array(z.object({
-    taskId: TaskIdSchema,
-    title: z.string(),
-    commits: z.number().int().nonnegative(),
-  })).max(10),
+  topTasks: z
+    .array(
+      z.object({
+        taskId: TaskIdSchema,
+        title: z.string(),
+        commits: z.number().int().nonnegative(),
+      }),
+    )
+    .max(10),
 });
 
 /**
@@ -285,13 +306,18 @@ export const TeamStatsSchema = z.object({
   totalCommits: z.number().int().nonnegative(),
   totalTasksCompleted: z.number().int().nonnegative(),
   codeMetrics: CodeMetricsSchema,
-  contributors: z.array(z.object({
-    username: z.string(),
-    commits: z.number().int().nonnegative(),
-    tasksCompleted: z.number().int().nonnegative(),
-    codeMetrics: CodeMetricsSchema,
-  })),
-  taskTypeDistribution: z.record(TaskTypeSchema, z.number().int().nonnegative()),
+  contributors: z.array(
+    z.object({
+      username: z.string(),
+      commits: z.number().int().nonnegative(),
+      tasksCompleted: z.number().int().nonnegative(),
+      codeMetrics: CodeMetricsSchema,
+    }),
+  ),
+  taskTypeDistribution: z.record(
+    TaskTypeSchema,
+    z.number().int().nonnegative(),
+  ),
 });
 
 /**
