@@ -1,32 +1,20 @@
 import { describe, expect, it } from 'vitest';
+import type { IMetricsManager } from './metrics.types';
 
-describe('ITaskProvider optional stats methods', () => {
-  it('accepts providers that implement optional stats methods', async () => {
-    const provider: any = {
-      findTask: async () => undefined,
-      getAllTasks: async () => [],
-      updateTask: async () => {},
-      createTask: async () => ({ task: {}, taskId: '1', filePath: '' }),
-      lint: async () => ({
-        errors: [],
-        tasksChecked: 0,
-        valid: true,
-        warnings: [],
-      }),
-      getUserStats: async (userId: string) => ({ userId }),
-      getTeamStats: async (teamId: string) => ({ teamId }),
-      getTaskStats: async (taskId: string) => ({ taskId }),
-      capabilities: () => ['stats'],
+describe('IMetricsManager contract', () => {
+  it('accepts an object implementing IMetricsManager', async () => {
+    const metrics: IMetricsManager = {
+      getUserMetrics: async (userId: string) => ({ userId } as any),
+      getTeamMetrics: async (teamId: string) => ({ teamId } as any),
+      getTaskMetrics: async (taskId: string) => ({ taskId } as any),
     };
 
-    expect(typeof provider.getUserStats).toBe('function');
-    expect(typeof provider.getTeamStats).toBe('function');
-    expect(typeof provider.getTaskStats).toBe('function');
-    expect(provider.capabilities()).toContain('stats');
+    expect(typeof metrics.getUserMetrics).toBe('function');
+    expect(typeof metrics.getTeamMetrics).toBe('function');
+    expect(typeof metrics.getTaskMetrics).toBe('function');
 
-    // Ensure calling them returns a promise-like result
-    await expect(provider.getUserStats('u1')).resolves.toBeDefined();
-    await expect(provider.getTeamStats('t1')).resolves.toBeDefined();
-    await expect(provider.getTaskStats('task1')).resolves.toBeDefined();
+    await expect(metrics.getUserMetrics('u1')).resolves.toBeDefined();
+    await expect(metrics.getTeamMetrics('t1')).resolves.toBeDefined();
+    await expect(metrics.getTaskMetrics('task1')).resolves.toBeDefined();
   });
 });
