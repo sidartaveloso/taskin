@@ -5,11 +5,25 @@
 
 import type { z } from 'zod';
 import type {
+  CodeMetricsSchema,
+  CommitSizeSchema,
+  ContributionMetricsSchema,
+  DayOfWeekSchema,
+  EngagementMetricsSchema,
+  GitCommitSchema,
+  RefactoringMetricsSchema,
+  StatsPeriodSchema,
+  StatsQuerySchema,
   TaskIdSchema,
   TaskSchema,
+  TaskStatsSchema,
   TaskStatusSchema,
   TaskTypeSchema,
+  TeamStatsSchema,
+  TemporalMetricsSchema,
+  TimeOfDaySchema,
   UserSchema,
+  UserStatsSchema,
 } from './taskin.schemas';
 
 export interface ListTasksOptions {
@@ -172,3 +186,91 @@ export type Task = z.infer<typeof TaskSchema>;
  * @public
  */
 export type User = z.infer<typeof UserSchema>;
+
+// ============================================================================
+// Stats & Track Record Types
+// ============================================================================
+
+/**
+ * Time period for filtering stats
+ * @public
+ */
+export type StatsPeriod = z.infer<typeof StatsPeriodSchema>;
+
+/**
+ * Time of day category
+ * @public
+ */
+export type TimeOfDay = z.infer<typeof TimeOfDaySchema>;
+
+/**
+ * Day of week (0 = Sunday, 6 = Saturday)
+ * @public
+ */
+export type DayOfWeek = z.infer<typeof DayOfWeekSchema>;
+
+/**
+ * Commit size classification
+ * @public
+ */
+export type CommitSize = z.infer<typeof CommitSizeSchema>;
+
+/**
+ * Git commit metadata
+ * @public
+ */
+export type GitCommit = z.infer<typeof GitCommitSchema>;
+
+/**
+ * Code metrics
+ * @public
+ */
+export type CodeMetrics = z.infer<typeof CodeMetricsSchema>;
+
+/**
+ * Refactoring quality metrics
+ * @public
+ */
+export type RefactoringMetrics = z.infer<typeof RefactoringMetricsSchema>;
+
+/**
+ * Temporal productivity metrics
+ * @public
+ */
+export type TemporalMetrics = z.infer<typeof TemporalMetricsSchema>;
+
+/**
+ * Contribution metrics
+ * @public
+ */
+export type ContributionMetrics = z.infer<typeof ContributionMetricsSchema>;
+
+/**
+ * Engagement metrics
+ * @public
+ */
+export type EngagementMetrics = z.infer<typeof EngagementMetricsSchema>;
+
+/**
+ * Task-specific statistics
+ * @public
+ */
+export type TaskStats = z.infer<typeof TaskStatsSchema>;
+
+/**
+ * User statistics report
+ * @public
+ */
+export type UserStats = z.infer<typeof UserStatsSchema>;
+
+/**
+ * Team statistics report
+ * @public
+ */
+export type TeamStats = z.infer<typeof TeamStatsSchema>;
+
+/**
+ * Statistics query parameters
+ * @public
+ */
+export type StatsQuery = z.infer<typeof StatsQuerySchema>;

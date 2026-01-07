@@ -53,7 +53,8 @@
     "dev": "tsc --watch",
     "generate:schemas": "tsx scripts/generate-schemas.ts",
     "lint": "eslint .",
-    "test": "echo 'No tests for types-ts (only type definitions)'"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "zod": "^3.25.76"
