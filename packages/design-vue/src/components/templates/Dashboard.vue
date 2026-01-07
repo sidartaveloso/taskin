@@ -19,9 +19,7 @@
       class="empty-state"
       v-else-if="!isLoading && (tasks ?? []).length === 0"
     >
-      <p class="empty-icon">
-        📋
-      </p>
+      <p class="empty-icon">📋</p>
       <h2>Nenhuma tarefa encontrada</h2>
       <p>Conecte-se ao servidor para visualizar suas tarefas.</p>
     </div>

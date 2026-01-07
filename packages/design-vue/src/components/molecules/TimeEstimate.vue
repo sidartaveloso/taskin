@@ -42,12 +42,8 @@ const getStatus = (estimate: TimeEstimateType): 'ok' | 'warning' | 'danger' => {
       }}</span>
     </div>
 
-    <div class="time-estimate__separator" v-if="variant === 'default'">
-      →
-    </div>
-    <div class="time-estimate__separator" v-else>
-      /
-    </div>
+    <div class="time-estimate__separator" v-if="variant === 'default'">→</div>
+    <div class="time-estimate__separator" v-else>/</div>
 
     <div class="time-estimate__item">
       <span class="time-estimate__label">Gasto</span>
@@ -56,12 +52,8 @@ const getStatus = (estimate: TimeEstimateType): 'ok' | 'warning' | 'danger' => {
       </span>
     </div>
 
-    <div class="time-estimate__separator" v-if="variant === 'default'">
-      →
-    </div>
-    <div class="time-estimate__separator" v-else>
-      /
-    </div>
+    <div class="time-estimate__separator" v-if="variant === 'default'">→</div>
+    <div class="time-estimate__separator" v-else>/</div>
 
     <div class="time-estimate__item">
       <span class="time-estimate__label">Restante</span>

@@ -202,12 +202,10 @@ const formatDate = (date: Date | string): string => {
       class="task-card__days"
       v-if="
         computedTask.progress?.dayLogs &&
-          computedTask.progress.dayLogs.length > 0
+        computedTask.progress.dayLogs.length > 0
       "
     >
-      <h4 class="task-card__days-title">
-        Progresso Diário
-      </h4>
+      <h4 class="task-card__days-title">Progresso Diário</h4>
       <div class="task-card__days-list">
         <DayBar
           v-for="(day, index) in computedTask.progress.dayLogs.slice(-3)"
