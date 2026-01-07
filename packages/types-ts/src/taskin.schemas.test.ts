@@ -38,7 +38,7 @@ describe('Taskin Schemas', () => {
 
   describe('TaskStatusSchema', () => {
     it('should accept all valid statuses', () => {
-      TASK_STATUSES.forEach(status => {
+      TASK_STATUSES.forEach((status) => {
         expect(TaskStatusSchema.parse(status)).toBe(status);
       });
     });
@@ -50,7 +50,7 @@ describe('Taskin Schemas', () => {
 
   describe('TaskTypeSchema', () => {
     it('should accept all valid types', () => {
-      TASK_TYPES.forEach(type => {
+      TASK_TYPES.forEach((type) => {
         expect(TaskTypeSchema.parse(type)).toBe(type);
       });
     });
@@ -335,13 +335,13 @@ describe('Stats & Track Record Schemas', () => {
     it('should accept valid temporal metrics with weekly distribution', () => {
       const metrics = {
         byDayOfWeek: {
-          '0': 2,  // Sunday
-          '1': 5,  // Monday
-          '2': 3,  // Tuesday
-          '3': 8,  // Wednesday
-          '4': 4,  // Thursday
-          '5': 2,  // Friday
-          '6': 1,  // Saturday
+          '0': 2, // Sunday
+          '1': 5, // Monday
+          '2': 3, // Tuesday
+          '3': 8, // Wednesday
+          '4': 4, // Thursday
+          '5': 2, // Friday
+          '6': 1, // Saturday
         },
         byTimeOfDay: {
           morning: 15,
@@ -507,8 +507,11 @@ describe('Stats & Track Record Schemas', () => {
     });
 
     it('should accept task stats without refactoring metrics for non-refactor tasks', () => {
-      const { refactoringMetrics: _unused, ...statsWithoutRefactoring } = validTaskStats;
-      expect(TaskStatsSchema.parse(statsWithoutRefactoring)).toEqual(statsWithoutRefactoring);
+      const { refactoringMetrics: _unused, ...statsWithoutRefactoring } =
+        validTaskStats;
+      expect(TaskStatsSchema.parse(statsWithoutRefactoring)).toEqual(
+        statsWithoutRefactoring,
+      );
     });
 
     it('should accept task stats without optional timestamp fields', () => {
@@ -552,7 +555,14 @@ describe('Stats & Track Record Schemas', () => {
         totalCommits: 23,
         tasksCompleted: 4,
         averageCompletionTime: 3.5,
-        taskTypeDistribution: { feat: 2, fix: 1, docs: 1, refactor: 0, test: 0, chore: 0 },
+        taskTypeDistribution: {
+          feat: 2,
+          fix: 1,
+          docs: 1,
+          refactor: 0,
+          test: 0,
+          chore: 0,
+        },
         activityFrequency: 3.3,
       },
       engagementMetrics: {
@@ -562,8 +572,16 @@ describe('Stats & Track Record Schemas', () => {
         completionRate: 0.8,
       },
       topTasks: [
-        { taskId: '550e8400-e29b-41d4-a716-446655440000', title: 'Task 1', commits: 10 },
-        { taskId: '550e8400-e29b-41d4-a716-446655440001', title: 'Task 2', commits: 8 },
+        {
+          taskId: '550e8400-e29b-41d4-a716-446655440000',
+          title: 'Task 1',
+          commits: 10,
+        },
+        {
+          taskId: '550e8400-e29b-41d4-a716-446655440001',
+          title: 'Task 2',
+          commits: 8,
+        },
       ],
     };
 
@@ -584,7 +602,9 @@ describe('Stats & Track Record Schemas', () => {
         },
       };
 
-      expect(UserStatsSchema.parse(statsWithRefactoring)).toEqual(statsWithRefactoring);
+      expect(UserStatsSchema.parse(statsWithRefactoring)).toEqual(
+        statsWithRefactoring,
+      );
     });
 
     it('should reject more than 10 top tasks', () => {
