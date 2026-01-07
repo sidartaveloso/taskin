@@ -1,12 +1,4 @@
-import type {
-  StatsQuery,
-  Task,
-  TaskStats,
-  TaskType,
-  TeamStats,
-  User,
-  UserStats,
-} from '@opentask/taskin-types';
+import type { Task, TaskType, User } from '@opentask/taskin-types';
 
 /**
  * Options for creating a new task
@@ -132,28 +124,6 @@ export interface ITaskProvider {
    * @returns The lint result with any validation issues found
    */
   lint(fix?: boolean): Promise<LintResult>;
-
-  /**
-   * Optional: Retrieve statistics for a specific user.
-   * Providers that implement analytics can return rich `UserStats`.
-   */
-  getUserStats?: (userId: string, query?: StatsQuery) => Promise<UserStats>;
-
-  /**
-   * Optional: Retrieve statistics for a specific team.
-   * Not all providers have team concepts; this method is optional.
-   */
-  getTeamStats?: (teamId: string, query?: StatsQuery) => Promise<TeamStats>;
-
-  /**
-   * Optional: Retrieve statistics for a specific task.
-   */
-  getTaskStats?: (taskId: string, query?: StatsQuery) => Promise<TaskStats>;
-
-  /**
-   * Optional: Return provider capabilities/features (eg. ['stats']).
-   */
-  capabilities?: () => string[];
 }
 
 /**
