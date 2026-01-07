@@ -63,9 +63,7 @@ const statusCounts = computed(() => ({
     <!-- Header with stats -->
     <div class="task-grid-header">
       <h2 class="task-grid-title">
-        <slot name="title">
-          Tarefas em Andamento
-        </slot>
+        <slot name="title"> Tarefas em Andamento </slot>
       </h2>
 
       <div class="task-grid-stats">
@@ -96,9 +94,7 @@ const statusCounts = computed(() => ({
 
     <!-- Empty state -->
     <div class="task-grid-empty" v-else-if="tasks.length === 0">
-      <div class="empty-icon">
-        📋
-      </div>
+      <div class="empty-icon">📋</div>
       <p class="empty-message">
         {{ emptyMessage }}
       </p>
