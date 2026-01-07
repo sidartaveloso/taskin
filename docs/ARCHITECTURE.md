@@ -226,6 +226,26 @@ LLM continues conversation
 
 ## Configuração
 
+## Métricas e Analytics
+
+O Taskin separa agora as responsabilidades de armazenamento das responsabilidades
+de métricas/analytics através da interface `IMetricsManager` definida em
+`packages/task-manager/src/metrics.types.ts`.
+
+- `IMetricsManager` fornece métodos: `getUserMetrics`, `getTeamMetrics`,
+  `getTaskMetrics`.
+- Os tipos retornados (`UserStats`, `TeamStats`, `TaskStats`) vêm do pacote
+  `@opentask/taskin-types`.
+
+Implementações concretas (por exemplo, `FsMetricsAdapter`) devem ser
+registradas separadamente do `ITaskProvider` e podem agregar dados a partir
+de várias fontes (arquivos locais, git, APIs externas) para produzir os
+relatórios.
+
+Consulte `docs/METRICS.md` para detalhes, exemplos e diretrizes de
+migração.
+
+
 ### Dashboard (.env)
 
 ```bash
