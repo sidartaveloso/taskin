@@ -334,7 +334,7 @@ const startTask = (taskId: string) => {
 // server.ts
 import { TaskWebSocketServer } from '@opentask/taskin-task-server-ws';
 import { TaskManager } from '@opentask/taskin-task-manager';
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import { FileSystemTaskProvider } from '@opentask/taskin-file-system-provider';
 
 const tasksDir = './TASKS';
 const taskProvider = new FileSystemTaskProvider(tasksDir);
@@ -368,7 +368,7 @@ process.on('SIGINT', async () => {
 // mcp-server.ts
 import { TaskMCPServer } from '@opentask/taskin-task-server-mcp';
 import { TaskManager } from '@opentask/taskin-task-manager';
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import { FileSystemTaskProvider } from '@opentask/taskin-file-system-provider';
 
 const tasksDir = './TASKS';
 const taskProvider = new FileSystemTaskProvider(tasksDir);

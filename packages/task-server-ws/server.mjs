@@ -2,7 +2,7 @@
 import {
   FileSystemTaskProvider,
   UserRegistry,
-} from '@opentask/taskin-fs-provider';
+} from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { join } from 'path';
 import { TaskWebSocketServer } from './dist/task-server-ws.js';

@@ -17,7 +17,7 @@ export interface ProviderInfo {
   id: string; // 'fs', 'redmine', 'jira', etc.
   name: string; // '📁 File System'
   description: string; // Short description
-  packageName: string; // '@taskin/fs-task-provider'
+  packageName: string; // '@opentask/taskin-file-system-provider'
   configSchema: {
     // JSON Schema for configuration
     required: string[];
@@ -29,7 +29,7 @@ export interface ProviderInfo {
 
 **Providers disponíveis:**
 
-- ✅ **File System** (`@taskin/fs-task-provider`) - Stable
+- ✅ **File System** (`@opentask/taskin-file-system-provider`) - Stable
 - 🚧 **Redmine** (`@taskin/redmine-task-provider`) - Coming Soon
 - 🚧 **Jira** (`@taskin/jira-task-provider`) - Coming Soon
 - 🚧 **GitHub Issues** (`@taskin/github-task-provider`) - Coming Soon

@@ -12,7 +12,7 @@
     { "path": "./packages/utils" },
     { "path": "./packages/git-utils" },
     { "path": "./packages/task-manager" },
-    { "path": "./packages/fs-task-provider" },
+    { "path": "./packages/file-system-task-provider" },
     { "path": "./dev" }
   ]
 }

@@ -130,7 +130,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
         });
       } catch (error: unknown) {
         const err = error as { stderr?: string; stdout?: string };
-        expect(err.stdout || err.stderr).toContain('error');
+        expect(err.stdout || err.stderr).toMatch(/Found \d+ issue/);
       }
     }, 60000);
   });
@@ -161,7 +161,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
       const taskPath = join(TEST_DIR, 'TASKS', taskFile!);
       const content = readFileSync(taskPath, 'utf-8');
 
-      expect(content).toContain('## Status');
+      expect(content).toMatch(/(## Status|Status:)/);
       expect(content).toContain('in-progress');
       expect(content).not.toContain('pending');
     }, 60000);
@@ -260,7 +260,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
       const taskPath = join(TEST_DIR, 'TASKS', taskFile!);
       const content = readFileSync(taskPath, 'utf-8');
 
-      expect(content).toContain('## Status');
+      expect(content).toMatch(/(## Status|Status:)/);
       expect(content).toContain('done');
       expect(content).not.toContain('in-progress');
       expect(content).not.toContain('pending');

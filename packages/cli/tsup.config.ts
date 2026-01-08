@@ -22,7 +22,7 @@ export default defineConfig({
   ],
   noExternal: [
     '@opentask/taskin-core',
-    '@opentask/taskin-fs-provider',
+    '@opentask/taskin-file-system-provider',
     '@opentask/taskin-git-utils',
     '@opentask/taskin-task-manager',
     '@opentask/taskin-task-provider-pinia',

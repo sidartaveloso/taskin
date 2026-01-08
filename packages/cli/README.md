@@ -55,12 +55,12 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 
 ### Task Providers
 
-| Provider                              | Description                           | Status         | npm         |
-| ------------------------------------- | ------------------------------------- | -------------- | ----------- |
-| **@opentask/taskin-fs-provider**      | File System provider (Markdown files) | ✅ Stable      | Coming soon |
-| **@opentask/taskin-redmine-provider** | Redmine integration                   | 🚧 Coming Soon | -           |
-| **@opentask/taskin-jira-provider**    | Jira Cloud integration                | 🚧 Coming Soon | -           |
-| **@opentask/taskin-github-provider**  | GitHub Issues integration             | 🚧 Coming Soon | -           |
+| Provider                                  | Description                           | Status         | npm         |
+| ----------------------------------------- | ------------------------------------- | -------------- | ----------- |
+| **@opentask/taskin-file-system-provider** | File System provider (Markdown files) | ✅ Stable      | Coming soon |
+| **@opentask/taskin-redmine-provider**     | Redmine integration                   | 🚧 Coming Soon | -           |
+| **@opentask/taskin-jira-provider**        | Jira Cloud integration                | 🚧 Coming Soon | -           |
+| **@opentask/taskin-github-provider**      | GitHub Issues integration             | 🚧 Coming Soon | -           |
 
 ### Utilities
 
@@ -262,12 +262,12 @@ See [EXAMPLES.md](./EXAMPLES.md) for detailed usage examples and workflows.
 
 ## 🔌 Available Providers
 
-| Provider         | Status         | Package                             |
-| ---------------- | -------------- | ----------------------------------- |
-| 📁 File System   | ✅ Stable      | `@opentask/taskin-fs-provider`      |
-| 🔴 Redmine       | 🚧 Coming Soon | `@opentask/taskin-redmine-provider` |
-| 🔵 Jira          | 🚧 Coming Soon | `@opentask/taskin-jira-provider`    |
-| 🐙 GitHub Issues | 🚧 Coming Soon | `@opentask/taskin-github-provider`  |
+| Provider         | Status         | Package                                 |
+| ---------------- | -------------- | --------------------------------------- |
+| 📁 File System   | ✅ Stable      | `@opentask/taskin-file-system-provider` |
+| 🔴 Redmine       | 🚧 Coming Soon | `@opentask/taskin-redmine-provider`     |
+| 🔵 Jira          | 🚧 Coming Soon | `@opentask/taskin-jira-provider`        |
+| 🐙 GitHub Issues | 🚧 Coming Soon | `@opentask/taskin-github-provider`      |
 
 Want to create your own provider? See [ARCHITECTURE.md](./ARCHITECTURE.md#-criando-um-novo-provider).
 

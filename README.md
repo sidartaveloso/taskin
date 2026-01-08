@@ -139,7 +139,7 @@ taskin mcp-server
 - **@opentask/taskin-core** - Core abstractions and logic
 - **@opentask/taskin-types-ts** - Zod schemas and TypeScript types
 - **@opentask/taskin-task-manager** - Task lifecycle orchestration
-- **@opentask/taskin-fs-provider** - Filesystem-based provider
+- **@opentask/taskin-file-system-provider** - Filesystem-based provider
 
 ### Server Packages
 

@@ -273,5 +273,5 @@ MIT
 ## 🔗 Related Packages
 
 - `@opentask/taskin-core` - Core types and interfaces
-- `@opentask/taskin-fs-provider` - Filesystem task provider
+- `@opentask/taskin-file-system-provider` - Filesystem task provider
 - `taskin` - CLI tool
