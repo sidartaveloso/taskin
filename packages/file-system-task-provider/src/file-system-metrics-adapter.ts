@@ -1,13 +1,39 @@
 import type { IMetricsManager } from '@opentask/taskin-task-manager/src/metrics.types';
-import type {
-  StatsQuery,
-  TaskStats,
-  TeamStats,
-  UserStats,
+import {
+  type StatsQuery,
+  type TaskStats,
+  type TaskStatus,
+  type TaskType,
+  type TeamStats,
+  type UserStats,
+  UserStatsSchema,
 } from '@opentask/taskin-types';
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { UserRegistry } from './user-registry';
+
+/**
+ * Task file parsing patterns
+ * Extracted as constants for maintainability and testing
+ */
+const TASK_FILENAME_PATTERN = /^task-(\d+)-/;
+const TASK_TITLE_PATTERNS = {
+  withDash: /^# .*?[—-]\s*(.+)$/im,
+  withNumber: /^# .*?\s+(\d+)\s*-\s*(.+)$/im,
+} as const;
+
+/**
+ * Internal representation of task file data
+ * Used for parsing markdown task files
+ */
+type TaskFileData = {
+  id: string;
+  title: string;
+  status?: TaskStatus;
+  assignee?: string;
+  type?: TaskType;
+  filePath: string;
+};
 
 function iso(d: Date) {
   return d.toISOString();
@@ -52,36 +78,72 @@ function zeroEngagement() {
   };
 }
 
+/**
+ * FileSystem-based metrics adapter (Work In Progress)
+ *
+ * @remarks
+ * **⚠️ CURRENT LIMITATION**: This adapter currently returns mock/zero values for most metrics.
+ * Full implementation with Git integration is planned for task-011.2 and task-011.3.
+ *
+ * **What works now**:
+ * - Task counting (assigned, completed, active)
+ * - Basic completion rate calculation
+ *
+ * **Not yet implemented** (returns zeros):
+ * - Git commit analysis
+ * - Code metrics (lines added/removed)
+ * - Temporal patterns (day of week, time of day)
+ * - Streaks and trends
+ *
+ * @see https://github.com/opentask/taskin/issues/task-011
+ * @notImplemented Full metrics calculation requires IGitAnalyzer integration
+ */
 export class FileSystemMetricsAdapter implements IMetricsManager {
   constructor(
     private tasksDirectory: string,
     private userRegistry: UserRegistry,
   ) {}
 
-  private async readTaskFiles() {
-    const files = await fs
-      .readdir(this.tasksDirectory)
-      .catch(() => [] as string[]);
+  /**
+   * Reads and parses task files from the filesystem
+   * @returns Array of parsed task file data
+   * @private
+   */
+  private async readTaskFiles(): Promise<TaskFileData[]> {
+    let files: string[];
+    try {
+      files = await fs.readdir(this.tasksDirectory);
+    } catch (error: any) {
+      if (error?.code === 'ENOENT') {
+        console.warn(`Tasks directory not found: ${this.tasksDirectory}`);
+        return [];
+      }
+      // Don't hide unexpected errors
+      throw new Error(
+        `Failed to read tasks directory: ${error?.message || error}`,
+      );
+    }
+
     const taskFiles = files.filter(
       (f) => f.startsWith('task-') && f.endsWith('.md'),
     );
-    const tasks: Array<{
-      id: string;
-      title: string;
-      status?: string;
-      assignee?: string;
-      type?: string;
-      filePath: string;
-    }> = [];
+    const tasks: TaskFileData[] = [];
 
     for (const file of taskFiles) {
       const filePath = path.join(this.tasksDirectory, file);
-      const content = await fs.readFile(filePath, 'utf-8').catch(() => '');
-      const idMatch = file.match(/^task-(\d+)-/);
+      let content: string;
+      try {
+        content = await fs.readFile(filePath, 'utf-8');
+      } catch (error: any) {
+        console.warn(`Failed to read task file ${filePath}: ${error?.message}`);
+        continue;
+      }
+
+      const idMatch = file.match(TASK_FILENAME_PATTERN);
       const id = idMatch ? idMatch[1] : file;
       const titleMatch =
-        content.match(/^# .*?[—-]\s*(.+)$/im) ||
-        content.match(/^# .*?\s+(\d+)\s*-\s*(.+)$/im);
+        content.match(TASK_TITLE_PATTERNS.withDash) ||
+        content.match(TASK_TITLE_PATTERNS.withNumber);
       const title = titleMatch ? titleMatch[1] : file.replace(/\.md$/, '');
 
       const extract = (name: string) => {
@@ -90,11 +152,35 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         return m ? m[1].trim() : undefined;
       };
 
-      const status = extract('Status');
-      const assignee = extract('Assignee');
-      const type = extract('Type');
+      const statusValue = extract('Status');
+      const assigneeValue = extract('Assignee');
+      const typeValue = extract('Type');
 
-      tasks.push({ id, title, status, assignee, type, filePath });
+      // Validate and cast to proper types
+      const validStatuses: TaskStatus[] = [
+        'pending',
+        'in-progress',
+        'done',
+        'blocked',
+        'canceled',
+      ];
+      const validTypes: TaskType[] = [
+        'feat',
+        'fix',
+        'refactor',
+        'docs',
+        'test',
+        'chore',
+      ];
+
+      const status = validStatuses.includes(statusValue as TaskStatus)
+        ? (statusValue as TaskStatus)
+        : undefined;
+      const type = validTypes.includes(typeValue as TaskType)
+        ? (typeValue as TaskType)
+        : undefined;
+
+      tasks.push({ id, title, status, assignee: assigneeValue, type, filePath });
     }
 
     return tasks;
@@ -123,7 +209,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     const completed = assigned.filter((t) => t.status === 'done').length;
     const active = assigned.filter((t) => t.status !== 'done').length;
 
-    const userStats: UserStats = {
+    const rawMetrics = {
       username,
       period: 'week',
       periodStart: iso(weekAgo),
@@ -137,9 +223,10 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         completionRate: assigned.length ? completed / assigned.length : 0,
       },
       topTasks: [],
-    } as unknown as UserStats;
+    };
 
-    return userStats;
+    // Validate output with Zod schema for runtime type safety
+    return UserStatsSchema.parse(rawMetrics);
   }
 
   async getTeamMetrics(
