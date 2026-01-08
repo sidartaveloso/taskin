@@ -15,7 +15,12 @@ const lastPongs = new Map<string, number>();
 /**
  * Pinia store for task management with WebSocket synchronization
  */
-const _usePiniaTaskProvider = defineStore('taskin-tasks', {
+const _usePiniaTaskProvider = defineStore<
+  'taskin-tasks',
+  PiniaTaskStoreState,
+  Record<string, any>,
+  any
+>('taskin-tasks', {
   state: (): PiniaTaskStoreState => ({
     tasks: [],
     loading: false,
@@ -29,21 +34,22 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Get task by ID
      */
-    taskById(state) {
-      return (id: string) => state.tasks.find((t) => t.id === id);
+    taskById(state: PiniaTaskStoreState) {
+      return (id: string) => state.tasks.find((t: TaskFile) => t.id === id);
     },
 
     /**
      * Get tasks filtered by status
      */
-    tasksByStatus(state) {
-      return (status: string) => state.tasks.filter((t) => t.status === status);
+    tasksByStatus(state: PiniaTaskStoreState) {
+      return (status: string) =>
+        state.tasks.filter((t: TaskFile) => t.status === status);
     },
 
     /**
      * Get connection status information
      */
-    connectionStatus(state) {
+    connectionStatus(state: PiniaTaskStoreState) {
       return {
         connected: state.connected,
         error: state.error,
@@ -56,7 +62,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Connect to WebSocket server
      */
-    connect(config: PiniaTaskProviderConfig): void {
+    connect(this: any, config: PiniaTaskProviderConfig): void {
       const storeId = this.$id;
 
       if (wsInstances.has(storeId)) {
@@ -77,7 +83,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Internal connection logic
      */
-    _connect(): void {
+    _connect(this: any): void {
       const storeId = this.$id;
       const config = wsConfigs.get(storeId);
 
@@ -136,7 +142,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Disconnect from WebSocket server
      */
-    disconnect(): void {
+    disconnect(this: any): void {
       const storeId = this.$id;
       this._log('Disconnecting');
       this._stopHeartbeat();
@@ -159,7 +165,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Send message to WebSocket server
      */
-    send(message: WebSocketMessage): void {
+    send(this: any, message: WebSocketMessage): void {
       const storeId = this.$id;
       const ws = wsInstances.get(storeId);
 
@@ -180,7 +186,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Handle incoming WebSocket message
      */
-    handleMessage(message: WebSocketMessage): void {
+    handleMessage(this: any, message: WebSocketMessage): void {
       this._log('Received:', message);
 
       switch (message.type) {
@@ -203,7 +209,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           // Single task response
           if (message.payload) {
             const task = message.payload as TaskFile;
-            const idx = this.tasks.findIndex((t) => t.id === task.id);
+            const idx = this.tasks.findIndex((t: TaskFile) => t.id === task.id);
             if (idx >= 0) {
               this.tasks[idx] = task;
             } else {
@@ -216,7 +222,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           // Task was updated
           if (message.payload) {
             const task = message.payload as TaskFile;
-            const idx = this.tasks.findIndex((t) => t.id === task.id);
+            const idx = this.tasks.findIndex((t: TaskFile) => t.id === task.id);
             if (idx >= 0) {
               this.tasks[idx] = task;
             }
@@ -235,7 +241,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           // Task was deleted
           if (message.payload) {
             const taskId = (message.payload as { id: string }).id;
-            this.tasks = this.tasks.filter((t) => t.id !== taskId);
+            this.tasks = this.tasks.filter((t: TaskFile) => t.id !== taskId);
           }
           break;
 
@@ -260,7 +266,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Handle connection error
      */
-    handleError(error: Error): void {
+    handleError(this: any, error: Error): void {
       this._log('Error:', error.message);
       this.error = error.message;
       this.connected = false;
@@ -269,7 +275,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Attempt reconnection
      */
-    reconnect(): void {
+    reconnect(this: any): void {
       const config = wsConfigs.get(this.$id);
       if (!config) return;
 
@@ -295,7 +301,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Start heartbeat to keep connection alive
      */
-    _startHeartbeat(): void {
+    _startHeartbeat(this: any): void {
       const storeId = this.$id;
       this._stopHeartbeat();
 
@@ -321,7 +327,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Stop heartbeat
      */
-    _stopHeartbeat(): void {
+    _stopHeartbeat(this: any): void {
       const storeId = this.$id;
       const interval = heartbeatIntervals.get(storeId);
 
@@ -334,7 +340,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Debug logging
      */
-    _log(...args: unknown[]): void {
+    _log(this: any, ...args: unknown[]): void {
       const config = wsConfigs.get(this.$id);
       if (config?.debug) {
         console.log('[PiniaTaskProvider]', ...args);
@@ -348,9 +354,9 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Find a task by ID
      */
-    async findTask(taskId: string): Promise<TaskFile | undefined> {
+    async findTask(this: any, taskId: string): Promise<TaskFile | undefined> {
       // Check cache first
-      const cached = this.tasks.find((t) => t.id === taskId);
+      const cached = this.tasks.find((t: TaskFile) => t.id === taskId);
       if (cached) {
         return cached;
       }
@@ -373,7 +379,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           // request/response correlation mechanism
           setTimeout(() => {
             clearTimeout(timeout);
-            resolve(this.tasks.find((t) => t.id === taskId));
+            resolve(this.tasks.find((t: TaskFile) => t.id === taskId));
           }, 500);
         });
       }
@@ -384,7 +390,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Get all tasks
      */
-    async getAllTasks(): Promise<TaskFile[]> {
+    async getAllTasks(this: any): Promise<TaskFile[]> {
       // Return cached tasks if available
       if (this.tasks.length > 0) {
         return this.tasks;
@@ -420,13 +426,13 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Update a task
      */
-    async updateTask(task: TaskFile): Promise<void> {
+    async updateTask(this: any, task: TaskFile): Promise<void> {
       if (!this.connected) {
         throw new Error('Not connected to server');
       }
 
       // Optimistically update cache
-      const idx = this.tasks.findIndex((t) => t.id === task.id);
+      const idx = this.tasks.findIndex((t: TaskFile) => t.id === task.id);
       if (idx >= 0) {
         this.tasks[idx] = task;
       }

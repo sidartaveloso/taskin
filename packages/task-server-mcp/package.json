@@ -25,7 +25,7 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/sdk": "^1.25.1",
     "@opentask/taskin-file-system-provider": "workspace:*",
     "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-types": "workspace:*"
