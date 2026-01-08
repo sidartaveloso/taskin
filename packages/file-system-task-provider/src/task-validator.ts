@@ -6,6 +6,19 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { detectLocale, getI18n } from './i18n.js';
 
 /**
+ * Content transformation function type
+ * Pure function that takes content and returns transformed content
+ */
+type ContentTransform = (content: string) => string;
+
+/**
+ * Normalizes blank-line pattern after H1 title
+ * Ensures files with one or two blank lines after title are considered equivalent
+ */
+const normalizeForCompare = (s: string): string =>
+  s.replace(/(^# .*?)\n+/m, '$1\n\n').trim() + '\n';
+
+/**
  * Fixes section-based metadata by converting to inline format
  */
 export async function fixTaskFile(filePath: string): Promise<boolean> {
