@@ -126,9 +126,9 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
-      '@opentask/taskin-fs-provider':
+      '@opentask/taskin-file-system-provider':
         specifier: workspace:*
-        version: link:../fs-task-provider
+        version: link:../file-system-task-provider
       '@opentask/taskin-task-manager':
         specifier: workspace:*
         version: link:../task-manager
@@ -333,7 +333,7 @@ importers:
         specifier: ^3.5.24
         version: 3.5.25(typescript@5.9.3)
 
-  packages/fs-task-provider:
+  packages/file-system-task-provider:
     dependencies:
       '@opentask/taskin-task-manager':
         specifier: workspace:*
@@ -399,9 +399,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.4
         version: 1.25.1(hono@4.11.1)(zod@3.25.76)
-      '@opentask/taskin-fs-provider':
+      '@opentask/taskin-file-system-provider':
         specifier: workspace:*
-        version: link:../fs-task-provider
+        version: link:../file-system-task-provider
       '@opentask/taskin-task-manager':
         specifier: workspace:*
         version: link:../task-manager

@@ -21,7 +21,7 @@ Servidor WebSocket que expõe `ITaskManager` e `ITaskProvider` para múltiplos c
 ```typescript
 // server.ts
 import { TaskManager } from '@opentask/taskin-task-manager';
-import { FileSystemTaskProvider } from '@opentask/taskin-fs-task-provider';
+import { FileSystemTaskProvider } from '@opentask/taskin-file-system-provider';
 import { createTaskWebSocketServer } from '@opentask/taskin-task-server-ws';
 
 async function startServer() {

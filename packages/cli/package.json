@@ -95,7 +95,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@opentask/taskin-fs-provider": "workspace:*",
+    "@opentask/taskin-file-system-provider": "workspace:*",
     "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-task-server-mcp": "workspace:*",
     "@opentask/taskin-task-server-ws": "workspace:*",

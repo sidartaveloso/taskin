@@ -11,6 +11,6 @@
   "references": [
     { "path": "../packages/types-ts" },
     { "path": "../packages/task-manager" },
-    { "path": "../packages/fs-task-provider" }
+    { "path": "../packages/file-system-task-provider" }
   ]
 }

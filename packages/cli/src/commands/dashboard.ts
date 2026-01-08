@@ -5,7 +5,7 @@
 import {
   FileSystemTaskProvider,
   UserRegistry,
-} from '@opentask/taskin-fs-provider';
+} from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { TaskWebSocketServer } from '@opentask/taskin-task-server-ws';
 import { escapeHtml, isValidHost, isValidPort } from '@opentask/taskin-utils';

@@ -5,7 +5,7 @@
 import {
   FileSystemTaskProvider,
   UserRegistry,
-} from '@opentask/taskin-fs-provider';
+} from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { MCPTransportType } from '@opentask/taskin-task-server-mcp';
 import { TaskMCPServer } from '@opentask/taskin-task-server-mcp';

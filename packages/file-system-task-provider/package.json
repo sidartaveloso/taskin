@@ -1,5 +1,5 @@
 {
-  "name": "@opentask/taskin-fs-provider",
+  "name": "@opentask/taskin-file-system-provider",
   "version": "1.0.5",
   "private": true,
   "description": "File system task provider for Taskin",
@@ -42,7 +42,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sidartaveloso/taskin.git",
-    "directory": "packages/fs-task-provider"
+    "directory": "packages/file-system-task-provider"
   },
   "license": "MIT",
   "publishConfig": {

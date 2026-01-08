@@ -5,7 +5,7 @@
 import {
   FileSystemTaskProvider,
   UserRegistry,
-} from '@opentask/taskin-fs-provider';
+} from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';

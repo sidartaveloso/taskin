@@ -5,7 +5,7 @@
 import {
   FileSystemTaskProvider,
   UserRegistry,
-} from '@opentask/taskin-fs-provider';
+} from '@opentask/taskin-file-system-provider';
 import type { LintTasksOptions } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import { join } from 'path';

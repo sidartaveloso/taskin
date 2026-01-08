@@ -125,7 +125,7 @@ LLM continues conversation
 - **Responsabilidade**: Validação de transições de estado, lógica de negócio
 - **Principais métodos**: `updateTask()`, `pauseTask()`, `startTask()`, `finishTask()`
 
-#### @opentask/taskin-fs-provider
+#### @opentask/taskin-file-system-provider
 
 - **Interface**: Implementa `ITaskProvider`
 - **Responsabilidade**: Persistência de tarefas em arquivos Markdown

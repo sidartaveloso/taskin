@@ -10,7 +10,7 @@ export const AVAILABLE_PROVIDERS: ProviderInfo[] = [
     id: 'fs',
     name: '📁 File System',
     description: 'Store tasks as Markdown files in a local TASKS/ directory',
-    packageName: '@opentask/taskin-fs-provider',
+    packageName: '@opentask/taskin-file-system-provider',
     configSchema: {
       required: ['tasksDir'],
       properties: {

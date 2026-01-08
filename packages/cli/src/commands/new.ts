@@ -5,7 +5,7 @@
 import {
   FileSystemTaskProvider,
   UserRegistry,
-} from '@opentask/taskin-fs-provider';
+} from '@opentask/taskin-file-system-provider';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';

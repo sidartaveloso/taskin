@@ -10,7 +10,9 @@
     "moduleResolution": "node",
     "paths": {
       "@opentask/taskin-core": ["packages/core/src"],
-      "@opentask/taskin-fs-provider": ["packages/fs-task-provider/src"],
+      "@opentask/taskin-file-system-provider": [
+        "packages/file-system-task-provider/src"
+      ],
       "@opentask/taskin-git-utils": ["packages/git-utils/src"],
       "@opentask/taskin-task-manager": ["packages/task-manager/src"],
       "@opentask/taskin-types": ["packages/types-ts/src"],

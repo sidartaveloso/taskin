@@ -5,7 +5,7 @@
 import {
   FileSystemTaskProvider,
   UserRegistry,
-} from '@opentask/taskin-fs-provider';
+} from '@opentask/taskin-file-system-provider';
 import type { PauseTaskOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import path from 'path';

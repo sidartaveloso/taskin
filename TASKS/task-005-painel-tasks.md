@@ -12,7 +12,7 @@ Painel visual de tarefas em andamento, ideal para apresentação em TVs e dashbo
 
 O Taskin suporta múltiplas implementações de task providers:
 
-- **FileSystem** (`@opentask/taskin-fs-provider`) - tasks em arquivos markdown
+- **FileSystem** (`@opentask/taskin-file-system-provider`) - tasks em arquivos markdown
 - **Redmine** (futuro provider)
 - **Jira** (futuro provider)
 - **Custom providers** - qualquer implementação que siga o contrato

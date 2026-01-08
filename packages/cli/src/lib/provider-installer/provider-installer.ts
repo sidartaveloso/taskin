@@ -28,7 +28,7 @@ export function detectPackageManager(): PackageManager {
  */
 function isBundledProvider(packageName: string): boolean {
   const bundledProviders = [
-    '@opentask/taskin-fs-provider',
+    '@opentask/taskin-file-system-provider',
     '@opentask/taskin-core',
     '@opentask/taskin-task-manager',
     '@opentask/taskin-git-utils',

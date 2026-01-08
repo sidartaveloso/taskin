@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "@opentask/taskin-fs-provider": "workspace:*",
+    "@opentask/taskin-file-system-provider": "workspace:*",
     "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-types": "workspace:*"
   },

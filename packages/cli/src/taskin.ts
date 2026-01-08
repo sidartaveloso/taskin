@@ -3,7 +3,7 @@
  * Main class that implements task management with dependency injection
  */
 
-import type { FileSystemTaskProvider } from '@opentask/taskin-fs-provider';
+import type { FileSystemTaskProvider } from '@opentask/taskin-file-system-provider';
 import type { TaskManager } from '@opentask/taskin-task-manager';
 import type {
   FinishTaskOptions,

@@ -1,4 +1,4 @@
-import type { IMetricsManager } from '@opentask/taskin-task-manager';
+import type { IMetricsManager } from '@opentask/taskin-task-manager/src/metrics.types';
 import type {
   StatsQuery,
   TaskStats,

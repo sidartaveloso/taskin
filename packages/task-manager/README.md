@@ -74,7 +74,7 @@ There is a small unit test validating the contract at
 
 If you want, I can:
 
-- Add an example adapter implementation in `fs-task-provider`.
+- Add an example adapter implementation in `file-system-task-provider`.
 - Add documentation to the repo-level `docs/` folder and cross-links.
 
 Tell me which and I’ll implement it.
