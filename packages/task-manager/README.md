@@ -47,7 +47,7 @@ export class FsMetricsAdapter implements IMetricsManager {
   async getUserMetrics(userId: string, query?: StatsQuery): Promise<UserStats> {
     // Aggregate tasks from fsProvider and compute simple metrics
     const tasks = await this.fsProvider.getAllTasks();
-    const userTasks = tasks.filter(t => t.assignee?.id === userId);
+    const userTasks = tasks.filter((t) => t.assignee?.id === userId);
     return { userId, taskCount: userTasks.length } as any;
   }
 
@@ -78,6 +78,7 @@ If you want, I can:
 - Add documentation to the repo-level `docs/` folder and cross-links.
 
 Tell me which and I’ll implement it.
+
 # @taskin/task-manager
 
 This package is responsible for the core logic of managing tasks.

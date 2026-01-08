@@ -154,11 +154,14 @@ export const CommitSizeSchema = z.enum(['small', 'medium', 'large']);
 export const GitCommitSchema = z.object({
   hash: z.string(),
   author: z.string(),
-  date: z.string().datetime(),
+  date: z.preprocess((val) => {
+    if (val instanceof Date) return val.toISOString();
+    return String(val);
+  }, z.string().datetime()),
   message: z.string(),
   filesChanged: z.number().int().nonnegative(),
-  linesAdded: z.number().int().nonnegative(),
-  linesRemoved: z.number().int().nonnegative(),
+  linesAdded: z.coerce.number().int().nonnegative(),
+  linesRemoved: z.coerce.number().int().nonnegative(),
   coAuthors: z.array(z.string()).optional(),
 });
 
@@ -167,12 +170,12 @@ export const GitCommitSchema = z.object({
  * @public
  */
 export const CodeMetricsSchema = z.object({
-  linesAdded: z.number().int().nonnegative(),
-  linesRemoved: z.number().int().nonnegative(),
-  netChange: z.number().int(),
-  characters: z.number().int().nonnegative(),
-  filesChanged: z.number().int().nonnegative(),
-  commits: z.number().int().nonnegative(),
+  linesAdded: z.coerce.number().int().nonnegative(),
+  linesRemoved: z.coerce.number().int().nonnegative(),
+  netChange: z.coerce.number().int(),
+  characters: z.coerce.number().int().nonnegative(),
+  filesChanged: z.coerce.number().int().nonnegative(),
+  commits: z.coerce.number().int().nonnegative(),
 });
 
 /**
@@ -180,11 +183,12 @@ export const CodeMetricsSchema = z.object({
  * @public
  */
 export const RefactoringMetricsSchema = z.object({
+  // simplificationRatio must be > 0 for refactor simplification
   simplificationRatio: z.number().positive(),
-  linesRemoved: z.number().int().nonnegative(),
-  linesAdded: z.number().int().nonnegative(),
-  netReduction: z.number().int(),
-  reductionPercentage: z.number(),
+  linesRemoved: z.coerce.number().int().nonnegative(),
+  linesAdded: z.coerce.number().int().nonnegative(),
+  netReduction: z.coerce.number().int(),
+  reductionPercentage: z.coerce.number(),
   quality: z.enum(['excellent', 'good', 'neutral', 'expansion']),
 });
 
@@ -193,9 +197,11 @@ export const RefactoringMetricsSchema = z.object({
  * @public
  */
 export const TemporalMetricsSchema = z.object({
-  byDayOfWeek: z.record(z.string(), z.number().int().nonnegative()), // keys are string '0'-'6'
-  byTimeOfDay: z.record(TimeOfDaySchema, z.number().int().nonnegative()),
-  streak: z.number().int().nonnegative(),
+  // keys are string '0'-'6'
+  byDayOfWeek: z.record(z.string(), z.coerce.number().int().nonnegative()),
+  // keys are time of day string values: 'morning'|'afternoon'|'evening'|'night'
+  byTimeOfDay: z.record(z.string(), z.coerce.number().int().nonnegative()),
+  streak: z.coerce.number().int().nonnegative(),
   trend: z.enum(['increasing', 'stable', 'decreasing']),
 });
 
@@ -204,14 +210,15 @@ export const TemporalMetricsSchema = z.object({
  * @public
  */
 export const ContributionMetricsSchema = z.object({
-  totalCommits: z.number().int().nonnegative(),
-  tasksCompleted: z.number().int().nonnegative(),
-  averageCompletionTime: z.number().nonnegative(), // in days
+  totalCommits: z.coerce.number().int().nonnegative(),
+  tasksCompleted: z.coerce.number().int().nonnegative(),
+  averageCompletionTime: z.coerce.number().nonnegative(), // in days
+  // keys are task type strings (e.g. 'feat', 'fix')
   taskTypeDistribution: z.record(
-    TaskTypeSchema,
-    z.number().int().nonnegative(),
+    z.string(),
+    z.coerce.number().int().nonnegative(),
   ),
-  activityFrequency: z.number().nonnegative(), // commits per day
+  activityFrequency: z.coerce.number().nonnegative(), // commits per day
 });
 
 /**
@@ -219,10 +226,10 @@ export const ContributionMetricsSchema = z.object({
  * @public
  */
 export const EngagementMetricsSchema = z.object({
-  commitsPerDay: z.number().nonnegative(),
-  consistency: z.number().min(0).max(1), // 0-1 score
-  activeTasksCount: z.number().int().nonnegative(),
-  completionRate: z.number().min(0).max(1), // percentage as decimal
+  commitsPerDay: z.coerce.number().nonnegative(),
+  consistency: z.coerce.number().min(0).max(1), // 0-1 score
+  activeTasksCount: z.coerce.number().int().nonnegative(),
+  completionRate: z.coerce.number().min(0).max(1), // percentage as decimal
 });
 
 /**
@@ -235,15 +242,33 @@ export const TaskStatsSchema = z.object({
   type: TaskTypeSchema,
   status: TaskStatusSchema,
   assignee: z.string().optional(),
-  duration: z.number().nonnegative(), // in days
-  created: z.string().datetime(),
-  firstCommit: z.string().datetime().optional(),
-  lastCommit: z.string().datetime().optional(),
-  statusChangedToDone: z.string().datetime().optional(),
+  duration: z.coerce.number().nonnegative(), // in days
+  created: z.preprocess(
+    (v) => (v instanceof Date ? v.toISOString() : String(v)),
+    z.string().datetime(),
+  ),
+  firstCommit: z
+    .preprocess(
+      (v) => (v instanceof Date ? v.toISOString() : String(v)),
+      z.string().datetime(),
+    )
+    .optional(),
+  lastCommit: z
+    .preprocess(
+      (v) => (v instanceof Date ? v.toISOString() : String(v)),
+      z.string().datetime(),
+    )
+    .optional(),
+  statusChangedToDone: z
+    .preprocess(
+      (v) => (v instanceof Date ? v.toISOString() : String(v)),
+      z.string().datetime(),
+    )
+    .optional(),
   contributors: z.array(
     z.object({
       name: z.string(),
-      commits: z.number().int().nonnegative(),
+      commits: z.coerce.number().int().nonnegative(),
       isCoAuthor: z.boolean().optional(),
     }),
   ),
@@ -256,15 +281,15 @@ export const TaskStatsSchema = z.object({
     gaps: z.number().int().nonnegative(), // days without activity
   }),
   commitHistory: z.object({
-    totalCommits: z.number().int().nonnegative(),
-    averageCommitSize: z.number().nonnegative(),
+    totalCommits: z.coerce.number().int().nonnegative(),
+    averageCommitSize: z.coerce.number().nonnegative(),
     largestCommit: z.object({
-      linesAdded: z.number().int().nonnegative(),
-      linesRemoved: z.number().int().nonnegative(),
+      linesAdded: z.coerce.number().int().nonnegative(),
+      linesRemoved: z.coerce.number().int().nonnegative(),
     }),
     smallestCommit: z.object({
-      linesAdded: z.number().int().nonnegative(),
-      linesRemoved: z.number().int().nonnegative(),
+      linesAdded: z.coerce.number().int().nonnegative(),
+      linesRemoved: z.coerce.number().int().nonnegative(),
     }),
   }),
 });
@@ -276,8 +301,14 @@ export const TaskStatsSchema = z.object({
 export const UserStatsSchema = z.object({
   username: z.string(),
   period: StatsPeriodSchema,
-  periodStart: z.string().datetime(),
-  periodEnd: z.string().datetime(),
+  periodStart: z.preprocess(
+    (v) => (v instanceof Date ? v.toISOString() : String(v)),
+    z.string().datetime(),
+  ),
+  periodEnd: z.preprocess(
+    (v) => (v instanceof Date ? v.toISOString() : String(v)),
+    z.string().datetime(),
+  ),
   codeMetrics: CodeMetricsSchema,
   temporalMetrics: TemporalMetricsSchema,
   contributionMetrics: ContributionMetricsSchema,
@@ -288,7 +319,7 @@ export const UserStatsSchema = z.object({
       z.object({
         taskId: TaskIdSchema,
         title: z.string(),
-        commits: z.number().int().nonnegative(),
+        commits: z.coerce.number().int().nonnegative(),
       }),
     )
     .max(10),
@@ -300,8 +331,14 @@ export const UserStatsSchema = z.object({
  */
 export const TeamStatsSchema = z.object({
   period: StatsPeriodSchema,
-  periodStart: z.string().datetime(),
-  periodEnd: z.string().datetime(),
+  periodStart: z.preprocess(
+    (v) => (v instanceof Date ? v.toISOString() : String(v)),
+    z.string().datetime(),
+  ),
+  periodEnd: z.preprocess(
+    (v) => (v instanceof Date ? v.toISOString() : String(v)),
+    z.string().datetime(),
+  ),
   totalContributors: z.number().int().nonnegative(),
   totalCommits: z.number().int().nonnegative(),
   totalTasksCompleted: z.number().int().nonnegative(),
@@ -309,14 +346,14 @@ export const TeamStatsSchema = z.object({
   contributors: z.array(
     z.object({
       username: z.string(),
-      commits: z.number().int().nonnegative(),
-      tasksCompleted: z.number().int().nonnegative(),
+      commits: z.coerce.number().int().nonnegative(),
+      tasksCompleted: z.coerce.number().int().nonnegative(),
       codeMetrics: CodeMetricsSchema,
     }),
   ),
   taskTypeDistribution: z.record(
-    TaskTypeSchema,
-    z.number().int().nonnegative(),
+    z.string(),
+    z.coerce.number().int().nonnegative(),
   ),
 });
 

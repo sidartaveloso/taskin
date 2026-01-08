@@ -210,6 +210,11 @@ export type TimeOfDay = z.infer<typeof TimeOfDaySchema>;
 export type DayOfWeek = z.infer<typeof DayOfWeekSchema>;
 
 /**
+ * String keys representing day-of-week used in records: '0'..'6'
+ */
+export type DayOfWeekKey = '0' | '1' | '2' | '3' | '4' | '5' | '6';
+
+/**
  * Commit size classification
  * @public
  */
@@ -219,6 +224,7 @@ export type CommitSize = z.infer<typeof CommitSizeSchema>;
  * Git commit metadata
  * @public
  */
+export type TaskTypeUnion = TaskType;
 export type GitCommit = z.infer<typeof GitCommitSchema>;
 
 /**
@@ -231,6 +237,7 @@ export type CodeMetrics = z.infer<typeof CodeMetricsSchema>;
  * Refactoring quality metrics
  * @public
  */
+export type TaskStatusUnion = TaskStatus;
 export type RefactoringMetrics = z.infer<typeof RefactoringMetricsSchema>;
 
 /**

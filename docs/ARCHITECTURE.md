@@ -245,7 +245,6 @@ relatórios.
 Consulte `docs/METRICS.md` para detalhes, exemplos e diretrizes de
 migração.
 
-
 ### Dashboard (.env)
 
 ```bash

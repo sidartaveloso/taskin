@@ -1,4 +1,9 @@
-import type { UserStats, TeamStats, TaskStats, StatsQuery } from '@opentask/taskin-types';
+import type {
+  StatsQuery,
+  TaskStats,
+  TeamStats,
+  UserStats,
+} from '@opentask/taskin-types';
 
 /**
  * IMetricsManager - Interface dedicada para operações de métricas/estatísticas.
@@ -10,4 +15,8 @@ export interface IMetricsManager {
   getTaskMetrics(taskId: string, query?: StatsQuery): Promise<TaskStats>;
 }
 
-export type { UserStats as UserMetrics, TeamStats as TeamMetrics, TaskStats as TaskMetrics };
+export type {
+  TaskStats as TaskMetrics,
+  TeamStats as TeamMetrics,
+  UserStats as UserMetrics,
+};

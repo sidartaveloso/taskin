@@ -125,16 +125,16 @@ export class FileSystemTaskProvider implements ITaskProvider {
     let updatedContent: string;
 
     if (/^Status:\s*.+$/im.test(content)) {
-      // Replace existing Status line (preserve trailing spaces for markdown line break)
+      // Replace existing Status line
       updatedContent = content.replace(
         /^Status:\s*.+$/im,
-        `Status: ${task.status}  `,
+        `Status: ${task.status}`,
       );
     } else {
       // If no Status field exists, insert it after the H1 title
       updatedContent = content.replace(
         /(^#.*\n)/,
-        `$1Status: ${task.status}  \n`,
+        `$1Status: ${task.status}\n`,
       );
     }
 
