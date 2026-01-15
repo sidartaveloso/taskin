@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config';
 import path from 'path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -7,7 +7,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@opentask/taskin-types': path.resolve(__dirname, '../types-ts/src/index.ts'),
+      '@opentask/taskin-types': path.resolve(
+        __dirname,
+        '../types-ts/src/index.ts',
+      ),
     },
   },
 });

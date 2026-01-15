@@ -28,6 +28,9 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@opentask/taskin-types": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.9.3"
   }
