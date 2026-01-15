@@ -11,3 +11,4 @@ export * from './mcp-server.js';
 export * from './new.js';
 export * from './pause.js';
 export * from './start.js';
+export * from './stats.js';

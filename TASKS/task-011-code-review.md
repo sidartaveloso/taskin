@@ -571,8 +571,10 @@ describe('taskin stats command', () => {
 
 *     "name": "file-system",
       "config": { ... }
+
   }
   }
+
   ```
 
   ```

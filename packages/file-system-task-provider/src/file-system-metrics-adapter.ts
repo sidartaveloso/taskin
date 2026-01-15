@@ -1,3 +1,4 @@
+import type { IGitAnalyzer } from '@opentask/taskin-git-utils/src/git-analyzer.types';
 import type { IMetricsManager } from '@opentask/taskin-task-manager/src/metrics.types';
 import {
   type StatsQuery,
@@ -8,7 +9,6 @@ import {
   type UserStats,
   UserStatsSchema,
 } from '@opentask/taskin-types';
-import type { IGitAnalyzer } from '@opentask/taskin-git-utils/src/git-analyzer.types';
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { UserRegistry } from './user-registry';
@@ -53,7 +53,15 @@ function emptyCodeMetrics() {
 
 function emptyTemporalMetrics() {
   return {
-    byDayOfWeek: { '0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0 } as Record<string, number>,
+    byDayOfWeek: {
+      '0': 0,
+      '1': 0,
+      '2': 0,
+      '3': 0,
+      '4': 0,
+      '5': 0,
+      '6': 0,
+    } as Record<string, number>,
     byTimeOfDay: { morning: 0, afternoon: 0, evening: 0, night: 0 },
     streak: 0,
     trend: 'stable' as const,
@@ -105,8 +113,7 @@ async function calculateCodeMetrics(
     return {
       ...metrics,
       netChange: metrics.linesAdded - metrics.linesRemoved,
-      characters:
-        (metrics.linesAdded + metrics.linesRemoved) * 40, // estimate ~40 chars/line
+      characters: (metrics.linesAdded + metrics.linesRemoved) * 40, // estimate ~40 chars/line
     };
   } catch (error) {
     console.warn('Failed to calculate code metrics:', error);
@@ -124,7 +131,12 @@ async function calculateTemporalMetrics(
   until: Date,
 ): Promise<{
   byDayOfWeek: Record<string, number>;
-  byTimeOfDay: { morning: number; afternoon: number; evening: number; night: number };
+  byTimeOfDay: {
+    morning: number;
+    afternoon: number;
+    evening: number;
+    night: number;
+  };
   streak: number;
   trend: 'increasing' | 'decreasing' | 'stable';
 }> {
@@ -140,7 +152,15 @@ async function calculateTemporalMetrics(
     });
 
     // Calculate byDayOfWeek
-    const byDayOfWeek: Record<string, number> = { '0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0 };
+    const byDayOfWeek: Record<string, number> = {
+      '0': 0,
+      '1': 0,
+      '2': 0,
+      '3': 0,
+      '4': 0,
+      '5': 0,
+      '6': 0,
+    };
     const byTimeOfDay = { morning: 0, afternoon: 0, evening: 0, night: 0 };
     const commitsByDate = new Map<string, number>();
 
@@ -189,8 +209,12 @@ async function calculateTemporalMetrics(
     const firstHalf = commits.slice(0, midpoint);
     const secondHalf = commits.slice(midpoint);
 
-    const firstHalfAvg = firstHalf.length ? firstHalf.length / Math.max(1, sortedDates.length / 2) : 0;
-    const secondHalfAvg = secondHalf.length ? secondHalf.length / Math.max(1, sortedDates.length / 2) : 0;
+    const firstHalfAvg = firstHalf.length
+      ? firstHalf.length / Math.max(1, sortedDates.length / 2)
+      : 0;
+    const secondHalfAvg = secondHalf.length
+      ? secondHalf.length / Math.max(1, sortedDates.length / 2)
+      : 0;
 
     let trend: 'increasing' | 'decreasing' | 'stable' = 'stable';
     if (secondHalfAvg > firstHalfAvg * 1.2) trend = 'increasing';
