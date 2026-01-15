@@ -19,6 +19,7 @@ export default defineConfig({
     'zod',
     'ws',
     'express',
+    '@opentask/taskin-types',
   ],
   noExternal: [
     '@opentask/taskin-core',
@@ -28,7 +29,6 @@ export default defineConfig({
     '@opentask/taskin-task-provider-pinia',
     '@opentask/taskin-task-server-mcp',
     '@opentask/taskin-task-server-ws',
-    '@opentask/taskin-types',
     '@opentask/taskin-utils',
   ],
 });

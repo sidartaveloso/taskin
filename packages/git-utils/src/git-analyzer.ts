@@ -3,9 +3,9 @@
  * Service for analyzing Git repository history and extracting metrics
  */
 
+import type { GitCommit } from '@opentask/taskin-types';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import type { GitCommit } from '@opentask/taskin-types';
 import type {
   Author,
   BlameInfo,
@@ -20,10 +20,7 @@ const execAsync = promisify(exec);
 /**
  * Executes a git command and returns the output
  */
-async function executeGit(
-  command: string,
-  cwd?: string,
-): Promise<string> {
+async function executeGit(command: string, cwd?: string): Promise<string> {
   try {
     const { stdout } = await execAsync(`git ${command}`, {
       cwd: cwd || process.cwd(),
@@ -33,7 +30,12 @@ async function executeGit(
     return stdout.trim();
   } catch (error) {
     // If git command fails, return empty string for graceful degradation
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'ENOENT'
+    ) {
       throw new Error('Git is not installed or not in PATH');
     }
     return '';
@@ -131,26 +133,31 @@ export class GitAnalyzer implements IGitAnalyzer {
         const [hash, author, date, messageWithBody] = parts;
         // Split by null byte (character code 0)
         const nullByteIndex = messageWithBody.indexOf('\0');
-        const subject = nullByteIndex !== -1 
-          ? messageWithBody.substring(0, nullByteIndex)
-          : messageWithBody;
-        
+        const subject =
+          nullByteIndex !== -1
+            ? messageWithBody.substring(0, nullByteIndex)
+            : messageWithBody;
+
         // Body might span multiple lines until we hit numstat
         let bodyLines: string[] = [];
         if (nullByteIndex !== -1) {
           // Get rest of body from current line
           bodyLines.push(messageWithBody.substring(nullByteIndex + 1));
         }
-        
+
         // Collect body lines until we hit numstat (lines with \t) or next commit (lines with |)
         i++;
-        while (i < lines.length && !lines[i].includes('|') && !lines[i].includes('\t')) {
+        while (
+          i < lines.length &&
+          !lines[i].includes('|') &&
+          !lines[i].includes('\t')
+        ) {
           if (lines[i].trim()) {
             bodyLines.push(lines[i]);
           }
           i++;
         }
-        
+
         const body = bodyLines.join('\n');
         const fullMessage = body ? `${subject}\n\n${body}` : subject;
 
@@ -310,11 +317,7 @@ export class GitAnalyzer implements IGitAnalyzer {
 
   async getBlame(filePath: string): Promise<BlameInfo[]> {
     // Format: hash|author|date|lineNumber|content
-    const args = [
-      'blame',
-      '--line-porcelain',
-      filePath,
-    ];
+    const args = ['blame', '--line-porcelain', filePath];
 
     const output = await executeGit(args.join(' '), this.repositoryPath);
 
@@ -325,7 +328,7 @@ export class GitAnalyzer implements IGitAnalyzer {
     return this.parseBlame(output);
   }
 
-  private parseBlame(output: string): BlameInfo[]  {
+  private parseBlame(output: string): BlameInfo[] {
     const lines = output.split('\n');
     const blameInfo: BlameInfo[] = [];
 

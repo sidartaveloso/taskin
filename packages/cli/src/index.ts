@@ -15,6 +15,7 @@ import { mcpServerCommand } from './commands/mcp-server.js';
 import { createCommand } from './commands/new.js';
 import { pauseCommand } from './commands/pause.js';
 import { startCommand } from './commands/start.js';
+import { statsCommand } from './commands/stats.js';
 import { showCustomHelp } from './lib/help.js';
 import { getVersion } from './version.js';
 
@@ -35,6 +36,7 @@ createCommand(program);
 startCommand(program);
 pauseCommand(program);
 finishCommand(program);
+statsCommand(program);
 lintCommand(program);
 dashboardCommand(program);
 mcpServerCommand(program);
