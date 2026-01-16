@@ -9,7 +9,8 @@ import {
 import { GitAnalyzer } from '@opentask/taskin-git-utils';
 import type { StatsQuery, TeamStats, UserStats } from '@opentask/taskin-types';
 import path from 'path';
-import { colors, printHeader } from '../lib/colors.js';
+import chalk from 'chalk';
+import { printHeader } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
 
@@ -54,11 +55,14 @@ export const statsCommand = defineCommand({
 async function showStats(options: StatsOptions): Promise<void> {
   requireTaskinProject();
 
-  const configPath = path.join(process.cwd(), '.taskin', 'config.json');
   const tasksDir = path.join(process.cwd(), 'TASKS');
 
   // Initialize services
-  const userRegistry = new UserRegistry(configPath);
+  const userRegistry = new UserRegistry({
+    taskinDir: path.join(process.cwd(), '.taskin'),
+  });
+  await userRegistry.load();
+  
   const gitAnalyzer = new GitAnalyzer(process.cwd());
   const metricsAdapter = new FileSystemMetricsAdapter(
     tasksDir,
@@ -80,37 +84,36 @@ async function showStats(options: StatsOptions): Promise<void> {
       const stats = await metricsAdapter.getTaskMetrics(options.task, query);
       displayTaskStats(stats, options.detailed);
     } else {
-      const username =
-        options.user || userRegistry.getCurrentUser()?.name || 'unknown';
+      const username = options.user || process.env.USER || 'unknown';
       printHeader(`User Statistics: ${username}`, '👤');
       const stats = await metricsAdapter.getUserMetrics(username, query);
       displayUserStats(stats, options.detailed);
     }
   } catch (error) {
-    console.error(colors.red('\n❌ Error fetching stats:'), error);
+    console.error(chalk.red('\n❌ Error fetching stats:'), error);
     process.exit(1);
   }
 }
 
 function displayUserStats(stats: UserStats, detailed = false): void {
   console.log(
-    `${colors.dim('Period:')} ${stats.period} (${formatDate(stats.periodStart)} to ${formatDate(stats.periodEnd)})\n`,
+    `${chalk.dim('Period:')} ${stats.period} (${formatDate(stats.periodStart)} to ${formatDate(stats.periodEnd)})\n`,
   );
 
   // Code Metrics
-  console.log(colors.bold('📝 Code Metrics'));
+  console.log(chalk.bold('📝 Code Metrics'));
   console.log(
-    `  ${colors.green('+')}${stats.codeMetrics.linesAdded} lines added`,
+    `  ${chalk.green('+')}${stats.codeMetrics.linesAdded} lines added`,
   );
   console.log(
-    `  ${colors.red('-')}${stats.codeMetrics.linesRemoved} lines removed`,
+    `  ${chalk.red('-')}${stats.codeMetrics.linesRemoved} lines removed`,
   );
-  console.log(`  ${colors.cyan('=')}${stats.codeMetrics.netChange} net change`);
+  console.log(`  ${chalk.cyan('=')}${stats.codeMetrics.netChange} net change`);
   console.log(`  📁 ${stats.codeMetrics.filesChanged} files changed`);
   console.log(`  💾 ${stats.codeMetrics.commits} commits\n`);
 
   // Contribution Metrics
-  console.log(colors.bold('🎯 Contribution'));
+  console.log(chalk.bold('🎯 Contribution'));
   console.log(
     `  ✅ ${stats.contributionMetrics.tasksCompleted} tasks completed`,
   );
@@ -119,7 +122,7 @@ function displayUserStats(stats: UserStats, detailed = false): void {
   );
 
   // Engagement
-  console.log(colors.bold('⚡ Engagement'));
+  console.log(chalk.bold('⚡ Engagement'));
   console.log(
     `  🔥 ${(stats.engagementMetrics.completionRate * 100).toFixed(1)}% completion rate`,
   );
@@ -129,7 +132,7 @@ function displayUserStats(stats: UserStats, detailed = false): void {
 
   if (detailed) {
     // Temporal Metrics
-    console.log(colors.bold('⏰ Temporal Patterns'));
+    console.log(chalk.bold('⏰ Temporal Patterns'));
     console.log('  By Day of Week:');
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     Object.entries(stats.temporalMetrics.byDayOfWeek).forEach(
@@ -163,25 +166,25 @@ function displayUserStats(stats: UserStats, detailed = false): void {
 
 function displayTeamStats(stats: TeamStats, detailed = false): void {
   console.log(
-    `${colors.dim('Period:')} ${stats.period} (${formatDate(stats.periodStart)} to ${formatDate(stats.periodEnd)})\n`,
+    `${chalk.dim('Period:')} ${stats.period} (${formatDate(stats.periodStart)} to ${formatDate(stats.periodEnd)})\n`,
   );
 
-  console.log(colors.bold('👥 Team Overview'));
+  console.log(chalk.bold('👥 Team Overview'));
   console.log(`  👤 ${stats.totalContributors} contributors`);
   console.log(`  💾 ${stats.totalCommits} total commits`);
   console.log(`  ✅ ${stats.totalTasksCompleted} tasks completed\n`);
 
-  console.log(colors.bold('📝 Code Metrics'));
+  console.log(chalk.bold('📝 Code Metrics'));
   console.log(
-    `  ${colors.green('+')}${stats.codeMetrics.linesAdded} lines added`,
+    `  ${chalk.green('+')}${stats.codeMetrics.linesAdded} lines added`,
   );
   console.log(
-    `  ${colors.red('-')}${stats.codeMetrics.linesRemoved} lines removed`,
+    `  ${chalk.red('-')}${stats.codeMetrics.linesRemoved} lines removed`,
   );
   console.log(`  📁 ${stats.codeMetrics.filesChanged} files changed\n`);
 
   if (detailed && stats.contributors.length > 0) {
-    console.log(colors.bold('🏆 Top Contributors'));
+    console.log(chalk.bold('🏆 Top Contributors'));
     stats.contributors
       .sort((a, b) => b.commits - a.commits)
       .slice(0, 5)
@@ -194,24 +197,24 @@ function displayTeamStats(stats: TeamStats, detailed = false): void {
 }
 
 function displayTaskStats(stats: any, detailed = false): void {
-  console.log(`${colors.dim('Task:')} ${stats.taskId} - ${stats.title}\n`);
+  console.log(`${chalk.dim('Task:')} ${stats.taskId} - ${stats.title}\n`);
 
-  console.log(colors.bold('📋 Task Info'));
+  console.log(chalk.bold('📋 Task Info'));
   console.log(`  Status: ${getStatusEmoji(stats.status)} ${stats.status}`);
   console.log(`  Type: ${stats.type}`);
   console.log(`  Assignee: ${stats.assignee || 'unassigned'}\n`);
 
-  console.log(colors.bold('📝 Code Metrics'));
+  console.log(chalk.bold('📝 Code Metrics'));
   console.log(
-    `  ${colors.green('+')}${stats.codeMetrics.linesAdded} lines added`,
+    `  ${chalk.green('+')}${stats.codeMetrics.linesAdded} lines added`,
   );
   console.log(
-    `  ${colors.red('-')}${stats.codeMetrics.linesRemoved} lines removed`,
+    `  ${chalk.red('-')}${stats.codeMetrics.linesRemoved} lines removed`,
   );
   console.log(`  📁 ${stats.codeMetrics.filesChanged} files changed\n`);
 
   if (stats.contributors.length > 0) {
-    console.log(colors.bold('👥 Contributors'));
+    console.log(chalk.bold('👥 Contributors'));
     stats.contributors.forEach((c: string) => {
       console.log(`  • ${c}`);
     });
@@ -227,7 +230,7 @@ function createBar(value: number, max: number, length = 20): string {
   if (max === 0) return '░'.repeat(length);
   const filled = Math.round((value / max) * length);
   return (
-    colors.cyan('█'.repeat(filled)) + colors.dim('░'.repeat(length - filled))
+    chalk.cyan('█'.repeat(filled)) + chalk.dim('░'.repeat(length - filled))
   );
 }
 
