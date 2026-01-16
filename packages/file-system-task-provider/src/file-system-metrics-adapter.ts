@@ -421,10 +421,11 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         username: string;
         commits: number;
         tasksCompleted: number;
-        codeMetrics: any;
+        codeMetrics: ReturnType<typeof emptyCodeMetrics>;
       }
     >();
 
+    // Collect task completion data
     for (const t of tasks) {
       const assignee = t.assignee || 'unknown';
       const prev = contributors.get(assignee) || {
@@ -433,22 +434,55 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         tasksCompleted: 0,
         codeMetrics: emptyCodeMetrics(),
       };
-      prev.commits += 0;
       if (t.status === 'done') prev.tasksCompleted += 1;
       contributors.set(assignee, prev);
     }
+
+    // Calculate git metrics for each contributor
+    for (const [username, data] of contributors.entries()) {
+      try {
+        const codeMetrics = await calculateCodeMetrics(
+          this.gitAnalyzer,
+          username,
+          weekAgo,
+          now,
+        );
+        data.commits = codeMetrics.commits;
+        data.codeMetrics = codeMetrics;
+      } catch (error) {
+        console.error(`Failed to calculate metrics for ${username}:`, error);
+      }
+    }
+
+    // Aggregate team totals
+    const totalCommits = Array.from(contributors.values()).reduce(
+      (sum, c) => sum + c.commits,
+      0,
+    );
+    const totalTasksCompleted = Array.from(contributors.values()).reduce(
+      (sum, c) => sum + c.tasksCompleted,
+      0,
+    );
+    const aggregatedCodeMetrics = Array.from(contributors.values()).reduce(
+      (acc, c) => ({
+        linesAdded: acc.linesAdded + c.codeMetrics.linesAdded,
+        linesRemoved: acc.linesRemoved + c.codeMetrics.linesRemoved,
+        netChange: acc.netChange + c.codeMetrics.netChange,
+        characters: acc.characters + c.codeMetrics.characters,
+        filesChanged: acc.filesChanged + c.codeMetrics.filesChanged,
+        commits: acc.commits + c.codeMetrics.commits,
+      }),
+      emptyCodeMetrics(),
+    );
 
     const team: TeamStats = {
       period: 'week',
       periodStart: iso(weekAgo),
       periodEnd: iso(now),
       totalContributors: contributors.size,
-      totalCommits: 0,
-      totalTasksCompleted: Array.from(contributors.values()).reduce(
-        (s, c) => s + c.tasksCompleted,
-        0,
-      ),
-      codeMetrics: emptyCodeMetrics(),
+      totalCommits,
+      totalTasksCompleted,
+      codeMetrics: aggregatedCodeMetrics,
       contributors: Array.from(contributors.values()).map((c) => ({
         username: c.username,
         commits: c.commits,

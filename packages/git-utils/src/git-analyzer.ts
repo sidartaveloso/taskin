@@ -133,15 +133,15 @@ export class GitAnalyzer implements IGitAnalyzer {
       // and the first part should be a valid git hash (40 chars hex)
       if (line.includes('|')) {
         const parts = line.split('|');
-        
+
         // Validate we have all required parts and first part looks like a hash
         if (parts.length < 4 || !/^[0-9a-f]{40}$/.test(parts[0])) {
           i++;
           continue;
         }
-        
+
         const [hash, author, date, messageWithBody] = parts;
-        
+
         // Split by null byte (character code 0)
         const nullByteIndex = messageWithBody?.indexOf('\0') ?? -1;
         const subject =
