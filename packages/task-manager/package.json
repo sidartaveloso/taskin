@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-manager",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Task lifecycle management for Taskin",
   "type": "module",
   "motivation": "To manage the lifecycle of tasks, including creation, status updates, and retrieval.",
@@ -44,7 +44,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opentask/taskin-types": "workspace:*"
+    "@opentask/taskin-types": "^1.0.5"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

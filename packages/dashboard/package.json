@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-dashboard",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Dashboard web component for task management with Taskin",
   "motivation": "Provide visual interface for task management",
   "solve": "Embeddable Vue dashboard component for task visualization",

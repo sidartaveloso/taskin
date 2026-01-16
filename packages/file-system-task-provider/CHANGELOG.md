@@ -1,5 +1,14 @@
 # @opentask/taskin-file-system-provider
 
+## 2.0.2
+
+### Patch Changes
+
+- fix: replace workspace:\* dependencies with actual npm versions
+- Updated dependencies
+  - @opentask/taskin-git-utils@2.0.2
+  - @opentask/taskin-task-manager@1.0.7
+
 ## 2.0.1
 
 ### Patch Changes
