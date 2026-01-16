@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @opentask/taskin-task-provider-pinia@1.0.0
+
 ## [0.1.0] - 2025-11-12
 
 ### ✨ Added
