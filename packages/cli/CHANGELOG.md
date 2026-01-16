@@ -1,5 +1,11 @@
 # taskin
 
+## 2.0.1
+
+### Patch Changes
+
+- fix: move internal dependencies from devDependencies to dependencies to ensure they are installed when the package is used
+
 ## 2.0.0
 
 ### Major Changes
