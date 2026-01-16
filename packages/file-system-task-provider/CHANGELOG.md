@@ -1,5 +1,14 @@
 # @opentask/taskin-file-system-provider
 
+## 2.0.3
+
+### Patch Changes
+
+- fix: publish missing packages with incremented versions
+- Updated dependencies
+  - @opentask/taskin-git-utils@2.0.3
+  - @opentask/taskin-task-manager@1.0.8
+
 ## 2.0.2
 
 ### Patch Changes

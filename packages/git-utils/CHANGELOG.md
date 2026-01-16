@@ -1,5 +1,11 @@
 # @opentask/taskin-git-utils
 
+## 2.0.3
+
+### Patch Changes
+
+- fix: publish missing packages with incremented versions
+
 ## 2.0.2
 
 ### Patch Changes
