@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "composite": true,
+    "module": "ESNext",
     "outDir": "./dist",
     "skipLibCheck": true
   },
