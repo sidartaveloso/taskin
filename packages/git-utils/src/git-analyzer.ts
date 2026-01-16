@@ -75,8 +75,9 @@ export class GitAnalyzer implements IGitAnalyzer {
     const args: string[] = ['log'];
 
     // Format: hash|author|date|subject%x00body
+    // Use single quotes to prevent shell interpretation of %
     args.push(
-      '--pretty=format:%H|%an|%aI|%s%x00%b',
+      "--pretty='format:%H|%an|%aI|%s%x00%b'",
       '--numstat', // Get file stats
     );
 
@@ -104,7 +105,8 @@ export class GitAnalyzer implements IGitAnalyzer {
       args.push('--', options.filePath);
     }
 
-    const output = await executeGit(args.join(' '), this.repositoryPath);
+    const command = args.join(' ');
+    const output = await executeGit(command, this.repositoryPath);
 
     if (!output) {
       return [];
@@ -127,16 +129,25 @@ export class GitAnalyzer implements IGitAnalyzer {
         continue;
       }
 
-      // Parse commit header
+      // Parse commit header - must have exactly 4 pipe-separated parts (hash|author|date|message)
+      // and the first part should be a valid git hash (40 chars hex)
       if (line.includes('|')) {
         const parts = line.split('|');
+        
+        // Validate we have all required parts and first part looks like a hash
+        if (parts.length < 4 || !/^[0-9a-f]{40}$/.test(parts[0])) {
+          i++;
+          continue;
+        }
+        
         const [hash, author, date, messageWithBody] = parts;
+        
         // Split by null byte (character code 0)
-        const nullByteIndex = messageWithBody.indexOf('\0');
+        const nullByteIndex = messageWithBody?.indexOf('\0') ?? -1;
         const subject =
           nullByteIndex !== -1
             ? messageWithBody.substring(0, nullByteIndex)
-            : messageWithBody;
+            : messageWithBody || '';
 
         // Body might span multiple lines until we hit numstat
         let bodyLines: string[] = [];
