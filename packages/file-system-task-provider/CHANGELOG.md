@@ -1,5 +1,14 @@
 # @opentask/taskin-file-system-provider
 
+## 2.0.1
+
+### Patch Changes
+
+- chore: publish packages required by taskin CLI
+- Updated dependencies
+  - @opentask/taskin-git-utils@2.0.1
+  - @opentask/taskin-task-manager@1.0.6
+
 ## 2.0.0
 
 ### Major Changes
