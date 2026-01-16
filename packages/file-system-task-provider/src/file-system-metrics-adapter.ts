@@ -69,6 +69,15 @@ function emptyTemporalMetrics() {
 }
 
 /**
+ * Removes code blocks (fenced with ```) from markdown content
+ * This prevents parsing metadata that appears inside code examples
+ */
+function removeCodeBlocks(content: string): string {
+  // Remove triple-backtick code blocks (including language identifier)
+  return content.replace(/```[\s\S]*?```/g, '');
+}
+
+/**
  * Calculates code metrics from git commits
  */
 async function calculateCodeMetrics(
@@ -296,9 +305,12 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         content.match(TASK_TITLE_PATTERNS.withNumber);
       const title = titleMatch ? titleMatch[1] : file.replace(/\.md$/, '');
 
+      // Remove code blocks before extracting metadata to avoid parsing examples
+      const contentWithoutCodeBlocks = removeCodeBlocks(content);
+
       const extract = (name: string) => {
         const rx = new RegExp(`^${name}:\\s*(.+)$`, 'im');
-        const m = content.match(rx);
+        const m = contentWithoutCodeBlocks.match(rx);
         return m ? m[1].trim() : undefined;
       };
 

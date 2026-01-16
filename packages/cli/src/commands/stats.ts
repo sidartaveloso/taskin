@@ -186,7 +186,18 @@ function displayTeamStats(stats: TeamStats, detailed = false): void {
   if (detailed && stats.contributors.length > 0) {
     console.log(chalk.bold('🏆 Top Contributors'));
     stats.contributors
-      .sort((a, b) => b.commits - a.commits)
+      .sort((a, b) => {
+        // Sort by commits first (descending)
+        if (b.commits !== a.commits) {
+          return b.commits - a.commits;
+        }
+        // If commits are equal, sort by tasks completed (descending)
+        if (b.tasksCompleted !== a.tasksCompleted) {
+          return b.tasksCompleted - a.tasksCompleted;
+        }
+        // If both are equal, sort alphabetically by username (ascending)
+        return a.username.localeCompare(b.username);
+      })
       .slice(0, 5)
       .forEach((contrib, idx) => {
         console.log(

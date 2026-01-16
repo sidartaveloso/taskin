@@ -66,4 +66,75 @@ describe('FileSystemMetricsAdapter', () => {
     expect(team.totalContributors).toBeGreaterThanOrEqual(2);
     expect(team.totalTasksCompleted).toBeGreaterThanOrEqual(1);
   });
+
+  it('should ignore Assignee field inside code blocks', async () => {
+    const files = ['task-001-real.md', 'task-002-summary.md'];
+    const realTask = `# Task 001 — Real Task
+Status: done
+Assignee: alice
+
+## Description
+This is a real task.`;
+
+    // This document has NO real Assignee, only one inside code block
+    const summaryWithCodeBlock = `# Task 002 — Summary Document
+Status: done
+
+## Example
+
+\`\`\`typescript
+const content = \`# Task 001 — Already Fixed
+Status: done
+Type: feat
+Assignee: John Doe
+
+## Description
+Already in inline format.\`;
+\`\`\`
+
+More content here.`;
+
+    (fs.readdir as Mock).mockResolvedValue(files);
+    (fs.readFile as Mock)
+      .mockResolvedValueOnce(realTask)
+      .mockResolvedValueOnce(summaryWithCodeBlock);
+
+    const team = await adapter.getTeamMetrics('team-x');
+
+    // Should only count alice (real assignee), NOT John Doe from code block
+    const contributorNames = team.contributors.map((c) => c.username);
+    expect(contributorNames).toContain('alice');
+    expect(contributorNames).not.toContain('John Doe');
+    // Should have alice + unknown (task-002 without assignee)
+    expect(team.totalContributors).toBe(2);
+  });
+
+  it('should ignore Status and Type fields inside code blocks', async () => {
+    const files = ['task-001-doc.md'];
+
+    // Task is actually pending, but has done/feat in code block
+    const taskWithCodeExample = `# Task 001 — Documentation
+Status: pending
+Type: docs
+
+## Example of task format
+
+\`\`\`markdown
+# Task Example
+Status: done
+Type: feat
+Assignee: Someone
+\`\`\`
+
+This shows the format.`;
+
+    (fs.readdir as Mock).mockResolvedValue(files);
+    (fs.readFile as Mock).mockResolvedValue(taskWithCodeExample);
+
+    const taskMetrics = await adapter.getTaskMetrics('001');
+
+    // Should read actual status/type, NOT from code block
+    expect(taskMetrics.status).toBe('pending');
+    expect(taskMetrics.type).toBe('docs');
+  });
 });
