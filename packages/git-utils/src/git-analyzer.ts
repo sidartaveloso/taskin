@@ -18,6 +18,13 @@ import type {
 const execAsync = promisify(exec);
 
 /**
+ * Type guard to check if an error is a Node.js system error
+ */
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return typeof error === 'object' && error !== null && 'code' in error;
+}
+
+/**
  * Executes a git command and returns the output
  */
 async function executeGit(command: string, cwd?: string): Promise<string> {
@@ -29,15 +36,16 @@ async function executeGit(command: string, cwd?: string): Promise<string> {
     });
     return stdout.trim();
   } catch (error) {
-    // If git command fails, return empty string for graceful degradation
-    if (
-      error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      error.code === 'ENOENT'
-    ) {
-      throw new Error('Git is not installed or not in PATH');
+    // Use type guard for better type safety
+    if (isNodeError(error)) {
+      if (error.code === 'ENOENT') {
+        throw new Error('Git is not installed or not in PATH');
+      }
+      // Other git errors are handled gracefully by returning empty string
+      // This allows the system to continue operating even if git commands fail
+      // (e.g., repository not found, permission errors, etc.)
     }
+    // Return empty string for graceful degradation
     return '';
   }
 }
@@ -74,8 +82,8 @@ export class GitAnalyzer implements IGitAnalyzer {
   async getCommits(options: CommitQueryOptions = {}): Promise<GitCommit[]> {
     const args: string[] = ['log'];
 
-    // Format: hash|author|date|subject%x00body
-    // Use single quotes to prevent shell interpretation of %
+    // Format: hash|author|date|subject%x00%body
+    // Use single quotes to prevent shell interpretation of format string
     args.push(
       "--pretty='format:%H|%an|%aI|%s%x00%b'",
       '--numstat', // Get file stats

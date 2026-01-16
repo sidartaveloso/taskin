@@ -6,6 +6,16 @@ import type {
   WebSocketMessage,
 } from './pinia-task-provider.types.js';
 
+/**
+ * WebSocket timing constants (in milliseconds)
+ */
+const DEFAULT_RECONNECT_DELAY = 5000; // 5 seconds
+const HEARTBEAT_INTERVAL = 10000; // 10 seconds
+const HEARTBEAT_TIMEOUT = 30000; // 30 seconds
+const TASK_REQUEST_TIMEOUT = 5000; // 5 seconds
+const TASK_REQUEST_CHECK_INTERVAL = 100; // 100ms
+const TASK_RESPONSE_DELAY = 500; // 500ms
+
 // WebSocket instance storage (outside Pinia store)
 const wsInstances = new Map<string, WebSocket>();
 const wsConfigs = new Map<string, PiniaTaskProviderConfig>();
@@ -13,14 +23,30 @@ const heartbeatIntervals = new Map<string, NodeJS.Timeout>();
 const lastPongs = new Map<string, number>();
 
 /**
+ * Pinia store context with typed this
+ */
+interface PiniaStoreContext extends PiniaTaskStoreState {
+  $id: string;
+  // Actions
+  connect(config: PiniaTaskProviderConfig): void;
+  _connect(): void;
+  disconnect(): void;
+  send(message: WebSocketMessage): void;
+  handleMessage(message: WebSocketMessage): void;
+  handleError(error: Error): void;
+  reconnect(): void;
+  _startHeartbeat(): void;
+  _stopHeartbeat(): void;
+  _log(...args: unknown[]): void;
+  findTask(taskId: string): Promise<TaskFile | undefined>;
+  getAllTasks(): Promise<TaskFile[]>;
+  updateTask(task: TaskFile): Promise<void>;
+}
+
+/**
  * Pinia store for task management with WebSocket synchronization
  */
-const _usePiniaTaskProvider = defineStore<
-  'taskin-tasks',
-  PiniaTaskStoreState,
-  Record<string, any>,
-  any
->('taskin-tasks', {
+const _usePiniaTaskProvider = defineStore('taskin-tasks', {
   state: (): PiniaTaskStoreState => ({
     tasks: [],
     loading: false,
@@ -62,7 +88,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Connect to WebSocket server
      */
-    connect(this: any, config: PiniaTaskProviderConfig): void {
+    connect(this: PiniaStoreContext, config: PiniaTaskProviderConfig): void {
       const storeId = this.$id;
 
       if (wsInstances.has(storeId)) {
@@ -71,7 +97,7 @@ const _usePiniaTaskProvider = defineStore<
 
       wsConfigs.set(storeId, {
         autoReconnect: true,
-        reconnectDelay: 5000,
+        reconnectDelay: DEFAULT_RECONNECT_DELAY,
         maxReconnectAttempts: 0,
         debug: false,
         ...config,
@@ -83,7 +109,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Internal connection logic
      */
-    _connect(this: any): void {
+    _connect(this: PiniaStoreContext): void {
       const storeId = this.$id;
       const config = wsConfigs.get(storeId);
 
@@ -142,7 +168,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Disconnect from WebSocket server
      */
-    disconnect(this: any): void {
+    disconnect(this: PiniaStoreContext): void {
       const storeId = this.$id;
       this._log('Disconnecting');
       this._stopHeartbeat();
@@ -165,7 +191,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Send message to WebSocket server
      */
-    send(this: any, message: WebSocketMessage): void {
+    send(this: PiniaStoreContext, message: WebSocketMessage): void {
       const storeId = this.$id;
       const ws = wsInstances.get(storeId);
 
@@ -186,7 +212,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Handle incoming WebSocket message
      */
-    handleMessage(this: any, message: WebSocketMessage): void {
+    handleMessage(this: PiniaStoreContext, message: WebSocketMessage): void {
       this._log('Received:', message);
 
       switch (message.type) {
@@ -266,7 +292,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Handle connection error
      */
-    handleError(this: any, error: Error): void {
+    handleError(this: PiniaStoreContext, error: Error): void {
       this._log('Error:', error.message);
       this.error = error.message;
       this.connected = false;
@@ -275,7 +301,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Attempt reconnection
      */
-    reconnect(this: any): void {
+    reconnect(this: PiniaStoreContext): void {
       const config = wsConfigs.get(this.$id);
       if (!config) return;
 
@@ -287,7 +313,7 @@ const _usePiniaTaskProvider = defineStore<
       }
 
       this.reconnectAttempts++;
-      const delay = config.reconnectDelay || 5000;
+      const delay = config.reconnectDelay || DEFAULT_RECONNECT_DELAY;
 
       this._log(
         `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`,
@@ -301,7 +327,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Start heartbeat to keep connection alive
      */
-    _startHeartbeat(this: any): void {
+    _startHeartbeat(this: PiniaStoreContext): void {
       const storeId = this.$id;
       this._stopHeartbeat();
 
@@ -311,7 +337,7 @@ const _usePiniaTaskProvider = defineStore<
         const timeSinceLastPong = now - (lastPongs.get(storeId) || now);
 
         // If no pong for 30 seconds, consider connection dead
-        if (timeSinceLastPong > 30000) {
+        if (timeSinceLastPong > HEARTBEAT_TIMEOUT) {
           this._log('Heartbeat timeout, reconnecting');
           this.disconnect();
           this.reconnect();
@@ -319,7 +345,7 @@ const _usePiniaTaskProvider = defineStore<
         }
 
         this.send({ type: 'ping' });
-      }, 10000); // Send ping every 10 seconds
+      }, HEARTBEAT_INTERVAL); // Send ping every 10 seconds
 
       heartbeatIntervals.set(storeId, interval);
     },
@@ -327,7 +353,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Stop heartbeat
      */
-    _stopHeartbeat(this: any): void {
+    _stopHeartbeat(this: PiniaStoreContext): void {
       const storeId = this.$id;
       const interval = heartbeatIntervals.get(storeId);
 
@@ -340,7 +366,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Debug logging
      */
-    _log(this: any, ...args: unknown[]): void {
+    _log(this: PiniaStoreContext, ...args: unknown[]): void {
       const config = wsConfigs.get(this.$id);
       if (config?.debug) {
         console.log('[PiniaTaskProvider]', ...args);
@@ -354,7 +380,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Find a task by ID
      */
-    async findTask(this: any, taskId: string): Promise<TaskFile | undefined> {
+    async findTask(this: PiniaStoreContext, taskId: string): Promise<TaskFile | undefined> {
       // Check cache first
       const cached = this.tasks.find((t: TaskFile) => t.id === taskId);
       if (cached) {
@@ -369,7 +395,7 @@ const _usePiniaTaskProvider = defineStore<
           // Set timeout
           const timeout = setTimeout(() => {
             resolve(undefined);
-          }, 5000);
+          }, TASK_REQUEST_TIMEOUT);
 
           // Listen for response via message handler
           this.send({ type: 'find', payload: { taskId }, requestId });
@@ -380,7 +406,7 @@ const _usePiniaTaskProvider = defineStore<
           setTimeout(() => {
             clearTimeout(timeout);
             resolve(this.tasks.find((t: TaskFile) => t.id === taskId));
-          }, 500);
+          }, TASK_RESPONSE_DELAY);
         });
       }
 
@@ -390,7 +416,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Get all tasks
      */
-    async getAllTasks(this: any): Promise<TaskFile[]> {
+    async getAllTasks(this: PiniaStoreContext): Promise<TaskFile[]> {
       // Return cached tasks if available
       if (this.tasks.length > 0) {
         return this.tasks;
@@ -406,7 +432,7 @@ const _usePiniaTaskProvider = defineStore<
           const timeout = setTimeout(() => {
             this.loading = false;
             resolve(this.tasks);
-          }, 5000);
+          }, TASK_REQUEST_TIMEOUT);
 
           // Check periodically if tasks are loaded
           const checkInterval = setInterval(() => {
@@ -416,7 +442,7 @@ const _usePiniaTaskProvider = defineStore<
               this.loading = false;
               resolve(this.tasks);
             }
-          }, 100);
+          }, TASK_REQUEST_CHECK_INTERVAL);
         });
       }
 
@@ -426,7 +452,7 @@ const _usePiniaTaskProvider = defineStore<
     /**
      * Update a task
      */
-    async updateTask(this: any, task: TaskFile): Promise<void> {
+    async updateTask(this: PiniaStoreContext, task: TaskFile): Promise<void> {
       if (!this.connected) {
         throw new Error('Not connected to server');
       }
@@ -443,10 +469,11 @@ const _usePiniaTaskProvider = defineStore<
   },
 });
 
-// Export with explicit any type to avoid Zod type issues in declarations
-// Type is properly inferred at usage sites
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const usePiniaTaskProvider: any = _usePiniaTaskProvider;
+/**
+ * Export Pinia store with proper typing
+ * Type is fully inferred from defineStore and PiniaStoreContext
+ */
+export const usePiniaTaskProvider = _usePiniaTaskProvider;
 
 /**
  * Create an ITaskProvider adapter for the Pinia store

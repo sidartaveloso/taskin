@@ -160,6 +160,8 @@ export const GitCommitSchema = z.object({
   }, z.string().datetime()),
   message: z.string(),
   filesChanged: z.number().int().nonnegative(),
+  // Using z.coerce for git output (strings like "123") -> numbers
+  // This is intentional for parsing external data sources
   linesAdded: z.coerce.number().int().nonnegative(),
   linesRemoved: z.coerce.number().int().nonnegative(),
   coAuthors: z.array(z.string()).optional(),
@@ -167,6 +169,8 @@ export const GitCommitSchema = z.object({
 
 /**
  * Code metrics for a commit or period
+ * Uses z.coerce to handle external data sources (Git output, API responses)
+ * that may provide numbers as strings
  * @public
  */
 export const CodeMetricsSchema = z.object({
