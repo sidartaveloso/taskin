@@ -8,8 +8,8 @@ import {
 } from '@opentask/taskin-file-system-provider';
 import { GitAnalyzer } from '@opentask/taskin-git-utils';
 import type { StatsQuery, TeamStats, UserStats } from '@opentask/taskin-types';
-import path from 'path';
 import chalk from 'chalk';
+import path from 'path';
 import { printHeader } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
@@ -62,7 +62,7 @@ async function showStats(options: StatsOptions): Promise<void> {
     taskinDir: path.join(process.cwd(), '.taskin'),
   });
   await userRegistry.load();
-  
+
   const gitAnalyzer = new GitAnalyzer(process.cwd());
   const metricsAdapter = new FileSystemMetricsAdapter(
     tasksDir,
