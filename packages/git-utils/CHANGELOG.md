@@ -1,5 +1,11 @@
 # @opentask/taskin-git-utils
 
+## 2.0.1
+
+### Patch Changes
+
+- chore: publish packages required by taskin CLI
+
 ## 2.0.0
 
 ### Major Changes
