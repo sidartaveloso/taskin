@@ -1,5 +1,11 @@
 # @opentask/taskin-git-utils
 
+## 2.0.2
+
+### Patch Changes
+
+- fix: replace workspace:\* dependencies with actual npm versions
+
 ## 2.0.1
 
 ### Patch Changes

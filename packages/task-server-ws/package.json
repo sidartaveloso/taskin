@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-server-ws",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "WebSocket server for real-time task management",
   "motivation": "Enable real-time task updates across multiple clients",
   "solve": "Provides WebSocket server for task synchronization",
