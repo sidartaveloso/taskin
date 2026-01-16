@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-provider-pinia",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Pinia store for task management integration with Taskin",
   "motivation": "Provide Vue 3 reactive state management for tasks",
   "solve": "Integrates Pinia with Taskin task providers",

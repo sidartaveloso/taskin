@@ -1,5 +1,11 @@
 # @opentask/taskin-task-manager
 
+## 1.0.8
+
+### Patch Changes
+
+- fix: publish missing packages with incremented versions
+
 ## 1.0.7
 
 ### Patch Changes
