@@ -14,6 +14,21 @@ import path from 'path';
 import type { UserRegistry } from './user-registry';
 
 /**
+ * Time constants for date calculations
+ */
+const MILLISECONDS_PER_SECOND = 1000;
+const SECONDS_PER_MINUTE = 60;
+const MINUTES_PER_HOUR = 60;
+const HOURS_PER_DAY = 24;
+const DAYS_PER_WEEK = 7;
+
+const MILLISECONDS_PER_DAY =
+  HOURS_PER_DAY *
+  MINUTES_PER_HOUR *
+  SECONDS_PER_MINUTE *
+  MILLISECONDS_PER_SECOND;
+
+/**
  * Task file parsing patterns
  * Extracted as constants for maintainability and testing
  */
@@ -36,8 +51,13 @@ type TaskFileData = {
   filePath: string;
 };
 
-function iso(d: Date) {
-  return d.toISOString();
+/**
+ * Converts a Date object to ISO 8601 string format
+ * @param date - The date to convert
+ * @returns ISO 8601 formatted string (e.g., "2026-01-16T10:30:00.000Z")
+ */
+function toISOString(date: Date): string {
+  return date.toISOString();
 }
 
 function emptyCodeMetrics() {
@@ -362,7 +382,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     const user = this.userRegistry.getUser(userId);
     const username = user ? user.name : userId;
     const now = new Date();
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(Date.now() - DAYS_PER_WEEK * MILLISECONDS_PER_DAY);
 
     const tasks = await this.readTaskFiles();
     const assigned = tasks.filter((t) => {
@@ -395,8 +415,8 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     const rawMetrics = {
       username,
       period: 'week',
-      periodStart: iso(weekAgo),
-      periodEnd: iso(now),
+      periodStart: toISOString(weekAgo),
+      periodEnd: toISOString(now),
       codeMetrics,
       temporalMetrics,
       contributionMetrics: {
@@ -404,10 +424,10 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         tasksCompleted: completed,
         averageCompletionTime: 0, // TODO: calculate from task timestamps
         taskTypeDistribution: {}, // TODO: calculate from task types
-        activityFrequency: codeMetrics.commits / 7, // commits per day
+        activityFrequency: codeMetrics.commits / DAYS_PER_WEEK, // commits per day
       },
       engagementMetrics: {
-        commitsPerDay: codeMetrics.commits / 7,
+        commitsPerDay: codeMetrics.commits / DAYS_PER_WEEK,
         consistency: 0, // TODO: calculate standard deviation
         activeTasksCount: active,
         completionRate: assigned.length ? completed / assigned.length : 0,
@@ -424,7 +444,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     _query?: StatsQuery,
   ): Promise<TeamStats> {
     const now = new Date();
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(Date.now() - DAYS_PER_WEEK * MILLISECONDS_PER_DAY);
     const tasks = await this.readTaskFiles();
 
     const contributors = new Map<
@@ -489,8 +509,8 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
 
     const team: TeamStats = {
       period: 'week',
-      periodStart: iso(weekAgo),
-      periodEnd: iso(now),
+      periodStart: toISOString(weekAgo),
+      periodEnd: toISOString(now),
       totalContributors: contributors.size,
       totalCommits,
       totalTasksCompleted,
@@ -516,14 +536,25 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
       (t) => t.id === taskId || t.filePath.includes(taskId),
     );
     const now = new Date();
+    const validStatuses: TaskStatus[] = [
+      'pending',
+      'in-progress',
+      'done',
+      'blocked',
+      'canceled',
+    ];
+
     const base = {
       taskId,
       title: found ? found.title : taskId,
       type: (found && found.type) || 'feat',
-      status: (found && (found.status as any)) || 'pending',
+      status:
+        found?.status && validStatuses.includes(found.status)
+          ? found.status
+          : 'pending',
       assignee: found?.assignee,
       duration: 0,
-      created: iso(now),
+      created: toISOString(now),
       contributors: [],
       codeMetrics: emptyCodeMetrics(),
       refactoringMetrics: undefined,
