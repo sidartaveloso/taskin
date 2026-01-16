@@ -3,6 +3,7 @@
  */
 
 export * from './dashboard.js';
+export * from './export.js';
 export * from './finish.js';
 export * from './init.js';
 export * from './lint.js';

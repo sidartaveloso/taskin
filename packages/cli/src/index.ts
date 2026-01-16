@@ -7,6 +7,7 @@
 
 import { Command } from 'commander';
 import { dashboardCommand } from './commands/dashboard.js';
+import { registerExportCommand } from './commands/export.js';
 import { finishCommand } from './commands/finish.js';
 import { initCommand } from './commands/init.js';
 import { lintCommand } from './commands/lint.js';
@@ -37,6 +38,7 @@ startCommand(program);
 pauseCommand(program);
 finishCommand(program);
 statsCommand(program);
+registerExportCommand(program);
 lintCommand(program);
 dashboardCommand(program);
 mcpServerCommand(program);
