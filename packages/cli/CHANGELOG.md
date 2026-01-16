@@ -1,5 +1,11 @@
 # taskin
 
+## 2.0.2
+
+### Patch Changes
+
+- fix: update internal dependencies to latest published versions
+
 ## 2.0.1
 
 ### Patch Changes
