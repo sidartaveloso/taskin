@@ -1,6 +1,6 @@
 # Task 012 — somente usuarios e tasks do taskin estão sendo considerados nas metricas
 
-Status: pending
+Status: in-progress
 Type: fix
 Assignee: Sidarta Veloso
 
