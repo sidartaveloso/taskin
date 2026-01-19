@@ -1,5 +1,16 @@
 # @opentask/taskin-git-utils
 
+## 2.1.0
+
+### Minor Changes
+
+- Include all git authors and registry users in team metrics
+  - Team metrics now aggregate all git committers in the period
+  - Include all registered Taskin users even if they have no tasks
+  - Fix git command execution issues with quoted parameters
+  - Accept abbreviated git hashes (6-40 chars)
+  - Increase git command timeout to 30s
+
 ## 2.0.3
 
 ### Patch Changes
