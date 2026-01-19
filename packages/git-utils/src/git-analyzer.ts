@@ -33,6 +33,7 @@ async function executeGit(command: string, cwd?: string): Promise<string> {
       cwd: cwd || process.cwd(),
       encoding: 'utf8',
       maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large repos
+      timeout: 30000, // 30 second timeout
     });
     return stdout.trim();
   } catch (error) {
@@ -94,11 +95,11 @@ export class GitAnalyzer implements IGitAnalyzer {
     }
 
     if (options.until) {
-      args.push(`--until="${options.until}"`);
+      args.push(`--until=${options.until}`);
     }
 
     if (options.author) {
-      args.push(`--author="${options.author}"`);
+      args.push(`--author='${options.author}'`);
     }
 
     if (options.maxCount) {
@@ -137,13 +138,13 @@ export class GitAnalyzer implements IGitAnalyzer {
         continue;
       }
 
-      // Parse commit header - must have exactly 4 pipe-separated parts (hash|author|date|message)
-      // and the first part should be a valid git hash (40 chars hex)
+      // Parse commit header - must have pipe-separated parts (hash|author|date|message)
+      // allow abbreviated hashes (6-40 hex chars) and be case-insensitive
       if (line.includes('|')) {
         const parts = line.split('|');
 
         // Validate we have all required parts and first part looks like a hash
-        if (parts.length < 4 || !/^[0-9a-f]{40}$/.test(parts[0])) {
+        if (parts.length < 4 || !/^[0-9a-f]{6,40}$/i.test(parts[0])) {
           i++;
           continue;
         }
@@ -359,7 +360,7 @@ export class GitAnalyzer implements IGitAnalyzer {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      if (line.match(/^[0-9a-f]{40}/)) {
+      if (line.match(/^[0-9a-f]{6,40}/i)) {
         // Start of new blame block
         const parts = line.split(' ');
         currentHash = parts[0];
@@ -390,11 +391,11 @@ export class GitAnalyzer implements IGitAnalyzer {
     const args = ['shortlog', '-sne'];
 
     if (options.since) {
-      args.push(`--since="${options.since}"`);
+      args.push(`--since=${options.since}`);
     }
 
     if (options.until) {
-      args.push(`--until="${options.until}"`);
+      args.push(`--until=${options.until}`);
     }
 
     if (!options.includeMerges) {
@@ -405,7 +406,8 @@ export class GitAnalyzer implements IGitAnalyzer {
       args.push('--', options.filePath);
     }
 
-    const output = await executeGit(args.join(' '), this.repositoryPath);
+    const command = args.join(' ');
+    const output = await executeGit(command, this.repositoryPath);
 
     if (!output) {
       return [];

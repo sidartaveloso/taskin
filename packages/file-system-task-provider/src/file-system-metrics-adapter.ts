@@ -457,32 +457,85 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
       }
     >();
 
+    // Helper to normalize keys so we consistently merge task assignees, registry
+    // users and git authors (case-insensitive)
+    const normalizeKey = (name: string) => name.toLowerCase();
+
     // Collect task completion data
     for (const t of tasks) {
       const assignee = t.assignee || 'unknown';
-      const prev = contributors.get(assignee) || {
+      const key = normalizeKey(assignee);
+      const prev = contributors.get(key) || {
         username: assignee,
         commits: 0,
         tasksCompleted: 0,
         codeMetrics: emptyCodeMetrics(),
       };
       if (t.status === 'done') prev.tasksCompleted += 1;
-      contributors.set(assignee, prev);
+      contributors.set(key, prev);
+    }
+
+    // Include all registered Taskin users even if they have no tasks
+    try {
+      const allUsers = this.userRegistry.getAllUsers?.() || [];
+      for (const u of allUsers) {
+        const username = u.name || u.id;
+        const key = normalizeKey(username);
+        if (!contributors.has(key)) {
+          contributors.set(key, {
+            username,
+            commits: 0,
+            tasksCompleted: 0,
+            codeMetrics: emptyCodeMetrics(),
+          });
+        }
+      }
+    } catch (error) {
+      // If registry is unavailable, continue with existing contributors
+      console.warn('Failed to include registry users in team metrics:', error);
+    }
+
+    // Include all git authors in the period, even if they have no tasks
+    if (this.gitAnalyzer) {
+      try {
+        const authors = await this.gitAnalyzer.getAuthors({
+          since: weekAgo.toISOString(),
+          until: now.toISOString(),
+        });
+
+        for (const a of authors) {
+          const name = a.name || a.email || 'unknown';
+          const key = normalizeKey(name);
+          if (!contributors.has(key)) {
+            contributors.set(key, {
+              username: name,
+              commits: 0,
+              tasksCompleted: 0,
+              codeMetrics: emptyCodeMetrics(),
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to fetch git authors for team metrics:', error);
+      }
     }
 
     // Calculate git metrics for each contributor
-    for (const [username, data] of contributors.entries()) {
+    for (const [key, data] of contributors.entries()) {
       try {
         const codeMetrics = await calculateCodeMetrics(
           this.gitAnalyzer,
-          username,
+          data.username,
           weekAgo,
           now,
         );
         data.commits = codeMetrics.commits;
         data.codeMetrics = codeMetrics;
       } catch (error) {
-        console.error(`Failed to calculate metrics for ${username}:`, error);
+        console.error(
+          `Failed to calculate metrics for ${data.username}:`,
+          error,
+        );
       }
     }
 
