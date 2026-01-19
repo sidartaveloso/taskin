@@ -1,5 +1,14 @@
 # taskin
 
+## 2.0.4
+
+### Patch Changes
+
+- Update dependencies to include enhanced team metrics
+  - Bump @opentask/taskin-file-system-provider to ^2.1.0
+  - Bump @opentask/taskin-git-utils to ^2.1.0
+  - Team stats now include all git committers and registry users
+
 ## 2.0.3
 
 ### Patch Changes
