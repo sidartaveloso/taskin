@@ -7,8 +7,10 @@ import {
   UserRegistry,
 } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
+import { execSync } from 'child_process';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { playSound } from '../lib/sound-player.js';
 import { defineCommand } from './define-command/index.js';
@@ -79,17 +81,52 @@ async function finishTask(
     process.exit(1);
   }
 
+  // Load automation config
+  const configManager = new ConfigManager(monorepoRoot);
+  const behavior = configManager.getAutomationBehavior();
+
   if (!options.skipUpdate) {
     info('Marking task as done...');
     const updatedTask = await taskManager.finishTask(task.id);
     success(`Task ${updatedTask.id} completed successfully! 🎉`);
     success(`Status changed to: ${updatedTask.status}`);
+
+    // Auto-commit status change if enabled
+    if (behavior.autoCommitStatusChange) {
+      try {
+        execSync(
+          `git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para done [skip-ci]"`,
+          { cwd: process.cwd(), stdio: 'ignore' },
+        );
+        success('✓ Auto-committed status change');
+      } catch {
+        // Ignore if nothing to commit
+      }
+    }
+
+    // Auto-commit work if autopilot is enabled
+    if (behavior.autoCommitFinish) {
+      const commitType = task.type || 'feat';
+      try {
+        execSync('git add .', { cwd: process.cwd(), stdio: 'ignore' });
+        execSync(
+          `git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`,
+          { cwd: process.cwd(), stdio: 'ignore' },
+        );
+        success('✓ Auto-committed completed work');
+      } catch {
+        // Ignore if nothing to commit
+      }
+    }
   } else {
     info('Skipping status update (--skip-update flag)');
   }
 
   console.log();
-  info('Next steps (suggestions):');
+  
+  // Show suggestions only if not auto-committing
+  if (!behavior.autoCommitFinish || options.skipUpdate) {
+    info('Next steps (suggestions):');
   if (!options.skipUpdate) {
     const commitType = task.type || 'feat';
     console.log(
@@ -116,7 +153,14 @@ async function finishTask(
     console.log(colors.secondary('  3. Push: git push'));
     console.log(colors.secondary('  4. Create a Pull Request'));
   }
-  console.log();
+    console.log();
+  } else {
+    info('All commits done automatically (autopilot mode)');
+    info('Next steps:');
+    console.log(colors.secondary('  1. Push: git push'));
+    console.log(colors.secondary('  2. Create a Pull Request'));
+    console.log();
+  }
 
   success('Great work! 🚀');
   console.log();
