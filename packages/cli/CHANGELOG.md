@@ -1,5 +1,14 @@
 # taskin
 
+## 2.2.1
+
+### Patch Changes
+
+- fix(cli): correct TaskinConfigSchema import to resolve runtime error
+
+  Change from namespace import pattern to direct named import to prevent
+  undefined schema error when running config command in production.
+
 ## 2.2.0
 
 ### Minor Changes

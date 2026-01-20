@@ -9,11 +9,9 @@ import type {
   CommitAutomation,
   TaskinConfig,
 } from '@opentask/taskin-types';
-import * as TaskinTypes from '@opentask/taskin-types';
+import { TaskinConfigSchema } from '@opentask/taskin-types';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-
-const { TaskinConfigSchema } = TaskinTypes;
 
 /**
  * Automation behavior resolved from config

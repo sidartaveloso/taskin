@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "Task management system integrated with Git workflows (alias for taskin)",
   "motivation": "Provide an alias package for users who prefer the @opentask scope",
   "solve": "Allows installation via both 'taskin' and '@opentask/taskin' names",
@@ -58,7 +58,7 @@
     "typecheck": "echo 'No typecheck needed for alias package'"
   },
   "dependencies": {
-    "taskin": "2.2.0"
+    "taskin": "2.2.1"
   },
   "peerDependencies": {
     "taskin": "^2.0.0"
