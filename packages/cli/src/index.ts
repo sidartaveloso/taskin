@@ -6,6 +6,7 @@
  */
 
 import { Command } from 'commander';
+import { configCommand } from './commands/config.js';
 import { dashboardCommand } from './commands/dashboard.js';
 import { registerExportCommand } from './commands/export.js';
 import { finishCommand } from './commands/finish.js';
@@ -46,6 +47,7 @@ startCommand(program);
 pauseCommand(program);
 finishCommand(program);
 statsCommand(program);
+configCommand(program);
 registerExportCommand(program);
 lintCommand(program);
 dashboardCommand(program);

@@ -1,5 +1,27 @@
 # taskin
 
+## 2.2.0
+
+### Minor Changes
+
+- feat(cli): add config command for automation settings
+
+  Implement `taskin config` command to manage automation levels through CLI.
+
+  **Features:**
+  - `taskin config --show` - Display current configuration
+  - `taskin config --level <manual|assisted|autopilot>` - Set automation level
+  - `taskin config` - Interactive mode with menu selection
+  - Input validation and error handling
+  - 10 unit tests with full coverage
+
+  **Automation Levels:**
+  - `manual` - All commits are suggestions only
+  - `assisted` - Auto-commit status changes and pauses (default)
+  - `autopilot` - Auto-commit everything
+
+  Closes task-013
+
 ## 2.1.0
 
 ### Minor Changes

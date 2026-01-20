@@ -118,8 +118,8 @@ importers:
         specifier: ^1.0.8
         version: 1.0.8
       '@opentask/taskin-task-server-mcp':
-        specifier: ^0.1.4
-        version: 0.1.5(zod@3.25.76)
+        specifier: ^0.1.6
+        version: 0.1.6(hono@4.11.4)(zod@3.25.76)
       '@opentask/taskin-task-server-ws':
         specifier: ^0.1.3
         version: 0.1.3
@@ -482,8 +482,8 @@ importers:
   packages/taskin-alias:
     dependencies:
       taskin:
-        specifier: 2.0.4
-        version: 2.0.4(@types/node@24.10.9)
+        specifier: 2.1.0
+        version: 2.1.0(@types/node@24.10.9)
 
   packages/types-py:
     dependencies:
@@ -1306,6 +1306,16 @@ packages:
       '@cfworker/json-schema':
         optional: true
 
+  '@modelcontextprotocol/sdk@1.25.3':
+    resolution: {integrity: sha512-vsAMBMERybvYgKbg/l4L1rhS7VXV1c0CtyJg72vwxONVX0l4ZfKVAnZEWTQixJGTzKnELjQ59e4NbdFDALRiAQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@cfworker/json-schema': ^4.1.1
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@cfworker/json-schema':
+        optional: true
+
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -1321,8 +1331,8 @@ packages:
   '@one-ini/wasm@0.1.1':
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
 
-  '@opentask/taskin-file-system-provider@2.1.0':
-    resolution: {integrity: sha512-UzEiTuyAtcWMAz0gxQUubL8asQa+sr8VCQ+eylMWTy53S5kN1UzXIluGlaHvrt1G/KvOL0Bbd/+bDVtQxvGs5w==}
+  '@opentask/taskin-file-system-provider@2.2.0':
+    resolution: {integrity: sha512-3dL2LNXQ9/EwD6SE++GnjT26yPOJ8voElLRiPIAOnpVgMqcglql0lz31nXnuVQyFBCLPd0qBN5BuPjeDthUE9g==}
 
   '@opentask/taskin-git-utils@2.1.0':
     resolution: {integrity: sha512-oVGRX3MjnXtOBYR+/xVXQPr/jy6HgbPX7UPw7WLArjoGNYP1VlD0lHl/kpG4012bOoszM0J8SPxGuSxR2cLtAw==}
@@ -1330,8 +1340,8 @@ packages:
   '@opentask/taskin-task-manager@1.0.8':
     resolution: {integrity: sha512-WIIeZNwQH8Z29QdGqoumhzU/fRMVoBvunH8kMOiPCEU/AlfuPH679Z9nhOfP+9+IF0yiZYEeM8EIct5yaG/s3A==}
 
-  '@opentask/taskin-task-server-mcp@0.1.5':
-    resolution: {integrity: sha512-5Q97cB/U5TAht4HUMtekHOx99yrCcE7R2RqL0JHBAvRytazqwpm2BnqDD3q59fL1WVUmMk14iGKB8T/Qrd2Qug==}
+  '@opentask/taskin-task-server-mcp@0.1.6':
+    resolution: {integrity: sha512-VMxBdEsaOzQSICzX9JqCUYg7VDimAzw4bUhQp6YOr9CIowVjitoMHxrS7fwiaUxEwUzmauwYShJKutXKxKeusw==}
 
   '@opentask/taskin-task-server-ws@0.1.3':
     resolution: {integrity: sha512-62aznD0iMBm0gozatZFNyokZQXN+qia+ajMpRtMP13MFuWjsXMsNkoh/Rk9XTHcX+t7rQe+lob+61Ktp+/OI9A==}
@@ -1339,8 +1349,8 @@ packages:
   '@opentask/taskin-types@1.0.5':
     resolution: {integrity: sha512-25hO+xHxpOY/ObvPik+S8NDAETE4OzvAdIhdm+M4IyOzIndwqF25RKLgF81AtMq79VwZ6Y6/1CdMC579TVgPsQ==}
 
-  '@opentask/taskin-utils@1.0.5':
-    resolution: {integrity: sha512-wvqGAqWFrY8A90IrvBHAT1v3MPsVBDjdgrrfL8lJz0hge9nHP2ykTZG3lghyRIjJS5i94VAUFxJps/obE4kqeA==}
+  '@opentask/taskin-utils@1.1.0':
+    resolution: {integrity: sha512-XB83O+6alPpveWvhHdpzHQxsrzTbAMH3K0AjNtiDEZ6XgUuaFEi8vmKjHAQBZjigAGIqkYplFZv6t3R5H72EYQ==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -4007,8 +4017,8 @@ packages:
   tabbable@6.4.0:
     resolution: {integrity: sha512-05PUHKSNE8ou2dwIxTngl4EzcnsCDZGJ/iCLtDflR/SHB/ny14rXc+qU5P4mG9JkusiV7EivzY9Mhm55AzAvCg==}
 
-  taskin@2.0.4:
-    resolution: {integrity: sha512-0S0G1QqsDVsFQd1iuqVhyXXnMtBpVVi1iEc6JPPUeHOsuCuAKlVizYchnNQmKhdZEzaeH/ygWWZ5NEaMAJS60Q==}
+  taskin@2.1.0:
+    resolution: {integrity: sha512-b1QZihJ1fC1noJDO/XeYk4YTEDgi1GC3f4yJnmyqbPsizJUkB+pj00aC3+zFk80tUm1rkT3qX4IuwCHSsQiH9g==}
     hasBin: true
 
   term-size@2.2.1:
@@ -5516,6 +5526,28 @@ snapshots:
       - hono
       - supports-color
 
+  '@modelcontextprotocol/sdk@1.25.3(hono@4.11.4)(zod@3.25.76)':
+    dependencies:
+      '@hono/node-server': 1.19.9(hono@4.11.4)
+      ajv: 8.17.1
+      ajv-formats: 3.0.1(ajv@8.17.1)
+      content-type: 1.0.5
+      cors: 2.8.5
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.0.6
+      express: 5.2.1
+      express-rate-limit: 7.5.1(express@5.2.1)
+      jose: 6.1.3
+      json-schema-typed: 8.0.2
+      pkce-challenge: 5.0.1
+      raw-body: 3.0.2
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.1(zod@3.25.76)
+    transitivePeerDependencies:
+      - hono
+      - supports-color
+
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -5530,11 +5562,12 @@ snapshots:
 
   '@one-ini/wasm@0.1.1': {}
 
-  '@opentask/taskin-file-system-provider@2.1.0':
+  '@opentask/taskin-file-system-provider@2.2.0':
     dependencies:
       '@opentask/taskin-git-utils': 2.1.0
       '@opentask/taskin-task-manager': 1.0.8
       '@opentask/taskin-types': 1.0.5
+      '@opentask/taskin-utils': 1.1.0
 
   '@opentask/taskin-git-utils@2.1.0':
     dependencies:
@@ -5544,10 +5577,10 @@ snapshots:
     dependencies:
       '@opentask/taskin-types': 1.0.5
 
-  '@opentask/taskin-task-server-mcp@0.1.5(zod@3.25.76)':
+  '@opentask/taskin-task-server-mcp@0.1.6(hono@4.11.4)(zod@3.25.76)':
     dependencies:
-      '@modelcontextprotocol/sdk': 1.25.2(hono@4.11.4)(zod@3.25.76)
-      '@opentask/taskin-file-system-provider': 2.1.0
+      '@modelcontextprotocol/sdk': 1.25.3(hono@4.11.4)(zod@3.25.76)
+      '@opentask/taskin-file-system-provider': 2.2.0
       '@opentask/taskin-task-manager': 1.0.8
       '@opentask/taskin-types': 1.0.5
     transitivePeerDependencies:
@@ -5569,7 +5602,7 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  '@opentask/taskin-utils@1.0.5':
+  '@opentask/taskin-utils@1.1.0':
     dependencies:
       chalk: 4.1.2
       zod: 3.25.76
@@ -8525,15 +8558,15 @@ snapshots:
 
   tabbable@6.4.0: {}
 
-  taskin@2.0.4(@types/node@24.10.9):
+  taskin@2.1.0(@types/node@24.10.9):
     dependencies:
-      '@opentask/taskin-file-system-provider': 2.1.0
+      '@opentask/taskin-file-system-provider': 2.2.0
       '@opentask/taskin-git-utils': 2.1.0
       '@opentask/taskin-task-manager': 1.0.8
-      '@opentask/taskin-task-server-mcp': 0.1.5(zod@3.25.76)
+      '@opentask/taskin-task-server-mcp': 0.1.6(hono@4.11.4)(zod@3.25.76)
       '@opentask/taskin-task-server-ws': 0.1.3
       '@opentask/taskin-types': 1.0.5
-      '@opentask/taskin-utils': 1.0.5
+      '@opentask/taskin-utils': 1.1.0
       '@types/express': 5.0.6
       '@types/inquirer': 9.0.9
       '@types/play-sound': 1.1.2
