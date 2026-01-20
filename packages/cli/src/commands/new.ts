@@ -6,6 +6,7 @@ import {
   FileSystemTaskProvider,
   UserRegistry,
 } from '@opentask/taskin-file-system-provider';
+import { slugify } from '@opentask/taskin-utils';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';
@@ -163,10 +164,7 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
   const taskId = String(nextNumber).padStart(3, '0');
 
   // Create task file name
-  const titleSlug = options.title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+  const titleSlug = slugify(options.title);
 
   const fileName = `task-${taskId}-${titleSlug}.md`;
   const filePath = path.join(tasksDir, fileName);

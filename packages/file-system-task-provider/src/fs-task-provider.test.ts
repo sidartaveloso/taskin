@@ -147,10 +147,7 @@ Test description`;
 
     it('should create a task file using pt-BR i18n', async () => {
       const title = 'Título Teste';
-      const titleSlug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
+      const titleSlug = 'titulo-teste'; // slugified version
       const fileName = `task-001-${titleSlug}.md`;
       const filePath = `${TASKS_DIR}/${fileName}`;
 
@@ -192,6 +189,83 @@ Test description`;
       expect(written).toContain('## Descrição');
       expect(written).toContain('## Tarefas');
       expect(written).toContain('## Notas');
+    });
+
+    it('should normalize accented characters in file name', async () => {
+      const title = 'Exclusão de propagação';
+      const expectedSlug = 'exclusao-de-propagacao';
+      const fileName = `task-001-${expectedSlug}.md`;
+      const filePath = `${TASKS_DIR}/${fileName}`;
+
+      (fs.readdir as Mock)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([fileName]);
+      (fs.access as Mock).mockRejectedValue(new Error('not found'));
+      (fs.writeFile as Mock).mockResolvedValue(undefined);
+
+      const createdContent = `# 🧩 Task 001 — ${title}\nStatus: pending`;
+      (fs.readFile as Mock).mockResolvedValue(createdContent);
+
+      (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
+        (name: string) => ({ id: 'temp', name, email: `${name}@example.com` }),
+      );
+
+      const result = await provider.createTask({ title, type: 'feat' });
+
+      expect(result.taskId).toBe('001');
+      expect(result.filePath).toBe(filePath);
+      expect(result.filePath).toContain(expectedSlug);
+      expect(result.filePath).not.toContain('ã');
+      expect(result.filePath).not.toContain('ç');
+
+      // Verify the file was written with normalized name
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        expect.stringContaining(expectedSlug),
+        expect.any(String),
+        'utf-8',
+      );
+    });
+
+    it('should normalize various accented characters from different languages', async () => {
+      const testCases = [
+        {
+          title: 'Configuração Avançada',
+          expectedSlug: 'configuracao-avancada',
+        },
+        { title: 'Ação de Integração', expectedSlug: 'acao-de-integracao' },
+        { title: 'São Paulo café', expectedSlug: 'sao-paulo-cafe' },
+        { title: 'naïve Zürich', expectedSlug: 'naive-zurich' },
+      ];
+
+      for (const [index, testCase] of testCases.entries()) {
+        const taskId = String(index + 1).padStart(3, '0');
+        const fileName = `task-${taskId}-${testCase.expectedSlug}.md`;
+
+        (fs.readdir as Mock).mockResolvedValueOnce(
+          index === 0
+            ? []
+            : testCases
+                .slice(0, index)
+                .map(
+                  (_, i) => `task-${String(i + 1).padStart(3, '0')}-test.md`,
+                ),
+        );
+        (fs.readdir as Mock).mockResolvedValueOnce([fileName]);
+        (fs.access as Mock).mockRejectedValue(new Error('not found'));
+        (fs.writeFile as Mock).mockResolvedValue(undefined);
+        (fs.readFile as Mock).mockResolvedValue(
+          `# Task ${taskId}\nStatus: pending`,
+        );
+
+        const result = await provider.createTask({
+          title: testCase.title,
+          type: 'feat',
+        });
+
+        expect(result.filePath).toContain(testCase.expectedSlug);
+        expect(result.filePath).not.toMatch(/[áàâãäéèêëíìîïóòôõöúùûüçñ]/i);
+      }
     });
   });
 

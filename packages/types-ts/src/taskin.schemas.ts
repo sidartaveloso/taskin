@@ -372,3 +372,77 @@ export const StatsQuerySchema = z.object({
   detailed: z.boolean().optional(),
   format: z.enum(['text', 'json', 'html']).optional(),
 });
+
+/**
+ * Automation level for Taskin operations.
+ * Defines how much Taskin automates git operations.
+ *
+ * @public
+ * @example
+ * ```ts
+ * // Manual: Full user control, only suggestions
+ * level: 'manual'
+ *
+ * // Assisted: Auto-commit metadata, suggest work commits
+ * level: 'assisted'
+ *
+ * // Autopilot: Auto-commit everything
+ * level: 'autopilot'
+ * ```
+ */
+export const AutomationLevelSchema = z.enum([
+  'manual',
+  'assisted',
+  'autopilot',
+]);
+
+/**
+ * Granular commit automation settings.
+ * Allows fine-grained control over what gets auto-committed.
+ *
+ * @public
+ */
+export const CommitAutomationSchema = z.object({
+  /** Auto-commit task status changes (e.g., pending → in-progress) */
+  taskStatusChanges: z.boolean().default(true),
+  /** Auto-commit work-in-progress saves (pause command) */
+  workInProgress: z.boolean().default(true),
+  /** Auto-commit completed work (finish command) */
+  completedWork: z.boolean().default(false),
+});
+
+/**
+ * Automation configuration schema.
+ * Controls how Taskin automates git operations.
+ *
+ * @public
+ */
+export const AutomationConfigSchema = z.object({
+  /** Preset automation level */
+  level: AutomationLevelSchema.default('assisted'),
+  /** Granular commit settings (overrides level if provided) */
+  commits: CommitAutomationSchema.optional(),
+});
+
+/**
+ * Provider configuration schema.
+ * Defines which task provider to use and its settings.
+ *
+ * @public
+ */
+export const ProviderConfigSchema = z.object({
+  type: z.string(),
+  config: z.record(z.unknown()),
+});
+
+/**
+ * Taskin configuration file schema (.taskin.json).
+ * Root configuration for a Taskin project.
+ *
+ * @public
+ */
+export const TaskinConfigSchema = z.object({
+  version: z.string(),
+  automation: AutomationConfigSchema.optional(),
+  provider: ProviderConfigSchema,
+});

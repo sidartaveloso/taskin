@@ -96,15 +96,21 @@ async function startTask(
 
   success(`Task ${updatedTask.id} started successfully!`);
   success(`Status changed to: ${updatedTask.status}`);
+
   console.log();
-  info('Next steps:');
+  info('Next steps (suggestions):');
   console.log(
     colors.secondary(
-      '  1. Create a branch: git checkout -b feat/task-' + normalizedId,
+      `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip ci]"`,
     ),
   );
-  console.log(colors.secondary('  2. Start coding! 💻'));
-  console.log(colors.secondary('  3. Use "taskin pause" to save progress'));
+  console.log(
+    colors.secondary(
+      '  2. Create a branch: git checkout -b feat/task-' + normalizedId,
+    ),
+  );
+  console.log(colors.secondary('  3. Start coding! 💻'));
+  console.log(colors.secondary('  4. Use "taskin pause" to save progress'));
   console.log();
 
   // Play start sound if not disabled

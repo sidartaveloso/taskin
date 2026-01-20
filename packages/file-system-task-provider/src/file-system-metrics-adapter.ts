@@ -98,6 +98,66 @@ function removeCodeBlocks(content: string): string {
 }
 
 /**
+ * Resolves a time period to date range
+ * @param period - The time period (day, week, month, year)
+ * @returns Object with since and until dates
+ */
+function resolvePeriod(
+  period: 'day' | 'week' | 'month' | 'year' | 'quarter' | 'all' = 'week',
+): {
+  since: Date;
+  until: Date;
+} {
+  const now = new Date();
+  const until = now;
+  let since: Date;
+
+  switch (period) {
+    case 'day':
+      since = new Date(Date.now() - MILLISECONDS_PER_DAY);
+      break;
+    case 'week':
+      since = new Date(Date.now() - DAYS_PER_WEEK * MILLISECONDS_PER_DAY);
+      break;
+    case 'month':
+      since = new Date(Date.now() - 30 * MILLISECONDS_PER_DAY);
+      break;
+    case 'quarter':
+      since = new Date(Date.now() - 90 * MILLISECONDS_PER_DAY);
+      break;
+    case 'year':
+      since = new Date(Date.now() - 365 * MILLISECONDS_PER_DAY);
+      break;
+    case 'all':
+      since = new Date(0); // Unix epoch
+      break;
+    default:
+      since = new Date(Date.now() - DAYS_PER_WEEK * MILLISECONDS_PER_DAY);
+  }
+
+  return { since, until };
+}
+
+/**
+ * Calculates activity frequency (commits per day) for a given period
+ */
+function calculateActivityFrequency(
+  commits: number,
+  period: 'day' | 'week' | 'month' | 'year' | 'quarter' | 'all',
+): number {
+  const daysInPeriod: Record<typeof period, number> = {
+    day: 1,
+    week: 7,
+    month: 30,
+    quarter: 90,
+    year: 365,
+    all: 365, // Use 1 year as baseline for 'all'
+  };
+
+  return commits / daysInPeriod[period];
+}
+
+/**
  * Calculates code metrics from git commits
  */
 async function calculateCodeMetrics(
@@ -125,7 +185,15 @@ async function calculateCodeMetrics(
     });
 
     const metrics = commits.reduce(
-      (acc, commit) => ({
+      (
+        acc: {
+          linesAdded: number;
+          linesRemoved: number;
+          filesChanged: number;
+          commits: number;
+        },
+        commit,
+      ) => ({
         linesAdded: acc.linesAdded + commit.linesAdded,
         linesRemoved: acc.linesRemoved + commit.linesRemoved,
         filesChanged: acc.filesChanged + commit.filesChanged,
@@ -375,14 +443,12 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     return tasks;
   }
 
-  async getUserMetrics(
-    userId: string,
-    _query?: StatsQuery,
-  ): Promise<UserStats> {
+  async getUserMetrics(userId: string, query?: StatsQuery): Promise<UserStats> {
     const user = this.userRegistry.getUser(userId);
     const username = user ? user.name : userId;
-    const now = new Date();
-    const weekAgo = new Date(Date.now() - DAYS_PER_WEEK * MILLISECONDS_PER_DAY);
+    const { since, until } = resolvePeriod(query?.period || 'week');
+    const now = until;
+    const weekAgo = since;
 
     const tasks = await this.readTaskFiles();
     const assigned = tasks.filter((t) => {
@@ -414,7 +480,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
 
     const rawMetrics = {
       username,
-      period: 'week',
+      period: query?.period || 'week',
       periodStart: toISOString(weekAgo),
       periodEnd: toISOString(now),
       codeMetrics,
@@ -424,10 +490,16 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         tasksCompleted: completed,
         averageCompletionTime: 0, // TODO: calculate from task timestamps
         taskTypeDistribution: {}, // TODO: calculate from task types
-        activityFrequency: codeMetrics.commits / DAYS_PER_WEEK, // commits per day
+        activityFrequency: calculateActivityFrequency(
+          codeMetrics.commits,
+          query?.period || 'week',
+        ),
       },
       engagementMetrics: {
-        commitsPerDay: codeMetrics.commits / DAYS_PER_WEEK,
+        commitsPerDay: calculateActivityFrequency(
+          codeMetrics.commits,
+          query?.period || 'week',
+        ),
         consistency: 0, // TODO: calculate standard deviation
         activeTasksCount: active,
         completionRate: assigned.length ? completed / assigned.length : 0,
@@ -441,10 +513,11 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
 
   async getTeamMetrics(
     _teamId: string,
-    _query?: StatsQuery,
+    query?: StatsQuery,
   ): Promise<TeamStats> {
-    const now = new Date();
-    const weekAgo = new Date(Date.now() - DAYS_PER_WEEK * MILLISECONDS_PER_DAY);
+    const { since, until } = resolvePeriod(query?.period || 'week');
+    const now = until;
+    const weekAgo = since;
     const tasks = await this.readTaskFiles();
 
     const contributors = new Map<
@@ -521,7 +594,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     }
 
     // Calculate git metrics for each contributor
-    for (const [key, data] of contributors.entries()) {
+    for (const [_key, data] of contributors.entries()) {
       try {
         const codeMetrics = await calculateCodeMetrics(
           this.gitAnalyzer,
@@ -561,7 +634,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     );
 
     const team: TeamStats = {
-      period: 'week',
+      period: query?.period || 'week',
       periodStart: toISOString(weekAgo),
       periodEnd: toISOString(now),
       totalContributors: contributors.size,

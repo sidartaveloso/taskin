@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-file-system-provider",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "File system task provider for Taskin",
   "type": "module",
   "motivation": "To provide a file-system-based implementation for task storage.",
@@ -62,7 +62,8 @@
   "dependencies": {
     "@opentask/taskin-git-utils": "^2.1.0",
     "@opentask/taskin-task-manager": "^1.0.8",
-    "@opentask/taskin-types": "^1.0.5"
+    "@opentask/taskin-types": "workspace:*",
+    "@opentask/taskin-utils": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
