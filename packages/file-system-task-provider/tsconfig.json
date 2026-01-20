@@ -1,11 +1,14 @@
 {
   "compilerOptions": {
     "composite": true,
+    "declaration": true,
+    "declarationMap": true,
     "module": "ESNext",
     "outDir": "./dist",
     "rootDir": "./src"
   },
+  "exclude": ["src/**/*.test.ts"],
   "extends": "../../tsconfig.base.json",
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "references": [{ "path": "../task-manager" }]
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../task-manager" }, { "path": "../utils" }]
 }

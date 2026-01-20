@@ -97,14 +97,37 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 ## Commands
 
 - `taskin init` - Initialize Taskin in your project with interactive setup
-- `taskin list` - List all tasks
+- `taskin list [options]` - List all tasks
+  - `--open` - Show only open tasks (pending, in-progress, blocked)
+  - `--closed` - Show only closed tasks (done, canceled)
+  - `--status <status>` - Filter by specific status
+  - `--type <type>` - Filter by task type
 - `taskin new` - Create a new task (alias: `create`)
-- `taskin start <id>` - Start working on a task
-- `taskin pause <id>` - Pause work on a task
-- `taskin finish <id>` - Complete a task
+- `taskin start <id>` - Start working on a task (suggests commits)
+- `taskin pause <id>` - Pause work on a task (auto-commits work in progress)
+- `taskin finish <id>` - Complete a task (suggests commits)
+- `taskin stats [options]` - Show statistics
+  - `--user` - User statistics
+  - `--team` - Team statistics
+  - `--period <day|week|month|year>` - Time period for stats
+- `taskin config [options]` - Configure automation level
+  - `--level <manual|assisted|autopilot>` - Set commit automation level
 - `taskin lint` - Validate task files
-- `taskin dashboard` - Start the web dashboard
+- `taskin dashboard [options]` - Start the web dashboard
+  - `--filter-open` - Show only open tasks
+  - `--filter-closed` - Show only closed tasks
 - `taskin mcp-server` - Start MCP server for Claude Desktop integration (alias: `mcp`)
+- `taskin help` - Show help information
+
+### Automation Levels
+
+Taskin supports three automation levels for git commits:
+
+- **manual** - You're in control: all commits are suggestions only
+- **assisted** (default) - Smart suggestions: auto-commits status changes, suggests work commits
+- **autopilot** - Let Taskin drive: auto-commits everything
+
+Configure with: `taskin config --level <level>`
 
 ## 🤖 MCP Server (Model Context Protocol)
 

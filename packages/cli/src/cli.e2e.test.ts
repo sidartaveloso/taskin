@@ -349,6 +349,70 @@ Another task`;
     }, 60000);
   });
 
+  describe.sequential('taskin new', () => {
+    beforeEach(async () => {
+      await execAsync(`node ${CLI_PATH} init`, {
+        cwd: TEST_DIR,
+        env: { ...process.env, CI: 'true' },
+      });
+    }, 60000);
+
+    it('should create task with accented characters normalized in filename', async () => {
+      const title = 'Exclusão de propagação';
+      const expectedSlug = 'exclusao-de-propagacao';
+
+      await execAsync(
+        `node ${CLI_PATH} new -t feat -T "${title}" -d "Test description"`,
+        { cwd: TEST_DIR },
+      );
+
+      const tasksDir = join(TEST_DIR, 'TASKS');
+      const files = await execAsync('ls', { cwd: tasksDir });
+
+      // Should create task-002 (001 is created by init)
+      expect(files.stdout).toContain(`task-002-${expectedSlug}.md`);
+      expect(files.stdout).not.toContain('ã');
+      expect(files.stdout).not.toContain('ç');
+
+      // Verify file content preserves original title with accents
+      const taskFile = join(tasksDir, `task-002-${expectedSlug}.md`);
+      const content = readFileSync(taskFile, 'utf-8');
+      expect(content).toContain(title); // Original title with accents in content
+    }, 60000);
+
+    it('should normalize various accented characters from different languages', async () => {
+      const testCases = [
+        {
+          title: 'Configuração Avançada',
+          expectedSlug: 'configuracao-avancada',
+        },
+        { title: 'Ação de Integração', expectedSlug: 'acao-de-integracao' },
+        { title: 'São Paulo café', expectedSlug: 'sao-paulo-cafe' },
+      ];
+
+      for (const [index, testCase] of testCases.entries()) {
+        await execAsync(`node ${CLI_PATH} new -t feat -T "${testCase.title}"`, {
+          cwd: TEST_DIR,
+        });
+
+        const tasksDir = join(TEST_DIR, 'TASKS');
+        const files = await execAsync('ls', { cwd: tasksDir });
+
+        // Task IDs: 001 (init), 002, 003, 004
+        const taskId = String(index + 2).padStart(3, '0');
+        const expectedFileName = `task-${taskId}-${testCase.expectedSlug}.md`;
+
+        expect(files.stdout).toContain(expectedFileName);
+        expect(files.stdout).not.toMatch(/[áàâãäéèêëíìîïóòôõöúùûüçñ]/i);
+
+        // Verify content preserves accents
+        const taskFile = join(tasksDir, expectedFileName);
+        const content = readFileSync(taskFile, 'utf-8');
+        expect(content).toContain(testCase.title);
+      }
+    }, 60000);
+  });
+
   describe.sequential('error handling', () => {
     it('should show helpful error when not in a taskin project', async () => {
       try {

@@ -45,7 +45,7 @@ export function showCustomHelp(): string {
     {
       name: colors.highlight('taskin start') + colors.normal(' <task-id>'),
       alias: colors.secondary('Alias: begin'),
-      description: 'Start working on a task',
+      description: 'Start working on a task (suggests commits)',
       examples: [
         'taskin start 001',
         'taskin start task-001',
@@ -56,16 +56,27 @@ export function showCustomHelp(): string {
     {
       name: colors.highlight('taskin pause') + colors.normal(' <task-id>'),
       alias: colors.secondary('Alias: stop'),
-      description: 'Pause a task (commit without push)',
+      description: 'Pause a task (auto-commits work in progress)',
       examples: ['taskin pause 001', 'taskin pause 001 -m "saving progress"'],
       icon: '⏸️',
     },
     {
       name: colors.highlight('taskin finish') + colors.normal(' <task-id>'),
       alias: colors.secondary('Alias: done'),
-      description: 'Finish a task',
+      description: 'Finish a task (suggests commits)',
       examples: ['taskin finish 001', 'taskin done task-001'],
       icon: '✅',
+    },
+    {
+      name: colors.highlight('taskin config') + colors.normal(' [options]'),
+      alias: colors.secondary('Options: --level <manual|assisted|autopilot>'),
+      description: 'Configure automation level',
+      examples: [
+        'taskin config',
+        'taskin config --level assisted',
+        'taskin config --level autopilot',
+      ],
+      icon: '⚙️',
     },
     {
       name: colors.highlight('taskin lint') + colors.normal(' [options]'),
@@ -80,12 +91,15 @@ export function showCustomHelp(): string {
     },
     {
       name: colors.highlight('taskin dashboard') + colors.normal(' [options]'),
-      alias: colors.secondary('Options: --host, --port'),
+      alias: colors.secondary(
+        'Options: --host, --port, --filter-open, --filter-closed',
+      ),
       description: 'Start the web dashboard',
       examples: [
         'taskin dashboard',
         'taskin dashboard --port 3000',
-        'taskin dashboard --host 0.0.0.0',
+        'taskin dashboard --filter-open',
+        'taskin dashboard --filter-closed -o',
       ],
       icon: '📊',
     },
@@ -124,6 +138,11 @@ export function showCustomHelp(): string {
   console.log(
     colors.normal(
       `${colors.warning('•')} Use short IDs: ${colors.highlight('001')}, ${colors.highlight('task-001')}`,
+    ),
+  );
+  console.log(
+    colors.normal(
+      `${colors.warning('•')} Configure automation with ${colors.highlight('taskin config --level <manual|assisted|autopilot>')}`,
     ),
   );
   console.log(

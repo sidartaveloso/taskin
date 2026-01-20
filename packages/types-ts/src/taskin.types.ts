@@ -5,16 +5,21 @@
 
 import type { z } from 'zod';
 import type {
+  AutomationConfigSchema,
+  AutomationLevelSchema,
   CodeMetricsSchema,
+  CommitAutomationSchema,
   CommitSizeSchema,
   ContributionMetricsSchema,
   DayOfWeekSchema,
   EngagementMetricsSchema,
   GitCommitSchema,
+  ProviderConfigSchema,
   RefactoringMetricsSchema,
   StatsPeriodSchema,
   StatsQuerySchema,
   TaskIdSchema,
+  TaskinConfigSchema,
   TaskSchema,
   TaskStatsSchema,
   TaskStatusSchema,
@@ -30,6 +35,8 @@ export interface ListTasksOptions {
   assignee?: string;
   status?: string;
   type?: string;
+  open?: boolean;
+  closed?: boolean;
 }
 
 export interface CreateTaskOptions {
@@ -281,3 +288,33 @@ export type TeamStats = z.infer<typeof TeamStatsSchema>;
  * @public
  */
 export type StatsQuery = z.infer<typeof StatsQuerySchema>;
+
+/**
+ * Automation level type
+ * @public
+ */
+export type AutomationLevel = z.infer<typeof AutomationLevelSchema>;
+
+/**
+ * Commit automation settings
+ * @public
+ */
+export type CommitAutomation = z.infer<typeof CommitAutomationSchema>;
+
+/**
+ * Automation configuration
+ * @public
+ */
+export type AutomationConfig = z.infer<typeof AutomationConfigSchema>;
+
+/**
+ * Provider configuration
+ * @public
+ */
+export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
+
+/**
+ * Taskin configuration file (.taskin.json)
+ * @public
+ */
+export type TaskinConfig = z.infer<typeof TaskinConfigSchema>;

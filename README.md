@@ -21,6 +21,10 @@
 - 📦 **Monorepo**: pnpm workspaces with optimized builds
 - 🎭 **Storybook**: 30+ interactive stories with autodocs
 - 🔒 **Security-First**: Zod validations, injection protection, secure HTTP headers
+- 📊 **Smart Filtering**: Semantic task filtering (open/closed) across CLI and dashboard
+- 📈 **Team Metrics**: Comprehensive stats with configurable time periods (day/week/month/year)
+- ⚙️ **Configurable Automation**: Three automation levels (manual/assisted/autopilot) for git commits
+- 💬 **Smart Suggestions**: Contextual commit message suggestions with [skip-ci] support
 
 ## 🔒 Security Features
 
@@ -99,10 +103,22 @@ taskin new "Implement authentication"
 # List tasks
 taskin list
 
+# Filter tasks
+taskin list --open              # Only open tasks
+taskin list --closed            # Only closed tasks
+taskin list --status pending    # Specific status
+
+# View statistics
+taskin stats --user             # User stats
+taskin stats --team --period year  # Team yearly stats
+
+# Configure automation
+taskin config --level assisted  # manual | assisted | autopilot
+
 # Manage tasks
-taskin start task-01
-taskin pause task-01
-taskin finish task-01
+taskin start task-01            # Suggests commits
+taskin pause task-01            # Auto-commits work
+taskin finish task-01           # Suggests commits
 ```
 
 #### 2. Dashboard with WebSocket
@@ -110,6 +126,10 @@ taskin finish task-01
 ```bash
 # Start WebSocket server + web dashboard
 taskin dashboard
+
+# With filters
+taskin dashboard --filter-open    # Show only open tasks
+taskin dashboard --filter-closed  # Show only closed tasks
 
 # Access: http://localhost:5173
 # WebSocket: ws://localhost:3001
