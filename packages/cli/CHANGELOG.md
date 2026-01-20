@@ -1,5 +1,17 @@
 # taskin
 
+## 2.3.0
+
+### Minor Changes
+
+- feat(cli): implement autopilot auto-commit functionality
+
+  Add automatic git commit functionality to pause and finish commands based on
+  automation level configuration. Now autopilot mode actually auto-commits as documented.
+  - pause command: auto-commits WIP when automation level allows (assisted/autopilot)
+  - finish command: auto-commits status changes and completed work in autopilot mode
+  - Graceful fallback to 'assisted' level when config is missing or invalid
+
 ## 2.2.2
 
 ### Patch Changes

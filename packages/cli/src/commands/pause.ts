@@ -10,6 +10,7 @@ import type { PauseTaskOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { playSound } from '../lib/sound-player.js';
 import { defineCommand } from './define-command/index.js';
@@ -81,11 +82,21 @@ async function pauseTask(
   const commitMessage =
     options.message || `WIP: task-${normalizedId} - ${task.title}`;
 
+  // Load automation config
+  const configManager = new ConfigManager(monorepoRoot);
+  const behavior = configManager.getAutomationBehavior();
+
   if (options.skipCommit) {
     info('Would create commit with message:');
     console.log(colors.highlight(`  "${commitMessage}"`));
     console.log();
     info('Use without --skip-commit to actually commit');
+  } else if (!behavior.autoCommitPause) {
+    // Manual mode - just show suggestions
+    info('Commit suggestion (manual mode):');
+    console.log(colors.secondary(`  git add -A && git commit -m "${commitMessage}"`));
+    console.log();
+    info('Status will be updated to pending');
   } else {
     info('Creating commit...');
     console.log(colors.secondary(`  Message: "${commitMessage}"`));
@@ -107,7 +118,7 @@ async function pauseTask(
     await taskProvider.updateTask(updatedTask);
 
     success('Task paused successfully!');
-    info('Commit created (not pushed)');
+    success('✓ Auto-committed work in progress');
     info('Status updated to pending');
     console.log();
     info('Next steps:');
