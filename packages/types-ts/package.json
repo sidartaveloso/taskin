@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-types",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "TypeScript types and Zod schemas for Taskin",
   "motivation": "Provide a single source of truth for Taskin entity definitions.",
   "solve": "Ensures consistent data types across all Taskin packages and languages.",

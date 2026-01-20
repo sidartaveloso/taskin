@@ -1,5 +1,14 @@
 # @opentask/taskin-file-system-provider
 
+## 2.2.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @opentask/taskin-types@1.0.6
+  - @opentask/taskin-git-utils@2.1.1
+  - @opentask/taskin-task-manager@1.0.9
+
 ## 2.2.0
 
 ### Minor Changes

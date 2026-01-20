@@ -1,5 +1,22 @@
 # taskin
 
+## 2.2.2
+
+### Patch Changes
+
+- fix(types): add explicit export for TaskinConfigSchema to resolve ESM import error
+
+  Add explicit named export for TaskinConfigSchema to ensure it's available
+  in ESM imports. This fixes "does not provide an export named" error.
+
+- Updated dependencies
+  - @opentask/taskin-types@1.0.6
+  - @opentask/taskin-file-system-provider@2.2.1
+  - @opentask/taskin-git-utils@2.1.1
+  - @opentask/taskin-task-manager@1.0.9
+  - @opentask/taskin-task-server-mcp@0.1.7
+  - @opentask/taskin-task-server-ws@0.1.4
+
 ## 2.2.1
 
 ### Patch Changes
