@@ -10,5 +10,9 @@
   "exclude": ["src/**/*.test.ts"],
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../task-manager" }, { "path": "../utils" }]
+  "references": [
+    { "path": "../git-utils" },
+    { "path": "../task-manager" },
+    { "path": "../utils" }
+  ]
 }

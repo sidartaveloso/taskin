@@ -94,7 +94,9 @@ async function pauseTask(
   } else if (!behavior.autoCommitPause) {
     // Manual mode - just show suggestions
     info('Commit suggestion (manual mode):');
-    console.log(colors.secondary(`  git add -A && git commit -m "${commitMessage}"`));
+    console.log(
+      colors.secondary(`  git add -A && git commit -m "${commitMessage}"`),
+    );
     console.log();
     info('Status will be updated to pending');
   } else {

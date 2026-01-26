@@ -1,3 +1,4 @@
+export * from './metrics.types';
 export * from './task-manager';
 export * from './task-manager.types';
 
