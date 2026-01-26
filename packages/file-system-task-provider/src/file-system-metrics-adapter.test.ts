@@ -7,6 +7,7 @@ vi.mock('fs', () => ({ promises: { readdir: vi.fn(), readFile: vi.fn() } }));
 
 const mockUserRegistry = {
   getUser: vi.fn(),
+  getAllUsers: vi.fn(),
 };
 
 describe('FileSystemMetricsAdapter', () => {
@@ -15,7 +16,11 @@ describe('FileSystemMetricsAdapter', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    adapter = new FileSystemMetricsAdapter(TASKS_DIR, mockUserRegistry as any);
+    adapter = new FileSystemMetricsAdapter(
+      TASKS_DIR,
+      mockUserRegistry as any,
+      undefined,
+    );
   });
 
   it('getUserMetrics counts completed and active tasks for user', async () => {
@@ -67,6 +72,43 @@ describe('FileSystemMetricsAdapter', () => {
     expect(team.totalTasksCompleted).toBeGreaterThanOrEqual(1);
   });
 
+  it('includes git authors and registry users in team metrics', async () => {
+    const files = ['task-001-a.md'];
+    const content1 = `# Task 001 — A\nStatus: done\nAssignee: alice`;
+
+    (fs.readdir as Mock).mockResolvedValue(files);
+    (fs.readFile as Mock).mockResolvedValueOnce(content1);
+
+    // mock registry to return a user 'carol'
+    (mockUserRegistry.getAllUsers as Mock).mockReturnValue([
+      { id: 'carol', name: 'Carol' },
+    ]);
+
+    // mock gitAnalyzer with getAuthors
+    const mockGitAnalyzer: any = {
+      getAuthors: vi
+        .fn()
+        .mockResolvedValue([
+          { name: 'Dave', email: 'dave@example.com', commits: 3 },
+        ]),
+      getCommits: vi.fn().mockResolvedValue([]),
+    };
+
+    adapter = new FileSystemMetricsAdapter(
+      TASKS_DIR,
+      mockUserRegistry as any,
+      mockGitAnalyzer,
+    );
+
+    const team = await adapter.getTeamMetrics('team-x');
+
+    const contributorNames = team.contributors.map((c) => c.username);
+    // should contain task assignee 'alice', registry user 'Carol' and git author 'Dave'
+    expect(contributorNames).toContain('alice');
+    expect(contributorNames).toContain('Carol');
+    expect(contributorNames).toContain('Dave');
+  });
+
   it('should ignore Assignee field inside code blocks', async () => {
     const files = ['task-001-real.md', 'task-002-summary.md'];
     const realTask = `# Task 001 — Real Task
@@ -98,6 +140,9 @@ More content here.`;
     (fs.readFile as Mock)
       .mockResolvedValueOnce(realTask)
       .mockResolvedValueOnce(summaryWithCodeBlock);
+
+    // Mock registry and git to return empty to avoid extra contributors
+    (mockUserRegistry.getAllUsers as Mock).mockReturnValue([]);
 
     const team = await adapter.getTeamMetrics('team-x');
 

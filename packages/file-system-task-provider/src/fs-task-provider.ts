@@ -6,6 +6,7 @@ import type {
   TaskFile,
 } from '@opentask/taskin-task-manager';
 import type { TaskId, TaskStatus, TaskType } from '@opentask/taskin-types';
+import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
@@ -249,11 +250,8 @@ export class FileSystemTaskProvider implements ITaskProvider {
       taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
     const taskId = String(nextNumber).padStart(3, '0');
 
-    // Create task file name
-    const titleSlug = options.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+    // Create task file name with slugified title (removes accents)
+    const titleSlug = slugify(options.title);
 
     const fileName = `task-${taskId}-${titleSlug}.md`;
     const filePath = path.join(this.tasksDirectory, fileName);

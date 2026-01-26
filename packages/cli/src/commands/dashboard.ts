@@ -26,6 +26,8 @@ interface DashboardOptions {
   wsPort?: number;
   open?: boolean;
   host?: string;
+  filterOpen?: boolean;
+  filterClosed?: boolean;
 }
 
 export const dashboardCommand = defineCommand({
@@ -51,6 +53,14 @@ export const dashboardCommand = defineCommand({
     {
       flags: '-o, --open',
       description: 'Open browser automatically',
+    },
+    {
+      flags: '--filter-open',
+      description: 'Show only open tasks (pending, in-progress, blocked)',
+    },
+    {
+      flags: '--filter-closed',
+      description: 'Show only closed tasks (done, canceled)',
     },
   ],
   handler: async (options: DashboardOptions) => {
@@ -248,9 +258,20 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
 
     success(`✓ Dashboard available at http://${host}:${port}`);
 
+    // Build filter query params
+    const filterParams = new URLSearchParams();
+    if (options.filterOpen) {
+      filterParams.set('filter', 'open');
+    } else if (options.filterClosed) {
+      filterParams.set('filter', 'closed');
+    }
+    const filterQuery = filterParams.toString()
+      ? `?${filterParams.toString()}`
+      : '';
+
     // Open browser if requested
     if (options.open) {
-      const url = `http://${host}:${port}`;
+      const url = `http://${host}:${port}${filterQuery}`;
       await import('child_process').then((cp) => {
         const cmd =
           process.platform === 'darwin'
@@ -264,8 +285,15 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
 
     info('');
     info(chalk.bold('Dashboard Controls:'));
-    info(`  • Dashboard: ${chalk.cyan(`http://${host}:${port}`)}`);
+    info(
+      `  • Dashboard: ${chalk.cyan(`http://${host}:${port}${filterQuery}`)}`,
+    );
     info(`  • WebSocket: ${chalk.cyan(`ws://${host}:${wsPort}`)}`);
+    if (options.filterOpen) {
+      info(`  • Filter: ${chalk.yellow('Open tasks only')}`);
+    } else if (options.filterClosed) {
+      info(`  • Filter: ${chalk.yellow('Closed tasks only')}`);
+    }
     info(`  • Press ${chalk.bold('Ctrl+C')} to stop both servers`);
     info('');
 

@@ -33,6 +33,14 @@ export const listCommand = defineCommand({
       flags: '-u, --user <user>',
       description: 'Filter by user',
     },
+    {
+      flags: '--open',
+      description: 'Show only open tasks (pending, in-progress, blocked)',
+    },
+    {
+      flags: '--closed',
+      description: 'Show only closed tasks (done, canceled)',
+    },
   ],
   handler: async (filter: string | undefined, options: ListTasksOptions) => {
     await listTasks(filter, options);
@@ -68,11 +76,23 @@ async function listTasks(
     return;
   }
 
+  // Define status categories
+  const openStatuses: TaskStatus[] = ['pending', 'in-progress', 'blocked'];
+  const closedStatuses: TaskStatus[] = ['done', 'canceled'];
+
   // Apply filters
   let filteredTasks = tasks;
 
   if (options.status) {
     filteredTasks = filteredTasks.filter((t) => t.status === options.status);
+  } else if (options.open) {
+    filteredTasks = filteredTasks.filter(
+      (t) => t.status && openStatuses.includes(t.status),
+    );
+  } else if (options.closed) {
+    filteredTasks = filteredTasks.filter(
+      (t) => t.status && closedStatuses.includes(t.status),
+    );
   }
 
   if (options.type) {
