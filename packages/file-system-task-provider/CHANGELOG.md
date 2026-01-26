@@ -1,5 +1,17 @@
 # @opentask/taskin-file-system-provider
 
+## 2.2.2
+
+### Patch Changes
+
+- 9e3e2e4: fix: add explicit type for commit parameter in file-system-metrics-adapter
+
+  Resolved TypeScript TS7006 error by importing GitCommit type from @opentask/taskin-types and adding explicit type annotation to the commit parameter in the reduce callback.
+
+- 9e3e2e4: build: ensure git-utils and task-manager are built before file-system-provider
+
+  Added explicit build dependency configuration in turbo.json to prevent TS6305 errors caused by race conditions during parallel builds.
+
 ## 2.2.1
 
 ### Patch Changes
