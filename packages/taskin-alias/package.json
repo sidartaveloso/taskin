@@ -58,7 +58,7 @@
     "typecheck": "echo 'No typecheck needed for alias package'"
   },
   "dependencies": {
-    "taskin": "2.3.1"
+    "taskin": "workspace:*"
   },
   "peerDependencies": {
     "taskin": "^2.0.0"

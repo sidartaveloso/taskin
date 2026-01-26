@@ -85,9 +85,9 @@
   },
   "dependencies": {
     "@opentask/taskin-file-system-provider": "workspace:*",
-    "@opentask/taskin-git-utils": "^2.1.1",
-    "@opentask/taskin-task-manager": "^1.0.9",
-    "@opentask/taskin-task-server-mcp": "^0.1.8",
+    "@opentask/taskin-git-utils": "workspace:*",
+    "@opentask/taskin-task-manager": "workspace:*",
+    "@opentask/taskin-task-server-mcp": "workspace:*",
     "@opentask/taskin-task-server-ws": "^0.1.4",
     "@opentask/taskin-types": "workspace:*",
     "@opentask/taskin-utils": "workspace:*",
