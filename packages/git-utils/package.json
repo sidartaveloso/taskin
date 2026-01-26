@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-git-utils",
-  "version": "2.0.3",
+  "version": "2.1.1",
   "description": "Git utilities for Taskin task management",
   "type": "module",
   "motivation": "To provide a set of utilities for interacting with Git repositories.",
@@ -44,7 +44,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opentask/taskin-types": "^1.0.5"
+    "@opentask/taskin-types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

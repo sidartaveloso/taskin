@@ -6,19 +6,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { detectLocale, getI18n } from './i18n.js';
 
 /**
- * Content transformation function type
- * Pure function that takes content and returns transformed content
- */
-type ContentTransform = (content: string) => string;
-
-/**
- * Normalizes blank-line pattern after H1 title
- * Ensures files with one or two blank lines after title are considered equivalent
- */
-const normalizeForCompare = (s: string): string =>
-  s.replace(/(^# .*?)\n+/m, '$1\n\n').trim() + '\n';
-
-/**
  * Fixes section-based metadata by converting to inline format
  */
 export async function fixTaskFile(filePath: string): Promise<boolean> {
@@ -81,7 +68,6 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     }
 
     let newContent = content;
-    let wasModified = false;
 
     // Fix section-based metadata if present
     if (hasSectionStatus || hasSectionType || hasSectionAssignee) {
@@ -139,8 +125,6 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
         '',
         ...afterTitle,
       ].join('\n');
-
-      wasModified = true;
     }
 
     // Fix inline metadata missing trailing spaces
@@ -157,7 +141,6 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
         /^(Assignee|Responsável):\s*(.+?)([ \t]*)$/im,
         (_, key, value) => `${key}: ${value.trim()}  `,
       );
-      wasModified = true;
     }
 
     // Clean up extra blank lines again
@@ -173,7 +156,6 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     const normalizedOriginal = normalizeForCompare(originalContentRaw);
 
     if (filePath.endsWith('/tasks/task-001.md')) {
-      // eslint-disable-next-line no-console
       console.debug('DEBUG-NORM COMPARE', {
         finalContentRaw: finalContentRaw.replace(/\n/g, '\\n'),
         originalContentRaw: originalContentRaw.replace(/\n/g, '\\n'),

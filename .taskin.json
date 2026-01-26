@@ -1,4 +1,7 @@
 {
+  "automation": {
+    "level": "autopilot"
+  },
   "provider": {
     "config": {
       "tasksDir": "TASKS"

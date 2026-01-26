@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-server-mcp",
-  "version": "0.1.4",
+  "version": "0.1.7",
   "description": "Model Context Protocol (MCP) server for task management integration with LLMs",
   "motivation": "Enable LLMs to interact with task management systems",
   "solve": "Provides MCP server implementation for task operations",

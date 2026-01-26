@@ -2,6 +2,7 @@
  * CLI commands exports
  */
 
+export * from './config.js';
 export * from './dashboard.js';
 export * from './export.js';
 export * from './finish.js';

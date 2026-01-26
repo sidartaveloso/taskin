@@ -207,7 +207,7 @@ function displayTeamStats(stats: TeamStats, detailed = false): void {
   }
 }
 
-function displayTaskStats(stats: any, detailed = false): void {
+function displayTaskStats(stats: any, _detailed = false): void {
   console.log(`${chalk.dim('Task:')} ${stats.taskId} - ${stats.title}\n`);
 
   console.log(chalk.bold('📋 Task Info'));

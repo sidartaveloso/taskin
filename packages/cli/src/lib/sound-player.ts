@@ -13,6 +13,11 @@ const soundPlayer = player({});
  * @param soundName - Name of the sound file (without extension)
  */
 export function playSound(soundName: string): void {
+  // Suppress sounds during tests
+  if (process.env.CI === 'true' || process.env.NODE_ENV === 'test') {
+    return;
+  }
+
   try {
     // Try to find the sound file in multiple locations
     const possiblePaths = [
