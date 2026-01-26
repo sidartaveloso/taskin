@@ -1,5 +1,5 @@
-import type { IGitAnalyzer } from '@opentask/taskin-git-utils/src/git-analyzer.types';
-import type { IMetricsManager } from '@opentask/taskin-task-manager/src/metrics.types';
+import type { IGitAnalyzer } from '@opentask/taskin-git-utils';
+import type { IMetricsManager } from '@opentask/taskin-task-manager';
 import {
   type StatsQuery,
   type TaskStats,

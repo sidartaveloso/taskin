@@ -123,36 +123,36 @@ async function finishTask(
   }
 
   console.log();
-  
+
   // Show suggestions only if not auto-committing
   if (!behavior.autoCommitFinish || options.skipUpdate) {
     info('Next steps (suggestions):');
-  if (!options.skipUpdate) {
-    const commitType = task.type || 'feat';
-    console.log(
-      colors.secondary(
-        `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para done [skip-ci]"`,
-      ),
-    );
-    console.log(colors.secondary('  2. Review your changes'));
-    console.log(
-      colors.secondary(
-        `  3. Commit your work: git add . && git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`,
-      ),
-    );
-    console.log(colors.secondary('  4. Push: git push'));
-    console.log(colors.secondary('  5. Create a Pull Request'));
-  } else {
-    const commitType = task.type || 'feat';
-    console.log(colors.secondary('  1. Review your changes'));
-    console.log(
-      colors.secondary(
-        `  2. Commit your work: git add . && git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`,
-      ),
-    );
-    console.log(colors.secondary('  3. Push: git push'));
-    console.log(colors.secondary('  4. Create a Pull Request'));
-  }
+    if (!options.skipUpdate) {
+      const commitType = task.type || 'feat';
+      console.log(
+        colors.secondary(
+          `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para done [skip-ci]"`,
+        ),
+      );
+      console.log(colors.secondary('  2. Review your changes'));
+      console.log(
+        colors.secondary(
+          `  3. Commit your work: git add . && git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`,
+        ),
+      );
+      console.log(colors.secondary('  4. Push: git push'));
+      console.log(colors.secondary('  5. Create a Pull Request'));
+    } else {
+      const commitType = task.type || 'feat';
+      console.log(colors.secondary('  1. Review your changes'));
+      console.log(
+        colors.secondary(
+          `  2. Commit your work: git add . && git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`,
+        ),
+      );
+      console.log(colors.secondary('  3. Push: git push'));
+      console.log(colors.secondary('  4. Create a Pull Request'));
+    }
     console.log();
   } else {
     info('All commits done automatically (autopilot mode)');
