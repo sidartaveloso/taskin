@@ -8,6 +8,7 @@
   "status": "planned",
   "since": "2025-11-05",
   "scripts": {
+    "install": "echo 'py-sdk has no dependencies yet'",
     "build": "echo 'build script'",
     "test": "echo 'test script'",
     "lint": "echo 'lint script'",

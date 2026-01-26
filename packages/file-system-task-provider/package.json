@@ -48,6 +48,7 @@
     "access": "public"
   },
   "scripts": {
+    "install": "echo 'Installing taskin-file-system-provider dependencies...'",
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",

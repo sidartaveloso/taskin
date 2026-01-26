@@ -22,6 +22,7 @@
     "README.md"
   ],
   "scripts": {
+    "install": "echo 'Installing taskin-dashboard dependencies...'",
     "dev": "vite",
     "build": "vite build && vue-tsc --emitDeclarationOnly --skipLibCheck",
     "build:app": "vite build --config vite.config.app.ts",

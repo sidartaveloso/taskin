@@ -17,6 +17,7 @@
     }
   },
   "scripts": {
+    "install": "echo 'Installing taskin-task-server-mcp dependencies...'",
     "build": "tsc",
     "test": "vitest run",
     "test:ui": "vitest --ui",

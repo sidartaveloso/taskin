@@ -49,6 +49,7 @@
     "access": "public"
   },
   "scripts": {
+    "install": "echo 'Installing taskin-types dependencies...'",
     "build": "tsc && pnpm run generate:schemas",
     "dev": "tsc --watch",
     "generate:schemas": "tsx scripts/generate-schemas.ts",
