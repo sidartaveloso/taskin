@@ -23,6 +23,7 @@
     "README.md"
   ],
   "scripts": {
+    "install": "echo 'Installing taskin-design-vue dependencies...'",
     "dev": "storybook dev -p 6007",
     "dev:vite": "vite",
     "build": "vite build && vue-tsc --emitDeclarationOnly",

@@ -9,6 +9,7 @@
   "status": "planned",
   "since": "2025-11-05",
   "scripts": {
+    "install": "echo 'Installing taskin-api dependencies...'",
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",

@@ -17,6 +17,7 @@
     }
   },
   "scripts": {
+    "install": "echo 'Installing taskin-core dependencies...'",
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",

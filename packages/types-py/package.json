@@ -8,6 +8,7 @@
   "status": "active",
   "since": "2025-11-05",
   "scripts": {
+    "install": "uv sync",
     "build": "pnpm run generate",
     "generate": "bash -c 'mkdir -p generated && for file in ../types-ts/dist/schema/*.json; do uv run python -m datamodel_code_generator --input \"$file\" --output \"generated/$(basename \"$file\" .schema.json).py\"; done'",
     "publish:pypi": "uv build && uv publish",
