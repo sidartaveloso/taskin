@@ -112,14 +112,14 @@ importers:
         specifier: workspace:*
         version: link:../file-system-task-provider
       '@opentask/taskin-git-utils':
-        specifier: ^2.1.1
-        version: 2.1.1
+        specifier: workspace:*
+        version: link:../git-utils
       '@opentask/taskin-task-manager':
-        specifier: ^1.0.9
-        version: 1.0.9
+        specifier: workspace:*
+        version: link:../task-manager
       '@opentask/taskin-task-server-mcp':
-        specifier: ^0.1.7
-        version: 0.1.7(hono@4.11.4)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../task-server-mcp
       '@opentask/taskin-task-server-ws':
         specifier: ^0.1.4
         version: 0.1.4
@@ -482,8 +482,8 @@ importers:
   packages/taskin-alias:
     dependencies:
       taskin:
-        specifier: 2.3.0
-        version: 2.3.0(@types/node@24.10.9)
+        specifier: workspace:*
+        version: link:../cli
 
   packages/types-py:
     dependencies:
@@ -1306,16 +1306,6 @@ packages:
       '@cfworker/json-schema':
         optional: true
 
-  '@modelcontextprotocol/sdk@1.25.3':
-    resolution: {integrity: sha512-vsAMBMERybvYgKbg/l4L1rhS7VXV1c0CtyJg72vwxONVX0l4ZfKVAnZEWTQixJGTzKnELjQ59e4NbdFDALRiAQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@cfworker/json-schema': ^4.1.1
-      zod: ^3.25 || ^4.0
-    peerDependenciesMeta:
-      '@cfworker/json-schema':
-        optional: true
-
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -1331,26 +1321,17 @@ packages:
   '@one-ini/wasm@0.1.1':
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
 
-  '@opentask/taskin-file-system-provider@2.2.1':
-    resolution: {integrity: sha512-yHIvdIBXkJvx8i5PMzCDn/I+j6vfHpfORTJzJy+181+XV2ucgdtuC47L7GZN0TFuB+g56h1MhE8L7SOgI5z0PA==}
-
   '@opentask/taskin-git-utils@2.1.1':
     resolution: {integrity: sha512-d40sEYIlZBUWu28hm2f3rpPAqghUzTVCYxW8bo9qZfqiYk+PexFkKkoVJOEZJyxRLEEN7iv8j/8HjkX4nzCvhg==}
 
   '@opentask/taskin-task-manager@1.0.9':
     resolution: {integrity: sha512-QLYefkLrGXpQyMe9j7ZFhrOqixAz3tNZP31W3Ue80PbX14irdV8QSXKGY8UIHEG3ApUGzZJOMmxIzwdQDlkQFQ==}
 
-  '@opentask/taskin-task-server-mcp@0.1.7':
-    resolution: {integrity: sha512-4c4v8f4aAjQZsVMVDvNUZTvdB57FTf+K1PI1o+QYfXfe8MsMFe891qUWqxMdL6yqN1RmIE02O6jqlE7ecNbULw==}
-
   '@opentask/taskin-task-server-ws@0.1.4':
     resolution: {integrity: sha512-HnFBQEBEx1jSPQWgOky75KqXR0a6X67k5EnBVx1dwZUXDFVFp7kzAPX24CjJiC4eiiy55t06GG3WA51icgi/Sg==}
 
   '@opentask/taskin-types@1.0.6':
     resolution: {integrity: sha512-RMg2h1UElUBBp/z59gmbKliZUZ4sNlEnhUpUU2KpnIoWe7FtQ22KcNw4KdAOmJazyAGZ+hgoc21JEswcVD7CvQ==}
-
-  '@opentask/taskin-utils@1.1.0':
-    resolution: {integrity: sha512-XB83O+6alPpveWvhHdpzHQxsrzTbAMH3K0AjNtiDEZ6XgUuaFEi8vmKjHAQBZjigAGIqkYplFZv6t3R5H72EYQ==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -2578,10 +2559,6 @@ packages:
 
   cors@2.8.5:
     resolution: {integrity: sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g==}
-    engines: {node: '>= 0.10'}
-
-  cors@2.8.6:
-    resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
 
   cross-spawn@7.0.6:
@@ -4259,10 +4236,6 @@ packages:
   tabbable@6.4.0:
     resolution: {integrity: sha512-05PUHKSNE8ou2dwIxTngl4EzcnsCDZGJ/iCLtDflR/SHB/ny14rXc+qU5P4mG9JkusiV7EivzY9Mhm55AzAvCg==}
 
-  taskin@2.3.0:
-    resolution: {integrity: sha512-ChYqJv6JcQic2UZilL/aEqndHfOt/TjjFPlsU/Syhq8pFcVyYSFnQeK79hWVzO/TTiU+Zeeaf9ckWXpTTEl9Uw==}
-    hasBin: true
-
   term-size@2.2.1:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
     engines: {node: '>=8'}
@@ -5490,29 +5463,12 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.30
 
-  '@inquirer/checkbox@4.3.2(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 24.10.9
-
   '@inquirer/confirm@5.1.21(@types/node@20.19.30)':
     dependencies:
       '@inquirer/core': 10.3.2(@types/node@20.19.30)
       '@inquirer/type': 3.0.10(@types/node@20.19.30)
     optionalDependencies:
       '@types/node': 20.19.30
-
-  '@inquirer/confirm@5.1.21(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-    optionalDependencies:
-      '@types/node': 24.10.9
 
   '@inquirer/core@10.3.2(@types/node@20.19.30)':
     dependencies:
@@ -5527,19 +5483,6 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.30
 
-  '@inquirer/core@10.3.2(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/ansi': 1.0.2
-      '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-      cli-width: 4.1.0
-      mute-stream: 2.0.0
-      signal-exit: 4.1.0
-      wrap-ansi: 6.2.0
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 24.10.9
-
   '@inquirer/editor@4.2.23(@types/node@20.19.30)':
     dependencies:
       '@inquirer/core': 10.3.2(@types/node@20.19.30)
@@ -5548,14 +5491,6 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.30
 
-  '@inquirer/editor@4.2.23(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/external-editor': 1.0.3(@types/node@24.10.9)
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-    optionalDependencies:
-      '@types/node': 24.10.9
-
   '@inquirer/expand@4.0.23(@types/node@20.19.30)':
     dependencies:
       '@inquirer/core': 10.3.2(@types/node@20.19.30)
@@ -5563,14 +5498,6 @@ snapshots:
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
       '@types/node': 20.19.30
-
-  '@inquirer/expand@4.0.23(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 24.10.9
 
   '@inquirer/external-editor@1.0.3(@types/node@20.19.30)':
     dependencies:
@@ -5595,26 +5522,12 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.30
 
-  '@inquirer/input@4.3.1(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-    optionalDependencies:
-      '@types/node': 24.10.9
-
   '@inquirer/number@3.0.23(@types/node@20.19.30)':
     dependencies:
       '@inquirer/core': 10.3.2(@types/node@20.19.30)
       '@inquirer/type': 3.0.10(@types/node@20.19.30)
     optionalDependencies:
       '@types/node': 20.19.30
-
-  '@inquirer/number@3.0.23(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-    optionalDependencies:
-      '@types/node': 24.10.9
 
   '@inquirer/password@4.0.23(@types/node@20.19.30)':
     dependencies:
@@ -5623,14 +5536,6 @@ snapshots:
       '@inquirer/type': 3.0.10(@types/node@20.19.30)
     optionalDependencies:
       '@types/node': 20.19.30
-
-  '@inquirer/password@4.0.23(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-    optionalDependencies:
-      '@types/node': 24.10.9
 
   '@inquirer/prompts@7.10.1(@types/node@20.19.30)':
     dependencies:
@@ -5647,21 +5552,6 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.30
 
-  '@inquirer/prompts@7.10.1(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/checkbox': 4.3.2(@types/node@24.10.9)
-      '@inquirer/confirm': 5.1.21(@types/node@24.10.9)
-      '@inquirer/editor': 4.2.23(@types/node@24.10.9)
-      '@inquirer/expand': 4.0.23(@types/node@24.10.9)
-      '@inquirer/input': 4.3.1(@types/node@24.10.9)
-      '@inquirer/number': 3.0.23(@types/node@24.10.9)
-      '@inquirer/password': 4.0.23(@types/node@24.10.9)
-      '@inquirer/rawlist': 4.1.11(@types/node@24.10.9)
-      '@inquirer/search': 3.2.2(@types/node@24.10.9)
-      '@inquirer/select': 4.4.2(@types/node@24.10.9)
-    optionalDependencies:
-      '@types/node': 24.10.9
-
   '@inquirer/rawlist@4.1.11(@types/node@20.19.30)':
     dependencies:
       '@inquirer/core': 10.3.2(@types/node@20.19.30)
@@ -5669,14 +5559,6 @@ snapshots:
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
       '@types/node': 20.19.30
-
-  '@inquirer/rawlist@4.1.11(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 24.10.9
 
   '@inquirer/search@3.2.2(@types/node@20.19.30)':
     dependencies:
@@ -5686,15 +5568,6 @@ snapshots:
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
       '@types/node': 20.19.30
-
-  '@inquirer/search@3.2.2(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 24.10.9
 
   '@inquirer/select@4.4.2(@types/node@20.19.30)':
     dependencies:
@@ -5706,23 +5579,9 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.30
 
-  '@inquirer/select@4.4.2(@types/node@24.10.9)':
-    dependencies:
-      '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 24.10.9
-
   '@inquirer/type@3.0.10(@types/node@20.19.30)':
     optionalDependencies:
       '@types/node': 20.19.30
-
-  '@inquirer/type@3.0.10(@types/node@24.10.9)':
-    optionalDependencies:
-      '@types/node': 24.10.9
 
   '@isaacs/cliui@8.0.2':
     dependencies:
@@ -5802,28 +5661,6 @@ snapshots:
       - hono
       - supports-color
 
-  '@modelcontextprotocol/sdk@1.25.3(hono@4.11.4)(zod@3.25.76)':
-    dependencies:
-      '@hono/node-server': 1.19.9(hono@4.11.4)
-      ajv: 8.17.1
-      ajv-formats: 3.0.1(ajv@8.17.1)
-      content-type: 1.0.5
-      cors: 2.8.6
-      cross-spawn: 7.0.6
-      eventsource: 3.0.7
-      eventsource-parser: 3.0.6
-      express: 5.2.1
-      express-rate-limit: 7.5.1(express@5.2.1)
-      jose: 6.1.3
-      json-schema-typed: 8.0.2
-      pkce-challenge: 5.0.1
-      raw-body: 3.0.2
-      zod: 3.25.76
-      zod-to-json-schema: 3.25.1(zod@3.25.76)
-    transitivePeerDependencies:
-      - hono
-      - supports-color
-
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -5838,13 +5675,6 @@ snapshots:
 
   '@one-ini/wasm@0.1.1': {}
 
-  '@opentask/taskin-file-system-provider@2.2.1':
-    dependencies:
-      '@opentask/taskin-git-utils': 2.1.1
-      '@opentask/taskin-task-manager': 1.0.9
-      '@opentask/taskin-types': 1.0.6
-      '@opentask/taskin-utils': 1.1.0
-
   '@opentask/taskin-git-utils@2.1.1':
     dependencies:
       '@opentask/taskin-types': 1.0.6
@@ -5852,18 +5682,6 @@ snapshots:
   '@opentask/taskin-task-manager@1.0.9':
     dependencies:
       '@opentask/taskin-types': 1.0.6
-
-  '@opentask/taskin-task-server-mcp@0.1.7(hono@4.11.4)(zod@3.25.76)':
-    dependencies:
-      '@modelcontextprotocol/sdk': 1.25.3(hono@4.11.4)(zod@3.25.76)
-      '@opentask/taskin-file-system-provider': 2.2.1
-      '@opentask/taskin-task-manager': 1.0.9
-      '@opentask/taskin-types': 1.0.6
-    transitivePeerDependencies:
-      - '@cfworker/json-schema'
-      - hono
-      - supports-color
-      - zod
 
   '@opentask/taskin-task-server-ws@0.1.4':
     dependencies:
@@ -5876,11 +5694,6 @@ snapshots:
 
   '@opentask/taskin-types@1.0.6':
     dependencies:
-      zod: 3.25.76
-
-  '@opentask/taskin-utils@1.1.0':
-    dependencies:
-      chalk: 4.1.2
       zod: 3.25.76
 
   '@pkgjs/parseargs@0.11.0':
@@ -7261,11 +7074,6 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
-  cors@2.8.6:
-    dependencies:
-      object-assign: 4.1.1
-      vary: 1.1.2
-
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -8022,18 +7830,6 @@ snapshots:
       rxjs: 7.8.2
     optionalDependencies:
       '@types/node': 20.19.30
-
-  inquirer@12.11.1(@types/node@24.10.9):
-    dependencies:
-      '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@24.10.9)
-      '@inquirer/prompts': 7.10.1(@types/node@24.10.9)
-      '@inquirer/type': 3.0.10(@types/node@24.10.9)
-      mute-stream: 2.0.0
-      run-async: 4.0.6
-      rxjs: 7.8.2
-    optionalDependencies:
-      '@types/node': 24.10.9
 
   ipaddr.js@1.9.1: {}
 
@@ -9133,33 +8929,6 @@ snapshots:
   symbol-tree@3.2.4: {}
 
   tabbable@6.4.0: {}
-
-  taskin@2.3.0(@types/node@24.10.9):
-    dependencies:
-      '@opentask/taskin-file-system-provider': 2.2.1
-      '@opentask/taskin-git-utils': 2.1.1
-      '@opentask/taskin-task-manager': 1.0.9
-      '@opentask/taskin-task-server-mcp': 0.1.7(hono@4.11.4)(zod@3.25.76)
-      '@opentask/taskin-task-server-ws': 0.1.4
-      '@opentask/taskin-types': 1.0.6
-      '@opentask/taskin-utils': 1.1.0
-      '@types/express': 5.0.6
-      '@types/inquirer': 9.0.9
-      '@types/play-sound': 1.1.2
-      chalk: 5.6.2
-      commander: 12.1.0
-      express: 4.22.1
-      inquirer: 12.11.1(@types/node@24.10.9)
-      play-sound: 1.1.6
-      ws: 8.19.0
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - '@cfworker/json-schema'
-      - '@types/node'
-      - bufferutil
-      - hono
-      - supports-color
-      - utf-8-validate
 
   term-size@2.2.1: {}
 
