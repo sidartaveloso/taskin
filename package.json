@@ -43,7 +43,7 @@
     "taskin": "tsx packages/cli/src/index.ts",
     "sync:versions": "node scripts/sync-versions.js",
     "changeset": "changeset",
-    "changeset:version": "changeset version",
+    "changeset:version": "changeset version && pnpm install --no-frozen-lockfile",
     "changeset:publish": "pnpm build && changeset publish",
     "publish:pypi": "turbo run publish:pypi",
     "publish:pypi:check": "turbo run publish:pypi:check",
