@@ -8,7 +8,7 @@
   "status": "planned",
   "since": "2025-11-05",
   "scripts": {
-    "install": "uv sync",
+    "install": "echo 'py-sdk has no Python dependencies yet'",
     "build": "echo 'build script'",
     "test": "echo 'test script'",
     "lint": "echo 'lint script'",
