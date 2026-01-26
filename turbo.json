@@ -3,20 +3,14 @@
   "globalDependencies": [".env", ".env.local"],
   "globalEnv": ["NODE_ENV", "PORT"],
   "tasks": {
-    "install": {
-      "cache": true,
-      "dependsOn": [],
-      "inputs": [
-        "package.json",
-        "pnpm-lock.yaml",
-        "packages/*/package.json",
-        "packages/*/pyproject.toml",
-        "packages/*/uv.lock"
-      ],
-      "outputs": ["node_modules/**", ".venv/**"]
-    },
     "@opentask/taskin#build": {
       "outputs": []
+    },
+    "@opentask/taskin-file-system-provider#build": {
+      "dependsOn": [
+        "@opentask/taskin-git-utils#build",
+        "@opentask/taskin-task-manager#build"
+      ]
     },
     "@taskin/chatbot#build": {
       "outputs": []
@@ -72,6 +66,18 @@
     "generate:schemas": {
       "dependsOn": [],
       "outputs": ["dist/schema/**"]
+    },
+    "install": {
+      "cache": true,
+      "dependsOn": [],
+      "inputs": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "packages/*/package.json",
+        "packages/*/pyproject.toml",
+        "packages/*/uv.lock"
+      ],
+      "outputs": ["node_modules/**", ".venv/**"]
     },
     "lint": {
       "dependsOn": ["install"],
