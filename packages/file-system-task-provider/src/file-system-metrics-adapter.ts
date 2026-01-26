@@ -1,13 +1,14 @@
 import type { IGitAnalyzer } from '@opentask/taskin-git-utils';
 import type { IMetricsManager } from '@opentask/taskin-task-manager';
 import {
-    type StatsQuery,
-    type TaskStats,
-    type TaskStatus,
-    type TaskType,
-    type TeamStats,
-    type UserStats,
-    UserStatsSchema,
+  type GitCommit,
+  type StatsQuery,
+  type TaskStats,
+  type TaskStatus,
+  type TaskType,
+  type TeamStats,
+  type UserStats,
+  UserStatsSchema,
 } from '@opentask/taskin-types';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -192,7 +193,7 @@ async function calculateCodeMetrics(
           filesChanged: number;
           commits: number;
         },
-        commit,
+        commit: GitCommit,
       ) => ({
         linesAdded: acc.linesAdded + commit.linesAdded,
         linesRemoved: acc.linesRemoved + commit.linesRemoved,
