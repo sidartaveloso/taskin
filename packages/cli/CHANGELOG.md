@@ -1,5 +1,14 @@
 # taskin
 
+## 2.3.1
+
+### Patch Changes
+
+- fix(cli): add auto-commit to start command for autopilot mode
+
+  Start command now respects automation level and auto-commits status changes
+  when configured (assisted/autopilot modes).
+
 ## 2.3.0
 
 ### Minor Changes
