@@ -7,8 +7,10 @@ import {
   UserRegistry,
 } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
+import { execSync } from 'child_process';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { playSound } from '../lib/sound-player.js';
 import { defineCommand } from './define-command/index.js';
@@ -97,20 +99,50 @@ async function startTask(
   success(`Task ${updatedTask.id} started successfully!`);
   success(`Status changed to: ${updatedTask.status}`);
 
+  // Load automation config
+  const configManager = new ConfigManager(monorepoRoot);
+  const behavior = configManager.getAutomationBehavior();
+
+  // Auto-commit status change if enabled
+  if (behavior.autoCommitStatusChange) {
+    try {
+      execSync(
+        `git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip-ci]"`,
+        { cwd: process.cwd(), stdio: 'ignore' },
+      );
+      success('✓ Auto-committed status change');
+    } catch {
+      // Ignore if nothing to commit
+    }
+  }
+
   console.log();
-  info('Next steps (suggestions):');
-  console.log(
-    colors.secondary(
-      `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip ci]"`,
-    ),
-  );
-  console.log(
-    colors.secondary(
-      '  2. Create a branch: git checkout -b feat/task-' + normalizedId,
-    ),
-  );
-  console.log(colors.secondary('  3. Start coding! 💻'));
-  console.log(colors.secondary('  4. Use "taskin pause" to save progress'));
+  
+  // Show suggestions only if not auto-committing
+  if (!behavior.autoCommitStatusChange) {
+    info('Next steps (suggestions):');
+    console.log(
+      colors.secondary(
+        `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip ci]"`,
+      ),
+    );
+    console.log(
+      colors.secondary(
+        '  2. Create a branch: git checkout -b feat/task-' + normalizedId,
+      ),
+    );
+    console.log(colors.secondary('  3. Start coding! 💻'));
+    console.log(colors.secondary('  4. Use "taskin pause" to save progress'));
+  } else {
+    info('Next steps:');
+    console.log(
+      colors.secondary(
+        '  1. Create a branch: git checkout -b feat/task-' + normalizedId,
+      ),
+    );
+    console.log(colors.secondary('  2. Start coding! 💻'));
+    console.log(colors.secondary('  3. Use "taskin pause" to save progress'));
+  }
   console.log();
 
   // Play start sound if not disabled
