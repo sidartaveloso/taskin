@@ -283,7 +283,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
         cwd: TEST_DIR,
       });
 
-      expect(stdout).toContain('commit message');
+      expect(stdout).toContain('git commit');
     }, 60000);
   });
 
