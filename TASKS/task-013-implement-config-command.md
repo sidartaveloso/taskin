@@ -1,6 +1,6 @@
 # Task 013 — Implement config command
 
-Status: in-progress
+Status: done
 Type: feat  
 Assignee: Sidarta Veloso
 
@@ -17,16 +17,16 @@ Implementar o comando `taskin config` que está documentado no help e no README 
 
 ## Tasks
 
-- [ ] Criar arquivo `packages/cli/src/commands/config.ts` seguindo o padrão dos outros comandos
-- [ ] Implementar `configCommand` usando `defineCommand` helper
-- [ ] Adicionar opção `--level <manual|assisted|autopilot>` para configurar nível de automação
-- [ ] Adicionar opção `--show` para exibir configuração atual (opcional, mas útil)
-- [ ] Implementar modo interativo quando executado sem argumentos (usando inquirer)
-- [ ] Exportar `configCommand` no `packages/cli/src/commands/index.ts`
-- [ ] Registrar comando no `packages/cli/src/index.ts` (adicionar após `statsCommand`)
-- [ ] Adicionar testes em `packages/cli/src/commands/config.test.ts`
-- [ ] Atualizar documentação se necessário (já está documentado, mas verificar)
-- [ ] Testar o comando localmente:
+- [x] Criar arquivo `packages/cli/src/commands/config.ts` seguindo o padrão dos outros comandos
+- [x] Implementar `configCommand` usando `defineCommand` helper
+- [x] Adicionar opção `--level <manual|assisted|autopilot>` para configurar nível de automação
+- [x] Adicionar opção `--show` para exibir configuração atual (opcional, mas útil)
+- [x] Implementar modo interativo quando executado sem argumentos (usando inquirer)
+- [x] Exportar `configCommand` no `packages/cli/src/commands/index.ts`
+- [x] Registrar comando no `packages/cli/src/index.ts` (adicionar após `statsCommand`)
+- [x] Adicionar testes em `packages/cli/src/commands/config.test.ts`
+- [x] Atualizar documentação se necessário (já está documentado, mas verificar)
+- [x] Testar o comando localmente:
   - `taskin config` (modo interativo)
   - `taskin config --level manual`
   - `taskin config --level assisted`
@@ -122,16 +122,16 @@ async function handleConfigCommand(options: ConfigOptions): Promise<void> {
 
 ## Acceptance Criteria
 
-- [ ] Comando `taskin config --help` exibe ajuda correta
-- [ ] Comando `taskin config --level manual` atualiza `.taskin.json` corretamente
-- [ ] Comando `taskin config --level assisted` atualiza `.taskin.json` corretamente
-- [ ] Comando `taskin config --level autopilot` atualiza `.taskin.json` corretamente
-- [ ] Comando `taskin config --show` exibe configuração atual
-- [ ] Comando `taskin config` sem argumentos abre modo interativo
-- [ ] Validação rejeita níveis inválidos com mensagem clara
-- [ ] Mensagem de sucesso é exibida após configuração
-- [ ] Testes cobrem todos os cenários (sucesso, erro, validação)
-- [ ] Comando falha graciosamente se projeto não estiver inicializado
+- [x] Comando `taskin config --help` exibe ajuda correta
+- [x] Comando `taskin config --level manual` atualiza `.taskin.json` corretamente
+- [x] Comando `taskin config --level assisted` atualiza `.taskin.json` corretamente
+- [x] Comando `taskin config --level autopilot` atualiza `.taskin.json` corretamente
+- [x] Comando `taskin config --show` exibe configuração atual
+- [x] Comando `taskin config` sem argumentos abre modo interativo
+- [x] Validação rejeita níveis inválidos com mensagem clara
+- [x] Mensagem de sucesso é exibida após configuração
+- [x] Testes cobrem todos os cenários (sucesso, erro, validação)
+- [x] Comando falha graciosamente se projeto não estiver inicializado
 
 ## References
 

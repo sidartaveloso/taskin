@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-types",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "TypeScript types and Zod schemas for Taskin",
   "motivation": "Provide a single source of truth for Taskin entity definitions.",
   "solve": "Ensures consistent data types across all Taskin packages and languages.",
@@ -49,6 +49,7 @@
     "access": "public"
   },
   "scripts": {
+    "install": "echo 'Installing taskin-types dependencies...'",
     "build": "tsc && pnpm run generate:schemas",
     "dev": "tsc --watch",
     "generate:schemas": "tsx scripts/generate-schemas.ts",

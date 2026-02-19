@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-server-ws",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "WebSocket server for real-time task management",
   "motivation": "Enable real-time task updates across multiple clients",
   "solve": "Provides WebSocket server for task synchronization",
@@ -17,6 +17,7 @@
     }
   },
   "scripts": {
+    "install": "echo 'Installing taskin-task-server-ws dependencies...'",
     "build": "tsc",
     "test": "vitest run",
     "test:ui": "vitest --ui",

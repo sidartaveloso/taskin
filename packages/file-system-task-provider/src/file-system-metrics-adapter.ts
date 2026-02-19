@@ -1,6 +1,7 @@
-import type { IGitAnalyzer } from '@opentask/taskin-git-utils/src/git-analyzer.types';
-import type { IMetricsManager } from '@opentask/taskin-task-manager/src/metrics.types';
+import type { IGitAnalyzer } from '@opentask/taskin-git-utils';
+import type { IMetricsManager } from '@opentask/taskin-task-manager';
 import {
+  type GitCommit,
   type StatsQuery,
   type TaskStats,
   type TaskStatus,
@@ -192,7 +193,7 @@ async function calculateCodeMetrics(
           filesChanged: number;
           commits: number;
         },
-        commit,
+        commit: GitCommit,
       ) => ({
         linesAdded: acc.linesAdded + commit.linesAdded,
         linesRemoved: acc.linesRemoved + commit.linesRemoved,
