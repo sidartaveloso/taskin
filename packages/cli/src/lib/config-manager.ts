@@ -9,11 +9,9 @@ import type {
   CommitAutomation,
   TaskinConfig,
 } from '@opentask/taskin-types';
-import * as TaskinTypes from '@opentask/taskin-types';
+import { TaskinConfigSchema } from '@opentask/taskin-types';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-
-const { TaskinConfigSchema } = TaskinTypes;
 
 /**
  * Automation behavior resolved from config
@@ -114,11 +112,16 @@ export class ConfigManager {
 
   /**
    * Get automation level from config
-   * Returns 'assisted' as default if not configured
+   * Returns 'assisted' as default if not configured or if config loading fails
    */
   getAutomationLevel(): AutomationLevel {
-    const config = this.loadConfig();
-    return config.automation?.level ?? 'assisted';
+    try {
+      const config = this.loadConfig();
+      return config.automation?.level ?? 'assisted';
+    } catch {
+      // If config doesn't exist or is invalid, return default
+      return 'assisted';
+    }
   }
 
   /**
@@ -139,8 +142,13 @@ export class ConfigManager {
    * Get automation configuration
    */
   getAutomationConfig(): AutomationConfig {
-    const config = this.loadConfig();
-    return config.automation ?? { level: 'assisted' };
+    try {
+      const config = this.loadConfig();
+      return config.automation ?? { level: 'assisted' };
+    } catch {
+      // If config doesn't exist or is invalid, return default
+      return { level: 'assisted' };
+    }
   }
 
   /**

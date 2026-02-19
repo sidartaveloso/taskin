@@ -6,6 +6,12 @@
     "@opentask/taskin#build": {
       "outputs": []
     },
+    "@opentask/taskin-file-system-provider#build": {
+      "dependsOn": [
+        "@opentask/taskin-git-utils#build",
+        "@opentask/taskin-task-manager#build"
+      ]
+    },
     "@taskin/chatbot#build": {
       "outputs": []
     },
@@ -26,7 +32,7 @@
       "dependsOn": ["build"]
     },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["install", "^build"],
       "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
       "outputs": [
         "dist/**",
@@ -40,13 +46,16 @@
     },
     "dev": {
       "cache": false,
+      "dependsOn": ["install"],
       "persistent": true
     },
     "format": {
+      "dependsOn": ["install"],
       "inputs": ["src/**/*.{ts,js,tsx,jsx,json}", "package.json"],
       "outputs": []
     },
     "format:check": {
+      "dependsOn": ["install"],
       "inputs": ["src/**/*.{ts,js,tsx,jsx,json}", "package.json"],
       "outputs": []
     },
@@ -58,16 +67,30 @@
       "dependsOn": [],
       "outputs": ["dist/schema/**"]
     },
+    "install": {
+      "cache": true,
+      "dependsOn": [],
+      "inputs": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "packages/*/package.json",
+        "packages/*/pyproject.toml",
+        "packages/*/uv.lock"
+      ],
+      "outputs": ["node_modules/**", ".venv/**"]
+    },
     "lint": {
+      "dependsOn": ["install"],
       "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
       "outputs": []
     },
     "lint:fix": {
+      "dependsOn": ["install"],
       "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
       "outputs": []
     },
     "test": {
-      "dependsOn": ["build"],
+      "dependsOn": ["install", "build"],
       "inputs": [
         "src/**/*.{ts,js,tsx,jsx}",
         "**/*.test.{ts,js}",
@@ -76,7 +99,7 @@
       "outputs": ["coverage/**", ".turbo/**"]
     },
     "test:coverage": {
-      "dependsOn": ["build"],
+      "dependsOn": ["install", "build"],
       "inputs": [
         "src/**/*.{ts,js,tsx,jsx}",
         "**/*.test.{ts,js}",
@@ -85,6 +108,7 @@
       "outputs": ["coverage/**"]
     },
     "typecheck": {
+      "dependsOn": ["install"],
       "inputs": ["src/**/*.{ts,tsx}", "package.json", "tsconfig.json"],
       "outputs": []
     }

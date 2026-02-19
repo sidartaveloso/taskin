@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-git-utils",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Git utilities for Taskin task management",
   "type": "module",
   "motivation": "To provide a set of utilities for interacting with Git repositories.",
@@ -32,6 +32,7 @@
     }
   },
   "scripts": {
+    "install": "echo 'Installing taskin-git-utils dependencies...'",
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",

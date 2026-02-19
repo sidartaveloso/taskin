@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-provider-pinia",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Pinia store for task management integration with Taskin",
   "motivation": "Provide Vue 3 reactive state management for tasks",
   "solve": "Integrates Pinia with Taskin task providers",
@@ -17,6 +17,7 @@
     }
   },
   "scripts": {
+    "install": "echo 'Installing taskin-task-provider-pinia dependencies...'",
     "build": "tsc",
     "test": "vitest run",
     "test:ui": "vitest --ui",

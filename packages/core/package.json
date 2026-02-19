@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-core",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": true,
   "type": "module",
   "motivation": "To contain the core business logic of Taskin.",
@@ -17,6 +17,7 @@
     }
   },
   "scripts": {
+    "install": "echo 'Installing taskin-core dependencies...'",
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",

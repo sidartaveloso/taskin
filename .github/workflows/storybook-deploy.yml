@@ -58,8 +58,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies for design-vue
+        run: pnpm install --frozen-lockfile --filter @opentask/taskin-design-vue
 
       - name: Build Storybook
         run: |
