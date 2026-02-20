@@ -183,9 +183,9 @@ Test description`;
 
     it('should return false if no section metadata found and inline has trailing spaces', async () => {
       const content = `# Task 001 — Already Fixed
-Status: done  
-Type: feat  
-Assignee: John Doe  
+Status: done
+Type: feat
+Assignee: John Doe
 
 ## Description
 Already in inline format.`;
