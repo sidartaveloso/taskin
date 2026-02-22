@@ -25,6 +25,7 @@ export const TaskIdSchema = z.string().uuid().brand('TaskId');
 export const TASK_STATUSES = [
   'pending',
   'in-progress',
+  'in-review',
   'done',
   'blocked',
   'canceled',
@@ -436,6 +437,138 @@ export const ProviderConfigSchema = z.object({
 });
 
 /**
+ * Command names for lifecycle hooks.
+ * Use this for runtime validation and type narrowing.
+ *
+ * @public
+ * @example
+ * ```ts
+ * const isValidCommand = HOOK_COMMANDS.includes(userInput);
+ * ```
+ */
+export const HOOK_COMMANDS = ['start', 'pause', 'finish', 'review'] as const;
+
+/**
+ * Hook phase (when the hook runs relative to command execution).
+ *
+ * @public
+ */
+export const HOOK_PHASES = ['pre', 'during', 'post'] as const;
+
+/**
+ * Command hooks schema - hooks for a single command.
+ * Each phase is optional and contains shell commands to execute.
+ *
+ * @public
+ * @example
+ * ```ts
+ * const reviewHooks: CommandHooks = {
+ *   pre: ['git fetch', 'git merge origin/main'],
+ *   during: ['pnpm lint', 'pnpm test'],
+ *   post: ['git push']
+ * };
+ * ```
+ */
+export const CommandHooksSchema = z.object({
+  /** Hooks executed before command logic */
+  pre: z.array(z.string()).optional(),
+  /** Hooks executed during command logic */
+  during: z.array(z.string()).optional(),
+  /** Hooks executed after command succeeds */
+  post: z.array(z.string()).optional(),
+});
+
+/**
+ * Global hook configuration for all commands.
+ *
+ * @public
+ */
+export const HookConfigSchema = z.object({
+  /** Hooks for start command */
+  start: CommandHooksSchema.optional(),
+  /** Hooks for pause command */
+  pause: CommandHooksSchema.optional(),
+  /** Hooks for finish command */
+  finish: CommandHooksSchema.optional(),
+  /** Hooks for review command */
+  review: CommandHooksSchema.optional(),
+});
+
+/**
+ * Global hook execution settings.
+ *
+ * @public
+ */
+export const HookSettingsSchema = z.object({
+  /** Base branch for git operations */
+  baseBranch: z.string().default('main'),
+  /** Continue on error */
+  continueOnError: z.boolean().default(false),
+  /** Timeout in milliseconds */
+  timeout: z.number().int().positive().default(300000),
+  /** Working directory */
+  cwd: z.string().optional(),
+});
+
+/**
+ * Hook execution context with template variables.
+ *
+ * @public
+ * @example
+ * ```ts
+ * const context: HookContext = {
+ *   taskId: '014',
+ *   taskTitle: 'Add review command',
+ *   baseBranch: 'develop'
+ * };
+ * // Hook: "git checkout -b feat/task-{{taskId}}"
+ * // Executes: "git checkout -b feat/task-014"
+ * ```
+ */
+export const HookContextSchema = z
+  .object({
+    /** Task ID (normalized) */
+    taskId: z.string(),
+    /** Task title for commit messages */
+    taskTitle: z.string(),
+    /** Base branch for merge operations */
+    baseBranch: z.string().optional(),
+  })
+  .catchall(z.string().optional());
+
+/**
+ * Options for hook execution.
+ *
+ * @public
+ */
+export const HookOptionsSchema = z.object({
+  /** Timeout in milliseconds */
+  timeout: z.number().int().positive(),
+  /** Continue executing remaining hooks if one fails */
+  continueOnError: z.boolean(),
+  /** Working directory for command execution */
+  cwd: z.string(),
+});
+
+/**
+ * Result of a single hook execution.
+ *
+ * @public
+ */
+export const HookResultSchema = z.object({
+  /** The hook command that was executed */
+  hook: z.string(),
+  /** Whether the hook succeeded */
+  success: z.boolean(),
+  /** Combined stdout/stderr output */
+  output: z.string().optional(),
+  /** Error message if failed */
+  error: z.string().optional(),
+  /** Execution duration in milliseconds */
+  duration: z.number().int().nonnegative(),
+});
+
+/**
  * Taskin configuration file schema (.taskin.json).
  * Root configuration for a Taskin project.
  *
@@ -445,4 +578,8 @@ export const TaskinConfigSchema = z.object({
   version: z.string(),
   automation: AutomationConfigSchema.optional(),
   provider: ProviderConfigSchema,
+  /** Unified hook system for all commands */
+  hooks: HookConfigSchema.optional(),
+  /** Global hook execution settings */
+  hookConfig: HookSettingsSchema.optional(),
 });

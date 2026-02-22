@@ -6,7 +6,9 @@
 import type {
   AutomationConfig,
   AutomationLevel,
+  CommandHooks,
   CommitAutomation,
+  HookSettings,
   TaskinConfig,
 } from '@opentask/taskin-types';
 import { TaskinConfigSchema } from '@opentask/taskin-types';
@@ -173,5 +175,47 @@ export class ConfigManager {
    */
   exists(): boolean {
     return existsSync(this.configPath);
+  }
+
+  /**
+   * Get hooks for a specific command.
+   * Returns empty object if hooks are not configured.
+   *
+   * @param command - Command name ('start', 'pause', 'finish', 'review')
+   * @returns Command hooks configuration
+   */
+  getCommandHooks(command: 'start' | 'pause' | 'finish' | 'review'): CommandHooks {
+    try {
+      const config = this.loadConfig();
+      return config.hooks?.[command] ?? {};
+    } catch {
+      // If config doesn't exist or is invalid, return empty hooks
+      return {};
+    }
+  }
+
+  /**
+   * Get global hook settings.
+   * Returns defaults if not configured.
+   *
+   * @returns Global hook settings
+   */
+  getHookSettings(): HookSettings {
+    try {
+      const config = this.loadConfig();
+      return {
+        baseBranch: config.hookConfig?.baseBranch ?? 'main',
+        continueOnError: config.hookConfig?.continueOnError ?? false,
+        timeout: config.hookConfig?.timeout ?? 300000,
+        cwd: config.hookConfig?.cwd,
+      };
+    } catch {
+      // If config doesn't exist or is invalid, return defaults
+      return {
+        baseBranch: 'main',
+        continueOnError: false,
+        timeout: 300000,
+      };
+    }
   }
 }
