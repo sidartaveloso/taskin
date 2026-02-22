@@ -184,7 +184,9 @@ export class ConfigManager {
    * @param command - Command name ('start', 'pause', 'finish', 'review')
    * @returns Command hooks configuration
    */
-  getCommandHooks(command: 'start' | 'pause' | 'finish' | 'review'): CommandHooks {
+  getCommandHooks(
+    command: 'start' | 'pause' | 'finish' | 'review',
+  ): CommandHooks {
     try {
       const config = this.loadConfig();
       return config.hooks?.[command] ?? {};
