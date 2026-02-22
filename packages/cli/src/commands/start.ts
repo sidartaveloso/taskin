@@ -117,7 +117,7 @@ async function startTask(
   }
 
   console.log();
-  
+
   // Show suggestions only if not auto-committing
   if (!behavior.autoCommitStatusChange) {
     info('Next steps (suggestions):');
