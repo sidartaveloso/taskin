@@ -199,7 +199,11 @@ async function reviewTask(
   }
 
   // Execute review checks (during hooks)
-  if (reviewHooks.during && reviewHooks.during.length > 0 && !options.skipChecks) {
+  if (
+    reviewHooks.during &&
+    reviewHooks.during.length > 0 &&
+    !options.skipChecks
+  ) {
     info('⏳ Executing review checks...');
     const duringResults = await hookRunner.executeHooks(
       reviewHooks.during,
