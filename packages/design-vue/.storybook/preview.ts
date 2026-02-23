@@ -17,11 +17,19 @@ const preview: Preview = {
     },
 
     // Layout configuration
-    layout: 'centered', // Center components by default
+    // Center components by default
+    layout: 'centered',
 
     // Docs configuration
     docs: {
       toc: true, // Enable table of contents
+    },
+
+    a11y: {
+      // 'todo' - show a11y violations in the test UI only
+      // 'error' - fail CI on a11y violations
+      // 'off' - skip a11y checks entirely
+      test: 'todo',
     },
   },
 
