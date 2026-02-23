@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "composite": false,
-    "declaration": false,
+    "composite": true,
+    "declaration": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
     "outDir": "./dist",
-    "paths": {},
     "skipLibCheck": true
   },
   "extends": "../../tsconfig.base.json",
