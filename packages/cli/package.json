@@ -84,9 +84,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0",
     "@opentask/taskin-file-system-provider": "workspace:*",
     "@opentask/taskin-git-utils": "^2.1.1",
-    "@opentask/taskin-task-manager": "^1.0.9",
+    "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-task-server-mcp": "^0.1.7",
     "@opentask/taskin-task-server-ws": "^0.1.4",
     "@opentask/taskin-types": "workspace:*",
