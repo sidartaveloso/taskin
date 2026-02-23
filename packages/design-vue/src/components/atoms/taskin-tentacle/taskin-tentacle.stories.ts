@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h } from 'vue';
 import type { TentacleAnimationKeyframes } from './taskin-tentacle';
 import TaskinTentacle from './taskin-tentacle';

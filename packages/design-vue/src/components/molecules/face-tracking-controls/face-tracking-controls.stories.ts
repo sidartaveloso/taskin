@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import FaceTrackingControls from './face-tracking-controls.vue';
 
 const meta = {

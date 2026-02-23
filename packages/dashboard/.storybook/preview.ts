@@ -21,17 +21,16 @@ const preview: Preview = {
 
     // Backgrounds addon (built-in to Storybook 10)
     backgrounds: {
-      default: 'light',
-      values: [
-        { name: 'light', value: '#ffffff' },
-        { name: 'dark', value: '#1a1a1a' },
-        { name: 'gray', value: '#f5f5f5' },
-      ],
+      options: {
+        light: { name: 'light', value: '#ffffff' },
+        dark: { name: 'dark', value: '#1a1a1a' },
+        gray: { name: 'gray', value: '#f5f5f5' }
+      }
     },
 
     // Viewport addon (built-in to Storybook 10)
     viewport: {
-      viewports: {
+      options: {
         mobile: {
           name: 'Mobile',
           styles: { width: '375px', height: '667px' },
@@ -71,6 +70,12 @@ const preview: Preview = {
 
   // Tags for all stories
   tags: ['autodocs'],
+
+  initialGlobals: {
+    backgrounds: {
+      value: 'light'
+    }
+  }
 };
 
 export default preview;
