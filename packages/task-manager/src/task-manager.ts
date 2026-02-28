@@ -44,6 +44,25 @@ export class TaskManager implements ITaskManager {
     return updatedTask;
   }
 
+  async reviewTask(taskId: string): Promise<TaskFile> {
+    const task = await this.taskProvider.findTask(taskId);
+
+    if (!task) {
+      throw new Error(`Task with ID '${taskId}' not found.`);
+    }
+
+    if (task.status !== 'in-progress') {
+      throw new Error(
+        `Task '${taskId}' must be in 'in-progress' status to be reviewed. Current status: ${task.status}`,
+      );
+    }
+
+    const updatedTask: TaskFile = { ...task, status: 'in-review' };
+    await this.taskProvider.updateTask(updatedTask);
+
+    return updatedTask;
+  }
+
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
     return this.taskProvider.createTask(options);
   }

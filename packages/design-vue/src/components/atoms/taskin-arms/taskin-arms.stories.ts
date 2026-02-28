@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { usePoseLandmarker } from '../../../composables/use-pose-landmarker';
 import FaceTrackingControls from '../../molecules/face-tracking-controls';

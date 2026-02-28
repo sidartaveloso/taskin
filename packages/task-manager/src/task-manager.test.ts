@@ -60,6 +60,56 @@ describe('TaskManager', () => {
     });
   });
 
+  describe('reviewTask', () => {
+    it('should change status to in-review for an in-progress task', async () => {
+      const inProgressTask = { ...mockTask, status: 'in-progress' as const };
+      (mockTaskProvider.findTask as Mock).mockResolvedValue(inProgressTask);
+
+      const updatedTask = await taskManager.reviewTask('task-001');
+
+      expect(mockTaskProvider.findTask).toHaveBeenCalledWith('task-001');
+      expect(mockTaskProvider.updateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'in-review' }),
+      );
+      expect(updatedTask.status).toBe('in-review');
+    });
+
+    it('should throw an error if task is not found', async () => {
+      (mockTaskProvider.findTask as Mock).mockResolvedValue(undefined);
+
+      await expect(taskManager.reviewTask('not-found')).rejects.toThrow(
+        "Task with ID 'not-found' not found.",
+      );
+    });
+
+    it('should throw an error if task is not in-progress', async () => {
+      const pendingTask = { ...mockTask, status: 'pending' as const };
+      (mockTaskProvider.findTask as Mock).mockResolvedValue(pendingTask);
+
+      await expect(taskManager.reviewTask('task-001')).rejects.toThrow(
+        "Task 'task-001' must be in 'in-progress' status to be reviewed",
+      );
+    });
+
+    it('should throw an error if task is already done', async () => {
+      const doneTask = { ...mockTask, status: 'done' as const };
+      (mockTaskProvider.findTask as Mock).mockResolvedValue(doneTask);
+
+      await expect(taskManager.reviewTask('task-001')).rejects.toThrow(
+        "Task 'task-001' must be in 'in-progress' status to be reviewed",
+      );
+    });
+
+    it('should throw an error if task is already in-review', async () => {
+      const reviewTask = { ...mockTask, status: 'in-review' as const };
+      (mockTaskProvider.findTask as Mock).mockResolvedValue(reviewTask);
+
+      await expect(taskManager.reviewTask('task-001')).rejects.toThrow(
+        "Task 'task-001' must be in 'in-progress' status to be reviewed",
+      );
+    });
+  });
+
   describe('createTask', () => {
     it('should delegate task creation to provider', async () => {
       const createOptions = { title: 'New Task', type: 'feat' as const };

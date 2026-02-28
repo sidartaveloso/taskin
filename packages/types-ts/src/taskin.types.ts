@@ -8,12 +8,18 @@ import type {
   AutomationConfigSchema,
   AutomationLevelSchema,
   CodeMetricsSchema,
+  CommandHooksSchema,
   CommitAutomationSchema,
   CommitSizeSchema,
   ContributionMetricsSchema,
   DayOfWeekSchema,
   EngagementMetricsSchema,
   GitCommitSchema,
+  HookConfigSchema,
+  HookContextSchema,
+  HookOptionsSchema,
+  HookResultSchema,
+  HookSettingsSchema,
   ProviderConfigSchema,
   RefactoringMetricsSchema,
   StatsPeriodSchema,
@@ -318,3 +324,105 @@ export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
  * @public
  */
 export type TaskinConfig = z.infer<typeof TaskinConfigSchema>;
+
+// ============================================================================
+// Hook System Types
+// ============================================================================
+
+/**
+ * Hook execution context with task variables for template substitution.
+ * Variables can be used in hook commands with {{variableName}} syntax.
+ *
+ * @public
+ * @example
+ * ```ts
+ * const context: HookContext = {
+ *   taskId: '014',
+ *   taskTitle: 'Add review command',
+ *   baseBranch: 'develop'
+ * };
+ * // Hook: "git checkout -b feat/task-{{taskId}}"
+ * // Executes: "git checkout -b feat/task-014"
+ * ```
+ */
+export type HookContext = z.infer<typeof HookContextSchema>;
+
+/**
+ * Options for hook execution.
+ * Controls timeout, error handling, and working directory.
+ *
+ * @public
+ */
+export type HookOptions = z.infer<typeof HookOptionsSchema>;
+
+/**
+ * Result of a single hook execution.
+ * Contains success status, output, error, and duration.
+ *
+ * @public
+ */
+export type HookResult = z.infer<typeof HookResultSchema>;
+
+/**
+ * Hooks for a single command (pre/during/post phases).
+ *
+ * @public
+ */
+export type CommandHooks = z.infer<typeof CommandHooksSchema>;
+
+/**
+ * Global hook configuration for all commands.
+ *
+ * @public
+ */
+export type HookConfig = z.infer<typeof HookConfigSchema>;
+
+/**
+ * Global hook execution settings.
+ *
+ * @public
+ */
+export type HookSettings = z.infer<typeof HookSettingsSchema>;
+
+/**
+ * Interface for executing lifecycle hooks.
+ * Follows the same provider pattern as ITaskProvider and IMetricsManager.
+ * Enables testing with mocks and dependency injection.
+ *
+ * @public
+ * @example
+ * ```ts
+ * const hookRunner: IHookRunner = new HookRunner();
+ * const results = await hookRunner.executeHooks(
+ *   ['pnpm lint', 'pnpm test'],
+ *   { taskId: '014', taskTitle: 'Add review' },
+ *   { timeout: 60000, continueOnError: false, cwd: process.cwd() }
+ * );
+ * ```
+ */
+export interface IHookRunner {
+  /**
+   * Execute a list of hooks sequentially.
+   *
+   * @param hooks - Array of shell commands to execute
+   * @param context - Context with variables for template substitution
+   * @param options - Execution options (timeout, error handling)
+   * @returns Array of results for each executed hook
+   *
+   * @example
+   * ```ts
+   * const results = await hookRunner.executeHooks(
+   *   ['pnpm lint', 'pnpm typecheck'],
+   *   { taskId: '014', taskTitle: 'Add review' },
+   *   { timeout: 60000, continueOnError: false, cwd: '.' }
+   * );
+   *
+   * const allPassed = results.every(r => r.success);
+   * ```
+   */
+  executeHooks(
+    hooks: string[],
+    context: HookContext,
+    options: HookOptions,
+  ): Promise<HookResult[]>;
+}

@@ -12,6 +12,11 @@
 
   Added explicit build dependency configuration in turbo.json to prevent TS6305 errors caused by race conditions during parallel builds.
 
+- Updated dependencies
+  - @opentask/taskin-task-manager@1.1.0
+  - @opentask/taskin-types@1.1.0
+  - @opentask/taskin-git-utils@2.1.2
+
 ## 2.2.1
 
 ### Patch Changes

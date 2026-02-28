@@ -68,6 +68,21 @@ export class MockMCPTaskManager implements ITaskManager {
     return task;
   }
 
+  async reviewTask(taskId: string): Promise<TaskFile> {
+    const task = this.tasks.get(taskId);
+    if (!task) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+
+    if (task.status !== 'in-progress') {
+      throw new Error(`Task must be in 'in-progress' status to be reviewed`);
+    }
+
+    task.status = 'in-review';
+    this.tasks.set(taskId, task);
+    return task;
+  }
+
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
     const taskId = String(this.tasks.size + 1).padStart(3, '0');
     const task: TaskFile = {

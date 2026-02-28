@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h, onMounted, onUnmounted, ref } from 'vue';
 import TaskinComposed from './taskin-composed';
 import type { TaskinMood } from './taskin.types';
