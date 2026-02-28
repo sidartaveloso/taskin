@@ -3,7 +3,7 @@ import type { TaskId } from '@opentask/taskin-types';
 import { promises as fs } from 'fs';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FileSystemTaskProvider } from './fs-task-provider';
+import { FileSystemTaskProvider } from './file-system-task-provider';
 import type { UserRegistry } from './user-registry';
 
 vi.mock('fs', () => ({
