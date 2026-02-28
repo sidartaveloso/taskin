@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6
+
+### Patch Changes
+
+- @opentask/taskin-task-provider-pinia@1.0.5
+
 ## 0.1.5
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "taskin",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "Task management system integrated with Git workflows",
   "motivation": "Provide a CLI tool for task management integrated with Git workflows",
   "solve": "Simplifies task tracking and management directly from the command line",
@@ -86,10 +86,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.0",
     "@opentask/taskin-file-system-provider": "workspace:*",
-    "@opentask/taskin-git-utils": "^2.1.1",
+    "@opentask/taskin-git-utils": "^2.1.2",
     "@opentask/taskin-task-manager": "workspace:*",
-    "@opentask/taskin-task-server-mcp": "^0.1.7",
-    "@opentask/taskin-task-server-ws": "^0.1.4",
+    "@opentask/taskin-task-server-mcp": "^0.1.8",
+    "@opentask/taskin-task-server-ws": "^0.1.5",
     "@opentask/taskin-types": "workspace:*",
     "@opentask/taskin-utils": "workspace:*",
     "@types/express": "^5.0.5",
