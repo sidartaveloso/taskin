@@ -11,6 +11,9 @@ export default defineConfig({
   shims: true,
   platform: 'node',
   target: 'node20',
+  esbuildOptions(options) {
+    options.preserveSymlinks = true;
+  },
   external: [
     'chalk',
     'commander',
@@ -20,6 +23,7 @@ export default defineConfig({
     'ws',
     'express',
     '@opentask/taskin-types',
+    '@modelcontextprotocol/sdk',
   ],
   noExternal: [
     '@opentask/taskin-core',

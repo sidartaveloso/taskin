@@ -24,10 +24,10 @@ const __dirname = path.dirname(__filename);
 interface DashboardOptions {
   port?: number;
   wsPort?: number;
-  open?: boolean;
+  browser?: boolean;
   host?: string;
-  filterOpen?: boolean;
-  filterClosed?: boolean;
+  open?: boolean;
+  closed?: boolean;
 }
 
 export const dashboardCommand = defineCommand({
@@ -51,15 +51,15 @@ export const dashboardCommand = defineCommand({
       defaultValue: 'localhost',
     },
     {
-      flags: '-o, --open',
+      flags: '-b, --browser',
       description: 'Open browser automatically',
     },
     {
-      flags: '--filter-open',
+      flags: '--open',
       description: 'Show only open tasks (pending, in-progress, blocked)',
     },
     {
-      flags: '--filter-closed',
+      flags: '--closed',
       description: 'Show only closed tasks (done, canceled)',
     },
   ],
@@ -260,9 +260,9 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
 
     // Build filter query params
     const filterParams = new URLSearchParams();
-    if (options.filterOpen) {
+    if (options.open) {
       filterParams.set('filter', 'open');
-    } else if (options.filterClosed) {
+    } else if (options.closed) {
       filterParams.set('filter', 'closed');
     }
     const filterQuery = filterParams.toString()
@@ -270,7 +270,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       : '';
 
     // Open browser if requested
-    if (options.open) {
+    if (options.browser) {
       const url = `http://${host}:${port}${filterQuery}`;
       await import('child_process').then((cp) => {
         const cmd =
@@ -289,9 +289,9 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       `  • Dashboard: ${chalk.cyan(`http://${host}:${port}${filterQuery}`)}`,
     );
     info(`  • WebSocket: ${chalk.cyan(`ws://${host}:${wsPort}`)}`);
-    if (options.filterOpen) {
+    if (options.open) {
       info(`  • Filter: ${chalk.yellow('Open tasks only')}`);
-    } else if (options.filterClosed) {
+    } else if (options.closed) {
       info(`  • Filter: ${chalk.yellow('Closed tasks only')}`);
     }
     info(`  • Press ${chalk.bold('Ctrl+C')} to stop both servers`);

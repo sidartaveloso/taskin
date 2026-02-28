@@ -142,6 +142,15 @@ export interface ITaskManager {
   finishTask(taskId: string): Promise<TaskFile>;
 
   /**
+   * Mark a task as ready for review.
+   * Transitions the task from 'in-progress' to 'in-review' status.
+   * @param taskId - The unique identifier of the task
+   * @returns The updated task
+   * @throws Error if task is not found or not in 'in-progress' status
+   */
+  reviewTask(taskId: string): Promise<TaskFile>;
+
+  /**
    * Start working on a task.
    * Transitions the task to 'in-progress' status.
    * @param taskId - The unique identifier of the task

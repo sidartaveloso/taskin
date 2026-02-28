@@ -8,6 +8,7 @@
   "references": [
     { "path": "./packages/core" },
     { "path": "./packages/api" },
+    { "path": "./packages/cli" },
     { "path": "./packages/types-ts" },
     { "path": "./packages/utils" },
     { "path": "./packages/git-utils" },

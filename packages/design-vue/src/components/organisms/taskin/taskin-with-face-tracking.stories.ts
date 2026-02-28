@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import TaskinWithFaceTracking from './taskin-with-face-tracking.vue';
 
 const meta = {

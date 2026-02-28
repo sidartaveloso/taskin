@@ -42,6 +42,19 @@ export class MockTaskManager implements ITaskManager {
     return task;
   }
 
+  async reviewTask(taskId: string): Promise<TaskFile> {
+    const task: TaskFile = {
+      id: taskId as TaskId,
+      title: `Task ${taskId}`,
+      status: 'in-review',
+      type: 'feat',
+      filePath: `./TASKS/task-${taskId}.md`,
+      content: `# Task ${taskId}`,
+      createdAt: new Date().toISOString(),
+    };
+    return task;
+  }
+
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
     const taskId = '001';
     const task: TaskFile = {
