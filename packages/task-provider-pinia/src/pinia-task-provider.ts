@@ -380,7 +380,10 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Find a task by ID
      */
-    async findTask(this: PiniaStoreContext, taskId: string): Promise<TaskFile | undefined> {
+    async findTask(
+      this: PiniaStoreContext,
+      taskId: string,
+    ): Promise<TaskFile | undefined> {
       // Check cache first
       const cached = this.tasks.find((t: TaskFile) => t.id === taskId);
       if (cached) {
@@ -502,5 +505,8 @@ export function createPiniaTaskProvider(
       warningCount: 0,
       infoCount: 0,
     }),
+    initialize: async () => {
+      // No initialization needed for Pinia provider (WebSocket-based)
+    },
   };
 }

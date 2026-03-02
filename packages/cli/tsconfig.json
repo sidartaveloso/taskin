@@ -14,5 +14,12 @@
     "vitest.config.ts",
     "vitest.e2e.config.ts",
     "*.config.ts"
+  ],
+  "references": [
+    { "path": "../file-system-task-provider" },
+    { "path": "../git-utils" },
+    { "path": "../task-manager" },
+    { "path": "../types-ts" },
+    { "path": "../utils" }
   ]
 }
