@@ -21,4 +21,5 @@ export const createMockTaskProvider = (): ITaskProvider => ({
   updateTask: vi.fn(),
   createTask: vi.fn(),
   lint: vi.fn(),
+  initialize: vi.fn(),
 });

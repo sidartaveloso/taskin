@@ -18,6 +18,35 @@ import {
 import type { UserRegistry } from './user-registry.js';
 
 export class FileSystemTaskProvider implements ITaskProvider {
+  async initialize(): Promise<void> {
+    const fs = await import('fs');
+    const path = await import('path');
+    const projectRoot = process.cwd();
+    const tasksDir = path.join(projectRoot, 'TASKS');
+    const usersFile = path.join(projectRoot, '.taskin-users.json');
+
+    // Cria TASKS/ se não existir
+    if (!fs.existsSync(tasksDir)) {
+      fs.mkdirSync(tasksDir, { recursive: true });
+      console.log(`✓ Created TASKS/ directory`);
+    }
+
+    // Cria .taskin-users.json se não existir
+    if (!fs.existsSync(usersFile)) {
+      const username = process.env.USER || 'developer';
+      const usersData = {
+        users: {
+          [username]: {
+            id: username,
+            name: username.charAt(0).toUpperCase() + username.slice(1),
+            email: `${username}@example.com`,
+          },
+        },
+      };
+      fs.writeFileSync(usersFile, JSON.stringify(usersData, null, 2), 'utf-8');
+      console.log(`✓ Created .taskin-users.json with default user`);
+    }
+  }
   private locale: Locale;
 
   constructor(

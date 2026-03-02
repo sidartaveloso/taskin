@@ -88,6 +88,9 @@ export class MockTaskManager implements ITaskManager {
  * Mock TaskProvider for testing
  */
 export class MockTaskProvider implements ITaskProvider {
+  async initialize(): Promise<void> {
+    return;
+  }
   private tasks: TaskFile[] = [];
 
   constructor(initialTasks: TaskFile[] = []) {

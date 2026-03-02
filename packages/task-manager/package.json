@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-manager",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Task lifecycle management for Taskin",
   "type": "module",
   "motivation": "To manage the lifecycle of tasks, including creation, status updates, and retrieval.",
