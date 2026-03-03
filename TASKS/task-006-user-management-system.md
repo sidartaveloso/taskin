@@ -1,6 +1,6 @@
 # Task 006 — User management system
 
-Status: in-progress
+Status: pending
 Type: feat  
 Assignee: developer
 
