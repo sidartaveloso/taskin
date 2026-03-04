@@ -19,6 +19,7 @@ interface StartTaskOptions {
   force?: boolean;
   base?: string;
   sound?: boolean;
+  dryRun?: boolean;
 }
 
 export const startCommand = defineCommand({
@@ -37,6 +38,10 @@ export const startCommand = defineCommand({
     {
       flags: '--no-sound',
       description: 'Disable start sound',
+    },
+    {
+      flags: '--dry-run',
+      description: 'Show what would be executed without running',
     },
   ],
   handler: async (taskId: string, options: StartTaskOptions) => {
@@ -80,6 +85,35 @@ async function startTask(
 
   info(`Found task: ${task.title}`);
   info(`Current status: ${task.status}`);
+
+  // Dry run mode - show what would be executed
+  if (_options.dryRun) {
+    console.log();
+    info('🔍 Dry run mode - showing what would be executed:');
+    console.log();
+
+    info('Status change:');
+    console.log(
+      colors.secondary(`  - Task status: ${task.status} → in-progress`),
+    );
+    console.log();
+
+    info('Git operations:');
+    console.log(
+      colors.secondary(
+        `  - Create branch: git checkout -b feat/task-${normalizedId}`,
+      ),
+    );
+    console.log(
+      colors.secondary(
+        `  - Commit status: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip-ci]"`,
+      ),
+    );
+    console.log();
+
+    info('✓ Dry run complete');
+    return;
+  }
 
   // Check if task is already in progress
   if (task.status === 'in-progress') {

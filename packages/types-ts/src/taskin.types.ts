@@ -61,11 +61,14 @@ export interface PauseTaskOptions {
   message?: string;
   skipCommit?: boolean;
   sound?: boolean;
+  dryRun?: boolean;
 }
 
 export interface FinishTaskOptions {
   push?: boolean;
   skipUpdate?: boolean;
+  sound?: boolean;
+  dryRun?: boolean;
 }
 
 export interface LintTasksOptions {
