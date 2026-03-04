@@ -6,8 +6,8 @@ import {
   FileSystemTaskProvider,
   UserRegistry,
 } from '@opentask/taskin-file-system-provider';
+import { GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
-import { execSync } from 'child_process';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
@@ -47,6 +47,7 @@ export const startCommand = defineCommand({
 async function startTask(
   taskId: string,
   _options: StartTaskOptions,
+  gitService?: IGitService,
 ): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
@@ -102,16 +103,17 @@ async function startTask(
   // Load automation config
   const configManager = new ConfigManager(monorepoRoot);
   const behavior = configManager.getAutomationBehavior();
+Initialize Git service
+  const git = gitService ?? new GitService(process.cwd());
 
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
-    try {
-      execSync(
-        `git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip-ci]"`,
-        { cwd: process.cwd(), stdio: 'ignore' },
-      );
+    const committed = await git.commitTaskStatusChange(
+      normalizedId,
+      'in-progress',
+    );
+    if (committed) {
       success('✓ Auto-committed status change');
-    } catch {
       // Ignore if nothing to commit
     }
   }

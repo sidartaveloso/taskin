@@ -3,6 +3,12 @@ import tsConfig from '../../eslint/typescript.js';
 export default [
   ...tsConfig,
   {
-    ignores: ['dist/**', 'vitest.config.ts', '*.config.js', '*.config.ts'],
+    ignores: [
+      'dist/**',
+      '**/*.d.ts',
+      'vitest.config.ts',
+      '*.config.js',
+      '*.config.ts',
+    ],
   },
 ];

@@ -27,7 +27,7 @@ export const icons = {
   hourglass: '⏳',
 };
 
-/* eslint-disable no-console */
+ 
 export function printHeader(title: string, icon: string = '') {
   const header = `${icon} ${title} ${icon}`;
   console.log(colors.primary('='.repeat(header.length + 4)));
@@ -35,4 +35,4 @@ export function printHeader(title: string, icon: string = '') {
   console.log(colors.primary('='.repeat(header.length + 4)));
   console.log();
 }
-/* eslint-enable no-console */
+ 
