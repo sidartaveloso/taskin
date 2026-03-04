@@ -61,8 +61,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opentask/taskin-git-utils": "^2.1.2",
-    "@opentask/taskin-task-manager": "^2.0.0",
+    "@opentask/taskin-git-utils": "workspace:*",
+    "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-types": "workspace:*",
     "@opentask/taskin-utils": "workspace:*"
   },

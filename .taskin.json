@@ -2,6 +2,21 @@
   "automation": {
     "level": "autopilot"
   },
+  "hookConfig": {
+    "baseBranch": "main",
+    "continueOnError": false,
+    "timeout": 300000
+  },
+  "hooks": {
+    "review": {
+      "during": ["pnpm lint", "pnpm typecheck", "pnpm test"],
+      "post": [
+        "git push origin HEAD",
+        "echo '✓ Task {{taskId}} ({{taskTitle}}) ready for review!'"
+      ],
+      "pre": ["git fetch origin", "git status --porcelain"]
+    }
+  },
   "provider": {
     "config": {
       "tasksDir": "TASKS"
