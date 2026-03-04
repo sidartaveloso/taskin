@@ -103,7 +103,8 @@ async function startTask(
   // Load automation config
   const configManager = new ConfigManager(monorepoRoot);
   const behavior = configManager.getAutomationBehavior();
-Initialize Git service
+
+  // Initialize Git service
   const git = gitService ?? new GitService(process.cwd());
 
   // Auto-commit status change if enabled
