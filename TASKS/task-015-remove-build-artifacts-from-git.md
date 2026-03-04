@@ -18,6 +18,7 @@ Durante a refatoração do sistema de hooks e implementação do IGitService, fo
 - Confusão entre source e build artifacts
 
 **Arquivos afetados:**
+
 ```
 packages/git-utils/src/
   ├── git-analyzer.js (10KB)
@@ -79,12 +80,13 @@ packages/utils/src/
 ## Implementation Steps
 
 1. Remover arquivos commitados do Git (mas manter no disco localmente):
+
    ```bash
    # Git-utils
    git rm --cached packages/git-utils/src/*.js
    git rm --cached packages/git-utils/src/*.d.ts
    git rm --cached packages/git-utils/src/*.map
-   
+
    # Utils
    git rm --cached packages/utils/src/*.js
    git rm --cached packages/utils/src/*.d.ts
@@ -92,29 +94,34 @@ packages/utils/src/
    ```
 
 2. Limpar arquivos do disco (serão regenerados):
+
    ```bash
    rm packages/git-utils/src/*.{js,d.ts,map}
    rm packages/utils/src/*.{js,d.ts,map}
    ```
 
 3. Rebuild para confirmar configuração:
+
    ```bash
    cd packages/git-utils && pnpm build
    cd packages/utils && pnpm build
    ```
 
 4. Verificar que arquivos foram para `dist/`:
+
    ```bash
    ls packages/git-utils/dist/
    ls packages/utils/dist/
    ```
 
 5. Executar testes:
+
    ```bash
    pnpm test
    ```
 
 6. Commit das mudanças:
+
    ```bash
    git add .gitignore
    git commit -m "chore: remove build artifacts from src/ in git-utils and utils packages
@@ -123,7 +130,7 @@ packages/utils/src/
    - Remove .js, .d.ts, .map files from packages/utils/src/
    - These files are now only generated in dist/ folder
    - .gitignore already configured to prevent future commits
-   
+
    Fixes repository bloat and prevents merge conflicts in generated files"
    ```
 
