@@ -1,8 +1,8 @@
 # Task 012 — somente usuarios e tasks do taskin estão sendo considerados nas metricas
 
-Status: in-review
-Type: fix
-Assignee: Sidarta Veloso
+Status: done  
+Type: fix  
+Assignee: Sidarta Veloso  
 
 ## Description
 
