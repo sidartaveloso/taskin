@@ -1,8 +1,8 @@
 # task-015-remove-build-artifacts-from-git
 
-**Assignee**: sidarta  
-**Status**: pending  
-**Type**: chore
+Status: done  
+Type: chore  
+Assignee: Sidarta Veloso  
 
 ## Description
 

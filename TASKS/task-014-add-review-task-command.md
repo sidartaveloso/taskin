@@ -1,8 +1,8 @@
 # 🔍 Task 014 — Add review task command
 
-Status: done
+Status: done  
 Type: feat  
-Assignee: Sidarta Veloso
+Assignee: Sidarta Veloso  
 
 ## Description
 

@@ -2,7 +2,7 @@
 
 Status: done  
 Type: feat  
-Assignee: Sidarta Veloso
+Assignee: Sidarta Veloso  
 
 ## Description
 

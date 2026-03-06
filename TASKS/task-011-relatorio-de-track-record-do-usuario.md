@@ -1,8 +1,8 @@
 # Task 011 — Relatório de Track Record do Usuário
 
 Status: in-progress  
-Type: feat
-Assignee: Sidarta Veloso
+Type: feat  
+Assignee: Sidarta Veloso  
 
 ## Description
 

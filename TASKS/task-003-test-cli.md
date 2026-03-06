@@ -2,7 +2,7 @@
 
 Status: done  
 Type: chore  
-Assignee: Sidarta Veloso
+Assignee: Sidarta Veloso  
 
 ## Description
 
