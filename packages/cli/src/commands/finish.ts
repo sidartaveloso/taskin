@@ -18,6 +18,7 @@ import { defineCommand } from './define-command/index.js';
 interface FinishTaskOptions {
   skipUpdate?: boolean;
   sound?: boolean;
+  dryRun?: boolean;
 }
 
 export const finishCommand = defineCommand({
