@@ -1,6 +1,6 @@
 {
   "name": "@taskin/api",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": true,
   "type": "module",
   "motivation": "To provide a dedicated API layer for Taskin.",
@@ -9,7 +9,6 @@
   "status": "planned",
   "since": "2025-11-05",
   "scripts": {
-    "install": "echo 'Installing taskin-api dependencies...'",
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",

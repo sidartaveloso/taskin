@@ -233,7 +233,7 @@ importers:
         version: 10.2.10(eslint@9.39.2)(storybook@10.2.10(@testing-library/dom@10.4.1)(prettier@3.8.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)
       eslint-plugin-vue:
         specifier: ^10.5.1
-        version: 10.7.0(@typescript-eslint/parser@8.56.0(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(vue-eslint-parser@10.2.0(eslint@9.39.2))
+        version: 10.7.0(@typescript-eslint/parser@8.53.1(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(vue-eslint-parser@10.2.0(eslint@9.39.2))
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -309,7 +309,7 @@ importers:
         version: 10.2.10(eslint@9.39.2)(storybook@10.2.10(@testing-library/dom@10.4.1)(prettier@3.8.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)
       eslint-plugin-vue:
         specifier: ^10.6.2
-        version: 10.7.0(@typescript-eslint/parser@8.53.1(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(vue-eslint-parser@10.2.0(eslint@9.39.2))
+        version: 10.7.0(@typescript-eslint/parser@8.56.0(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(vue-eslint-parser@10.2.0(eslint@9.39.2))
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -4629,8 +4629,8 @@ packages:
   vue-component-type-helpers@2.2.12:
     resolution: {integrity: sha512-YbGqHZ5/eW4SnkPNR44mKVc6ZKQoRs/Rux1sxC6rdwXb4qpbOSYfDr9DsTHolOTGmIKgM9j141mZbBeg05R1pw==}
 
-  vue-component-type-helpers@3.2.5:
-    resolution: {integrity: sha512-tkvNr+bU8+xD/onAThIe7CHFvOJ/BO6XCOrxMzeytJq40nTfpGDJuVjyCM8ccGZKfAbGk2YfuZyDMXM56qheZQ==}
+  vue-component-type-helpers@3.2.6:
+    resolution: {integrity: sha512-O02tnvIfOQVmnvoWwuSydwRoHjZVt8UEBR+2p4rT35p8GAy5VTlWP8o5qXfJR/GWCN0nVZoYWsVUvx2jwgdBmQ==}
 
   vue-demi@0.14.10:
     resolution: {integrity: sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==}
@@ -5840,7 +5840,7 @@ snapshots:
       storybook: 10.2.10(@testing-library/dom@10.4.1)(prettier@3.8.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       type-fest: 2.19.0
       vue: 3.5.28(typescript@5.9.3)
-      vue-component-type-helpers: 3.2.5
+      vue-component-type-helpers: 3.2.6
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -9484,7 +9484,7 @@ snapshots:
 
   vue-component-type-helpers@2.2.12: {}
 
-  vue-component-type-helpers@3.2.5: {}
+  vue-component-type-helpers@3.2.6: {}
 
   vue-demi@0.14.10(vue@3.5.28(typescript@5.9.3)):
     dependencies:

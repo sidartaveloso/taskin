@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-manager",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Task lifecycle management for Taskin",
   "type": "module",
   "motivation": "To manage the lifecycle of tasks, including creation, status updates, and retrieval.",
@@ -32,7 +32,6 @@
     }
   },
   "scripts": {
-    "install": "echo 'Installing taskin-task-manager dependencies...'",
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",

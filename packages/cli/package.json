@@ -1,6 +1,6 @@
 {
   "name": "taskin",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Task management system integrated with Git workflows",
   "motivation": "Provide a CLI tool for task management integrated with Git workflows",
   "solve": "Simplifies task tracking and management directly from the command line",
@@ -68,7 +68,6 @@
     "LICENSE"
   ],
   "scripts": {
-    "install": "echo 'Installing taskin-cli dependencies...'",
     "build": "pnpm run build:dashboard && tsup",
     "build:dashboard": "cd ../dashboard && pnpm run build:app && cd ../cli && rm -rf dashboard-dist && cp -r ../dashboard/dist-app dashboard-dist",
     "clean": "rm -rf dist dashboard-dist coverage .turbo test-temp-e2e",

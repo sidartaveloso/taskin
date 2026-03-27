@@ -1,5 +1,22 @@
 # taskin
 
+## 3.0.2
+
+### Patch Changes
+
+- Remove unnecessary install scripts that caused pnpm build script warnings
+
+  Removed `install` scripts from all packages that only printed echo messages. These scripts were unnecessary since packages are already pre-built and included in the published bundle. This eliminates the "Ignored build scripts" warning when installing taskin in external projects.
+
+- Updated dependencies
+  - @opentask/taskin-types@1.1.1
+  - @opentask/taskin-git-utils@2.1.3
+  - @opentask/taskin-task-manager@2.0.1
+  - @opentask/taskin-file-system-provider@3.0.2
+  - @opentask/taskin-task-server-ws@0.2.1
+  - @opentask/taskin-task-server-mcp@0.1.9
+  - @opentask/taskin-utils@1.1.1
+
 ## 2.4.0
 
 ### Minor Changes

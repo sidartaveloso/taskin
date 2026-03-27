@@ -2,7 +2,7 @@
 
 Status: done  
 Type: feat  
-Assignee: developer  
+Assignee: developer
 
 ## Description
 
