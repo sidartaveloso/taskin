@@ -27,7 +27,7 @@ export async function createNoiseWatcher(): Promise<NoiseWatcher> {
   source.connect(analyser);
 
   let rafId: number | null = null;
-  let pollingInterval = 100; // ms
+  const pollingInterval = 100; // ms
   let lastRms = 0;
 
   const levelListeners: Set<NoiseLevelCallback> = new Set();

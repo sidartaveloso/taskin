@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-file-system-provider",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "File system task provider for Taskin",
   "type": "module",
   "motivation": "To provide a file-system-based implementation for task storage.",
@@ -48,7 +48,6 @@
     "access": "public"
   },
   "scripts": {
-    "install": "echo 'Installing taskin-file-system-provider dependencies...'",
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",

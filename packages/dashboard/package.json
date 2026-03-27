@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-dashboard",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Dashboard web component for task management with Taskin",
   "motivation": "Provide visual interface for task management",
   "solve": "Embeddable Vue dashboard component for task visualization",
@@ -22,7 +22,6 @@
     "README.md"
   ],
   "scripts": {
-    "install": "echo 'Installing taskin-dashboard dependencies...'",
     "dev": "vite",
     "build": "vite build && vue-tsc --emitDeclarationOnly --skipLibCheck",
     "build:app": "vite build --config vite.config.app.ts",

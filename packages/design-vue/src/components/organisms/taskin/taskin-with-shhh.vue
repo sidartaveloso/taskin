@@ -61,6 +61,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
+import { createNoiseWatcher } from '../../../utils/noise-watcher';
 import WebcamVideo from '../../atoms/webcam-video';
 import FaceTrackingControls from '../../molecules/face-tracking-controls';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
@@ -141,7 +142,6 @@ const toggleTracking = () => {
 };
 
 // Noise watcher
-import { createNoiseWatcher } from '../../../utils/noise-watcher';
 let noiseWatcher: Awaited<ReturnType<typeof createNoiseWatcher>> | null = null;
 let noiseUnsub: (() => void) | null = null;
 
@@ -248,7 +248,7 @@ onMounted(async () => {
         noiseDebounceMsRef.value,
       );
       // also subscribe to level updates
-      noiseLevelUnsubLocal = noiseWatcher.subscribeLevel((rms) => {
+      noiseLevelUnsubLocal = noiseWatcher.subscribeLevel((rms: number) => {
         noiseLevel.value = rms;
       });
     } catch (e) {
@@ -284,7 +284,7 @@ watch(enableNoiseReactionsRef, async (v) => {
           noiseDebounceMsRef.value,
         );
         noiseLevelUnsubLocal = noiseWatcher.subscribeLevel(
-          (rms) => (noiseLevel.value = rms),
+          (rms: number) => (noiseLevel.value = rms),
         );
       } catch {}
     }
@@ -368,7 +368,7 @@ const debugInfo = computed(() => {
 // subscribe to level updates when noise watcher available
 onMounted(() => {
   if (noiseWatcher && enableNoiseReactionsRef.value) {
-    noiseLevelUnsubLocal = noiseWatcher.subscribeLevel((rms) => {
+    noiseLevelUnsubLocal = noiseWatcher.subscribeLevel((rms: number) => {
       noiseLevel.value = rms;
     });
   }
