@@ -122,7 +122,7 @@ async function setAutomationLevel(
     }
 
     configManager.setAutomationLevel(level as AutomationLevel);
-    success(`✓ Automation level set to ${colors.highlight(level)}`);
+    success(`Automation level set to ${colors.highlight(level)}`);
 
     // Show what changed
     const behavior = configManager.getAutomationBehavior();
@@ -188,7 +188,7 @@ async function interactiveConfig(configManager: ConfigManager): Promise<void> {
     }
 
     configManager.setAutomationLevel(level);
-    success(`✓ Automation level set to ${colors.highlight(level)}`);
+    success(`Automation level set to ${colors.highlight(level)}`);
 
     // Show new behavior
     const behavior = configManager.getAutomationBehavior();

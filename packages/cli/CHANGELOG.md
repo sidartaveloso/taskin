@@ -1,5 +1,13 @@
 # taskin
 
+## 3.0.3
+
+### Patch Changes
+
+- Fix duplicate checkmark in config command success message
+
+  Remove explicit checkmark character from success messages since the success() function already adds one automatically.
+
 ## 3.0.2
 
 ### Patch Changes
