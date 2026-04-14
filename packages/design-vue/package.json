@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-design-vue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vue 3 design system components for Taskin - including the official mascot and UI elements",
   "motivation": "Provide a reusable, well-documented Vue 3 component library featuring the Taskin mascot with animations, expressions, and interactive features for task management UIs",
   "solve": "Standardizes Taskin mascot implementation across projects, provides ready-to-use Vue components with Storybook documentation, and enables facial tracking features",
@@ -23,7 +23,6 @@
     "README.md"
   ],
   "scripts": {
-    "install": "echo 'Installing taskin-design-vue dependencies...'",
     "dev": "storybook dev -p 6007",
     "dev:vite": "vite",
     "build": "vite build && vue-tsc --emitDeclarationOnly",
@@ -63,6 +62,7 @@
     "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.16",
     "@vue/test-utils": "^2.4.6",
+    "eslint": "^9.39.1",
     "eslint-plugin-storybook": "^10.2.10",
     "eslint-plugin-vue": "^10.6.2",
     "jsdom": "^25.0.1",

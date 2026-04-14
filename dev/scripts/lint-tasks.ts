@@ -14,7 +14,7 @@ import type {
   ValidationIssue,
 } from '@opentask/taskin-task-manager';
 import { TaskManager } from '@opentask/taskin-task-manager';
-import { join } from 'path';
+import path, { join } from 'path';
 import { exit } from 'process';
 
 // Dynamic import to avoid TypeScript rootDir issues
@@ -24,7 +24,7 @@ async function createProvider(tasksDir: string): Promise<ITaskProvider> {
 
   // Create a simple user registry (empty for linting purposes)
   const userRegistry = new UserRegistry({
-    taskinDir: join(tasksDir, '.taskin'),
+    taskinDir: path.dirname(tasksDir),
   });
   await userRegistry.load();
 

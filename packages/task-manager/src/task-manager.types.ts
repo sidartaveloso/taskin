@@ -92,6 +92,12 @@ export type TaskFile = Task & {
  */
 export interface ITaskProvider {
   /**
+   * Initialize the provider, performing any necessary setup or loading.
+   * This may involve reading existing tasks, setting up connections, etc.
+   */
+  initialize(): Promise<void>;
+
+  /**
    * Find a specific task by its ID.
    * @param taskId - The unique identifier of the task
    * @returns The task if found, undefined otherwise

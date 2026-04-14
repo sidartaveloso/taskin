@@ -5,12 +5,11 @@ Este diretório contém configurações locais do projeto Taskin.
 ## Estrutura
 
 ```
-.taskin/
-├── users.json       # Registro de usuários do projeto
-└── config.json      # Configurações do projeto (futuro)
+.taskin-users.json   # Registro de usuários do projeto
+.taskin/             # Configurações futuras
 ```
 
-## users.json
+## .taskin-users.json
 
 Arquivo com informações dos usuários do projeto. Cada usuário tem:
 

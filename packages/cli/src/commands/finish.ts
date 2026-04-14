@@ -18,6 +18,7 @@ import { defineCommand } from './define-command/index.js';
 interface FinishTaskOptions {
   skipUpdate?: boolean;
   sound?: boolean;
+  dryRun?: boolean;
 }
 
 export const finishCommand = defineCommand({
@@ -32,6 +33,10 @@ export const finishCommand = defineCommand({
     {
       flags: '--no-sound',
       description: 'Disable finish sound',
+    },
+    {
+      flags: '--dry-run',
+      description: 'Show what would be executed without running',
     },
   ],
   handler: async (taskId: string, options: FinishTaskOptions) => {
@@ -74,6 +79,35 @@ async function finishTask(
 
   info(`Found task: ${task.title}`);
   info(`Current status: ${task.status}`);
+
+  // Dry run mode - show what would be executed
+  if (options.dryRun) {
+    console.log();
+    info('🔍 Dry run mode - showing what would be executed:');
+    console.log();
+
+    info('Status change:');
+    console.log(colors.secondary(`  - Task status: ${task.status} → done`));
+    console.log();
+
+    const commitType = task.type || 'feat';
+    info('Git operations:');
+    console.log(
+      colors.secondary(
+        `  - Commit status: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para done [skip-ci]"`,
+      ),
+    );
+    console.log(
+      colors.secondary(
+        `  - Commit work: git add . && git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`,
+      ),
+    );
+    console.log(colors.secondary(`  - Push: git push`));
+    console.log();
+
+    info('✓ Dry run complete');
+    return;
+  }
 
   // Check if task is already done
   if (task.status === 'done') {

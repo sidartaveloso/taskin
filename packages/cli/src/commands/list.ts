@@ -61,8 +61,8 @@ async function listTasks(
 
   // Initialize UserRegistry
   const monorepoRoot = path.dirname(tasksDir);
-  const taskinDir = path.join(monorepoRoot, '.taskin');
-  const userRegistry = new UserRegistry({ taskinDir });
+
+  const userRegistry = new UserRegistry({ taskinDir: monorepoRoot });
   await userRegistry.load();
 
   // Initialize task provider

@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export interface UserRegistryConfig {
-  /** Path to the .taskin directory */
+  /** Path to o diretório raiz do projeto (usado para .taskin-users.json) */
   taskinDir: string;
 }
 
@@ -13,18 +13,19 @@ export interface UsersData {
 
 /**
  * Registry for managing user information
- * Loads users from .taskin/users.json
+ * Loads users from .taskin-users.json
  */
 export class UserRegistry {
   private users: Map<string, User> = new Map();
   private usersFilePath: string;
 
   constructor(private config: UserRegistryConfig) {
-    this.usersFilePath = path.join(config.taskinDir, 'users.json');
+    // .taskin-users.json na raiz do projeto
+    this.usersFilePath = path.join(config.taskinDir, '.taskin-users.json');
   }
 
   /**
-   * Load users from users.json
+   * Load users from .taskin-users.json
    */
   async load(): Promise<void> {
     try {
@@ -40,7 +41,7 @@ export class UserRegistry {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         console.warn(
-          '[UserRegistry] users.json not found, starting with empty registry',
+          '[UserRegistry] .taskin-users.json not found, starting with empty registry',
         );
         this.users.clear();
       } else {
@@ -109,7 +110,7 @@ export class UserRegistry {
   }
 
   /**
-   * Save users to users.json
+   * Save users to .taskin-users.json
    */
   private async save(): Promise<void> {
     const data: UsersData = {

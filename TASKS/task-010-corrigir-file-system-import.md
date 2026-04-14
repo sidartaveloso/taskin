@@ -1,7 +1,7 @@
 # Task 010 — corrigir file-system import
 
 Status: done  
-Type: fix
+Type: fix  
 Assignee: Sidarta Veloso
 
 ## Description

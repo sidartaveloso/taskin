@@ -2,13 +2,7 @@
  * Init command - Initialize Taskin in the current project
  */
 
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-} from 'fs';
+import { existsSync, readdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import { join } from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
@@ -134,20 +128,7 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
   writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf-8');
   success(`✓ Created ${colors.highlight('.taskin.json')}`);
 
-  // Add .taskin.json to .gitignore if it exists
-  const gitignorePath = join(cwd, '.gitignore');
-  if (existsSync(gitignorePath)) {
-    const gitignoreContent = readFileSync(gitignorePath, 'utf-8');
-    if (!gitignoreContent.includes('.taskin.json')) {
-      info('Adding .taskin.json to .gitignore...');
-      writeFileSync(
-        gitignorePath,
-        `${gitignoreContent}\n# Taskin configuration\n.taskin.json\n`,
-        'utf-8',
-      );
-      success('✓ Updated .gitignore');
-    }
-  }
+  //TODO: execute provider.initialize()
 
   console.log();
   success('🎉 Taskin initialized successfully!');
@@ -212,16 +193,13 @@ async function setupFileSystemProvider(
   cwd: string,
 ): Promise<Record<string, string>> {
   const tasksDir = join(cwd, 'TASKS');
+  // Chama inicialização do provider
+  const { FileSystemTaskProvider, UserRegistry } =
+    await import('@opentask/taskin-file-system-provider');
 
-  // Create TASKS directory
-  if (!existsSync(tasksDir)) {
-    info(`Creating TASKS directory...`);
-    mkdirSync(tasksDir, { recursive: true });
-    success(`✓ Created ${colors.highlight('TASKS/')} directory`);
-  } else {
-    info(`${colors.highlight('TASKS/')} directory already exists`);
-    success('✓ Directory is ready to use');
-  }
+  const userRegistry = new UserRegistry({ taskinDir: cwd });
+  const fileSystemProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
+  await fileSystemProvider.initialize();
 
   // Check if any task-001-*.md file already exists
   const existingTask001 = readdirSync(tasksDir).find(

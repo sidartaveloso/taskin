@@ -37,6 +37,7 @@ describe('TaskWebSocketServer', () => {
         warningCount: 0,
         infoCount: 0,
       }),
+      initialize: async () => {},
     };
 
     const mockManager = {

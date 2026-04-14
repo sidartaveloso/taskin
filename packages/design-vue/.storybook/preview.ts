@@ -56,9 +56,9 @@ const preview: Preview = {
         title: 'Background',
         icon: 'photo',
         items: [
-          { value: 'light', title: 'Light', left: '⚪' },
-          { value: 'dark', title: 'Dark', left: '⚫' },
-          { value: 'gray', title: 'Gray', left: '🔘' },
+          { value: 'light', title: 'Light' },
+          { value: 'dark', title: 'Dark' },
+          { value: 'gray', title: 'Gray' },
         ],
         dynamicTitle: true,
       },
