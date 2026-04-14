@@ -32,6 +32,10 @@ export const pauseCommand = defineCommand({
       flags: '--no-sound',
       description: 'Disable pause sound',
     },
+    {
+      flags: '--dry-run',
+      description: 'Show what would be executed without running',
+    },
   ],
   handler: async (taskId: string, options: PauseTaskOptions) => {
     await pauseTask(taskId, options);
@@ -72,6 +76,30 @@ async function pauseTask(
 
   info(`Found task: ${task.title}`);
   info(`Current status: ${task.status}`);
+
+  // Dry run mode - show what would be executed
+  if (options.dryRun) {
+    console.log();
+    info('🔍 Dry run mode - showing what would be executed:');
+    console.log();
+
+    const commitMessage =
+      options.message || `WIP: task-${normalizedId} - ${task.title}`;
+
+    info('Status change:');
+    console.log(colors.secondary(`  - Task status: in-progress → pending`));
+    console.log();
+
+    info('Git operations:');
+    console.log(colors.secondary(`  - Add all changes: git add -A`));
+    console.log(
+      colors.secondary(`  - Commit: git commit -m "${commitMessage}"`),
+    );
+    console.log();
+
+    info('✓ Dry run complete');
+    return;
+  }
 
   // Check if task is in progress
   if (task.status !== 'in-progress') {

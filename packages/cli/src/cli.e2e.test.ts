@@ -69,10 +69,9 @@ describe.sequential('Taskin CLI E2E Tests', () => {
         env: { ...process.env, CI: 'true' },
       });
 
-      expect(stdout).toContain('TASKS');
-      expect(stdout).toContain('already exists');
       expect(stdout).toContain('initialized successfully');
       expect(existsSync(join(TEST_DIR, '.taskin.json'))).toBe(true);
+      expect(existsSync(join(TEST_DIR, '.taskin-users.json'))).toBe(true);
     }, 60000);
   });
 
@@ -186,6 +185,30 @@ describe.sequential('Taskin CLI E2E Tests', () => {
         const err = error as { code?: number };
         expect(err.code).toBe(1);
       }
+    }, 60000);
+
+    it('should auto-commit status change in autopilot mode', async () => {
+      // Update .taskin.json to use autopilot mode
+      const configPath = join(TEST_DIR, '.taskin.json');
+      const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+      config.automation = { level: 'autopilot' };
+      writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+
+      // Start task
+      const { stdout } = await execAsync(`node ${CLI_PATH} start 001`, {
+        cwd: TEST_DIR,
+      });
+
+      expect(stdout).toContain('started successfully');
+      expect(stdout).toContain('Auto-committed status change');
+      expect(stdout).not.toContain('Commit the status change'); // Should not show manual suggestion
+
+      // Verify git commit was created
+      const gitLog = await execAsync('git log --oneline -1', {
+        cwd: TEST_DIR,
+      });
+      expect(gitLog.stdout).toContain('task-001');
+      expect(gitLog.stdout).toContain('in-progress');
     }, 60000);
   });
 

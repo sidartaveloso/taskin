@@ -50,6 +50,39 @@ function getPackageVersion(packagePath) {
   return { name: pkg.name, version: pkg.version };
 }
 
+function checkRegistry() {
+  log('\n🔍 Verificando registry npm...', colors.yellow);
+  try {
+    const registry = execSync('npm config get registry', {
+      encoding: 'utf-8',
+    }).trim();
+    const expectedRegistry = 'https://registry.npmjs.org/';
+
+    log(`Registry atual: ${registry}`, colors.blue);
+
+    if (registry !== expectedRegistry) {
+      log(`\n❌ ERRO: Registry incorreto!`, colors.red);
+      log(`Esperado: ${expectedRegistry}`, colors.red);
+      log(`Atual: ${registry}`, colors.red);
+      log(
+        `\nEste projeto NUNCA deve publicar no Verdaccio ou outros registries privados.`,
+        colors.red,
+      );
+      log(
+        `Execute: npm config set registry ${expectedRegistry}`,
+        colors.yellow,
+      );
+      return false;
+    }
+
+    log(`✓ Registry correto: npm público`, colors.green);
+    return true;
+  } catch (error) {
+    log(`✗ Erro ao verificar registry: ${error.message}`, colors.red);
+    return false;
+  }
+}
+
 async function publishPackage(packageName, packagePath, tag = 'latest') {
   log(`\n${'='.repeat(60)}`, colors.bright);
   log(`📦 Publishing ${packageName}`, colors.bright);
@@ -104,6 +137,15 @@ async function main() {
   log('\n🔄 Syncing package versions...', colors.yellow);
   if (!exec('node scripts/sync-versions.js', rootDir)) {
     log('✗ Failed to sync versions', colors.red);
+    process.exit(1);
+  }
+
+  // Check registry configuration
+  if (!checkRegistry()) {
+    log(
+      '\n✗ Abortando publicação devido a configuração incorreta do registry',
+      colors.red,
+    );
     process.exit(1);
   }
 

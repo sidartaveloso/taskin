@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-server-mcp",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Model Context Protocol (MCP) server for task management integration with LLMs",
   "motivation": "Enable LLMs to interact with task management systems",
   "solve": "Provides MCP server implementation for task operations",
@@ -17,7 +17,6 @@
     }
   },
   "scripts": {
-    "install": "echo 'Installing taskin-task-server-mcp dependencies...'",
     "build": "tsc",
     "test": "vitest run",
     "test:ui": "vitest --ui",
