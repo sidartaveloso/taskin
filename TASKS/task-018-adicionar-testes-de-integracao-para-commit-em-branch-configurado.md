@@ -2,7 +2,7 @@
 
 Status: in-progress
 Type: test
-Assignee: unassigned
+Assignee: Sidarta Veloso
 
 ## Description
 
