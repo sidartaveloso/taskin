@@ -124,7 +124,7 @@ export class GitAnalyzer {
             ? messageWithBody.substring(0, nullByteIndex)
             : messageWithBody || '';
         // Body might span multiple lines until we hit numstat
-        let bodyLines = [];
+        const bodyLines = [];
         if (nullByteIndex !== -1) {
           // Get rest of body from current line
           bodyLines.push(messageWithBody.substring(nullByteIndex + 1));

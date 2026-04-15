@@ -4,9 +4,18 @@ import type { IMetricsManager } from './metrics.types';
 describe('IMetricsManager contract', () => {
   it('accepts an object implementing IMetricsManager', async () => {
     const metrics: IMetricsManager = {
-      getUserMetrics: async (userId: string) => ({ userId }) as any,
-      getTeamMetrics: async (teamId: string) => ({ teamId }) as any,
-      getTaskMetrics: async (taskId: string) => ({ taskId }) as any,
+      getUserMetrics: async (userId: string) =>
+        ({ userId }) as unknown as Awaited<
+          ReturnType<IMetricsManager['getUserMetrics']>
+        >,
+      getTeamMetrics: async (teamId: string) =>
+        ({ teamId }) as unknown as Awaited<
+          ReturnType<IMetricsManager['getTeamMetrics']>
+        >,
+      getTaskMetrics: async (taskId: string) =>
+        ({ taskId }) as unknown as Awaited<
+          ReturnType<IMetricsManager['getTaskMetrics']>
+        >,
     };
 
     expect(typeof metrics.getUserMetrics).toBe('function');

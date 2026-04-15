@@ -7,7 +7,12 @@ import {
   UserRegistry,
 } from '@opentask/taskin-file-system-provider';
 import { GitAnalyzer } from '@opentask/taskin-git-utils';
-import type { StatsQuery, TeamStats, UserStats } from '@opentask/taskin-types';
+import type {
+  StatsQuery,
+  TaskStats,
+  TeamStats,
+  UserStats,
+} from '@opentask/taskin-types';
 import chalk from 'chalk';
 import path from 'path';
 import { printHeader } from '../lib/colors.js';
@@ -207,7 +212,7 @@ function displayTeamStats(stats: TeamStats, detailed = false): void {
   }
 }
 
-function displayTaskStats(stats: any, _detailed = false): void {
+function displayTaskStats(stats: TaskStats, _detailed = false): void {
   console.log(`${chalk.dim('Task:')} ${stats.taskId} - ${stats.title}\n`);
 
   console.log(chalk.bold('📋 Task Info'));
@@ -226,8 +231,8 @@ function displayTaskStats(stats: any, _detailed = false): void {
 
   if (stats.contributors.length > 0) {
     console.log(chalk.bold('👥 Contributors'));
-    stats.contributors.forEach((c: string) => {
-      console.log(`  • ${c}`);
+    stats.contributors.forEach((c) => {
+      console.log(`  • ${c.name} (${c.commits} commits)`);
     });
   }
 }

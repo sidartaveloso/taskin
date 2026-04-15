@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "composite": true,
-    "downlevelIteration": true,
     "outDir": "./dist",
     "rootDir": "./",
     "skipLibCheck": true
