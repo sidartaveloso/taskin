@@ -1,6 +1,6 @@
 # Task 018 — adicionar testes de integração para commit em branch configurado
 
-Status: pending
+Status: in-progress
 Type: test
 Assignee: unassigned
 
