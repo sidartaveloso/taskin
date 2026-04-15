@@ -81,14 +81,36 @@ export class GitService implements IGitService {
         return this.commitTaskStatusChange(taskId, status);
       }
 
-      // Check if there are uncommitted changes
+      // Capture the modified task file content before stashing
+      const taskPattern = `TASKS/task-${taskId}-*.md`;
+      let taskFileContent: string | null = null;
+      let taskFilePath: string | null = null;
+      try {
+        const files = execSync(`git ls-files -m ${taskPattern}`, {
+          cwd: this.cwd,
+          encoding: 'utf8',
+          stdio: 'pipe',
+        }).trim();
+        if (files) {
+          taskFilePath = files.split('\n')[0];
+          const { readFileSync } = await import('fs');
+          taskFileContent = readFileSync(
+            `${this.cwd}/${taskFilePath}`,
+            'utf-8',
+          );
+        }
+      } catch {
+        // No modified task file found — try unstaged check
+      }
+
+      // Check if there are other uncommitted changes (besides the task file)
       const hasChanges = await this.hasUncommittedChanges();
       let stashed = false;
 
       try {
-        // Stash changes if needed
+        // Stash all changes if needed (including the task file temporarily)
         if (hasChanges) {
-          execSync('git stash push -m "taskin-temp-stash"', {
+          execSync('git stash push -u -m "taskin-temp-stash"', {
             cwd: this.cwd,
             stdio: 'ignore',
           });
@@ -101,10 +123,22 @@ export class GitService implements IGitService {
           stdio: 'ignore',
         });
 
-        // Commit the task status change
-        const pattern = `TASKS/task-${taskId}-*.md`;
-        const message = `docs(TASKS): task-${taskId} - atualiza status para ${status} [skip-ci]`;
-        const committed = await this.addAndCommit(pattern, message);
+        // Write the captured task file content to the target branch
+        let committed = false;
+        if (taskFileContent && taskFilePath) {
+          const { writeFileSync } = await import('fs');
+          writeFileSync(
+            `${this.cwd}/${taskFilePath}`,
+            taskFileContent,
+            'utf-8',
+          );
+          const message = `docs(TASKS): task-${taskId} - atualiza status para ${status} [skip-ci]`;
+          committed = await this.addAndCommit(taskPattern, message);
+        } else {
+          // Fallback: try to commit directly (task might already be staged)
+          const message = `docs(TASKS): task-${taskId} - atualiza status para ${status} [skip-ci]`;
+          committed = await this.addAndCommit(taskPattern, message);
+        }
 
         // Return to original branch
         execSync(`git checkout ${currentBranch}`, {

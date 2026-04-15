@@ -1,12 +1,23 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "composite": true,
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "lib": ["ES2022"],
     "module": "commonjs",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
+    "paths": {
+      "@opentask/taskin-core": ["packages/core/src"],
+      "@opentask/taskin-file-system-provider": [
+        "packages/file-system-task-provider/src"
+      ],
+      "@opentask/taskin-git-utils": ["packages/git-utils/src"],
+      "@opentask/taskin-task-manager": ["packages/task-manager/src"],
+      "@opentask/taskin-types": ["packages/types-ts/src"],
+      "@opentask/taskin-utils": ["packages/utils/src"]
+    },
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
