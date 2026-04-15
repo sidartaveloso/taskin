@@ -361,15 +361,19 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     let files: string[];
     try {
       files = await fs.readdir(this.tasksDirectory);
-    } catch (error: any) {
-      if (error?.code === 'ENOENT') {
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'ENOENT'
+      ) {
         console.warn(`Tasks directory not found: ${this.tasksDirectory}`);
         return [];
       }
       // Don't hide unexpected errors
-      throw new Error(
-        `Failed to read tasks directory: ${error?.message || error}`,
-      );
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to read tasks directory: ${message}`);
     }
 
     const taskFiles = files.filter(
@@ -382,8 +386,9 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
       let content: string;
       try {
         content = await fs.readFile(filePath, 'utf-8');
-      } catch (error: any) {
-        console.warn(`Failed to read task file ${filePath}: ${error?.message}`);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Failed to read task file ${filePath}: ${message}`);
         continue;
       }
 

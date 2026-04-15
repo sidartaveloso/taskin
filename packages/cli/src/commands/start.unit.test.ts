@@ -15,6 +15,7 @@ describe('start command - auto-commit logic (unit)', () => {
       commit: vi.fn().mockResolvedValue(true),
       addAndCommit: vi.fn().mockResolvedValue(true),
       commitTaskStatusChange: vi.fn().mockResolvedValue(true),
+      commitTaskStatusChangeOnBranch: vi.fn().mockResolvedValue(true),
       hasUncommittedChanges: vi.fn().mockResolvedValue(false),
       getCurrentBranch: vi.fn().mockResolvedValue('main'),
       isGitRepository: vi.fn().mockResolvedValue(true),

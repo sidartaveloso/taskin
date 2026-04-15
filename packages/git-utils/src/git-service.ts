@@ -58,6 +58,94 @@ export class GitService implements IGitService {
     return this.addAndCommit(pattern, message);
   }
 
+  async commitTaskStatusChangeOnBranch(
+    taskId: string,
+    status: string,
+    defaultBranch?: string,
+  ): Promise<boolean> {
+    // If no defaultBranch specified, use normal commit
+    if (!defaultBranch) {
+      return this.commitTaskStatusChange(taskId, status);
+    }
+
+    try {
+      // Get current branch
+      const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', {
+        cwd: this.cwd,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+
+      // If already on target branch, commit normally
+      if (currentBranch === defaultBranch) {
+        return this.commitTaskStatusChange(taskId, status);
+      }
+
+      // Check if there are uncommitted changes
+      const hasChanges = await this.hasUncommittedChanges();
+      let stashed = false;
+
+      try {
+        // Stash changes if needed
+        if (hasChanges) {
+          execSync('git stash push -m "taskin-temp-stash"', {
+            cwd: this.cwd,
+            stdio: 'ignore',
+          });
+          stashed = true;
+        }
+
+        // Checkout target branch
+        execSync(`git checkout ${defaultBranch}`, {
+          cwd: this.cwd,
+          stdio: 'ignore',
+        });
+
+        // Commit the task status change
+        const pattern = `TASKS/task-${taskId}-*.md`;
+        const message = `docs(TASKS): task-${taskId} - atualiza status para ${status} [skip-ci]`;
+        const committed = await this.addAndCommit(pattern, message);
+
+        // Return to original branch
+        execSync(`git checkout ${currentBranch}`, {
+          cwd: this.cwd,
+          stdio: 'ignore',
+        });
+
+        // Pop stash if we stashed
+        if (stashed) {
+          execSync('git stash pop', {
+            cwd: this.cwd,
+            stdio: 'ignore',
+          });
+        }
+
+        return committed;
+      } catch {
+        // Ensure we return to original branch even on error
+        try {
+          execSync(`git checkout ${currentBranch}`, {
+            cwd: this.cwd,
+            stdio: 'ignore',
+          });
+
+          if (stashed) {
+            execSync('git stash pop', {
+              cwd: this.cwd,
+              stdio: 'ignore',
+            });
+          }
+        } catch {
+          // If we can't restore, at least we tried
+        }
+
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
   async hasUncommittedChanges(): Promise<boolean> {
     try {
       const output = execSync('git status --porcelain', {

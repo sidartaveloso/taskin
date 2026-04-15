@@ -25,6 +25,8 @@ export interface AutomationBehavior {
   autoCommitPause: boolean;
   /** Auto-commit completed work (finish command) */
   autoCommitFinish: boolean;
+  /** Default branch for autocommits */
+  defaultBranch?: string;
 }
 
 /**
@@ -167,7 +169,10 @@ export class ConfigManager {
    */
   getAutomationBehavior(): AutomationBehavior {
     const automation = this.getAutomationConfig();
-    return getAutomationBehavior(automation.level, automation.commits);
+    return {
+      ...getAutomationBehavior(automation.level, automation.commits),
+      defaultBranch: automation.defaultBranch,
+    };
   }
 
   /**

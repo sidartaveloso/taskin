@@ -143,9 +143,10 @@ async function startTask(
 
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
-    const committed = await git.commitTaskStatusChange(
+    const committed = await git.commitTaskStatusChangeOnBranch(
       normalizedId,
       'in-progress',
+      behavior.defaultBranch,
     );
     if (committed) {
       success('✓ Auto-committed status change');

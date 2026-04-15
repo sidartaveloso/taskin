@@ -36,6 +36,21 @@ export interface IGitService {
   commitTaskStatusChange(taskId: string, status: string): Promise<boolean>;
 
   /**
+   * Commit task status change to a specific branch.
+   * If defaultBranch is provided and different from current branch,
+   * will temporarily switch to it, commit, and return to original branch.
+   * @param taskId - Task identifier (e.g., "014")
+   * @param status - New status (e.g., "in-progress", "paused", "done")
+   * @param defaultBranch - Optional target branch for the commit
+   * @returns True if commit was created successfully
+   */
+  commitTaskStatusChangeOnBranch(
+    taskId: string,
+    status: string,
+    defaultBranch?: string,
+  ): Promise<boolean>;
+
+  /**
    * Check if repository has uncommitted changes.
    * @returns True if there are uncommitted changes
    */

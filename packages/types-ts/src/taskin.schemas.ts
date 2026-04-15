@@ -423,6 +423,8 @@ export const AutomationConfigSchema = z.object({
   level: AutomationLevelSchema.default('assisted'),
   /** Granular commit settings (overrides level if provided) */
   commits: CommitAutomationSchema.optional(),
+  /** Default branch for task commits (e.g., 'main', 'develop'). When set, autocommits will always commit to this branch regardless of current branch. */
+  defaultBranch: z.string().optional(),
 });
 
 /**

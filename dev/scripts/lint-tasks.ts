@@ -9,18 +9,18 @@
  *   pnpm lint:tasks --fix  - Validate and auto-fix issues
  */
 
+import path, { join } from 'path';
+import { exit } from 'process';
 import type {
   ITaskProvider,
   ValidationIssue,
-} from '@opentask/taskin-task-manager';
-import { TaskManager } from '@opentask/taskin-task-manager';
-import path, { join } from 'path';
-import { exit } from 'process';
+} from '../../packages/task-manager/dist/index.js';
+import { TaskManager } from '../../packages/task-manager/dist/index.js';
 
 // Dynamic import to avoid TypeScript rootDir issues
 async function createProvider(tasksDir: string): Promise<ITaskProvider> {
   const { FileSystemTaskProvider, UserRegistry } =
-    await import('@opentask/taskin-file-system-provider');
+    await import('../../packages/file-system-task-provider/dist/index.js');
 
   // Create a simple user registry (empty for linting purposes)
   const userRegistry = new UserRegistry({
