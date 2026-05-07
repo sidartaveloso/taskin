@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["node"],
     "declaration": true,
     "declarationMap": true,
     "module": "ESNext",

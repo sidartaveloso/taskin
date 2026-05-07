@@ -6,7 +6,8 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "types": ["node"]
   },
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*"]
