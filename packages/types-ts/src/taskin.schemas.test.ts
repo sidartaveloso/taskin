@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AutomationConfigSchema,
   CodeMetricsSchema,
   CommitSizeSchema,
   ContributionMetricsSchema,
@@ -729,5 +730,110 @@ describe('Stats & Track Record Schemas', () => {
       };
       expect(StatsQuerySchema.parse(query)).toEqual(query);
     });
+  });
+});
+
+// ============================================================================
+// Task 019 — autoSync and originBranch fields
+// ============================================================================
+
+describe('AutomationConfigSchema - autoSync', () => {
+  it('should have autoSync default to true when field is absent', () => {
+    const result = AutomationConfigSchema.parse({ level: 'autopilot' });
+    expect(result.autoSync).toBe(true);
+  });
+
+  it('should accept autoSync: false', () => {
+    const result = AutomationConfigSchema.parse({
+      level: 'autopilot',
+      autoSync: false,
+    });
+    expect(result.autoSync).toBe(false);
+  });
+
+  it('should reject autoSync with non-boolean value (string)', () => {
+    const result = AutomationConfigSchema.safeParse({
+      level: 'autopilot',
+      autoSync: 'yes',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject autoSync with non-boolean value (number)', () => {
+    const result = AutomationConfigSchema.safeParse({
+      level: 'autopilot',
+      autoSync: 1,
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('AutomationConfigSchema - originBranch', () => {
+  it('should accept originBranch: "develop"', () => {
+    const result = AutomationConfigSchema.parse({
+      level: 'autopilot',
+      originBranch: 'develop',
+    });
+    expect(result.originBranch).toBe('develop');
+  });
+
+  it('should be optional when absent (undefined)', () => {
+    const result = AutomationConfigSchema.parse({ level: 'autopilot' });
+    expect(result.originBranch).toBeUndefined();
+  });
+
+  it('should reject originBranch with non-string value (boolean)', () => {
+    const result = AutomationConfigSchema.safeParse({
+      level: 'autopilot',
+      originBranch: true,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject originBranch with non-string value (number)', () => {
+    const result = AutomationConfigSchema.safeParse({
+      level: 'autopilot',
+      originBranch: 42,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should accept originBranch as empty string', () => {
+    const result = AutomationConfigSchema.parse({
+      level: 'autopilot',
+      originBranch: '',
+    });
+    expect(result.originBranch).toBe('');
+  });
+});
+
+describe('AutomationConfigSchema - autoSync + originBranch combined', () => {
+  it('should accept both fields together', () => {
+    const result = AutomationConfigSchema.parse({
+      level: 'autopilot',
+      autoSync: false,
+      originBranch: 'main',
+    });
+    expect(result.autoSync).toBe(false);
+    expect(result.originBranch).toBe('main');
+  });
+
+  it('should preserve existing fields (defaultBranch, commits)', () => {
+    const result = AutomationConfigSchema.parse({
+      level: 'assisted',
+      autoSync: true,
+      defaultBranch: 'tasks',
+      originBranch: 'develop',
+      commits: {
+        taskStatusChanges: false,
+        workInProgress: true,
+        completedWork: false,
+      },
+    });
+    expect(result.level).toBe('assisted');
+    expect(result.autoSync).toBe(true);
+    expect(result.defaultBranch).toBe('tasks');
+    expect(result.originBranch).toBe('develop');
+    expect(result.commits?.taskStatusChanges).toBe(false);
   });
 });
