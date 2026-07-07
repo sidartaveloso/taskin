@@ -152,6 +152,57 @@ taskin mcp-server
 }
 ```
 
+## 🔀 Git Flow: Automatic Sync (Roadmap)
+
+> 🚧 **Planned feature** — described here as the target workflow for [TASKS/task-019](./TASKS/task-019-fazer-push-automatico-e-pull-automatico.md). Not implemented yet; `automation.autoSync` and `automation.originBranch` don't exist in the codebase until that task ships.
+
+Example configuration once implemented, using `tasks` as the shared `defaultBranch` and `develop` as the `originBranch`:
+
+```json
+{
+  "automation": {
+    "level": "autopilot",
+    "autoSync": true,
+    "defaultBranch": "tasks",
+    "originBranch": "develop"
+  }
+}
+```
+
+With this config:
+
+1. `tasks` is a long-lived shared branch (branched once from `develop`) where every `taskin new` and `taskin update --status` commit lands — regardless of which local branch the user is on.
+2. **`taskin new`**: before computing the next task number, `autoSync` does `fetch` + `rebase` on `tasks`, then commits the new task file and pushes. If the push is rejected (another user pushed first), it retries the whole cycle (fetch → rebase → renumber → commit → push) up to 3 times.
+3. **`taskin update <id> --status ...`**: same `autoSync` cycle — status changes are committed and pushed to `tasks` automatically.
+4. **When a task's status becomes `done`**: taskin takes the final content of *that task's file only* from `tasks` and creates a single squash commit directly on `develop` (`originBranch`) — without dragging in other tasks still open on `tasks`.
+5. `tasks` keeps accumulating many small bookkeeping commits; `develop` only ever receives one clean commit per finished task.
+
+```mermaid
+---
+config:
+  gitGraph:
+    mainBranchName: 'develop'
+---
+gitGraph
+   commit id: "release-1.2.0"
+   branch tasks
+   checkout tasks
+   commit id: "task-042: new (pending)"
+   commit id: "task-042: in-progress"
+   commit id: "task-043: new (pending)"
+   commit id: "task-042: done"
+   checkout develop
+   merge tasks id: "squash: task-042 done" tag: "auto"
+   checkout tasks
+   commit id: "task-043: in-progress"
+   commit id: "task-043: done"
+   checkout develop
+   merge tasks id: "squash: task-043 done" tag: "auto"
+```
+
+- `develop` (`originBranch`) only ever sees the two squash commits — one per finished task — no matter how many `pending`/`in-progress` commits happened on `tasks` in between.
+- Disabling `autoSync` (or leaving `defaultBranch`/`originBranch` unset) falls back to today's behavior: fully local commits, no push/pull/squash.
+
 ## 📦 Packages
 
 ### Core Packages
