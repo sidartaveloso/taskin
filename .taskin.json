@@ -1,27 +1,44 @@
 {
+  "version": "1.0.3",
   "automation": {
-    "level": "autopilot"
+    "level": "autopilot",
+    "autoSync": true
+  },
+  "provider": {
+    "type": "fs",
+    "config": {
+      "tasksDir": "TASKS"
+    }
+  },
+  "hooks": {
+    "review": {
+      "pre": [
+        "git fetch origin",
+        "git status --porcelain"
+      ],
+      "during": [
+        "pnpm lint",
+        "pnpm typecheck",
+        "pnpm test"
+      ],
+      "post": [
+        "git push origin HEAD",
+        "echo '✓ Task {{taskId}} ({{taskTitle}}) ready for review!'"
+      ]
+    }
   },
   "hookConfig": {
     "baseBranch": "main",
     "continueOnError": false,
     "timeout": 300000
   },
-  "hooks": {
-    "review": {
-      "during": ["pnpm lint", "pnpm typecheck", "pnpm test"],
-      "post": [
-        "git push origin HEAD",
-        "echo '✓ Task {{taskId}} ({{taskTitle}}) ready for review!'"
-      ],
-      "pre": ["git fetch origin", "git status --porcelain"]
+  "notifications": {
+    "discord": {
+      "webhookUrl": "${DISCORD_TASKIN_WEBHOOK_URL}",
+      "events": [
+        "task:start",
+        "task:done"
+      ]
     }
-  },
-  "provider": {
-    "config": {
-      "tasksDir": "TASKS"
-    },
-    "type": "fs"
-  },
-  "version": "1.0.3"
+  }
 }

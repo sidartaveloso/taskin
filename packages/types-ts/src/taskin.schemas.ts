@@ -574,6 +574,104 @@ export const HookResultSchema = z.object({
   duration: z.number().int().nonnegative(),
 });
 
+// ============================================================================
+// Notification System Schemas
+// ============================================================================
+
+/**
+ * Supported notification event types.
+ * Use this for runtime validation and type narrowing.
+ *
+ * @public
+ * @example
+ * ```ts
+ * const isValidEvent = NOTIFICATION_EVENTS.includes(userInput);
+ * ```
+ */
+export const NOTIFICATION_EVENTS = [
+  'task:start',
+  'task:done',
+  'task:review',
+] as const;
+
+/**
+ * Runtime validator for notification event values.
+ *
+ * @public
+ */
+export const NotificationEventSchema = z.enum(NOTIFICATION_EVENTS);
+
+/**
+ * Schema for a single field in a notification message.
+ * Supports rich formatting with name, value, and inline display.
+ *
+ * @public
+ */
+export const NotificationFieldSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+  inline: z.boolean().optional(),
+});
+
+/**
+ * Schema for a structured notification message.
+ * Supports rich embeds with title, description, color, fields, mentions, and footer.
+ *
+ * @public
+ */
+export const NotificationMessageSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  color: z.number().optional(),
+  fields: z.array(NotificationFieldSchema).optional(),
+  mentions: z.array(z.string()).optional(),
+  footer: z.object({ text: z.string() }).optional(),
+});
+
+/**
+ * Schema for the result of a notification send operation.
+ *
+ * @public
+ */
+export const NotificationResultSchema = z.object({
+  success: z.boolean(),
+  provider: z.string(),
+  error: z.string().optional(),
+  duration: z.number().int().nonnegative(),
+});
+
+/**
+ * Schema for Discord notification provider configuration.
+ *
+ * @public
+ */
+export const NotificationDiscordConfigSchema = z.object({
+  webhookUrl: z.string(),
+  mentions: z.record(z.string(), z.string()).optional(),
+  events: z.array(NotificationEventSchema),
+});
+
+/**
+ * Schema for Telegram notification provider configuration.
+ *
+ * @public
+ */
+export const NotificationTelegramConfigSchema = z.object({
+  botToken: z.string(),
+  chatId: z.string(),
+  events: z.array(NotificationEventSchema),
+});
+
+/**
+ * Schema for the notification configuration block in .taskin.json.
+ *
+ * @public
+ */
+export const NotificationConfigSchema = z.object({
+  discord: NotificationDiscordConfigSchema.optional(),
+  telegram: NotificationTelegramConfigSchema.optional(),
+});
+
 /**
  * Taskin configuration file schema (.taskin.json).
  * Root configuration for a Taskin project.
@@ -588,4 +686,6 @@ export const TaskinConfigSchema = z.object({
   hooks: HookConfigSchema.optional(),
   /** Global hook execution settings */
   hookConfig: HookSettingsSchema.optional(),
+  /** Notification system configuration */
+  notifications: NotificationConfigSchema.optional(),
 });

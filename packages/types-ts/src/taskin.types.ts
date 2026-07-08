@@ -20,6 +20,13 @@ import type {
   HookOptionsSchema,
   HookResultSchema,
   HookSettingsSchema,
+  NotificationConfigSchema,
+  NotificationDiscordConfigSchema,
+  NotificationEventSchema,
+  NotificationFieldSchema,
+  NotificationMessageSchema,
+  NotificationResultSchema,
+  NotificationTelegramConfigSchema,
   ProviderConfigSchema,
   RefactoringMetricsSchema,
   StatsPeriodSchema,
@@ -428,4 +435,89 @@ export interface IHookRunner {
     context: HookContext,
     options: HookOptions,
   ): Promise<HookResult[]>;
+}
+
+// ============================================================================
+// Notification System Types
+// ============================================================================
+
+/**
+ * Notification event type.
+ * Represents lifecycle events that can trigger notifications.
+ *
+ * @public
+ */
+export type NotificationEvent = z.infer<typeof NotificationEventSchema>;
+
+/**
+ * A single field in a structured notification message.
+ *
+ * @public
+ */
+export type NotificationField = z.infer<typeof NotificationFieldSchema>;
+
+/**
+ * Structured notification message with support for rich embeds.
+ *
+ * @public
+ */
+export type NotificationMessage = z.infer<typeof NotificationMessageSchema>;
+
+/**
+ * Result of a notification send operation.
+ *
+ * @public
+ */
+export type NotificationResult = z.infer<typeof NotificationResultSchema>;
+
+/**
+ * Discord notification provider configuration.
+ *
+ * @public
+ */
+export type NotificationDiscordConfig = z.infer<
+  typeof NotificationDiscordConfigSchema
+>;
+
+/**
+ * Telegram notification provider configuration.
+ *
+ * @public
+ */
+export type NotificationTelegramConfig = z.infer<
+  typeof NotificationTelegramConfigSchema
+>;
+
+/**
+ * Notification configuration block from .taskin.json.
+ *
+ * @public
+ */
+export type NotificationConfig = z.infer<typeof NotificationConfigSchema>;
+
+/**
+ * Interface for notification providers.
+ * Follows the same provider pattern as ITaskProvider for consistency.
+ *
+ * @public
+ * @example
+ * ```ts
+ * class DiscordProvider implements INotificationProvider {
+ *   readonly name = 'discord';
+ *   async send(message: NotificationMessage): Promise<NotificationResult> {
+ *     // send via webhook
+ *   }
+ * }
+ * ```
+ */
+export interface INotificationProvider {
+  /** Provider name identifier */
+  readonly name: string;
+  /**
+   * Send a notification message.
+   *
+   * @param message - The structured notification message to send
+   * @returns Result indicating success or failure
+   */
+  send(message: NotificationMessage): Promise<NotificationResult>;
 }

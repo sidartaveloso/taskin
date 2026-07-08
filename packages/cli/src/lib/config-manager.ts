@@ -9,6 +9,7 @@ import type {
   CommandHooks,
   CommitAutomation,
   HookSettings,
+  NotificationConfig,
   TaskinConfig,
 } from '@opentask/taskin-types';
 import { TaskinConfigSchema } from '@opentask/taskin-types';
@@ -231,5 +232,27 @@ export class ConfigManager {
         timeout: 300000,
       };
     }
+  }
+
+  /**
+   * Get notification configuration.
+   * Returns undefined if notifications are not configured.
+   */
+  getNotifications(): NotificationConfig | undefined {
+    try {
+      const config = this.loadConfig();
+      return config.notifications;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Set notification configuration.
+   */
+  setNotifications(notifications: NotificationConfig): void {
+    const config = this.loadConfig();
+    config.notifications = notifications;
+    this.saveConfig(config);
   }
 }

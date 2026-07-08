@@ -7,6 +7,14 @@ import {
   DayOfWeekSchema,
   EngagementMetricsSchema,
   GitCommitSchema,
+  NOTIFICATION_EVENTS,
+  NotificationConfigSchema,
+  NotificationDiscordConfigSchema,
+  NotificationEventSchema,
+  NotificationFieldSchema,
+  NotificationMessageSchema,
+  NotificationResultSchema,
+  NotificationTelegramConfigSchema,
   RefactoringMetricsSchema,
   StatsPeriodSchema,
   StatsQuerySchema,
@@ -17,6 +25,7 @@ import {
   TaskStatsSchema,
   TaskStatusSchema,
   TaskTypeSchema,
+  TaskinConfigSchema,
   TeamStatsSchema,
   TemporalMetricsSchema,
   TimeOfDaySchema,
@@ -835,5 +844,222 @@ describe('AutomationConfigSchema - autoSync + originBranch combined', () => {
     expect(result.defaultBranch).toBe('tasks');
     expect(result.originBranch).toBe('develop');
     expect(result.commits?.taskStatusChanges).toBe(false);
+  });
+});
+
+// ============================================================================
+// Task 020 — Notification System Schemas
+// ============================================================================
+
+describe('NotificationEventSchema', () => {
+  it('should accept all valid notification events', () => {
+    NOTIFICATION_EVENTS.forEach((event) => {
+      expect(NotificationEventSchema.parse(event)).toBe(event);
+    });
+  });
+
+  it('should reject invalid notification event', () => {
+    expect(() => NotificationEventSchema.parse('task:invalid')).toThrow();
+    expect(() => NotificationEventSchema.parse('invalid')).toThrow();
+  });
+});
+
+describe('NotificationFieldSchema', () => {
+  it('should accept valid field with all properties', () => {
+    const field = { name: 'Status', value: 'done', inline: true };
+    expect(NotificationFieldSchema.parse(field)).toEqual(field);
+  });
+
+  it('should accept field without inline flag', () => {
+    const field = { name: 'Status', value: 'done' };
+    expect(NotificationFieldSchema.parse(field)).toEqual(field);
+  });
+
+  it('should reject field missing name', () => {
+    expect(() => NotificationFieldSchema.parse({ value: 'done' })).toThrow();
+  });
+});
+
+describe('NotificationMessageSchema', () => {
+  it('should accept valid message with all fields', () => {
+    const message = {
+      title: 'Task #020 — Notifications',
+      description: 'Foi finalizada por **Sidarta Veloso**',
+      color: 5763719,
+      fields: [
+        { name: 'Status', value: 'pending → done', inline: true },
+        { name: 'Branch', value: 'feat/task-020', inline: true },
+      ],
+      mentions: ['@Sidarta'],
+      footer: { text: 'Taskin • task-020' },
+    };
+    expect(NotificationMessageSchema.parse(message)).toEqual(message);
+  });
+
+  it('should accept minimal message (title + description only)', () => {
+    const message = {
+      title: 'Task #020',
+      description: 'Task completed',
+    };
+    expect(NotificationMessageSchema.parse(message)).toEqual(message);
+  });
+
+  it('should reject message missing title', () => {
+    expect(() =>
+      NotificationMessageSchema.parse({ description: 'desc' }),
+    ).toThrow();
+  });
+});
+
+describe('NotificationResultSchema', () => {
+  it('should accept successful result', () => {
+    const result = { success: true, provider: 'discord', duration: 150 };
+    expect(NotificationResultSchema.parse(result)).toEqual(result);
+  });
+
+  it('should accept failed result with error', () => {
+    const result = {
+      success: false,
+      provider: 'discord',
+      error: 'Network error',
+      duration: 5000,
+    };
+    expect(NotificationResultSchema.parse(result)).toEqual(result);
+  });
+
+  it('should reject negative duration', () => {
+    expect(() =>
+      NotificationResultSchema.parse({
+        success: true,
+        provider: 'discord',
+        duration: -1,
+      }),
+    ).toThrow();
+  });
+});
+
+describe('NotificationDiscordConfigSchema', () => {
+  it('should accept valid discord config', () => {
+    const config = {
+      webhookUrl: 'https://discord.com/api/webhooks/123/abc',
+      events: ['task:done' as const],
+    };
+    expect(NotificationDiscordConfigSchema.parse(config)).toEqual(config);
+  });
+
+  it('should accept discord config with mentions', () => {
+    const config = {
+      webhookUrl: 'https://discord.com/api/webhooks/123/abc',
+      mentions: { 'Sidarta Veloso': '<@12345>' },
+      events: ['task:done' as const, 'task:start' as const],
+    };
+    expect(NotificationDiscordConfigSchema.parse(config)).toEqual(config);
+  });
+
+  it('should reject discord config with invalid event', () => {
+    expect(() =>
+      NotificationDiscordConfigSchema.parse({
+        webhookUrl: 'https://discord.com/api/webhooks/123/abc',
+        events: ['task:invalid'],
+      }),
+    ).toThrow();
+  });
+
+  it('should reject discord config missing webhookUrl', () => {
+    expect(() =>
+      NotificationDiscordConfigSchema.parse({
+        events: ['task:done'],
+      }),
+    ).toThrow();
+  });
+});
+
+describe('NotificationTelegramConfigSchema', () => {
+  it('should accept valid telegram config', () => {
+    const config = {
+      botToken: '123456:ABC-DEF1234ghIkl',
+      chatId: '-1001234567890',
+      events: ['task:done' as const],
+    };
+    expect(NotificationTelegramConfigSchema.parse(config)).toEqual(config);
+  });
+
+  it('should reject telegram config missing botToken', () => {
+    expect(() =>
+      NotificationTelegramConfigSchema.parse({
+        chatId: '-1001234567890',
+        events: ['task:done'],
+      }),
+    ).toThrow();
+  });
+});
+
+describe('NotificationConfigSchema', () => {
+  it('should accept config with both providers', () => {
+    const config = {
+      discord: {
+        webhookUrl: 'https://discord.com/api/webhooks/123/abc',
+        events: ['task:done' as const],
+      },
+      telegram: {
+        botToken: '123456:ABC-DEF1234ghIkl',
+        chatId: '-1001234567890',
+        events: ['task:start' as const],
+      },
+    };
+    expect(NotificationConfigSchema.parse(config)).toEqual(config);
+  });
+
+  it('should accept config with only discord', () => {
+    const config = {
+      discord: {
+        webhookUrl: 'https://discord.com/api/webhooks/123/abc',
+        events: ['task:done' as const],
+      },
+    };
+    expect(NotificationConfigSchema.parse(config)).toEqual(config);
+  });
+
+  it('should accept config with only telegram', () => {
+    const config = {
+      telegram: {
+        botToken: '123456:ABC-DEF1234ghIkl',
+        chatId: '-1001234567890',
+        events: ['task:done' as const],
+      },
+    };
+    expect(NotificationConfigSchema.parse(config)).toEqual(config);
+  });
+
+  it('should accept empty config (no providers)', () => {
+    expect(NotificationConfigSchema.parse({})).toEqual({});
+  });
+});
+
+describe('TaskinConfigSchema - with notifications', () => {
+  it('should accept full config with notifications', () => {
+    const config = {
+      version: '1.0.0',
+      provider: { type: 'fs', config: { tasksDir: 'TASKS' } },
+      notifications: {
+        discord: {
+          webhookUrl: 'https://discord.com/api/webhooks/123/abc',
+          events: ['task:done' as const],
+        },
+      },
+    };
+    const result = TaskinConfigSchema.parse(config);
+    expect(result.notifications?.discord?.webhookUrl).toBe(
+      'https://discord.com/api/webhooks/123/abc',
+    );
+  });
+
+  it('should accept config without notifications', () => {
+    const config = {
+      version: '1.0.0',
+      provider: { type: 'fs', config: { tasksDir: 'TASKS' } },
+    };
+    const result = TaskinConfigSchema.parse(config);
+    expect(result.notifications).toBeUndefined();
   });
 });
