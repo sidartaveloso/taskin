@@ -3,7 +3,7 @@
  * Quando autoSync está ativo, o output não deve mencionar push manual.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IGitService } from '@opentask/taskin-git-utils';
 
 describe('new command - auto-sync output', () => {
@@ -25,6 +25,7 @@ describe('new command - auto-sync output', () => {
       rebase: vi.fn().mockResolvedValue(true),
       push: vi.fn().mockResolvedValue(true),
       abortRebase: vi.fn().mockResolvedValue(true),
+      checkoutFile: vi.fn().mockResolvedValue(true),
     };
   });
 

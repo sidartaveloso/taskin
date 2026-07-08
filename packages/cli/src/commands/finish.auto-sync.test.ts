@@ -3,14 +3,14 @@
  * Quando autoSync está ativo, o output "Next steps" não deve incluir git push manual.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IGitService } from '@opentask/taskin-git-utils';
 
 describe('finish command - auto-sync output', () => {
-  let mockGitService: IGitService;
+  let _mockGitService: IGitService;
 
   beforeEach(() => {
-    mockGitService = {
+    _mockGitService = {
       addFiles: vi.fn().mockResolvedValue(true),
       commit: vi.fn().mockResolvedValue(true),
       addAndCommit: vi.fn().mockResolvedValue(true),
@@ -25,6 +25,7 @@ describe('finish command - auto-sync output', () => {
       rebase: vi.fn().mockResolvedValue(true),
       push: vi.fn().mockResolvedValue(true),
       abortRebase: vi.fn().mockResolvedValue(true),
+      checkoutFile: vi.fn().mockResolvedValue(true),
     };
   });
 
@@ -33,8 +34,8 @@ describe('finish command - auto-sync output', () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       const autoSync = true;
-      const taskId = '042';
-      const status = 'done';
+      const _taskId = '042';
+      const _status = 'done';
 
       // Simula o output do finish quando autoSync está ativo
       if (autoSync) {
@@ -150,7 +151,7 @@ describe('finish command - auto-sync output', () => {
     });
 
     it('should NOT be called when status is not done even with originBranch', async () => {
-      const status = 'in-progress';
+      const status: string = 'in-progress';
       const originBranch = 'develop';
 
       const shouldSquash = status === 'done' && !!originBranch;

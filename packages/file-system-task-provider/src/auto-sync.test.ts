@@ -28,6 +28,7 @@ const createMockGitService = (): IGitService => ({
   rebase: vi.fn().mockResolvedValue(true),
   push: vi.fn().mockResolvedValue(true),
   abortRebase: vi.fn().mockResolvedValue(true),
+  checkoutFile: vi.fn().mockResolvedValue(true),
 });
 
 // ============================================================================

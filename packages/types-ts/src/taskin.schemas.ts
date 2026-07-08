@@ -425,6 +425,10 @@ export const AutomationConfigSchema = z.object({
   commits: CommitAutomationSchema.optional(),
   /** Default branch for task commits (e.g., 'main', 'develop'). When set, autocommits will always commit to this branch regardless of current branch. */
   defaultBranch: z.string().optional(),
+  /** Enable automatic fetch/rebase/push before creating tasks and after status changes. Default true. */
+  autoSync: z.boolean().default(true),
+  /** Target branch for squash commits when a task is marked as done (e.g., 'main', 'develop'). Optional. */
+  originBranch: z.string().optional(),
 });
 
 /**

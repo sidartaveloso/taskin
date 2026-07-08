@@ -187,10 +187,19 @@ describe('GitService', () => {
   describe('getCurrentBranch', () => {
     it('should return current branch name', async () => {
       const service = new GitService('/test/dir');
+      vi.mocked(execSync).mockReturnValue('main\n');
 
       const result = await service.getCurrentBranch();
 
       expect(result).toBe('main');
+      expect(execSync).toHaveBeenCalledWith(
+        'git branch --show-current',
+        {
+          cwd: '/test/dir',
+          encoding: 'utf8',
+          stdio: 'pipe',
+        },
+      );
     });
   });
 });

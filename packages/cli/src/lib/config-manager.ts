@@ -27,6 +27,10 @@ export interface AutomationBehavior {
   autoCommitFinish: boolean;
   /** Default branch for autocommits */
   defaultBranch?: string;
+  /** Enable automatic fetch/rebase/push before creating tasks and after status changes */
+  autoSync?: boolean;
+  /** Target branch for squash commits when a task is marked as done */
+  originBranch?: string;
 }
 
 /**
@@ -135,6 +139,7 @@ export class ConfigManager {
     const config = this.loadConfig();
 
     config.automation = {
+      autoSync: true,
       ...config.automation,
       level,
     };
@@ -148,10 +153,10 @@ export class ConfigManager {
   getAutomationConfig(): AutomationConfig {
     try {
       const config = this.loadConfig();
-      return config.automation ?? { level: 'assisted' };
+      return config.automation ?? { level: 'assisted', autoSync: true };
     } catch {
       // If config doesn't exist or is invalid, return default
-      return { level: 'assisted' };
+      return { level: 'assisted', autoSync: true };
     }
   }
 
@@ -172,6 +177,8 @@ export class ConfigManager {
     return {
       ...getAutomationBehavior(automation.level, automation.commits),
       defaultBranch: automation.defaultBranch,
+      autoSync: automation.autoSync,
+      originBranch: automation.originBranch,
     };
   }
 
