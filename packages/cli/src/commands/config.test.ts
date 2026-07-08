@@ -162,7 +162,7 @@ describe('ConfigManager integration for config command', () => {
       // TypeScript should prevent this, but test runtime validation
       expect(() => {
         const config = manager.loadConfig();
-        config.automation = { level: 'invalid' as any };
+        config.automation = { level: 'invalid' as any, autoSync: true as any };
         manager.saveConfig(config);
       }).toThrow();
     });

@@ -39,7 +39,7 @@ export function getCurrentBranch(): string {
  * @returns True if the branch exists, false otherwise.
  */
 export function branchExists(branchName: string): boolean {
-  return !!executeGit(`show-ref --verify --quiet refs/heads/${branchName}`);
+  return !!executeGit(`show-ref --verify refs/heads/${branchName}`);
 }
 
 /**

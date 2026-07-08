@@ -1,9 +1,6 @@
 import { execSync } from 'child_process';
 import {
-  branchExists,
-  checkoutBranch as checkoutBranchUtil,
   createBranch as createBranchUtil,
-  getCurrentBranch as getCurrentBranchUtil,
   isGitRepository as isGitRepositoryUtil,
 } from './git';
 import type { IGitService } from './git-service.types';
@@ -194,7 +191,15 @@ export class GitService implements IGitService {
   }
 
   async getCurrentBranch(): Promise<string> {
-    return Promise.resolve(getCurrentBranchUtil());
+    try {
+      return execSync('git branch --show-current', {
+        cwd: this.cwd,
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim();
+    } catch {
+      return '';
+    }
   }
 
   async isGitRepository(): Promise<boolean> {
@@ -215,10 +220,70 @@ export class GitService implements IGitService {
 
   async checkoutBranch(branchName: string): Promise<boolean> {
     try {
-      if (!branchExists(branchName)) {
-        return false;
-      }
-      checkoutBranchUtil(branchName);
+      execSync(`git checkout ${branchName}`, {
+        cwd: this.cwd,
+        stdio: 'ignore',
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async fetch(remote: string = 'origin'): Promise<boolean> {
+    try {
+      execSync(`git fetch ${remote}`, {
+        cwd: this.cwd,
+        stdio: 'ignore',
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async rebase(branch: string): Promise<boolean> {
+    try {
+      execSync(`git rebase ${branch}`, {
+        cwd: this.cwd,
+        stdio: 'ignore',
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async push(branch: string, remote: string = 'origin'): Promise<boolean> {
+    try {
+      execSync(`git push ${remote} ${branch}`, {
+        cwd: this.cwd,
+        stdio: 'ignore',
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async abortRebase(): Promise<boolean> {
+    try {
+      execSync('git rebase --abort', {
+        cwd: this.cwd,
+        stdio: 'ignore',
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async checkoutFile(branch: string, pattern: string): Promise<boolean> {
+    try {
+      execSync(`git checkout ${branch} -- ${pattern}`, {
+        cwd: this.cwd,
+        stdio: 'ignore',
+      });
       return true;
     } catch {
       return false;

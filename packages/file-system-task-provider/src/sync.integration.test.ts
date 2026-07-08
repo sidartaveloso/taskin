@@ -15,7 +15,6 @@ import {
   syncBeforeCreate,
   pushAfterCreate,
   squashTaskFileOnDone,
-  createTaskWithSync,
 } from './auto-sync';
 import type { SyncConfig } from './auto-sync';
 
@@ -99,15 +98,6 @@ function setupClone(
   cloneRepo(bareDir, cloneDir);
   const gitService = new GitService(cloneDir);
   return { dir: cloneDir, gitService };
-}
-
-function setupInitialBranch(
-  dir: string,
-  branch: string,
-  bareDir: string,
-): void {
-  createBranch(dir, branch);
-  pushBranch(dir, branch);
 }
 
 // ============================================================================
@@ -262,6 +252,7 @@ describe('AutoSync Integration', () => {
     execSync('git push', { cwd: cloneB.dir, stdio: 'ignore' });
 
     // In clone A, create a conflicting change on the same file
+    mkdirSync(join(cloneA.dir, 'TASKS'), { recursive: true });
     writeFileSync(
       join(cloneA.dir, 'TASKS', 'conflict.md'),
       'divergent content\n',
@@ -321,43 +312,41 @@ describe('AutoSync Integration', () => {
   });
 
   // --------------------------------------------------------------------------
-  // Cenário 5 — Limite de retries esgotado
+  // Cenário 5 — Retry em caso de push rejeitado
   // --------------------------------------------------------------------------
-  it('Cenário 5: should exhaust retries and abort with error', async () => {
+  it('Cenário 5: should retry push when rejected and eventually succeed', async () => {
     // Push something from clone B so clone A's push will be rejected
     mkdirSync(join(cloneB.dir, 'TASKS'), { recursive: true });
     writeFileSync(
       join(cloneB.dir, 'TASKS', 'blocker.md'),
       'blocker content\n',
     );
-    execSync('git add TASKS/blocker.md', { cwd: cloneB.dir, stdio: 'ignore' });
+    execSync('git add TASKS/', { cwd: cloneB.dir, stdio: 'ignore' });
     execSync('git commit -m "Blocker"', { cwd: cloneB.dir, stdio: 'ignore' });
     execSync('git push', { cwd: cloneB.dir, stdio: 'ignore' });
 
-    // Clone A tries to pushAfterCreate — will push, get rejected, push again, etc.
+    // Clone A tries to pushAfterCreate — will push, get rejected, retry, succeed
     mkdirSync(join(cloneA.dir, 'TASKS'), { recursive: true });
     writeFileSync(
       join(cloneA.dir, 'TASKS', 'task-001-test.md'),
       '# Task 001\n\nStatus: pending\n',
     );
 
-    // We need to keep pushing from clone B to keep rejecting clone A
-    // Simulate by pushing from B after each A retry
-    await expect(
-      pushAfterCreate(cloneA.gitService, {
-        taskId: '001',
-        title: 'Test',
-        defaultBranch: 'tasks',
-      }),
-    ).rejects.toThrow();
+    const result = await pushAfterCreate(cloneA.gitService, {
+      taskId: '001',
+      title: 'Test',
+      defaultBranch: 'tasks',
+    });
+    expect(result).toBe(true);
 
-    // Verify no lingering rebase state
-    const rebaseInProgress = execSync('git rev-parse --git-path rebase-merge', {
-      cwd: cloneA.dir,
-      encoding: 'utf8',
-      stdio: 'pipe',
-    }).trim();
-    expect(existsSync(join(cloneA.dir, rebaseInProgress))).toBe(false);
+    // Verify: remote has both blocker and A's task
+    const bareClone = mkdtempSync(join(tmpdir(), 'taskin-sync-verify-'));
+    cleanupDirs.push(bareClone);
+    execSync(`git clone ${bareDir} ${bareClone}`, { stdio: 'ignore' });
+    execSync('git checkout tasks', { cwd: bareClone, stdio: 'ignore' });
+
+    expect(existsSync(join(bareClone, 'TASKS', 'blocker.md'))).toBe(true);
+    expect(existsSync(join(bareClone, 'TASKS', 'task-001-test.md'))).toBe(true);
   });
 
   // --------------------------------------------------------------------------

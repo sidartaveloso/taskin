@@ -82,4 +82,41 @@ export interface IGitService {
    * @returns True if checkout succeeded
    */
   checkoutBranch(branchName: string): Promise<boolean>;
+
+  /**
+   * Fetch from a remote repository.
+   * @param remote - Remote name (defaults to 'origin')
+   * @returns True if fetch succeeded
+   */
+  fetch(remote?: string): Promise<boolean>;
+
+  /**
+   * Rebase current branch onto another branch.
+   * @param branch - Branch to rebase onto (e.g., 'origin/tasks')
+   * @returns True if rebase succeeded
+   */
+  rebase(branch: string): Promise<boolean>;
+
+  /**
+   * Push current branch to a remote repository.
+   * @param branch - Branch to push
+   * @param remote - Remote name (defaults to 'origin')
+   * @returns True if push succeeded
+   */
+  push(branch: string, remote?: string): Promise<boolean>;
+
+  /**
+   * Abort current rebase operation.
+   * @returns True if abort succeeded
+   */
+  abortRebase(): Promise<boolean>;
+
+  /**
+   * Checkout files from another branch into the working directory.
+   * Equivalent to `git checkout <branch> -- <pattern>`.
+   * @param branch - Source branch to checkout from
+   * @param pattern - File pattern to checkout
+   * @returns True if checkout succeeded
+   */
+  checkoutFile(branch: string, pattern: string): Promise<boolean>;
 }

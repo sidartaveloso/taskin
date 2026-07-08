@@ -11,6 +11,10 @@ export default defineConfig({
         __dirname,
         '../types-ts/src/index.ts',
       ),
+      '@opentask/taskin-git-utils': path.resolve(
+        __dirname,
+        '../git-utils/src/index.ts',
+      ),
     },
   },
 });

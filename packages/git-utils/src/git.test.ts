@@ -43,7 +43,7 @@ describe('Git Utilities', () => {
     mockedExecSync.mockReturnValue('refs/heads/main');
     expect(branchExists('main')).toBe(true);
     expect(execSync).toHaveBeenCalledWith(
-      'git show-ref --verify --quiet refs/heads/main',
+      'git show-ref --verify refs/heads/main',
       expect.any(Object),
     );
   });

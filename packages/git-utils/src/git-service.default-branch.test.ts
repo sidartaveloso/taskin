@@ -22,6 +22,11 @@ describe('GitService - defaultBranch feature', () => {
       isGitRepository: vi.fn().mockResolvedValue(true),
       createBranch: vi.fn().mockResolvedValue(true),
       checkoutBranch: vi.fn().mockResolvedValue(true),
+      fetch: vi.fn().mockResolvedValue(true),
+      rebase: vi.fn().mockResolvedValue(true),
+      push: vi.fn().mockResolvedValue(true),
+      abortRebase: vi.fn().mockResolvedValue(true),
+      checkoutFile: vi.fn().mockResolvedValue(true),
     };
   });
 

@@ -30,6 +30,7 @@ describe('ConfigManager', () => {
         version: '1.0.3',
         automation: {
           level: 'assisted' as const,
+          autoSync: true,
         },
         provider: {
           type: 'fs',
@@ -98,6 +99,7 @@ describe('ConfigManager', () => {
         version: '1.0.3',
         automation: {
           level: 'autopilot' as const,
+          autoSync: true,
         },
         provider: {
           type: 'fs',
