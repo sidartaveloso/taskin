@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "automation": {
+    "level": "assisted",
+    "autoSync": true
+  },
+  "provider": {
+    "type": "fs",
+    "config": {
+      "tasksDir": "TASKS"
+    }
+  },
+  "hooks": {
+    "review": {
+      "during": ["pnpm lint", "pnpm typecheck", "pnpm test"],
+      "post": ["git push origin HEAD"],
+      "pre": ["git fetch origin", "git status --porcelain"]
+    }
+  },
+  "hookConfig": {
+    "baseBranch": "main",
+    "continueOnError": false,
+    "timeout": 300000
+  },
+  "notifications": {
+    "discord": {
+      "webhookUrl": "${DISCORD_TASKIN_WEBHOOK_URL}",
+      "mentions": {
+        "Sidarta Veloso": "<@123456789>",
+        "Joris Veloso": "<@987654321>"
+      },
+      "events": ["task:start", "task:done", "task:review"]
+    },
+    "telegram": {
+      "botToken": "${TELEGRAM_BOT_TOKEN}",
+      "chatId": "${TELEGRAM_CHAT_ID}",
+      "events": ["task:done"]
+    }
+  }
+}

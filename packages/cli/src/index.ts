@@ -5,6 +5,7 @@
  * Command-line interface for managing tasks
  */
 
+import { loadDotEnv } from './lib/notification/env-resolver.js';
 import { Command } from 'commander';
 import { configCommand } from './commands/config.js';
 import { dashboardCommand } from './commands/dashboard.js';
@@ -14,6 +15,7 @@ import { initCommand } from './commands/init.js';
 import { lintCommand } from './commands/lint.js';
 import { listCommand } from './commands/list.js';
 import { mcpServerCommand } from './commands/mcp-server.js';
+import { notifyCommand } from './commands/notify.js';
 import { createCommand } from './commands/new.js';
 import { pauseCommand } from './commands/pause.js';
 import { reviewCommand } from './commands/review.js';
@@ -21,6 +23,9 @@ import { startCommand } from './commands/start.js';
 import { statsCommand } from './commands/stats.js';
 import { showCustomHelp } from './lib/help.js';
 import { getVersion } from './version.js';
+
+// Load .env file from project root (optional, keeps secrets out of .taskin.json)
+loadDotEnv();
 
 const program = new Command();
 
@@ -54,6 +59,7 @@ registerExportCommand(program);
 lintCommand(program);
 dashboardCommand(program);
 mcpServerCommand(program);
+notifyCommand(program);
 
 // Intercept --help at root level
 program.on('option:help', () => {

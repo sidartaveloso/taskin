@@ -11,6 +11,7 @@ import { execSync } from 'child_process';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
+import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { playSound } from '../lib/sound-player.js';
 import { defineCommand } from './define-command/index.js';
@@ -198,6 +199,9 @@ async function finishTask(
 
   success('Great work! 🚀');
   console.log();
+
+  // Send notification
+  await sendTaskNotification(configManager, 'task:done', normalizedId, task.title);
 
   // Play finish sound if not disabled
   if (options.sound !== false) {

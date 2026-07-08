@@ -21,6 +21,7 @@ import {
 } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { HookRunner } from '../lib/hook-runner.js';
+import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { playSound } from '../lib/sound-player.js';
 import { defineCommand } from './define-command/index.js';
@@ -292,6 +293,9 @@ async function reviewTask(
       : '';
 
   success(`✓ Task ready for review! ${totalDuration}`);
+
+  // Send notification
+  await sendTaskNotification(configManager, 'task:review', normalizedId, task.title);
 
   // Play sound if enabled
   if (options.sound !== false) {

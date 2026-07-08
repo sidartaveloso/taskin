@@ -11,6 +11,7 @@ import { TaskManager } from '@opentask/taskin-task-manager';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
+import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { playSound } from '../lib/sound-player.js';
 import { defineCommand } from './define-command/index.js';
@@ -182,6 +183,9 @@ async function startTask(
     console.log(colors.secondary('  3. Use "taskin pause" to save progress'));
   }
   console.log();
+
+  // Send notification
+  await sendTaskNotification(configManager, 'task:start', normalizedId, task.title);
 
   // Play start sound if not disabled
   if (_options.sound !== false) {

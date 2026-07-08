@@ -14,4 +14,5 @@ export * from './new.js';
 export * from './pause.js';
 export * from './review.js';
 export * from './start.js';
+export * from './notify.js';
 export * from './stats.js';
