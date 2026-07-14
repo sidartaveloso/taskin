@@ -5,3 +5,6 @@ export { default as DashboardLayout } from './DashboardLayout.vue';
 
 // Task management templates
 export { default as TaskGrid } from './TaskGrid.vue';
+
+// Prioritization board
+export { default as PrioritizationScreen } from './PrioritizationScreen.vue';

@@ -106,6 +106,14 @@ export const TaskSchema = z.object({
   completed: z.boolean().optional(),
   description: z.string().optional(),
   userId: z.string().optional(),
+  /** Manual priority rank (lower = higher priority); set via the prioritization board */
+  order: z.number().optional(),
+  /** Opaque id of the ad hoc prioritization group this task belongs to, if any */
+  groupId: z.string().optional(),
+  /** Display label of the prioritization group, if the user named it */
+  groupName: z.string().optional(),
+  /** Perceived difficulty from 1 (trivial) to 5 (very hard) */
+  difficulty: z.number().int().min(1).max(5).optional(),
 });
 
 // ============================================================================

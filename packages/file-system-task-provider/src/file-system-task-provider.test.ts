@@ -269,6 +269,128 @@ Test description`;
     });
   });
 
+  describe('prioritization fields (Priority/Group/GroupName/Difficulty)', () => {
+    it('should read Priority/Group/GroupName/Difficulty from an existing file', async () => {
+      const content = `# Task 001 — Prioritized Task
+Status: pending
+Type: feat
+Priority: 20
+Group: g-abc123
+GroupName: Backend
+Difficulty: 3
+
+## Description
+Test description`;
+
+      (fs.readdir as Mock).mockResolvedValue(['task-001-prioritized.md']);
+      (fs.readFile as Mock).mockResolvedValue(content);
+
+      const task = await provider.findTask('001');
+
+      expect(task?.order).toBe(20);
+      expect(task?.groupId).toBe('g-abc123');
+      expect(task?.groupName).toBe('Backend');
+      expect(task?.difficulty).toBe(3);
+    });
+
+    it('should leave prioritization fields undefined when absent', async () => {
+      const content = `# Task 001 — Plain Task
+Status: pending
+Type: feat
+
+## Description
+Test description`;
+
+      (fs.readdir as Mock).mockResolvedValue(['task-001-plain.md']);
+      (fs.readFile as Mock).mockResolvedValue(content);
+
+      const task = await provider.findTask('001');
+
+      expect(task?.order).toBeUndefined();
+      expect(task?.groupId).toBeUndefined();
+      expect(task?.groupName).toBeUndefined();
+      expect(task?.difficulty).toBeUndefined();
+    });
+
+    it('should write Priority/Group/GroupName/Difficulty inline metadata (round-trip)', async () => {
+      const originalContent = `# Task 001 — Test Task
+Status: pending
+Type: feat
+
+## Description
+Test description`;
+
+      (fs.readFile as Mock).mockResolvedValue(originalContent);
+
+      const mockTask: TaskFile = {
+        content: 'not used in updateTask',
+        createdAt: new Date().toISOString(),
+        filePath: '/fake/tasks/task-001.md',
+        id: '001' satisfies string as TaskId,
+        status: 'pending',
+        title: 'Test Task',
+        type: 'feat',
+        order: 30,
+        groupId: 'g-xyz789',
+        groupName: 'Frontend',
+        difficulty: 4,
+      };
+
+      await provider.updateTask(mockTask);
+
+      const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
+      expect(written).toMatch(/^Priority: 30$/m);
+      expect(written).toMatch(/^Group: g-xyz789$/m);
+      expect(written).toMatch(/^GroupName: Frontend$/m);
+      expect(written).toMatch(/^Difficulty: 4$/m);
+
+      // Round-trip: reading the written content back should yield the same fields
+      (fs.readdir as Mock).mockResolvedValue(['task-001-test.md']);
+      (fs.readFile as Mock).mockResolvedValue(written);
+      const reread = await provider.findTask('001');
+      expect(reread?.order).toBe(30);
+      expect(reread?.groupId).toBe('g-xyz789');
+      expect(reread?.groupName).toBe('Frontend');
+      expect(reread?.difficulty).toBe(4);
+    });
+
+    it('should remove a prioritization field when it becomes undefined (ungroup)', async () => {
+      const originalContent = `# Task 001 — Grouped Task
+Status: pending
+Type: feat
+Priority: 10
+Group: g-abc123
+GroupName: Backend
+Difficulty: 2
+
+## Description
+Test description`;
+
+      (fs.readFile as Mock).mockResolvedValue(originalContent);
+
+      const mockTask: TaskFile = {
+        content: 'not used in updateTask',
+        createdAt: new Date().toISOString(),
+        filePath: '/fake/tasks/task-001.md',
+        id: '001' satisfies string as TaskId,
+        status: 'pending',
+        title: 'Grouped Task',
+        type: 'feat',
+        order: 10,
+        difficulty: 2,
+        // groupId/groupName intentionally omitted (task left the group)
+      };
+
+      await provider.updateTask(mockTask);
+
+      const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
+      expect(written).toMatch(/^Priority: 10$/m);
+      expect(written).toMatch(/^Difficulty: 2$/m);
+      expect(written).not.toMatch(/^Group:/m);
+      expect(written).not.toMatch(/^GroupName:/m);
+    });
+  });
+
   describe('getAllTasks', () => {
     it('should return empty array when no task files exist', async () => {
       (fs.readdir as Mock).mockResolvedValue([]);

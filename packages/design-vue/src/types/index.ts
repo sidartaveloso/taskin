@@ -61,6 +61,11 @@ export interface Task {
   progress?: TaskProgress;
   tags?: string[];
   warnings?: string[]; // Alert messages (e.g., "No task in progress", "Task blocked")
+  type?: string; // Task type (feat, fix, refactor, docs, test, chore, ...)
+  order?: number; // Manual priority rank (lower = higher priority), set via the prioritization board
+  groupId?: string; // Opaque id of the ad hoc prioritization group this task belongs to, if any
+  groupName?: string; // Display label of the prioritization group, if the user named it
+  difficulty?: number; // Perceived difficulty (1 trivial - 5 very hard)
 }
 
 export interface DashboardConfig {

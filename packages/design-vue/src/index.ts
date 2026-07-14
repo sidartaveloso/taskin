@@ -37,6 +37,7 @@ export * from './components/molecules/taskin-tentacle-with-item';
 export * from './components/molecules/taskin-tentacles-fluid';
 export * from './components/organisms';
 export * from './components/templates';
+export * from './components/pages';
 
 // Export specific organisms with default exports
 export {
