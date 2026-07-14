@@ -1,5 +1,23 @@
 <template>
+  <div class="mode-toggle">
+    <button
+      type="button"
+      :class="{ active: mode === 'board' }"
+      @click="mode = 'board'"
+    >
+      Board
+    </button>
+    <button
+      type="button"
+      :class="{ active: mode === 'prioritization' }"
+      @click="mode = 'prioritization'"
+    >
+      Priorização
+    </button>
+  </div>
+
   <Dashboard
+    v-if="mode === 'board'"
     title="Taskin Dashboard"
     :connection-status="connectionStatusType"
     :status-text="statusText"
@@ -10,13 +28,16 @@
     :tasks="tasks"
     @retry="handleRefresh"
   />
+  <PrioritizationPage v-else :tasks="tasks" @update-task="handleUpdateTask" />
 </template>
 
 <script setup lang="ts">
 import type { Task, TaskStatus } from '@opentask/taskin-design-vue';
-import { Dashboard } from '@opentask/taskin-design-vue';
+import { Dashboard, PrioritizationPage } from '@opentask/taskin-design-vue';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+
+const mode = ref<'board' | 'prioritization'>('board');
 
 // WebSocket configuration
 const wsUrl = ref(
@@ -45,6 +66,10 @@ const tasks = computed<Task[]>(() => {
       createdAt: string;
       type?: string;
       assignee?: { id: string; name: string };
+      order?: number;
+      groupId?: string;
+      groupName?: string;
+      difficulty?: number;
     }) => {
       // Calculate progress based on status
       let progressPercentage = 0;
@@ -82,6 +107,11 @@ const tasks = computed<Task[]>(() => {
         progress: {
           percentage: progressPercentage,
         },
+        type: taskFile.type,
+        order: taskFile.order,
+        groupId: taskFile.groupId,
+        groupName: taskFile.groupName,
+        difficulty: taskFile.difficulty,
       };
 
       // Debug log
@@ -113,6 +143,20 @@ onUnmounted(() => {
 // Refresh handler
 const handleRefresh = () => {
   taskStore.getAllTasks();
+};
+
+// Persist a prioritization change (order/group/difficulty) coming from PrioritizationPage
+const handleUpdateTask = (task: Task) => {
+  const original = taskStore.tasks.find((t) => t.id === task.id);
+  if (!original) return;
+
+  taskStore.updateTask({
+    ...original,
+    order: task.order,
+    groupId: task.groupId,
+    groupName: task.groupName,
+    difficulty: task.difficulty,
+  });
 };
 
 // Connection status type for header component
@@ -150,6 +194,30 @@ body {
 </style>
 
 <style scoped>
+.mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-card, #fff);
+  border-bottom: 1px solid var(--border-muted, #e5e5e5);
+}
+
+.mode-toggle button {
+  background: transparent;
+  border: 1px solid var(--border-muted, #e5e5e5);
+  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-primary, #212529);
+}
+
+.mode-toggle button.active {
+  background: var(--status-progress-bg, #169bd7);
+  color: #fff;
+  border-color: transparent;
+}
+
 /* Page-specific styles */
 .loading-state,
 .empty-state {

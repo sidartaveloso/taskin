@@ -17,6 +17,62 @@ import {
 } from './task-validator.js';
 import type { UserRegistry } from './user-registry.js';
 
+/**
+ * Parses the raw inline matches for the prioritization fields (Priority/Group/
+ * GroupName/Difficulty) into the typed shape expected on TaskFile.
+ */
+function parsePrioritizationFields(
+  priorityMatch: string | null,
+  groupMatch: string | null,
+  groupNameMatch: string | null,
+  difficultyMatch: string | null,
+): {
+  order?: number;
+  groupId?: string;
+  groupName?: string;
+  difficulty?: number;
+} {
+  const order = priorityMatch ? Number(priorityMatch.trim()) : undefined;
+  const difficulty = difficultyMatch
+    ? Number(difficultyMatch.trim())
+    : undefined;
+
+  return {
+    ...(order !== undefined && !isNaN(order) && { order }),
+    ...(groupMatch && { groupId: groupMatch.trim() }),
+    ...(groupNameMatch && { groupName: groupNameMatch.trim() }),
+    ...(difficulty !== undefined && !isNaN(difficulty) && { difficulty }),
+  };
+}
+
+/**
+ * Upserts or removes a single `Field: value` inline metadata line in the
+ * task markdown content, following the same convention used for `Status`.
+ * Passing `value === undefined` removes the line if present.
+ */
+function setInlineField(
+  content: string,
+  fieldName: string,
+  value: string | undefined,
+): string {
+  const linePattern = new RegExp(`^${fieldName}:\\s*.+$\\n?`, 'im');
+
+  if (value === undefined) {
+    return linePattern.test(content)
+      ? content.replace(linePattern, '')
+      : content;
+  }
+
+  if (new RegExp(`^${fieldName}:\\s*.+$`, 'im').test(content)) {
+    return content.replace(
+      new RegExp(`^${fieldName}:\\s*.+$`, 'im'),
+      `${fieldName}: ${value}`,
+    );
+  }
+
+  return content.replace(/(^#.*\n)/, `$1${fieldName}: ${value}\n`);
+}
+
 export class FileSystemTaskProvider implements ITaskProvider {
   async initialize(): Promise<void> {
     const fs = await import('fs');
@@ -103,6 +159,10 @@ export class FileSystemTaskProvider implements ITaskProvider {
     const statusMatch = extractInline('Status', i18n.status);
     const typeMatch = extractInline('Type', i18n.type);
     const assigneeMatch = extractInline('Assignee', i18n.assignee);
+    const priorityMatch = extractInline('Priority', i18n.priority);
+    const groupMatch = extractInline('Group', i18n.group);
+    const groupNameMatch = extractInline('GroupName', i18n.groupName);
+    const difficultyMatch = extractInline('Difficulty', i18n.difficulty);
 
     // Resolve assignee from registry
     let assignee;
@@ -131,6 +191,12 @@ export class FileSystemTaskProvider implements ITaskProvider {
         : 'pending') as TaskStatus,
       type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
       createdAt: new Date().toISOString(),
+      ...parsePrioritizationFields(
+        priorityMatch,
+        groupMatch,
+        groupNameMatch,
+        difficultyMatch,
+      ),
     };
 
     return task;
@@ -167,6 +233,28 @@ export class FileSystemTaskProvider implements ITaskProvider {
         `$1Status: ${task.status}\n`,
       );
     }
+
+    // Update prioritization fields (manual order, ad hoc group, difficulty)
+    updatedContent = setInlineField(
+      updatedContent,
+      'Priority',
+      task.order !== undefined ? String(task.order) : undefined,
+    );
+    updatedContent = setInlineField(
+      updatedContent,
+      'Group',
+      task.groupId || undefined,
+    );
+    updatedContent = setInlineField(
+      updatedContent,
+      'GroupName',
+      task.groupName || undefined,
+    );
+    updatedContent = setInlineField(
+      updatedContent,
+      'Difficulty',
+      task.difficulty !== undefined ? String(task.difficulty) : undefined,
+    );
 
     // Write the updated content back to the file
     await fs.writeFile(task.filePath, updatedContent, 'utf-8');
@@ -221,6 +309,10 @@ export class FileSystemTaskProvider implements ITaskProvider {
       const statusMatch = extractInline('Status', i18n.status);
       const typeMatch = extractInline('Type', i18n.type);
       const assigneeMatch = extractInline('Assignee', i18n.assignee);
+      const priorityMatch = extractInline('Priority', i18n.priority);
+      const groupMatch = extractInline('Group', i18n.group);
+      const groupNameMatch = extractInline('GroupName', i18n.groupName);
+      const difficultyMatch = extractInline('Difficulty', i18n.difficulty);
 
       // Resolve assignee from registry
       let assignee;
@@ -246,6 +338,12 @@ export class FileSystemTaskProvider implements ITaskProvider {
           : 'pending') as TaskStatus,
         type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
         createdAt: new Date().toISOString(),
+        ...parsePrioritizationFields(
+          priorityMatch,
+          groupMatch,
+          groupNameMatch,
+          difficultyMatch,
+        ),
       };
 
       tasks.push(task);

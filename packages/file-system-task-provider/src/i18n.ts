@@ -26,6 +26,14 @@ export interface TaskFileI18n {
   descriptionPlaceholder: string;
   /** Placeholder text for notes */
   notesPlaceholder: string;
+  /** Field name for manual priority order */
+  priority: string;
+  /** Field name for the ad hoc group id */
+  group: string;
+  /** Field name for the ad hoc group display name */
+  groupName: string;
+  /** Field name for difficulty rating */
+  difficulty: string;
 }
 
 /**
@@ -42,6 +50,10 @@ export const i18nConfig: Record<Locale, TaskFileI18n> = {
     defaultAssignee: 'To be defined',
     descriptionPlaceholder: 'Add task description here...',
     notesPlaceholder: 'Add any relevant notes or links here.',
+    priority: 'Priority',
+    group: 'Group',
+    groupName: 'GroupName',
+    difficulty: 'Difficulty',
   },
   'pt-BR': {
     status: 'Status',
@@ -53,6 +65,10 @@ export const i18nConfig: Record<Locale, TaskFileI18n> = {
     defaultAssignee: 'A definir',
     descriptionPlaceholder: 'Adicione a descrição da tarefa aqui...',
     notesPlaceholder: 'Adicione notas ou links relevantes aqui.',
+    priority: 'Prioridade',
+    group: 'Grupo',
+    groupName: 'NomeGrupo',
+    difficulty: 'Dificuldade',
   },
 };
 

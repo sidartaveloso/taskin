@@ -20,9 +20,26 @@ components/
 │   ├── taskin-effect-vomit/
 │   ├── taskin-effect-phone/
 │   └── taskin-effect-fart-cloud/
-└── organisms/          # Complete components
-    └── taskin/         # Main Taskin mascot (composition)
+├── organisms/          # Complete components
+│   └── taskin/         # Main Taskin mascot (composition)
+├── templates/          # Presentational "screens" — props/emits only, no app state
+│   └── PrioritizationScreen.vue
+└── pages/              # Smart containers — own a composable, feed a template/screen
+    └── PrioritizationPage.vue
 ```
+
+## Pages (new tier)
+
+`pages/` sits above `templates/`. A page owns a composable (app-agnostic state +
+actions, e.g. `usePrioritization`) and renders a template ("screen") by passing
+its state down via props/`v-model` and listening to the screen's interaction
+emits to drive the composable's actions. The template itself stays pure
+presentation — no composable import, no `localStorage`, no side effects.
+
+Example: `PrioritizationPage` uses `usePrioritization` and renders
+`PrioritizationScreen`, emitting `update-task`/`update-tasks` whenever the
+composable reports a task's manual order/group/difficulty changed, so the
+host app (e.g. `packages/dashboard`) can persist it via its task provider.
 
 ## Atoms
 
