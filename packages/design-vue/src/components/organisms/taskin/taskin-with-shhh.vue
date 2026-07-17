@@ -8,7 +8,7 @@
       :mirrored="true"
     />
 
-    <FaceTrackingControls
+    <TrackingControls
       :is-detecting="faceLandmarker.state.value.isDetecting"
       :error="faceLandmarker.state.value.error"
       :show-webcam="showWebcam"
@@ -29,10 +29,10 @@
       :noise-debounce-ms="noiseDebounceMsRef"
       :noise-sound="noiseSoundRef"
       @toggle-noise="toggleNoise"
-      @update:enableNoiseReactions="setEnableNoiseReactions"
-      @update:noiseThreshold="setNoiseThreshold"
-      @update:noiseDebounceMs="setNoiseDebounceMs"
-      @update:noiseSound="setNoiseSound"
+      @update:enable-noise-reactions="setEnableNoiseReactions"
+      @update:noise-threshold="setNoiseThreshold"
+      @update:noise-debounce-ms="setNoiseDebounceMs"
+      @update:noise-sound="setNoiseSound"
     />
 
     <div class="mascot-container" ref="mascotContainer">
@@ -63,7 +63,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
 import { createNoiseWatcher } from '../../../utils/noise-watcher';
 import WebcamVideo from '../../atoms/webcam-video';
-import FaceTrackingControls from '../../molecules/face-tracking-controls';
+import TrackingControls from '../../molecules/tracking-controls';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
 import NoiseTrackingControls from '../../molecules/noise-tracking-controls';
 import TaskinComposed from './taskin-composed';

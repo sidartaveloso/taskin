@@ -2,8 +2,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
-import FaceTrackingControls from '../../molecules/face-tracking-controls';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
+import TrackingControls from '../../molecules/tracking-controls';
 import WebcamVideo from '../webcam-video';
 import type { MouthExpression } from './taskin-mouth.types';
 import TaskinMouth from './taskin-mouth.vue';
@@ -297,7 +297,7 @@ export const FaceTracking: Story = {
               height: 240,
               mirrored: true,
             }),
-            h(FaceTrackingControls, {
+            h(TrackingControls, {
               isDetecting: faceLandmarker.state.value.isDetecting,
               error: faceLandmarker.state.value.error,
               showWebcam: showWebcam.value,

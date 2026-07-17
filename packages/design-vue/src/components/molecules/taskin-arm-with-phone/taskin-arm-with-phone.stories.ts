@@ -3,8 +3,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
 import WebcamVideo from '../../atoms/webcam-video';
-import FaceTrackingControls from '../face-tracking-controls';
 import FaceTrackingDebug from '../face-tracking-debug';
+import TrackingControls from '../tracking-controls';
 import TaskinArmWithPhone from './taskin-arm-with-phone.vue';
 
 const meta = {
@@ -333,7 +333,7 @@ export const FaceTracking: Story = {
               height: 240,
               mirrored: true,
             }),
-            h(FaceTrackingControls, {
+            h(TrackingControls, {
               isDetecting: faceLandmarker.state.value.isDetecting,
               error: faceLandmarker.state.value.error,
               showWebcam: showWebcam.value,

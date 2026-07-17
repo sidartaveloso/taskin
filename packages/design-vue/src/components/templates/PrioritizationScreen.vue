@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { provide, ref, toRef } from 'vue';
 import type {
-  PriorityGroupNode,
   PrioritizationSortMode,
   PrioritizationViewMode,
   PriorityNode,
 } from '../../composables/use-prioritization';
+import PriorityGroupRenderer from './PriorityGroupRenderer.vue';
 
 export interface PrioritizationScreenProps {
   tree: PriorityNode[];
@@ -15,6 +15,7 @@ export interface PrioritizationScreenProps {
   dragEnabled?: boolean;
   canUndo?: boolean;
   canRedo?: boolean;
+  focusedId?: string | null;
 }
 
 const props = withDefaults(defineProps<PrioritizationScreenProps>(), {
@@ -24,6 +25,7 @@ const props = withDefaults(defineProps<PrioritizationScreenProps>(), {
   dragEnabled: true,
   canUndo: false,
   canRedo: false,
+  focusedId: null,
 });
 
 const emit = defineEmits<{
@@ -38,42 +40,30 @@ const emit = defineEmits<{
   'move-after': [draggedId: string, targetId: string];
   'group-with': [draggedId: string, targetId: string];
   'join-group': [taskId: string, groupId: string];
+  'move-group-before': [groupId: string, targetId: string];
+  'move-group-after': [groupId: string, targetId: string];
+  'group-with-group': [draggedGroupId: string, targetGroupId: string];
+  'move-up': [id: string];
+  'move-down': [id: string];
+  ungroup: [groupId: string];
   'export-json': [];
   'copy-card': [taskId: string];
   'copy-group': [groupId: string];
+  'update:focusedId': [value: string | null];
   undo: [];
   redo: [];
 }>();
 
-const TYPE_ICON: Record<string, string> = {
-  feat: '✨',
-  feature: '✨',
-  fix: '🔧',
-  bug: '🐞',
-  refactor: '♻️',
-  refactoring: '♻️',
-  perf: '⚡',
-  docs: '📄',
-  test: '🧪',
-  chore: '🧹',
-  infra: '🏗️',
-  security: '🔒',
-  research: '🔬',
-};
-
-function iconFor(type: string | undefined): string {
-  return TYPE_ICON[(type ?? '').toLowerCase()] ?? '📌';
-}
-
-function groupLabel(node: PriorityGroupNode): string {
-  return node.groupName ?? 'Grupo';
-}
-
 // Drag & drop state (ephemeral UI state, not domain data)
 const draggedId = ref<string | null>(null);
+const isDraggingGroup = ref(false);
 type DropIntent =
   | { type: 'before' | 'after' | 'group'; taskId: string }
   | { type: 'ingroup'; groupId: string }
+  | {
+      type: 'group-before' | 'group-after' | 'group-merge';
+      targetGroupId: string;
+    }
   | null;
 const dropIntent = ref<DropIntent>(null);
 
@@ -82,17 +72,33 @@ function onDragStart(taskId: string, event: DragEvent) {
     event.preventDefault();
     return;
   }
+  isDraggingGroup.value = false;
   draggedId.value = taskId;
   event.dataTransfer?.setData('text/plain', taskId);
 }
 
+function onGroupDragStart(groupId: string, event: DragEvent) {
+  if (!props.dragEnabled) {
+    event.preventDefault();
+    return;
+  }
+  isDraggingGroup.value = true;
+  draggedId.value = groupId;
+  event.dataTransfer?.setData('text/plain', groupId);
+}
+
 function onDragEnd() {
   draggedId.value = null;
+  isDraggingGroup.value = false;
   dropIntent.value = null;
 }
 
 function onCardDragOver(taskId: string, event: DragEvent) {
-  if (!props.dragEnabled || draggedId.value === null || draggedId.value === taskId) {
+  if (
+    !props.dragEnabled ||
+    draggedId.value === null ||
+    draggedId.value === taskId
+  ) {
     return;
   }
   event.preventDefault();
@@ -109,26 +115,61 @@ function onCardDragOver(taskId: string, event: DragEvent) {
 
 function onGroupDragOver(groupId: string, event: DragEvent) {
   if (!props.dragEnabled || draggedId.value === null) return;
+  if ((event.target as HTMLElement)?.closest('.priority-card')) return;
   event.preventDefault();
-  dropIntent.value = { type: 'ingroup', groupId };
+
+  if (isDraggingGroup.value) {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const ratio = (event.clientY - rect.top) / rect.height;
+    if (ratio < 0.3) {
+      dropIntent.value = { type: 'group-before', targetGroupId: groupId };
+    } else if (ratio > 0.7) {
+      dropIntent.value = { type: 'group-after', targetGroupId: groupId };
+    } else {
+      dropIntent.value = { type: 'group-merge', targetGroupId: groupId };
+    }
+  } else {
+    dropIntent.value = { type: 'ingroup', groupId };
+  }
 }
 
 function onDrop() {
   if (!props.dragEnabled || draggedId.value === null || !dropIntent.value) {
     draggedId.value = null;
+    isDraggingGroup.value = false;
     dropIntent.value = null;
     return;
   }
 
   const dragged = draggedId.value;
   const intent = dropIntent.value;
+  const isGroup = isDraggingGroup.value;
 
-  if (intent.type === 'before') emit('move-before', dragged, intent.taskId);
-  else if (intent.type === 'after') emit('move-after', dragged, intent.taskId);
-  else if (intent.type === 'group') emit('group-with', dragged, intent.taskId);
-  else if (intent.type === 'ingroup') emit('join-group', dragged, intent.groupId);
+  if (isGroup) {
+    if (intent.type === 'before')
+      emit('move-group-before', dragged, intent.taskId);
+    else if (intent.type === 'after')
+      emit('move-group-after', dragged, intent.taskId);
+    else if (intent.type === 'group')
+      emit('group-with-group', dragged, intent.taskId);
+    else if (intent.type === 'group-before')
+      emit('move-group-before', dragged, intent.targetGroupId);
+    else if (intent.type === 'group-after')
+      emit('move-group-after', dragged, intent.targetGroupId);
+    else if (intent.type === 'group-merge')
+      emit('group-with-group', dragged, intent.targetGroupId);
+  } else {
+    if (intent.type === 'before') emit('move-before', dragged, intent.taskId);
+    else if (intent.type === 'after')
+      emit('move-after', dragged, intent.taskId);
+    else if (intent.type === 'group')
+      emit('group-with', dragged, intent.taskId);
+    else if (intent.type === 'ingroup')
+      emit('join-group', dragged, intent.groupId);
+  }
 
   draggedId.value = null;
+  isDraggingGroup.value = false;
   dropIntent.value = null;
 }
 
@@ -144,11 +185,46 @@ function cardClass(taskId: string) {
   };
 }
 
-function onRenameGroup(node: PriorityGroupNode) {
-  const next = window.prompt('Nome do grupo:', node.groupName ?? '');
-  if (next === null) return;
-  emit('rename-group', node.groupId, next.trim() || null);
+function groupClass(groupId: string) {
+  return {
+    'priority-group--dragging':
+      isDraggingGroup.value && draggedId.value === groupId,
+    'priority-group--drop-before':
+      dropIntent.value?.type === 'group-before' &&
+      dropIntent.value.targetGroupId === groupId,
+    'priority-group--drop-after':
+      dropIntent.value?.type === 'group-after' &&
+      dropIntent.value.targetGroupId === groupId,
+    'priority-group--drop-merge':
+      dropIntent.value?.type === 'group-merge' &&
+      dropIntent.value.targetGroupId === groupId,
+  };
 }
+
+provide('dragContext', {
+  dragEnabled: props.dragEnabled,
+  draggedId,
+  dropIntent,
+  onDragStart,
+  onGroupDragStart,
+  onDragEnd,
+  onCardDragOver,
+  onGroupDragOver,
+  cardClass,
+  groupClass,
+  onToggleCollapse: (groupId: string) => emit('toggle-collapse', groupId),
+  onSetDifficulty: (taskId: string, difficulty: number) =>
+    emit('set-difficulty', taskId, difficulty as 1 | 2 | 3 | 4 | 5),
+  onRenameGroup: (groupId: string, name: string | null) =>
+    emit('rename-group', groupId, name),
+  onCopyCard: (taskId: string) => emit('copy-card', taskId),
+  onCopyGroup: (groupId: string) => emit('copy-group', groupId),
+  onMoveUp: (id: string) => emit('move-up', id),
+  onMoveDown: (id: string) => emit('move-down', id),
+  onUngroup: (groupId: string) => emit('ungroup', groupId),
+  focusedId: toRef(props, 'focusedId'),
+  onFocusNode: (id: string) => emit('update:focusedId', id),
+});
 </script>
 
 <template>
@@ -159,18 +235,22 @@ function onRenameGroup(node: PriorityGroupNode) {
         type="text"
         placeholder="🔎 filtrar…"
         :value="filter"
-        @input="emit('update:filter', ($event.target as HTMLInputElement).value)"
+        @input="
+          emit('update:filter', ($event.target as HTMLInputElement).value)
+        "
       />
 
       <div class="segmented" role="group" aria-label="Modo de visualização">
         <button
-          v-for="v in (['cards', 'icons', 'grid'] as PrioritizationViewMode[])"
+          v-for="v in ['cards', 'icons', 'grid'] as PrioritizationViewMode[]"
           :key="v"
           type="button"
           :class="{ active: viewMode === v }"
           @click="emit('update:viewMode', v)"
         >
-          {{ v === 'cards' ? '▤ Cards' : v === 'icons' ? '◫ Ícones' : '▦ Grid' }}
+          {{
+            v === 'cards' ? '▤ Cards' : v === 'icons' ? '◫ Ícones' : '▦ Grid'
+          }}
         </button>
       </div>
 
@@ -180,25 +260,40 @@ function onRenameGroup(node: PriorityGroupNode) {
         @change="
           emit(
             'update:sortMode',
-            ($event.target as HTMLSelectElement).value as PrioritizationSortMode,
+            ($event.target as HTMLSelectElement)
+              .value as PrioritizationSortMode,
           )
         "
       >
-        <option value="manual">Manual (prioridade)</option>
-        <option value="diff-desc">Dificuldade ↓ (maior→menor)</option>
-        <option value="diff-asc">Dificuldade ↑ (menor→maior)</option>
+        <option value="manual">
+          Manual (prioridade)
+        </option>
+        <option value="diff-desc">
+          Dificuldade ↓ (maior→menor)
+        </option>
+        <option value="diff-asc">
+          Dificuldade ↑ (menor→maior)
+        </option>
       </select>
 
-      <button type="button" class="ghost" @click="emit('set-all-collapsed', true)">
+      <button
+        class="ghost"
+        type="button"
+        @click="emit('set-all-collapsed', true)"
+      >
         ⊟ Colapsar todos
       </button>
-      <button type="button" class="ghost" @click="emit('set-all-collapsed', false)">
+      <button
+        class="ghost"
+        type="button"
+        @click="emit('set-all-collapsed', false)"
+      >
         ⊞ Expandir todos
       </button>
 
       <button
-        type="button"
         class="ghost"
+        type="button"
         title="Desfazer (Ctrl/Cmd+Z)"
         data-testid="undo-button"
         :disabled="!canUndo"
@@ -207,8 +302,8 @@ function onRenameGroup(node: PriorityGroupNode) {
         ↶ Desfazer
       </button>
       <button
-        type="button"
         class="ghost"
+        type="button"
         title="Refazer (Ctrl/Cmd+Shift+Z)"
         data-testid="redo-button"
         :disabled="!canRedo"
@@ -218,129 +313,31 @@ function onRenameGroup(node: PriorityGroupNode) {
       </button>
 
       <span class="spacer" />
-      <button type="button" class="ghost" @click="emit('export-json')">
+      <button class="ghost" type="button" @click="emit('export-json')">
         ⬇ JSON
       </button>
 
-      <span v-if="!dragEnabled" class="drag-warning">
+      <span class="drag-warning" v-if="!dragEnabled">
         ⚠ arrastar desabilitado (ordenado por dificuldade)
       </span>
     </div>
 
-    <div class="node-list" :class="`view-${viewMode}`" @dragover.prevent @drop="onDrop">
-      <template v-for="node in tree" :key="node.kind === 'group' ? node.groupId : node.task.id">
-        <div
-          v-if="node.kind === 'group'"
-          class="priority-group"
-          :class="{ collapsed: node.collapsed }"
-          :data-testid="`priority-group-${node.groupId}`"
-          @dragover="onGroupDragOver(node.groupId, $event)"
-        >
-          <div class="group-head">
-            <button
-              type="button"
-              class="caret"
-              @click="emit('toggle-collapse', node.groupId)"
-            >
-              {{ node.collapsed ? '▸' : '▾' }}
-            </button>
-            <span class="group-name" @click="onRenameGroup(node)">{{
-              groupLabel(node)
-            }}</span>
-            <span class="group-count">· {{ node.items.length }} tasks</span>
-            <span class="spacer" />
-            <button
-              type="button"
-              class="cp"
-              title="Copiar grupo"
-              @click="emit('copy-group', node.groupId)"
-            >
-              ⧉
-            </button>
-          </div>
+    <div
+      class="node-list"
+      :class="`view-${viewMode}`"
+      @dragover.prevent
+      @drop="onDrop"
+    >
+      <PriorityGroupRenderer :nodes="tree" />
 
-          <div class="group-items">
-            <div
-              v-for="(task, index) in node.items"
-              :key="task.id"
-              class="priority-card"
-              :class="cardClass(task.id)"
-              :data-testid="`priority-card-${task.id}`"
-              :draggable="dragEnabled"
-              @dragstart="onDragStart(task.id, $event)"
-              @dragend="onDragEnd"
-              @dragover="onCardDragOver(task.id, $event)"
-            >
-              <div class="rank">{{ index + 1 }}</div>
-              <div class="tico">{{ iconFor(task.type) }}</div>
-              <div class="body">
-                <div class="id">{{ task.id }}</div>
-                <div class="title">{{ task.title }}</div>
-              </div>
-              <div class="diff">
-                <span
-                  v-for="d in [1, 2, 3, 4, 5]"
-                  :key="d"
-                  :class="{ [`on${d}`]: task.difficulty === d }"
-                  @click="emit('set-difficulty', task.id, d as 1 | 2 | 3 | 4 | 5)"
-                  >{{ d }}</span
-                >
-              </div>
-              <button
-                type="button"
-                class="cp"
-                title="Copiar card"
-                @click="emit('copy-card', task.id)"
-              >
-                ⧉
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div
-          v-else
-          class="priority-card"
-          :class="cardClass(node.task.id)"
-          :data-testid="`priority-card-${node.task.id}`"
-          :draggable="dragEnabled"
-          @dragstart="onDragStart(node.task.id, $event)"
-          @dragend="onDragEnd"
-          @dragover="onCardDragOver(node.task.id, $event)"
-        >
-          <div class="tico">{{ iconFor(node.task.type) }}</div>
-          <div class="body">
-            <div class="id">{{ node.task.id }}</div>
-            <div class="title">{{ node.task.title }}</div>
-          </div>
-          <div class="diff">
-            <span
-              v-for="d in [1, 2, 3, 4, 5]"
-              :key="d"
-              :class="{ [`on${d}`]: node.task.difficulty === d }"
-              @click="emit('set-difficulty', node.task.id, d as 1 | 2 | 3 | 4 | 5)"
-              >{{ d }}</span
-            >
-          </div>
-          <button
-            type="button"
-            class="cp"
-            title="Copiar card"
-            @click="emit('copy-card', node.task.id)"
-          >
-            ⧉
-          </button>
-        </div>
-      </template>
-
-      <div v-if="tree.length === 0" class="empty-state">
+      <div class="empty-state" v-if="tree.length === 0">
         <p>Nenhuma tarefa encontrada.</p>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
+<style>
 @import '../../styles/variables.css';
 
 .prioritization-screen {
@@ -464,6 +461,12 @@ button.ghost:disabled {
   box-shadow: 0 3px 0 var(--status-progress-bg);
 }
 
+.priority-card.focused,
+.group-head.focused {
+  outline: 2px solid var(--status-progress-bg);
+  outline-offset: 1px;
+}
+
 .rank {
   font-weight: var(--font-weight-bold);
   color: var(--status-progress-bg);
@@ -568,6 +571,28 @@ button.ghost:disabled {
   background: var(--bg-progress);
 }
 
+.move-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.move-btn {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  line-height: 1.2;
+  opacity: 0.4;
+}
+
+.move-btn:hover {
+  opacity: 1;
+  color: var(--status-progress-bg);
+}
+
 .priority-group {
   border: 2px dashed var(--border-muted);
   border-radius: var(--radius-lg);
@@ -619,6 +644,27 @@ button.ghost:disabled {
 
 .priority-group.collapsed .group-items {
   display: none;
+}
+
+.priority-group--dragging {
+  opacity: 0.35;
+}
+
+.priority-group--drop-before {
+  box-shadow: 0 -3px 0 var(--status-progress-bg);
+}
+
+.priority-group--drop-after {
+  box-shadow: 0 3px 0 var(--status-progress-bg);
+}
+
+.priority-group--drop-merge {
+  outline: 2px solid var(--status-progress-bg);
+  outline-offset: 1px;
+}
+
+.group-head[draggable='true'] {
+  cursor: grab;
 }
 
 .empty-state {

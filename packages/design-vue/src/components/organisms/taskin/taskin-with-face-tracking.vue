@@ -10,7 +10,7 @@
     />
 
     <!-- Controles -->
-    <FaceTrackingControls
+    <TrackingControls
       :is-detecting="faceLandmarker.state.value.isDetecting"
       :error="faceLandmarker.state.value.error"
       :show-webcam="showWebcam"
@@ -52,7 +52,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
 import WebcamVideo from '../../atoms/webcam-video';
-import FaceTrackingControls from '../../molecules/face-tracking-controls';
+import TrackingControls from '../../molecules/tracking-controls';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
 import TaskinComposed from './taskin-composed';
 import type { TaskinMood } from './taskin.types';

@@ -40,7 +40,12 @@ const flatTasks: Task[] = [
     groupName: 'Backend',
     difficulty: 4,
   }),
-  createTask('003', { order: 30, type: 'refactor', groupId: 'g1', groupName: 'Backend' }),
+  createTask('003', {
+    order: 30,
+    type: 'refactor',
+    groupId: 'g1',
+    groupName: 'Backend',
+  }),
   createTask('004', { order: 40, type: 'docs' }),
   createTask('005', { order: 50, type: 'test', difficulty: 1 }),
 ];

@@ -1,5 +1,5 @@
 <template>
-  <div class="face-tracking-controls">
+  <div class="tracking-controls">
     <button
       class="control-button"
       :disabled="disabled"
@@ -66,6 +66,20 @@
       Sincronizar Braços
     </label>
 
+    <label class="control-checkbox">
+      <input
+        type="checkbox"
+        :checked="syncGestures"
+        @change="
+          emit(
+            'update:syncGestures',
+            ($event.target as HTMLInputElement).checked,
+          )
+        "
+      />
+      Sincronizar Gestos
+    </label>
+
     <div class="error" v-if="error">
       {{ error }}
     </div>
@@ -79,23 +93,23 @@
 
 <script setup lang="ts">
 import type {
-  FaceTrackingControlsEmits,
-  FaceTrackingControlsProps,
-} from './face-tracking-controls.types';
+  TrackingControlsEmits,
+  TrackingControlsProps,
+} from './tracking-controls.types';
 
-defineProps<FaceTrackingControlsProps>();
+defineProps<TrackingControlsProps>();
 
-const emit = defineEmits<FaceTrackingControlsEmits>();
+const emit = defineEmits<TrackingControlsEmits>();
 </script>
 
 <script lang="ts">
 export default {
-  name: 'FaceTrackingControls',
+  name: 'TrackingControls',
 };
 </script>
 
 <style scoped>
-.face-tracking-controls {
+.tracking-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;

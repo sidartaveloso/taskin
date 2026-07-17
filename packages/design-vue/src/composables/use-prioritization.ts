@@ -14,7 +14,7 @@ export interface PriorityGroupNode {
   groupId: string;
   groupName: string | null;
   collapsed: boolean;
-  items: Task[];
+  items: PriorityNode[];
 }
 
 export type PriorityNode = PriorityTaskNode | PriorityGroupNode;
@@ -86,7 +86,8 @@ export function buildPriorityTree(
     .sort((a, b) => {
       const orderA = a.task.order;
       const orderB = b.task.order;
-      if (orderA === undefined && orderB === undefined) return a.index - b.index;
+      if (orderA === undefined && orderB === undefined)
+        return a.index - b.index;
       if (orderA === undefined) return 1;
       if (orderB === undefined) return -1;
       if (orderA !== orderB) return orderA - orderB;
@@ -100,7 +101,7 @@ export function buildPriorityTree(
   for (const task of sorted) {
     if (task.groupId) {
       if (currentGroup && currentGroup.groupId === task.groupId) {
-        currentGroup.items.push(task);
+        currentGroup.items.push({ kind: 'task', task });
         continue;
       }
       currentGroup = {
@@ -108,7 +109,7 @@ export function buildPriorityTree(
         groupId: task.groupId,
         groupName: task.groupName ?? null,
         collapsed: !!collapsedGroups[task.groupId],
-        items: [task],
+        items: [{ kind: 'task', task }],
       };
       nodes.push(currentGroup);
     } else {
@@ -120,18 +121,29 @@ export function buildPriorityTree(
   return nodes;
 }
 
-/** Flattens the tree back into an ordered list of tasks (grouping preserved via groupId/groupName). */
+/** Flattens the tree back into an ordered list of tasks (grouping preserved via innermost groupId/groupName). */
 export function flattenPriorityTree(nodes: PriorityNode[]): Task[] {
   const flat: Task[] = [];
-  for (const node of nodes) {
-    if (node.kind === 'group') {
-      for (const task of node.items) {
-        flat.push({ ...task, groupId: node.groupId, groupName: node.groupName ?? undefined });
+  function walk(
+    list: PriorityNode[],
+    parentGroupId?: string,
+    parentGroupName?: string,
+  ): void {
+    for (const node of list) {
+      if (node.kind === 'group') {
+        for (const child of node.items) {
+          walk([child], node.groupId, node.groupName ?? undefined);
+        }
+      } else {
+        flat.push({
+          ...node.task,
+          groupId: parentGroupId,
+          groupName: parentGroupName,
+        });
       }
-    } else {
-      flat.push({ ...node.task, groupId: undefined, groupName: undefined });
     }
   }
+  walk(nodes);
   return flat;
 }
 
@@ -176,7 +188,9 @@ export function diffAgainstBaseline(
   tasks: Task[],
   baseline: Map<string, PrioritizationSnapshot>,
 ): Task[] {
-  return tasks.filter((task) => !snapshotsEqual(baseline.get(task.id), snapshotOf(task)));
+  return tasks.filter(
+    (task) => !snapshotsEqual(baseline.get(task.id), snapshotOf(task)),
+  );
 }
 
 export interface UsePrioritization {
@@ -198,6 +212,12 @@ export interface UsePrioritization {
   groupWith(draggedId: string, targetId: string): void;
   joinGroup(taskId: string, groupId: string): void;
   renameGroup(groupId: string, name: string | null): void;
+  moveGroupBefore(groupId: string, targetId: string): void;
+  moveGroupAfter(groupId: string, targetId: string): void;
+  groupWithGroup(draggedGroupId: string, targetGroupId: string): void;
+  moveUp(id: string): void;
+  moveDown(id: string): void;
+  ungroup(groupId: string): void;
   exportJson(): string;
   copyCardText(taskId: string): string;
   copyGroupText(groupId: string): string;
@@ -255,14 +275,27 @@ export function usePrioritization(
     });
   }
 
-  /** Recomputes order/groupId/groupName for every task in the tree and rewrites node contents in place. */
+  /** Renumbers `order` in-place, preserving the current tree structure (including nested groups). */
   function commit(): void {
-    const flat = renumber(flattenPriorityTree(treeInternal.value), orderStep);
-    treeInternal.value = buildPriorityTree(flat, collapsedGroups.value);
+    let counter = 0;
+    function walk(nodes: PriorityNode[]): void {
+      for (const node of nodes) {
+        if (node.kind === 'task') {
+          counter++;
+          node.task.order = counter * orderStep;
+        } else {
+          walk(node.items);
+        }
+      }
+    }
+    walk(treeInternal.value);
   }
 
   const changedTasks = computed<Task[]>(() =>
-    diffAgainstBaseline(flattenPriorityTree(treeInternal.value), baseline.value),
+    diffAgainstBaseline(
+      flattenPriorityTree(treeInternal.value),
+      baseline.value,
+    ),
   );
 
   function acknowledgeChanges(): void {
@@ -299,39 +332,88 @@ export function usePrioritization(
     treeInternal.value = next;
   }
 
-  function findTaskIndex(nodes: PriorityNode[], taskId: string): {
-    nodeIndex: number;
-    itemIndex: number | null;
+  /** Recursively finds a task within the tree, returning its container array, index, and parent group. */
+  function findTaskLocation(
+    nodes: PriorityNode[],
+    taskId: string,
+    parentGroup: PriorityGroupNode | null = null,
+  ): {
+    container: PriorityNode[];
+    index: number;
+    parentGroup: PriorityGroupNode | null;
   } | null {
-    for (let nodeIndex = 0; nodeIndex < nodes.length; nodeIndex++) {
-      const node = nodes[nodeIndex];
-      if (node.kind === 'task') {
-        if (node.task.id === taskId) return { nodeIndex, itemIndex: null };
-      } else {
-        const itemIndex = node.items.findIndex((t) => t.id === taskId);
-        if (itemIndex >= 0) return { nodeIndex, itemIndex };
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (node.kind === 'task' && node.task.id === taskId) {
+        return { container: nodes, index: i, parentGroup };
+      }
+      if (node.kind === 'group') {
+        const found = findTaskLocation(node.items, taskId, node);
+        if (found) return found;
       }
     }
     return null;
   }
 
+  /** Recursively finds any node (task or group) by its ID, returning container array and index. */
+  function findNodeLocation(
+    nodes: PriorityNode[],
+    id: string,
+  ): { container: PriorityNode[]; index: number } | null {
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (
+        (node.kind === 'task' && node.task.id === id) ||
+        (node.kind === 'group' && node.groupId === id)
+      ) {
+        return { container: nodes, index: i };
+      }
+      if (node.kind === 'group') {
+        const found = findNodeLocation(node.items, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  /** Recursively dissolves groups with ≤1 member. */
+  function cleanupGroups(nodes: PriorityNode[]): void {
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const node = nodes[i];
+      if (node.kind === 'group') {
+        cleanupGroups(node.items);
+        if (node.items.length === 1 && node.items[0].kind === 'task') {
+          nodes.splice(i, 1, { kind: 'task', task: node.items[0].task });
+        } else if (node.items.length === 0) {
+          nodes.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  /** Recursively removes a task from the tree and cleans up empty/single-member groups. */
   function removeTaskById(nodes: PriorityNode[], taskId: string): Task | null {
-    const loc = findTaskIndex(nodes, taskId);
+    const loc = findTaskLocation(nodes, taskId);
     if (!loc) return null;
+    const [removed] = loc.container.splice(loc.index, 1);
+    if (removed.kind !== 'task') return null;
+    cleanupGroups(nodes);
+    return removed.task;
+  }
 
-    if (loc.itemIndex === null) {
-      const [node] = nodes.splice(loc.nodeIndex, 1);
-      return node.kind === 'task' ? node.task : null;
+  /** Recursively finds a group node by its ID anywhere in the tree. */
+  function findGroupById(
+    nodes: PriorityNode[],
+    groupId: string,
+  ): PriorityGroupNode | null {
+    for (const node of nodes) {
+      if (node.kind === 'group') {
+        if (node.groupId === groupId) return node;
+        const found = findGroupById(node.items, groupId);
+        if (found) return found;
+      }
     }
-
-    const group = nodes[loc.nodeIndex] as PriorityGroupNode;
-    const [task] = group.items.splice(loc.itemIndex, 1);
-    if (group.items.length === 1) {
-      nodes.splice(loc.nodeIndex, 1, { kind: 'task', task: group.items[0] });
-    } else if (group.items.length === 0) {
-      nodes.splice(loc.nodeIndex, 1);
-    }
-    return task;
+    return null;
   }
 
   function setFilter(value: string): void {
@@ -353,49 +435,38 @@ export function usePrioritization(
       ...collapsedGroups.value,
       [groupId]: !collapsedGroups.value[groupId],
     };
-    const node = treeInternal.value.find(
-      (n): n is PriorityGroupNode => n.kind === 'group' && n.groupId === groupId,
-    );
+    const node = findGroupById(treeInternal.value, groupId);
     if (node) node.collapsed = collapsedGroups.value[groupId];
     persistPrefs();
   }
 
   function setDifficulty(taskId: string, difficulty: 1 | 2 | 3 | 4 | 5): void {
-    const nodes = treeInternal.value;
-    for (const node of nodes) {
-      if (node.kind === 'task' && node.task.id === taskId) {
-        pushHistory(cloneTree(treeInternal.value));
-        node.task = { ...node.task, difficulty };
-        return;
-      }
-      if (node.kind === 'group') {
-        const idx = node.items.findIndex((t) => t.id === taskId);
-        if (idx >= 0) {
-          pushHistory(cloneTree(treeInternal.value));
-          node.items[idx] = { ...node.items[idx], difficulty };
-          return;
-        }
-      }
-    }
+    const loc = findTaskLocation(treeInternal.value, taskId);
+    if (!loc) return;
+    pushHistory(cloneTree(treeInternal.value));
+    const node = loc.container[loc.index];
+    if (node.kind !== 'task') return;
+    node.task = { ...node.task, difficulty };
   }
 
   function moveBefore(draggedId: string, targetId: string): void {
     if (draggedId === targetId) return;
     const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = [...treeInternal.value];
+    const nodes = cloneTree(treeInternal.value);
     const task = removeTaskById(nodes, draggedId);
     if (!task) return;
-    const loc = findTaskIndex(nodes, targetId);
+    const loc = findTaskLocation(nodes, targetId);
     if (!loc) {
       nodes.push({ kind: 'task', task });
-    } else if (loc.itemIndex === null) {
-      nodes.splice(loc.nodeIndex, 0, { kind: 'task', task: { ...task, groupId: undefined, groupName: undefined } });
     } else {
-      const group = nodes[loc.nodeIndex] as PriorityGroupNode;
-      group.items.splice(loc.itemIndex, 0, {
-        ...task,
-        groupId: group.groupId,
-        groupName: group.groupName ?? undefined,
+      const parentGroup = loc.parentGroup;
+      loc.container.splice(loc.index, 0, {
+        kind: 'task',
+        task: {
+          ...task,
+          groupId: parentGroup?.groupId,
+          groupName: parentGroup?.groupName ?? undefined,
+        },
       });
     }
     pushHistory(preSnapshot);
@@ -406,20 +477,21 @@ export function usePrioritization(
   function moveAfter(draggedId: string, targetId: string): void {
     if (draggedId === targetId) return;
     const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = [...treeInternal.value];
+    const nodes = cloneTree(treeInternal.value);
     const task = removeTaskById(nodes, draggedId);
     if (!task) return;
-    const loc = findTaskIndex(nodes, targetId);
+    const loc = findTaskLocation(nodes, targetId);
     if (!loc) {
       nodes.push({ kind: 'task', task });
-    } else if (loc.itemIndex === null) {
-      nodes.splice(loc.nodeIndex + 1, 0, { kind: 'task', task: { ...task, groupId: undefined, groupName: undefined } });
     } else {
-      const group = nodes[loc.nodeIndex] as PriorityGroupNode;
-      group.items.splice(loc.itemIndex + 1, 0, {
-        ...task,
-        groupId: group.groupId,
-        groupName: group.groupName ?? undefined,
+      const parentGroup = loc.parentGroup;
+      loc.container.splice(loc.index + 1, 0, {
+        kind: 'task',
+        task: {
+          ...task,
+          groupId: parentGroup?.groupId,
+          groupName: parentGroup?.groupName ?? undefined,
+        },
       });
     }
     pushHistory(preSnapshot);
@@ -427,15 +499,139 @@ export function usePrioritization(
     commit();
   }
 
-  /** Drag a card onto another: creates a new group, or joins the target's existing group. */
+  /** Finds the array (top-level or group.items) that contains a group node — used to locate sibling groups. */
+  function findGroupContainer(
+    nodes: PriorityNode[],
+    groupId: string,
+  ): PriorityNode[] | null {
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (node.kind === 'group') {
+        if (node.groupId === groupId) return nodes;
+        const found = findGroupContainer(node.items, groupId);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Drag a card onto another (middle zone).
+   *
+   * Behaviour depends on the relationship between the two tasks at the moment
+   * the function is called (all lookups happen against the *cloned* tree):
+   *
+   *   A) Both are in different groups at the same level  → nest both groups
+   *      under a new parent group.
+   *   B) Both are in the same group                      → create a subgroup
+   *      within that group containing only those two tasks (others stay).
+   *   C) Target is standalone                            → create a new group
+   *      with both tasks.
+   *   D) Dragged was standalone, target is in a group    → join (move into
+   *      the target's group).
+   *   E) Both were standalone                            → same as C.
+   *
+   * Cases A & B run BEFORE any removal so the source group stays intact.
+   * Cases C–E remove the dragged task and then insert into the target's
+   * container.
+   */
   function groupWith(draggedId: string, targetId: string): void {
     if (draggedId === targetId) return;
+
     const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = [...treeInternal.value];
+    const nodes = cloneTree(treeInternal.value);
+
+    // 1. Locate both tasks before any mutation.
+    const draggedLoc = findTaskLocation(nodes, draggedId);
+    const targetLoc = findTaskLocation(nodes, targetId);
+    if (!draggedLoc || !targetLoc) return;
+
+    const targetNode = targetLoc.container[targetLoc.index];
+    if (targetNode.kind !== 'task') return;
+
+    const draggedParentGroup = draggedLoc.parentGroup;
+    const targetParentGroup = targetLoc.parentGroup;
+    const draggedParentGroupId = draggedParentGroup?.groupId;
+    const targetParentGroupId = targetParentGroup?.groupId;
+
+    // ── Case A: different groups at the same level → nest under a parent ──
+    if (
+      draggedParentGroup &&
+      targetParentGroup &&
+      draggedParentGroupId !== targetParentGroupId
+    ) {
+      const container = findGroupContainer(nodes, targetParentGroup.groupId);
+      if (!container) return;
+
+      const draggedIdx = container.indexOf(draggedParentGroup);
+      const targetIdx = container.indexOf(targetParentGroup);
+      if (draggedIdx === -1 || targetIdx === -1) return;
+
+      const parentGroupId = `g-${Math.random().toString(36).slice(2, 10)}`;
+      const newParent: PriorityGroupNode = {
+        kind: 'group',
+        groupId: parentGroupId,
+        groupName: null,
+        collapsed: false,
+        items: [{ ...draggedParentGroup }, { ...targetParentGroup }],
+      };
+      const minIdx = Math.min(draggedIdx, targetIdx);
+      const maxIdx = Math.max(draggedIdx, targetIdx);
+      container.splice(minIdx, maxIdx - minIdx + 1, newParent);
+
+      pushHistory(preSnapshot);
+      treeInternal.value = nodes;
+      commit();
+      return;
+    }
+
+    // ── Case B: both in the same group → create a subgroup ──
+    if (
+      draggedParentGroup &&
+      targetParentGroup &&
+      draggedParentGroupId === targetParentGroupId
+    ) {
+      const subId = `g-${Math.random().toString(36).slice(2, 10)}`;
+      const minIdx = Math.min(draggedLoc.index, targetLoc.index);
+      const maxIdx = Math.max(draggedLoc.index, targetLoc.index);
+
+      // Collect the tasks we're grouping (they're inside the same items array)
+      const draggedTask = draggedLoc.container[draggedLoc.index];
+      const targetTask = targetLoc.container[targetLoc.index];
+      if (draggedTask.kind !== 'task' || targetTask.kind !== 'task') return;
+
+      const subgroup: PriorityGroupNode = {
+        kind: 'group',
+        groupId: subId,
+        groupName: null,
+        collapsed: false,
+        items: [
+          {
+            kind: 'task',
+            task: { ...draggedTask.task, groupId: subId, groupName: undefined },
+          },
+          {
+            kind: 'task',
+            task: { ...targetTask.task, groupId: subId, groupName: undefined },
+          },
+        ],
+      };
+
+      // Replace the two tasks with the subgroup
+      draggedLoc.container.splice(minIdx, maxIdx - minIdx + 1, subgroup);
+
+      pushHistory(preSnapshot);
+      treeInternal.value = nodes;
+      commit();
+      return;
+    }
+
+    // ── Cases C–E: require removing the dragged task ──
     const task = removeTaskById(nodes, draggedId);
     if (!task) return;
 
-    const loc = findTaskIndex(nodes, targetId);
+    // Re-locate the target (the tree changed after removal).
+    const loc = findTaskLocation(nodes, targetId);
     if (!loc) {
       nodes.push({ kind: 'task', task });
       pushHistory(preSnapshot);
@@ -444,29 +640,40 @@ export function usePrioritization(
       return;
     }
 
-    if (loc.itemIndex !== null) {
-      // Target is already inside a group: join it
-      const group = nodes[loc.nodeIndex] as PriorityGroupNode;
-      group.items.push({
-        ...task,
-        groupId: group.groupId,
-        groupName: group.groupName ?? undefined,
+    const targetNodeAfter = loc.container[loc.index];
+    if (targetNodeAfter.kind !== 'task') {
+      nodes.push({ kind: 'task', task });
+      pushHistory(preSnapshot);
+      treeInternal.value = nodes;
+      commit();
+      return;
+    }
+
+    if (loc.parentGroup) {
+      // Case D: dragged was standalone → join the target group
+      loc.parentGroup.items.push({
+        kind: 'task',
+        task: {
+          ...task,
+          groupId: loc.parentGroup.groupId,
+          groupName: loc.parentGroup.groupName ?? undefined,
+        },
       });
     } else {
-      // Target is a standalone task: create a new group with both
-      const targetNode = nodes[loc.nodeIndex] as PriorityTaskNode;
+      // Cases C / E: target is standalone → create a new group
       const groupId = `g-${Math.random().toString(36).slice(2, 10)}`;
-      const grouped = [targetNode.task, task].map((t) => ({
-        ...t,
-        groupId,
-        groupName: undefined,
-      }));
-      nodes.splice(loc.nodeIndex, 1, {
+      loc.container.splice(loc.index, 1, {
         kind: 'group',
         groupId,
         groupName: null,
         collapsed: false,
-        items: grouped,
+        items: [
+          {
+            kind: 'task',
+            task: { ...targetNodeAfter.task, groupId, groupName: undefined },
+          },
+          { kind: 'task', task: { ...task, groupId, groupName: undefined } },
+        ],
       });
     }
 
@@ -477,26 +684,30 @@ export function usePrioritization(
 
   /** Drag a card directly onto an existing group (its container, or any of its members) to join it. */
   function joinGroup(taskId: string, groupId: string): void {
-    const targetGroup = treeInternal.value.find(
-      (n): n is PriorityGroupNode => n.kind === 'group' && n.groupId === groupId,
-    );
+    const targetGroup = findGroupById(treeInternal.value, groupId);
     if (!targetGroup) return;
-    if (targetGroup.items.some((t) => t.id === taskId)) return; // already a member, no-op
+    if (
+      targetGroup.items.some((n) => n.kind === 'task' && n.task.id === taskId)
+    )
+      return;
 
     const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = [...treeInternal.value];
+    const nodes = cloneTree(treeInternal.value);
     const task = removeTaskById(nodes, taskId);
     if (!task) return;
 
-    const group = nodes.find(
-      (n): n is PriorityGroupNode => n.kind === 'group' && n.groupId === groupId,
-    );
+    const group = findGroupById(nodes, groupId);
     if (!group) {
-      // Defensive fallback: the target group should still exist since taskId
-      // was confirmed not to be one of its members before removal.
       nodes.push({ kind: 'task', task });
     } else {
-      group.items.push({ ...task, groupId: group.groupId, groupName: group.groupName ?? undefined });
+      group.items.push({
+        kind: 'task',
+        task: {
+          ...task,
+          groupId: group.groupId,
+          groupName: group.groupName ?? undefined,
+        },
+      });
     }
 
     pushHistory(preSnapshot);
@@ -504,14 +715,184 @@ export function usePrioritization(
     commit();
   }
 
-  function renameGroup(groupId: string, name: string | null): void {
-    const node = treeInternal.value.find(
-      (n): n is PriorityGroupNode => n.kind === 'group' && n.groupId === groupId,
+  /** Move an entire group (all its items) to before a target task or group. */
+  function moveGroupBefore(movedGroupId: string, targetId: string): void {
+    const group = findGroupById(treeInternal.value, movedGroupId);
+    if (!group) return;
+    if (movedGroupId === targetId) return;
+
+    const preSnapshot = cloneTree(treeInternal.value);
+    const nodes = cloneTree(treeInternal.value);
+
+    const container = findGroupContainer(nodes, movedGroupId);
+    if (!container) return;
+    const groupIdx = container.findIndex(
+      (n) => n.kind === 'group' && n.groupId === movedGroupId,
     );
+    if (groupIdx === -1) return;
+    const [movedGroup] = container.splice(groupIdx, 1);
+
+    const targetLoc = findNodeLocation(nodes, targetId);
+    if (!targetLoc) {
+      container.push(movedGroup);
+    } else {
+      targetLoc.container.splice(targetLoc.index, 0, movedGroup);
+    }
+
+    pushHistory(preSnapshot);
+    treeInternal.value = nodes;
+    commit();
+  }
+
+  /** Move an entire group to after a target task or group. */
+  function moveGroupAfter(movedGroupId: string, targetId: string): void {
+    const group = findGroupById(treeInternal.value, movedGroupId);
+    if (!group) return;
+    if (movedGroupId === targetId) return;
+
+    const preSnapshot = cloneTree(treeInternal.value);
+    const nodes = cloneTree(treeInternal.value);
+
+    const container = findGroupContainer(nodes, movedGroupId);
+    if (!container) return;
+    const groupIdx = container.findIndex(
+      (n) => n.kind === 'group' && n.groupId === movedGroupId,
+    );
+    if (groupIdx === -1) return;
+    const [movedGroup] = container.splice(groupIdx, 1);
+
+    const targetLoc = findNodeLocation(nodes, targetId);
+    if (!targetLoc) {
+      container.push(movedGroup);
+    } else {
+      targetLoc.container.splice(targetLoc.index + 1, 0, movedGroup);
+    }
+
+    pushHistory(preSnapshot);
+    treeInternal.value = nodes;
+    commit();
+  }
+
+  /** Nest two groups at the same level under a new parent group. */
+  function groupWithGroup(draggedGroupId: string, targetGroupId: string): void {
+    if (draggedGroupId === targetGroupId) return;
+
+    const draggedGroup = findGroupById(treeInternal.value, draggedGroupId);
+    const targetGroup = findGroupById(treeInternal.value, targetGroupId);
+    if (!draggedGroup || !targetGroup) return;
+
+    const preSnapshot = cloneTree(treeInternal.value);
+    const nodes = cloneTree(treeInternal.value);
+
+    const container = findGroupContainer(nodes, targetGroupId);
+    if (!container) return;
+    const draggedIdx = container.findIndex(
+      (n) => n.kind === 'group' && n.groupId === draggedGroupId,
+    );
+    const targetIdx = container.findIndex(
+      (n) => n.kind === 'group' && n.groupId === targetGroupId,
+    );
+    if (draggedIdx === -1 || targetIdx === -1) return;
+
+    const parentGroupId = `g-${Math.random().toString(36).slice(2, 10)}`;
+    const groupA = container[draggedIdx];
+    const groupB = container[targetIdx];
+    const newParent: PriorityGroupNode = {
+      kind: 'group',
+      groupId: parentGroupId,
+      groupName: null,
+      collapsed: false,
+      items: [{ ...groupA }, { ...groupB }],
+    };
+    // Remove the higher index first so splice offsets don't interfere
+    const first = Math.min(draggedIdx, targetIdx);
+    const second = Math.max(draggedIdx, targetIdx);
+    container.splice(second, 1);
+    container.splice(first, 1, newParent);
+
+    pushHistory(preSnapshot);
+    treeInternal.value = nodes;
+    commit();
+  }
+
+  /** Swap a node (task or group) with its previous sibling — decreases order / moves up. */
+  function moveUp(id: string): void {
+    const loc = findNodeLocation(treeInternal.value, id);
+    if (!loc || loc.index === 0) return;
+
+    const preSnapshot = cloneTree(treeInternal.value);
+    const nodes = cloneTree(treeInternal.value);
+
+    const loc2 = findNodeLocation(nodes, id);
+    if (!loc2 || loc2.index === 0) return;
+
+    const prev = loc2.container[loc2.index - 1];
+    loc2.container[loc2.index - 1] = loc2.container[loc2.index];
+    loc2.container[loc2.index] = prev;
+
+    pushHistory(preSnapshot);
+    treeInternal.value = nodes;
+    commit();
+  }
+
+  /** Swap a node (task or group) with its next sibling — increases order / moves down. */
+  function moveDown(id: string): void {
+    const loc = findNodeLocation(treeInternal.value, id);
+    if (!loc || loc.index >= loc.container.length - 1) return;
+
+    const preSnapshot = cloneTree(treeInternal.value);
+    const nodes = cloneTree(treeInternal.value);
+
+    const loc2 = findNodeLocation(nodes, id);
+    if (!loc2 || loc2.index >= loc2.container.length - 1) return;
+
+    const next = loc2.container[loc2.index + 1];
+    loc2.container[loc2.index + 1] = loc2.container[loc2.index];
+    loc2.container[loc2.index] = next;
+
+    pushHistory(preSnapshot);
+    treeInternal.value = nodes;
+    commit();
+  }
+
+  /** Dissolve a group: remove the group wrapper and promote its items in-place. */
+  function ungroup(groupId: string): void {
+    const group = findGroupById(treeInternal.value, groupId);
+    if (!group) return;
+
+    const preSnapshot = cloneTree(treeInternal.value);
+    const nodes = cloneTree(treeInternal.value);
+
+    const container = findGroupContainer(nodes, groupId);
+    if (!container) return;
+    const idx = container.findIndex(
+      (n) => n.kind === 'group' && n.groupId === groupId,
+    );
+    if (idx === -1 || container[idx].kind !== 'group') return;
+    const groupNode = container[idx] as PriorityGroupNode;
+
+    container.splice(idx, 1, ...groupNode.items);
+
+    pushHistory(preSnapshot);
+    treeInternal.value = nodes;
+    commit();
+  }
+
+  function renameGroup(groupId: string, name: string | null): void {
+    const node = findGroupById(treeInternal.value, groupId);
     if (!node) return;
     pushHistory(cloneTree(treeInternal.value));
     node.groupName = name;
-    node.items = node.items.map((t) => ({ ...t, groupName: name ?? undefined }));
+    function updateNames(nodes: PriorityNode[]): void {
+      for (const n of nodes) {
+        if (n.kind === 'task') {
+          n.task = { ...n.task, groupName: name ?? undefined };
+        } else {
+          updateNames(n.items);
+        }
+      }
+    }
+    updateNames(node.items);
     commit();
   }
 
@@ -520,25 +901,34 @@ export function usePrioritization(
   }
 
   function copyCardText(taskId: string): string {
-    const loc = findTaskIndex(treeInternal.value, taskId);
+    const loc = findTaskLocation(treeInternal.value, taskId);
     if (!loc) return '';
-    const node = treeInternal.value[loc.nodeIndex];
-    const task =
-      loc.itemIndex === null
-        ? (node as PriorityTaskNode).task
-        : (node as PriorityGroupNode).items[loc.itemIndex];
+    const node = loc.container[loc.index];
+    if (node.kind !== 'task') return '';
+    const task = node.task;
     return `[${task.id}] (${task.type ?? '-'}) ${task.title} — dif: ${task.difficulty ?? '-'}`;
   }
 
   function copyGroupText(groupId: string): string {
-    const node = treeInternal.value.find(
-      (n): n is PriorityGroupNode => n.kind === 'group' && n.groupId === groupId,
-    );
+    const node = findGroupById(treeInternal.value, groupId);
     if (!node) return '';
-    const header = `${node.groupName ?? 'Grupo'} (${node.items.length} tasks)`;
-    const lines = node.items.map(
-      (t) => `  [${t.id}] (${t.type ?? '-'}) ${t.title} — dif: ${t.difficulty ?? '-'}`,
-    );
+    const header = `${node.groupName ?? 'Grupo'} (${node.items.length} items)`;
+    const lines: string[] = [];
+    function walk(nodes: PriorityNode[], indent: number): void {
+      for (const n of nodes) {
+        if (n.kind === 'task') {
+          lines.push(
+            `${'  '.repeat(indent)}[${n.task.id}] (${n.task.type ?? '-'}) ${n.task.title} — dif: ${n.task.difficulty ?? '-'}`,
+          );
+        } else {
+          lines.push(
+            `${'  '.repeat(indent)}▼ ${n.groupName ?? 'Grupo'} (${n.items.length} items)`,
+          );
+          walk(n.items, indent + 1);
+        }
+      }
+    }
+    walk(node.items, 1);
     return [header, ...lines].join('\n');
   }
 
@@ -549,15 +939,27 @@ export function usePrioritization(
 
     if (sortMode.value !== 'manual') {
       const dir = sortMode.value === 'diff-asc' ? 1 : -1;
-      const rank = (t: Task) => t.difficulty ?? 0;
-      nodes = nodes.map((node) =>
-        node.kind === 'group'
-          ? { ...node, items: [...node.items].sort((a, b) => (rank(a) - rank(b)) * dir) }
-          : node,
-      );
-      const groupRank = (n: PriorityNode) =>
-        n.kind === 'group' ? Math.max(0, ...n.items.map(rank)) : rank(n.task);
-      nodes = [...nodes].sort((a, b) => (groupRank(a) - groupRank(b)) * dir);
+
+      function nodeRank(n: PriorityNode): number {
+        if (n.kind === 'task') return n.task.difficulty ?? 0;
+        return Math.max(0, ...n.items.map(nodeRank));
+      }
+
+      function sortRecursive(list: PriorityNode[]): PriorityNode[] {
+        return list.map((n) =>
+          n.kind === 'group'
+            ? {
+                ...n,
+                items: sortRecursive([...n.items]).sort(
+                  (a, b) => (nodeRank(a) - nodeRank(b)) * dir,
+                ),
+              }
+            : n,
+        );
+      }
+
+      nodes = sortRecursive(nodes);
+      nodes = [...nodes].sort((a, b) => (nodeRank(a) - nodeRank(b)) * dir);
     }
 
     const q = filter.value.trim().toLowerCase();
@@ -566,13 +968,19 @@ export function usePrioritization(
     const matches = (t: Task) =>
       `${t.id} ${t.type ?? ''} ${t.title}`.toLowerCase().includes(q);
 
-    return nodes
-      .map((node) =>
-        node.kind === 'group'
-          ? { ...node, items: node.items.filter(matches) }
-          : node,
-      )
-      .filter((node) => (node.kind === 'group' ? node.items.length > 0 : matches(node.task)));
+    function filterRecursive(list: PriorityNode[]): PriorityNode[] {
+      return list
+        .map((n) => {
+          if (n.kind === 'group') {
+            const filtered = filterRecursive(n.items);
+            return filtered.length > 0 ? { ...n, items: filtered } : null;
+          }
+          return matches(n.task) ? n : null;
+        })
+        .filter((n): n is PriorityNode => n !== null);
+    }
+
+    return filterRecursive(nodes);
   });
 
   return {
@@ -594,6 +1002,12 @@ export function usePrioritization(
     groupWith,
     joinGroup,
     renameGroup,
+    moveGroupBefore,
+    moveGroupAfter,
+    groupWithGroup,
+    moveUp,
+    moveDown,
+    ungroup,
     exportJson,
     copyCardText,
     copyGroupText,

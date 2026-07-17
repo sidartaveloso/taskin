@@ -36,8 +36,8 @@ export * from './components/molecules/taskin-effect-zzz';
 export * from './components/molecules/taskin-tentacle-with-item';
 export * from './components/molecules/taskin-tentacles-fluid';
 export * from './components/organisms';
-export * from './components/templates';
 export * from './components/pages';
+export * from './components/templates';
 
 // Export specific organisms with default exports
 export {

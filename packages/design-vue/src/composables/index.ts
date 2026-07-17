@@ -1,6 +1,8 @@
 export { useElementTracking } from './use-element-tracking';
 export { useEyeTracking } from './use-eye-tracking';
 export { useFaceLandmarker } from './use-face-landmarker';
+export { useGestureRecognizer } from './use-gesture-recognizer';
+export { useGestureShortcuts } from './use-gesture-shortcuts';
 export { useMouseTracking } from './use-mouse-tracking';
 export {
   buildPriorityTree,
@@ -22,13 +24,26 @@ export type {
   FaceLandmarkerState,
   UseFaceLandmarkerOptions,
 } from './use-face-landmarker';
+export type {
+  CannedGesture,
+  GestureRecognizerState,
+  HandLandmark,
+  Handedness,
+  RecognizedGesture,
+  UseGestureRecognizerOptions,
+} from './use-gesture-recognizer';
+export type {
+  GestureMapping,
+  PrioritizationAction,
+  WizardState,
+} from './use-gesture-shortcuts';
 export type { MousePosition } from './use-mouse-tracking';
 export type {
+  PrioritizationSortMode,
+  PrioritizationViewMode,
   PriorityGroupNode,
   PriorityNode,
   PriorityTaskNode,
-  PrioritizationSortMode,
-  PrioritizationViewMode,
   UsePrioritization,
   UsePrioritizationOptions,
 } from './use-prioritization';
