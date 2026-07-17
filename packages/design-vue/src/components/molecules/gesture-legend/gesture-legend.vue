@@ -5,7 +5,7 @@
       v-for="m in visibleMappings"
       :key="m.gesture"
     >
-      <span class="gesture-legend__emoji">{{ emoji[m.gesture] }}</span>
+      <GestureIcon :gesture="m.gesture" :size="compact ? 'sm' : 'md'" />
       <span class="gesture-legend__label">{{ label[m.action] }}</span>
     </div>
   </div>
@@ -13,14 +13,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { CannedGesture } from '../../../composables/use-gesture-recognizer';
 import type { PrioritizationAction } from '../../../composables/use-gesture-shortcuts';
-import { actionLabel, gestureEmoji } from '../gesture-wizard/gesture-wizard.types';
+import GestureIcon from '../../atoms/gesture-icon/gesture-icon.vue';
+import { actionLabel } from '../gesture-wizard/gesture-wizard.types';
 import type { GestureLegendProps } from './gesture-legend.types';
 
 const props = defineProps<GestureLegendProps>();
 
-const emoji: Record<CannedGesture, string> = gestureEmoji;
 const label: Record<PrioritizationAction, string> = actionLabel;
 
 const visibleMappings = computed(() => props.mappings.filter((m) => m.gesture !== 'None' && m.action !== 'none'));
@@ -53,15 +52,6 @@ const visibleMappings = computed(() => props.mappings.filter((m) => m.gesture !=
   padding: 2px 8px;
   font-size: 11px;
   gap: 4px;
-}
-
-.gesture-legend__emoji {
-  font-size: 16px;
-  line-height: 1;
-}
-
-.gesture-legend--compact .gesture-legend__emoji {
-  font-size: 13px;
 }
 
 .gesture-legend__label {

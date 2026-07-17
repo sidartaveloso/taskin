@@ -1,6 +1,7 @@
 // Dashboard atoms
 export { default as Avatar } from './Avatar.vue';
 export { default as Badge } from './Badge.vue';
+export { default as GestureIcon } from './gesture-icon';
 export { default as ProgressBar } from './ProgressBar.vue';
 export * from './taskin-arms';
 export * from './taskin-body';
