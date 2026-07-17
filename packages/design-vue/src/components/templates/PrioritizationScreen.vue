@@ -244,6 +244,7 @@ provide('dragContext', {
 
       <select
         class="sort-select"
+        data-testid="sort-select"
         :value="sortMode"
         @change="
           emit(
