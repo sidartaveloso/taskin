@@ -14,6 +14,12 @@ export interface GestureWizardProps {
   availableActions: PrioritizationAction[];
   lastMapping?: GestureMapping | null;
   error?: string | null;
+  /**
+   * Onde teleportar o overlay. Default `'body'` (cobre a viewport inteira).
+   * Passe `false` para renderizar in-place (cobre o ancestor posicionado,
+   * ex: dentro de PriorizationScreen).
+   */
+  teleportTo?: string | false;
 }
 
 export const gestureEmoji: Record<CannedGesture, string> = {
