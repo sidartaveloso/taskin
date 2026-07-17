@@ -233,6 +233,7 @@ provide('dragContext', {
           :key="v"
           type="button"
           :class="{ active: viewMode === v }"
+          :data-testid="`view-mode-${v}`"
           @click="emit('update:viewMode', v)"
         >
           {{
