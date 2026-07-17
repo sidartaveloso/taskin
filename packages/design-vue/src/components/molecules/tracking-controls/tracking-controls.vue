@@ -92,10 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  TrackingControlsEmits,
-  TrackingControlsProps,
-} from './tracking-controls.types';
+import type { TrackingControlsEmits, TrackingControlsProps } from './tracking-controls.types';
 
 defineProps<TrackingControlsProps>();
 

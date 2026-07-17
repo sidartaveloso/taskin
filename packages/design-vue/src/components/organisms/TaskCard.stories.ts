@@ -106,8 +106,7 @@ export const InProgress: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Task in progress with 65% completion, showing all information including daily progress.',
+        story: 'Task in progress with 65% completion, showing all information including daily progress.',
       },
     },
   },
@@ -124,10 +123,7 @@ export const Blocked: Story = {
       progress: {
         percentage: 30,
       },
-      warnings: [
-        'External dependency not available',
-        'Aguardando aprovação do time de infra',
-      ],
+      warnings: ['External dependency not available', 'Aguardando aprovação do time de infra'],
     },
     variant: 'default',
   },
@@ -161,8 +157,7 @@ export const Done: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Completed task with 100% progress, displayed with reduced opacity.',
+        story: 'Completed task with 100% progress, displayed with reduced opacity.',
       },
     },
   },
@@ -186,8 +181,7 @@ export const Paused: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Paused task with orange border indicating temporary suspension.',
+        story: 'Paused task with orange border indicating temporary suspension.',
       },
     },
   },
@@ -232,8 +226,7 @@ export const Compact: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Compact variant with reduced padding and single-line title, suitable for dense layouts.',
+        story: 'Compact variant with reduced padding and single-line title, suitable for dense layouts.',
       },
     },
   },
@@ -302,8 +295,7 @@ export const AllStatuses: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'All available status variants: pending, in-progress, paused, blocked, and done.',
+        story: 'All available status variants: pending, in-progress, paused, blocked, and done.',
       },
     },
     controls: { disable: true },

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { inject } from 'vue';
-import type {
-  PriorityGroupNode,
-  PriorityNode,
-} from '../../composables/use-prioritization';
+import type { PriorityGroupNode, PriorityNode } from '../../composables/use-prioritization';
 
 interface DragContext {
   dragEnabled: boolean;

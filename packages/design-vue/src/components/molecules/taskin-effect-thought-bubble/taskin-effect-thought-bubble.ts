@@ -18,9 +18,7 @@ export default {
         'g',
         {
           id: 'effect-thought-bubble',
-          style: props.animationsEnabled
-            ? 'animation: thought-pulse 2s ease-in-out infinite;'
-            : '',
+          style: props.animationsEnabled ? 'animation: thought-pulse 2s ease-in-out infinite;' : '',
         },
         [
           h('ellipse', {

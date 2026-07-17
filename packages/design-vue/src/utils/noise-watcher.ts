@@ -2,25 +2,19 @@ type NoiseCallback = () => void;
 type NoiseLevelCallback = (rms: number) => void;
 
 export interface NoiseWatcher {
-  onNoiseAbove: (
-    threshold: number,
-    cb: NoiseCallback,
-    debounceMs?: number,
-  ) => () => void;
+  onNoiseAbove: (threshold: number, cb: NoiseCallback, debounceMs?: number) => () => void;
   subscribeLevel: (cb: NoiseLevelCallback) => () => void;
   getCurrentLevel: () => number;
   stop: () => Promise<void>;
 }
 
 export async function createNoiseWatcher(): Promise<NoiseWatcher> {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+  if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error('Web Audio API not supported or no microphone access');
   }
 
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const audioCtx = new (
-    window.AudioContext || (window as any).webkitAudioContext
-  )();
+  const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   const source = audioCtx.createMediaStreamSource(stream);
   const analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048;
@@ -100,7 +94,9 @@ export async function createNoiseWatcher(): Promise<NoiseWatcher> {
         rafId = null;
       }
       try {
-        stream.getTracks().forEach((t) => t.stop());
+        for (const track of stream.getTracks()) {
+          track.stop();
+        }
       } catch {}
       try {
         await audioCtx.close();

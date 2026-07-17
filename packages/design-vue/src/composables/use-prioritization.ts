@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef, watch, type Ref } from 'vue';
+import { computed, type Ref, ref, shallowRef, watch } from 'vue';
 import type { Task } from '../types';
 
 export type PrioritizationViewMode = 'cards' | 'icons' | 'grid';
@@ -77,17 +77,13 @@ function savePrefs(storageKey: string, prefs: PersistedPrefs): void {
  * consecutive tasks sharing the same non-empty `groupId` are clustered
  * into a single group node.
  */
-export function buildPriorityTree(
-  tasks: Task[],
-  collapsedGroups: Record<string, boolean> = {},
-): PriorityNode[] {
+export function buildPriorityTree(tasks: Task[], collapsedGroups: Record<string, boolean> = {}): PriorityNode[] {
   const sorted = tasks
     .map((task, index) => ({ task, index }))
     .sort((a, b) => {
       const orderA = a.task.order;
       const orderB = b.task.order;
-      if (orderA === undefined && orderB === undefined)
-        return a.index - b.index;
+      if (orderA === undefined && orderB === undefined) return a.index - b.index;
       if (orderA === undefined) return 1;
       if (orderB === undefined) return -1;
       if (orderA !== orderB) return orderA - orderB;
@@ -124,11 +120,7 @@ export function buildPriorityTree(
 /** Flattens the tree back into an ordered list of tasks (grouping preserved via innermost groupId/groupName). */
 export function flattenPriorityTree(nodes: PriorityNode[]): Task[] {
   const flat: Task[] = [];
-  function walk(
-    list: PriorityNode[],
-    parentGroupId?: string,
-    parentGroupName?: string,
-  ): void {
+  function walk(list: PriorityNode[], parentGroupId?: string, parentGroupName?: string): void {
     for (const node of list) {
       if (node.kind === 'group') {
         for (const child of node.items) {
@@ -170,27 +162,14 @@ function snapshotOf(task: Task): PrioritizationSnapshot {
   };
 }
 
-function snapshotsEqual(
-  a: PrioritizationSnapshot | undefined,
-  b: PrioritizationSnapshot,
-): boolean {
+function snapshotsEqual(a: PrioritizationSnapshot | undefined, b: PrioritizationSnapshot): boolean {
   if (!a) return false;
-  return (
-    a.order === b.order &&
-    a.groupId === b.groupId &&
-    a.groupName === b.groupName &&
-    a.difficulty === b.difficulty
-  );
+  return a.order === b.order && a.groupId === b.groupId && a.groupName === b.groupName && a.difficulty === b.difficulty;
 }
 
 /** Returns only the tasks whose prioritization fields differ from the baseline snapshot. */
-export function diffAgainstBaseline(
-  tasks: Task[],
-  baseline: Map<string, PrioritizationSnapshot>,
-): Task[] {
-  return tasks.filter(
-    (task) => !snapshotsEqual(baseline.get(task.id), snapshotOf(task)),
-  );
+export function diffAgainstBaseline(tasks: Task[], baseline: Map<string, PrioritizationSnapshot>): Task[] {
+  return tasks.filter((task) => !snapshotsEqual(baseline.get(task.id), snapshotOf(task)));
 }
 
 export interface UsePrioritization {
@@ -232,10 +211,7 @@ export interface UsePrioritization {
  * rating, filtering, view/sort preferences, and change tracking so the host
  * app only has to persist the tasks that actually changed.
  */
-export function usePrioritization(
-  tasks: Ref<Task[]>,
-  options: UsePrioritizationOptions = {},
-): UsePrioritization {
+export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritizationOptions = {}): UsePrioritization {
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY;
   const orderStep = options.orderStep ?? DEFAULT_ORDER_STEP;
 
@@ -245,14 +221,10 @@ export function usePrioritization(
   const collapsedGroups = ref<Record<string, boolean>>(prefs.collapsedGroups);
   const filter = ref('');
 
-  const treeInternal = ref<PriorityNode[]>(
-    buildPriorityTree(tasks.value, collapsedGroups.value),
-  );
+  const treeInternal = ref<PriorityNode[]>(buildPriorityTree(tasks.value, collapsedGroups.value));
 
   const baseline = shallowRef(
-    new Map<string, PrioritizationSnapshot>(
-      tasks.value.map((task) => [task.id, snapshotOf(task)]),
-    ),
+    new Map<string, PrioritizationSnapshot>(tasks.value.map((task) => [task.id, snapshotOf(task)])),
   );
 
   // Undo/redo history: snapshots of the tree taken *before* each domain
@@ -292,10 +264,7 @@ export function usePrioritization(
   }
 
   const changedTasks = computed<Task[]>(() =>
-    diffAgainstBaseline(
-      flattenPriorityTree(treeInternal.value),
-      baseline.value,
-    ),
+    diffAgainstBaseline(flattenPriorityTree(treeInternal.value), baseline.value),
   );
 
   function acknowledgeChanges(): void {
@@ -315,9 +284,7 @@ export function usePrioritization(
   function undo(): void {
     if (history.value.length === 0) return;
     const previous = history.value[history.value.length - 1];
-    future.value = [...future.value, cloneTree(treeInternal.value)].slice(
-      -MAX_HISTORY_SIZE,
-    );
+    future.value = [...future.value, cloneTree(treeInternal.value)].slice(-MAX_HISTORY_SIZE);
     history.value = history.value.slice(0, -1);
     treeInternal.value = previous;
   }
@@ -325,9 +292,7 @@ export function usePrioritization(
   function redo(): void {
     if (future.value.length === 0) return;
     const next = future.value[future.value.length - 1];
-    history.value = [...history.value, cloneTree(treeInternal.value)].slice(
-      -MAX_HISTORY_SIZE,
-    );
+    history.value = [...history.value, cloneTree(treeInternal.value)].slice(-MAX_HISTORY_SIZE);
     future.value = future.value.slice(0, -1);
     treeInternal.value = next;
   }
@@ -356,16 +321,10 @@ export function usePrioritization(
   }
 
   /** Recursively finds any node (task or group) by its ID, returning container array and index. */
-  function findNodeLocation(
-    nodes: PriorityNode[],
-    id: string,
-  ): { container: PriorityNode[]; index: number } | null {
+  function findNodeLocation(nodes: PriorityNode[], id: string): { container: PriorityNode[]; index: number } | null {
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if (
-        (node.kind === 'task' && node.task.id === id) ||
-        (node.kind === 'group' && node.groupId === id)
-      ) {
+      if ((node.kind === 'task' && node.task.id === id) || (node.kind === 'group' && node.groupId === id)) {
         return { container: nodes, index: i };
       }
       if (node.kind === 'group') {
@@ -402,10 +361,7 @@ export function usePrioritization(
   }
 
   /** Recursively finds a group node by its ID anywhere in the tree. */
-  function findGroupById(
-    nodes: PriorityNode[],
-    groupId: string,
-  ): PriorityGroupNode | null {
+  function findGroupById(nodes: PriorityNode[], groupId: string): PriorityGroupNode | null {
     for (const node of nodes) {
       if (node.kind === 'group') {
         if (node.groupId === groupId) return node;
@@ -500,10 +456,7 @@ export function usePrioritization(
   }
 
   /** Finds the array (top-level or group.items) that contains a group node — used to locate sibling groups. */
-  function findGroupContainer(
-    nodes: PriorityNode[],
-    groupId: string,
-  ): PriorityNode[] | null {
+  function findGroupContainer(nodes: PriorityNode[], groupId: string): PriorityNode[] | null {
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       if (node.kind === 'group') {
@@ -555,11 +508,7 @@ export function usePrioritization(
     const targetParentGroupId = targetParentGroup?.groupId;
 
     // ── Case A: different groups at the same level → nest under a parent ──
-    if (
-      draggedParentGroup &&
-      targetParentGroup &&
-      draggedParentGroupId !== targetParentGroupId
-    ) {
+    if (draggedParentGroup && targetParentGroup && draggedParentGroupId !== targetParentGroupId) {
       const container = findGroupContainer(nodes, targetParentGroup.groupId);
       if (!container) return;
 
@@ -586,11 +535,7 @@ export function usePrioritization(
     }
 
     // ── Case B: both in the same group → create a subgroup ──
-    if (
-      draggedParentGroup &&
-      targetParentGroup &&
-      draggedParentGroupId === targetParentGroupId
-    ) {
+    if (draggedParentGroup && targetParentGroup && draggedParentGroupId === targetParentGroupId) {
       const subId = `g-${Math.random().toString(36).slice(2, 10)}`;
       const minIdx = Math.min(draggedLoc.index, targetLoc.index);
       const maxIdx = Math.max(draggedLoc.index, targetLoc.index);
@@ -686,10 +631,7 @@ export function usePrioritization(
   function joinGroup(taskId: string, groupId: string): void {
     const targetGroup = findGroupById(treeInternal.value, groupId);
     if (!targetGroup) return;
-    if (
-      targetGroup.items.some((n) => n.kind === 'task' && n.task.id === taskId)
-    )
-      return;
+    if (targetGroup.items.some((n) => n.kind === 'task' && n.task.id === taskId)) return;
 
     const preSnapshot = cloneTree(treeInternal.value);
     const nodes = cloneTree(treeInternal.value);
@@ -726,9 +668,7 @@ export function usePrioritization(
 
     const container = findGroupContainer(nodes, movedGroupId);
     if (!container) return;
-    const groupIdx = container.findIndex(
-      (n) => n.kind === 'group' && n.groupId === movedGroupId,
-    );
+    const groupIdx = container.findIndex((n) => n.kind === 'group' && n.groupId === movedGroupId);
     if (groupIdx === -1) return;
     const [movedGroup] = container.splice(groupIdx, 1);
 
@@ -755,9 +695,7 @@ export function usePrioritization(
 
     const container = findGroupContainer(nodes, movedGroupId);
     if (!container) return;
-    const groupIdx = container.findIndex(
-      (n) => n.kind === 'group' && n.groupId === movedGroupId,
-    );
+    const groupIdx = container.findIndex((n) => n.kind === 'group' && n.groupId === movedGroupId);
     if (groupIdx === -1) return;
     const [movedGroup] = container.splice(groupIdx, 1);
 
@@ -786,12 +724,8 @@ export function usePrioritization(
 
     const container = findGroupContainer(nodes, targetGroupId);
     if (!container) return;
-    const draggedIdx = container.findIndex(
-      (n) => n.kind === 'group' && n.groupId === draggedGroupId,
-    );
-    const targetIdx = container.findIndex(
-      (n) => n.kind === 'group' && n.groupId === targetGroupId,
-    );
+    const draggedIdx = container.findIndex((n) => n.kind === 'group' && n.groupId === draggedGroupId);
+    const targetIdx = container.findIndex((n) => n.kind === 'group' && n.groupId === targetGroupId);
     if (draggedIdx === -1 || targetIdx === -1) return;
 
     const parentGroupId = `g-${Math.random().toString(36).slice(2, 10)}`;
@@ -865,9 +799,7 @@ export function usePrioritization(
 
     const container = findGroupContainer(nodes, groupId);
     if (!container) return;
-    const idx = container.findIndex(
-      (n) => n.kind === 'group' && n.groupId === groupId,
-    );
+    const idx = container.findIndex((n) => n.kind === 'group' && n.groupId === groupId);
     if (idx === -1 || container[idx].kind !== 'group') return;
     const groupNode = container[idx] as PriorityGroupNode;
 
@@ -921,9 +853,7 @@ export function usePrioritization(
             `${'  '.repeat(indent)}[${n.task.id}] (${n.task.type ?? '-'}) ${n.task.title} — dif: ${n.task.difficulty ?? '-'}`,
           );
         } else {
-          lines.push(
-            `${'  '.repeat(indent)}▼ ${n.groupName ?? 'Grupo'} (${n.items.length} items)`,
-          );
+          lines.push(`${'  '.repeat(indent)}▼ ${n.groupName ?? 'Grupo'} (${n.items.length} items)`);
           walk(n.items, indent + 1);
         }
       }
@@ -950,9 +880,7 @@ export function usePrioritization(
           n.kind === 'group'
             ? {
                 ...n,
-                items: sortRecursive([...n.items]).sort(
-                  (a, b) => (nodeRank(a) - nodeRank(b)) * dir,
-                ),
+                items: sortRecursive([...n.items]).sort((a, b) => (nodeRank(a) - nodeRank(b)) * dir),
               }
             : n,
         );
@@ -965,8 +893,7 @@ export function usePrioritization(
     const q = filter.value.trim().toLowerCase();
     if (!q) return nodes;
 
-    const matches = (t: Task) =>
-      `${t.id} ${t.type ?? ''} ${t.title}`.toLowerCase().includes(q);
+    const matches = (t: Task) => `${t.id} ${t.type ?? ''} ${t.title}`.toLowerCase().includes(q);
 
     function filterRecursive(list: PriorityNode[]): PriorityNode[] {
       return list

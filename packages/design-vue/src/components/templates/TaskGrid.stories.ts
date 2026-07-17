@@ -139,8 +139,7 @@ export const TwoColumns: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          '2-column layout with larger gaps, suitable for medium-sized displays.',
+        story: '2-column layout with larger gaps, suitable for medium-sized displays.',
       },
     },
   },
@@ -150,10 +149,7 @@ export const FourColumns: Story = {
   args: {
     tasks: mockTasks
       .slice(0, 8)
-      .concat(
-        createMockTask(7, { status: 'pending' }),
-        createMockTask(8, { status: 'in-progress' }),
-      ),
+      .concat(createMockTask(7, { status: 'pending' }), createMockTask(8, { status: 'in-progress' })),
     columns: 4,
     gap: 'sm',
   },
@@ -168,17 +164,14 @@ export const FourColumns: Story = {
 
 export const CompactVariant: Story = {
   args: {
-    tasks: mockTasks
-      .slice(0, 9)
-      .concat(createMockTask(7), createMockTask(8), createMockTask(9)),
+    tasks: mockTasks.slice(0, 9).concat(createMockTask(7), createMockTask(8), createMockTask(9)),
     columns: 3,
     variant: 'compact',
   },
   parameters: {
     docs: {
       description: {
-        story:
-          'Using compact card variant for denser display. Good for dashboards showing many tasks.',
+        story: 'Using compact card variant for denser display. Good for dashboards showing many tasks.',
       },
     },
   },
@@ -193,8 +186,7 @@ export const Loading: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Loading state with spinner, shown while fetching tasks from API.',
+        story: 'Loading state with spinner, shown while fetching tasks from API.',
       },
     },
   },
@@ -210,8 +202,7 @@ export const Empty: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Empty state shown when no tasks are available. Message can be customized.',
+        story: 'Empty state shown when no tasks are available. Message can be customized.',
       },
     },
   },
@@ -237,8 +228,7 @@ export const WithCustomTitle: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Custom title using the title slot. Useful for different contexts (sprint, team, project).',
+        story: 'Custom title using the title slot. Useful for different contexts (sprint, team, project).',
       },
     },
   },
@@ -266,8 +256,7 @@ export const WithFooter: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Grid with custom footer using the footer slot. Can show refresh info, pagination, or actions.',
+        story: 'Grid with custom footer using the footer slot. Can show refresh info, pagination, or actions.',
       },
     },
   },
@@ -277,9 +266,7 @@ export const ManyTasks: Story = {
   args: {
     tasks: Array.from({ length: 15 }, (_, i) =>
       createMockTask(i + 1, {
-        status: ['in-progress', 'blocked', 'paused', 'done'][
-          i % 4
-        ] as Task['status'],
+        status: ['in-progress', 'blocked', 'paused', 'done'][i % 4] as Task['status'],
       }),
     ),
     columns: 3,
@@ -288,8 +275,7 @@ export const ManyTasks: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Grid with many tasks to demonstrate scrolling behavior and performance.',
+        story: 'Grid with many tasks to demonstrate scrolling behavior and performance.',
       },
     },
   },
@@ -304,8 +290,7 @@ export const TVDisplay: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Optimized for TV displays (1920x1080). Larger fonts and spacing for better visibility.',
+        story: 'Optimized for TV displays (1920x1080). Larger fonts and spacing for better visibility.',
       },
     },
     viewport: {

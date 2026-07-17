@@ -106,7 +106,7 @@ export const LiveDemo: Story = {
         g.forEach((gest, i) => {
           info[`mão ${i + 1}`] = {
             gesto: gestureLabel[gest.gesture] || gest.gesture,
-            confiança: (gest.score * 100).toFixed(1) + '%',
+            confiança: `${(gest.score * 100).toFixed(1)}%`,
             mão: gest.handedness,
           };
         });
@@ -162,16 +162,9 @@ export const LiveDemo: Story = {
                   gap: '16px',
                   padding: '24px 40px',
                   background:
-                    dominantGesture.value?.gesture === 'None' ||
-                    !dominantGesture.value
-                      ? '#f0f0f0'
-                      : '#e3f2fd',
+                    dominantGesture.value?.gesture === 'None' || !dominantGesture.value ? '#f0f0f0' : '#e3f2fd',
                   border: '2px solid',
-                  borderColor:
-                    dominantGesture.value?.gesture === 'None' ||
-                    !dominantGesture.value
-                      ? '#ddd'
-                      : '#1f7acb',
+                  borderColor: dominantGesture.value?.gesture === 'None' || !dominantGesture.value ? '#ddd' : '#1f7acb',
                   borderRadius: '16px',
                   minWidth: '240px',
                   justifyContent: 'center',
@@ -186,9 +179,7 @@ export const LiveDemo: Story = {
                       lineHeight: 1,
                     },
                   },
-                  dominantGesture.value
-                    ? gestureEmoji[dominantGesture.value.gesture]
-                    : gestureEmoji.None,
+                  dominantGesture.value ? gestureEmoji[dominantGesture.value.gesture] : gestureEmoji.None,
                 ),
                 h(
                   'div',
@@ -208,9 +199,7 @@ export const LiveDemo: Story = {
                           color: '#1a1a1a',
                         },
                       },
-                      dominantGesture.value
-                        ? gestureLabel[dominantGesture.value.gesture]
-                        : 'Aguardando...',
+                      dominantGesture.value ? gestureLabel[dominantGesture.value.gesture] : 'Aguardando...',
                     ),
                     dominantGesture.value
                       ? h(

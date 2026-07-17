@@ -96,25 +96,17 @@ export const Unprioritized: Story = {
 // ---------------------------------------------------------------------------
 
 function getCard(canvasElement: HTMLElement, taskId: string): HTMLElement {
-  const el = canvasElement.querySelector<HTMLElement>(
-    `[data-testid="priority-card-${taskId}"]`,
-  );
+  const el = canvasElement.querySelector<HTMLElement>(`[data-testid="priority-card-${taskId}"]`);
   if (!el) throw new Error(`Card ${taskId} not found`);
   return el;
 }
 
 function getAnyGroup(canvasElement: HTMLElement): HTMLElement | null {
-  return canvasElement.querySelector<HTMLElement>(
-    '[data-testid^="priority-group-"]',
-  );
+  return canvasElement.querySelector<HTMLElement>('[data-testid^="priority-group-"]');
 }
 
 /** Simulates a full native HTML5 drag gesture from `source` onto `target`, at a given vertical zone. */
-async function dragOnto(
-  source: HTMLElement,
-  target: HTMLElement,
-  zone: 'before' | 'after' | 'middle',
-): Promise<void> {
+async function dragOnto(source: HTMLElement, target: HTMLElement, zone: 'before' | 'after' | 'middle'): Promise<void> {
   const dataTransfer = new DataTransfer();
   const rect = target.getBoundingClientRect();
   const ratio = zone === 'before' ? 0.1 : zone === 'after' ? 0.9 : 0.5;
@@ -128,10 +120,7 @@ async function dragOnto(
 }
 
 /** Simulates dragging `source` into an existing group container (adds it as a member). */
-async function dragIntoGroup(
-  source: HTMLElement,
-  groupEl: HTMLElement,
-): Promise<void> {
+async function dragIntoGroup(source: HTMLElement, groupEl: HTMLElement): Promise<void> {
   const dataTransfer = new DataTransfer();
   await fireEvent.dragStart(source, { dataTransfer });
   await fireEvent.dragOver(groupEl, { dataTransfer });
@@ -160,29 +149,15 @@ export const DragAndDropInteractions: Story = {
   },
   play: async ({ canvasElement }) => {
     // 1. Move a task above another → increases its manual priority (reorder).
-    await dragOnto(
-      getCard(canvasElement, '003'),
-      getCard(canvasElement, '001'),
-      'before',
-    );
+    await dragOnto(getCard(canvasElement, '003'), getCard(canvasElement, '001'), 'before');
     await waitFor(() => {
-      const cards = Array.from(
-        canvasElement.querySelectorAll<HTMLElement>(
-          '[data-testid^="priority-card-"]',
-        ),
-      );
+      const cards = Array.from(canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-card-"]'));
       const order = cards.map((c) => c.dataset.testid);
-      expect(order.indexOf('priority-card-003')).toBeLessThan(
-        order.indexOf('priority-card-001'),
-      );
+      expect(order.indexOf('priority-card-003')).toBeLessThan(order.indexOf('priority-card-001'));
     });
 
     // 2. Move a task into another (middle zone) → creates a new group.
-    await dragOnto(
-      getCard(canvasElement, '002'),
-      getCard(canvasElement, '001'),
-      'middle',
-    );
+    await dragOnto(getCard(canvasElement, '002'), getCard(canvasElement, '001'), 'middle');
     await waitFor(() => {
       const group = getAnyGroup(canvasElement);
       expect(group).not.toBeNull();
@@ -201,74 +176,46 @@ export const DragAndDropInteractions: Story = {
     });
 
     // 4. Reorder tasks inside the group — drag 004 before 001.
-    await dragOnto(
-      getCard(canvasElement, '004'),
-      getCard(canvasElement, '001'),
-      'before',
-    );
+    await dragOnto(getCard(canvasElement, '004'), getCard(canvasElement, '001'), 'before');
     await waitFor(() => {
       const group = getAnyGroup(canvasElement);
       expect(group?.textContent).toContain('3 items');
-      const cardsInGroup = Array.from(
-        group!.querySelectorAll<HTMLElement>('[data-testid^="priority-card-"]'),
-      );
+      const cardsInGroup = Array.from(group!.querySelectorAll<HTMLElement>('[data-testid^="priority-card-"]'));
       const order = cardsInGroup.map((c) => c.dataset.testid);
-      expect(order).toEqual([
-        'priority-card-004',
-        'priority-card-001',
-        'priority-card-002',
-      ]);
+      expect(order).toEqual(['priority-card-004', 'priority-card-001', 'priority-card-002']);
     });
 
     // 5. Create a subgroup — drag 002 onto 001's middle zone (both are in the
     //    same group) → a subgroup is created inside the parent.
-    await dragOnto(
-      getCard(canvasElement, '002'),
-      getCard(canvasElement, '001'),
-      'middle',
-    );
+    await dragOnto(getCard(canvasElement, '002'), getCard(canvasElement, '001'), 'middle');
     await waitFor(() => {
       const parentGroup = getAnyGroup(canvasElement);
       expect(parentGroup).not.toBeNull();
       // Parent has 2 direct items: task 004 + the new subgroup
       expect(parentGroup?.textContent).toContain('2 items');
       // Subgroup is nested inside the parent
-      const subGroups = parentGroup!.querySelectorAll<HTMLElement>(
-        '[data-testid^="priority-group-"]',
-      );
+      const subGroups = parentGroup!.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       expect(subGroups.length).toBe(1);
       const subGroup = subGroups[0];
       expect(subGroup.textContent).toContain('2 items');
       expect(within(subGroup).getByTestId('priority-card-001')).toBeTruthy();
       expect(within(subGroup).getByTestId('priority-card-002')).toBeTruthy();
       // Card 004 stays directly in the parent
-      expect(
-        within(parentGroup!).getByTestId('priority-card-004'),
-      ).toBeTruthy();
+      expect(within(parentGroup!).getByTestId('priority-card-004')).toBeTruthy();
     });
 
     // 6. Remove a task from the group (drag it out onto a standalone task) →
     //    group shrinks back to 2 items, the removed task becomes a standalone card.
-    await dragOnto(
-      getCard(canvasElement, '002'),
-      getCard(canvasElement, '003'),
-      'after',
-    );
+    await dragOnto(getCard(canvasElement, '002'), getCard(canvasElement, '003'), 'after');
     await waitFor(() => {
       const group = getAnyGroup(canvasElement);
       expect(group?.textContent).toContain('2 items');
-      expect(
-        group?.querySelector('[data-testid="priority-card-002"]'),
-      ).toBeNull();
+      expect(group?.querySelector('[data-testid="priority-card-002"]')).toBeNull();
     });
 
     // 7. Remove the last remaining "extra" task from a group that only had two
     //    members → the group must dissolve entirely (no group node left).
-    await dragOnto(
-      getCard(canvasElement, '004'),
-      getCard(canvasElement, '003'),
-      'after',
-    );
+    await dragOnto(getCard(canvasElement, '004'), getCard(canvasElement, '003'), 'after');
     await waitFor(() => {
       expect(getAnyGroup(canvasElement)).toBeNull();
     });
@@ -289,9 +236,7 @@ const groupedTasks: Task[] = [
 ];
 
 function getGroupHead(canvasElement: HTMLElement, index: number): HTMLElement {
-  const groups = canvasElement.querySelectorAll<HTMLElement>(
-    '[data-testid^="priority-group-"]',
-  );
+  const groups = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
   const group = groups[index];
   if (!group) throw new Error(`Group at index ${index} not found`);
   const head = group.querySelector<HTMLElement>('.group-head');
@@ -337,9 +282,7 @@ export const GroupDragInteractions: Story = {
     const betaHead = getGroupHead(canvasElement, 1);
     await dragGroupOnto(betaHead, alphaGroup, 'before');
     await waitFor(() => {
-      const groups = canvasElement.querySelectorAll<HTMLElement>(
-        '[data-testid^="priority-group-"]',
-      );
+      const groups = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       expect(groups.length).toBe(2);
       // Beta should now be first
       expect(groups[0].textContent).toContain('Beta');
@@ -352,18 +295,14 @@ export const GroupDragInteractions: Story = {
     await dragGroupOnto(alphaHead, betaGroupAfterReorder, 'middle');
     await waitFor(() => {
       // Only the parent group should show at top level
-      const groups = canvasElement.querySelectorAll<HTMLElement>(
-        '[data-testid^="priority-group-"]',
-      );
+      const groups = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       // Parent group + 2 standalone tasks = 1 + 2 direct children
       const nodeList = canvasElement.querySelector('.node-list')!;
       const directChildren = nodeList.children;
       const parentGroup = directChildren[0] as HTMLElement;
       expect(parentGroup?.textContent).toContain('2 items');
       // Subgroups are nested inside the parent
-      const subGroups = parentGroup!.querySelectorAll<HTMLElement>(
-        '[data-testid^="priority-group-"]',
-      );
+      const subGroups = parentGroup!.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       expect(subGroups.length).toBe(2);
     });
   },
@@ -503,7 +442,7 @@ export const GestureControl: Story = {
         g.forEach((gest, i) => {
           info[`mão ${i + 1} (${gest.handedness})`] = {
             gesto: gestureNameMap[gest.gesture] || gest.gesture,
-            confiança: (gest.score * 100).toFixed(1) + '%',
+            confiança: `${(gest.score * 100).toFixed(1)}%`,
           };
         });
         return info;
@@ -591,9 +530,7 @@ export const GestureControl: Story = {
                       { style: { fontWeight: 600 } },
                       (() => {
                         const g = getStableGesture();
-                        return g
-                          ? `${gestureNameMap[g.gesture] || g.gesture}`
-                          : 'Aguardando gesto...';
+                        return g ? `${gestureNameMap[g.gesture] || g.gesture}` : 'Aguardando gesto...';
                       })(),
                     ),
                   ],
@@ -619,11 +556,7 @@ export const GestureControl: Story = {
                 h('span', null, '✌️ agrupar'),
                 h('span', null, '🖐️ desagrupar'),
                 h('span', null, '✊ desfazer'),
-                h(
-                  'span',
-                  { style: { color: '#4fc3f7' } },
-                  '🖐️ (2s) configurar atalhos',
-                ),
+                h('span', { style: { color: '#4fc3f7' } }, '🖐️ (2s) configurar atalhos'),
               ],
             ),
             // The actual prioritization page — receives gesture callbacks

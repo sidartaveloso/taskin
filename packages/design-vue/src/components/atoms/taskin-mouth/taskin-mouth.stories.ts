@@ -15,16 +15,7 @@ const meta = {
   argTypes: {
     expression: {
       control: { type: 'select' },
-      options: [
-        'neutral',
-        'smile',
-        'frown',
-        'open',
-        'wide-open',
-        'o-shape',
-        'smirk',
-        'surprised',
-      ],
+      options: ['neutral', 'smile', 'frown', 'open', 'wide-open', 'o-shape', 'smirk', 'surprised'],
       description: 'Mouth expression',
     },
     animationsEnabled: {
@@ -266,12 +257,9 @@ export const FaceTracking: Story = {
         const frownIntensity = faceLandmarker.getFrownIntensity();
 
         return {
-          mouthOpenness:
-            (mouthOpenness >= 0 ? '+' : '') + mouthOpenness.toFixed(10),
-          smileIntensity:
-            (smileIntensity >= 0 ? '+' : '') + smileIntensity.toFixed(10),
-          frownIntensity:
-            (frownIntensity >= 0 ? '+' : '') + frownIntensity.toFixed(10),
+          mouthOpenness: (mouthOpenness >= 0 ? '+' : '') + mouthOpenness.toFixed(10),
+          smileIntensity: (smileIntensity >= 0 ? '+' : '') + smileIntensity.toFixed(10),
+          frownIntensity: (frownIntensity >= 0 ? '+' : '') + frownIntensity.toFixed(10),
           mouthExpression: mouthExpression.value,
         };
       });
@@ -354,8 +342,7 @@ export const FaceTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          '📹 Mouth tracks your face expressions using webcam! Click "Iniciar Detecção" to start.',
+        story: '📹 Mouth tracks your face expressions using webcam! Click "Iniciar Detecção" to start.',
       },
     },
   },

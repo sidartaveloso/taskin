@@ -18,9 +18,7 @@ export default {
           'font-size': '24',
           'font-weight': 'bold',
           textContent: 'Z',
-          style: props.animationsEnabled
-            ? 'animation: zzz-rise 2s ease-in-out infinite;'
-            : '',
+          style: props.animationsEnabled ? 'animation: zzz-rise 2s ease-in-out infinite;' : '',
         }),
         h('text', {
           x: '200',
@@ -29,9 +27,7 @@ export default {
           'font-size': '24',
           'font-weight': 'bold',
           textContent: 'Z',
-          style: props.animationsEnabled
-            ? 'animation: zzz-rise 2s ease-in-out infinite 0.3s;'
-            : '',
+          style: props.animationsEnabled ? 'animation: zzz-rise 2s ease-in-out infinite 0.3s;' : '',
         }),
         h('text', {
           x: '210',
@@ -40,9 +36,7 @@ export default {
           'font-size': '24',
           'font-weight': 'bold',
           textContent: 'Z',
-          style: props.animationsEnabled
-            ? 'animation: zzz-rise 2s ease-in-out infinite 0.6s;'
-            : '',
+          style: props.animationsEnabled ? 'animation: zzz-rise 2s ease-in-out infinite 0.6s;' : '',
         }),
         h(
           'style',

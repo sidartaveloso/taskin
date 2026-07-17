@@ -26,9 +26,7 @@ export default {
             r: puff.r,
             fill: '#A1887F',
             opacity: '0.4',
-            style: props.animationsEnabled
-              ? `animation: fart-expand 2s ease-out infinite ${idx * 0.2}s;`
-              : '',
+            style: props.animationsEnabled ? `animation: fart-expand 2s ease-out infinite ${idx * 0.2}s;` : '',
           }),
         ),
         h(

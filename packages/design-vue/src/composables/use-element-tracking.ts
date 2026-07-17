@@ -5,9 +5,7 @@ export interface ElementPosition {
   y: number;
 }
 
-export function useElementTracking(
-  targetSelector: () => string | HTMLElement | undefined,
-) {
+export function useElementTracking(targetSelector: () => string | HTMLElement | undefined) {
   const position = ref<ElementPosition>({ x: 0, y: 0 });
   const isTracking = ref(false);
   let animationFrameId: number | null = null;
@@ -16,8 +14,7 @@ export function useElementTracking(
     const target = targetSelector();
     if (!target) return;
 
-    const element =
-      typeof target === 'string' ? document.querySelector(target) : target;
+    const element = typeof target === 'string' ? document.querySelector(target) : target;
 
     if (element instanceof HTMLElement) {
       const rect = element.getBoundingClientRect();

@@ -1,4 +1,4 @@
-import { computed, h, onMounted, onUnmounted, ref, type PropType } from 'vue';
+import { computed, h, onMounted, onUnmounted, type PropType, ref } from 'vue';
 import TaskinArms from '../../atoms/taskin-arms/taskin-arms.vue';
 import TaskinBody from '../../atoms/taskin-body/taskin-body.vue';
 import type { EyeState } from '../../atoms/taskin-eyes/taskin-eyes.types';
@@ -354,9 +354,7 @@ export default {
     eyeState?: 'normal' | 'closed' | 'squint' | 'wide';
     mouthExpression?: MouthExpression;
   }) {
-    const config = computed(
-      () => MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral,
-    );
+    const config = computed(() => MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral);
     const idleTimer = ref<number | null>(null);
     const blinkEyes = ref(false);
     const wiggleTentacles = ref(false);
@@ -414,14 +412,7 @@ export default {
           h(TaskinTentacleWithItem, {
             tentacleColor: config.value.tentacleColor,
             animationsEnabled: props.animationsEnabled,
-            speed:
-              props.mood === 'dancing'
-                ? 1.5
-                : props.mood === 'tired'
-                  ? 0.6
-                  : props.mood === 'sleeping'
-                    ? 0
-                    : 1,
+            speed: props.mood === 'dancing' ? 1.5 : props.mood === 'tired' ? 0.6 : props.mood === 'sleeping' ? 0 : 1,
             fluid: true,
             translateX: -30,
             translateY: 0,
@@ -429,14 +420,7 @@ export default {
           h(TaskinTentacleWithItem, {
             tentacleColor: config.value.tentacleColor,
             animationsEnabled: props.animationsEnabled,
-            speed:
-              props.mood === 'dancing'
-                ? 1.8
-                : props.mood === 'tired'
-                  ? 0.5
-                  : props.mood === 'sleeping'
-                    ? 0
-                    : 1.1,
+            speed: props.mood === 'dancing' ? 1.8 : props.mood === 'tired' ? 0.5 : props.mood === 'sleeping' ? 0 : 1.1,
             fluid: true,
             translateX: -10,
             translateY: 0,
@@ -444,14 +428,7 @@ export default {
           h(TaskinTentacleWithItem, {
             tentacleColor: config.value.tentacleColor,
             animationsEnabled: props.animationsEnabled,
-            speed:
-              props.mood === 'dancing'
-                ? 1.6
-                : props.mood === 'tired'
-                  ? 0.7
-                  : props.mood === 'sleeping'
-                    ? 0
-                    : 0.9,
+            speed: props.mood === 'dancing' ? 1.6 : props.mood === 'tired' ? 0.7 : props.mood === 'sleeping' ? 0 : 0.9,
             fluid: true,
             translateX: 10,
             translateY: 0,
@@ -459,14 +436,7 @@ export default {
           h(TaskinTentacleWithItem, {
             tentacleColor: config.value.tentacleColor,
             animationsEnabled: props.animationsEnabled && wiggleTentacles.value,
-            speed:
-              props.mood === 'dancing'
-                ? 1.7
-                : props.mood === 'tired'
-                  ? 0.6
-                  : props.mood === 'sleeping'
-                    ? 0
-                    : 1.0,
+            speed: props.mood === 'dancing' ? 1.7 : props.mood === 'tired' ? 0.6 : props.mood === 'sleeping' ? 0 : 1.0,
             fluid: true,
             translateX: 30,
             translateY: 0,
@@ -496,9 +466,7 @@ export default {
             }),
         // Eyes
         h(TaskinEyes, {
-          state:
-            props.eyeState ??
-            (blinkEyes.value ? 'closed' : config.value.eyeState),
+          state: props.eyeState ?? (blinkEyes.value ? 'closed' : config.value.eyeState),
           trackingMode: props.eyeTrackingMode ?? 'none',
           trackingBounds: props.eyeTrackingBounds,
           lookDirection: props.eyeLookDirection ?? config.value.lookDirection,
@@ -508,10 +476,7 @@ export default {
         }),
         // Mouth
         h(TaskinMouth, {
-          expression:
-            props.mouthExpression !== undefined
-              ? props.mouthExpression
-              : config.value.mouthExpression,
+          expression: props.mouthExpression !== undefined ? props.mouthExpression : config.value.mouthExpression,
           animationsEnabled: props.animationsEnabled,
         }),
         // Effects

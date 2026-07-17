@@ -40,11 +40,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import {
-  useElementTracking,
-  useEyeTracking,
-  useMouseTracking,
-} from '../../../composables';
+import { useElementTracking, useEyeTracking, useMouseTracking } from '../../../composables';
 import type { TaskinEyesProps } from './taskin-eyes.types';
 
 const props = withDefaults(defineProps<TaskinEyesProps>(), {
@@ -67,7 +63,6 @@ const eyeHeight = computed(() => {
       return 8;
     case 'wide':
       return 18;
-    case 'normal':
     default:
       return 14;
   }
@@ -81,7 +76,6 @@ const pupilRadius = computed(() => {
       return 2;
     case 'closed':
       return 0;
-    case 'normal':
     default:
       return 5;
   }
@@ -94,16 +88,12 @@ const trackingMode = computed(() => props.trackingMode || 'mouse');
 const mouseTracking = useMouseTracking();
 
 // Element tracking
-const targetElement = computed(() =>
-  trackingMode.value === 'element' ? props.targetElement : undefined,
-);
+const targetElement = computed(() => (trackingMode.value === 'element' ? props.targetElement : undefined));
 const elementTracking = useElementTracking(() => targetElement.value);
 
 // Custom position tracking
 const customPosition = computed(() =>
-  trackingMode.value === 'custom' && props.customPosition
-    ? props.customPosition
-    : { x: 0, y: 0 },
+  trackingMode.value === 'custom' && props.customPosition ? props.customPosition : { x: 0, y: 0 },
 );
 
 // Determina a posição do alvo baseado no modo

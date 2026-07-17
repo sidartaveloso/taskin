@@ -1,5 +1,5 @@
 import { FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
-import { onUnmounted, ref, type Ref } from 'vue';
+import { onUnmounted, type Ref, ref } from 'vue';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GestureRecognizerInstance = any;
@@ -122,24 +122,20 @@ export function useGestureRecognizer(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm',
       );
 
-      gestureRecognizer.value = await GestureRecognizer.createFromOptions(
-        vision,
-        {
-          baseOptions: {
-            modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',
-            delegate: 'GPU',
-          },
-          runningMode: 'IMAGE',
-          numHands,
-          minHandDetectionConfidence,
-          minHandPresenceConfidence,
-          minTrackingConfidence,
+      gestureRecognizer.value = await GestureRecognizer.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',
+          delegate: 'GPU',
         },
-      );
+        runningMode: 'IMAGE',
+        numHands,
+        minHandDetectionConfidence,
+        minHandPresenceConfidence,
+        minTrackingConfidence,
+      });
 
       state.value.isReady = true;
-      console.log('GestureRecognizer initialized successfully!');
     } catch (error) {
       state.value.error = `Failed to initialize gesture recognizer: ${error}`;
       console.error(state.value.error);
@@ -179,17 +175,11 @@ export function useGestureRecognizer(
       if (result.gestures && result.gestures.length > 0) {
         for (let i = 0; i < result.gestures.length; i++) {
           const top = result.gestures[i][0];
-          if (
-            top &&
-            top.categoryName &&
-            CANNED_GESTURES.includes(top.categoryName)
-          ) {
+          if (top?.categoryName && CANNED_GESTURES.includes(top.categoryName)) {
             recognized.push({
               gesture: top.categoryName as CannedGesture,
               score: top.score,
-              handedness:
-                (result.handedness?.[i]?.[0]?.categoryName as Handedness) ||
-                'Right',
+              handedness: (result.handedness?.[i]?.[0]?.categoryName as Handedness) || 'Right',
             });
           }
         }
@@ -252,7 +242,9 @@ export function useGestureRecognizer(
     }
 
     if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+      for (const track of stream.getTracks()) {
+        track.stop();
+      }
       stream = null;
     }
 
@@ -267,9 +259,7 @@ export function useGestureRecognizer(
       return null;
     }
 
-    const best = state.value.gestures.reduce((a, b) =>
-      a.score > b.score ? a : b,
-    );
+    const best = state.value.gestures.reduce((a, b) => (a.score > b.score ? a : b));
 
     if (best.score < gestureScoreThreshold) {
       lastGesture.value = 'None';
@@ -284,10 +274,7 @@ export function useGestureRecognizer(
     return state.value.gestures.reduce((a, b) => (a.score > b.score ? a : b));
   };
 
-  const isGestureHeld = (
-    gesture: CannedGesture,
-    minHoldMs: number = 300,
-  ): boolean => {
+  const isGestureHeld = (gesture: CannedGesture, minHoldMs: number = 300): boolean => {
     const best = getDominantGesture();
     if (!best || best.gesture !== gesture) {
       lastGesture.value = 'None';

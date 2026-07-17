@@ -1,25 +1,9 @@
 import { computed, ref } from 'vue';
-import type {
-  CannedGesture,
-  RecognizedGesture,
-} from './use-gesture-recognizer';
+import type { CannedGesture, RecognizedGesture } from './use-gesture-recognizer';
 
-export type PrioritizationAction =
-  | 'moveUp'
-  | 'moveDown'
-  | 'groupWith'
-  | 'ungroup'
-  | 'undo'
-  | 'copyCard'
-  | 'none';
+export type PrioritizationAction = 'moveUp' | 'moveDown' | 'groupWith' | 'ungroup' | 'undo' | 'copyCard' | 'none';
 
-export type WizardState =
-  | 'IDLE'
-  | 'READY'
-  | 'RECORDING'
-  | 'SELECTING'
-  | 'CONFIRMING'
-  | 'SAVED';
+export type WizardState = 'IDLE' | 'READY' | 'RECORDING' | 'SELECTING' | 'CONFIRMING' | 'SAVED';
 
 export interface GestureMapping {
   gesture: CannedGesture;
@@ -121,9 +105,7 @@ export function useGestureShortcuts(
     cancelTimers();
   };
 
-  const getActionForGesture = (
-    gesture: CannedGesture,
-  ): PrioritizationAction => {
+  const getActionForGesture = (gesture: CannedGesture): PrioritizationAction => {
     if (wizardState.value !== 'IDLE') return 'none';
     for (const m of mappings.value) {
       if (m.gesture === gesture) return m.action;
@@ -131,9 +113,7 @@ export function useGestureShortcuts(
     return 'none';
   };
 
-  const getGestureForAction = (
-    action: PrioritizationAction,
-  ): CannedGesture | null => {
+  const getGestureForAction = (action: PrioritizationAction): CannedGesture | null => {
     for (const m of mappings.value) {
       if (m.action === action) return m.gesture;
     }
@@ -155,7 +135,7 @@ export function useGestureShortcuts(
           readyProgress.value = 0;
           openHandTimer = setInterval(() => {
             const current = getStableGesture();
-            if (!current || current.gesture !== 'Open_Palm') {
+            if (current?.gesture !== 'Open_Palm') {
               readyProgress.value = 0;
               cancelTimers();
               return;
@@ -167,7 +147,7 @@ export function useGestureShortcuts(
               readyProgress.value = WIZARD_READY_HOLD_MS;
               const confirmTimer = setInterval(() => {
                 const still = getStableGesture();
-                if (!still || still.gesture !== 'Open_Palm') {
+                if (still?.gesture !== 'Open_Palm') {
                   if (still && still.gesture !== 'None') {
                     wizardState.value = 'RECORDING';
                     step.value = 1;
@@ -186,7 +166,7 @@ export function useGestureShortcuts(
               openHandTimer = confirmTimer;
             }
           }, 100);
-        } else if (!gest || gest.gesture !== 'Open_Palm') {
+        } else if (gest?.gesture !== 'Open_Palm') {
           readyProgress.value = 0;
         }
         break;
@@ -230,15 +210,9 @@ export function useGestureShortcuts(
           step.value = 3;
           wizardState.value = 'CONFIRMING';
         } else if (gest?.gesture === 'Thumb_Up') {
-          selectedActionIndex.value = Math.min(
-            selectedActionIndex.value + 1,
-            AVAILABLE_ACTIONS.length - 1,
-          );
+          selectedActionIndex.value = Math.min(selectedActionIndex.value + 1, AVAILABLE_ACTIONS.length - 1);
         } else if (gest?.gesture === 'Thumb_Down') {
-          selectedActionIndex.value = Math.max(
-            selectedActionIndex.value - 1,
-            0,
-          );
+          selectedActionIndex.value = Math.max(selectedActionIndex.value - 1, 0);
         } else if (gest?.gesture === 'Open_Palm') {
           resetWizard();
         }
@@ -248,9 +222,7 @@ export function useGestureShortcuts(
       case 'CONFIRMING': {
         if (isGestureHeld('Closed_Fist', WIZARD_SELECT_HOLD_MS)) {
           if (lastMapping.value) {
-            const existing = mappings.value.findIndex(
-              (m) => m.gesture === lastMapping.value!.gesture,
-            );
+            const existing = mappings.value.findIndex((m) => m.gesture === lastMapping.value!.gesture);
             if (existing >= 0) {
               mappings.value[existing] = lastMapping.value;
             } else {
@@ -261,10 +233,7 @@ export function useGestureShortcuts(
           wizardState.value = 'SAVED';
           step.value = 4;
           setTimeout(resetWizard, 1500);
-        } else if (
-          gest?.gesture === 'Open_Palm' ||
-          gest?.gesture === 'Thumb_Down'
-        ) {
+        } else if (gest?.gesture === 'Open_Palm' || gest?.gesture === 'Thumb_Down') {
           resetWizard();
         }
         break;

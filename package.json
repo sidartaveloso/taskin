@@ -33,7 +33,7 @@
     "test:coverage": "turbo run test:coverage",
     "format": "run-p format:root format:turbo",
     "format:turbo": "turbo run format",
-    "format:root": "prettier --write \"./*.{js,ts,tsx,jsx,vue,md,json,css,scss,html}\" \"./TASKS/**/*.md\" \"./dev/**/*.ts\"",
+    "format:root": "biome check --write .",
     "format:check": "turbo run format:check",
     "typecheck": "turbo run typecheck",
     "ci": "pnpm typecheck && pnpm lint && pnpm test",
@@ -52,6 +52,7 @@
     "publish:latest": "node scripts/publish-packages.js --tag latest"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.4",
     "@changesets/cli": "^2.29.8",
     "@types/node": "^25.3.0",
     "@typescript-eslint/eslint-plugin": "^8.56.0",

@@ -37,15 +37,7 @@ export const Medium: Story = {
 export const Long: Story = {
   args: {
     project: {
-      segments: [
-        'Company',
-        'Departments',
-        'Engineering',
-        'Projects',
-        'Frontend',
-        'Web',
-        'Dashboard',
-      ],
+      segments: ['Company', 'Departments', 'Engineering', 'Projects', 'Frontend', 'Web', 'Dashboard'],
     },
     maxSegments: 3,
   },

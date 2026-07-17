@@ -25,9 +25,7 @@ export default {
             ry: '6',
             fill: '#8BC34A',
             opacity: '0.8',
-            style: props.animationsEnabled
-              ? `animation: vomit-drop 1s ease-in infinite ${idx * 0.1}s;`
-              : '',
+            style: props.animationsEnabled ? `animation: vomit-drop 1s ease-in infinite ${idx * 0.1}s;` : '',
           }),
         ),
         h(

@@ -1,9 +1,9 @@
 import TaskinMascot from './taskin';
 
 export { default as Taskin, default as TaskinMascot } from './taskin';
-export { default as TaskinComposed } from './taskin-composed';
-export { default as TaskinWithShhh } from './taskin-with-shhh.vue';
 export * from './taskin.controller';
 export * from './taskin.mock';
 export * from './taskin.types';
+export { default as TaskinComposed } from './taskin-composed';
+export { default as TaskinWithShhh } from './taskin-with-shhh.vue';
 export default TaskinMascot;

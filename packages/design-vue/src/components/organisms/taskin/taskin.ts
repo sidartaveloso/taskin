@@ -1,13 +1,7 @@
-import { h, onMounted, onUnmounted, ref, watch, type PropType } from 'vue';
+import { h, onMounted, onUnmounted, type PropType, ref, watch } from 'vue';
 import { createTaskinController } from './taskin.controller';
 import svgRaw from './taskin.svg?raw';
-import type {
-  TaskinController,
-  TaskinExpose,
-  TaskinMood,
-  TaskinProps,
-  TaskinReadyPayload,
-} from './taskin.types';
+import type { TaskinController, TaskinExpose, TaskinMood, TaskinProps, TaskinReadyPayload } from './taskin.types';
 
 export default {
   name: 'TaskinMascot',
@@ -101,10 +95,7 @@ export default {
       svg.setAttribute('width', String(props.size));
       svg.setAttribute('height', String((props.size! * 260) / 320));
 
-      const controller = createTaskinController(
-        svg as SVGElement,
-        animationsEnabled,
-      );
+      const controller = createTaskinController(svg as SVGElement, animationsEnabled);
       controller.setMood(props.mood || 'sarcastic');
 
       controllerRef.value = controller;

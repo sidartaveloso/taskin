@@ -85,9 +85,7 @@ export const Architecture: Story = {
             },
           },
           [
-            h('h2', { style: { fontSize: '24px', marginBottom: '16px' } }, [
-              'Keyboard Shortcuts → Gesture Shortcuts',
-            ]),
+            h('h2', { style: { fontSize: '24px', marginBottom: '16px' } }, ['Keyboard Shortcuts → Gesture Shortcuts']),
             h(
               'div',
               {
@@ -118,9 +116,7 @@ export const Architecture: Story = {
                 ),
               ],
             ),
-            h('h3', { style: { fontSize: '18px', marginBottom: '12px' } }, [
-              'Default mappings',
-            ]),
+            h('h3', { style: { fontSize: '18px', marginBottom: '12px' } }, ['Default mappings']),
             h(
               'table',
               {
@@ -144,11 +140,7 @@ export const Architecture: Story = {
                     h('tr', { key: row.gesture }, [
                       h('td', { style: tableCellStyle }, row.gesture),
                       h('td', { style: tableCellStyle }, row.action),
-                      h(
-                        'td',
-                        { style: { ...tableCellStyle, color: '#666' } },
-                        row.keyboard,
-                      ),
+                      h('td', { style: { ...tableCellStyle, color: '#666' } }, row.keyboard),
                     ]),
                   ),
                 ),

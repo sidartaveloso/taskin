@@ -133,8 +133,7 @@ export const AllVariations: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Overview of all fluid tentacles variations - colors, counts, speeds, and animation modes',
+        story: 'Overview of all fluid tentacles variations - colors, counts, speeds, and animation modes',
       },
     },
   },

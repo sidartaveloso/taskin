@@ -140,8 +140,7 @@ export const AllVariations: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Overview of all tentacle variations - static, fluid, animations, and special effects',
+        story: 'Overview of all tentacle variations - static, fluid, animations, and special effects',
       },
     },
   },
@@ -449,8 +448,7 @@ export const CurlingTentacle: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Tentacle curling inward - simulating natural octopus curling behavior (1.2s animation)',
+        story: 'Tentacle curling inward - simulating natural octopus curling behavior (1.2s animation)',
       },
     },
   },
@@ -465,8 +463,7 @@ export const UncurlingTentacle: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Tentacle uncurling from curled position - extending outward (1.2s animation)',
+        story: 'Tentacle uncurling from curled position - extending outward (1.2s animation)',
       },
     },
   },
@@ -500,8 +497,7 @@ export const CurlingWithColor: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Red tentacle curling - demonstrates how curl animation works with different colors',
+        story: 'Red tentacle curling - demonstrates how curl animation works with different colors',
       },
     },
   },

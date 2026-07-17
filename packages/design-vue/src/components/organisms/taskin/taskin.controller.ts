@@ -1,9 +1,4 @@
-import type {
-  TaskinArmSide,
-  TaskinController,
-  TaskinMood,
-  TaskinTentacleId,
-} from './taskin.types';
+import type { TaskinArmSide, TaskinController, TaskinMood, TaskinTentacleId } from './taskin.types';
 
 const TENTACLE_IDS: TaskinTentacleId[] = [
   'tentacle-front-left',
@@ -28,10 +23,7 @@ function animateTransform(
   el.animate(keyframes, options);
 }
 
-export function createTaskinController(
-  svg: SVGElement,
-  animationsEnabled: () => boolean,
-): TaskinController {
+export function createTaskinController(svg: SVGElement, animationsEnabled: () => boolean): TaskinController {
   const controller: TaskinController = {
     raiseArm(side: TaskinArmSide, angleDeg = -35, durationMs = 250) {
       const armId = side === 'left' ? 'arm-left' : 'arm-right';
@@ -56,10 +48,7 @@ export function createTaskinController(
         const arm = getElement(svg, id);
         animateTransform(
           arm,
-          [
-            { transformOrigin: '160px 110px' },
-            { transform: 'rotate(0deg)', transformOrigin: '160px 110px' },
-          ],
+          [{ transformOrigin: '160px 110px' }, { transform: 'rotate(0deg)', transformOrigin: '160px 110px' }],
           { duration: durationMs, fill: 'forwards', easing: 'ease-out' },
           animationsEnabled,
         );
@@ -115,8 +104,7 @@ export function createTaskinController(
       const pupilRight = getElement(svg, 'pupil-right');
       if (!pupilLeft || !pupilRight) return controller;
 
-      const offset =
-        direction === 'left' ? -amount : direction === 'right' ? amount : 0;
+      const offset = direction === 'left' ? -amount : direction === 'right' ? amount : 0;
 
       [pupilLeft, pupilRight].forEach((p) => {
         p.setAttribute('transform', `translate(${offset}, 0)`);
@@ -150,18 +138,12 @@ export function createTaskinController(
           browRight.setAttribute('d', 'M160 88 Q170 90 185 94');
           break;
         case 'happy':
-          controller
-            .blink()
-            .smile()
-            .changeColor('#FFD700', '#FFF44F', '#FFD700');
+          controller.blink().smile().changeColor('#FFD700', '#FFF44F', '#FFD700');
           browLeft.setAttribute('d', 'M135 88 Q150 80 160 84');
           browRight.setAttribute('d', 'M160 84 Q170 80 185 88');
           break;
         case 'smirk':
-          controller
-            .blink()
-            .smile()
-            .changeColor('#1f7acb', '#2090e0', '#1f7acb');
+          controller.blink().smile().changeColor('#1f7acb', '#2090e0', '#1f7acb');
           browLeft.setAttribute('d', 'M135 90 Q150 84 160 86');
           browRight.setAttribute('d', 'M160 86 Q170 88 185 90');
           break;
@@ -180,37 +162,25 @@ export function createTaskinController(
           break;
         case 'cold':
           // Shivering expression, blue-ish color
-          controller
-            .neutralMouth()
-            .changeColor('#A0C4FF', '#C4D7FF', '#A0C4FF')
-            .shiver();
+          controller.neutralMouth().changeColor('#A0C4FF', '#C4D7FF', '#A0C4FF').shiver();
           browLeft.setAttribute('d', 'M135 92 Q150 84 160 86');
           browRight.setAttribute('d', 'M160 86 Q170 84 185 92');
           break;
         case 'hot':
           // Panting expression, red-orange gradient
-          controller
-            .neutralMouth()
-            .changeColor('#FF6B6B', '#FFA07A', '#FF6B6B')
-            .pant();
+          controller.neutralMouth().changeColor('#FF6B6B', '#FFA07A', '#FF6B6B').pant();
           browLeft.setAttribute('d', 'M135 94 Q150 88 160 88');
           browRight.setAttribute('d', 'M160 88 Q170 88 185 94');
           break;
         case 'dancing':
           // Colorful, dancing
-          controller
-            .smile()
-            .changeColor('#9B59B6', '#BB8FCE', '#9B59B6')
-            .dance();
+          controller.smile().changeColor('#9B59B6', '#BB8FCE', '#9B59B6').dance();
           browLeft.setAttribute('d', 'M135 88 Q150 80 160 84');
           browRight.setAttribute('d', 'M160 84 Q170 80 185 88');
           break;
         case 'furious':
           // Angry red color, angry expression
-          controller
-            .neutralMouth()
-            .changeColor('#DC143C', '#FF6347', '#DC143C')
-            .angryShake();
+          controller.neutralMouth().changeColor('#DC143C', '#FF6347', '#DC143C').angryShake();
           browLeft.setAttribute('d', 'M135 90 Q150 78 160 76');
           browRight.setAttribute('d', 'M160 76 Q170 78 185 90');
           // Angry mouth
@@ -218,12 +188,9 @@ export function createTaskinController(
             mouth.setAttribute('d', 'M145 125 Q160 118 175 125');
           }
           break;
-        case 'sleeping':
+        case 'sleeping': {
           // Closed eyes, sleeping
-          controller
-            .neutralMouth()
-            .changeColor('#6C5CE7', '#A29BFE', '#6C5CE7')
-            .addZzz();
+          controller.neutralMouth().changeColor('#6C5CE7', '#A29BFE', '#6C5CE7').addZzz();
           browLeft.setAttribute('d', 'M135 90 Q150 84 160 86');
           browRight.setAttribute('d', 'M160 86 Q170 84 185 90');
           // Close eyes
@@ -233,20 +200,16 @@ export function createTaskinController(
             eyes.setAttribute('transform-origin', '160px 100px');
           }
           break;
+        }
         case 'in-love':
           // Pink with hearts
-          controller
-            .smile()
-            .changeColor('#FF69B4', '#FFB6C1', '#FF69B4')
-            .addHearts();
+          controller.smile().changeColor('#FF69B4', '#FFB6C1', '#FF69B4').addHearts();
           browLeft.setAttribute('d', 'M135 88 Q150 80 160 84');
           browRight.setAttribute('d', 'M160 84 Q170 80 185 88');
           break;
-        case 'tired':
+        case 'tired': {
           // Grayish, exhausted
-          controller
-            .neutralMouth()
-            .changeColor('#95A5A6', '#BDC3C7', '#95A5A6');
+          controller.neutralMouth().changeColor('#95A5A6', '#BDC3C7', '#95A5A6');
           browLeft.setAttribute('d', 'M135 94 Q150 90 160 90');
           browRight.setAttribute('d', 'M160 90 Q170 90 185 94');
           // Half-closed eyes
@@ -256,12 +219,10 @@ export function createTaskinController(
             eyesTired.setAttribute('transform-origin', '160px 100px');
           }
           break;
-        case 'thoughtful':
+        }
+        case 'thoughtful': {
           // Purple-blue, thinking pose
-          controller
-            .neutralMouth()
-            .changeColor('#5F4B8B', '#8B7BA8', '#5F4B8B')
-            .addThoughtBubble();
+          controller.neutralMouth().changeColor('#5F4B8B', '#8B7BA8', '#5F4B8B').addThoughtBubble();
           browLeft.setAttribute('d', 'M135 92 Q150 85 160 86');
           browRight.setAttribute('d', 'M160 86 Q170 82 185 88');
           // Look up slightly
@@ -271,12 +232,10 @@ export function createTaskinController(
             (p as SVGElement).setAttribute('transform', 'translate(0, -3)');
           });
           break;
-        case 'vomiting':
+        }
+        case 'vomiting': {
           // Greenish sick color
-          controller
-            .neutralMouth()
-            .changeColor('#7CB342', '#9CCC65', '#7CB342')
-            .vomit();
+          controller.neutralMouth().changeColor('#7CB342', '#9CCC65', '#7CB342').vomit();
           browLeft.setAttribute('d', 'M135 95 Q150 90 160 90');
           browRight.setAttribute('d', 'M160 90 Q170 90 185 95');
           // Sad eyes
@@ -289,22 +248,16 @@ export function createTaskinController(
             mouth.setAttribute('d', 'M145 125 Q160 135 175 125');
           }
           break;
+        }
         case 'taking-selfie':
           // Bright, happy color with phone
-          controller
-            .smile()
-            .changeColor('#FF8A65', '#FFAB91', '#FF8A65')
-            .addPhone()
-            .raiseArm('right', -45);
+          controller.smile().changeColor('#FF8A65', '#FFAB91', '#FF8A65').addPhone().raiseArm('right', -45);
           browLeft.setAttribute('d', 'M135 88 Q150 80 160 84');
           browRight.setAttribute('d', 'M160 84 Q170 80 185 88');
           break;
         case 'farting':
           // Embarrassed brownish-green color
-          controller
-            .neutralMouth()
-            .changeColor('#8D6E63', '#A1887F', '#8D6E63')
-            .addFartCloud();
+          controller.neutralMouth().changeColor('#8D6E63', '#A1887F', '#8D6E63').addFartCloud();
           browLeft.setAttribute('d', 'M135 92 Q150 88 160 88');
           browRight.setAttribute('d', 'M160 88 Q170 88 185 92');
           // Embarrassed look to the side
@@ -313,11 +266,8 @@ export function createTaskinController(
             mouth.setAttribute('d', 'M145 125 Q160 128 175 125');
           }
           break;
-        case 'neutral':
-        default:
-          controller
-            .neutralMouth()
-            .changeColor('#1f7acb', '#2090e0', '#1f7acb');
+        default: {
+          controller.neutralMouth().changeColor('#1f7acb', '#2090e0', '#1f7acb');
           browLeft.setAttribute('d', 'M135 90 Q150 82 160 86');
           browRight.setAttribute('d', 'M160 86 Q170 82 185 90');
           // Reset eyes
@@ -326,16 +276,13 @@ export function createTaskinController(
             eyesNeutral.setAttribute('transform', 'scaleY(1)');
           }
           break;
+        }
       }
 
       return controller;
     },
 
-    changeColor(
-      bodyColor: string,
-      bodyHighlight: string,
-      tentacleColor: string,
-    ) {
+    changeColor(bodyColor: string, bodyHighlight: string, tentacleColor: string) {
       const body = svg.querySelectorAll('#body circle');
       const tentacles = svg.querySelectorAll('[id^="tentacle-"]');
       const arms = svg.querySelectorAll('#arm-left path, #arm-right path');
@@ -345,10 +292,7 @@ export function createTaskinController(
         const targetColor = index === 0 ? bodyColor : bodyHighlight;
         animateTransform(
           circle as SVGElement,
-          [
-            { fill: circle.getAttribute('fill') || '#1f7acb' },
-            { fill: targetColor },
-          ],
+          [{ fill: circle.getAttribute('fill') || '#1f7acb' }, { fill: targetColor }],
           { duration: 500, fill: 'forwards', easing: 'ease-in-out' },
           animationsEnabled,
         );
@@ -358,10 +302,7 @@ export function createTaskinController(
       tentacles.forEach((tentacle) => {
         animateTransform(
           tentacle as SVGElement,
-          [
-            { stroke: tentacle.getAttribute('stroke') || '#1f7acb' },
-            { stroke: tentacleColor },
-          ],
+          [{ stroke: tentacle.getAttribute('stroke') || '#1f7acb' }, { stroke: tentacleColor }],
           { duration: 500, fill: 'forwards', easing: 'ease-in-out' },
           animationsEnabled,
         );
@@ -371,10 +312,7 @@ export function createTaskinController(
       arms.forEach((arm) => {
         animateTransform(
           arm as SVGElement,
-          [
-            { stroke: arm.getAttribute('stroke') || '#1f7acb' },
-            { stroke: tentacleColor },
-          ],
+          [{ stroke: arm.getAttribute('stroke') || '#1f7acb' }, { stroke: tentacleColor }],
           { duration: 500, fill: 'forwards', easing: 'ease-in-out' },
           animationsEnabled,
         );
@@ -476,10 +414,7 @@ export function createTaskinController(
       controller.removeHearts();
 
       const createHeart = (x: number, y: number, id: string, delay: number) => {
-        const heart = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'text',
-        );
+        const heart = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         heart.setAttribute('id', id);
         heart.setAttribute('x', x.toString());
         heart.setAttribute('y', y.toString());
@@ -520,10 +455,7 @@ export function createTaskinController(
       controller.removeZzz();
 
       const createZ = (x: number, y: number, id: string, delay: number) => {
-        const z = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'text',
-        );
+        const z = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         z.setAttribute('id', id);
         z.setAttribute('x', x.toString());
         z.setAttribute('y', y.toString());
@@ -573,10 +505,7 @@ export function createTaskinController(
 
       // Criar lágrimas como círculos azuis
       const createTear = (x: number, y: number, id: string) => {
-        const tear = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'circle',
-        );
+        const tear = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         tear.setAttribute('id', id);
         tear.setAttribute('cx', x.toString());
         tear.setAttribute('cy', y.toString());
@@ -613,16 +542,11 @@ export function createTaskinController(
     },
 
     sarcasticShrug() {
-      controller
-        .raiseArm('left', -20, 200)
-        .raiseArm('right', 15, 200)
-        .smile()
-        .blink(60);
+      controller.raiseArm('left', -20, 200).raiseArm('right', 15, 200).smile().blink(60);
       return controller;
     },
 
-    speak(message: string) {
-      console.log(`[Taskin] ${message}`);
+    speak(_message: string) {
       controller.smile();
       return controller;
     },
@@ -672,17 +596,11 @@ export function createTaskinController(
       controller.removeThoughtBubble();
 
       // Create thought bubble
-      const bubble = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'g',
-      );
+      const bubble = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       bubble.setAttribute('id', 'thought-bubble');
 
       // Main bubble
-      const mainBubble = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'ellipse',
-      );
+      const mainBubble = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
       mainBubble.setAttribute('cx', '210');
       mainBubble.setAttribute('cy', '50');
       mainBubble.setAttribute('rx', '35');
@@ -692,10 +610,7 @@ export function createTaskinController(
       mainBubble.setAttribute('stroke-width', '2');
 
       // Small bubbles
-      const smallBubble1 = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'circle',
-      );
+      const smallBubble1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       smallBubble1.setAttribute('cx', '190');
       smallBubble1.setAttribute('cy', '75');
       smallBubble1.setAttribute('r', '8');
@@ -703,10 +618,7 @@ export function createTaskinController(
       smallBubble1.setAttribute('stroke', '#2C3E50');
       smallBubble1.setAttribute('stroke-width', '2');
 
-      const smallBubble2 = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'circle',
-      );
+      const smallBubble2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       smallBubble2.setAttribute('cx', '180');
       smallBubble2.setAttribute('cy', '85');
       smallBubble2.setAttribute('r', '5');
@@ -715,10 +627,7 @@ export function createTaskinController(
       smallBubble2.setAttribute('stroke-width', '2');
 
       // Question marks or dots
-      const text = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'text',
-      );
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       text.setAttribute('x', '210');
       text.setAttribute('y', '55');
       text.setAttribute('text-anchor', 'middle');
@@ -754,18 +663,12 @@ export function createTaskinController(
     },
 
     vomit() {
-      const vomitGroup = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'g',
-      );
+      const vomitGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       vomitGroup.setAttribute('id', 'vomit-effect');
 
       // Multiple vomit drops
       for (let i = 0; i < 5; i++) {
-        const drop = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'ellipse',
-        );
+        const drop = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
         const x = 160 + (i - 2) * 8;
         drop.setAttribute('cx', x.toString());
         drop.setAttribute('cy', '135');
@@ -810,10 +713,7 @@ export function createTaskinController(
       phone.setAttribute('transform', 'translate(253, 45) rotate(-45)');
 
       // Phone body
-      const body = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'rect',
-      );
+      const body = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       body.setAttribute('x', '-10');
       body.setAttribute('y', '-17.5');
       body.setAttribute('width', '20');
@@ -824,10 +724,7 @@ export function createTaskinController(
       body.setAttribute('stroke-width', '1');
 
       // Screen
-      const screen = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'rect',
-      );
+      const screen = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       screen.setAttribute('x', '-8');
       screen.setAttribute('y', '-14.5');
       screen.setAttribute('width', '16');
@@ -836,10 +733,7 @@ export function createTaskinController(
       screen.setAttribute('fill', '#3498DB');
 
       // Camera flash effect
-      const flash = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'circle',
-      );
+      const flash = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       flash.setAttribute('cx', '0');
       flash.setAttribute('cy', '-15.5');
       flash.setAttribute('r', '1.5');
@@ -885,10 +779,7 @@ export function createTaskinController(
       ];
 
       puffs.forEach((puff, i) => {
-        const circle = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'circle',
-        );
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', puff.cx.toString());
         circle.setAttribute('cy', puff.cy.toString());
         circle.setAttribute('r', puff.r.toString());

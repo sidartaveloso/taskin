@@ -94,11 +94,7 @@ function onDragEnd() {
 }
 
 function onCardDragOver(taskId: string, event: DragEvent) {
-  if (
-    !props.dragEnabled ||
-    draggedId.value === null ||
-    draggedId.value === taskId
-  ) {
+  if (!props.dragEnabled || draggedId.value === null || draggedId.value === taskId) {
     return;
   }
   event.preventDefault();
@@ -146,26 +142,17 @@ function onDrop() {
   const isGroup = isDraggingGroup.value;
 
   if (isGroup) {
-    if (intent.type === 'before')
-      emit('move-group-before', dragged, intent.taskId);
-    else if (intent.type === 'after')
-      emit('move-group-after', dragged, intent.taskId);
-    else if (intent.type === 'group')
-      emit('group-with-group', dragged, intent.taskId);
-    else if (intent.type === 'group-before')
-      emit('move-group-before', dragged, intent.targetGroupId);
-    else if (intent.type === 'group-after')
-      emit('move-group-after', dragged, intent.targetGroupId);
-    else if (intent.type === 'group-merge')
-      emit('group-with-group', dragged, intent.targetGroupId);
+    if (intent.type === 'before') emit('move-group-before', dragged, intent.taskId);
+    else if (intent.type === 'after') emit('move-group-after', dragged, intent.taskId);
+    else if (intent.type === 'group') emit('group-with-group', dragged, intent.taskId);
+    else if (intent.type === 'group-before') emit('move-group-before', dragged, intent.targetGroupId);
+    else if (intent.type === 'group-after') emit('move-group-after', dragged, intent.targetGroupId);
+    else if (intent.type === 'group-merge') emit('group-with-group', dragged, intent.targetGroupId);
   } else {
     if (intent.type === 'before') emit('move-before', dragged, intent.taskId);
-    else if (intent.type === 'after')
-      emit('move-after', dragged, intent.taskId);
-    else if (intent.type === 'group')
-      emit('group-with', dragged, intent.taskId);
-    else if (intent.type === 'ingroup')
-      emit('join-group', dragged, intent.groupId);
+    else if (intent.type === 'after') emit('move-after', dragged, intent.taskId);
+    else if (intent.type === 'group') emit('group-with', dragged, intent.taskId);
+    else if (intent.type === 'ingroup') emit('join-group', dragged, intent.groupId);
   }
 
   draggedId.value = null;
@@ -176,28 +163,21 @@ function onDrop() {
 function cardClass(taskId: string) {
   return {
     'priority-card--dragging': draggedId.value === taskId,
-    'priority-card--drop-before':
-      dropIntent.value?.type === 'before' && dropIntent.value.taskId === taskId,
-    'priority-card--drop-after':
-      dropIntent.value?.type === 'after' && dropIntent.value.taskId === taskId,
-    'priority-card--drop-group':
-      dropIntent.value?.type === 'group' && dropIntent.value.taskId === taskId,
+    'priority-card--drop-before': dropIntent.value?.type === 'before' && dropIntent.value.taskId === taskId,
+    'priority-card--drop-after': dropIntent.value?.type === 'after' && dropIntent.value.taskId === taskId,
+    'priority-card--drop-group': dropIntent.value?.type === 'group' && dropIntent.value.taskId === taskId,
   };
 }
 
 function groupClass(groupId: string) {
   return {
-    'priority-group--dragging':
-      isDraggingGroup.value && draggedId.value === groupId,
+    'priority-group--dragging': isDraggingGroup.value && draggedId.value === groupId,
     'priority-group--drop-before':
-      dropIntent.value?.type === 'group-before' &&
-      dropIntent.value.targetGroupId === groupId,
+      dropIntent.value?.type === 'group-before' && dropIntent.value.targetGroupId === groupId,
     'priority-group--drop-after':
-      dropIntent.value?.type === 'group-after' &&
-      dropIntent.value.targetGroupId === groupId,
+      dropIntent.value?.type === 'group-after' && dropIntent.value.targetGroupId === groupId,
     'priority-group--drop-merge':
-      dropIntent.value?.type === 'group-merge' &&
-      dropIntent.value.targetGroupId === groupId,
+      dropIntent.value?.type === 'group-merge' && dropIntent.value.targetGroupId === groupId,
   };
 }
 
@@ -215,8 +195,7 @@ provide('dragContext', {
   onToggleCollapse: (groupId: string) => emit('toggle-collapse', groupId),
   onSetDifficulty: (taskId: string, difficulty: number) =>
     emit('set-difficulty', taskId, difficulty as 1 | 2 | 3 | 4 | 5),
-  onRenameGroup: (groupId: string, name: string | null) =>
-    emit('rename-group', groupId, name),
+  onRenameGroup: (groupId: string, name: string | null) => emit('rename-group', groupId, name),
   onCopyCard: (taskId: string) => emit('copy-card', taskId),
   onCopyGroup: (groupId: string) => emit('copy-group', groupId),
   onMoveUp: (id: string) => emit('move-up', id),

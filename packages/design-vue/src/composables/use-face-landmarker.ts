@@ -1,5 +1,5 @@
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
-import { onUnmounted, ref, type Ref } from 'vue';
+import { onUnmounted, type Ref, ref } from 'vue';
 
 // Tipos do MediaPipe Face Landmarker
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,10 +56,7 @@ export interface UseFaceLandmarkerOptions {
  * Composable para usar MediaPipe Face Landmarker
  * Detecta expressões faciais em tempo real via webcam
  */
-export function useFaceLandmarker(
-  videoElement: Ref<HTMLVideoElement | null>,
-  options: UseFaceLandmarkerOptions = {},
-) {
+export function useFaceLandmarker(videoElement: Ref<HTMLVideoElement | null>, options: UseFaceLandmarkerOptions = {}) {
   const state = ref<FaceLandmarkerState>({
     isReady: false,
     isDetecting: false,
@@ -77,14 +74,10 @@ export function useFaceLandmarker(
    */
   const initializeFaceLandmarker = async () => {
     try {
-      console.log('Inicializando MediaPipe Face Landmarker...');
-
       // Inicializa o FilesetResolver para carregar os arquivos WASM
       const filesetResolver = await FilesetResolver.forVisionTasks(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm',
       );
-
-      console.log('Criando FaceLandmarker...');
       faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
         baseOptions: {
           modelAssetPath:
@@ -99,8 +92,6 @@ export function useFaceLandmarker(
         minFacePresenceConfidence: 0.5,
         minTrackingConfidence: options.minTrackingConfidence ?? 0.5,
       });
-
-      console.log('FaceLandmarker inicializado com sucesso!');
       state.value.isReady = true;
       state.value.error = null;
     } catch (error) {
@@ -188,11 +179,9 @@ export function useFaceLandmarker(
             mouthPucker: 0,
           };
 
-          results.faceBlendshapes[0].categories.forEach(
-            (category: { categoryName: string; score: number }) => {
-              blendShapes[category.categoryName] = category.score;
-            },
-          );
+          results.faceBlendshapes[0].categories.forEach((category: { categoryName: string; score: number }) => {
+            blendShapes[category.categoryName] = category.score;
+          });
 
           state.value.blendShapes = blendShapes;
         }
@@ -253,7 +242,9 @@ export function useFaceLandmarker(
     }
 
     if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+      for (const track of stream.getTracks()) {
+        track.stop();
+      }
       stream = null;
     }
 
@@ -275,14 +266,10 @@ export function useFaceLandmarker(
     // Horizontal:
     // - eyeLookInLeft + eyeLookOutRight = olhando para a esquerda (negativo)
     // - eyeLookOutLeft + eyeLookInRight = olhando para a direita (positivo)
-    let horizontal =
-      (bs.eyeLookOutLeft + bs.eyeLookInRight) / 2 -
-      (bs.eyeLookInLeft + bs.eyeLookOutRight) / 2;
+    let horizontal = (bs.eyeLookOutLeft + bs.eyeLookInRight) / 2 - (bs.eyeLookInLeft + bs.eyeLookOutRight) / 2;
 
     // Vertical: cima (negativo) vs baixo (positivo)
-    let vertical =
-      (bs.eyeLookDownLeft + bs.eyeLookDownRight) / 2 -
-      (bs.eyeLookUpLeft + bs.eyeLookUpRight) / 2;
+    let vertical = (bs.eyeLookDownLeft + bs.eyeLookDownRight) / 2 - (bs.eyeLookUpLeft + bs.eyeLookUpRight) / 2;
 
     // Se mirrorEyeTracking está habilitado, inverte o horizontal
     // para que o Taskin olhe na mesma direção que você (efeito espelho)

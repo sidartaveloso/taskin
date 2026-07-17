@@ -3,12 +3,7 @@
  * Provider-agnostic interfaces for task visualization
  */
 
-export type TaskStatus =
-  | 'pending'
-  | 'in-progress'
-  | 'paused'
-  | 'done'
-  | 'blocked';
+export type TaskStatus = 'pending' | 'in-progress' | 'paused' | 'done' | 'blocked';
 
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
 

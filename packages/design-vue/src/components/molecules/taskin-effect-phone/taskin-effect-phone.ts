@@ -15,9 +15,7 @@ export default {
         'g',
         {
           id: 'effect-phone',
-          style: props.animationsEnabled
-            ? 'animation: phone-shake 0.5s ease-in-out infinite;'
-            : '',
+          style: props.animationsEnabled ? 'animation: phone-shake 0.5s ease-in-out infinite;' : '',
         },
         [
           h(TaskinPhone, { animationsEnabled: props.animationsEnabled }),

@@ -62,12 +62,12 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
 import { createNoiseWatcher } from '../../../utils/noise-watcher';
-import WebcamVideo from '../../atoms/webcam-video';
-import TrackingControls from '../../molecules/tracking-controls';
+import type WebcamVideo from '../../atoms/webcam-video';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
 import NoiseTrackingControls from '../../molecules/noise-tracking-controls';
-import TaskinComposed from './taskin-composed';
+import TrackingControls from '../../molecules/tracking-controls';
 import type { TaskinMood } from './taskin.types';
+import TaskinComposed from './taskin-composed';
 
 export interface Props {
   mascotSize?: number;
@@ -99,8 +99,7 @@ const syncExpressions = ref(true);
 
 const videoElement = ref<HTMLVideoElement | null>(null);
 onMounted(() => {
-  if (webcamVideoRef.value)
-    videoElement.value = webcamVideoRef.value.videoElement;
+  if (webcamVideoRef.value) videoElement.value = webcamVideoRef.value.videoElement;
 });
 
 const faceLandmarker = useFaceLandmarker(videoElement, {
@@ -114,16 +113,9 @@ const currentMood = ref<TaskinMood>('neutral');
 const eyeTrackingMode = ref<'none' | 'mouse' | 'element' | 'custom'>('none');
 const eyePosition = ref<{ x: number; y: number }>({ x: 0, y: 0 });
 const eyeState = ref<'normal' | 'closed' | 'squint' | 'wide'>('normal');
-const mouthExpression = ref<
-  | 'neutral'
-  | 'smile'
-  | 'frown'
-  | 'open'
-  | 'wide-open'
-  | 'o-shape'
-  | 'smirk'
-  | 'surprised'
->('neutral');
+const mouthExpression = ref<'neutral' | 'smile' | 'frown' | 'open' | 'wide-open' | 'o-shape' | 'smirk' | 'surprised'>(
+  'neutral',
+);
 
 const showThoughtBubble = ref(false);
 const thoughtBubbleText = ref<string>('');
@@ -181,8 +173,7 @@ function setNoiseSound(v: boolean) {
 }
 
 watch(syncEyes, (enabled) => {
-  if (enabled && faceLandmarker.state.value.isDetecting)
-    eyeTrackingMode.value = 'custom';
+  if (enabled && faceLandmarker.state.value.isDetecting) eyeTrackingMode.value = 'custom';
 });
 
 watch(
@@ -283,9 +274,7 @@ watch(enableNoiseReactionsRef, async (v) => {
           () => triggerShhhReaction(),
           noiseDebounceMsRef.value,
         );
-        noiseLevelUnsubLocal = noiseWatcher.subscribeLevel(
-          (rms: number) => (noiseLevel.value = rms),
-        );
+        noiseLevelUnsubLocal = noiseWatcher.subscribeLevel((rms: number) => (noiseLevel.value = rms));
       } catch {}
     }
   } else {
@@ -309,11 +298,7 @@ watch(noiseThresholdRef, (v) => {
     try {
       noiseUnsub();
     } catch {}
-    noiseUnsub = noiseWatcher.onNoiseAbove(
-      v,
-      () => triggerShhhReaction(),
-      noiseDebounceMsRef.value,
-    );
+    noiseUnsub = noiseWatcher.onNoiseAbove(v, () => triggerShhhReaction(), noiseDebounceMsRef.value);
   }
 });
 
@@ -322,11 +307,7 @@ watch(noiseDebounceMsRef, (v) => {
     try {
       noiseUnsub();
     } catch {}
-    noiseUnsub = noiseWatcher.onNoiseAbove(
-      noiseThresholdRef.value,
-      () => triggerShhhReaction(),
-      v,
-    );
+    noiseUnsub = noiseWatcher.onNoiseAbove(noiseThresholdRef.value, () => triggerShhhReaction(), v);
   }
 });
 
