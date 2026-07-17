@@ -56,6 +56,7 @@ const {
 } = usePrioritization(toRef(props, 'tasks'));
 
 const focusedId = ref<string | null>(null);
+const detecting = ref(false);
 
 // Gesture shortcuts (only when getStableGesture is provided)
 const gestureEnabled = !!props.getStableGesture;
@@ -86,8 +87,16 @@ if (gestureEnabled && gestureShortcuts) {
     executePrioritizationAction(action);
   };
 
-  onMounted(() => {
-    gestureTickInterval = setInterval(processMappedAction, 300);
+  watch(detecting, (isDetecting) => {
+    if (isDetecting) {
+      gestureTickInterval = setInterval(processMappedAction, 300);
+    } else {
+      if (gestureTickInterval) {
+        clearInterval(gestureTickInterval);
+        gestureTickInterval = null;
+      }
+      gestureShortcuts.resetWizard();
+    }
   });
 
   onUnmounted(() => {
@@ -189,6 +198,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
     :can-undo="canUndo"
     :can-redo="canRedo"
     :focused-id="focusedId"
+    :detecting="gestureEnabled ? detecting : undefined"
+    @toggle-tracking="detecting = !detecting"
     @update:filter="setFilter"
     @update:view-mode="setViewMode"
     @update:sort-mode="setSortMode"

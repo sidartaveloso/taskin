@@ -6,7 +6,6 @@ import { useGestureRecognizer } from '../../composables/use-gesture-recognizer';
 import type { Task } from '../../types';
 import WebcamVideo from '../atoms/webcam-video/webcam-video.vue';
 import FaceTrackingDebug from '../molecules/face-tracking-debug/face-tracking-debug.vue';
-import TrackingControls from '../molecules/tracking-controls/tracking-controls.vue';
 import PrioritizationPage from './PrioritizationPage.vue';
 
 const meta: Meta<typeof PrioritizationPage> = {
@@ -409,6 +408,8 @@ export const GestureControl: Story = {
         gestureScoreThreshold: 0.6,
       });
 
+      const detecting = ref(true);
+
       onMounted(async () => {
         if (webcamVideoRef.value) {
           videoElement.value = webcamVideoRef.value.videoElement;
@@ -416,14 +417,6 @@ export const GestureControl: Story = {
         await nextTick();
         gestureRecognizer.startDetection();
       });
-
-      const toggleDetection = () => {
-        if (gestureRecognizer.state.value.isDetecting) {
-          gestureRecognizer.stopDetection();
-        } else {
-          gestureRecognizer.startDetection();
-        }
-      };
 
       const getStableGesture = () => {
         const gest = gestureRecognizer.getDominantGesture();
@@ -467,99 +460,13 @@ export const GestureControl: Story = {
             },
           },
           [
-            // Top bar: webcam + controls
-            h(
-              'div',
-              {
-                style: {
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '16px',
-                  flexWrap: 'wrap',
-                },
-              },
-              [
-                h(WebcamVideo, {
-                  ref: webcamVideoRef,
-                  visible: showWebcam.value,
-                  width: 240,
-                  height: 180,
-                  mirrored: true,
-                }),
-                h(TrackingControls, {
-                  isDetecting: gestureRecognizer.state.value.isDetecting,
-                  error: gestureRecognizer.state.value.error,
-                  showWebcam: showWebcam.value,
-                  syncEyes: false,
-                  syncMouth: false,
-                  syncExpressions: false,
-                  syncArms: false,
-                  syncGestures: true,
-                  disabled: false,
-                  'onToggle-tracking': toggleDetection,
-                  'onUpdate:showWebcam': (v: boolean) => {
-                    showWebcam.value = v;
-                  },
-                }),
-                // Live gesture indicator
-                h(
-                  'div',
-                  {
-                    style: {
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 16px',
-                      background: '#f0f8ff',
-                      border: '1px solid #b3d9ff',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                    },
-                  },
-                  [
-                    h(
-                      'span',
-                      { style: { fontSize: '24px' } },
-                      (() => {
-                        const g = getStableGesture();
-                        return g ? gestureEmojiMap[g.gesture] || '🫥' : '🫥';
-                      })(),
-                    ),
-                    h(
-                      'span',
-                      { style: { fontWeight: 600 } },
-                      (() => {
-                        const g = getStableGesture();
-                        return g ? `${gestureNameMap[g.gesture] || g.gesture}` : 'Aguardando gesto...';
-                      })(),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            // Legend: which gesture does what
-            h(
-              'div',
-              {
-                style: {
-                  display: 'flex',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                  fontSize: '12px',
-                  color: '#666',
-                  padding: '4px 0',
-                },
-              },
-              [
-                h('span', null, '☝️ subir'),
-                h('span', null, '👎 descer'),
-                h('span', null, '✌️ agrupar'),
-                h('span', null, '🖐️ desagrupar'),
-                h('span', null, '✊ desfazer'),
-                h('span', { style: { color: '#4fc3f7' } }, '🖐️ (2s) configurar atalhos'),
-              ],
-            ),
-            // The actual prioritization page — receives gesture callbacks
+            h(WebcamVideo, {
+              ref: webcamVideoRef,
+              visible: showWebcam.value,
+              width: 240,
+              height: 180,
+              mirrored: true,
+            }),
             h(PrioritizationPage, {
               tasks: gestureMockTasks,
               getStableGesture,
@@ -568,7 +475,6 @@ export const GestureControl: Story = {
               'onUpdate-task': () => {},
               'onUpdate-tasks': () => {},
             }),
-            // Debug overlay
             h(FaceTrackingDebug, {
               data: debugInfo.value,
               title: 'Gesture Recognizer',

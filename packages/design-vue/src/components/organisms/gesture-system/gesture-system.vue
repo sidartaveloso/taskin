@@ -9,22 +9,11 @@
       playsinline
     />
 
-    <div class="gesture-system__fixed">
-      <GestureLegend
-        class="gesture-system__legend"
-        :mappings="mappings"
-        compact
-      />
-      <TrackingControls
-        :is-detecting="detecting"
-        :error="recorderState?.error ?? null"
-        :show-webcam="showWebcam"
-        :disabled="false"
-        class="gesture-system__controls"
-        @toggle-tracking="$emit('update:detecting', !detecting)"
-        @update:show-webcam="showWebcam = $event"
-      />
-    </div>
+    <GestureLegend
+      class="gesture-system__legend"
+      :mappings="mappings"
+      compact
+    />
 
     <GestureWizard
       :wizard-state="wizardState"
@@ -46,26 +35,17 @@ import type { PrioritizationAction } from '../../../composables/use-gesture-shor
 import { useGestureShortcuts } from '../../../composables/use-gesture-shortcuts';
 import GestureLegend from '../../molecules/gesture-legend/gesture-legend.vue';
 import GestureWizard from '../../molecules/gesture-wizard/gesture-wizard.vue';
-import TrackingControls from '../../molecules/tracking-controls/tracking-controls.vue';
 import type { GestureSystemProps } from './gesture-system.types';
 
 const props = defineProps<GestureSystemProps>();
 
 const emit = defineEmits<{
   gestureAction: [action: string];
-  'update:detecting': [value: boolean];
 }>();
 
 const videoRef = ref<HTMLVideoElement | null>(null);
-const showWebcam = ref(false);
 
-const {
-  state: recorderState,
-  startDetection,
-  stopDetection,
-  getStableGesture,
-  isGestureHeld,
-} = useGestureRecognizer(videoRef);
+const { startDetection, stopDetection, getStableGesture, isGestureHeld } = useGestureRecognizer(videoRef);
 
 const {
   wizardState,
@@ -123,14 +103,10 @@ onUnmounted(() => {
   position: relative;
 }
 
-.gesture-system__fixed {
+.gesture-system__legend {
   position: fixed;
   bottom: 16px;
   right: 16px;
   z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: flex-end;
 }
 </style>

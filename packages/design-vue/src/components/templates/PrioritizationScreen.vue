@@ -5,6 +5,7 @@ import type {
   PrioritizationViewMode,
   PriorityNode,
 } from '../../composables/use-prioritization';
+import TrackingControls from '../molecules/tracking-controls/tracking-controls.vue';
 import PriorityGroupRenderer from './PriorityGroupRenderer.vue';
 
 export interface PrioritizationScreenProps {
@@ -16,6 +17,11 @@ export interface PrioritizationScreenProps {
   canUndo?: boolean;
   canRedo?: boolean;
   focusedId?: string | null;
+
+  // Tracking controls (optional — only rendered when provided)
+  detecting?: boolean;
+  showWebcam?: boolean;
+  trackedError?: string | null;
 }
 
 const props = withDefaults(defineProps<PrioritizationScreenProps>(), {
@@ -52,6 +58,8 @@ const emit = defineEmits<{
   'update:focusedId': [value: string | null];
   undo: [];
   redo: [];
+  'toggle-tracking': [];
+  'update:showWebcam': [value: boolean];
 }>();
 
 // Drag & drop state (ephemeral UI state, not domain data)
@@ -313,6 +321,16 @@ provide('dragContext', {
         <p>Nenhuma tarefa encontrada.</p>
       </div>
     </div>
+
+    <TrackingControls
+      v-if="detecting !== undefined"
+      :is-detecting="detecting"
+      :error="trackedError ?? null"
+      :show-webcam="showWebcam ?? false"
+      class="prioritization-screen__tracking"
+      @toggle-tracking="emit('toggle-tracking')"
+      @update:show-webcam="emit('update:showWebcam', $event)"
+    />
   </div>
 </template>
 
@@ -650,5 +668,12 @@ button.ghost:disabled {
   text-align: center;
   padding: var(--spacing-3xl) var(--spacing-xl);
   color: var(--text-muted);
+}
+
+.prioritization-screen__tracking {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
 }
 </style>
