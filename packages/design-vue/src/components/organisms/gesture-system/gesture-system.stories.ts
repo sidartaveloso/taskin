@@ -44,7 +44,6 @@ const meta = {
           '  user-id="fernando"',
           '  :detecting="isDetecting"',
           '  @gesture-action="handleAction"',
-          '  @update:detecting="isDetecting = $event"',
           '/>',
           '```',
           '',
@@ -114,9 +113,6 @@ export const Default: Story = {
             detecting: detecting.value,
             'onGesture-action': (action: string) => {
               lastAction.value = action;
-            },
-            'onUpdate:detecting': (v: boolean) => {
-              detecting.value = v;
             },
           }),
         ]);

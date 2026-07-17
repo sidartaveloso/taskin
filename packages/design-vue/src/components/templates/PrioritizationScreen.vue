@@ -6,6 +6,8 @@ import type {
   PriorityNode,
 } from '../../composables/use-prioritization';
 import TrackingControls from '../molecules/tracking-controls/tracking-controls.vue';
+import type { ConfigurableFunction } from '../organisms/gesture-system/gesture-system.types';
+import GestureSystem from '../organisms/gesture-system/gesture-system.vue';
 import PriorityGroupRenderer from './PriorityGroupRenderer.vue';
 
 export interface PrioritizationScreenProps {
@@ -22,6 +24,9 @@ export interface PrioritizationScreenProps {
   detecting?: boolean;
   showWebcam?: boolean;
   trackedError?: string | null;
+  // Gesture system (optional — only rendered when provided)
+  gestureFunctions?: ConfigurableFunction[];
+  gestureUserId?: string;
 }
 
 const props = withDefaults(defineProps<PrioritizationScreenProps>(), {
@@ -60,6 +65,7 @@ const emit = defineEmits<{
   redo: [];
   'toggle-tracking': [];
   'update:showWebcam': [value: boolean];
+  gestureAction: [action: string];
 }>();
 
 // Drag & drop state (ephemeral UI state, not domain data)
@@ -324,15 +330,22 @@ provide('dragContext', {
       </div>
     </div>
 
-    <TrackingControls
-      v-if="detecting !== undefined"
-      :is-detecting="detecting"
-      :error="trackedError ?? null"
-      :show-webcam="showWebcam ?? false"
-      class="prioritization-screen__tracking"
-      @toggle-tracking="emit('toggle-tracking')"
-      @update:show-webcam="emit('update:showWebcam', $event)"
-    />
+    <div class="prioritization-screen__fixed" v-if="detecting !== undefined">
+      <GestureSystem
+        v-if="gestureFunctions && gestureUserId"
+        :functions="gestureFunctions"
+        :user-id="gestureUserId"
+        :detecting="detecting"
+        @gesture-action="emit('gestureAction', $event)"
+      />
+      <TrackingControls
+        :is-detecting="detecting"
+        :error="trackedError ?? null"
+        :show-webcam="showWebcam ?? false"
+        @toggle-tracking="emit('toggle-tracking')"
+        @update:show-webcam="emit('update:showWebcam', $event)"
+      />
+    </div>
   </div>
 </template>
 
@@ -672,10 +685,14 @@ button.ghost:disabled {
   color: var(--text-muted);
 }
 
-.prioritization-screen__tracking {
+.prioritization-screen__fixed {
   position: fixed;
   bottom: 16px;
   right: 16px;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 </style>

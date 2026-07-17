@@ -1,11 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
-import { computed, h, nextTick, onMounted, onUnmounted, ref } from 'vue';
-import type { CannedGesture } from '../../composables/use-gesture-recognizer';
-import { useGestureRecognizer } from '../../composables/use-gesture-recognizer';
+import { h } from 'vue';
 import type { Task } from '../../types';
-import WebcamVideo from '../atoms/webcam-video/webcam-video.vue';
-import FaceTrackingDebug from '../molecules/face-tracking-debug/face-tracking-debug.vue';
 import PrioritizationPage from './PrioritizationPage.vue';
 
 const meta: Meta<typeof PrioritizationPage> = {
@@ -374,85 +370,14 @@ const gestureMockTasks: Task[] = [
   },
 ];
 
-const gestureEmojiMap: Record<string, string> = {
-  Pointing_Up: '☝️',
-  Thumb_Down: '👎',
-  Victory: '✌️',
-  Open_Palm: '🖐️',
-  Closed_Fist: '✊',
-  Thumb_Up: '👍',
-  ILoveYou: '🤟',
-  None: '🫥',
-};
-
-const gestureNameMap: Record<string, string> = {
-  Pointing_Up: 'Subir',
-  Thumb_Down: 'Descer',
-  Victory: 'Agrupar',
-  Open_Palm: 'Desagrupar',
-  Closed_Fist: 'Desfazer',
-  Thumb_Up: 'OK',
-  ILoveYou: 'Join',
-  None: '—',
-};
-
 export const GestureControl: Story = {
   render: () => ({
     setup() {
-      const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
-      const videoElement = ref<HTMLVideoElement | null>(null);
-      const showWebcam = ref(true);
-
-      const gestureRecognizer = useGestureRecognizer(videoElement, {
-        numHands: 2,
-        gestureScoreThreshold: 0.6,
-      });
-
-      const detecting = ref(true);
-
-      onMounted(async () => {
-        if (webcamVideoRef.value) {
-          videoElement.value = webcamVideoRef.value.videoElement;
-        }
-        await nextTick();
-        gestureRecognizer.startDetection();
-      });
-
-      const getStableGesture = () => {
-        const gest = gestureRecognizer.getDominantGesture();
-        if (!gest || gest.gesture === 'None' || gest.score < 0.6) return null;
-        return { gesture: gest.gesture as CannedGesture, score: gest.score };
-      };
-
-      const isGestureHeld = (gesture: CannedGesture, ms = 600) => {
-        return gestureRecognizer.isGestureHeld(gesture, ms);
-      };
-
-      const debugInfo = computed(() => {
-        const g = gestureRecognizer.state.value.gestures;
-        if (g.length === 0) return null;
-        const info: Record<string, unknown> = {};
-        g.forEach((gest, i) => {
-          info[`mão ${i + 1} (${gest.handedness})`] = {
-            gesto: gestureNameMap[gest.gesture] || gest.gesture,
-            confiança: `${(gest.score * 100).toFixed(1)}%`,
-          };
-        });
-        return info;
-      });
-
-      onUnmounted(() => {
-        gestureRecognizer.stopDetection();
-      });
-
       return () =>
         h(
           'div',
           {
             style: {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
               padding: '16px',
               position: 'relative',
               minHeight: '100vh',
@@ -460,25 +385,11 @@ export const GestureControl: Story = {
             },
           },
           [
-            h(WebcamVideo, {
-              ref: webcamVideoRef,
-              visible: showWebcam.value,
-              width: 240,
-              height: 180,
-              mirrored: true,
-            }),
             h(PrioritizationPage, {
               tasks: gestureMockTasks,
-              getStableGesture,
-              isGestureHeld,
               gestureUserId: 'storybook-demo',
               'onUpdate-task': () => {},
               'onUpdate-tasks': () => {},
-            }),
-            h(FaceTrackingDebug, {
-              data: debugInfo.value,
-              title: 'Gesture Recognizer',
-              position: 'bottom-right',
             }),
           ],
         );
@@ -489,7 +400,7 @@ export const GestureControl: Story = {
     docs: {
       description: {
         story:
-          '📹 Controle total da priorização por gestos manuais via webcam. Selecione um card clicando nele (borda azul), depois faça o gesto. Mantenha a mão aberta por 2s para abrir o wizard de configuração de atalhos. Use 👍/👎 para navegar e ✊ para confirmar.',
+          '📹 Controle total da priorização por gestos manuais via webcam. O `GestureSystem` integrado gerencia câmera, reconhecimento e wizard. Clique em "Iniciar Detecção" e selecione um card para começar.',
       },
     },
   },
