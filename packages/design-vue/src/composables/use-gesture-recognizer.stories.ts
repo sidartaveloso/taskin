@@ -34,8 +34,30 @@ const meta = {
   parameters: {
     docs: {
       description: {
-        component:
-          '📹 Reconhecimento de gestos manuais usando MediaPipe GestureRecognizer. Aponte a câmera para sua mão e faça gestos!',
+        component: [
+          '## Gesto de Atalho — a evolução do atalho de teclado',
+          '',
+          'Assim como `⌘C`/`⌘V` eliminam a navegação por menu, **gestos de atalho** eliminam a necessidade de tocar ou clicar — sem exigir hardware especializado e com mapeamento persistente por usuário.',
+          '',
+          '### Por que existe',
+          '',
+          'O teclado é o instrumento mais rápido para um usuário avançado sentado à mesa. Mas e quando o usuário está em pé na frente de um videowall? O display é uma TV na parede da sala de reunião? É um totem em loja? O usuário simplesmente prefere comandar por gesto?',
+          '',
+          '### Onde pode ser aplicado',
+          '',
+          '| Cenário | Antes | Agora |',
+          '|---------|-------|-------|',
+          '| **Videowall corporativo** | Dashboard estático, ninguém interage | Gestor abre/fecha KPIs com a mão |',
+          '| **TV sala de reunião** | Apresentador preso ao notebook | Navega slides com gestos, sem voltar à mesa |',
+          '| **Totem de loja / quiosque** | Touch screen (sujeira, manutenção) | Comando sem contato físico |',
+          '| **Linha de produção / cozinha industrial** | Mão suja não pode tocar tela | Gesto substitui o toque |',
+          '| **Prioritização de tarefas** | Só atalho de teclado (`⌘↑↓`) | Mão aberta, punho, joinha — sem teclado |',
+          '| **Dashboards interativos** | Mouse/teclado fixo na bancada | Navegação livre, gestos persistidos por perfil |',
+          '',
+          '---',
+          '',
+          'Este composable é a camada base: reconhece os gestos da mão via MediaPipe. Veja também `useGestureShortcuts` (mapeamento gesto→ação) e `GestureWizard` (interface de configuração).',
+        ].join('\n'),
       },
     },
   },
@@ -227,8 +249,13 @@ export const LiveDemo: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Demonstração ao vivo do reconhecimento de gestos. Ative a câmera e faça gestos com as mãos. Pontuando acima de 60% de confiança o gesto é exibido.',
+        story: [
+          'Demonstração ao vivo do reconhecimento de gestos. Ative a câmera, faça gestos com as mãos e veja o resultado em tempo real com emoji, nome e confiança.',
+          '',
+          '**Gestos reconhecidos:** Punho fechado ✊, Mão aberta 🖐️, Indicador ☝️, Polegar baixo 👎, Polegar cima 👍, Vitória ✌️, Rock On 🤟.',
+          '',
+          'Use este demo para testar a sensibilidade da câmera, distância ideal e iluminação antes de integrar o mapeamento de atalhos.',
+        ].join('\n'),
       },
     },
   },
