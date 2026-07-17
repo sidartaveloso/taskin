@@ -52,6 +52,7 @@ const {
 
 const focusedId = ref<string | null>(null);
 const detecting = ref(false);
+const cameraActive = ref(false);
 
 const gestureEnabled = !!props.gestureUserId;
 
@@ -166,10 +167,12 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
     :can-redo="canRedo"
     :focused-id="focusedId"
     :detecting="gestureEnabled ? detecting : undefined"
+    :camera-active="cameraActive"
     :gesture-functions="gestureEnabled ? defaultFunctions : undefined"
     :gesture-user-id="gestureEnabled ? props.gestureUserId : undefined"
     @toggle-tracking="detecting = !detecting"
     @gesture-action="onGestureAction"
+    @update:camera-active="cameraActive = $event"
     @update:filter="setFilter"
     @update:view-mode="setViewMode"
     @update:sort-mode="setSortMode"
