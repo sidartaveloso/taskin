@@ -23,7 +23,7 @@
       :selected-action-index="selectedActionIndex"
       :available-actions="wizardActions"
       :last-mapping="lastMapping"
-      :teleport-to="false"
+      teleport-to="body"
     />
   </div>
 </template>
@@ -104,9 +104,7 @@ onUnmounted(() => {
 }
 
 .gesture-system__legend {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

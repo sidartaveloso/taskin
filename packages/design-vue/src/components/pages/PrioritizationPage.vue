@@ -1,17 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, toRef, watch } from 'vue';
-import type { CannedGesture } from '../../composables/use-gesture-recognizer';
-import { useGestureShortcuts } from '../../composables/use-gesture-shortcuts';
 import { usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
-import { actionLabel, gestureEmoji } from '../molecules/gesture-wizard/gesture-wizard.types';
-import GestureWizard from '../molecules/gesture-wizard/gesture-wizard.vue';
+import { defaultFunctions } from '../organisms/gesture-system/gesture-system.types';
 import PrioritizationScreen from '../templates/PrioritizationScreen.vue';
 
 export interface PrioritizationPageProps {
   tasks: Task[];
-  getStableGesture?: () => { gesture: CannedGesture; score: number } | null;
-  isGestureHeld?: (gesture: CannedGesture, ms?: number) => boolean;
   gestureUserId?: string;
 }
 
@@ -58,53 +53,10 @@ const {
 const focusedId = ref<string | null>(null);
 const detecting = ref(false);
 
-// Gesture shortcuts (only when getStableGesture is provided)
-const gestureEnabled = !!props.getStableGesture;
+const gestureEnabled = !!props.gestureUserId;
 
-const gestureShortcuts = gestureEnabled
-  ? useGestureShortcuts(
-      () => {
-        const g = props.getStableGesture!();
-        return g ? { gesture: g.gesture, score: g.score, handedness: 'Right' as const } : null;
-      },
-      (gesture: CannedGesture, ms?: number) => props.isGestureHeld?.(gesture, ms) ?? false,
-      props.gestureUserId,
-    )
-  : null;
-
-let gestureTickInterval: ReturnType<typeof setInterval> | null = null;
-
-if (gestureEnabled && gestureShortcuts) {
-  const processMappedAction = () => {
-    if (!gestureShortcuts) return;
-    if (gestureShortcuts.wizardState.value !== 'IDLE') {
-      gestureShortcuts.tick();
-      return;
-    }
-    const action = gestureShortcuts.getMappedAction();
-    if (!action || action === 'none') return;
-    gestureShortcuts.tick();
-    executePrioritizationAction(action);
-  };
-
-  watch(detecting, (isDetecting) => {
-    if (isDetecting) {
-      gestureTickInterval = setInterval(processMappedAction, 300);
-    } else {
-      if (gestureTickInterval) {
-        clearInterval(gestureTickInterval);
-        gestureTickInterval = null;
-      }
-      gestureShortcuts.resetWizard();
-    }
-  });
-
-  onUnmounted(() => {
-    if (gestureTickInterval) clearInterval(gestureTickInterval);
-  });
-}
-
-function executePrioritizationAction(action: string) {
+function onGestureAction(action: string) {
+  if (action === 'none') return;
   if (!focusedId.value) return;
   switch (action) {
     case 'moveUp':
@@ -124,6 +76,21 @@ function executePrioritizationAction(action: string) {
       break;
     case 'copyCard':
       handleCopyCard(focusedId.value);
+      break;
+    case 'setDifficulty1':
+      setDifficulty(focusedId.value, 1);
+      break;
+    case 'setDifficulty2':
+      setDifficulty(focusedId.value, 2);
+      break;
+    case 'setDifficulty3':
+      setDifficulty(focusedId.value, 3);
+      break;
+    case 'setDifficulty4':
+      setDifficulty(focusedId.value, 4);
+      break;
+    case 'setDifficulty5':
+      setDifficulty(focusedId.value, 5);
       break;
   }
 }
@@ -199,7 +166,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
     :can-redo="canRedo"
     :focused-id="focusedId"
     :detecting="gestureEnabled ? detecting : undefined"
+    :gesture-functions="gestureEnabled ? defaultFunctions : undefined"
+    :gesture-user-id="gestureEnabled ? props.gestureUserId : undefined"
     @toggle-tracking="detecting = !detecting"
+    @gesture-action="onGestureAction"
     @update:filter="setFilter"
     @update:view-mode="setViewMode"
     @update:sort-mode="setSortMode"
@@ -224,84 +194,4 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
     @undo="undo"
     @redo="redo"
   />
-
-  <GestureWizard
-    v-if="gestureShortcuts && gestureShortcuts.wizardState.value !== 'IDLE'"
-    :wizard-state="gestureShortcuts.wizardState.value"
-    :ready-progress="gestureShortcuts.readyProgress.value"
-    :step="gestureShortcuts.step.value"
-    :recording-candidate="gestureShortcuts.recordingCandidate.value"
-    :selected-action-index="gestureShortcuts.selectedActionIndex.value"
-    :available-actions="gestureShortcuts.AVAILABLE_ACTIONS"
-    :last-mapping="gestureShortcuts.lastMapping.value"
-  />
-
-  <div
-    class="gesture-status-bar"
-    v-if="gestureShortcuts && gestureShortcuts.wizardState.value !== 'IDLE'"
-  >
-    <span class="gs-gesture">
-      {{
-        gestureEmoji[gestureShortcuts.recordingCandidate.value || 'None'] ||
-          '🖐️'
-      }}
-    </span>
-    <span class="gs-sep">→</span>
-    <span class="gs-action">
-      {{
-        gestureShortcuts.lastMapping.value
-          ? actionLabel[gestureShortcuts.lastMapping.value.action]
-          : wizardStepLabel(gestureShortcuts.step.value)
-      }}
-    </span>
-  </div>
 </template>
-
-<script lang="ts">
-function wizardStepLabel(step: number): string {
-  switch (step) {
-    case 1:
-      return 'Escolha o gesto';
-    case 2:
-      return 'Escolha a ação';
-    case 3:
-      return 'Confirme';
-    case 4:
-      return 'Salvo!';
-    default:
-      return 'Configuração';
-  }
-}
-</script>
-
-<style scoped>
-.gesture-status-bar {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
-  background: rgba(26, 26, 46, 0.9);
-  color: #fff;
-  border-radius: 20px;
-  font-size: 14px;
-  z-index: 9998;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.gs-gesture {
-  font-size: 20px;
-}
-
-.gs-sep {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.gs-action {
-  font-weight: 600;
-}
-</style>
