@@ -1,3 +1,144 @@
+<template>
+  <div class="prioritization-screen">
+    <div class="toolbar">
+      <input
+        class="filter-input"
+        type="text"
+        placeholder="🔎 filtrar…"
+        :value="filter"
+        @input="
+          emit('update:filter', ($event.target as HTMLInputElement).value)
+        "
+      />
+
+      <div class="segmented" role="group" aria-label="Modo de visualização">
+        <button
+          v-for="v in ['cards', 'icons', 'grid'] as PrioritizationViewMode[]"
+          :key="v"
+          type="button"
+          :class="{ active: viewMode === v }"
+          :data-testid="`view-mode-${v}`"
+          @click="emit('update:viewMode', v)"
+        >
+          {{
+            v === 'cards' ? '▤ Cards' : v === 'icons' ? '◫ Ícones' : '▦ Grid'
+          }}
+        </button>
+      </div>
+
+      <select
+        class="sort-select"
+        data-testid="sort-select"
+        :value="sortMode"
+        @change="
+          emit(
+            'update:sortMode',
+            ($event.target as HTMLSelectElement)
+              .value as PrioritizationSortMode,
+          )
+        "
+      >
+        <option value="manual">Manual (prioridade)</option>
+        <option value="diff-desc">Dificuldade ↓ (maior→menor)</option>
+        <option value="diff-asc">Dificuldade ↑ (menor→maior)</option>
+      </select>
+
+      <button
+        class="ghost"
+        type="button"
+        @click="emit('set-all-collapsed', true)"
+      >
+        ⊟ Colapsar todos
+      </button>
+      <button
+        class="ghost"
+        type="button"
+        @click="emit('set-all-collapsed', false)"
+      >
+        ⊞ Expandir todos
+      </button>
+
+      <button
+        class="ghost"
+        type="button"
+        title="Desfazer (Ctrl/Cmd+Z)"
+        data-testid="undo-button"
+        :disabled="!canUndo"
+        @click="emit('undo')"
+      >
+        ↶ Desfazer
+      </button>
+      <button
+        class="ghost"
+        type="button"
+        title="Refazer (Ctrl/Cmd+Shift+Z)"
+        data-testid="redo-button"
+        :disabled="!canRedo"
+        @click="emit('redo')"
+      >
+        ↷ Refazer
+      </button>
+
+      <span class="spacer" />
+      <button class="ghost" type="button" @click="emit('export-json')">
+        ⬇ JSON
+      </button>
+
+      <span class="drag-warning" v-if="!dragEnabled">
+        ⚠ arrastar desabilitado (ordenado por dificuldade)
+      </span>
+    </div>
+
+    <div
+      class="node-list"
+      :class="`view-${viewMode}`"
+      @dragover.prevent
+      @drop="onDrop"
+    >
+      <PriorityGroupRenderer :nodes="tree" />
+
+      <div class="empty-state" v-if="tree.length === 0">
+        <p>Nenhuma tarefa encontrada.</p>
+      </div>
+    </div>
+
+    <div
+      class="prioritization-screen__fixed"
+      v-if="gestureFunctions && gestureUserId"
+    >
+      <video
+        ref="videoRef"
+        style="display: none"
+        width="320"
+        height="240"
+        muted
+        playsinline
+      />
+      <TrackingControls
+        :is-detecting="cameraActive"
+        :error="trackedError ?? null"
+        :show-webcam="showWebcam"
+        @toggle-tracking="emit('toggle-tracking')"
+        @update:show-webcam="emit('update:showWebcam', $event)"
+      />
+      <GestureSystem
+        :functions="gestureFunctions"
+        :user-id="gestureUserId"
+        :detecting="detecting"
+        :video-element="videoRef"
+        @gesture-action="emit('gestureAction', $event)"
+        @camera-active="emit('update:cameraActive', $event)"
+      />
+      <div
+        class="prioritization-screen__camera-status"
+        v-if="detecting && !cameraActive"
+      >
+        ⏳ Ativando câmera...
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { provide, ref, toRef } from 'vue';
 import type {
@@ -224,142 +365,6 @@ provide('dragContext', {
 });
 </script>
 
-<template>
-  <div class="prioritization-screen">
-    <div class="toolbar">
-      <input
-        class="filter-input"
-        type="text"
-        placeholder="🔎 filtrar…"
-        :value="filter"
-        @input="
-          emit('update:filter', ($event.target as HTMLInputElement).value)
-        "
-      />
-
-      <div class="segmented" role="group" aria-label="Modo de visualização">
-        <button
-          v-for="v in ['cards', 'icons', 'grid'] as PrioritizationViewMode[]"
-          :key="v"
-          type="button"
-          :class="{ active: viewMode === v }"
-          :data-testid="`view-mode-${v}`"
-          @click="emit('update:viewMode', v)"
-        >
-          {{
-            v === 'cards' ? '▤ Cards' : v === 'icons' ? '◫ Ícones' : '▦ Grid'
-          }}
-        </button>
-      </div>
-
-      <select
-        class="sort-select"
-        data-testid="sort-select"
-        :value="sortMode"
-        @change="
-          emit(
-            'update:sortMode',
-            ($event.target as HTMLSelectElement)
-              .value as PrioritizationSortMode,
-          )
-        "
-      >
-        <option value="manual">Manual (prioridade)</option>
-        <option value="diff-desc">Dificuldade ↓ (maior→menor)</option>
-        <option value="diff-asc">Dificuldade ↑ (menor→maior)</option>
-      </select>
-
-      <button
-        class="ghost"
-        type="button"
-        @click="emit('set-all-collapsed', true)"
-      >
-        ⊟ Colapsar todos
-      </button>
-      <button
-        class="ghost"
-        type="button"
-        @click="emit('set-all-collapsed', false)"
-      >
-        ⊞ Expandir todos
-      </button>
-
-      <button
-        class="ghost"
-        type="button"
-        title="Desfazer (Ctrl/Cmd+Z)"
-        data-testid="undo-button"
-        :disabled="!canUndo"
-        @click="emit('undo')"
-      >
-        ↶ Desfazer
-      </button>
-      <button
-        class="ghost"
-        type="button"
-        title="Refazer (Ctrl/Cmd+Shift+Z)"
-        data-testid="redo-button"
-        :disabled="!canRedo"
-        @click="emit('redo')"
-      >
-        ↷ Refazer
-      </button>
-
-      <span class="spacer" />
-      <button class="ghost" type="button" @click="emit('export-json')">
-        ⬇ JSON
-      </button>
-
-      <span class="drag-warning" v-if="!dragEnabled">
-        ⚠ arrastar desabilitado (ordenado por dificuldade)
-      </span>
-    </div>
-
-    <div
-      class="node-list"
-      :class="`view-${viewMode}`"
-      @dragover.prevent
-      @drop="onDrop"
-    >
-      <PriorityGroupRenderer :nodes="tree" />
-
-      <div class="empty-state" v-if="tree.length === 0">
-        <p>Nenhuma tarefa encontrada.</p>
-      </div>
-    </div>
-
-    <div class="prioritization-screen__fixed" v-if="detecting">
-      <video
-        ref="videoRef"
-        style="display: none"
-        width="320"
-        height="240"
-        muted
-        playsinline
-      />
-      <GestureSystem
-        v-if="gestureFunctions && gestureUserId"
-        :functions="gestureFunctions"
-        :user-id="gestureUserId"
-        :detecting="detecting"
-        :video-element="videoRef"
-        @gesture-action="emit('gestureAction', $event)"
-        @camera-active="emit('update:cameraActive', $event)"
-      />
-      <TrackingControls
-        :is-detecting="cameraActive"
-        :error="trackedError ?? null"
-        :show-webcam="showWebcam ?? false"
-        @toggle-tracking="emit('toggle-tracking')"
-        @update:show-webcam="emit('update:showWebcam', $event)"
-      />
-    </div>
-    <div class="prioritization-screen__camera-status" v-if="detecting && !cameraActive">
-      ⏳ Ativando câmera...
-    </div>
-  </div>
-</template>
-
 <style>
 @import '../../styles/variables.css';
 
@@ -526,10 +531,12 @@ button.ghost:disabled {
 
 .view-icons .title {
   -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 
 .view-grid .title {
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .diff {

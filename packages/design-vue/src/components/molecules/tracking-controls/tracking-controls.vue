@@ -92,9 +92,13 @@
 </template>
 
 <script setup lang="ts">
+import { withDefaults } from 'vue';
 import type { TrackingControlsEmits, TrackingControlsProps } from './tracking-controls.types';
 
-defineProps<TrackingControlsProps>();
+const props = withDefaults(defineProps<TrackingControlsProps>(), {
+  showWebcam: true,
+  syncGestures: true,
+});
 
 const emit = defineEmits<TrackingControlsEmits>();
 </script>
