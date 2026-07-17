@@ -9,21 +9,22 @@
       playsinline
     />
 
-    <TrackingControls
-      :is-detecting="detecting"
-      :error="recorderState?.error ?? null"
-      :show-webcam="showWebcam"
-      :disabled="false"
-      class="gesture-system__controls"
-      @toggle-tracking="$emit('update:detecting', !detecting)"
-      @update:show-webcam="showWebcam = $event"
-    />
-
-    <GestureLegend
-      class="gesture-system__legend"
-      :mappings="mappings"
-      compact
-    />
+    <div class="gesture-system__fixed">
+      <GestureLegend
+        class="gesture-system__legend"
+        :mappings="mappings"
+        compact
+      />
+      <TrackingControls
+        :is-detecting="detecting"
+        :error="recorderState?.error ?? null"
+        :show-webcam="showWebcam"
+        :disabled="false"
+        class="gesture-system__controls"
+        @toggle-tracking="$emit('update:detecting', !detecting)"
+        @update:show-webcam="showWebcam = $event"
+      />
+    </div>
 
     <GestureWizard
       :wizard-state="wizardState"
@@ -122,17 +123,14 @@ onUnmounted(() => {
   position: relative;
 }
 
-.gesture-system__controls {
+.gesture-system__fixed {
   position: fixed;
   bottom: 16px;
   right: 16px;
   z-index: 1000;
-}
-
-.gesture-system__legend {
-  position: fixed;
-  bottom: 72px;
-  right: 16px;
-  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
 }
 </style>
