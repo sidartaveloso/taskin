@@ -1,6 +1,6 @@
 # Task 024 — Wizard de configuração de gestos reutilizável com play function
 
-Status: pending  
+Status: in-progress
 Type: feat  
 Assignee: fernandogatti
 
