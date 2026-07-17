@@ -10,7 +10,7 @@
     />
 
     <!-- Controles -->
-    <FaceTrackingControls
+    <TrackingControls
       :is-detecting="isDetecting"
       :error="trackingError"
       :show-webcam="showWebcam"
@@ -75,7 +75,7 @@ import TaskinEyes from '../../atoms/taskin-eyes/taskin-eyes.vue';
 import type { MouthExpression } from '../../atoms/taskin-mouth/taskin-mouth.types';
 import TaskinMouth from '../../atoms/taskin-mouth/taskin-mouth.vue';
 import WebcamVideo from '../../atoms/webcam-video';
-import FaceTrackingControls from '../../molecules/face-tracking-controls';
+import TrackingControls from '../../molecules/tracking-controls';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
 
 export interface Props {

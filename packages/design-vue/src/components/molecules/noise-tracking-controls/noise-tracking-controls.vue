@@ -56,7 +56,9 @@
       Play Sound
     </label>
 
-    <div class="error" v-if="error">{{ error }}</div>
+    <div class="error" v-if="error">
+      {{ error }}
+    </div>
 
     <div class="status" v-if="isActive">
       <span class="status-indicator" /> Listening for noise...

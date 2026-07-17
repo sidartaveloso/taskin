@@ -2,8 +2,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { usePoseLandmarker } from '../../../composables/use-pose-landmarker';
-import FaceTrackingControls from '../../molecules/face-tracking-controls';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
+import TrackingControls from '../../molecules/tracking-controls';
 import WebcamVideo from '../webcam-video';
 import type { ArmPosition } from './taskin-arms.types';
 import TaskinArms from './taskin-arms.vue';
@@ -528,7 +528,7 @@ export const PoseTracking: Story = {
               height: 240,
               mirrored: true,
             }),
-            h(FaceTrackingControls, {
+            h(TrackingControls, {
               isDetecting: poseLandmarker.state.value.isDetecting,
               error: poseLandmarker.state.value.error,
               showWebcam: showWebcam.value,

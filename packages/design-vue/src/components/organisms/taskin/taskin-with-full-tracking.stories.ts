@@ -11,8 +11,8 @@ import TaskinEyes from '../../atoms/taskin-eyes/taskin-eyes.vue';
 import type { MouthExpression } from '../../atoms/taskin-mouth/taskin-mouth.types';
 import TaskinMouth from '../../atoms/taskin-mouth/taskin-mouth.vue';
 import WebcamVideo from '../../atoms/webcam-video/webcam-video.vue';
-import FaceTrackingControls from '../../molecules/face-tracking-controls';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
+import TrackingControls from '../../molecules/tracking-controls';
 
 const meta = {
   title: 'Organisms/Taskin/Full Tracking',
@@ -220,7 +220,7 @@ export const FullTracking: Story = {
               height: 240,
               mirrored: true,
             }),
-            h(FaceTrackingControls, {
+            h(TrackingControls, {
               isDetecting: isDetecting.value,
               error: trackingError.value,
               showWebcam: showWebcam.value,
