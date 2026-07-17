@@ -47,5 +47,10 @@ export const actionLabel: Record<PrioritizationAction, string> = {
   ungroup: 'Desagrupar',
   undo: 'Desfazer',
   copyCard: 'Copiar card',
+  setDifficulty1: 'Dificuldade 1',
+  setDifficulty2: 'Dificuldade 2',
+  setDifficulty3: 'Dificuldade 3',
+  setDifficulty4: 'Dificuldade 4',
+  setDifficulty5: 'Dificuldade 5',
   none: 'Nenhuma ação',
 };
