@@ -5,8 +5,10 @@
       v-for="m in visibleMappings"
       :key="m.gesture"
     >
-      <GestureIcon :gesture="m.gesture" :size="compact ? 'sm' : 'md'" />
-      <span class="gesture-legend__label">{{ label[m.action] }}</span>
+      <slot name="chip" :mapping="m" :action-label="label[m.action]">
+        <GestureIcon :gesture="m.gesture" :size="compact ? 'sm' : 'md'" />
+        <span class="gesture-legend__label">{{ label[m.action] }}</span>
+      </slot>
     </div>
   </div>
 </template>
