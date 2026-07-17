@@ -3,6 +3,7 @@ import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { ref, toRef } from 'vue';
 import { buildPriorityTree, usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
+import { defaultFunctions } from '../organisms/gesture-system/gesture-system.types';
 import PrioritizationScreen from './PrioritizationScreen.vue';
 
 const meta: Meta<typeof PrioritizationScreen> = {
@@ -143,5 +144,55 @@ export const Default: Story = {
 export const Empty: Story = {
   args: {
     tree: [],
+  },
+};
+
+export const WithGesture: Story = {
+  render: () => ({
+    components: { PrioritizationScreen },
+    setup() {
+      return {
+        tree: buildPriorityTree(defaultTasks),
+        filter: '',
+        viewMode: 'cards' as string,
+        sortMode: 'manual',
+        dragEnabled: true,
+        detecting: true,
+        gestureFunctions: defaultFunctions,
+      };
+    },
+    template: `
+      <PrioritizationScreen
+        :tree="tree"
+        :filter="filter"
+        :view-mode="viewMode"
+        :sort-mode="sortMode"
+        :drag-enabled="dragEnabled"
+        :detecting="detecting"
+        :gesture-functions="gestureFunctions"
+        gesture-user-id="storybook-test"
+      />
+    `,
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'PrioritizationScreen com GestureSystem integrado. TrackingControls + GestureLegend aparecem no canto inferior direito.',
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const fixed = canvasElement.querySelector<HTMLElement>('.prioritization-screen__fixed');
+    expect(fixed).not.toBeNull();
+
+    const trackingBtn = within(fixed!).queryByText('Parar Detecção');
+    expect(trackingBtn).not.toBeNull();
+
+    const legend = fixed!.querySelector('.gesture-legend');
+    expect(legend).not.toBeNull();
+
+    const gestureSystem = fixed!.querySelector('.gesture-system');
+    expect(gestureSystem).not.toBeNull();
   },
 };
