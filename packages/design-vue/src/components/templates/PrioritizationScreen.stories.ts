@@ -57,9 +57,11 @@ export const Default: Story = {
     components: { PrioritizationScreen },
     setup() {
       const tasks = ref<Task[]>([...defaultTasks]);
-      const { tree, filter, viewMode, sortMode, dragEnabled } = usePrioritization(toRef(tasks));
+      const { tree, filter, viewMode, sortMode, dragEnabled, setViewMode, setSortMode } = usePrioritization(
+        toRef(tasks),
+      );
 
-      return { tree, filter, viewMode, sortMode, dragEnabled };
+      return { tree, filter, viewMode, sortMode, dragEnabled, setViewMode, setSortMode };
     },
     template: `
       <PrioritizationScreen
@@ -68,6 +70,8 @@ export const Default: Story = {
         :view-mode="viewMode"
         :sort-mode="sortMode"
         :drag-enabled="dragEnabled"
+        @update:view-mode="setViewMode"
+        @update:sort-mode="setSortMode"
       />
     `,
   }),
@@ -116,16 +120,16 @@ export const Default: Story = {
     await waitFor(() => {
       expect(sortSelect.value).toBe('diff-desc');
       const ids = cardIds();
-      expect(ids[0]).toBe('002');
-      expect(ids[1]).toBe('005');
+      // g1(max=4) → 002(diff=4), 003(diff=0); then 001(diff=2), 005(diff=1), 004(sem)
+      expect(ids.slice(0, 5)).toEqual(['002', '003', '001', '005', '004']);
     });
 
     await fireEvent.change(sortSelect, { target: { value: 'diff-asc' } });
     await waitFor(() => {
       expect(sortSelect.value).toBe('diff-asc');
       const ids = cardIds();
-      expect(ids[0]).toBe('004');
-      expect(ids[1]).toBe('003');
+      // 004(sem), 005(diff=1), 001(diff=2), then g1(max=4) → 003(diff=0), 002(diff=4)
+      expect(ids.slice(0, 5)).toEqual(['004', '005', '001', '003', '002']);
     });
 
     await fireEvent.change(sortSelect, { target: { value: 'manual' } });
