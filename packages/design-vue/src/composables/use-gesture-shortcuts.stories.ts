@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { h } from 'vue';
 
 const meta = {
   title: 'Composables/GestureShortcuts',
@@ -70,6 +71,93 @@ export default meta;
 type Story = StoryObj;
 
 export const Architecture: Story = {
+  render: () => ({
+    setup() {
+      return () =>
+        h(
+          'div',
+          {
+            style: {
+              fontFamily: 'system-ui, sans-serif',
+              maxWidth: '640px',
+              margin: '0 auto',
+              padding: '32px',
+            },
+          },
+          [
+            h('h2', { style: { fontSize: '24px', marginBottom: '16px' } }, [
+              'Keyboard Shortcuts → Gesture Shortcuts',
+            ]),
+            h(
+              'div',
+              {
+                style: {
+                  background: '#e3f2fd',
+                  border: '2px solid #1f7acb',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  marginBottom: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                },
+              },
+              [
+                h('span', { style: { fontSize: '40px' } }, '⌨️ ➡️ 🖐️'),
+                h(
+                  'p',
+                  {
+                    style: {
+                      margin: 0,
+                      fontSize: '15px',
+                      lineHeight: '1.5',
+                      color: '#1a1a1a',
+                    },
+                  },
+                  'O mesmo conceito de atalhos de teclado, mas com gestos — sem teclado, sem hardware especializado, configurável por usuário e persistido no localStorage.',
+                ),
+              ],
+            ),
+            h('h3', { style: { fontSize: '18px', marginBottom: '12px' } }, [
+              'Default mappings',
+            ]),
+            h(
+              'table',
+              {
+                style: {
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '14px',
+                },
+              },
+              [
+                h('thead', [
+                  h('tr', [
+                    h('th', { style: tableHeaderStyle }, 'Gesto'),
+                    h('th', { style: tableHeaderStyle }, 'Ação'),
+                    h('th', { style: tableHeaderStyle }, 'Atalho teclado'),
+                  ]),
+                ]),
+                h(
+                  'tbody',
+                  rows.map((row) =>
+                    h('tr', { key: row.gesture }, [
+                      h('td', { style: tableCellStyle }, row.gesture),
+                      h('td', { style: tableCellStyle }, row.action),
+                      h(
+                        'td',
+                        { style: { ...tableCellStyle, color: '#666' } },
+                        row.keyboard,
+                      ),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+    },
+  }),
   parameters: {
     docs: {
       description: {
@@ -105,3 +193,23 @@ export const Architecture: Story = {
     },
   },
 };
+
+const tableHeaderStyle = {
+  textAlign: 'left' as const,
+  padding: '8px 12px',
+  borderBottom: '2px solid #ddd',
+  fontWeight: 600,
+};
+
+const tableCellStyle = {
+  padding: '8px 12px',
+  borderBottom: '1px solid #eee',
+};
+
+const rows = [
+  { gesture: '☝️ Pointing_Up', action: 'moveUp', keyboard: '⌘↑' },
+  { gesture: '👎 Thumb_Down', action: 'moveDown', keyboard: '⌘↓' },
+  { gesture: '✌️ Victory', action: 'groupWith', keyboard: '⌘G' },
+  { gesture: '🖐️ Open_Palm', action: 'ungroup', keyboard: '⌘⇧G' },
+  { gesture: '✊ Closed_Fist', action: 'undo', keyboard: '⌘Z' },
+];
