@@ -3,6 +3,19 @@ import './preview.css'; // Import global styles
 
 const preview: Preview = {
   parameters: {
+    options: {
+      storySort: {
+        order: [
+          'Atoms',
+          'Molecules',
+          'Organisms',
+          'Templates',
+          'Pages',
+          'Composables',
+        ],
+      },
+    },
+
     // Actions configuration
     actions: { argTypesRegex: '^on[A-Z].*' },
 
