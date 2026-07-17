@@ -153,6 +153,7 @@ export const WithGesture: Story = {
     components: { PrioritizationScreen, WebcamVideo },
     setup() {
       const showWebcam = ref(true);
+      const cameraActive = ref(false);
 
       return () =>
         h(
@@ -172,9 +173,16 @@ export const WithGesture: Story = {
               sortMode: 'manual',
               dragEnabled: true,
               detecting: true,
+              cameraActive: cameraActive.value,
               gestureFunctions: defaultFunctions,
               gestureUserId: 'storybook-test',
+              'onUpdate:cameraActive': (v: boolean) => {
+                cameraActive.value = v;
+              },
             }),
+            cameraActive.value
+              ? h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#4caf50' } }, '📷 Câmera ativa')
+              : h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#999' } }, '⏳ Aguardando câmera...'),
           ],
         );
     },
@@ -190,17 +198,18 @@ export const WithGesture: Story = {
   play: async ({ canvasElement }) => {
     const video = canvasElement.querySelector<HTMLElement>('.webcam-video');
     expect(video).not.toBeNull();
+    expect(video!.className).toContain('visible');
 
     const fixed = canvasElement.querySelector<HTMLElement>('.prioritization-screen__fixed');
     expect(fixed).not.toBeNull();
 
-    const trackingBtn = within(fixed!).queryByText('Parar Detecção');
-    expect(trackingBtn).not.toBeNull();
+    const hasTracking = fixed!.querySelector('.tracking-controls') !== null;
+    expect(hasTracking).toBe(true);
 
-    const legend = fixed!.querySelector('.gesture-legend');
-    expect(legend).not.toBeNull();
-
-    const gestureSystem = fixed!.querySelector('.gesture-system');
+    const gestureSystem = fixed!.querySelector<HTMLElement>('.gesture-system');
     expect(gestureSystem).not.toBeNull();
+
+    const hasVideo = gestureSystem!.querySelector('video') !== null;
+    expect(hasVideo).toBe(true);
   },
 };

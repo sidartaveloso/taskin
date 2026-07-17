@@ -27,6 +27,7 @@ export interface PrioritizationScreenProps {
   // Gesture system (optional — only rendered when provided)
   gestureFunctions?: ConfigurableFunction[];
   gestureUserId?: string;
+  cameraActive?: boolean;
 }
 
 const props = withDefaults(defineProps<PrioritizationScreenProps>(), {
@@ -66,6 +67,7 @@ const emit = defineEmits<{
   'toggle-tracking': [];
   'update:showWebcam': [value: boolean];
   gestureAction: [action: string];
+  'update:cameraActive': [value: boolean];
 }>();
 
 // Drag & drop state (ephemeral UI state, not domain data)
@@ -260,15 +262,9 @@ provide('dragContext', {
           )
         "
       >
-        <option value="manual">
-          Manual (prioridade)
-        </option>
-        <option value="diff-desc">
-          Dificuldade ↓ (maior→menor)
-        </option>
-        <option value="diff-asc">
-          Dificuldade ↑ (menor→maior)
-        </option>
+        <option value="manual">Manual (prioridade)</option>
+        <option value="diff-desc">Dificuldade ↓ (maior→menor)</option>
+        <option value="diff-asc">Dificuldade ↑ (menor→maior)</option>
       </select>
 
       <button
@@ -330,21 +326,25 @@ provide('dragContext', {
       </div>
     </div>
 
-    <div class="prioritization-screen__fixed" v-if="detecting !== undefined">
+    <div class="prioritization-screen__fixed" v-if="detecting">
       <GestureSystem
         v-if="gestureFunctions && gestureUserId"
         :functions="gestureFunctions"
         :user-id="gestureUserId"
         :detecting="detecting"
         @gesture-action="emit('gestureAction', $event)"
+        @camera-active="emit('update:cameraActive', $event)"
       />
       <TrackingControls
-        :is-detecting="detecting"
+        :is-detecting="cameraActive"
         :error="trackedError ?? null"
         :show-webcam="showWebcam ?? false"
         @toggle-tracking="emit('toggle-tracking')"
         @update:show-webcam="emit('update:showWebcam', $event)"
       />
+    </div>
+    <div class="prioritization-screen__camera-status" v-if="detecting && !cameraActive">
+      ⏳ Ativando câmera...
     </div>
   </div>
 </template>
@@ -694,5 +694,18 @@ button.ghost:disabled {
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+}
+
+.prioritization-screen__camera-status {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #666;
 }
 </style>

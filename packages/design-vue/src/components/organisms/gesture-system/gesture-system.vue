@@ -10,6 +10,7 @@
     />
 
     <GestureLegend
+      v-if="recorderState.isDetecting"
       class="gesture-system__legend"
       :mappings="mappings"
       compact
@@ -41,11 +42,18 @@ const props = defineProps<GestureSystemProps>();
 
 const emit = defineEmits<{
   gestureAction: [action: string];
+  'camera-active': [active: boolean];
 }>();
 
 const videoRef = ref<HTMLVideoElement | null>(null);
 
-const { startDetection, stopDetection, getStableGesture, isGestureHeld } = useGestureRecognizer(videoRef);
+const {
+  state: recorderState,
+  startDetection,
+  stopDetection,
+  getStableGesture,
+  isGestureHeld,
+} = useGestureRecognizer(videoRef);
 
 const {
   wizardState,
@@ -64,6 +72,11 @@ const wizardActions = computed<PrioritizationAction[]>(() => [
   ...props.functions.map((f) => f.id as PrioritizationAction),
   'none',
 ]);
+
+watch(
+  () => recorderState.isDetecting,
+  (active) => emit('camera-active', active),
+);
 
 let tickInterval: ReturnType<typeof setInterval> | null = null;
 
