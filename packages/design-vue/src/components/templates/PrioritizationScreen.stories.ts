@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
-import { buildPriorityTree } from '../../composables/use-prioritization';
+import { ref, toRef } from 'vue';
+import { buildPriorityTree, usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
 import PrioritizationScreen from './PrioritizationScreen.vue';
 
@@ -127,7 +128,6 @@ export const ViewModeSwitching: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // Start in cards mode
     const cardsBtn = canvas.getByTestId('view-mode-cards');
     const iconsBtn = canvas.getByTestId('view-mode-icons');
     const gridBtn = canvas.getByTestId('view-mode-grid');
@@ -139,7 +139,6 @@ export const ViewModeSwitching: Story = {
     const nodeList = canvasElement.querySelector<HTMLElement>('.node-list')!;
     expect(nodeList.className).toContain('view-cards');
 
-    // Switch to icons
     await fireEvent.click(iconsBtn);
     await waitFor(() => {
       expect(iconsBtn.className).toContain('active');
@@ -147,7 +146,6 @@ export const ViewModeSwitching: Story = {
       expect(nodeList.className).toContain('view-icons');
     });
 
-    // Switch to grid
     await fireEvent.click(gridBtn);
     await waitFor(() => {
       expect(gridBtn.className).toContain('active');
@@ -155,12 +153,93 @@ export const ViewModeSwitching: Story = {
       expect(nodeList.className).toContain('view-grid');
     });
 
-    // Switch back to cards
     await fireEvent.click(cardsBtn);
     await waitFor(() => {
       expect(cardsBtn.className).toContain('active');
       expect(gridBtn.className).not.toContain('active');
       expect(nodeList.className).toContain('view-cards');
+    });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Sort mode switching — play function
+// ---------------------------------------------------------------------------
+
+export const SortModeSwitching: Story = {
+  render: () => ({
+    components: { PrioritizationScreen },
+    setup() {
+      const tasks = ref<Task[]>([
+        createTask('001', { order: 10, type: 'feat', difficulty: 2 }),
+        createTask('002', { order: 20, type: 'fix', difficulty: 5 }),
+        createTask('003', { order: 30, type: 'refactor', difficulty: 1 }),
+        createTask('004', { order: 40, type: 'docs' }),
+        createTask('005', { order: 50, type: 'test', difficulty: 3 }),
+      ]);
+
+      const { tree, sortMode, setSortMode, dragEnabled, filter, viewMode } = usePrioritization(toRef(tasks));
+
+      return { tree, sortMode, setSortMode, dragEnabled, filter, viewMode };
+    },
+    template: `
+      <PrioritizationScreen
+        :tree="tree"
+        :filter="filter"
+        :view-mode="viewMode"
+        :sort-mode="sortMode"
+        :drag-enabled="dragEnabled"
+        @update:sort-mode="setSortMode"
+      />
+    `,
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Interactive sort mode switching. The `usePrioritization` composable owns the state and re-computes the sorted tree when sort mode changes.',
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const sortSelect = canvas.getByTestId('sort-select') as HTMLSelectElement;
+
+    function cardIds(): string[] {
+      const cards = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-card-"]');
+      return Array.from(cards).map((c) => c.dataset.testid!.replace('priority-card-', ''));
+    }
+
+    // Start in manual mode — cards ordered by `order` field
+    expect(sortSelect.value).toBe('manual');
+    expect(cardIds()).toEqual(['001', '002', '003', '004', '005']);
+
+    // Switch to diff-desc (difficulty highest first)
+    await fireEvent.change(sortSelect, { target: { value: 'diff-desc' } });
+    await waitFor(() => {
+      expect(sortSelect.value).toBe('diff-desc');
+      // 002 (diff=5), 005 (diff=3), 001 (diff=2), 003 (diff=1), 004 (no diff)
+      const ids = cardIds();
+      expect(ids[0]).toBe('002');
+      expect(ids[1]).toBe('005');
+    });
+
+    // Switch to diff-asc (difficulty lowest first)
+    await fireEvent.change(sortSelect, { target: { value: 'diff-asc' } });
+    await waitFor(() => {
+      expect(sortSelect.value).toBe('diff-asc');
+      const ids = cardIds();
+      expect(ids[0]).toBe('004'); // no diff
+      expect(ids[1]).toBe('003'); // diff=1
+      expect(ids[ids.length - 1]).toBe('002'); // diff=5
+    });
+
+    // Switch back to manual
+    await fireEvent.change(sortSelect, { target: { value: 'manual' } });
+    await waitFor(() => {
+      expect(sortSelect.value).toBe('manual');
+      expect(cardIds()).toEqual(['001', '002', '003', '004', '005']);
     });
   },
 };
