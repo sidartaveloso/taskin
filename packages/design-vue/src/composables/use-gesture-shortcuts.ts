@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import type { CannedGesture, RecognizedGesture } from './use-gesture-recognizer';
 
-export type PrioritizationAction = 'moveUp' | 'moveDown' | 'groupWith' | 'ungroup' | 'undo' | 'copyCard' | 'none';
+export type PrioritizationAction = 'moveUp' | 'moveDown' | 'groupWith' | 'ungroup' | 'undo' | 'copyCard' | 'setDifficulty1' | 'setDifficulty2' | 'setDifficulty3' | 'setDifficulty4' | 'setDifficulty5' | 'none';
 
 export type WizardState = 'IDLE' | 'READY' | 'RECORDING' | 'SELECTING' | 'CONFIRMING' | 'SAVED';
 
@@ -27,6 +27,11 @@ const AVAILABLE_ACTIONS: PrioritizationAction[] = [
   'ungroup',
   'undo',
   'copyCard',
+  'setDifficulty1',
+  'setDifficulty2',
+  'setDifficulty3',
+  'setDifficulty4',
+  'setDifficulty5',
   'none',
 ];
 
