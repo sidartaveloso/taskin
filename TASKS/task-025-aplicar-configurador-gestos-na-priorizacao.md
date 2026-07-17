@@ -7,23 +7,23 @@ Depends on: task-024
 
 ## Description
 
-Após o `GestureWizard` estar reutilizável (task-024), integrá-lo na `PrioritizationPage` substituindo o mapeamento fixo atual por funções configuráveis via wizard. O usuário pode reconfigurar a qualquer momento qual gesto executa qual ação de priorização.
+Após o `GestureWizard` estar reutilizável (task-024), integrá-lo na `PrioritizationScreen` e `PrioritizationPage` substituindo o mapeamento fixo atual por funções configuráveis via wizard. O usuário pode reconfigurar a qualquer momento qual gesto executa qual ação de priorização.
 
 ## Funções expostas no wizard da tela de tasks
 
-| id | title | Descrição | Atalho teclado | Gesto padrão |
-|----|-------|-----------|----------------|--------------|
-| `moveUp` | Mover para cima | Aumenta a prioridade da tarefa focada | `⌘↑` | `Pointing_Up` |
-| `moveDown` | Mover para baixo | Diminui a prioridade da tarefa focada | `⌘↓` | `Thumb_Down` |
-| `groupWith` | Agrupar | Agrupa a tarefa focada com a adjacente | `⌘G` | `Victory` |
-| `ungroup` | Desagrupar | Dissolve o grupo focado | `⌘⇧G` | `Open_Palm` |
-| `setDifficulty1` | Dificuldade 1 | Marca dificuldade como muito fácil | `⌘1` | — |
-| `setDifficulty2` | Dificuldade 2 | Marca dificuldade como fácil | `⌘2` | — |
-| `setDifficulty3` | Dificuldade 3 | Marca dificuldade como média | `⌘3` | — |
-| `setDifficulty4` | Dificuldade 4 | Marca dificuldade como difícil | `⌘4` | — |
-| `setDifficulty5` | Dificuldade 5 | Marca dificuldade como muito difícil | `⌘5` | — |
-| `undo` | Desfazer | Desfaz a última ação | `⌘Z` | `Closed_Fist` |
-| `copyCard` | Copiar card | Copia o texto do card focado | `⌘C` | — |
+| id               | title            | Descrição                              | Atalho teclado | Gesto padrão  |
+| ---------------- | ---------------- | -------------------------------------- | -------------- | ------------- |
+| `moveUp`         | Mover para cima  | Aumenta a prioridade da tarefa focada  | `⌘↑`           | `Pointing_Up` |
+| `moveDown`       | Mover para baixo | Diminui a prioridade da tarefa focada  | `⌘↓`           | `Thumb_Down`  |
+| `groupWith`      | Agrupar          | Agrupa a tarefa focada com a adjacente | `⌘G`           | `Victory`     |
+| `ungroup`        | Desagrupar       | Dissolve o grupo focado                | `⌘⇧G`          | `Open_Palm`   |
+| `setDifficulty1` | Dificuldade 1    | Marca dificuldade como muito fácil     | `⌘1`           | —             |
+| `setDifficulty2` | Dificuldade 2    | Marca dificuldade como fácil           | `⌘2`           | —             |
+| `setDifficulty3` | Dificuldade 3    | Marca dificuldade como média           | `⌘3`           | —             |
+| `setDifficulty4` | Dificuldade 4    | Marca dificuldade como difícil         | `⌘4`           | —             |
+| `setDifficulty5` | Dificuldade 5    | Marca dificuldade como muito difícil   | `⌘5`           | —             |
+| `undo`           | Desfazer         | Desfaz a última ação                   | `⌘Z`           | `Closed_Fist` |
+| `copyCard`       | Copiar card      | Copia o texto do card focado           | `⌘C`           | —             |
 
 ## Requisitos funcionais
 
