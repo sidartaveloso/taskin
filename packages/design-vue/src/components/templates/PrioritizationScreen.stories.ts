@@ -153,6 +153,7 @@ export const WithGesture: Story = {
     components: { PrioritizationScreen, WebcamVideo },
     setup() {
       const showWebcam = ref(true);
+      const detecting = ref(false);
       const cameraActive = ref(false);
 
       return () =>
@@ -172,10 +173,13 @@ export const WithGesture: Story = {
               viewMode: 'cards',
               sortMode: 'manual',
               dragEnabled: true,
-              detecting: true,
+              detecting: detecting.value,
               cameraActive: cameraActive.value,
               gestureFunctions: defaultFunctions,
               gestureUserId: 'storybook-test',
+              'onToggle-tracking': () => {
+                detecting.value = !detecting.value;
+              },
               'onUpdate:cameraActive': (v: boolean) => {
                 cameraActive.value = v;
               },
@@ -200,15 +204,45 @@ export const WithGesture: Story = {
     expect(video).not.toBeNull();
     expect(video!.className).toContain('visible');
 
+    // Fixed container is always visible when gesture features are enabled
     const fixed = canvasElement.querySelector<HTMLElement>('.prioritization-screen__fixed');
     expect(fixed).not.toBeNull();
 
-    const hasTracking = fixed!.querySelector('.tracking-controls') !== null;
-    expect(hasTracking).toBe(true);
+    // Tracking controls are always visible (start/stop detection)
+    const trackingBtn = within(fixed!).getByText('Iniciar Detecção');
+    expect(trackingBtn).not.toBeNull();
 
+    // GestureSystem is always mounted (needs to be to detect detecting changes)
     const gestureSystem = fixed!.querySelector<HTMLElement>('.gesture-system');
     expect(gestureSystem).not.toBeNull();
 
+    // GestureLegend is NOT rendered yet (camera not streaming)
+    const legend = gestureSystem!.querySelector<HTMLElement>('.gesture-system__legend');
+    expect(legend).toBeNull();
+
+    // Camera-status indicator is NOT shown yet (detecting is false)
+    const statusBefore = canvasElement.querySelector<HTMLElement>('.prioritization-screen__camera-status');
+    expect(statusBefore).toBeNull();
+
+    // ── User clicks "Iniciar Detecção" ──
+    await fireEvent.click(trackingBtn);
+
+    // Camera-status indicator appears while camera initializes (detecting=true, cameraActive=false)
+    await waitFor(() => {
+      const status = canvasElement.querySelector<HTMLElement>('.prioritization-screen__camera-status');
+      expect(status).not.toBeNull();
+      expect(status!.textContent).toContain('Ativando câmera');
+    });
+
+    // Button still shows "Iniciar Detecção" because cameraActive is still false
+    // (no real camera stream in test environment)
+    expect(() => within(fixed!).getByText('Iniciar Detecção')).not.toThrow();
+
+    // GestureLegend still not rendered (camera never actually streams in test)
+    const legendAfter = gestureSystem!.querySelector<HTMLElement>('.gesture-system__legend');
+    expect(legendAfter).toBeNull();
+
+    // The hidden <video> element is provided by the screen
     const fixedVideo = fixed!.querySelector('video');
     expect(fixedVideo).not.toBeNull();
   },

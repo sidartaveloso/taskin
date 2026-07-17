@@ -17,6 +17,7 @@
     />
 
     <GestureWizard
+      v-if="recorderState.isDetecting"
       :wizard-state="wizardState"
       :ready-progress="readyProgress"
       :step="step"
