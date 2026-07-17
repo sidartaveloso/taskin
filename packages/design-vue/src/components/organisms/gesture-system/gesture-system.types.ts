@@ -13,6 +13,7 @@ export interface GestureSystemProps {
   functions: ConfigurableFunction[];
   userId: string;
   detecting: boolean;
+  videoElement?: HTMLVideoElement | null;
 }
 
 export const defaultFunctions: ConfigurableFunction[] = [
