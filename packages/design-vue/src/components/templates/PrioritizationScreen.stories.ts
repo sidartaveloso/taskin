@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
-import { ref, toRef } from 'vue';
+import { h, ref, toRef } from 'vue';
 import { buildPriorityTree, usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
+import WebcamVideo from '../atoms/webcam-video/webcam-video.vue';
 import { defaultFunctions } from '../organisms/gesture-system/gesture-system.types';
 import PrioritizationScreen from './PrioritizationScreen.vue';
 
@@ -149,30 +150,34 @@ export const Empty: Story = {
 
 export const WithGesture: Story = {
   render: () => ({
-    components: { PrioritizationScreen },
+    components: { PrioritizationScreen, WebcamVideo },
     setup() {
-      return {
-        tree: buildPriorityTree(defaultTasks),
-        filter: '',
-        viewMode: 'cards' as string,
-        sortMode: 'manual',
-        dragEnabled: true,
-        detecting: true,
-        gestureFunctions: defaultFunctions,
-      };
+      const showWebcam = ref(true);
+
+      return () =>
+        h(
+          'div',
+          { style: { padding: '16px', position: 'relative', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' } },
+          [
+            h(WebcamVideo, {
+              visible: showWebcam.value,
+              width: 240,
+              height: 180,
+              mirrored: true,
+            }),
+            h(PrioritizationScreen, {
+              tree: buildPriorityTree(defaultTasks),
+              filter: '',
+              viewMode: 'cards',
+              sortMode: 'manual',
+              dragEnabled: true,
+              detecting: true,
+              gestureFunctions: defaultFunctions,
+              gestureUserId: 'storybook-test',
+            }),
+          ],
+        );
     },
-    template: `
-      <PrioritizationScreen
-        :tree="tree"
-        :filter="filter"
-        :view-mode="viewMode"
-        :sort-mode="sortMode"
-        :drag-enabled="dragEnabled"
-        :detecting="detecting"
-        :gesture-functions="gestureFunctions"
-        gesture-user-id="storybook-test"
-      />
-    `,
   }),
   parameters: {
     docs: {
@@ -183,6 +188,9 @@ export const WithGesture: Story = {
     },
   },
   play: async ({ canvasElement }) => {
+    const video = canvasElement.querySelector<HTMLElement>('.webcam-video');
+    expect(video).not.toBeNull();
+
     const fixed = canvasElement.querySelector<HTMLElement>('.prioritization-screen__fixed');
     expect(fixed).not.toBeNull();
 
