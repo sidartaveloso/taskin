@@ -1,14 +1,14 @@
 <template>
   <div class="gesture-system">
     <video
-      ref="videoRef"
+      v-if="props.videoElement === undefined"
+      ref="internalVideoRef"
       style="display: none"
       width="320"
       height="240"
       muted
       playsinline
     />
-
     <GestureLegend
       v-if="recorderState.isDetecting"
       class="gesture-system__legend"
@@ -45,7 +45,8 @@ const emit = defineEmits<{
   'camera-active': [active: boolean];
 }>();
 
-const videoRef = ref<HTMLVideoElement | null>(null);
+const internalVideoRef = ref<HTMLVideoElement | null>(null);
+const videoForRecognition = computed(() => props.videoElement ?? internalVideoRef.value);
 
 const {
   state: recorderState,
@@ -53,7 +54,7 @@ const {
   stopDetection,
   getStableGesture,
   isGestureHeld,
-} = useGestureRecognizer(videoRef);
+} = useGestureRecognizer(videoForRecognition);
 
 const {
   wizardState,

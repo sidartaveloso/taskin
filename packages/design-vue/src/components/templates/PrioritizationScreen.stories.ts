@@ -209,7 +209,7 @@ export const WithGesture: Story = {
     const gestureSystem = fixed!.querySelector<HTMLElement>('.gesture-system');
     expect(gestureSystem).not.toBeNull();
 
-    const hasVideo = gestureSystem!.querySelector('video') !== null;
-    expect(hasVideo).toBe(true);
+    const fixedVideo = fixed!.querySelector('video');
+    expect(fixedVideo).not.toBeNull();
   },
 };

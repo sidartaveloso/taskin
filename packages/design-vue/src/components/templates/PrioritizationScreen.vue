@@ -70,6 +70,8 @@ const emit = defineEmits<{
   'update:cameraActive': [value: boolean];
 }>();
 
+const videoRef = ref<HTMLVideoElement | null>(null);
+
 // Drag & drop state (ephemeral UI state, not domain data)
 const draggedId = ref<string | null>(null);
 const isDraggingGroup = ref(false);
@@ -327,11 +329,20 @@ provide('dragContext', {
     </div>
 
     <div class="prioritization-screen__fixed" v-if="detecting">
+      <video
+        ref="videoRef"
+        style="display: none"
+        width="320"
+        height="240"
+        muted
+        playsinline
+      />
       <GestureSystem
         v-if="gestureFunctions && gestureUserId"
         :functions="gestureFunctions"
         :user-id="gestureUserId"
         :detecting="detecting"
+        :video-element="videoRef"
         @gesture-action="emit('gestureAction', $event)"
         @camera-active="emit('update:cameraActive', $event)"
       />
