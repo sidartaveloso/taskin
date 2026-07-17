@@ -2,6 +2,7 @@
 export { default as DayBar } from './DayBar.vue';
 // Tracking molecules
 export * from './face-tracking-debug';
+export * from './gesture-legend';
 export * from './gesture-wizard';
 export { default as ProjectBreadcrumb } from './ProjectBreadcrumb.vue';
 export { default as TaskHeader } from './TaskHeader.vue';

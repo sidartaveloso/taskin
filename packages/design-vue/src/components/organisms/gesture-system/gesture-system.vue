@@ -19,6 +19,12 @@
       @update:show-webcam="showWebcam = $event"
     />
 
+    <GestureLegend
+      class="gesture-system__legend"
+      :mappings="mappings"
+      compact
+    />
+
     <GestureWizard
       :wizard-state="wizardState"
       :ready-progress="readyProgress"
@@ -35,10 +41,11 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { useGestureRecognizer } from '../../../composables/use-gesture-recognizer';
+import type { PrioritizationAction } from '../../../composables/use-gesture-shortcuts';
 import { useGestureShortcuts } from '../../../composables/use-gesture-shortcuts';
+import GestureLegend from '../../molecules/gesture-legend/gesture-legend.vue';
 import GestureWizard from '../../molecules/gesture-wizard/gesture-wizard.vue';
 import TrackingControls from '../../molecules/tracking-controls/tracking-controls.vue';
-import type { PrioritizationAction } from '../../../composables/use-gesture-shortcuts';
 import type { GestureSystemProps } from './gesture-system.types';
 
 const props = defineProps<GestureSystemProps>();
@@ -66,6 +73,7 @@ const {
   recordingCandidate,
   selectedActionIndex,
   lastMapping,
+  mappings,
   tick,
   getMappedAction,
   resetWizard,
@@ -117,6 +125,13 @@ onUnmounted(() => {
 .gesture-system__controls {
   position: fixed;
   bottom: 16px;
+  right: 16px;
+  z-index: 1000;
+}
+
+.gesture-system__legend {
+  position: fixed;
+  bottom: 72px;
   right: 16px;
   z-index: 1000;
 }
