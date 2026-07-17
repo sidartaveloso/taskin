@@ -1,9 +1,5 @@
 import type { CannedGesture } from '../../../composables/use-gesture-recognizer';
-import type {
-  GestureMapping,
-  PrioritizationAction,
-  WizardState,
-} from '../../../composables/use-gesture-shortcuts';
+import type { GestureMapping, PrioritizationAction, WizardState } from '../../../composables/use-gesture-shortcuts';
 
 export interface GestureWizardProps {
   wizardState: WizardState;

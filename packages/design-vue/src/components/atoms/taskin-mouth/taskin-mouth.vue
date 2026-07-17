@@ -48,7 +48,6 @@ const mouthPath = computed(() => {
     case 'surprised':
       // Surpresa (O alongado vertical - maior que o-shape)
       return 'M155 118 Q152 118 152 125 Q152 132 155 132 Q165 132 165 125 Q165 118 155 118 Z';
-    case 'neutral':
     default:
       return 'M145 125 Q160 130 175 125';
   }

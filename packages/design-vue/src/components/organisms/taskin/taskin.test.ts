@@ -29,14 +29,7 @@ describe('TaskinMascot', () => {
   });
 
   it('should support all moods', () => {
-    const moods = [
-      'neutral',
-      'smirk',
-      'happy',
-      'annoyed',
-      'sarcastic',
-      'crying',
-    ];
+    const moods = ['neutral', 'smirk', 'happy', 'annoyed', 'sarcastic', 'crying'];
     moods.forEach((mood) => {
       const result = fakeTaskinController.setMood(mood as any);
       expect(result).toBe(fakeTaskinController);

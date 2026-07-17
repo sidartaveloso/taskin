@@ -151,10 +151,7 @@ export default {
     { slots }: any,
   ) {
     return () => {
-      const animationDuration =
-        props.animationsEnabled && props.speed > 0
-          ? `${2 / props.speed}s`
-          : '0s';
+      const animationDuration = props.animationsEnabled && props.speed > 0 ? `${2 / props.speed}s` : '0s';
 
       const isFluid = props.fluid || !props.d;
       const keyframes = props.animationKeyframes || defaultKeyframes;
@@ -337,9 +334,7 @@ export default {
           'stroke-linecap': 'round',
           'stroke-linejoin': 'round',
           style: [
-            props.animationDelay > 0
-              ? `animation-delay: ${props.animationDelay}s;`
-              : '',
+            props.animationDelay > 0 ? `animation-delay: ${props.animationDelay}s;` : '',
             isFluid && props.animationsEnabled && props.speed > 0
               ? `animation: tentacle-fluid-${props.x}-${props.y} ${animationDuration} ease-in-out infinite;`
               : '',
@@ -355,12 +350,7 @@ export default {
       // For static: fixed at end point
       const tipAnimation = (() => {
         // curl, uncurl, and dance are handled by CSS class selectors
-        if (
-          !props.animationsEnabled ||
-          props.curl ||
-          props.uncurl ||
-          props.dance
-        ) {
+        if (!props.animationsEnabled || props.curl || props.uncurl || props.dance) {
           return undefined;
         }
 

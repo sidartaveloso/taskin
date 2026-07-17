@@ -161,8 +161,7 @@ export const AllVariations: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Overview of all variations showing phone anchored to arms with different positions and rotations.',
+        story: 'Overview of all variations showing phone anchored to arms with different positions and rotations.',
       },
     },
   },
@@ -380,8 +379,7 @@ export const FaceTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          '📹 Arms move based on your eye direction! Look left/right to see the arms raise.',
+        story: '📹 Arms move based on your eye direction! Look left/right to see the arms raise.',
       },
     },
   },

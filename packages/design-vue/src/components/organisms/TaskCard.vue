@@ -1,20 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type {
-  ProjectPath,
-  Task,
-  TaskProgress,
-  TaskStatus,
-  TimeEstimate as TimeEstimateType,
-  User,
-} from '../../types';
+import type { ProjectPath, Task, TaskProgress, TaskStatus, TimeEstimate as TimeEstimateType, User } from '../../types';
 import { Badge, ProgressBar } from '../atoms';
-import {
-  DayBar,
-  ProjectBreadcrumb,
-  TaskHeader,
-  TimeEstimate,
-} from '../molecules';
+import { DayBar, ProjectBreadcrumb, TaskHeader, TimeEstimate } from '../molecules';
 
 interface Props {
   // Hybrid approach: accept full Task object OR individual props
@@ -77,26 +65,17 @@ const computedTask = computed((): Task => {
     dates: {
       created: new Date(),
       ...(props.dueDate && {
-        dueDate:
-          typeof props.dueDate === 'string'
-            ? new Date(props.dueDate)
-            : props.dueDate,
+        dueDate: typeof props.dueDate === 'string' ? new Date(props.dueDate) : props.dueDate,
       }),
       ...(props.startDate && {
-        started:
-          typeof props.startDate === 'string'
-            ? new Date(props.startDate)
-            : props.startDate,
+        started: typeof props.startDate === 'string' ? new Date(props.startDate) : props.startDate,
       }),
     },
   };
 });
 
 // Status badge variant mapping
-const statusVariantMap: Record<
-  TaskStatus,
-  'default' | 'primary' | 'warning' | 'success' | 'danger'
-> = {
+const statusVariantMap: Record<TaskStatus, 'default' | 'primary' | 'warning' | 'success' | 'danger'> = {
   pending: 'default',
   'in-progress': 'primary',
   paused: 'warning',
@@ -129,9 +108,7 @@ const statusLabel = computed(() => {
 });
 
 // Check if task has warnings
-const hasWarnings = computed(
-  () => computedTask.value.warnings && computedTask.value.warnings.length > 0,
-);
+const hasWarnings = computed(() => computedTask.value.warnings && computedTask.value.warnings.length > 0);
 
 // Format date
 const formatDate = (date: Date | string): string => {

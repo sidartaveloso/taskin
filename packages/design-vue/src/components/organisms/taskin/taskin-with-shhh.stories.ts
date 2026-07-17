@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import TaskinWithShhh from './taskin-with-shhh.vue';
 import { defaultTaskinProps } from './taskin.mock';
+import TaskinWithShhh from './taskin-with-shhh.vue';
 
 const meta = {
   title: 'Organisms/TaskinWithShhh',

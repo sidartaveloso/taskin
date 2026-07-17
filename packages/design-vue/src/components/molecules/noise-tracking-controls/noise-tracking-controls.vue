@@ -67,10 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  NoiseTrackingControlsEmits,
-  NoiseTrackingControlsProps,
-} from './noise-tracking-controls.types';
+import type { NoiseTrackingControlsEmits, NoiseTrackingControlsProps } from './noise-tracking-controls.types';
 
 defineProps<NoiseTrackingControlsProps>();
 const emit = defineEmits<NoiseTrackingControlsEmits>();

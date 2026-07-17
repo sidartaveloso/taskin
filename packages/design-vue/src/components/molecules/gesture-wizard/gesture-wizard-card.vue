@@ -140,7 +140,7 @@
 
 <script setup lang="ts">
 import type { GestureWizardProps } from './gesture-wizard.types';
-import { gestureEmoji, gestureLabel, actionLabel } from './gesture-wizard.types';
+import { actionLabel, gestureEmoji, gestureLabel } from './gesture-wizard.types';
 
 defineProps<GestureWizardProps>();
 </script>

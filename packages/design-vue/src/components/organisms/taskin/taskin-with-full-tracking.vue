@@ -74,9 +74,9 @@ import TaskinBody from '../../atoms/taskin-body/taskin-body.vue';
 import TaskinEyes from '../../atoms/taskin-eyes/taskin-eyes.vue';
 import type { MouthExpression } from '../../atoms/taskin-mouth/taskin-mouth.types';
 import TaskinMouth from '../../atoms/taskin-mouth/taskin-mouth.vue';
-import WebcamVideo from '../../atoms/webcam-video';
-import TrackingControls from '../../molecules/tracking-controls';
+import type WebcamVideo from '../../atoms/webcam-video';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
+import TrackingControls from '../../molecules/tracking-controls';
 
 export interface Props {
   mascotSize?: number;
@@ -134,15 +134,9 @@ const leftArmPosition = ref<ArmPosition>(NEUTRAL_ARM_POSITION);
 const rightArmPosition = ref<ArmPosition>(NEUTRAL_ARM_POSITION);
 
 // Controle combinado
-const isDetecting = computed(
-  () =>
-    faceLandmarker.state.value.isDetecting ||
-    poseLandmarker.state.value.isDetecting,
-);
+const isDetecting = computed(() => faceLandmarker.state.value.isDetecting || poseLandmarker.state.value.isDetecting);
 
-const trackingError = computed(
-  () => faceLandmarker.state.value.error || poseLandmarker.state.value.error,
-);
+const trackingError = computed(() => faceLandmarker.state.value.error || poseLandmarker.state.value.error);
 
 const toggleTracking = () => {
   if (faceLandmarker.state.value.isDetecting) {
@@ -266,8 +260,8 @@ const debugInfo = computed(() => {
   const armAngles = poseLandmarker.getArmAngles();
   const poseData = armAngles
     ? {
-        leftShoulder: armAngles.left.shoulder.toFixed(1) + '°',
-        rightShoulder: armAngles.right.shoulder.toFixed(1) + '°',
+        leftShoulder: `${armAngles.left.shoulder.toFixed(1)}°`,
+        rightShoulder: `${armAngles.right.shoulder.toFixed(1)}°`,
       }
     : null;
 

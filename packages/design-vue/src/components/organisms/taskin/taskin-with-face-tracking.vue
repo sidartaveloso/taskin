@@ -51,11 +51,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
-import WebcamVideo from '../../atoms/webcam-video';
-import TrackingControls from '../../molecules/tracking-controls';
+import type WebcamVideo from '../../atoms/webcam-video';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
-import TaskinComposed from './taskin-composed';
+import TrackingControls from '../../molecules/tracking-controls';
 import type { TaskinMood } from './taskin.types';
+import TaskinComposed from './taskin-composed';
 
 export interface Props {
   mascotSize?: number;
@@ -100,16 +100,9 @@ const currentMood = ref<TaskinMood>('neutral');
 const eyeTrackingMode = ref<'none' | 'mouse' | 'element' | 'custom'>('none');
 const eyePosition = ref<{ x: number; y: number }>({ x: 0, y: 0 });
 const eyeState = ref<'normal' | 'closed' | 'squint' | 'wide'>('normal');
-const mouthExpression = ref<
-  | 'neutral'
-  | 'smile'
-  | 'frown'
-  | 'open'
-  | 'wide-open'
-  | 'o-shape'
-  | 'smirk'
-  | 'surprised'
->('neutral');
+const mouthExpression = ref<'neutral' | 'smile' | 'frown' | 'open' | 'wide-open' | 'o-shape' | 'smirk' | 'surprised'>(
+  'neutral',
+);
 
 // Controle
 const toggleTracking = () => {
@@ -247,8 +240,7 @@ const debugInfo = computed(() => {
     },
     eyeOpenness: {
       left: (eyeOpenness.left >= 0 ? '+' : '') + eyeOpenness.left.toFixed(10),
-      right:
-        (eyeOpenness.right >= 0 ? '+' : '') + eyeOpenness.right.toFixed(10),
+      right: (eyeOpenness.right >= 0 ? '+' : '') + eyeOpenness.right.toFixed(10),
     },
   };
 });

@@ -252,11 +252,7 @@ export const ElementTracking: Story = {
                 },
               },
               [
-                h(
-                  'p',
-                  { style: { margin: 0 } },
-                  '👇 Drag this button with mouse or touch!',
-                ),
+                h('p', { style: { margin: 0 } }, '👇 Drag this button with mouse or touch!'),
                 h(
                   'button',
                   {
@@ -304,8 +300,7 @@ export const ElementTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          '🎯 Eyes track a specific element on the page. Hover over the button to see it move!',
+        story: '🎯 Eyes track a specific element on the page. Hover over the button to see it move!',
       },
     },
   },
@@ -498,9 +493,7 @@ export const FaceTracking: Story = {
       const videoElement = ref<HTMLVideoElement | null>(null);
       const showWebcam = ref(false);
       const syncEyes = ref(true);
-      const eyeTrackingMode = ref<'none' | 'mouse' | 'element' | 'custom'>(
-        'none',
-      );
+      const eyeTrackingMode = ref<'none' | 'mouse' | 'element' | 'custom'>('none');
       const eyeState = ref<EyeState>('normal');
       const eyePosition = ref({ x: 0, y: 0 });
 
@@ -597,11 +590,8 @@ export const FaceTracking: Story = {
             y: (eyeLook.y >= 0 ? '+' : '') + eyeLook.y.toFixed(15),
           },
           eyeOpenness: {
-            left:
-              (eyeOpenness.left >= 0 ? '+' : '') + eyeOpenness.left.toFixed(10),
-            right:
-              (eyeOpenness.right >= 0 ? '+' : '') +
-              eyeOpenness.right.toFixed(10),
+            left: (eyeOpenness.left >= 0 ? '+' : '') + eyeOpenness.left.toFixed(10),
+            right: (eyeOpenness.right >= 0 ? '+' : '') + eyeOpenness.right.toFixed(10),
           },
           eyeState: eyeState.value,
         };
@@ -688,8 +678,7 @@ export const FaceTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          '📹 Eyes track your face using webcam! Click "Iniciar Detecção" to start.',
+        story: '📹 Eyes track your face using webcam! Click "Iniciar Detecção" to start.',
       },
     },
   },

@@ -108,11 +108,7 @@ export interface TaskinTentacleController {
   /**
    * Wiggle a specific tentacle
    */
-  wiggleTentacle(
-    id: TentacleId,
-    intensityDeg?: number,
-    durationMs?: number,
-  ): void;
+  wiggleTentacle(id: TentacleId, intensityDeg?: number, durationMs?: number): void;
 
   /**
    * Wiggle all tentacles with delay

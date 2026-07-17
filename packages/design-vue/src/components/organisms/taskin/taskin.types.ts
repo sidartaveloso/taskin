@@ -98,21 +98,14 @@ export interface TaskinProps {
 }
 
 export interface TaskinController {
-  raiseArm(
-    side: TaskinArmSide,
-    angleDeg?: number,
-    durationMs?: number,
-  ): TaskinController;
+  raiseArm(side: TaskinArmSide, angleDeg?: number, durationMs?: number): TaskinController;
   lowerArms(durationMs?: number): TaskinController;
 
   smile(durationMs?: number): TaskinController;
   neutralMouth(): TaskinController;
 
   blink(durationMs?: number): TaskinController;
-  look(
-    direction: 'left' | 'right' | 'center',
-    amount?: number,
-  ): TaskinController;
+  look(direction: 'left' | 'right' | 'center', amount?: number): TaskinController;
 
   setMood(mood: TaskinMood): TaskinController;
 
@@ -123,19 +116,12 @@ export interface TaskinController {
   /**
    * Wiggle a specific tentacle by id.
    */
-  wiggleTentacle(
-    id: TaskinTentacleId,
-    intensityDeg?: number,
-    durationMs?: number,
-  ): TaskinController;
+  wiggleTentacle(id: TaskinTentacleId, intensityDeg?: number, durationMs?: number): TaskinController;
 
   /**
    * Wiggle all tentacles with a small delay between them.
    */
-  wiggleAllTentacles(
-    intensityDeg?: number,
-    durationMs?: number,
-  ): TaskinController;
+  wiggleAllTentacles(intensityDeg?: number, durationMs?: number): TaskinController;
 
   /**
    * Add animated tears (for crying mood).
@@ -150,11 +136,7 @@ export interface TaskinController {
   /**
    * Change the octopus color (for mood-based camouflage).
    */
-  changeColor(
-    bodyColor: string,
-    bodyHighlight: string,
-    tentacleColor: string,
-  ): TaskinController;
+  changeColor(bodyColor: string, bodyHighlight: string, tentacleColor: string): TaskinController;
 
   /**
    * Add shiver animation (for cold mood).
@@ -241,8 +223,6 @@ export interface TaskinReadyPayload {
   rootSvg: SVGElement;
 }
 
-export interface TaskinEmits {
-  (e: 'ready', payload: TaskinReadyPayload): void;
-}
+export type TaskinEmits = (e: 'ready', payload: TaskinReadyPayload) => void;
 
 export type TaskinInstance = Ref<TaskinExpose | null>;

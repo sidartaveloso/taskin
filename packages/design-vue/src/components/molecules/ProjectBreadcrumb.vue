@@ -18,11 +18,7 @@ const displaySegments = computed(() => {
     return props.project.segments;
   }
 
-  return [
-    props.project.segments[0],
-    '...',
-    ...props.project.segments.slice(-props.maxSegments + 1),
-  ];
+  return [props.project.segments[0], '...', ...props.project.segments.slice(-props.maxSegments + 1)];
 });
 </script>
 

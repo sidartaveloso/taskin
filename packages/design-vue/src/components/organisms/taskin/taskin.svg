@@ -3,7 +3,9 @@
   id="taskin-root"
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 320 260"
+  role="img"
 >
+  <title>Taskin mascot</title>
   <!-- sombra -->
   <ellipse id="shadow" cx="160" cy="230" rx="70" ry="14" fill="#d8e2f0" />
 

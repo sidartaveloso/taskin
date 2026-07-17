@@ -46,11 +46,7 @@ export const Default: Story = {
     components: { TaskinMascot },
     setup() {
       const onReady = (payload: TaskinReadyPayload) => {
-        payload.controller
-          .raiseArm('left')
-          .smile()
-          .wiggleAllTentacles()
-          .speak('Welcome to Taskin Storybook.');
+        payload.controller.raiseArm('left').smile().wiggleAllTentacles().speak('Welcome to Taskin Storybook.');
       };
 
       return { args, onReady };

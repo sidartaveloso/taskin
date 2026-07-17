@@ -175,8 +175,8 @@ export const FullTracking: Story = {
         const armAngles = poseLandmarker.getArmAngles();
         const poseData = armAngles
           ? {
-              leftShoulder: armAngles.left.shoulder.toFixed(1) + '°',
-              rightShoulder: armAngles.right.shoulder.toFixed(1) + '°',
+              leftShoulder: `${armAngles.left.shoulder.toFixed(1)}°`,
+              rightShoulder: `${armAngles.right.shoulder.toFixed(1)}°`,
             }
           : null;
 
@@ -189,15 +189,10 @@ export const FullTracking: Story = {
       });
 
       const isDetecting = computed(
-        () =>
-          faceLandmarker.state.value.isDetecting ||
-          poseLandmarker.state.value.isDetecting,
+        () => faceLandmarker.state.value.isDetecting || poseLandmarker.state.value.isDetecting,
       );
 
-      const trackingError = computed(
-        () =>
-          faceLandmarker.state.value.error || poseLandmarker.state.value.error,
-      );
+      const trackingError = computed(() => faceLandmarker.state.value.error || poseLandmarker.state.value.error);
 
       return () =>
         h(
@@ -253,8 +248,7 @@ export const FullTracking: Story = {
                 height: '400',
                 style: {
                   border: '2px solid #e0e0e0',
-                  background:
-                    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   borderRadius: '12px',
                 },
               },

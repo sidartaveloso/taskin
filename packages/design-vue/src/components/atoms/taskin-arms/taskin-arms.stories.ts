@@ -144,8 +144,7 @@ export const AllVariations: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Overview of all available arm position variations with different colors.',
+        story: 'Overview of all available arm position variations with different colors.',
       },
     },
   },
@@ -212,8 +211,7 @@ export const ArmsStraightOut: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Arms stretched straight out to the sides - T-pose with fully extended arms.',
+        story: 'Arms stretched straight out to the sides - T-pose with fully extended arms.',
       },
     },
   },
@@ -228,8 +226,7 @@ export const ArmsWideOpen: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Arms wide open and slightly raised - welcoming gesture with fully extended arms.',
+        story: 'Arms wide open and slightly raised - welcoming gesture with fully extended arms.',
       },
     },
   },
@@ -453,12 +450,6 @@ export const PoseTracking: Story = {
             const armAngles = poseLandmarker.getArmAngles();
             if (!armAngles) return;
 
-            // Debug: log arm angles
-            console.log('Arm angles:', {
-              left: armAngles.left,
-              right: armAngles.right,
-            });
-
             // Update left arm
             leftArmPosition.value = {
               shoulderAngle: armAngles.left.shoulder,
@@ -493,17 +484,17 @@ export const PoseTracking: Story = {
 
         return {
           leftArm: {
-            shoulder: armAngles?.left.shoulder.toFixed(2) + '°',
-            elbow: armAngles?.left.elbow.toFixed(2) + '°',
-            wrist: armAngles?.left.wrist.toFixed(2) + '°',
+            shoulder: `${armAngles?.left.shoulder.toFixed(2)}°`,
+            elbow: `${armAngles?.left.elbow.toFixed(2)}°`,
+            wrist: `${armAngles?.left.wrist.toFixed(2)}°`,
           },
           rightArm: {
-            shoulder: armAngles?.right.shoulder.toFixed(2) + '°',
-            elbow: armAngles?.right.elbow.toFixed(2) + '°',
-            wrist: armAngles?.right.wrist.toFixed(2) + '°',
+            shoulder: `${armAngles?.right.shoulder.toFixed(2)}°`,
+            elbow: `${armAngles?.right.elbow.toFixed(2)}°`,
+            wrist: `${armAngles?.right.wrist.toFixed(2)}°`,
           },
-          headTilt: headTilt.toFixed(2) + '°',
-          torsoTilt: torsoTilt.toFixed(2) + '°',
+          headTilt: `${headTilt.toFixed(2)}°`,
+          torsoTilt: `${torsoTilt.toFixed(2)}°`,
         };
       });
 

@@ -22,10 +22,7 @@ export interface EyeTrackingOptions {
  * @param targetPosition Posição do alvo (mouse, elemento, etc)
  * @param options Opções de configuração do tracking
  */
-export function useEyeTracking(
-  targetPosition: Ref<TrackingPosition>,
-  options: EyeTrackingOptions,
-) {
+export function useEyeTracking(targetPosition: Ref<TrackingPosition>, options: EyeTrackingOptions) {
   const { eyeCenterX, eyeCenterY, maxOffset = 6, containerElement } = options;
 
   const pupilOffset = computed<EyeOffset>(() => {

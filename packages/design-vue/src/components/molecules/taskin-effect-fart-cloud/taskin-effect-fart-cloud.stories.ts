@@ -34,8 +34,7 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Fart cloud expanding and fading animation with staggered delays',
+        story: 'Fart cloud expanding and fading animation with staggered delays',
       },
     },
   },

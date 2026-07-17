@@ -17,9 +17,7 @@ export default {
           fill: '#FF1493',
           'font-size': '20',
           textContent: '❤',
-          style: props.animationsEnabled
-            ? 'animation: heart-float-1 2s ease-in-out infinite;'
-            : '',
+          style: props.animationsEnabled ? 'animation: heart-float-1 2s ease-in-out infinite;' : '',
         }),
         h('text', {
           x: '195',
@@ -27,9 +25,7 @@ export default {
           fill: '#FF1493',
           'font-size': '20',
           textContent: '❤',
-          style: props.animationsEnabled
-            ? 'animation: heart-float-2 2s ease-in-out infinite 0.3s;'
-            : '',
+          style: props.animationsEnabled ? 'animation: heart-float-2 2s ease-in-out infinite 0.3s;' : '',
         }),
         h('text', {
           x: '150',
@@ -37,9 +33,7 @@ export default {
           fill: '#FF1493',
           'font-size': '20',
           textContent: '❤',
-          style: props.animationsEnabled
-            ? 'animation: heart-float-3 2s ease-in-out infinite 0.6s;'
-            : '',
+          style: props.animationsEnabled ? 'animation: heart-float-3 2s ease-in-out infinite 0.6s;' : '',
         }),
         h(
           'style',

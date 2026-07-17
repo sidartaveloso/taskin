@@ -1,5 +1,5 @@
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
-import { onUnmounted, ref, type Ref } from 'vue';
+import { onUnmounted, type Ref, ref } from 'vue';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PoseLandmarkerInstance = any;
@@ -80,15 +80,8 @@ export const POSE_LANDMARKS = {
   RIGHT_FOOT_INDEX: 32,
 } as const;
 
-export function usePoseLandmarker(
-  videoElement: Ref<HTMLVideoElement | null>,
-  options: UsePoseLandmarkerOptions = {},
-) {
-  const {
-    minDetectionConfidence = 0.5,
-    minTrackingConfidence = 0.5,
-    mirrorPose = true,
-  } = options;
+export function usePoseLandmarker(videoElement: Ref<HTMLVideoElement | null>, options: UsePoseLandmarkerOptions = {}) {
+  const { minDetectionConfidence = 0.5, minTrackingConfidence = 0.5, mirrorPose = true } = options;
 
   const poseLandmarker = ref<PoseLandmarkerInstance | null>(null);
   const state = ref<PoseLandmarkerState>({
@@ -143,13 +136,9 @@ export function usePoseLandmarker(
         poseLandmarker.value = null;
       }
 
-      console.log('Initializing MediaPipe Pose Landmarker...');
-
       const vision = await FilesetResolver.forVisionTasks(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm',
       );
-
-      console.log('Creating PoseLandmarker with IMAGE mode...');
 
       // Create with IMAGE mode (mais estável para detecção frame-by-frame)
       poseLandmarker.value = await PoseLandmarker.createFromOptions(vision, {
@@ -166,7 +155,6 @@ export function usePoseLandmarker(
       });
 
       state.value.isReady = true;
-      console.log('PoseLandmarker initialized successfully with IMAGE mode!');
     } catch (error) {
       state.value.error = `Failed to initialize pose landmarker: ${error}`;
       console.error(state.value.error);
@@ -224,137 +212,89 @@ export function usePoseLandmarker(
           const mirrored = [...landmarks];
 
           // Trocar olhos
-          [
-            mirrored[POSE_LANDMARKS.LEFT_EYE_INNER],
-            mirrored[POSE_LANDMARKS.RIGHT_EYE_INNER],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_EYE_INNER], mirrored[POSE_LANDMARKS.RIGHT_EYE_INNER]] = [
             mirrored[POSE_LANDMARKS.RIGHT_EYE_INNER],
             mirrored[POSE_LANDMARKS.LEFT_EYE_INNER],
           ];
-          [
-            mirrored[POSE_LANDMARKS.LEFT_EYE],
-            mirrored[POSE_LANDMARKS.RIGHT_EYE],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_EYE], mirrored[POSE_LANDMARKS.RIGHT_EYE]] = [
             mirrored[POSE_LANDMARKS.RIGHT_EYE],
             mirrored[POSE_LANDMARKS.LEFT_EYE],
           ];
-          [
-            mirrored[POSE_LANDMARKS.LEFT_EYE_OUTER],
-            mirrored[POSE_LANDMARKS.RIGHT_EYE_OUTER],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_EYE_OUTER], mirrored[POSE_LANDMARKS.RIGHT_EYE_OUTER]] = [
             mirrored[POSE_LANDMARKS.RIGHT_EYE_OUTER],
             mirrored[POSE_LANDMARKS.LEFT_EYE_OUTER],
           ];
 
           // Trocar orelhas
-          [
-            mirrored[POSE_LANDMARKS.LEFT_EAR],
-            mirrored[POSE_LANDMARKS.RIGHT_EAR],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_EAR], mirrored[POSE_LANDMARKS.RIGHT_EAR]] = [
             mirrored[POSE_LANDMARKS.RIGHT_EAR],
             mirrored[POSE_LANDMARKS.LEFT_EAR],
           ];
 
           // Trocar boca
-          [
-            mirrored[POSE_LANDMARKS.MOUTH_LEFT],
-            mirrored[POSE_LANDMARKS.MOUTH_RIGHT],
-          ] = [
+          [mirrored[POSE_LANDMARKS.MOUTH_LEFT], mirrored[POSE_LANDMARKS.MOUTH_RIGHT]] = [
             mirrored[POSE_LANDMARKS.MOUTH_RIGHT],
             mirrored[POSE_LANDMARKS.MOUTH_LEFT],
           ];
 
           // Trocar ombros
-          [
-            mirrored[POSE_LANDMARKS.LEFT_SHOULDER],
-            mirrored[POSE_LANDMARKS.RIGHT_SHOULDER],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_SHOULDER], mirrored[POSE_LANDMARKS.RIGHT_SHOULDER]] = [
             mirrored[POSE_LANDMARKS.RIGHT_SHOULDER],
             mirrored[POSE_LANDMARKS.LEFT_SHOULDER],
           ];
 
           // Trocar cotovelos
-          [
-            mirrored[POSE_LANDMARKS.LEFT_ELBOW],
-            mirrored[POSE_LANDMARKS.RIGHT_ELBOW],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_ELBOW], mirrored[POSE_LANDMARKS.RIGHT_ELBOW]] = [
             mirrored[POSE_LANDMARKS.RIGHT_ELBOW],
             mirrored[POSE_LANDMARKS.LEFT_ELBOW],
           ];
 
           // Trocar punhos
-          [
-            mirrored[POSE_LANDMARKS.LEFT_WRIST],
-            mirrored[POSE_LANDMARKS.RIGHT_WRIST],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_WRIST], mirrored[POSE_LANDMARKS.RIGHT_WRIST]] = [
             mirrored[POSE_LANDMARKS.RIGHT_WRIST],
             mirrored[POSE_LANDMARKS.LEFT_WRIST],
           ];
 
           // Trocar mãos
-          [
-            mirrored[POSE_LANDMARKS.LEFT_PINKY],
-            mirrored[POSE_LANDMARKS.RIGHT_PINKY],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_PINKY], mirrored[POSE_LANDMARKS.RIGHT_PINKY]] = [
             mirrored[POSE_LANDMARKS.RIGHT_PINKY],
             mirrored[POSE_LANDMARKS.LEFT_PINKY],
           ];
-          [
-            mirrored[POSE_LANDMARKS.LEFT_INDEX],
-            mirrored[POSE_LANDMARKS.RIGHT_INDEX],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_INDEX], mirrored[POSE_LANDMARKS.RIGHT_INDEX]] = [
             mirrored[POSE_LANDMARKS.RIGHT_INDEX],
             mirrored[POSE_LANDMARKS.LEFT_INDEX],
           ];
-          [
-            mirrored[POSE_LANDMARKS.LEFT_THUMB],
-            mirrored[POSE_LANDMARKS.RIGHT_THUMB],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_THUMB], mirrored[POSE_LANDMARKS.RIGHT_THUMB]] = [
             mirrored[POSE_LANDMARKS.RIGHT_THUMB],
             mirrored[POSE_LANDMARKS.LEFT_THUMB],
           ];
 
           // Trocar quadris
-          [
-            mirrored[POSE_LANDMARKS.LEFT_HIP],
-            mirrored[POSE_LANDMARKS.RIGHT_HIP],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_HIP], mirrored[POSE_LANDMARKS.RIGHT_HIP]] = [
             mirrored[POSE_LANDMARKS.RIGHT_HIP],
             mirrored[POSE_LANDMARKS.LEFT_HIP],
           ];
 
           // Trocar joelhos
-          [
-            mirrored[POSE_LANDMARKS.LEFT_KNEE],
-            mirrored[POSE_LANDMARKS.RIGHT_KNEE],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_KNEE], mirrored[POSE_LANDMARKS.RIGHT_KNEE]] = [
             mirrored[POSE_LANDMARKS.RIGHT_KNEE],
             mirrored[POSE_LANDMARKS.LEFT_KNEE],
           ];
 
           // Trocar tornozelos
-          [
-            mirrored[POSE_LANDMARKS.LEFT_ANKLE],
-            mirrored[POSE_LANDMARKS.RIGHT_ANKLE],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_ANKLE], mirrored[POSE_LANDMARKS.RIGHT_ANKLE]] = [
             mirrored[POSE_LANDMARKS.RIGHT_ANKLE],
             mirrored[POSE_LANDMARKS.LEFT_ANKLE],
           ];
 
           // Trocar calcanhares
-          [
-            mirrored[POSE_LANDMARKS.LEFT_HEEL],
-            mirrored[POSE_LANDMARKS.RIGHT_HEEL],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_HEEL], mirrored[POSE_LANDMARKS.RIGHT_HEEL]] = [
             mirrored[POSE_LANDMARKS.RIGHT_HEEL],
             mirrored[POSE_LANDMARKS.LEFT_HEEL],
           ];
 
           // Trocar dedos dos pés
-          [
-            mirrored[POSE_LANDMARKS.LEFT_FOOT_INDEX],
-            mirrored[POSE_LANDMARKS.RIGHT_FOOT_INDEX],
-          ] = [
+          [mirrored[POSE_LANDMARKS.LEFT_FOOT_INDEX], mirrored[POSE_LANDMARKS.RIGHT_FOOT_INDEX]] = [
             mirrored[POSE_LANDMARKS.RIGHT_FOOT_INDEX],
             mirrored[POSE_LANDMARKS.LEFT_FOOT_INDEX],
           ];
@@ -389,8 +329,6 @@ export function usePoseLandmarker(
       console.warn('Detection already running');
       return;
     }
-
-    console.log('Starting pose detection loop...');
     state.value.isDetecting = true;
     state.value.error = null;
 
@@ -436,7 +374,9 @@ export function usePoseLandmarker(
 
     // Stop webcam stream
     if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+      for (const track of stream.getTracks()) {
+        track.stop();
+      }
       stream = null;
     }
 
@@ -447,13 +387,8 @@ export function usePoseLandmarker(
   };
 
   // Calculate angle between three points
-  const calculateAngle = (
-    a: PoseLandmark,
-    b: PoseLandmark,
-    c: PoseLandmark,
-  ): number => {
-    const radians =
-      Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+  const calculateAngle = (a: PoseLandmark, b: PoseLandmark, c: PoseLandmark): number => {
+    const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
     let angle = Math.abs((radians * 180.0) / Math.PI);
 
     if (angle > 180.0) {
@@ -478,32 +413,16 @@ export function usePoseLandmarker(
       const rightWrist = landmarks[POSE_LANDMARKS.RIGHT_WRIST];
 
       // Calculate shoulder angle (relative to horizontal)
-      const leftShoulderAngle = Math.atan2(
-        leftElbow.y - leftShoulder.y,
-        leftElbow.x - leftShoulder.x,
-      );
-      const rightShoulderAngle = Math.atan2(
-        rightElbow.y - rightShoulder.y,
-        rightElbow.x - rightShoulder.x,
-      );
+      const leftShoulderAngle = Math.atan2(leftElbow.y - leftShoulder.y, leftElbow.x - leftShoulder.x);
+      const rightShoulderAngle = Math.atan2(rightElbow.y - rightShoulder.y, rightElbow.x - rightShoulder.x);
 
       // Calculate elbow angle
       const leftElbowAngle = calculateAngle(leftShoulder, leftElbow, leftWrist);
-      const rightElbowAngle = calculateAngle(
-        rightShoulder,
-        rightElbow,
-        rightWrist,
-      );
+      const rightElbowAngle = calculateAngle(rightShoulder, rightElbow, rightWrist);
 
       // Calculate wrist position relative to elbow
-      const leftWristAngle = Math.atan2(
-        leftWrist.y - leftElbow.y,
-        leftWrist.x - leftElbow.x,
-      );
-      const rightWristAngle = Math.atan2(
-        rightWrist.y - rightElbow.y,
-        rightWrist.x - rightElbow.x,
-      );
+      const leftWristAngle = Math.atan2(leftWrist.y - leftElbow.y, leftWrist.x - leftElbow.x);
+      const rightWristAngle = Math.atan2(rightWrist.y - rightElbow.y, rightWrist.x - rightElbow.x);
 
       // Retorna os ângulos (mirrorPose já foi aplicado aos landmarks)
       return {
@@ -558,10 +477,7 @@ export function usePoseLandmarker(
     const hipCenterX = (leftHip.x + rightHip.x) / 2;
 
     // Calculate lean angle
-    const angle = Math.atan2(
-      shoulderCenterY - hipCenterY,
-      shoulderCenterX - hipCenterX,
-    );
+    const angle = Math.atan2(shoulderCenterY - hipCenterY, shoulderCenterX - hipCenterX);
     return (angle * 180) / Math.PI - 90; // Subtract 90 to make upright = 0
   };
 

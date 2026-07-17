@@ -97,8 +97,7 @@ export const AllVariants: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'All available color variants: default, primary, success, warning, danger, and info.',
+        story: 'All available color variants: default, primary, success, warning, danger, and info.',
       },
     },
     controls: { disable: true },

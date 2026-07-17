@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { NEUTRAL_ARM_POSITION, type ArmPosition } from './taskin-arms.types';
+import { type ArmPosition, NEUTRAL_ARM_POSITION } from './taskin-arms.types';
 
 export interface Props {
   color?: string;
@@ -40,11 +40,7 @@ const LEFT_SHOULDER = { x: 95, y: 120 };
 const RIGHT_SHOULDER = { x: 225, y: 120 };
 
 // Generate arm path based on angles
-const generateArmPath = (
-  shoulder: { x: number; y: number },
-  position: ArmPosition,
-  side: 'left' | 'right',
-): string => {
+const generateArmPath = (shoulder: { x: number; y: number }, position: ArmPosition, side: 'left' | 'right'): string => {
   // Convert angles to radians
   const shoulderRad = (position.shoulderAngle * Math.PI) / 180;
   const elbowRad = (position.elbowAngle * Math.PI) / 180;
@@ -53,20 +49,14 @@ const generateArmPath = (
   const upperArmLength = 25;
 
   // Calculate elbow position
-  const elbowX =
-    shoulder.x +
-    Math.cos(shoulderRad) * upperArmLength * (side === 'left' ? -1 : 1);
+  const elbowX = shoulder.x + Math.cos(shoulderRad) * upperArmLength * (side === 'left' ? -1 : 1);
   const elbowY = shoulder.y + Math.sin(shoulderRad) * upperArmLength;
 
   // Forearm length (elbow to wrist)
   const forearmLength = 25;
 
   // Calculate wrist position
-  const wristX =
-    elbowX +
-    Math.cos(shoulderRad - elbowRad) *
-      forearmLength *
-      (side === 'left' ? -1 : 1);
+  const wristX = elbowX + Math.cos(shoulderRad - elbowRad) * forearmLength * (side === 'left' ? -1 : 1);
   const wristY = elbowY + Math.sin(shoulderRad - elbowRad) * forearmLength;
 
   // Create smooth curve using quadratic bezier

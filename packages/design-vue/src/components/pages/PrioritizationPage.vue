@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, toRef, watch } from 'vue';
-import { usePrioritization } from '../../composables/use-prioritization';
-import { useGestureShortcuts } from '../../composables/use-gesture-shortcuts';
 import type { CannedGesture } from '../../composables/use-gesture-recognizer';
+import { useGestureShortcuts } from '../../composables/use-gesture-shortcuts';
+import { usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
-import {
-  gestureEmoji,
-  actionLabel,
-} from '../molecules/gesture-wizard/gesture-wizard.types';
+import { actionLabel, gestureEmoji } from '../molecules/gesture-wizard/gesture-wizard.types';
 import GestureWizard from '../molecules/gesture-wizard/gesture-wizard.vue';
 import PrioritizationScreen from '../templates/PrioritizationScreen.vue';
 
@@ -67,12 +64,9 @@ const gestureShortcuts = gestureEnabled
   ? useGestureShortcuts(
       () => {
         const g = props.getStableGesture!();
-        return g
-          ? { gesture: g.gesture, score: g.score, handedness: 'Right' as const }
-          : null;
+        return g ? { gesture: g.gesture, score: g.score, handedness: 'Right' as const } : null;
       },
-      (gesture: CannedGesture, ms?: number) =>
-        props.isGestureHeld?.(gesture, ms) ?? false,
+      (gesture: CannedGesture, ms?: number) => props.isGestureHeld?.(gesture, ms) ?? false,
       props.gestureUserId,
     )
   : null;

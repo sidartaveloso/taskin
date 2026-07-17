@@ -1,9 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h, ref } from 'vue';
-import type {
-  PrioritizationAction,
-  WizardState,
-} from '../../../composables/use-gesture-shortcuts';
+import type { PrioritizationAction, WizardState } from '../../../composables/use-gesture-shortcuts';
 import GestureWizard from './gesture-wizard.vue';
 
 const AVAILABLE_ACTIONS: PrioritizationAction[] = [

@@ -1,19 +1,25 @@
 <template>
   <Teleport v-if="teleportTo !== false" :to="teleportTo ?? 'body'">
     <div class="gesture-wizard-overlay gesture-wizard-overlay--fixed">
-      <WizardCard />
+      <WizardCard v-bind="wizardCardProps" />
     </div>
   </Teleport>
   <div v-else class="gesture-wizard-overlay gesture-wizard-overlay--absolute">
-    <WizardCard />
+    <WizardCard v-bind="wizardCardProps" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { GestureWizardProps } from './gesture-wizard.types';
-import GestureWizardCard from './gesture-wizard-card.vue';
+import WizardCard from './gesture-wizard-card.vue';
 
-defineProps<GestureWizardProps>();
+const props = defineProps<GestureWizardProps>();
+
+const wizardCardProps = computed(() => {
+  const { teleportTo: _teleportTo, ...rest } = props;
+  return rest;
+});
 </script>
 
 <script lang="ts">

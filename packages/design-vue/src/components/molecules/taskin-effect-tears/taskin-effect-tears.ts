@@ -17,9 +17,7 @@ export default {
           r: '2',
           fill: '#4A90E2',
           opacity: '0.8',
-          style: props.animationsEnabled
-            ? 'animation: tear-drop 1.5s ease-in-out infinite;'
-            : '',
+          style: props.animationsEnabled ? 'animation: tear-drop 1.5s ease-in-out infinite;' : '',
         }),
         h('circle', {
           cx: '172',
@@ -27,9 +25,7 @@ export default {
           r: '2',
           fill: '#4A90E2',
           opacity: '0.8',
-          style: props.animationsEnabled
-            ? 'animation: tear-drop 1.5s ease-in-out infinite 0.5s;'
-            : '',
+          style: props.animationsEnabled ? 'animation: tear-drop 1.5s ease-in-out infinite 0.5s;' : '',
         }),
         h(
           'style',

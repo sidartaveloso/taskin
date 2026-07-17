@@ -1,8 +1,8 @@
 // @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h, onMounted, onUnmounted, ref } from 'vue';
-import TaskinComposed from './taskin-composed';
 import type { TaskinMood } from './taskin.types';
+import TaskinComposed from './taskin-composed';
 
 const meta = {
   title: 'Organisms/Taskin/Composed',
@@ -11,8 +11,7 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component:
-          'Compositional Taskin mascot built entirely from atomic and molecular components.',
+        component: 'Compositional Taskin mascot built entirely from atomic and molecular components.',
       },
     },
   },
@@ -263,8 +262,7 @@ export const WithIdleAnimations: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Taskin with idle animations enabled. Watch it blink and wiggle its tentacles every few seconds.',
+        story: 'Taskin with idle animations enabled. Watch it blink and wiggle its tentacles every few seconds.',
       },
     },
   },
@@ -279,8 +277,7 @@ export const WithoutAnimations: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Taskin with all animations disabled, including mood-specific and idle animations.',
+        story: 'Taskin with all animations disabled, including mood-specific and idle animations.',
       },
     },
   },
@@ -294,8 +291,7 @@ export const EyeTrackingMouse: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Taskin with eyes following the mouse cursor. Move your mouse around to see the eyes track it.',
+        story: 'Taskin with eyes following the mouse cursor. Move your mouse around to see the eyes track it.',
       },
     },
   },
@@ -373,11 +369,7 @@ export const EyeTrackingElement: Story = {
               },
             },
             [
-              h(
-                'p',
-                { style: { margin: 0 } },
-                '👇 Drag this button with mouse or touch!',
-              ),
+              h('p', { style: { margin: 0 } }, '👇 Drag this button with mouse or touch!'),
               h(
                 'button',
                 {
@@ -414,8 +406,7 @@ export const EyeTrackingElement: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Taskin with eyes following a specific HTML element (the button above).',
+        story: 'Taskin with eyes following a specific HTML element (the button above).',
       },
     },
   },
@@ -459,9 +450,7 @@ export const EyeTrackingCustomPosition: Story = {
     },
     methods: {
       setTargetPosition(event: MouseEvent): void {
-        const rect = (
-          this.$refs.container as HTMLElement
-        ).getBoundingClientRect();
+        const rect = (this.$refs.container as HTMLElement).getBoundingClientRect();
         // A posição customizada deve ser absoluta na viewport
         this.customPosition = {
           x: event.clientX,
@@ -484,8 +473,7 @@ export const EyeTrackingCustomPosition: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Taskin with eyes following a custom position. Click anywhere in the box to set the target position.',
+        story: 'Taskin with eyes following a custom position. Click anywhere in the box to set the target position.',
       },
     },
   },

@@ -29,11 +29,7 @@ const gridClasses = computed(() => {
     4: 'task-grid--cols-4',
   };
 
-  return [
-    'task-grid',
-    colClasses[props.columns],
-    `task-grid--gap-${props.gap}`,
-  ];
+  return ['task-grid', colClasses[props.columns], `task-grid--gap-${props.gap}`];
 });
 
 // Separate tasks by status for better organization

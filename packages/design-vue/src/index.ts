@@ -1,21 +1,6 @@
 // Import global CSS variables (unscoped)
 import './styles/variables.css';
 
-// Export types first to avoid naming conflicts
-export * from './types';
-export type {
-  DashboardConfig,
-  DayProgress,
-  ProjectPath,
-  Task,
-  TaskDates,
-  TaskPriority,
-  TaskProgress,
-  TaskStatus,
-  TimeEstimate as TimeEstimateType,
-  User,
-} from './types';
-
 // Export all components by atomic design level
 export * from './components/atoms';
 // Export molecules manually to handle TimeEstimate conflict
@@ -36,16 +21,28 @@ export * from './components/molecules/taskin-effect-zzz';
 export * from './components/molecules/taskin-tentacle-with-item';
 export * from './components/molecules/taskin-tentacles-fluid';
 export * from './components/organisms';
-export * from './components/pages';
-export * from './components/templates';
-
 // Export specific organisms with default exports
 export {
-  TaskinMascot,
   default as TaskinMascotDefault,
+  TaskinMascot,
 } from './components/organisms/taskin';
-export { default as TaskinWithFaceTracking } from './components/organisms/taskin/taskin-with-face-tracking.vue';
 export * from './components/organisms/taskin/taskin.types';
-
+export { default as TaskinWithFaceTracking } from './components/organisms/taskin/taskin-with-face-tracking.vue';
+export * from './components/pages';
+export * from './components/templates';
 // Export composables
 export * from './composables';
+export type {
+  DashboardConfig,
+  DayProgress,
+  ProjectPath,
+  Task,
+  TaskDates,
+  TaskPriority,
+  TaskProgress,
+  TaskStatus,
+  TimeEstimate as TimeEstimateType,
+  User,
+} from './types';
+// Export types first to avoid naming conflicts
+export * from './types';
