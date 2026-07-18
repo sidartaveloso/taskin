@@ -1,6 +1,6 @@
 # Task 026 — Normalizar ao padrão storytype
 
-Status: pending
+Status: in-progress
 Type: refactor
 Assignee: sidartaeloso
 
