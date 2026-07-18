@@ -1,2 +1,2 @@
-export * from './webcam-video.types';
-export { default } from './webcam-video.vue';
+export * from './WebcamVideo.types';
+export { default } from './WebcamVideo.vue';

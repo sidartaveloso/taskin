@@ -1,2 +1,2 @@
-export * from './tracking-controls.types';
-export { default } from './tracking-controls.vue';
+export * from './TrackingControls.types';
+export { default } from './TrackingControls.vue';

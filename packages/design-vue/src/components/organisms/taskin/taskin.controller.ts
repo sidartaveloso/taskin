@@ -1,4 +1,4 @@
-import type { TaskinArmSide, TaskinController, TaskinMood, TaskinTentacleId } from './taskin.types';
+import type { TaskinArmSide, TaskinController, TaskinMood, TaskinTentacleId } from './Taskin.types';
 
 const TENTACLE_IDS: TaskinTentacleId[] = [
   'tentacle-front-left',

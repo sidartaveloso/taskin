@@ -1,2 +1,2 @@
-export * from './gesture-system.types';
-export { default } from './gesture-system.vue';
+export * from './GestureSystem.types';
+export { default } from './GestureSystem.vue';

@@ -1,19 +1,19 @@
 import { computed, h, onMounted, onUnmounted, type PropType, ref } from 'vue';
-import TaskinArms from '../../atoms/taskin-arms/taskin-arms.vue';
-import TaskinBody from '../../atoms/taskin-body/taskin-body.vue';
-import type { EyeState } from '../../atoms/taskin-eyes/taskin-eyes.types';
-import TaskinEyes from '../../atoms/taskin-eyes/taskin-eyes.vue';
-import type { MouthExpression } from '../../atoms/taskin-mouth/taskin-mouth.types';
-import TaskinMouth from '../../atoms/taskin-mouth/taskin-mouth.vue';
-import TaskinArmWithPhone from '../../molecules/taskin-arm-with-phone/taskin-arm-with-phone.vue';
+import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
+import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
+import type { EyeState } from '../../atoms/taskin-eyes/TaskinEyes.types';
+import TaskinEyes from '../../atoms/taskin-eyes/TaskinEyes.vue';
+import type { MouthExpression } from '../../atoms/taskin-mouth/TaskinMouth.types';
+import TaskinMouth from '../../atoms/taskin-mouth/TaskinMouth.vue';
+import TaskinArmWithPhone from '../../molecules/taskin-arm-with-phone/TaskinArmWithPhone.vue';
 import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/taskin-effect-fart-cloud';
 import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/taskin-effect-hearts';
 import TaskinEffectTears from '../../molecules/taskin-effect-tears/taskin-effect-tears';
 import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/taskin-effect-thought-bubble';
 import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/taskin-effect-vomit';
 import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/taskin-effect-zzz';
-import TaskinTentacleWithItem from '../../molecules/taskin-tentacle-with-item/taskin-tentacle-with-item.vue';
-import type { TaskinMood } from './taskin.types';
+import TaskinTentacleWithItem from '../../molecules/taskin-tentacle-with-item/TaskinTentacleWithItem.vue';
+import type { TaskinMood } from './Taskin.types';
 
 type LookDirection = 'center' | 'left' | 'right' | 'up' | 'down';
 

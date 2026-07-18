@@ -1,7 +1,7 @@
 import { h, onMounted, onUnmounted, type PropType, ref, watch } from 'vue';
 import { createTaskinController } from './taskin.controller';
 import svgRaw from './taskin.svg?raw';
-import type { TaskinController, TaskinExpose, TaskinMood, TaskinProps, TaskinReadyPayload } from './taskin.types';
+import type { TaskinController, TaskinExpose, TaskinMood, TaskinProps, TaskinReadyPayload } from './Taskin.types';
 
 export default {
   name: 'TaskinMascot',

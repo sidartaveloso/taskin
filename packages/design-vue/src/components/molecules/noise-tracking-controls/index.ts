@@ -1,2 +1,2 @@
-export * from './noise-tracking-controls.types';
-export { default } from './noise-tracking-controls.vue';
+export * from './NoiseTrackingControls.types';
+export { default } from './NoiseTrackingControls.vue';

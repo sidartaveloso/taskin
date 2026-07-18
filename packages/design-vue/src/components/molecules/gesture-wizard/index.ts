@@ -1,2 +1,2 @@
-export * from './gesture-wizard.types';
-export { default } from './gesture-wizard.vue';
+export * from './GestureWizard.types';
+export { default } from './GestureWizard.vue';
