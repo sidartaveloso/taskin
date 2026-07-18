@@ -1,0 +1,63 @@
+<template>
+  <div class="gesture-legend" :class="{ 'gesture-legend--compact': compact }">
+    <div
+      class="gesture-legend__chip"
+      v-for="m in visibleMappings"
+      :key="m.gesture"
+    >
+      <slot name="chip" :mapping="m" :action-label="label[m.action]">
+        <GestureIcon :gesture="m.gesture" :size="compact ? 'sm' : 'md'" />
+        <span class="gesture-legend__label">{{ label[m.action] }}</span>
+      </slot>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import type { PrioritizationAction } from '../../../composables/use-gesture-shortcuts';
+import GestureIcon from '../../atoms/gesture-icon/GestureIcon.vue';
+import { actionLabel } from '../gesture-wizard/GestureWizard.types';
+import type { GestureLegendProps } from './GestureLegend.types';
+
+const props = defineProps<GestureLegendProps>();
+
+const label: Record<PrioritizationAction, string> = actionLabel;
+
+const visibleMappings = computed(() => props.mappings.filter((m) => m.gesture !== 'None' && m.action !== 'none'));
+</script>
+
+<style scoped>
+.gesture-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gesture-legend--compact {
+  gap: 4px;
+}
+
+.gesture-legend__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(79, 195, 247, 0.1);
+  border: 1px solid rgba(79, 195, 247, 0.3);
+  border-radius: 20px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.gesture-legend--compact .gesture-legend__chip {
+  padding: 2px 8px;
+  font-size: 11px;
+  gap: 4px;
+}
+
+.gesture-legend__label {
+  color: var(--text-primary, #212529);
+  font-weight: 500;
+}
+</style>

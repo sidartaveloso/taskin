@@ -31,7 +31,8 @@
     "storybook": "storybook dev -p 6007",
     "format": "biome format --write src/",
     "format:check": "biome format src/",
-    "test": "vitest run",
+    "test": "vitest run && vitest run --config vitest.storybook.config.ts",
+    "test:storybook": "vitest run --config vitest.storybook.config.ts",
     "test:ui": "vitest --ui",
     "typecheck": "vue-tsc --noEmit",
     "lint": "biome check src/",
@@ -63,7 +64,6 @@
     "@vitest/ui": "^4.0.16",
     "@vue/test-utils": "^2.4.6",
 
-    "jsdom": "^25.0.1",
     "playwright": "^1.57.0",
     "storybook": "^10.5.0",
     "typescript": "^6.0.0",

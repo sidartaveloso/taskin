@@ -1,0 +1,271 @@
+<template>
+  <div class="taskin-face-tracking">
+    <!-- Webcam -->
+    <WebcamVideo
+      ref="webcamVideoRef"
+      :visible="showWebcam"
+      :width="320"
+      :height="240"
+      :mirrored="true"
+    />
+
+    <!-- Controles -->
+    <TrackingControls
+      :is-detecting="faceLandmarker.state.value.isDetecting"
+      :error="faceLandmarker.state.value.error"
+      :show-webcam="showWebcam"
+      :sync-eyes="syncEyes"
+      :sync-mouth="syncMouth"
+      :sync-expressions="syncExpressions"
+      :disabled="faceLandmarker.state.value.error !== null"
+      @toggle-tracking="toggleTracking"
+      @update:show-webcam="showWebcam = $event"
+      @update:sync-eyes="syncEyes = $event"
+      @update:sync-mouth="syncMouth = $event"
+      @update:sync-expressions="syncExpressions = $event"
+    />
+
+    <!-- Taskin Mascot -->
+    <div class="mascot-container" ref="mascotContainer">
+      <TaskinComposed
+        :mood="currentMood"
+        :size="mascotSize"
+        :eye-tracking-mode="eyeTrackingMode"
+        :eye-custom-position="eyePosition"
+        :eye-state="eyeState"
+        :mouth-expression="mouthExpression"
+        :animations-enabled="true"
+      />
+    </div>
+
+    <!-- Debug Info -->
+    <FaceTrackingDebug
+      v-if="showDebug"
+      :data="debugInfo"
+      title="BlendShapes"
+      position="top-right"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue';
+import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
+import type WebcamVideo from '../../atoms/webcam-video';
+import FaceTrackingDebug from '../../molecules/face-tracking-debug';
+import TrackingControls from '../../molecules/tracking-controls';
+import type { TaskinMood } from './Taskin.types';
+import TaskinComposed from './taskin-composed';
+
+export interface Props {
+  mascotSize?: number;
+  showWebcam?: boolean;
+  showDebug?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  mascotSize: 300,
+  showWebcam: false,
+  showDebug: false,
+});
+
+// Refs
+const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
+const mascotContainer = ref<HTMLDivElement | null>(null);
+const showWebcam = ref(props.showWebcam);
+const syncEyes = ref(true);
+const syncMouth = ref(true);
+const syncExpressions = ref(true);
+
+// Video element do WebcamVideo
+const videoElement = ref<HTMLVideoElement | null>(null);
+
+// Após montar, obtém a referência do vídeo
+onMounted(() => {
+  if (webcamVideoRef.value) {
+    videoElement.value = webcamVideoRef.value.videoElement;
+  }
+});
+
+// Face Landmarker
+const faceLandmarker = useFaceLandmarker(videoElement, {
+  enableBlendshapes: true,
+  minDetectionConfidence: 0.5,
+  minTrackingConfidence: 0.5,
+  mirrorEyeTracking: true,
+});
+
+// Estado do Taskin
+const currentMood = ref<TaskinMood>('neutral');
+const eyeTrackingMode = ref<'none' | 'mouse' | 'element' | 'custom'>('none');
+const eyePosition = ref<{ x: number; y: number }>({ x: 0, y: 0 });
+const eyeState = ref<'normal' | 'closed' | 'squint' | 'wide'>('normal');
+const mouthExpression = ref<'neutral' | 'smile' | 'frown' | 'open' | 'wide-open' | 'o-shape' | 'smirk' | 'surprised'>(
+  'neutral',
+);
+
+// Controle
+const toggleTracking = () => {
+  if (faceLandmarker.state.value.isDetecting) {
+    faceLandmarker.stopDetection();
+  } else {
+    faceLandmarker.startDetection();
+  }
+};
+
+// Watch para syncEyes - garante que o tracking mode seja mantido
+watch(syncEyes, (enabled) => {
+  if (enabled && faceLandmarker.state.value.isDetecting) {
+    eyeTrackingMode.value = 'custom';
+  }
+});
+
+// Sincronização dos olhos
+watch(
+  () => faceLandmarker.state.value.blendShapes,
+  (blendShapes) => {
+    if (!blendShapes || !mascotContainer.value) {
+      return;
+    }
+
+    // Se não está sincronizando, mantém os valores atuais (congelados)
+    if (!syncEyes.value) {
+      return;
+    }
+
+    eyeTrackingMode.value = 'custom';
+
+    // Movimento dos olhos - converte para coordenadas absolutas da viewport
+    const eyeLook = faceLandmarker.getEyeLookDirection();
+    const mascotRect = mascotContainer.value.getBoundingClientRect();
+    const mascotCenterX = mascotRect.left + mascotRect.width / 2;
+    const mascotCenterY = mascotRect.top + mascotRect.height / 2;
+
+    eyePosition.value = {
+      x: mascotCenterX + eyeLook.x * 3, // Amplifica o movimento relativo ao centro do mascote
+      y: mascotCenterY + eyeLook.y * 3,
+    };
+
+    // Estado dos olhos (aberto/fechado/arregalado)
+    const eyeOpenness = faceLandmarker.getEyeOpenness();
+    const avgOpenness = (eyeOpenness.left + eyeOpenness.right) / 2;
+
+    if (faceLandmarker.isEyesWide()) {
+      eyeState.value = 'wide';
+    } else if (avgOpenness < 0.3) {
+      eyeState.value = 'closed';
+    } else if (avgOpenness < 0.6) {
+      eyeState.value = 'squint';
+    } else {
+      eyeState.value = 'normal';
+    }
+  },
+);
+
+// Sincronização da boca e expressões
+watch(
+  () => faceLandmarker.state.value.blendShapes,
+  (blendShapes) => {
+    if (!blendShapes) return;
+
+    // Se não está sincronizando, mantém os valores atuais (congelados)
+    if (!syncMouth.value && !syncExpressions.value) {
+      return;
+    }
+
+    const smileIntensity = faceLandmarker.getSmileIntensity();
+    const frownIntensity = faceLandmarker.getFrownIntensity();
+    const mouthOpenness = faceLandmarker.getMouthOpenness();
+    const isWide = faceLandmarker.isEyesWide();
+
+    // Sincroniza a expressão da boca baseado na abertura
+    if (syncMouth.value) {
+      if (mouthOpenness > 0.7) {
+        mouthExpression.value = 'wide-open';
+      } else if (mouthOpenness > 0.4) {
+        mouthExpression.value = 'open';
+      } else if (mouthOpenness > 0.2) {
+        mouthExpression.value = 'o-shape';
+      } else if (smileIntensity > 0.5) {
+        mouthExpression.value = 'smile';
+      } else if (smileIntensity > 0.3) {
+        mouthExpression.value = 'smirk';
+      } else if (frownIntensity > 0.4) {
+        mouthExpression.value = 'frown';
+      } else {
+        mouthExpression.value = 'neutral';
+      }
+    }
+
+    // Sincroniza o mood geral (expressões faciais completas)
+    if (syncExpressions.value) {
+      // Determina o mood baseado nas expressões
+      // Prioridade: sorriso > franzir > boca aberta > olhos arregalados
+      if (smileIntensity > 0.5) {
+        currentMood.value = 'happy';
+      } else if (smileIntensity > 0.3) {
+        currentMood.value = 'smirk';
+      } else if (frownIntensity > 0.4) {
+        currentMood.value = 'annoyed';
+      } else if (mouthOpenness > 0.6) {
+        currentMood.value = 'sarcastic';
+      } else if (isWide) {
+        currentMood.value = 'furious';
+      } else if (mouthOpenness > 0.3) {
+        // Boca meio aberta = neutro falando
+        currentMood.value = 'neutral';
+      } else {
+        currentMood.value = 'neutral';
+      }
+    }
+  },
+);
+
+// Debug info
+const debugInfo = computed(() => {
+  const bs = faceLandmarker.state.value.blendShapes;
+  if (!bs) return null;
+
+  const eyeLook = faceLandmarker.getEyeLookDirection();
+  const eyeOpenness = faceLandmarker.getEyeOpenness();
+  return {
+    smile: faceLandmarker.getSmileIntensity().toFixed(2),
+    frown: faceLandmarker.getFrownIntensity().toFixed(2),
+    mouthOpen: faceLandmarker.getMouthOpenness().toFixed(2),
+    mouthExpression: mouthExpression.value,
+    eyesWide: faceLandmarker.isEyesWide(),
+    eyeLook: {
+      x: (eyeLook.x >= 0 ? '+' : '') + eyeLook.x.toFixed(15),
+      y: (eyeLook.y >= 0 ? '+' : '') + eyeLook.y.toFixed(15),
+    },
+    eyeOpenness: {
+      left: (eyeOpenness.left >= 0 ? '+' : '') + eyeOpenness.left.toFixed(10),
+      right: (eyeOpenness.right >= 0 ? '+' : '') + eyeOpenness.right.toFixed(10),
+    },
+  };
+});
+</script>
+
+<script lang="ts">
+export default {
+  name: 'TaskinWithFaceTracking',
+};
+</script>
+
+<style scoped>
+.taskin-face-tracking {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  position: relative;
+}
+
+.mascot-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+</style>

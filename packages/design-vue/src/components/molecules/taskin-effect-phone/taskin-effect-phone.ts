@@ -1,5 +1,5 @@
 import { h } from 'vue';
-import TaskinPhone from '../../atoms/taskin-phone/taskin-phone.vue';
+import TaskinPhone from '../../atoms/taskin-phone/TaskinPhone.vue';
 
 export default {
   name: 'TaskinEffectPhone',

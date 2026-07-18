@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { TaskinEyesProps } from '../../atoms/taskin-eyes/taskin-eyes.types';
+import type { TaskinEyesProps } from '../../atoms/taskin-eyes/TaskinEyes.types';
 
 export type TaskinArmSide = 'left' | 'right';
 

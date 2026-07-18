@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fakeTaskinController } from './taskin.mock';
+import { fakeTaskinController } from './Taskin.mock';
 
 describe('TaskinMascot', () => {
   it('should export TaskinMascot component', async () => {

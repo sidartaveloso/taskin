@@ -1,2 +1,2 @@
-export * from './taskin-body.types';
-export { default } from './taskin-body.vue';
+export * from './TaskinBody.types';
+export { default } from './TaskinBody.vue';

@@ -1,2 +1,2 @@
-export * from './taskin-eyes.types';
-export { default } from './taskin-eyes.vue';
+export * from './TaskinEyes.types';
+export { default } from './TaskinEyes.vue';

@@ -1,2 +1,2 @@
-export * from './face-tracking-debug.types';
-export { default } from './face-tracking-debug.vue';
+export * from './FaceTrackingDebug.types';
+export { default } from './FaceTrackingDebug.vue';

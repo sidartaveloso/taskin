@@ -3,8 +3,8 @@ import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { h, ref, toRef } from 'vue';
 import { buildPriorityTree, usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
-import WebcamVideo from '../atoms/webcam-video/webcam-video.vue';
-import { defaultFunctions } from '../organisms/gesture-system/gesture-system.types';
+import WebcamVideo from '../atoms/webcam-video/WebcamVideo.vue';
+import { defaultFunctions } from '../organisms/gesture-system/GestureSystem.types';
 import PrioritizationScreen from './PrioritizationScreen.vue';
 
 const meta: Meta<typeof PrioritizationScreen> = {

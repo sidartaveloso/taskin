@@ -1,4 +1,4 @@
-import type { TaskinController, TaskinProps } from './taskin.types';
+import type { TaskinController, TaskinProps } from './Taskin.types';
 
 export const defaultTaskinProps: TaskinProps = {
   size: 340,

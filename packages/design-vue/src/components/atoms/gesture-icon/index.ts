@@ -1,1 +1,1 @@
-export { default } from './gesture-icon.vue';
+export { default } from './GestureIcon.vue';

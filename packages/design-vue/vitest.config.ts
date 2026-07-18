@@ -1,3 +1,4 @@
+import { playwright } from '@vitest/browser-playwright';
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
 import svgLoader from 'vite-svg-loader';
@@ -14,7 +15,12 @@ export default defineConfig({
   ],
   test: {
     globals: true,
-    environment: 'jsdom',
+    browser: {
+      enabled: true,
+      headless: true,
+      provider: playwright(),
+      instances: [{ browser: 'chromium' }],
+    },
   },
   resolve: {
     alias: {

@@ -1,2 +1,2 @@
-export * from './taskin-arms.types';
-export { default } from './taskin-arms.vue';
+export * from './TaskinArms.types';
+export { default } from './TaskinArms.vue';
