@@ -1,6 +1,6 @@
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 import svgLoader from 'vite-svg-loader';
 
 export default defineConfig({
@@ -10,7 +10,7 @@ export default defineConfig({
       svgoConfig: {
         multipass: true,
       },
-    }),
+    }) as PluginOption,
   ],
   build: {
     lib: {

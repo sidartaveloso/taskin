@@ -124,7 +124,7 @@
       <GestureSystem
         :functions="gestureFunctions"
         :user-id="gestureUserId"
-        :detecting="detecting"
+        :detecting="detecting ?? false"
         :video-element="videoRef"
         @gesture-action="emit('gestureAction', $event)"
         @camera-active="emit('update:cameraActive', $event)"
