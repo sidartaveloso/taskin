@@ -294,7 +294,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
 };
 
 export default {
-  name: 'TaskinMascotComposed',
+  name: 'Taskin',
   props: {
     size: {
       type: Number as PropType<number>,

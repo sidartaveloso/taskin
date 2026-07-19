@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { fakeTaskinController } from './Taskin.mock';
 
-describe('TaskinMascot', () => {
-  it('should export TaskinMascot component', async () => {
-    const module = await import('./taskin');
+describe('TaskinV1', () => {
+  it('should export TaskinV1 component', async () => {
+    const module = await import('./TaskinV1');
     expect(module.default).toBeDefined();
   });
 

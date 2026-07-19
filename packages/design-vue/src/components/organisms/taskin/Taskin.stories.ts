@@ -2,11 +2,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h, onMounted, onUnmounted, ref } from 'vue';
 import type { TaskinMood } from './Taskin.types';
-import TaskinComposed from './taskin-composed';
+import Taskin from './Taskin';
 
 const meta = {
-  title: 'Organisms/Taskin/Composed',
-  component: TaskinComposed,
+  title: 'Organisms/Taskin/Taskin',
+  component: Taskin,
   parameters: {
     layout: 'centered',
     docs: {
@@ -73,18 +73,18 @@ const meta = {
     animationsEnabled: true,
     idleAnimation: true,
   },
-} satisfies Meta<typeof TaskinComposed>;
+} satisfies Meta<typeof Taskin>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const AllMoods: Story = {
   render: () => ({
-    components: { TaskinComposed },
+    components: { Taskin },
     template: `
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px;">
         <div v-for="mood in moods" :key="mood" style="text-align: center;">
-          <TaskinComposed :mood="mood" :size="150" />
+          <Taskin :mood="mood" :size="150" />
           <p style="margin-top: 10px; font-size: 12px;">{{ mood }}</p>
         </div>
       </div>
@@ -392,7 +392,7 @@ export const EyeTrackingElement: Story = {
               ),
             ],
           ),
-          h(TaskinComposed, {
+          h(Taskin, {
             mood: 'neutral' as TaskinMood,
             size: 200,
             idleAnimation: true,
@@ -414,7 +414,7 @@ export const EyeTrackingElement: Story = {
 
 export const EyeTrackingCustomPosition: Story = {
   render: () => ({
-    components: { TaskinComposed },
+    components: { Taskin },
     template: `
       <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
         <div style="text-align: center; margin-bottom: 20px;">
@@ -429,7 +429,7 @@ export const EyeTrackingCustomPosition: Story = {
               style="position: absolute; width: 10px; height: 10px; background: red; border-radius: 50%; pointer-events: none;"
               :style="{ left: visualIndicator.x + 'px', top: visualIndicator.y + 'px', transform: 'translate(-5px, -5px)' }"
             ></div>
-            <TaskinComposed
+            <Taskin
               mood="neutral"
               :size="150"
               eye-tracking-mode="custom"
