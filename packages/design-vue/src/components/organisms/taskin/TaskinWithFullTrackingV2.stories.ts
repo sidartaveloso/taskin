@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import TaskinWithFullTracking from './TaskinWithFullTracking.vue';
 

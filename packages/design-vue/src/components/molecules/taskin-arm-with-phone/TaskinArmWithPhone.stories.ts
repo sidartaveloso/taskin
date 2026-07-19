@@ -1,7 +1,7 @@
-// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
+import type { TaskinArmWithPhoneProps } from './TaskinArmWithPhone.types';
 import WebcamVideo from '../../atoms/webcam-video';
 import FaceTrackingDebug from '../face-tracking-debug';
 import TrackingControls from '../tracking-controls';
@@ -53,7 +53,7 @@ const meta = {
       description: 'Enable/disable animations',
     },
   },
-  render: (args: any) => ({
+  render: (args: TaskinArmWithPhoneProps) => ({
     setup() {
       return () =>
         h(
@@ -150,7 +150,7 @@ export const AllVariations: Story = {
                       background: '#f5f5f5',
                     },
                   },
-                  [h(TaskinArmWithPhone, variant as any)],
+                  [h(TaskinArmWithPhone, variant as TaskinArmWithPhoneProps)],
                 ),
               ],
             ),

@@ -1,7 +1,7 @@
-// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
+import type { TaskinMouthProps } from './TaskinMouth.types';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
 import TrackingControls from '../../molecules/tracking-controls';
 import WebcamVideo from '../webcam-video';
@@ -23,7 +23,7 @@ const meta = {
       description: 'Enable/disable animations',
     },
   },
-  render: (args: any) => ({
+  render: (args: TaskinMouthProps) => ({
     setup() {
       return () =>
         h(

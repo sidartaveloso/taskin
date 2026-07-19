@@ -1,11 +1,11 @@
-// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
+import type { TaskinEyesProps } from './TaskinEyes.types';
+import type { EyeState } from './TaskinEyes.types';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
 import TrackingControls from '../../molecules/tracking-controls';
 import WebcamVideo from '../webcam-video';
-import type { EyeState } from './TaskinEyes.types';
 import TaskinEyes from './TaskinEyes.vue';
 
 const meta = {
@@ -38,7 +38,7 @@ const meta = {
       description: 'Maximum pupil movement in pixels',
     },
   },
-  render: (args: any) => ({
+  render: (args: TaskinEyesProps) => ({
     setup() {
       return () =>
         h(
@@ -288,7 +288,7 @@ export const ElementTracking: Story = {
                 h(TaskinEyes, {
                   state: 'normal',
                   trackingMode: 'element',
-                  targetElement: '#tracking-target',
+                  targetElement: '#tracking-target' as unknown as HTMLElement,
                   trackingBounds: 8,
                 }),
               ],

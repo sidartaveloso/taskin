@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
@@ -17,7 +16,7 @@ import TrackingControls from '../../molecules/tracking-controls';
 const meta = {
   title: 'Organisms/Taskin/Full Tracking',
   tags: ['autodocs'],
-} satisfies Meta;
+} satisfies Meta<Record<string, never>>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
