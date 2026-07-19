@@ -4,7 +4,7 @@ import svgRaw from './taskin.svg?raw';
 import type { TaskinController, TaskinExpose, TaskinMood, TaskinProps, TaskinReadyPayload } from './Taskin.types';
 
 export default {
-  name: 'TaskinMascot',
+  name: 'TaskinV1',
   props: {
     size: {
       type: Number as PropType<number>,

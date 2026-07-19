@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import TaskinMascot from './taskin';
+import TaskinV1 from './TaskinV1';
 import { defaultTaskinProps } from './Taskin.mock';
 import type { TaskinMood, TaskinReadyPayload } from './Taskin.types';
 
 const meta = {
-  title: 'Organisms/TaskinMascot',
-  component: TaskinMascot,
+  title: 'Organisms/Taskin/V1',
+  component: TaskinV1,
   argTypes: {
     mood: {
       control: { type: 'select' },
@@ -36,14 +36,14 @@ const meta = {
   args: {
     ...defaultTaskinProps,
   },
-} satisfies Meta<typeof TaskinMascot>;
+} satisfies Meta<typeof TaskinV1>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       const onReady = (payload: TaskinReadyPayload) => {
         payload.controller.raiseArm('left').smile().wiggleAllTentacles().speak('Welcome to Taskin Storybook.');
@@ -53,7 +53,7 @@ export const Default: Story = {
     },
     template: `
       <div style="padding: 2rem;">
-        <TaskinMascot v-bind="args" @ready="onReady" />
+        <TaskinV1 v-bind="args" @ready="onReady" />
       </div>
     `,
   }),
@@ -64,13 +64,13 @@ export const Default: Story = {
 
 export const Happy: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem;">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
       </div>
     `,
   }),
@@ -81,13 +81,13 @@ export const Happy: Story = {
 
 export const AnnoyedNoIdle: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem;">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
       </div>
     `,
   }),
@@ -107,7 +107,7 @@ export const Neutral: Story = {
 
   render: (args: any) => ({
     components: {
-      TaskinMascot,
+      TaskinV1,
     },
 
     setup() {
@@ -116,7 +116,7 @@ export const Neutral: Story = {
 
     template: `
       <div style="padding: 2rem;">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
       </div>
     `,
   }),
@@ -124,13 +124,13 @@ export const Neutral: Story = {
 
 export const Crying: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: #f0f0f0;">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #666;">
           Don't cry, Taskin! 😢
         </p>
@@ -146,13 +146,13 @@ export const Crying: Story = {
 
 export const Cold: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(to bottom, #e0f7fa, #b2ebf2);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #0277bd;">
           Brrr... it's freezing! 🥶
         </p>
@@ -168,13 +168,13 @@ export const Cold: Story = {
 
 export const Hot: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(to bottom, #fff3e0, #ffe0b2);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #e65100;">
           So hot! 🔥
         </p>
@@ -190,13 +190,13 @@ export const Hot: Story = {
 
 export const Dancing: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #fff;">
           Let's dance! 💃🕺
         </p>
@@ -212,13 +212,13 @@ export const Dancing: Story = {
 
 export const Furious: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(to bottom, #ffcdd2, #ef5350);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #b71c1c;">
           RAWR! 😡💢
         </p>
@@ -234,13 +234,13 @@ export const Furious: Story = {
 
 export const Sleeping: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(to bottom, #e1bee7, #ba68c8);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #4a148c;">
           Zzz... 😴💤
         </p>
@@ -256,13 +256,13 @@ export const Sleeping: Story = {
 
 export const InLove: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(to bottom, #fce4ec, #f8bbd0);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #880e4f;">
           Love is in the air! 💕💖
         </p>
@@ -278,13 +278,13 @@ export const InLove: Story = {
 
 export const Tired: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(to bottom, #eceff1, #cfd8dc);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #37474f;">
           So exhausted... 😮‍💨
         </p>
@@ -300,13 +300,13 @@ export const Tired: Story = {
 
 export const Thoughtful: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(to bottom, #d1c4e9, #b39ddb);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #4a148c;">
           Hmm... let me think... 🤔
         </p>
@@ -322,13 +322,13 @@ export const Thoughtful: Story = {
 
 export const Vomiting: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(to bottom, #dcedc8, #c5e1a5);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #558b2f;">
           Ugh... feeling sick! 🤢
         </p>
@@ -344,13 +344,13 @@ export const Vomiting: Story = {
 
 export const TakingSelfie: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #fff;">
           Say cheese! 📸✨
         </p>
@@ -366,13 +366,13 @@ export const TakingSelfie: Story = {
 
 export const Farting: Story = {
   render: (args: any) => ({
-    components: { TaskinMascot },
+    components: { TaskinV1 },
     setup() {
       return { args };
     },
     template: `
       <div style="padding: 2rem; background: linear-gradient(to bottom, #d7ccc8, #bcaaa4);">
-        <TaskinMascot v-bind="args" />
+        <TaskinV1 v-bind="args" />
         <p style="margin-top: 1rem; text-align: center; color: #4e342e;">
           Oops... excuse me! 💨😳
         </p>

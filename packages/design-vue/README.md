@@ -16,7 +16,7 @@ pnpm add @opentask/taskin-design-vue
 
 ```vue
 <script setup lang="ts">
-import { TaskinMascot } from '@opentask/taskin-design-vue';
+import { TaskinV1 } from '@opentask/taskin-design-vue';
 import '@opentask/taskin-design-vue/style.css';
 import { ref } from 'vue';
 
@@ -36,7 +36,7 @@ const celebrate = () => {
 
 <template>
   <div>
-    <TaskinMascot
+    <TaskinV1
       ref="taskinRef"
       :size="220"
       mood="sarcastic"

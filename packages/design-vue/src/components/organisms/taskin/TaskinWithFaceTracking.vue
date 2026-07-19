@@ -27,7 +27,7 @@
 
     <!-- Taskin Mascot -->
     <div class="mascot-container" ref="mascotContainer">
-      <TaskinComposed
+      <Taskin
         :mood="currentMood"
         :size="mascotSize"
         :eye-tracking-mode="eyeTrackingMode"
@@ -55,7 +55,7 @@ import type WebcamVideo from '../../atoms/webcam-video';
 import FaceTrackingDebug from '../../molecules/face-tracking-debug';
 import TrackingControls from '../../molecules/tracking-controls';
 import type { TaskinMood } from './Taskin.types';
-import TaskinComposed from './taskin-composed';
+import Taskin from './Taskin';
 
 export interface Props {
   mascotSize?: number;

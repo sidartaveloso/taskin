@@ -23,8 +23,9 @@ export * from './components/molecules/taskin-tentacles-fluid';
 export * from './components/organisms';
 // Export specific organisms with default exports
 export {
-  default as TaskinMascotDefault,
-  TaskinMascot,
+  default as TaskinDefault,
+  Taskin,
+  TaskinV1,
 } from './components/organisms/taskin';
 export * from './components/organisms/taskin/Taskin.types';
 export { default as TaskinWithFaceTracking } from './components/organisms/taskin/TaskinWithFaceTracking.vue';
