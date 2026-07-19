@@ -1,6 +1,6 @@
-// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h } from 'vue';
+import type { TaskinPhoneProps } from './TaskinPhone.types';
 import TaskinPhone from './TaskinPhone.vue';
 
 const meta = {
@@ -33,7 +33,7 @@ const meta = {
       description: 'Enable/disable animations',
     },
   },
-  render: (args: any) => ({
+  render: (args: TaskinPhoneProps) => ({
     setup() {
       return () =>
         h(
@@ -114,7 +114,7 @@ export const AllVariations: Story = {
                       background: '#f5f5f5',
                     },
                   },
-                  [h(TaskinPhone, variant as any)],
+                  [h(TaskinPhone, variant as TaskinPhoneProps)],
                 ),
               ],
             ),

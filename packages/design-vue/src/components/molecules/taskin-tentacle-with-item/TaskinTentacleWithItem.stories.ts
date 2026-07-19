@@ -1,7 +1,8 @@
-// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h } from 'vue';
+import type { TaskinPhoneProps } from '../../atoms/taskin-phone/TaskinPhone.types';
 import TaskinPhone from '../../atoms/taskin-phone/TaskinPhone.vue';
+import type { TaskinTentacleWithItemProps } from './TaskinTentacleWithItem.types';
 import TaskinTentacleWithItem from './TaskinTentacleWithItem.vue';
 
 const meta = {
@@ -34,7 +35,7 @@ const meta = {
       description: 'Enable/disable animations',
     },
   },
-  render: (args: any) => ({
+  render: (args: TaskinTentacleWithItemProps) => ({
     setup() {
       return () =>
         h(
@@ -142,7 +143,7 @@ export const AllVariations: Story = {
                   [
                     h(
                       TaskinTentacleWithItem,
-                      variant as any,
+                      variant as TaskinTentacleWithItemProps,
                       index === 1
                         ? {
                             item: () =>
@@ -178,7 +179,7 @@ export const Default: Story = {
 };
 
 export const WithPhone: Story = {
-  render: (args: any) => ({
+  render: (args: TaskinTentacleWithItemProps) => ({
     setup() {
       return () =>
         h(
@@ -198,7 +199,7 @@ export const WithPhone: Story = {
                   height: 25,
                   phoneColor: '#2C3E50',
                   screenColor: '#3498DB',
-                }),
+                } as TaskinPhoneProps),
             }),
           ],
         );
@@ -212,7 +213,7 @@ export const WithPhone: Story = {
 };
 
 export const RotatedWithItem: Story = {
-  render: (args: any) => ({
+  render: (args: TaskinTentacleWithItemProps) => ({
     setup() {
       return () =>
         h(
@@ -232,7 +233,7 @@ export const RotatedWithItem: Story = {
                   height: 25,
                   phoneColor: '#9D6BFF',
                   screenColor: '#C9B6FF',
-                }),
+                } as TaskinPhoneProps),
             }),
           ],
         );
@@ -263,7 +264,7 @@ export const CurlWithBall: Story = {
 };
 
 export const CustomItemPosition: Story = {
-  render: (args: any) => ({
+  render: (args: TaskinTentacleWithItemProps) => ({
     setup() {
       return () =>
         h(

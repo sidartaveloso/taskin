@@ -1,6 +1,6 @@
-// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h } from 'vue';
+import type { TaskinBodyProps } from './TaskinBody.types';
 import TaskinBody from './TaskinBody.vue';
 
 const meta = {
@@ -33,7 +33,7 @@ const meta = {
       description: 'Enable sway animation',
     },
   },
-  render: (args: any) => ({
+  render: (args: TaskinBodyProps) => ({
     setup() {
       return () =>
         h(
@@ -124,7 +124,7 @@ export const AllVariations: Story = {
                       background: '#f5f5f5',
                     },
                   },
-                  [h(TaskinBody, variant as any)],
+                  [h(TaskinBody, variant as TaskinBodyProps)],
                 ),
               ],
             ),

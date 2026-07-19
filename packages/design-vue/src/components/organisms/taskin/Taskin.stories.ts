@@ -1,7 +1,7 @@
-// @ts-nocheck
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h, onMounted, onUnmounted, ref } from 'vue';
 import type { TaskinMood } from './Taskin.types';
+import type { TaskinProps } from './Taskin.types';
 import Taskin from './Taskin';
 
 const meta = {
