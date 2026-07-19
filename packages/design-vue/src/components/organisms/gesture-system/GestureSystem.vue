@@ -76,7 +76,7 @@ const wizardActions = computed<PrioritizationAction[]>(() => [
 ]);
 
 watch(
-  () => recorderState.isDetecting,
+  () => recorderState.value.isDetecting,
   (active) => emit('camera-active', active),
 );
 

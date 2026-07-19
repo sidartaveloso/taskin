@@ -94,7 +94,7 @@
 <script setup lang="ts">
 import type { TrackingControlsEmits, TrackingControlsProps } from './TrackingControls.types';
 
-const props = withDefaults(defineProps<TrackingControlsProps>(), {
+withDefaults(defineProps<TrackingControlsProps>(), {
   showWebcam: true,
   syncGestures: true,
 });
