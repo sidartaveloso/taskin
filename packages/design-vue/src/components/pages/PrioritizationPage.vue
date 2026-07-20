@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref, toRef, watch } from 'vue';
 import { usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
-import { defaultFunctions } from '../organisms/gesture-system/GestureSystem.types';
+import { defaultFunctions } from '@opentask/ui-sense';
 import PrioritizationScreen from '../templates/PrioritizationScreen.vue';
 
 export interface PrioritizationPageProps {

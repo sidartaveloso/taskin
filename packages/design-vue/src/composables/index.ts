@@ -1,35 +1,3 @@
-export type { ElementPosition } from './use-element-tracking';
-export { useElementTracking } from './use-element-tracking';
-export type {
-  EyeOffset,
-  EyeTrackingOptions,
-  TrackingPosition,
-} from './use-eye-tracking';
-export { useEyeTracking } from './use-eye-tracking';
-export type {
-  FaceLandmarkerBlendShapes,
-  FaceLandmarkerResult,
-  FaceLandmarkerState,
-  UseFaceLandmarkerOptions,
-} from './use-face-landmarker';
-export { useFaceLandmarker } from './use-face-landmarker';
-export type {
-  CannedGesture,
-  GestureRecognizerState,
-  Handedness,
-  HandLandmark,
-  RecognizedGesture,
-  UseGestureRecognizerOptions,
-} from './use-gesture-recognizer';
-export { useGestureRecognizer } from './use-gesture-recognizer';
-export type {
-  GestureMapping,
-  PrioritizationAction,
-  WizardState,
-} from './use-gesture-shortcuts';
-export { useGestureShortcuts } from './use-gesture-shortcuts';
-export type { MousePosition } from './use-mouse-tracking';
-export { useMouseTracking } from './use-mouse-tracking';
 export type {
   PrioritizationSortMode,
   PrioritizationViewMode,
@@ -46,3 +14,21 @@ export {
   renumber,
   usePrioritization,
 } from './use-prioritization';
+
+// Re-export UiSense composables for backward compatibility
+export type { ElementPosition } from '@opentask/ui-sense';
+export { useElementTracking } from '@opentask/ui-sense';
+export type { EyeOffset, EyeTrackingOptions, TrackingPosition } from '@opentask/ui-sense';
+export { useEyeTracking } from '@opentask/ui-sense';
+export type { FaceLandmarkerBlendShapes, FaceLandmarkerResult, FaceLandmarkerState, UseFaceLandmarkerOptions } from '@opentask/ui-sense';
+export { useFaceLandmarker } from '@opentask/ui-sense';
+export type { CannedGesture, GestureRecognizerState, Handedness, HandLandmark, RecognizedGesture, UseGestureRecognizerOptions } from '@opentask/ui-sense';
+export { useGestureRecognizer } from '@opentask/ui-sense';
+export type { GestureMapping, PrioritizationAction, WizardState } from '@opentask/ui-sense';
+export { useGestureShortcuts } from '@opentask/ui-sense';
+export type { MousePosition } from '@opentask/ui-sense';
+export { useMouseTracking } from '@opentask/ui-sense';
+export type { PoseLandmarkerResult, PoseLandmarkerState, UsePoseLandmarkerOptions } from '@opentask/ui-sense';
+export { usePoseLandmarker } from '@opentask/ui-sense';
+export type { NoiseWatcher } from '@opentask/ui-sense';
+export { createNoiseWatcher } from '@opentask/ui-sense';

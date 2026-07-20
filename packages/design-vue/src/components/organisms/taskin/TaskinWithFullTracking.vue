@@ -65,8 +65,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
-import { usePoseLandmarker } from '../../../composables/use-pose-landmarker';
+import { useFaceLandmarker, usePoseLandmarker, FaceTrackingDebug, TrackingControls } from '@opentask/ui-sense';
+import type { WebcamVideo } from '@opentask/ui-sense';
 import type { ArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
 import { NEUTRAL_ARM_POSITION } from '../../atoms/taskin-arms/TaskinArms.types';
 import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
@@ -74,9 +74,6 @@ import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
 import TaskinEyes from '../../atoms/taskin-eyes/TaskinEyes.vue';
 import type { MouthExpression } from '../../atoms/taskin-mouth/TaskinMouth.types';
 import TaskinMouth from '../../atoms/taskin-mouth/TaskinMouth.vue';
-import type WebcamVideo from '../../atoms/webcam-video';
-import FaceTrackingDebug from '../../molecules/face-tracking-debug';
-import TrackingControls from '../../molecules/tracking-controls';
 
 export interface Props {
   mascotSize?: number;

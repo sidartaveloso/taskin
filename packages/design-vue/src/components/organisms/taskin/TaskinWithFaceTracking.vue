@@ -50,10 +50,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
-import type WebcamVideo from '../../atoms/webcam-video';
-import FaceTrackingDebug from '../../molecules/face-tracking-debug';
-import TrackingControls from '../../molecules/tracking-controls';
+import { useFaceLandmarker, FaceTrackingDebug, TrackingControls } from '@opentask/ui-sense';
+import type { WebcamVideo } from '@opentask/ui-sense';
 import type { TaskinMood } from './Taskin.types';
 import Taskin from './Taskin';
 

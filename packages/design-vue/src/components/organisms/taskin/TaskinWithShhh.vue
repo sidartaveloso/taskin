@@ -60,12 +60,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useFaceLandmarker } from '../../../composables/use-face-landmarker';
-import { createNoiseWatcher } from '../../../utils/noise-watcher';
-import type WebcamVideo from '../../atoms/webcam-video';
-import FaceTrackingDebug from '../../molecules/face-tracking-debug';
-import NoiseTrackingControls from '../../molecules/noise-tracking-controls';
-import TrackingControls from '../../molecules/tracking-controls';
+import { useFaceLandmarker, createNoiseWatcher, FaceTrackingDebug, NoiseTrackingControls, TrackingControls } from '@opentask/ui-sense';
+import type { WebcamVideo } from '@opentask/ui-sense';
 import type { TaskinMood } from './Taskin.types';
 import Taskin from './Taskin';
 
