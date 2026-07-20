@@ -146,9 +146,7 @@ import type {
   PrioritizationViewMode,
   PriorityNode,
 } from '../../composables/use-prioritization';
-import TrackingControls from '../molecules/tracking-controls/TrackingControls.vue';
-import type { ConfigurableFunction } from '../organisms/gesture-system/GestureSystem.types';
-import GestureSystem from '../organisms/gesture-system/GestureSystem.vue';
+import { TrackingControls, GestureSystem, type ConfigurableFunction } from '@opentask/ui-sense';
 import PriorityGroupRenderer from './PriorityGroupRenderer.vue';
 
 export interface PrioritizationScreenProps {
