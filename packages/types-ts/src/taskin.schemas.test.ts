@@ -21,11 +21,11 @@ import {
   TASK_STATUSES,
   TASK_TYPES,
   TaskIdSchema,
+  TaskinConfigSchema,
   TaskSchema,
   TaskStatsSchema,
   TaskStatusSchema,
   TaskTypeSchema,
-  TaskinConfigSchema,
   TeamStatsSchema,
   TemporalMetricsSchema,
   TimeOfDaySchema,
@@ -517,11 +517,8 @@ describe('Stats & Track Record Schemas', () => {
     });
 
     it('should accept task stats without refactoring metrics for non-refactor tasks', () => {
-      const { refactoringMetrics: _unused, ...statsWithoutRefactoring } =
-        validTaskStats;
-      expect(TaskStatsSchema.parse(statsWithoutRefactoring)).toEqual(
-        statsWithoutRefactoring,
-      );
+      const { refactoringMetrics: _unused, ...statsWithoutRefactoring } = validTaskStats;
+      expect(TaskStatsSchema.parse(statsWithoutRefactoring)).toEqual(statsWithoutRefactoring);
     });
 
     it('should accept task stats without optional timestamp fields', () => {
@@ -612,9 +609,7 @@ describe('Stats & Track Record Schemas', () => {
         },
       };
 
-      expect(UserStatsSchema.parse(statsWithRefactoring)).toEqual(
-        statsWithRefactoring,
-      );
+      expect(UserStatsSchema.parse(statsWithRefactoring)).toEqual(statsWithRefactoring);
     });
 
     it('should reject more than 10 top tasks', () => {
@@ -905,9 +900,7 @@ describe('NotificationMessageSchema', () => {
   });
 
   it('should reject message missing title', () => {
-    expect(() =>
-      NotificationMessageSchema.parse({ description: 'desc' }),
-    ).toThrow();
+    expect(() => NotificationMessageSchema.parse({ description: 'desc' })).toThrow();
   });
 });
 
@@ -1049,9 +1042,7 @@ describe('TaskinConfigSchema - with notifications', () => {
       },
     };
     const result = TaskinConfigSchema.parse(config);
-    expect(result.notifications?.discord?.webhookUrl).toBe(
-      'https://discord.com/api/webhooks/123/abc',
-    );
+    expect(result.notifications?.discord?.webhookUrl).toBe('https://discord.com/api/webhooks/123/abc');
   });
 
   it('should accept config without notifications', () => {

@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { TelegramProvider } from './telegram-provider.js';
 import type { NotificationMessage } from '@opentask/taskin-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TelegramProvider } from './telegram-provider.js';
 
 describe('TelegramProvider', () => {
   let provider: TelegramProvider;
@@ -118,9 +118,7 @@ describe('TelegramProvider', () => {
     const message: NotificationMessage = {
       title: 'Task #020',
       description: 'Task completed',
-      fields: [
-        { name: 'Status', value: 'done', inline: true },
-      ],
+      fields: [{ name: 'Status', value: 'done', inline: true }],
     };
 
     await provider.send(message);

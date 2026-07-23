@@ -23,12 +23,7 @@ export function showCustomHelp(): string {
       name: colors.highlight('taskin list') + colors.normal(' [filter]'),
       alias: colors.secondary('Alias: ls'),
       description: 'List all tasks in the project',
-      examples: [
-        'taskin list',
-        'taskin list pending',
-        'taskin list --status in-progress',
-        'taskin list --type feat',
-      ],
+      examples: ['taskin list', 'taskin list pending', 'taskin list --status in-progress', 'taskin list --type feat'],
       icon: '📊',
     },
     {
@@ -46,11 +41,7 @@ export function showCustomHelp(): string {
       name: colors.highlight('taskin start') + colors.normal(' <task-id>'),
       alias: colors.secondary('Alias: begin'),
       description: 'Start working on a task (suggests commits)',
-      examples: [
-        'taskin start 001',
-        'taskin start task-001',
-        'taskin start 001 --force',
-      ],
+      examples: ['taskin start 001', 'taskin start task-001', 'taskin start 001 --force'],
       icon: '🚀',
     },
     {
@@ -71,29 +62,19 @@ export function showCustomHelp(): string {
       name: colors.highlight('taskin config') + colors.normal(' [options]'),
       alias: colors.secondary('Options: --level <manual|assisted|autopilot>'),
       description: 'Configure automation level',
-      examples: [
-        'taskin config',
-        'taskin config --level assisted',
-        'taskin config --level autopilot',
-      ],
+      examples: ['taskin config', 'taskin config --level assisted', 'taskin config --level autopilot'],
       icon: '⚙️',
     },
     {
       name: colors.highlight('taskin lint') + colors.normal(' [options]'),
       alias: colors.secondary('Options: -p, --path <directory>'),
       description: 'Validate task markdown files',
-      examples: [
-        'taskin lint',
-        'taskin lint --path ./TASKS',
-        'taskin lint -p /path/to/tasks',
-      ],
+      examples: ['taskin lint', 'taskin lint --path ./TASKS', 'taskin lint -p /path/to/tasks'],
       icon: '🔍',
     },
     {
       name: colors.highlight('taskin dashboard') + colors.normal(' [options]'),
-      alias: colors.secondary(
-        'Options: --host, --port, --filter-open, --filter-closed',
-      ),
+      alias: colors.secondary('Options: --host, --port, --filter-open, --filter-closed'),
       description: 'Start the web dashboard',
       examples: [
         'taskin dashboard',
@@ -136,9 +117,7 @@ export function showCustomHelp(): string {
 
   console.log(colors.info('💡 QUICK TIPS'));
   console.log(
-    colors.normal(
-      `${colors.warning('•')} Use short IDs: ${colors.highlight('001')}, ${colors.highlight('task-001')}`,
-    ),
+    colors.normal(`${colors.warning('•')} Use short IDs: ${colors.highlight('001')}, ${colors.highlight('task-001')}`),
   );
   console.log(
     colors.normal(
@@ -146,9 +125,7 @@ export function showCustomHelp(): string {
     ),
   );
   console.log(
-    colors.normal(
-      `${colors.warning('•')} All commands support ${colors.highlight('--help')} for more options`,
-    ),
+    colors.normal(`${colors.warning('•')} All commands support ${colors.highlight('--help')} for more options`),
   );
   console.log(
     colors.normal(
@@ -158,11 +135,7 @@ export function showCustomHelp(): string {
   console.log();
 
   console.log(colors.info('🔧 FOR MORE HELP'));
-  console.log(
-    colors.secondary('taskin ') +
-      colors.highlight('<command>') +
-      colors.secondary(' --help'),
-  );
+  console.log(colors.secondary('taskin ') + colors.highlight('<command>') + colors.secondary(' --help'));
   console.log();
 
   return '';

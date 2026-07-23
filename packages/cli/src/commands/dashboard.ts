@@ -2,19 +2,16 @@
  * Dashboard command - Start WebSocket server and HTTP server for dashboard
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { TaskWebSocketServer } from '@opentask/taskin-task-server-ws';
 import { escapeHtml, isValidHost, isValidPort } from '@opentask/taskin-utils';
 import chalk from 'chalk';
 import express from 'express';
-import { createServer } from 'http';
+import { createServer, type Server } from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { error, info, printHeader, success } from '../lib/colors.js';
+import { error, info, printHeader, success, warning } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
 
@@ -28,6 +25,36 @@ interface DashboardOptions {
   host?: string;
   open?: boolean;
   closed?: boolean;
+}
+
+async function startHttpServer(
+  app: express.Express,
+  startPort: number,
+  host: string,
+  maxAttempts = 10,
+): Promise<{ server: Server; port: number }> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const tryPort = startPort + attempt;
+    try {
+      const server = createServer(app);
+      await new Promise<void>((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(tryPort, host, () => resolve());
+      });
+      return { server, port: tryPort };
+    } catch (err) {
+      const nodeErr = err as { code?: string };
+      if (nodeErr.code !== 'EADDRINUSE') {
+        throw err;
+      }
+      if (attempt < maxAttempts - 1) {
+        info(`Port ${tryPort} is in use, trying port ${tryPort + 1}...`);
+      }
+    }
+  }
+  throw new Error(
+    `Could not find an available port after ${maxAttempts} attempts (tried ${startPort}-${startPort + maxAttempts - 1})`,
+  );
 }
 
 export const dashboardCommand = defineCommand({
@@ -77,9 +104,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
   // Security: Validate host before any parsing
   if (!isValidHost(host)) {
     error('Security validation failed');
-    error(
-      `Invalid host: ${host}. Must be localhost, a valid IPv4 address, or hostname.`,
-    );
+    error(`Invalid host: ${host}. Must be localhost, a valid IPv4 address, or hostname.`);
     process.exit(1);
   }
 
@@ -91,21 +116,13 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
   }
   if (typeof options.wsPort === 'string' && !isValidPort(options.wsPort)) {
     error('Security validation failed');
-    error(
-      `Invalid WebSocket port: ${options.wsPort}. Must be between 1 and 65535.`,
-    );
+    error(`Invalid WebSocket port: ${options.wsPort}. Must be between 1 and 65535.`);
     process.exit(1);
   }
 
   // Parse port values (Commander may pass them as strings)
-  const port =
-    typeof options.port === 'string'
-      ? parseInt(options.port, 10)
-      : options.port || 5173;
-  const wsPort =
-    typeof options.wsPort === 'string'
-      ? parseInt(options.wsPort, 10)
-      : options.wsPort || 3001;
+  const port = typeof options.port === 'string' ? parseInt(options.port, 10) : options.port || 5173;
+  const wsPort = typeof options.wsPort === 'string' ? parseInt(options.wsPort, 10) : options.wsPort || 3001;
 
   if (!isValidPort(port)) {
     error('Security validation failed');
@@ -208,12 +225,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     app.use((req, res, next) => {
       if (req.path === '/' || req.path === '/index.html') {
         import('fs')
-          .then((fs) =>
-            fs.promises.readFile(
-              path.join(dashboardDist, 'index.html'),
-              'utf-8',
-            ),
-          )
+          .then((fs) => fs.promises.readFile(path.join(dashboardDist, 'index.html'), 'utf-8'))
           .then((html) => {
             // Security: Escape values before injecting into HTML to prevent XSS
             const safeHost = escapeHtml(host);
@@ -249,14 +261,13 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       res.status(404).send('Not Found');
     });
 
-    const httpServer = createServer(app);
-    await new Promise<void>((resolve) => {
-      httpServer.listen(port, host, () => {
-        resolve();
-      });
-    });
+    const { server: httpServer, port: actualPort } = await startHttpServer(app, port, host);
 
-    success(`✓ Dashboard available at http://${host}:${port}`);
+    if (actualPort !== port) {
+      warning(`Port ${port} was in use. Dashboard started on port ${actualPort}.`);
+    }
+
+    success(`✓ Dashboard available at http://${host}:${actualPort}`);
 
     // Build filter query params
     const filterParams = new URLSearchParams();
@@ -265,29 +276,20 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     } else if (options.closed) {
       filterParams.set('filter', 'closed');
     }
-    const filterQuery = filterParams.toString()
-      ? `?${filterParams.toString()}`
-      : '';
+    const filterQuery = filterParams.toString() ? `?${filterParams.toString()}` : '';
 
     // Open browser if requested
     if (options.browser) {
-      const url = `http://${host}:${port}${filterQuery}`;
+      const url = `http://${host}:${actualPort}${filterQuery}`;
       await import('child_process').then((cp) => {
-        const cmd =
-          process.platform === 'darwin'
-            ? 'open'
-            : process.platform === 'win32'
-              ? 'start'
-              : 'xdg-open';
+        const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
         cp.exec(`${cmd} ${url}`);
       });
     }
 
     info('');
     info(chalk.bold('Dashboard Controls:'));
-    info(
-      `  • Dashboard: ${chalk.cyan(`http://${host}:${port}${filterQuery}`)}`,
-    );
+    info(`  • Dashboard: ${chalk.cyan(`http://${host}:${actualPort}${filterQuery}`)}`);
     info(`  • WebSocket: ${chalk.cyan(`ws://${host}:${wsPort}`)}`);
     if (options.open) {
       info(`  • Filter: ${chalk.yellow('Open tasks only')}`);

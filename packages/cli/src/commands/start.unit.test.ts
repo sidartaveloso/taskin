@@ -36,18 +36,12 @@ describe('start command - auto-commit logic (unit)', () => {
 
       await mockGitService.commitTaskStatusChange(taskId, status);
 
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledWith(
-        taskId,
-        status,
-      );
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledWith(taskId, status);
       expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledTimes(1);
     });
 
     it('should return true when commit succeeds', async () => {
-      const result = await mockGitService.commitTaskStatusChange(
-        '014',
-        'in-progress',
-      );
+      const result = await mockGitService.commitTaskStatusChange('014', 'in-progress');
 
       expect(result).toBe(true);
     });
@@ -55,10 +49,7 @@ describe('start command - auto-commit logic (unit)', () => {
     it('should return false when commit fails', async () => {
       vi.mocked(mockGitService.commitTaskStatusChange).mockResolvedValue(false);
 
-      const result = await mockGitService.commitTaskStatusChange(
-        '014',
-        'in-progress',
-      );
+      const result = await mockGitService.commitTaskStatusChange('014', 'in-progress');
 
       expect(result).toBe(false);
     });
@@ -69,21 +60,9 @@ describe('start command - auto-commit logic (unit)', () => {
       await mockGitService.commitTaskStatusChange('999', 'in-progress');
 
       expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledTimes(3);
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(
-        1,
-        '001',
-        'in-progress',
-      );
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(
-        2,
-        '042',
-        'in-progress',
-      );
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(
-        3,
-        '999',
-        'in-progress',
-      );
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(1, '001', 'in-progress');
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(2, '042', 'in-progress');
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(3, '999', 'in-progress');
     });
 
     it('should handle different statuses', async () => {
@@ -91,21 +70,9 @@ describe('start command - auto-commit logic (unit)', () => {
       await mockGitService.commitTaskStatusChange('014', 'paused');
       await mockGitService.commitTaskStatusChange('014', 'done');
 
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(
-        1,
-        '014',
-        'in-progress',
-      );
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(
-        2,
-        '014',
-        'paused',
-      );
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(
-        3,
-        '014',
-        'done',
-      );
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(1, '014', 'in-progress');
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(2, '014', 'paused');
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenNthCalledWith(3, '014', 'done');
     });
   });
 
@@ -114,10 +81,7 @@ describe('start command - auto-commit logic (unit)', () => {
       const autoCommitStatusChange = true;
 
       if (autoCommitStatusChange) {
-        const committed = await mockGitService.commitTaskStatusChange(
-          '014',
-          'in-progress',
-        );
+        const committed = await mockGitService.commitTaskStatusChange('014', 'in-progress');
         expect(committed).toBe(true);
       }
 
@@ -137,10 +101,7 @@ describe('start command - auto-commit logic (unit)', () => {
     it('should handle commit failure gracefully', async () => {
       vi.mocked(mockGitService.commitTaskStatusChange).mockResolvedValue(false);
 
-      const committed = await mockGitService.commitTaskStatusChange(
-        '014',
-        'in-progress',
-      );
+      const committed = await mockGitService.commitTaskStatusChange('014', 'in-progress');
 
       expect(committed).toBe(false);
       // Application should continue even if commit fails
@@ -151,28 +112,19 @@ describe('start command - auto-commit logic (unit)', () => {
     it('should handle task ID normalization (without padding)', async () => {
       await mockGitService.commitTaskStatusChange('14', 'in-progress');
 
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledWith(
-        '14',
-        'in-progress',
-      );
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledWith('14', 'in-progress');
     });
 
     it('should handle task ID normalization (with padding)', async () => {
       await mockGitService.commitTaskStatusChange('014', 'in-progress');
 
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledWith(
-        '014',
-        'in-progress',
-      );
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledWith('014', 'in-progress');
     });
 
     it('should handle empty status gracefully', async () => {
       await mockGitService.commitTaskStatusChange('014', '');
 
-      expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledWith(
-        '014',
-        '',
-      );
+      expect(mockGitService.commitTaskStatusChange).toHaveBeenCalledWith('014', '');
     });
   });
 });

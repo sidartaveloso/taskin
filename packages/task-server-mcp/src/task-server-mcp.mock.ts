@@ -130,9 +130,7 @@ export class MockMCPTaskManager implements ITaskManager {
 /**
  * Create mock MCP server configuration
  */
-export function createMockMCPServerConfig(
-  overrides?: Partial<MCPServerConfig>,
-): MCPServerConfig {
+export function createMockMCPServerConfig(overrides?: Partial<MCPServerConfig>): MCPServerConfig {
   return {
     taskManager: new MockMCPTaskManager(),
     name: 'test-mcp-server',

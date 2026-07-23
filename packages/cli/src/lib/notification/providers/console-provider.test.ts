@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ConsoleProvider } from './console-provider.js';
 import type { NotificationMessage } from '@opentask/taskin-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConsoleProvider } from './console-provider.js';
 
 describe('ConsoleProvider', () => {
   let provider: ConsoleProvider;

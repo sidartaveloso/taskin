@@ -12,8 +12,7 @@ export function createMockTask(overrides?: Partial<TaskFile>): TaskFile {
     status: 'in-progress' as TaskStatus,
     type: 'feat' as TaskType,
     filePath: './TASKS/task-001-implement-user-authentication.md',
-    content:
-      '# Task 001 — Implement user authentication\n\nDescription goes here',
+    content: '# Task 001 — Implement user authentication\n\nDescription goes here',
     createdAt: '2024-01-01T00:00:00.000Z',
   };
 

@@ -37,10 +37,7 @@ export interface AutomationBehavior {
 /**
  * Resolves automation behavior from level and optional granular settings
  */
-export function getAutomationBehavior(
-  level: AutomationLevel,
-  commits?: CommitAutomation,
-): AutomationBehavior {
+export function getAutomationBehavior(level: AutomationLevel, commits?: CommitAutomation): AutomationBehavior {
   // Define preset behaviors for each level
   const presets: Record<AutomationLevel, AutomationBehavior> = {
     manual: {
@@ -65,8 +62,7 @@ export function getAutomationBehavior(
   // Apply granular overrides if provided
   if (commits) {
     return {
-      autoCommitStatusChange:
-        commits.taskStatusChanges ?? behavior.autoCommitStatusChange,
+      autoCommitStatusChange: commits.taskStatusChanges ?? behavior.autoCommitStatusChange,
       autoCommitPause: commits.workInProgress ?? behavior.autoCommitPause,
       autoCommitFinish: commits.completedWork ?? behavior.autoCommitFinish,
     };
@@ -91,9 +87,7 @@ export class ConfigManager {
    */
   loadConfig(): TaskinConfig {
     if (!existsSync(this.configPath)) {
-      throw new Error(
-        `Taskin configuration not found at ${this.configPath}.\nRun 'taskin init' to initialize.`,
-      );
+      throw new Error(`Taskin configuration not found at ${this.configPath}.\nRun 'taskin init' to initialize.`);
     }
 
     const content = readFileSync(this.configPath, 'utf-8');
@@ -197,9 +191,7 @@ export class ConfigManager {
    * @param command - Command name ('start', 'pause', 'finish', 'review')
    * @returns Command hooks configuration
    */
-  getCommandHooks(
-    command: 'start' | 'pause' | 'finish' | 'review',
-  ): CommandHooks {
+  getCommandHooks(command: 'start' | 'pause' | 'finish' | 'review'): CommandHooks {
     try {
       const config = this.loadConfig();
       return config.hooks?.[command] ?? {};

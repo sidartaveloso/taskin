@@ -59,11 +59,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useFaceLandmarker, createNoiseWatcher, FaceTrackingDebug, NoiseTrackingControls, TrackingControls } from '@opentask/ui-sense';
 import type { WebcamVideo } from '@opentask/ui-sense';
-import type { TaskinMood } from './Taskin.types';
+import {
+  createNoiseWatcher,
+  FaceTrackingDebug,
+  NoiseTrackingControls,
+  TrackingControls,
+  useFaceLandmarker,
+} from '@opentask/ui-sense';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import Taskin from './Taskin';
+import type { TaskinMood } from './Taskin.types';
 
 export interface Props {
   mascotSize?: number;

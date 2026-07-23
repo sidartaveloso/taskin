@@ -4,14 +4,8 @@ export interface DayBarType {
   emits: DayBarEmits;
 }
 
-export interface DayBarModels {
-  //TODO: Add models here
-}
+export type DayBarModels = {};
 
-export interface DayBarProps {
-  //TODO: Add props here
-}
+export type DayBarProps = {};
 
-export interface DayBarEmits {
-  //TODO: Add emits here
-}
+export type DayBarEmits = {};

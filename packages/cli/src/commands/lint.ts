@@ -2,10 +2,7 @@
  * Lint command - Validate task markdown files
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import type { LintTasksOptions } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import { join } from 'path';
@@ -60,9 +57,7 @@ async function executeLint(options: LintTasksOptions): Promise<void> {
   }
 
   if (!result.valid && !options.fix) {
-    console.log(
-      chalk.blue(`💡 Run with --fix to automatically fix format issues\n`),
-    );
+    console.log(chalk.blue(`💡 Run with --fix to automatically fix format issues\n`));
     process.exit(1);
   }
 }

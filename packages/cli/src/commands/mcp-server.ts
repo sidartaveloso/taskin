@@ -2,10 +2,7 @@
  * MCP Server command - Start Model Context Protocol server
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { MCPTransportType } from '@opentask/taskin-task-server-mcp';
 import { TaskMCPServer } from '@opentask/taskin-task-server-mcp';
@@ -87,12 +84,8 @@ async function startMCPServer(options: MCPServerOptions): Promise<void> {
     info(`  • ${chalk.green('finish_task')} - Mark a task as finished`);
     info('');
     info(chalk.bold('Available Prompts:'));
-    info(
-      `  • ${chalk.green('start-task-workflow')} - Guide for starting tasks`,
-    );
-    info(
-      `  • ${chalk.green('finish-task-workflow')} - Guide for finishing tasks`,
-    );
+    info(`  • ${chalk.green('start-task-workflow')} - Guide for starting tasks`);
+    info(`  • ${chalk.green('finish-task-workflow')} - Guide for finishing tasks`);
     info(`  • ${chalk.green('task-summary')} - Get task summary and insights`);
     info('');
     info(chalk.bold('Available Resources:'));

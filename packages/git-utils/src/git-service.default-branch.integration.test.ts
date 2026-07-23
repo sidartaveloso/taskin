@@ -1,12 +1,5 @@
 import { execSync } from 'child_process';
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -68,9 +61,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
   }
 
   function getLastCommitMessage(branch?: string): string {
-    const cmd = branch
-      ? `git log ${branch} -1 --pretty=%B`
-      : 'git log -1 --pretty=%B';
+    const cmd = branch ? `git log ${branch} -1 --pretty=%B` : 'git log -1 --pretty=%B';
     return execSync(cmd, {
       cwd: testDir,
       encoding: 'utf8',
@@ -78,10 +69,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
     }).trim();
   }
 
-  function createBranchWithCommit(
-    branchName: string,
-    baseBranch: string = 'main',
-  ): void {
+  function createBranchWithCommit(branchName: string, baseBranch: string = 'main'): void {
     execSync(`git checkout ${baseBranch}`, { cwd: testDir, stdio: 'ignore' });
     execSync(`git checkout -b ${branchName}`, {
       cwd: testDir,
@@ -101,10 +89,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
     writeFileSync(join(testDir, filename), content);
   }
 
-  function fileContentMatches(
-    filename: string,
-    expectedContent: string,
-  ): boolean {
+  function fileContentMatches(filename: string, expectedContent: string): boolean {
     if (!existsSync(join(testDir, filename))) return false;
     const content = readFileSync(join(testDir, filename), 'utf-8');
     return content === expectedContent;
@@ -141,11 +126,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
     updateTaskStatus('001', 'in-progress');
 
     // Action: Commit on main branch
-    const result = await gitService.commitTaskStatusChangeOnBranch(
-      '001',
-      'in-progress',
-      'main',
-    );
+    const result = await gitService.commitTaskStatusChangeOnBranch('001', 'in-progress', 'main');
 
     // Assert: Success
     expect(result).toBe(true);
@@ -174,11 +155,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
     updateTaskStatus('002', 'in-progress');
 
     // Action: Commit on main
-    const result = await gitService.commitTaskStatusChangeOnBranch(
-      '002',
-      'in-progress',
-      'main',
-    );
+    const result = await gitService.commitTaskStatusChangeOnBranch('002', 'in-progress', 'main');
 
     // Assert: Success
     expect(result).toBe(true);
@@ -240,11 +217,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
     updateTaskStatus('004', 'in-progress');
 
     // Action: Try to commit on non-existent branch
-    const result = await gitService.commitTaskStatusChangeOnBranch(
-      '004',
-      'in-progress',
-      'non-existent-branch',
-    );
+    const result = await gitService.commitTaskStatusChangeOnBranch('004', 'in-progress', 'non-existent-branch');
 
     // Assert: Failed
     expect(result).toBe(false);
@@ -262,11 +235,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
     updateTaskStatus('005', 'in-progress');
 
     // Action: Commit on main while on main
-    const result = await gitService.commitTaskStatusChangeOnBranch(
-      '005',
-      'in-progress',
-      'main',
-    );
+    const result = await gitService.commitTaskStatusChangeOnBranch('005', 'in-progress', 'main');
 
     // Assert: Success
     expect(result).toBe(true);
@@ -326,11 +295,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
 
     // First commit
     updateTaskStatus('007', 'in-progress');
-    const result1 = await gitService.commitTaskStatusChangeOnBranch(
-      '007',
-      'in-progress',
-      'main',
-    );
+    const result1 = await gitService.commitTaskStatusChangeOnBranch('007', 'in-progress', 'main');
 
     expect(result1).toBe(true);
     expect(getCurrentBranch()).toBe('feature/multi-commit');
@@ -339,11 +304,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
     // Second commit with more local changes
     addLocalChanges('work2.txt', 'work 2');
     updateTaskStatus('008', 'in-progress');
-    const result2 = await gitService.commitTaskStatusChangeOnBranch(
-      '008',
-      'in-progress',
-      'main',
-    );
+    const result2 = await gitService.commitTaskStatusChangeOnBranch('008', 'in-progress', 'main');
 
     expect(result2).toBe(true);
     expect(getCurrentBranch()).toBe('feature/multi-commit');
@@ -380,11 +341,7 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
     updateTaskStatus('009', 'in-progress');
 
     // Action: Commit on main
-    const result = await gitService.commitTaskStatusChangeOnBranch(
-      '009',
-      'in-progress',
-      'main',
-    );
+    const result = await gitService.commitTaskStatusChangeOnBranch('009', 'in-progress', 'main');
 
     // Assert: Success
     expect(result).toBe(true);

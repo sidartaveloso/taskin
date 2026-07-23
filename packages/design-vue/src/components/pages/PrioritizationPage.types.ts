@@ -4,14 +4,8 @@ export interface PrioritizationPageType {
   emits: PrioritizationPageEmits;
 }
 
-export interface PrioritizationPageModels {
-  //TODO: Add models here
-}
+export type PrioritizationPageModels = {};
 
-export interface PrioritizationPageProps {
-  //TODO: Add props here
-}
+export type PrioritizationPageProps = {};
 
-export interface PrioritizationPageEmits {
-  //TODO: Add emits here
-}
+export type PrioritizationPageEmits = {};

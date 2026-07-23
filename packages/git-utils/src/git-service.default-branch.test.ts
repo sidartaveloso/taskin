@@ -36,60 +36,30 @@ describe('GitService - defaultBranch feature', () => {
       const status = 'in-progress';
       const defaultBranch = 'main';
 
-      await mockGitService.commitTaskStatusChangeOnBranch(
-        taskId,
-        status,
-        defaultBranch,
-      );
+      await mockGitService.commitTaskStatusChangeOnBranch(taskId, status, defaultBranch);
 
-      expect(
-        mockGitService.commitTaskStatusChangeOnBranch,
-      ).toHaveBeenCalledWith(taskId, status, defaultBranch);
-      expect(
-        mockGitService.commitTaskStatusChangeOnBranch,
-      ).toHaveBeenCalledTimes(1);
+      expect(mockGitService.commitTaskStatusChangeOnBranch).toHaveBeenCalledWith(taskId, status, defaultBranch);
+      expect(mockGitService.commitTaskStatusChangeOnBranch).toHaveBeenCalledTimes(1);
     });
 
     it('should return true on success', async () => {
-      const result = await mockGitService.commitTaskStatusChangeOnBranch(
-        '017',
-        'in-progress',
-        'main',
-      );
+      const result = await mockGitService.commitTaskStatusChangeOnBranch('017', 'in-progress', 'main');
 
       expect(result).toBe(true);
     });
 
     it('should handle undefined defaultBranch', async () => {
-      const result = await mockGitService.commitTaskStatusChangeOnBranch(
-        '017',
-        'in-progress',
-        undefined,
-      );
+      const result = await mockGitService.commitTaskStatusChangeOnBranch('017', 'in-progress', undefined);
 
       expect(result).toBe(true);
     });
 
     it('should work with different branch names', async () => {
-      await mockGitService.commitTaskStatusChangeOnBranch(
-        '017',
-        'in-progress',
-        'develop',
-      );
-      await mockGitService.commitTaskStatusChangeOnBranch(
-        '017',
-        'in-progress',
-        'feature/test',
-      );
-      await mockGitService.commitTaskStatusChangeOnBranch(
-        '017',
-        'in-progress',
-        'release/v1.0',
-      );
+      await mockGitService.commitTaskStatusChangeOnBranch('017', 'in-progress', 'develop');
+      await mockGitService.commitTaskStatusChangeOnBranch('017', 'in-progress', 'feature/test');
+      await mockGitService.commitTaskStatusChangeOnBranch('017', 'in-progress', 'release/v1.0');
 
-      expect(
-        mockGitService.commitTaskStatusChangeOnBranch,
-      ).toHaveBeenCalledTimes(3);
+      expect(mockGitService.commitTaskStatusChangeOnBranch).toHaveBeenCalledTimes(3);
     });
   });
 

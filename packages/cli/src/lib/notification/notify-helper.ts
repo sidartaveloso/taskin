@@ -1,16 +1,12 @@
+import type { INotificationProvider, NotificationEvent, NotificationMessage } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
-import type {
-  INotificationProvider,
-  NotificationEvent,
-  NotificationMessage,
-} from '@opentask/taskin-types';
 import type { ConfigManager } from '../config-manager.js';
 import { resolveEnvVars } from './env-resolver.js';
 import { NotificationManager } from './notification-manager.js';
 import { NotificationMessageBuilder } from './notification-message-builder.js';
+import { ConsoleProvider } from './providers/console-provider.js';
 import { DiscordProvider } from './providers/discord-provider.js';
 import { TelegramProvider } from './providers/telegram-provider.js';
-import { ConsoleProvider } from './providers/console-provider.js';
 
 interface GitInfo {
   branch: string;

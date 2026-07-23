@@ -20,10 +20,10 @@
     "build": "tsc",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "format": "biome check --write .",
+    "format:check": "biome check .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
@@ -32,7 +32,6 @@
     "@opentask/taskin-types": "workspace:*"
   },
   "devDependencies": {
-    "eslint": "^9.39.1",
     "typescript": "^6.0.0",
     "vitest": "^1.6.1"
   }

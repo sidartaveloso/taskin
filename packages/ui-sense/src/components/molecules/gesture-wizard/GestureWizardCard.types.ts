@@ -4,14 +4,8 @@ export interface GestureWizardCardType {
   emits: GestureWizardCardEmits;
 }
 
-export interface GestureWizardCardModels {
-  //TODO: Add models here
-}
+export type GestureWizardCardModels = {};
 
-export interface GestureWizardCardProps {
-  //TODO: Add props here
-}
+export type GestureWizardCardProps = {};
 
-export interface GestureWizardCardEmits {
-  //TODO: Add emits here
-}
+export type GestureWizardCardEmits = {};

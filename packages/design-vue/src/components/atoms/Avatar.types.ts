@@ -4,14 +4,8 @@ export interface AvatarType {
   emits: AvatarEmits;
 }
 
-export interface AvatarModels {
-  //TODO: Add models here
-}
+export type AvatarModels = {};
 
-export interface AvatarProps {
-  //TODO: Add props here
-}
+export type AvatarProps = {};
 
-export interface AvatarEmits {
-  //TODO: Add emits here
-}
+export type AvatarEmits = {};

@@ -3,12 +3,7 @@
  * Implements IHookRunner interface with sequential execution and template substitution.
  */
 
-import type {
-  HookContext,
-  HookOptions,
-  HookResult,
-  IHookRunner,
-} from '@opentask/taskin-types';
+import type { HookContext, HookOptions, HookResult, IHookRunner } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 
 /**
@@ -37,11 +32,7 @@ export class HookRunner implements IHookRunner {
    * @param options - Execution options (timeout, error handling)
    * @returns Array of results for each executed hook
    */
-  async executeHooks(
-    hooks: string[],
-    context: HookContext,
-    options: HookOptions,
-  ): Promise<HookResult[]> {
+  async executeHooks(hooks: string[], context: HookContext, options: HookOptions): Promise<HookResult[]> {
     const results: HookResult[] = [];
 
     for (const hook of hooks) {

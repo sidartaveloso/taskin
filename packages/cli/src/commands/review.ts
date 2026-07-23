@@ -3,22 +3,12 @@
  * Executes quality checks and transitions task to 'in-review' status
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { HookContext, HookOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import path from 'path';
-import {
-  colors,
-  error,
-  info,
-  printHeader,
-  success,
-  warning,
-} from '../lib/colors.js';
+import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { HookRunner } from '../lib/hook-runner.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
@@ -60,10 +50,7 @@ export const reviewCommand = defineCommand({
   },
 });
 
-async function reviewTask(
-  taskId: string,
-  options: ReviewTaskOptions,
-): Promise<void> {
+async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -98,9 +85,7 @@ async function reviewTask(
 
   // Check if task is in-progress
   if (task.status !== 'in-progress') {
-    error(
-      `Task must be 'in-progress' to be reviewed. Current status: ${task.status}`,
-    );
+    error(`Task must be 'in-progress' to be reviewed. Current status: ${task.status}`);
     process.exit(1);
   }
 
@@ -169,11 +154,7 @@ async function reviewTask(
   // Execute pre-review hooks
   if (reviewHooks.pre && reviewHooks.pre.length > 0 && !options.skipMerge) {
     info('⏳ Executing pre-review hooks...');
-    const preResults = await hookRunner.executeHooks(
-      reviewHooks.pre,
-      hookContext,
-      hookOptions,
-    );
+    const preResults = await hookRunner.executeHooks(reviewHooks.pre, hookContext, hookOptions);
 
     // Display results
     for (const result of preResults) {
@@ -200,17 +181,9 @@ async function reviewTask(
   }
 
   // Execute review checks (during hooks)
-  if (
-    reviewHooks.during &&
-    reviewHooks.during.length > 0 &&
-    !options.skipChecks
-  ) {
+  if (reviewHooks.during && reviewHooks.during.length > 0 && !options.skipChecks) {
     info('⏳ Executing review checks...');
-    const duringResults = await hookRunner.executeHooks(
-      reviewHooks.during,
-      hookContext,
-      hookOptions,
-    );
+    const duringResults = await hookRunner.executeHooks(reviewHooks.during, hookContext, hookOptions);
 
     // Display results
     for (const result of duringResults) {
@@ -261,11 +234,7 @@ async function reviewTask(
   // Execute post-review hooks
   if (reviewHooks.post && reviewHooks.post.length > 0) {
     info('⏳ Executing post-review hooks...');
-    const postResults = await hookRunner.executeHooks(
-      reviewHooks.post,
-      hookContext,
-      hookOptions,
-    );
+    const postResults = await hookRunner.executeHooks(reviewHooks.post, hookContext, hookOptions);
 
     // Display results
     for (const result of postResults) {
@@ -284,11 +253,7 @@ async function reviewTask(
 
   // Calculate total duration
   const totalDuration =
-    [
-      ...(reviewHooks.pre ?? []),
-      ...(reviewHooks.during ?? []),
-      ...(reviewHooks.post ?? []),
-    ].length > 0
+    [...(reviewHooks.pre ?? []), ...(reviewHooks.during ?? []), ...(reviewHooks.post ?? [])].length > 0
       ? 'with hooks'
       : '';
 

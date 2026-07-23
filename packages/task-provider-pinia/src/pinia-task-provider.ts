@@ -1,10 +1,6 @@
 import type { ITaskProvider, TaskFile } from '@opentask/taskin-task-manager';
 import { defineStore } from 'pinia';
-import type {
-  PiniaTaskProviderConfig,
-  PiniaTaskStoreState,
-  WebSocketMessage,
-} from './pinia-task-provider.types.js';
+import type { PiniaTaskProviderConfig, PiniaTaskStoreState, WebSocketMessage } from './pinia-task-provider.types.js';
 
 /**
  * WebSocket timing constants (in milliseconds)
@@ -68,8 +64,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
      * Get tasks filtered by status
      */
     tasksByStatus(state: PiniaTaskStoreState) {
-      return (status: string) =>
-        state.tasks.filter((t: TaskFile) => t.status === status);
+      return (status: string) => state.tasks.filter((t: TaskFile) => t.status === status);
     },
 
     /**
@@ -159,9 +154,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           }
         };
       } catch (error) {
-        this.handleError(
-          error instanceof Error ? error : new Error(String(error)),
-        );
+        this.handleError(error instanceof Error ? error : new Error(String(error)));
       }
     },
 
@@ -222,10 +215,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           this._log('Received tasks:', this.tasks.length);
           // Debug first task
           if (this.tasks.length > 0) {
-            this._log(
-              'First task sample:',
-              JSON.stringify(this.tasks[0], null, 2),
-            );
+            this._log('First task sample:', JSON.stringify(this.tasks[0], null, 2));
           }
           this.lastSync = Date.now();
           this.loading = false;
@@ -273,9 +263,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
 
         case 'error':
           // Error from server
-          this.error =
-            (message.payload as { message: string })?.message ||
-            'Unknown error';
+          this.error = (message.payload as { message: string })?.message || 'Unknown error';
           this._log('Server error:', this.error);
           break;
 
@@ -315,9 +303,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
       this.reconnectAttempts++;
       const delay = config.reconnectDelay || DEFAULT_RECONNECT_DELAY;
 
-      this._log(
-        `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`,
-      );
+      this._log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
       setTimeout(() => {
         this._connect();
@@ -380,10 +366,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Find a task by ID
      */
-    async findTask(
-      this: PiniaStoreContext,
-      taskId: string,
-    ): Promise<TaskFile | undefined> {
+    async findTask(this: PiniaStoreContext, taskId: string): Promise<TaskFile | undefined> {
       // Check cache first
       const cached = this.tasks.find((t: TaskFile) => t.id === taskId);
       if (cached) {
@@ -481,9 +464,7 @@ export const usePiniaTaskProvider = _usePiniaTaskProvider;
 /**
  * Create an ITaskProvider adapter for the Pinia store
  */
-export function createPiniaTaskProvider(
-  config: PiniaTaskProviderConfig,
-): ITaskProvider {
+export function createPiniaTaskProvider(config: PiniaTaskProviderConfig): ITaskProvider {
   const store = _usePiniaTaskProvider();
 
   // Connect on creation
@@ -494,9 +475,7 @@ export function createPiniaTaskProvider(
     getAllTasks: () => store.getAllTasks(),
     updateTask: (task: TaskFile) => store.updateTask(task),
     createTask: async () => {
-      throw new Error(
-        'createTask not supported in Pinia provider (WebSocket-based)',
-      );
+      throw new Error('createTask not supported in Pinia provider (WebSocket-based)');
     },
     lint: async () => ({
       valid: true,

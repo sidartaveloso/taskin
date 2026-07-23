@@ -1,7 +1,4 @@
-import type {
-  ITaskManager,
-  ITaskProvider,
-} from '@opentask/taskin-task-manager';
+import type { ITaskManager, ITaskProvider } from '@opentask/taskin-task-manager';
 import type { WebSocket as WSType } from 'ws';
 
 /**

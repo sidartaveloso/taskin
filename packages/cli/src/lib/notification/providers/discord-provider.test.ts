@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { DiscordProvider } from './discord-provider.js';
 import type { NotificationMessage } from '@opentask/taskin-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DiscordProvider } from './discord-provider.js';
 
 describe('DiscordProvider', () => {
   let provider: DiscordProvider;
@@ -91,9 +91,7 @@ describe('DiscordProvider', () => {
       title: 'Task #020 — Notifications',
       description: 'Foi finalizada por **Sidarta Veloso**',
       color: 5763719,
-      fields: [
-        { name: 'Status', value: 'pending → done', inline: true },
-      ],
+      fields: [{ name: 'Status', value: 'pending → done', inline: true }],
       footer: { text: 'Taskin • task-020' },
     };
 

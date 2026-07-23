@@ -140,13 +140,13 @@
 </template>
 
 <script setup lang="ts">
+import { type ConfigurableFunction, GestureSystem, TrackingControls } from '@opentask/ui-sense';
 import { provide, ref, toRef } from 'vue';
 import type {
   PrioritizationSortMode,
   PrioritizationViewMode,
   PriorityNode,
 } from '../../composables/use-prioritization';
-import { TrackingControls, GestureSystem, type ConfigurableFunction } from '@opentask/ui-sense';
 import PriorityGroupRenderer from './PriorityGroupRenderer.vue';
 
 export interface PrioritizationScreenProps {

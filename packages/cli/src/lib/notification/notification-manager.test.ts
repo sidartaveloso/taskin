@@ -1,9 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { INotificationProvider, NotificationMessage } from '@opentask/taskin-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationManager } from './notification-manager.js';
-import type {
-  INotificationProvider,
-  NotificationMessage,
-} from '@opentask/taskin-types';
 
 function createMockProvider(name: string): INotificationProvider {
   return {
@@ -47,10 +44,7 @@ describe('NotificationManager', () => {
       },
     });
 
-    await manager.notify(
-      { title: 'Test', description: 'Test' },
-      { event: 'task:done' },
-    );
+    await manager.notify({ title: 'Test', description: 'Test' }, { event: 'task:done' });
 
     expect(discordMock.send).toHaveBeenCalledTimes(1);
     expect(telegramMock.send).not.toHaveBeenCalled();
@@ -64,10 +58,7 @@ describe('NotificationManager', () => {
       },
     });
 
-    await manager.notify(
-      { title: 'Test', description: 'Test' },
-      { event: 'task:done' },
-    );
+    await manager.notify({ title: 'Test', description: 'Test' }, { event: 'task:done' });
 
     expect(discordMock.send).toHaveBeenCalledTimes(1);
     expect(telegramMock.send).toHaveBeenCalledTimes(1);
@@ -166,10 +157,7 @@ describe('NotificationManager', () => {
   it('should not filter providers without event filter config', async () => {
     manager = new NotificationManager([discordMock, telegramMock]);
 
-    await manager.notify(
-      { title: 'Test', description: 'Test' },
-      { event: 'task:done' },
-    );
+    await manager.notify({ title: 'Test', description: 'Test' }, { event: 'task:done' });
 
     expect(discordMock.send).toHaveBeenCalledTimes(1);
     expect(telegramMock.send).toHaveBeenCalledTimes(1);

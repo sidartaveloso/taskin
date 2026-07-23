@@ -1,9 +1,9 @@
-import { playwright } from '@vitest/browser-playwright';
 import vue from '@vitejs/plugin-vue';
+import { playwright } from '@vitest/browser-playwright';
 import { resolve } from 'path';
+import type { PluginOption } from 'vite';
 import svgLoader from 'vite-svg-loader';
 import { defineConfig } from 'vitest/config';
-import type { PluginOption } from 'vite';
 
 export default defineConfig({
   plugins: [

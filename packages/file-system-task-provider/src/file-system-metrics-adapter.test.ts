@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileSystemMetricsAdapter } from './file-system-metrics-adapter';
+import type { IUserRegistry } from './user-registry';
 
 vi.mock('fs', () => ({ promises: { readdir: vi.fn(), readFile: vi.fn() } }));
 
@@ -16,11 +17,7 @@ describe('FileSystemMetricsAdapter', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    adapter = new FileSystemMetricsAdapter(
-      TASKS_DIR,
-      mockUserRegistry as unknown as IUserRegistry,
-      undefined,
-    );
+    adapter = new FileSystemMetricsAdapter(TASKS_DIR, mockUserRegistry as unknown as IUserRegistry, undefined);
   });
 
   it('getUserMetrics counts completed and active tasks for user', async () => {
@@ -29,9 +26,7 @@ describe('FileSystemMetricsAdapter', () => {
     const content2 = `# Task 002 — Second Task\nStatus: in-progress\nAssignee: john-doe`;
 
     (fs.readdir as Mock).mockResolvedValue(files);
-    (fs.readFile as Mock)
-      .mockResolvedValueOnce(content1)
-      .mockResolvedValueOnce(content2);
+    (fs.readFile as Mock).mockResolvedValueOnce(content1).mockResolvedValueOnce(content2);
 
     (mockUserRegistry.getUser as Mock).mockReturnValue({
       id: 'john-doe',
@@ -63,9 +58,7 @@ describe('FileSystemMetricsAdapter', () => {
     const content2 = `# Task 002 — B\nStatus: pending\nAssignee: bob`;
 
     (fs.readdir as Mock).mockResolvedValue(files);
-    (fs.readFile as Mock)
-      .mockResolvedValueOnce(content1)
-      .mockResolvedValueOnce(content2);
+    (fs.readFile as Mock).mockResolvedValueOnce(content1).mockResolvedValueOnce(content2);
 
     const team = await adapter.getTeamMetrics('team-x');
     expect(team.totalContributors).toBeGreaterThanOrEqual(2);
@@ -80,25 +73,15 @@ describe('FileSystemMetricsAdapter', () => {
     (fs.readFile as Mock).mockResolvedValueOnce(content1);
 
     // mock registry to return a user 'carol'
-    (mockUserRegistry.getAllUsers as Mock).mockReturnValue([
-      { id: 'carol', name: 'Carol' },
-    ]);
+    (mockUserRegistry.getAllUsers as Mock).mockReturnValue([{ id: 'carol', name: 'Carol' }]);
 
     // mock gitAnalyzer with getAuthors
     const mockGitAnalyzer = {
-      getAuthors: vi
-        .fn()
-        .mockResolvedValue([
-          { name: 'Dave', email: 'dave@example.com', commits: 3 },
-        ]),
+      getAuthors: vi.fn().mockResolvedValue([{ name: 'Dave', email: 'dave@example.com', commits: 3 }]),
       getCommits: vi.fn().mockResolvedValue([]),
     } as unknown as GitAnalyzer;
 
-    adapter = new FileSystemMetricsAdapter(
-      TASKS_DIR,
-      mockUserRegistry as unknown as IUserRegistry,
-      mockGitAnalyzer,
-    );
+    adapter = new FileSystemMetricsAdapter(TASKS_DIR, mockUserRegistry as unknown as IUserRegistry, mockGitAnalyzer);
 
     const team = await adapter.getTeamMetrics('team-x');
 
@@ -137,9 +120,7 @@ Already in inline format.\`;
 More content here.`;
 
     (fs.readdir as Mock).mockResolvedValue(files);
-    (fs.readFile as Mock)
-      .mockResolvedValueOnce(realTask)
-      .mockResolvedValueOnce(summaryWithCodeBlock);
+    (fs.readFile as Mock).mockResolvedValueOnce(realTask).mockResolvedValueOnce(summaryWithCodeBlock);
 
     // Mock registry and git to return empty to avoid extra contributors
     (mockUserRegistry.getAllUsers as Mock).mockReturnValue([]);

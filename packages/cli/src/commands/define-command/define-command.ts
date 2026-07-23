@@ -23,9 +23,7 @@ export const defineCommand: DefineCommandFunction = (config) => {
       try {
         await config.handler(...args);
       } catch (err) {
-        error(
-          `Failed to execute command: ${err instanceof Error ? err.message : String(err)}`,
-        );
+        error(`Failed to execute command: ${err instanceof Error ? err.message : String(err)}`);
         process.exit(1);
       }
     });

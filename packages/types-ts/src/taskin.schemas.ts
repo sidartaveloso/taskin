@@ -22,14 +22,7 @@ export const TaskIdSchema = z.string().uuid().brand('TaskId');
  * TASK_STATUSES.forEach(status => console.log(status));
  * ```
  */
-export const TASK_STATUSES = [
-  'pending',
-  'in-progress',
-  'in-review',
-  'done',
-  'blocked',
-  'canceled',
-] as const;
+export const TASK_STATUSES = ['pending', 'in-progress', 'in-review', 'done', 'blocked', 'canceled'] as const;
 
 /**
  * All possible task type values.
@@ -42,14 +35,7 @@ export const TASK_STATUSES = [
  * const options = TASK_TYPES.map(type => ({ value: type, label: type }));
  * ```
  */
-export const TASK_TYPES = [
-  'feat',
-  'fix',
-  'refactor',
-  'docs',
-  'test',
-  'chore',
-] as const;
+export const TASK_TYPES = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'] as const;
 
 /**
  * Runtime validator for task status values.
@@ -77,6 +63,7 @@ export const UserSchema = z.object({
   email: z.string().email(),
   id: z.string(),
   name: z.string(),
+  avatar: z.string().optional(),
 });
 
 /**
@@ -124,25 +111,13 @@ export const TaskSchema = z.object({
  * Time period for filtering stats
  * @public
  */
-export const StatsPeriodSchema = z.enum([
-  'day',
-  'week',
-  'month',
-  'quarter',
-  'year',
-  'all',
-]);
+export const StatsPeriodSchema = z.enum(['day', 'week', 'month', 'quarter', 'year', 'all']);
 
 /**
  * Time of day categories for productivity analysis
  * @public
  */
-export const TimeOfDaySchema = z.enum([
-  'morning',
-  'afternoon',
-  'evening',
-  'night',
-]);
+export const TimeOfDaySchema = z.enum(['morning', 'afternoon', 'evening', 'night']);
 
 /**
  * Day of week (0 = Sunday, 6 = Saturday)
@@ -227,10 +202,7 @@ export const ContributionMetricsSchema = z.object({
   tasksCompleted: z.coerce.number().int().nonnegative(),
   averageCompletionTime: z.coerce.number().nonnegative(), // in days
   // keys are task type strings (e.g. 'feat', 'fix')
-  taskTypeDistribution: z.record(
-    z.string(),
-    z.coerce.number().int().nonnegative(),
-  ),
+  taskTypeDistribution: z.record(z.string(), z.coerce.number().int().nonnegative()),
   activityFrequency: z.coerce.number().nonnegative(), // commits per day
 });
 
@@ -256,27 +228,11 @@ export const TaskStatsSchema = z.object({
   status: TaskStatusSchema,
   assignee: z.string().optional(),
   duration: z.coerce.number().nonnegative(), // in days
-  created: z.preprocess(
-    (v) => (v instanceof Date ? v.toISOString() : String(v)),
-    z.string().datetime(),
-  ),
-  firstCommit: z
-    .preprocess(
-      (v) => (v instanceof Date ? v.toISOString() : String(v)),
-      z.string().datetime(),
-    )
-    .optional(),
-  lastCommit: z
-    .preprocess(
-      (v) => (v instanceof Date ? v.toISOString() : String(v)),
-      z.string().datetime(),
-    )
-    .optional(),
+  created: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
+  firstCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()).optional(),
+  lastCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()).optional(),
   statusChangedToDone: z
-    .preprocess(
-      (v) => (v instanceof Date ? v.toISOString() : String(v)),
-      z.string().datetime(),
-    )
+    .preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime())
     .optional(),
   contributors: z.array(
     z.object({
@@ -314,14 +270,8 @@ export const TaskStatsSchema = z.object({
 export const UserStatsSchema = z.object({
   username: z.string(),
   period: StatsPeriodSchema,
-  periodStart: z.preprocess(
-    (v) => (v instanceof Date ? v.toISOString() : String(v)),
-    z.string().datetime(),
-  ),
-  periodEnd: z.preprocess(
-    (v) => (v instanceof Date ? v.toISOString() : String(v)),
-    z.string().datetime(),
-  ),
+  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
+  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
   codeMetrics: CodeMetricsSchema,
   temporalMetrics: TemporalMetricsSchema,
   contributionMetrics: ContributionMetricsSchema,
@@ -344,14 +294,8 @@ export const UserStatsSchema = z.object({
  */
 export const TeamStatsSchema = z.object({
   period: StatsPeriodSchema,
-  periodStart: z.preprocess(
-    (v) => (v instanceof Date ? v.toISOString() : String(v)),
-    z.string().datetime(),
-  ),
-  periodEnd: z.preprocess(
-    (v) => (v instanceof Date ? v.toISOString() : String(v)),
-    z.string().datetime(),
-  ),
+  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
+  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
   totalContributors: z.number().int().nonnegative(),
   totalCommits: z.number().int().nonnegative(),
   totalTasksCompleted: z.number().int().nonnegative(),
@@ -364,10 +308,7 @@ export const TeamStatsSchema = z.object({
       codeMetrics: CodeMetricsSchema,
     }),
   ),
-  taskTypeDistribution: z.record(
-    z.string(),
-    z.coerce.number().int().nonnegative(),
-  ),
+  taskTypeDistribution: z.record(z.string(), z.coerce.number().int().nonnegative()),
 });
 
 /**
@@ -399,11 +340,7 @@ export const StatsQuerySchema = z.object({
  * level: 'autopilot'
  * ```
  */
-export const AutomationLevelSchema = z.enum([
-  'manual',
-  'assisted',
-  'autopilot',
-]);
+export const AutomationLevelSchema = z.enum(['manual', 'assisted', 'autopilot']);
 
 /**
  * Granular commit automation settings.
@@ -596,11 +533,7 @@ export const HookResultSchema = z.object({
  * const isValidEvent = NOTIFICATION_EVENTS.includes(userInput);
  * ```
  */
-export const NOTIFICATION_EVENTS = [
-  'task:start',
-  'task:done',
-  'task:review',
-] as const;
+export const NOTIFICATION_EVENTS = ['task:start', 'task:done', 'task:review'] as const;
 
 /**
  * Runtime validator for notification event values.

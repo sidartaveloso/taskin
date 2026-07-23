@@ -8,11 +8,7 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "ignore": [
-    "@taskin/docs",
-    "@taskin/directus-extension",
-    "@taskin/n8n-plugin"
-  ],
+  "ignore": ["@taskin/docs", "@taskin/directus-extension", "@taskin/n8n-plugin"],
   "linked": [],
   "updateInternalDependencies": "patch"
 }

@@ -19,9 +19,7 @@ export function isTaskinProject(cwd: string = process.cwd()): boolean {
  */
 export function requireTaskinProject(cwd: string = process.cwd()): void {
   if (!isTaskinProject(cwd)) {
-    error(
-      'This directory is not initialized as a taskin project. Run "taskin init" first.',
-    );
+    error('This directory is not initialized as a taskin project. Run "taskin init" first.');
     process.exit(1);
   }
 }

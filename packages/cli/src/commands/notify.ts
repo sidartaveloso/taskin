@@ -4,9 +4,9 @@ import { ConfigManager } from '../lib/config-manager.js';
 import { resolveEnvVars } from '../lib/notification/env-resolver.js';
 import { NotificationManager } from '../lib/notification/notification-manager.js';
 import { NotificationMessageBuilder } from '../lib/notification/notification-message-builder.js';
+import { ConsoleProvider } from '../lib/notification/providers/console-provider.js';
 import { DiscordProvider } from '../lib/notification/providers/discord-provider.js';
 import { TelegramProvider } from '../lib/notification/providers/telegram-provider.js';
-import { ConsoleProvider } from '../lib/notification/providers/console-provider.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
 

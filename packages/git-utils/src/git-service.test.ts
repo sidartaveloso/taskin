@@ -51,13 +51,10 @@ describe('GitService', () => {
       const result = await service.commit('fix: test commit');
 
       expect(result).toBe(true);
-      expect(execSync).toHaveBeenCalledWith(
-        'git commit -m "fix: test commit"',
-        {
-          cwd: '/test/dir',
-          stdio: 'ignore',
-        },
-      );
+      expect(execSync).toHaveBeenCalledWith('git commit -m "fix: test commit"', {
+        cwd: '/test/dir',
+        stdio: 'ignore',
+      });
     });
 
     it('should return false on error', async () => {
@@ -81,10 +78,7 @@ describe('GitService', () => {
 
       expect(result).toBe(true);
       expect(execSync).toHaveBeenCalledWith('git add *.md', expect.any(Object));
-      expect(execSync).toHaveBeenCalledWith(
-        'git commit -m "docs: update"',
-        expect.any(Object),
-      );
+      expect(execSync).toHaveBeenCalledWith('git commit -m "docs: update"', expect.any(Object));
     });
 
     it('should return false if add fails', async () => {
@@ -120,10 +114,7 @@ describe('GitService', () => {
       const result = await service.commitTaskStatusChange('014', 'in-progress');
 
       expect(result).toBe(true);
-      expect(execSync).toHaveBeenCalledWith(
-        'git add TASKS/task-014-*.md',
-        expect.any(Object),
-      );
+      expect(execSync).toHaveBeenCalledWith('git add TASKS/task-014-*.md', expect.any(Object));
       expect(execSync).toHaveBeenCalledWith(
         'git commit -m "docs(TASKS): task-014 - atualiza status para in-progress [skip-ci]"',
         expect.any(Object),
@@ -192,14 +183,11 @@ describe('GitService', () => {
       const result = await service.getCurrentBranch();
 
       expect(result).toBe('main');
-      expect(execSync).toHaveBeenCalledWith(
-        'git branch --show-current',
-        {
-          cwd: '/test/dir',
-          encoding: 'utf8',
-          stdio: 'pipe',
-        },
-      );
+      expect(execSync).toHaveBeenCalledWith('git branch --show-current', {
+        cwd: '/test/dir',
+        encoding: 'utf8',
+        stdio: 'pipe',
+      });
     });
   });
 });

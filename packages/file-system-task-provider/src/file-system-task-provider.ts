@@ -10,12 +10,9 @@ import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
-import {
-  createLintResult,
-  fixTaskFile,
-  validateTaskFile,
-} from './task-validator.js';
-import type { UserRegistry } from './user-registry.js';
+import { createLintResult, fixTaskFile, validateTaskFile } from './task-validator.js';
+import type { ILogger, UserRegistry } from './user-registry.js';
+import { NullLogger } from './user-registry.js';
 
 /**
  * Parses the raw inline matches for the prioritization fields (Priority/Group/
@@ -33,9 +30,7 @@ function parsePrioritizationFields(
   difficulty?: number;
 } {
   const order = priorityMatch ? Number(priorityMatch.trim()) : undefined;
-  const difficulty = difficultyMatch
-    ? Number(difficultyMatch.trim())
-    : undefined;
+  const difficulty = difficultyMatch ? Number(difficultyMatch.trim()) : undefined;
 
   return {
     ...(order !== undefined && !isNaN(order) && { order }),
@@ -50,30 +45,34 @@ function parsePrioritizationFields(
  * task markdown content, following the same convention used for `Status`.
  * Passing `value === undefined` removes the line if present.
  */
-function setInlineField(
-  content: string,
-  fieldName: string,
-  value: string | undefined,
-): string {
+function setInlineField(content: string, fieldName: string, value: string | undefined): string {
   const linePattern = new RegExp(`^${fieldName}:\\s*.+$\\n?`, 'im');
 
   if (value === undefined) {
-    return linePattern.test(content)
-      ? content.replace(linePattern, '')
-      : content;
+    return linePattern.test(content) ? content.replace(linePattern, '') : content;
   }
 
   if (new RegExp(`^${fieldName}:\\s*.+$`, 'im').test(content)) {
-    return content.replace(
-      new RegExp(`^${fieldName}:\\s*.+$`, 'im'),
-      `${fieldName}: ${value}`,
-    );
+    return content.replace(new RegExp(`^${fieldName}:\\s*.+$`, 'im'), `${fieldName}: ${value}`);
   }
 
   return content.replace(/(^#.*\n)/, `$1${fieldName}: ${value}\n`);
 }
 
 export class FileSystemTaskProvider implements ITaskProvider {
+  private locale: Locale;
+  private logger: ILogger;
+
+  constructor(
+    private tasksDirectory: string,
+    private userRegistry: UserRegistry,
+    locale: Locale = 'en-US',
+    logger?: ILogger,
+  ) {
+    this.locale = locale;
+    this.logger = logger ?? NullLogger;
+  }
+
   async initialize(): Promise<void> {
     const fs = await import('fs');
     const path = await import('path');
@@ -84,7 +83,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
     // Cria TASKS/ se não existir
     if (!fs.existsSync(tasksDir)) {
       fs.mkdirSync(tasksDir, { recursive: true });
-      console.log(`✓ Created TASKS/ directory`);
+      this.logger.info(`✓ Created TASKS/ directory`);
     }
 
     // Cria .taskin-users.json se não existir
@@ -100,24 +99,13 @@ export class FileSystemTaskProvider implements ITaskProvider {
         },
       };
       fs.writeFileSync(usersFile, JSON.stringify(usersData, null, 2), 'utf-8');
-      console.log(`✓ Created .taskin-users.json with default user`);
+      this.logger.info(`✓ Created .taskin-users.json with default user`);
     }
-  }
-  private locale: Locale;
-
-  constructor(
-    private tasksDirectory: string,
-    private userRegistry: UserRegistry,
-    locale: Locale = 'en-US',
-  ) {
-    this.locale = locale;
   }
 
   async findTask(taskId: string): Promise<TaskFile | undefined> {
     const files = await fs.readdir(this.tasksDirectory);
-    const taskFile = files.find(
-      (file) => file.startsWith(`task-${taskId}-`) && file.endsWith('.md'),
-    );
+    const taskFile = files.find((file) => file.startsWith(`task-${taskId}-`) && file.endsWith('.md'));
 
     if (!taskFile) {
       return undefined;
@@ -136,15 +124,9 @@ export class FileSystemTaskProvider implements ITaskProvider {
 
     // Extract metadata from inline format (Status: value)
     // Support both English and localized field names
-    const extractInline = (
-      name: string,
-      localizedName?: string,
-    ): string | null => {
+    const extractInline = (name: string, localizedName?: string): string | null => {
       // Try localized name first, then English name
-      const names =
-        localizedName && localizedName !== name
-          ? [localizedName, name]
-          : [name];
+      const names = localizedName && localizedName !== name ? [localizedName, name] : [name];
 
       for (const n of names) {
         // Escape special regex characters in field name
@@ -173,9 +155,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
 
       // Fallback: create temporary user if not in registry
       if (!assignee) {
-        console.warn(
-          `[FS Provider] User "${assigneeValue}" not found in registry, creating temporary user`,
-        );
+        console.warn(`[FS Provider] User "${assigneeValue}" not found in registry, creating temporary user`);
         assignee = this.userRegistry.createTemporaryUser(assigneeValue);
       }
     }
@@ -186,17 +166,10 @@ export class FileSystemTaskProvider implements ITaskProvider {
       content,
       filePath,
       assignee,
-      status: (statusMatch
-        ? statusMatch.trim().toLowerCase()
-        : 'pending') as TaskStatus,
+      status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
       type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
       createdAt: new Date().toISOString(),
-      ...parsePrioritizationFields(
-        priorityMatch,
-        groupMatch,
-        groupNameMatch,
-        difficultyMatch,
-      ),
+      ...parsePrioritizationFields(priorityMatch, groupMatch, groupNameMatch, difficultyMatch),
     };
 
     return task;
@@ -205,9 +178,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
   async updateTask(task: TaskFile): Promise<void> {
     // First, ensure file is migrated to inline format if needed
     const currentContent = await fs.readFile(task.filePath, 'utf-8');
-    const hasSectionMetadata = /##\s*(Status|Type|Assignee)/i.test(
-      currentContent,
-    );
+    const hasSectionMetadata = /##\s*(Status|Type|Assignee)/i.test(currentContent);
 
     if (hasSectionMetadata) {
       const { fixTaskFile } = await import('./task-validator.js');
@@ -222,16 +193,10 @@ export class FileSystemTaskProvider implements ITaskProvider {
 
     if (/^Status:\s*.+$/im.test(content)) {
       // Replace existing Status line
-      updatedContent = content.replace(
-        /^Status:\s*.+$/im,
-        `Status: ${task.status}`,
-      );
+      updatedContent = content.replace(/^Status:\s*.+$/im, `Status: ${task.status}`);
     } else {
       // If no Status field exists, insert it after the H1 title
-      updatedContent = content.replace(
-        /(^#.*\n)/,
-        `$1Status: ${task.status}\n`,
-      );
+      updatedContent = content.replace(/(^#.*\n)/, `$1Status: ${task.status}\n`);
     }
 
     // Update prioritization fields (manual order, ad hoc group, difficulty)
@@ -240,16 +205,8 @@ export class FileSystemTaskProvider implements ITaskProvider {
       'Priority',
       task.order !== undefined ? String(task.order) : undefined,
     );
-    updatedContent = setInlineField(
-      updatedContent,
-      'Group',
-      task.groupId || undefined,
-    );
-    updatedContent = setInlineField(
-      updatedContent,
-      'GroupName',
-      task.groupName || undefined,
-    );
+    updatedContent = setInlineField(updatedContent, 'Group', task.groupId || undefined);
+    updatedContent = setInlineField(updatedContent, 'GroupName', task.groupName || undefined);
     updatedContent = setInlineField(
       updatedContent,
       'Difficulty',
@@ -262,9 +219,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
 
   async getAllTasks(): Promise<TaskFile[]> {
     const files = await fs.readdir(this.tasksDirectory);
-    const taskFiles = files.filter(
-      (file) => file.startsWith('task-') && file.endsWith('.md'),
-    );
+    const taskFiles = files.filter((file) => file.startsWith('task-') && file.endsWith('.md'));
 
     const tasks: TaskFile[] = [];
 
@@ -286,15 +241,9 @@ export class FileSystemTaskProvider implements ITaskProvider {
 
       // Extract metadata from inline format (Status: value)
       // Support both English and localized field names
-      const extractInline = (
-        name: string,
-        localizedName?: string,
-      ): string | null => {
+      const extractInline = (name: string, localizedName?: string): string | null => {
         // Try localized name first, then English name
-        const names =
-          localizedName && localizedName !== name
-            ? [localizedName, name]
-            : [name];
+        const names = localizedName && localizedName !== name ? [localizedName, name] : [name];
 
         for (const n of names) {
           // Escape special regex characters in field name
@@ -333,17 +282,10 @@ export class FileSystemTaskProvider implements ITaskProvider {
         content,
         filePath,
         assignee,
-        status: (statusMatch
-          ? statusMatch.trim().toLowerCase()
-          : 'pending') as TaskStatus,
+        status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
         type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
         createdAt: new Date().toISOString(),
-        ...parsePrioritizationFields(
-          priorityMatch,
-          groupMatch,
-          groupNameMatch,
-          difficultyMatch,
-        ),
+        ...parsePrioritizationFields(priorityMatch, groupMatch, groupNameMatch, difficultyMatch),
       };
 
       tasks.push(task);
@@ -373,8 +315,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
       })
       .filter((num) => !isNaN(num));
 
-    const nextNumber =
-      taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
+    const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
     const taskId = String(nextNumber).padStart(3, '0');
 
     // Create task file name with slugified title (removes accents)
@@ -473,7 +414,7 @@ ${i18n.notesPlaceholder}
         }
       }
       if (fixedCount > 0) {
-        console.log(`✨ Fixed ${fixedCount} task file(s)`);
+        this.logger.info(`✨ Fixed ${fixedCount} task file(s)`);
       }
     }
 

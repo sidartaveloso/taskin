@@ -24,8 +24,8 @@ const preview: Preview = {
       options: {
         light: { name: 'light', value: '#ffffff' },
         dark: { name: 'dark', value: '#1a1a1a' },
-        gray: { name: 'gray', value: '#f5f5f5' }
-      }
+        gray: { name: 'gray', value: '#f5f5f5' },
+      },
     },
 
     // Viewport addon (built-in to Storybook 10)
@@ -63,8 +63,7 @@ const preview: Preview = {
   decorators: [
     (story: () => unknown) => ({
       components: { story },
-      template:
-        "<div style=\"padding: 1rem; font-family: 'Ubuntu', 'Roboto', Arial, sans-serif;\"><story /></div>",
+      template: "<div style=\"padding: 1rem; font-family: 'Ubuntu', 'Roboto', Arial, sans-serif;\"><story /></div>",
     }),
   ],
 
@@ -73,9 +72,9 @@ const preview: Preview = {
 
   initialGlobals: {
     backgrounds: {
-      value: 'light'
-    }
-  }
+      value: 'light',
+    },
+  },
 };
 
 export default preview;

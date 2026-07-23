@@ -2,19 +2,13 @@
  * Init command - Initialize Taskin in the current project
  */
 
+import type { User } from '@opentask/taskin-types';
 import { existsSync, readdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import { join } from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
-import {
-  ensureProviderInstalled,
-  isProviderInstalled,
-} from '../lib/provider-installer/index.js';
-import {
-  getAllProviders,
-  getProviderById,
-  type ProviderInfo,
-} from '../lib/provider-registry/index.js';
+import { ensureProviderInstalled, isProviderInstalled } from '../lib/provider-installer/index.js';
+import { getAllProviders, getProviderById, type ProviderInfo } from '../lib/provider-registry/index.js';
 import { defineCommand } from './define-command/index.js';
 
 interface InitOptions {
@@ -33,8 +27,7 @@ export const initCommand = defineCommand({
     },
     {
       flags: '-p, --provider <provider>',
-      description:
-        'Provider to use (fs, redmine, jira, github) - skips interactive prompt',
+      description: 'Provider to use (fs, redmine, jira, github) - skips interactive prompt',
     },
   ],
   handler: async (options: InitOptions) => {
@@ -128,6 +121,11 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
   writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf-8');
   success(`✓ Created ${colors.highlight('.taskin.json')}`);
 
+  // Propose creating first user
+  if (process.env.CI !== 'true' && selectedProvider.id === 'fs') {
+    await promptCreateFirstUser(cwd);
+  }
+
   //TODO: execute provider.initialize()
 
   console.log();
@@ -151,10 +149,7 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
 /**
  * Setup provider configuration based on provider schema
  */
-async function setupProviderConfig(
-  provider: ProviderInfo,
-  cwd: string,
-): Promise<Record<string, unknown>> {
+async function setupProviderConfig(provider: ProviderInfo, cwd: string): Promise<Record<string, unknown>> {
   // Special handling for File System provider
   if (provider.id === 'fs') {
     return setupFileSystemProvider(cwd);
@@ -164,22 +159,17 @@ async function setupProviderConfig(
   info(`Configuring ${provider.name}...`);
   console.log();
 
-  const questions = Object.entries(provider.configSchema.properties).map(
-    ([key, schema]) => ({
-      type: schema.secret ? ('password' as const) : ('input' as const),
-      name: key,
-      message: `${schema.description}:`,
-      validate: (input: string) => {
-        if (
-          provider.configSchema.required.includes(key) &&
-          input.length === 0
-        ) {
-          return `${schema.description} is required`;
-        }
-        return true;
-      },
-    }),
-  );
+  const questions = Object.entries(provider.configSchema.properties).map(([key, schema]) => ({
+    type: schema.secret ? ('password' as const) : ('input' as const),
+    name: key,
+    message: `${schema.description}:`,
+    validate: (input: string) => {
+      if (provider.configSchema.required.includes(key) && input.length === 0) {
+        return `${schema.description} is required`;
+      }
+      return true;
+    },
+  }));
 
   const answers = await inquirer.prompt(questions);
 
@@ -189,15 +179,12 @@ async function setupProviderConfig(
   return answers;
 }
 
-async function setupFileSystemProvider(
-  cwd: string,
-): Promise<Record<string, string>> {
+async function setupFileSystemProvider(cwd: string): Promise<Record<string, string>> {
   const tasksDir = join(cwd, 'TASKS');
   // Chama inicialização do provider
-  const { FileSystemTaskProvider, UserRegistry } =
-    await import('@opentask/taskin-file-system-provider');
+  const { FileSystemTaskProvider, UserRegistry } = await import('@opentask/taskin-file-system-provider');
 
-  const userRegistry = new UserRegistry({ taskinDir: cwd });
+  const userRegistry = new UserRegistry({ taskinDir: join(cwd, '.taskin') });
   const fileSystemProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
   await fileSystemProvider.initialize();
 
@@ -234,12 +221,58 @@ This is a sample task created during Taskin initialization.
 You can edit or delete this file. Use \`taskin list\` to see all tasks.
 `;
     writeFileSync(sampleTaskFile, sampleTask, 'utf-8');
-    success(
-      `✓ Created sample task ${colors.highlight('task-001-setup-project.md')}`,
-    );
+    success(`✓ Created sample task ${colors.highlight('task-001-setup-project.md')}`);
   }
 
   return {
     tasksDir: 'TASKS',
   };
+}
+
+async function promptCreateFirstUser(cwd: string): Promise<void> {
+  const { UserRegistry } = await import('@opentask/taskin-file-system-provider');
+  const taskinDir = join(cwd, '.taskin');
+  const userRegistry = new UserRegistry({ taskinDir });
+
+  const { createFirstUser } = await inquirer.prompt<{
+    createFirstUser: boolean;
+  }>([
+    {
+      type: 'confirm',
+      name: 'createFirstUser',
+      message: 'Create the first user now?',
+      default: true,
+    },
+  ]);
+
+  if (!createFirstUser) {
+    info('You can create users later with the registry commands.');
+    return;
+  }
+
+  const answers = await inquirer.prompt<{ name: string; email: string }>([
+    {
+      type: 'input',
+      name: 'name',
+      message: 'Full name:',
+      default: process.env.USER || 'developer',
+      validate: (input: string) => input.trim().length > 0 || 'Name is required',
+    },
+    {
+      type: 'input',
+      name: 'email',
+      message: 'Email:',
+      default: 'developer@example.com',
+      validate: (input: string) => input.includes('@') || 'A valid email is required',
+    },
+  ]);
+
+  const user: User = {
+    id: answers.name.toLowerCase().replace(/\s+/g, '-'),
+    name: answers.name,
+    email: answers.email,
+  };
+
+  await userRegistry.saveUser(user);
+  success(`✓ User "${user.name}" (${user.email}) created successfully!`);
 }

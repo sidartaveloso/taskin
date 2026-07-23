@@ -44,9 +44,7 @@ function exec(command, cwd) {
 }
 
 function getPackageVersion(packagePath) {
-  const pkg = JSON.parse(
-    readFileSync(join(packagePath, 'package.json'), 'utf-8'),
-  );
+  const pkg = JSON.parse(readFileSync(join(packagePath, 'package.json'), 'utf-8'));
   return { name: pkg.name, version: pkg.version };
 }
 
@@ -64,14 +62,8 @@ function checkRegistry() {
       log(`\n❌ ERRO: Registry incorreto!`, colors.red);
       log(`Esperado: ${expectedRegistry}`, colors.red);
       log(`Atual: ${registry}`, colors.red);
-      log(
-        `\nEste projeto NUNCA deve publicar no Verdaccio ou outros registries privados.`,
-        colors.red,
-      );
-      log(
-        `Execute: npm config set registry ${expectedRegistry}`,
-        colors.yellow,
-      );
+      log(`\nEste projeto NUNCA deve publicar no Verdaccio ou outros registries privados.`, colors.red);
+      log(`Execute: npm config set registry ${expectedRegistry}`, colors.yellow);
       return false;
     }
 
@@ -105,9 +97,7 @@ async function publishPackage(packageName, packagePath, tag = 'latest') {
 
   // Dry run first
   log('\n🧪 Dry run...', colors.yellow);
-  if (
-    !exec(`pnpm publish --tag ${tag} --dry-run --no-git-checks`, packagePath)
-  ) {
+  if (!exec(`pnpm publish --tag ${tag} --dry-run --no-git-checks`, packagePath)) {
     log(`✗ Dry run failed for ${name}`, colors.red);
     return false;
   }
@@ -142,10 +132,7 @@ async function main() {
 
   // Check registry configuration
   if (!checkRegistry()) {
-    log(
-      '\n✗ Abortando publicação devido a configuração incorreta do registry',
-      colors.red,
-    );
+    log('\n✗ Abortando publicação devido a configuração incorreta do registry', colors.red);
     process.exit(1);
   }
 
@@ -168,10 +155,7 @@ async function main() {
   }
 
   if (!skipConfirm) {
-    log(
-      '\n⚠️  Press Ctrl+C to cancel, or press Enter to continue...',
-      colors.yellow,
-    );
+    log('\n⚠️  Press Ctrl+C to cancel, or press Enter to continue...', colors.yellow);
     await new Promise((resolve) => {
       process.stdin.once('data', () => resolve());
     });

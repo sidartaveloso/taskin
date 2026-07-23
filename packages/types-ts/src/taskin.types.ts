@@ -430,11 +430,7 @@ export interface IHookRunner {
    * const allPassed = results.every(r => r.success);
    * ```
    */
-  executeHooks(
-    hooks: string[],
-    context: HookContext,
-    options: HookOptions,
-  ): Promise<HookResult[]>;
+  executeHooks(hooks: string[], context: HookContext, options: HookOptions): Promise<HookResult[]>;
 }
 
 // ============================================================================
@@ -475,18 +471,14 @@ export type NotificationResult = z.infer<typeof NotificationResultSchema>;
  *
  * @public
  */
-export type NotificationDiscordConfig = z.infer<
-  typeof NotificationDiscordConfigSchema
->;
+export type NotificationDiscordConfig = z.infer<typeof NotificationDiscordConfigSchema>;
 
 /**
  * Telegram notification provider configuration.
  *
  * @public
  */
-export type NotificationTelegramConfig = z.infer<
-  typeof NotificationTelegramConfigSchema
->;
+export type NotificationTelegramConfig = z.infer<typeof NotificationTelegramConfigSchema>;
 
 /**
  * Notification configuration block from .taskin.json.

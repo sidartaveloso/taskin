@@ -1,8 +1,7 @@
+import { FaceTrackingDebug, TrackingControls, useFaceLandmarker, WebcamVideo } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useFaceLandmarker } from '@opentask/ui-sense';
 import type { TaskinArmWithPhoneProps } from './TaskinArmWithPhone.types';
-import { WebcamVideo, FaceTrackingDebug, TrackingControls } from '@opentask/ui-sense';
 import TaskinArmWithPhone from './TaskinArmWithPhone.vue';
 
 const meta = {

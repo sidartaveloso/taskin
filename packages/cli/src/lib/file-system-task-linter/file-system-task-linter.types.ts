@@ -11,10 +11,7 @@ export type { TaskMetadata, TaskValidationIssue } from '@opentask/taskin-types';
  * FileSystem-specific validation error
  * Extends TaskValidationIssue with file-specific information
  */
-export interface FileValidationError extends Omit<
-  TaskValidationIssue,
-  'taskId'
-> {
+export interface FileValidationError extends Omit<TaskValidationIssue, 'taskId'> {
   file: string;
 }
 
@@ -54,8 +51,5 @@ export interface IFileSystemTaskLinter {
    * @param fileName - Name of the file being validated
    * @returns Array of validation errors
    */
-  validateMetadata(
-    metadata: Record<string, unknown>,
-    fileName: string,
-  ): FileValidationError[];
+  validateMetadata(metadata: Record<string, unknown>, fileName: string): FileValidationError[];
 }

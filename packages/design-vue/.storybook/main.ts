@@ -4,12 +4,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 // Read version from package.json
-const packageJson = JSON.parse(
-  readFileSync(
-    join(dirname(fileURLToPath(import.meta.url)), '../package.json'),
-    'utf-8',
-  ),
-);
+const packageJson = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../package.json'), 'utf-8'));
 const version = packageJson.version;
 
 /**

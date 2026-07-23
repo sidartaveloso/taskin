@@ -12,9 +12,7 @@ import type {
 /**
  * Create mock FileValidationError
  */
-export function createMockFileValidationError(
-  overrides?: Partial<FileValidationError>,
-): FileValidationError {
+export function createMockFileValidationError(overrides?: Partial<FileValidationError>): FileValidationError {
   return {
     file: 'task-001.md',
     message: 'Mock validation error',
@@ -26,9 +24,7 @@ export function createMockFileValidationError(
 /**
  * Create mock FileLintResult
  */
-export function createMockFileLintResult(
-  overrides?: Partial<FileLintResult>,
-): FileLintResult {
+export function createMockFileLintResult(overrides?: Partial<FileLintResult>): FileLintResult {
   return {
     errors: [],
     filesChecked: 0,
@@ -41,9 +37,7 @@ export function createMockFileLintResult(
 /**
  * Create mock TaskMetadata
  */
-export function createMockTaskMetadata(
-  overrides?: Partial<TaskMetadata>,
-): TaskMetadata {
+export function createMockTaskMetadata(overrides?: Partial<TaskMetadata>): TaskMetadata {
   return {
     assignee: 'john@example.com',
     status: 'pending',
@@ -68,10 +62,7 @@ export class MockFileSystemTaskLinter implements IFileSystemTaskLinter {
     return this.mockLintFileResult;
   }
 
-  validateMetadata(
-    _metadata: Record<string, unknown>,
-    _fileName: string,
-  ): FileValidationError[] {
+  validateMetadata(_metadata: Record<string, unknown>, _fileName: string): FileValidationError[] {
     return this.mockValidateMetadataResult;
   }
 
@@ -155,14 +146,12 @@ export const MOCK_WARNINGS_LINT_RESULT: FileLintResult = {
 export const MOCK_VALIDATION_ERRORS: FileValidationError[] = [
   createMockFileValidationError({
     file: 'task-001.md',
-    message:
-      'Invalid status: must be one of [pending, in-progress, done, blocked]',
+    message: 'Invalid status: must be one of [pending, in-progress, done, blocked]',
     line: 5,
   }),
   createMockFileValidationError({
     file: 'task-001.md',
-    message:
-      'Invalid type: must be one of [feat, fix, chore, docs, refactor, test]',
+    message: 'Invalid type: must be one of [feat, fix, chore, docs, refactor, test]',
     line: 6,
   }),
 ];

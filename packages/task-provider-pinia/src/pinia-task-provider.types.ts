@@ -96,9 +96,7 @@ export interface PiniaTaskStoreState {
  */
 export interface PiniaTaskStoreGetters {
   /** Get task by ID */
-  taskById: (
-    state: PiniaTaskStoreState,
-  ) => (id: string) => TaskFile | undefined;
+  taskById: (state: PiniaTaskStoreState) => (id: string) => TaskFile | undefined;
 
   /** Get tasks by status */
   tasksByStatus: (state: PiniaTaskStoreState) => (status: string) => TaskFile[];
@@ -147,7 +145,4 @@ export interface PiniaTaskStoreActions {
 /**
  * Complete Pinia store type
  */
-export interface PiniaTaskStore
-  extends PiniaTaskStoreState,
-    PiniaTaskStoreGetters,
-    PiniaTaskStoreActions {}
+export interface PiniaTaskStore extends PiniaTaskStoreState, PiniaTaskStoreGetters, PiniaTaskStoreActions {}

@@ -4,14 +4,8 @@ export interface GestureIconType {
   emits: GestureIconEmits;
 }
 
-export interface GestureIconModels {
-  //TODO: Add models here
-}
+export type GestureIconModels = {};
 
-export interface GestureIconProps {
-  //TODO: Add props here
-}
+export type GestureIconProps = {};
 
-export interface GestureIconEmits {
-  //TODO: Add emits here
-}
+export type GestureIconEmits = {};

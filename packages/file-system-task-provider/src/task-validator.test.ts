@@ -46,9 +46,7 @@ This task uses section-based metadata.`;
       (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile('/tasks/task-001-invalid-task.md');
       expect(result.length).toBeGreaterThan(0);
-      expect(
-        result.some((issue) => issue.message.toLowerCase().includes('section')),
-      ).toBe(true);
+      expect(result.some((issue) => issue.message.toLowerCase().includes('section'))).toBe(true);
     });
 
     it('should detect missing Status field', async () => {
@@ -59,17 +57,9 @@ Type: feat
 This task is missing the Status field.`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
-      const result = await validateTaskFile(
-        '/tasks/task-001-missing-status.md',
-      );
+      const result = await validateTaskFile('/tasks/task-001-missing-status.md');
       expect(result.length).toBeGreaterThan(0);
-      expect(
-        result.some(
-          (issue) =>
-            issue.message.includes('Status') ||
-            issue.message.includes('status'),
-        ),
-      ).toBe(true);
+      expect(result.some((issue) => issue.message.includes('Status') || issue.message.includes('status'))).toBe(true);
     });
 
     it('should detect invalid status value', async () => {
@@ -80,16 +70,12 @@ Status: invalid-status
 This task has an invalid status.`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
-      const result = await validateTaskFile(
-        '/tasks/task-001-invalid-status.md',
-      );
+      const result = await validateTaskFile('/tasks/task-001-invalid-status.md');
       expect(result.length).toBeGreaterThan(0);
       expect(
         result.some(
           (issue) =>
-            issue.message.includes('Status') &&
-            (issue.message.includes('todo') ||
-              issue.message.includes('pending')),
+            issue.message.includes('Status') && (issue.message.includes('todo') || issue.message.includes('pending')),
         ),
       ).toBe(true);
     });
@@ -104,9 +90,7 @@ Assignee: João Silva
 Esta é uma tarefa válida em português.`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
-      const result = await validateTaskFile(
-        '/tasks/task-001-tarefa-em-portugues.md',
-      );
+      const result = await validateTaskFile('/tasks/task-001-tarefa-em-portugues.md');
       const errors = result.filter((issue) => issue.severity === 'error');
       expect(errors).toHaveLength(0);
     });
@@ -116,17 +100,9 @@ Esta é uma tarefa válida em português.`;
 Status: todo`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
-      const result = await validateTaskFile(
-        '/tasks/task-001-no-description.md',
-      );
+      const result = await validateTaskFile('/tasks/task-001-no-description.md');
       expect(result.length).toBeGreaterThan(0);
-      expect(
-        result.some(
-          (issue) =>
-            issue.severity === 'warning' &&
-            issue.message.includes('description'),
-        ),
-      ).toBe(true);
+      expect(result.some((issue) => issue.severity === 'warning' && issue.message.includes('description'))).toBe(true);
     });
 
     it('should warn about invalid filename pattern', async () => {
@@ -139,12 +115,7 @@ Valid content but bad filename.`;
       (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile('/tasks/invalid-filename.md');
       expect(result.length).toBeGreaterThan(0);
-      expect(
-        result.some(
-          (issue) =>
-            issue.severity === 'warning' && issue.message.includes('filename'),
-        ),
-      ).toBe(true);
+      expect(result.some((issue) => issue.severity === 'warning' && issue.message.includes('filename'))).toBe(true);
     });
   });
 
@@ -374,11 +345,7 @@ Descrição da tarefa`;
       const result = await validateTaskFile('/tasks/task-001-pt.md');
       expect(result.length).toBeGreaterThan(0);
       expect(
-        result.some(
-          (issue) =>
-            issue.severity === 'error' &&
-            issue.message.toLowerCase().includes('section'),
-        ),
+        result.some((issue) => issue.severity === 'error' && issue.message.toLowerCase().includes('section')),
       ).toBe(true);
     });
 
@@ -392,10 +359,7 @@ Tarefa com status inválido`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile('/tasks/task-001-pt.md');
-      const statusErrors = result.filter(
-        (issue) =>
-          issue.severity === 'error' && issue.message.includes('Status'),
-      );
+      const statusErrors = result.filter((issue) => issue.severity === 'error' && issue.message.includes('Status'));
       expect(statusErrors.length).toBeGreaterThan(0);
     });
 
@@ -407,9 +371,7 @@ Tarefa sem metadados`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
       const result = await validateTaskFile('/tasks/task-001-pt.md');
-      const statusIssue = result.find((issue) =>
-        issue.message.includes('Status'),
-      );
+      const statusIssue = result.find((issue) => issue.message.includes('Status'));
 
       // Should suggest Portuguese field name since content is in Portuguese
       expect(statusIssue?.suggestion).toContain('Status:');

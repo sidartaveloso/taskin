@@ -2,10 +2,7 @@
  * New command - Create a new task
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { slugify } from '@opentask/taskin-utils';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
@@ -128,9 +125,7 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
 
   // Validate task type
   if (!validTypes.includes(options.type)) {
-    error(
-      `Invalid task type: ${options.type}. Must be one of: ${validTypes.join(', ')}`,
-    );
+    error(`Invalid task type: ${options.type}. Must be one of: ${validTypes.join(', ')}`);
     return;
   }
 
@@ -147,6 +142,9 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
   const taskinDir = path.join(monorepoRoot, '.taskin');
   const userRegistry = new UserRegistry({ taskinDir });
   await userRegistry.load();
+
+  // Ensure the current user exists in the registry
+  await userRegistry.ensureCurrentUser();
 
   // Initialize task provider to get existing tasks
   const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
@@ -195,11 +193,7 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
   console.log();
   console.log(colors.info('Next steps:'));
   console.log(colors.normal(`  1. Edit the task file to add more details`));
-  console.log(
-    colors.normal(
-      `  2. Run ${colors.highlight('taskin start ' + taskId)} to begin working on it`,
-    ),
-  );
+  console.log(colors.normal(`  2. Run ${colors.highlight('taskin start ' + taskId)} to begin working on it`));
   console.log();
 }
 

@@ -120,16 +120,13 @@ export class TaskMCPServer implements ITaskMCPServer {
     });
 
     // Read a resource
-    this.server.setRequestHandler(
-      ReadResourceRequestSchema,
-      async (request) => {
-        const result = await this.readResource({
-          uri: request.params.uri,
-        });
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      const result = await this.readResource({
+        uri: request.params.uri,
+      });
 
-        return result;
-      },
-    );
+      return result;
+    });
   }
 
   /**
@@ -168,8 +165,7 @@ export class TaskMCPServer implements ITaskMCPServer {
     const tools: MCPTool[] = [
       {
         name: 'start_task',
-        description:
-          'Start working on a task by changing its status to in-progress',
+        description: 'Start working on a task by changing its status to in-progress',
         inputSchema: {
           type: 'object',
           properties: {
@@ -212,9 +208,7 @@ export class TaskMCPServer implements ITaskMCPServer {
           return await this.handleStartTask(params.arguments?.taskId as string);
 
         case 'finish_task':
-          return await this.handleFinishTask(
-            params.arguments?.taskId as string,
-          );
+          return await this.handleFinishTask(params.arguments?.taskId as string);
 
         default:
           return {
@@ -306,8 +300,7 @@ export class TaskMCPServer implements ITaskMCPServer {
     const prompts: MCPPrompt[] = [
       {
         name: 'start-task-workflow',
-        description:
-          'Guide the user through starting work on a task with git branch creation',
+        description: 'Guide the user through starting work on a task with git branch creation',
         arguments: [
           {
             name: 'taskId',
@@ -318,8 +311,7 @@ export class TaskMCPServer implements ITaskMCPServer {
       },
       {
         name: 'finish-task-workflow',
-        description:
-          'Guide the user through completing a task with commit and PR creation',
+        description: 'Guide the user through completing a task with commit and PR creation',
         arguments: [
           {
             name: 'taskId',
@@ -330,8 +322,7 @@ export class TaskMCPServer implements ITaskMCPServer {
       },
       {
         name: 'task-summary',
-        description:
-          'Generate a summary of a task for documentation or reports',
+        description: 'Generate a summary of a task for documentation or reports',
         arguments: [
           {
             name: 'taskId',
