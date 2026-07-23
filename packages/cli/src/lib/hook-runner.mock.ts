@@ -3,12 +3,7 @@
  * Provides configurable behavior for testing hook execution scenarios.
  */
 
-import type {
-  HookContext,
-  HookOptions,
-  HookResult,
-  IHookRunner,
-} from '@opentask/taskin-types';
+import type { HookContext, HookOptions, HookResult, IHookRunner } from '@opentask/taskin-types';
 
 /**
  * Mock hook runner for testing.
@@ -36,11 +31,7 @@ export class MockHookRunner implements IHookRunner {
    * Execute hooks (mocked).
    * Returns pre-configured results.
    */
-  async executeHooks(
-    hooks: string[],
-    context: HookContext,
-    options: HookOptions,
-  ): Promise<HookResult[]> {
+  async executeHooks(hooks: string[], context: HookContext, options: HookOptions): Promise<HookResult[]> {
     // Store execution for verification
     this.executedHooks.push({ hooks, context, options });
 
@@ -102,9 +93,7 @@ export class MockHookRunner implements IHookRunner {
    *
    * @returns Last hook execution or undefined
    */
-  getLastExecution():
-    | { hooks: string[]; context: HookContext; options: HookOptions }
-    | undefined {
+  getLastExecution(): { hooks: string[]; context: HookContext; options: HookOptions } | undefined {
     return this.executedHooks[this.executedHooks.length - 1];
   }
 }

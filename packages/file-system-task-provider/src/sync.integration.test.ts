@@ -1,22 +1,11 @@
+import { GitService } from '@opentask/taskin-git-utils';
 import { execSync } from 'child_process';
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { GitService } from '@opentask/taskin-git-utils';
-import {
-  syncBeforeCreate,
-  pushAfterCreate,
-  squashTaskFileOnDone,
-} from './auto-sync';
 import type { SyncConfig } from './auto-sync';
+import { pushAfterCreate, squashTaskFileOnDone, syncBeforeCreate } from './auto-sync';
 
 // ============================================================================
 // Helpers
@@ -90,10 +79,7 @@ function setupRemoteBare(): string {
   return bareDir;
 }
 
-function setupClone(
-  bareDir: string,
-  prefix: string,
-): { dir: string; gitService: GitService } {
+function setupClone(bareDir: string, prefix: string): { dir: string; gitService: GitService } {
   const cloneDir = mkdtempSync(join(tmpdir(), `${prefix}-`));
   cloneRepo(bareDir, cloneDir);
   const gitService = new GitService(cloneDir);
@@ -161,10 +147,7 @@ describe('AutoSync Integration', () => {
 
     // Create a task file manually (simulating taskin new)
     mkdirSync(join(cloneA.dir, 'TASKS'), { recursive: true });
-    writeFileSync(
-      join(cloneA.dir, 'TASKS', 'task-001-my-feature.md'),
-      '# Task 001 — My Feature\n\nStatus: pending\n',
-    );
+    writeFileSync(join(cloneA.dir, 'TASKS', 'task-001-my-feature.md'), '# Task 001 — My Feature\n\nStatus: pending\n');
 
     await pushAfterCreate(cloneA.gitService, {
       taskId: '001',
@@ -194,10 +177,7 @@ describe('AutoSync Integration', () => {
       defaultBranch: 'tasks',
     });
     mkdirSync(join(cloneA.dir, 'TASKS'), { recursive: true });
-    writeFileSync(
-      join(cloneA.dir, 'TASKS', 'task-001-feat-a.md'),
-      '# Task 001 — Feat A\n\nStatus: pending\n',
-    );
+    writeFileSync(join(cloneA.dir, 'TASKS', 'task-001-feat-a.md'), '# Task 001 — Feat A\n\nStatus: pending\n');
     await pushAfterCreate(cloneA.gitService, {
       taskId: '001',
       title: 'Feat A',
@@ -210,10 +190,7 @@ describe('AutoSync Integration', () => {
       defaultBranch: 'tasks',
     });
     mkdirSync(join(cloneB.dir, 'TASKS'), { recursive: true });
-    writeFileSync(
-      join(cloneB.dir, 'TASKS', 'task-002-feat-b.md'),
-      '# Task 002 — Feat B\n\nStatus: pending\n',
-    );
+    writeFileSync(join(cloneB.dir, 'TASKS', 'task-002-feat-b.md'), '# Task 002 — Feat B\n\nStatus: pending\n');
     await pushAfterCreate(cloneB.gitService, {
       taskId: '002',
       title: 'Feat B',
@@ -226,12 +203,8 @@ describe('AutoSync Integration', () => {
     execSync(`git clone ${bareDir} ${bareClone}`, { stdio: 'ignore' });
     execSync('git checkout tasks', { cwd: bareClone, stdio: 'ignore' });
 
-    expect(existsSync(join(bareClone, 'TASKS', 'task-001-feat-a.md'))).toBe(
-      true,
-    );
-    expect(existsSync(join(bareClone, 'TASKS', 'task-002-feat-b.md'))).toBe(
-      true,
-    );
+    expect(existsSync(join(bareClone, 'TASKS', 'task-001-feat-a.md'))).toBe(true);
+    expect(existsSync(join(bareClone, 'TASKS', 'task-002-feat-b.md'))).toBe(true);
   });
 
   // --------------------------------------------------------------------------
@@ -240,10 +213,7 @@ describe('AutoSync Integration', () => {
   it('Cenário 3: should abort rebase and restore original state on conflict', async () => {
     // Create conflicting change in clone B's remote tracking
     mkdirSync(join(cloneB.dir, 'TASKS'), { recursive: true });
-    writeFileSync(
-      join(cloneB.dir, 'TASKS', 'conflict.md'),
-      'original content\n',
-    );
+    writeFileSync(join(cloneB.dir, 'TASKS', 'conflict.md'), 'original content\n');
     execSync('git add TASKS/conflict.md', { cwd: cloneB.dir, stdio: 'ignore' });
     execSync('git commit -m "Add conflict file"', {
       cwd: cloneB.dir,
@@ -253,10 +223,7 @@ describe('AutoSync Integration', () => {
 
     // In clone A, create a conflicting change on the same file
     mkdirSync(join(cloneA.dir, 'TASKS'), { recursive: true });
-    writeFileSync(
-      join(cloneA.dir, 'TASKS', 'conflict.md'),
-      'divergent content\n',
-    );
+    writeFileSync(join(cloneA.dir, 'TASKS', 'conflict.md'), 'divergent content\n');
     execSync('git add TASKS/conflict.md', { cwd: cloneA.dir, stdio: 'ignore' });
     execSync('git commit -m "Divergent change"', {
       cwd: cloneA.dir,
@@ -265,10 +232,7 @@ describe('AutoSync Integration', () => {
 
     // Also add a local uncommitted task change
     mkdirSync(join(cloneA.dir, 'TASKS'), { recursive: true });
-    writeFileSync(
-      join(cloneA.dir, 'TASKS', 'task-001-test.md'),
-      '# Task 001\n\nStatus: pending\n',
-    );
+    writeFileSync(join(cloneA.dir, 'TASKS', 'task-001-test.md'), '# Task 001\n\nStatus: pending\n');
 
     // Attempt syncBeforeCreate — should fail due to conflict
     const originalBranch = getCurrentBranch(cloneA.dir);
@@ -284,9 +248,7 @@ describe('AutoSync Integration', () => {
     expect(getCurrentBranch(cloneA.dir)).toBe(originalBranch);
 
     // Verify the uncommitted task file is still present (not lost by rebase)
-    expect(
-      existsSync(join(cloneA.dir, 'TASKS', 'task-001-test.md')),
-    ).toBe(true);
+    expect(existsSync(join(cloneA.dir, 'TASKS', 'task-001-test.md'))).toBe(true);
   });
 
   // --------------------------------------------------------------------------
@@ -317,20 +279,14 @@ describe('AutoSync Integration', () => {
   it('Cenário 5: should retry push when rejected and eventually succeed', async () => {
     // Push something from clone B so clone A's push will be rejected
     mkdirSync(join(cloneB.dir, 'TASKS'), { recursive: true });
-    writeFileSync(
-      join(cloneB.dir, 'TASKS', 'blocker.md'),
-      'blocker content\n',
-    );
+    writeFileSync(join(cloneB.dir, 'TASKS', 'blocker.md'), 'blocker content\n');
     execSync('git add TASKS/', { cwd: cloneB.dir, stdio: 'ignore' });
     execSync('git commit -m "Blocker"', { cwd: cloneB.dir, stdio: 'ignore' });
     execSync('git push', { cwd: cloneB.dir, stdio: 'ignore' });
 
     // Clone A tries to pushAfterCreate — will push, get rejected, retry, succeed
     mkdirSync(join(cloneA.dir, 'TASKS'), { recursive: true });
-    writeFileSync(
-      join(cloneA.dir, 'TASKS', 'task-001-test.md'),
-      '# Task 001\n\nStatus: pending\n',
-    );
+    writeFileSync(join(cloneA.dir, 'TASKS', 'task-001-test.md'), '# Task 001\n\nStatus: pending\n');
 
     const result = await pushAfterCreate(cloneA.gitService, {
       taskId: '001',
@@ -358,10 +314,7 @@ describe('AutoSync Integration', () => {
 
     // Create task-042 with multiple status changes
     createTaskFile(cloneA.dir, '042', 'pending');
-    writeFileSync(
-      join(cloneA.dir, 'TASKS', 'task-042-title.md'),
-      '# Task 042\n\nStatus: in-progress\n',
-    );
+    writeFileSync(join(cloneA.dir, 'TASKS', 'task-042-title.md'), '# Task 042\n\nStatus: in-progress\n');
     execSync('git add TASKS/task-042-title.md', {
       cwd: cloneA.dir,
       stdio: 'ignore',
@@ -410,17 +363,19 @@ describe('AutoSync Integration', () => {
     expect(developCommitCount).toBe(2); // initial commit + 1 squash
 
     // Verify: squash contains only task-042, not task-043
-    const squashContent = execSync(
-      'git show origin/develop:TASKS/task-042-title.md',
-      { cwd: cloneA.dir, encoding: 'utf8', stdio: 'pipe' },
-    );
+    const squashContent = execSync('git show origin/develop:TASKS/task-042-title.md', {
+      cwd: cloneA.dir,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
     expect(squashContent).toContain('Task 042');
 
     // task-043 should NOT be in develop
-    const task043Exists = execSync(
-      'git ls-tree -r origin/develop --name-only',
-      { cwd: cloneA.dir, encoding: 'utf8', stdio: 'pipe' },
-    )
+    const task043Exists = execSync('git ls-tree -r origin/develop --name-only', {
+      cwd: cloneA.dir,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    })
       .trim()
       .includes('task-043');
     expect(task043Exists).toBe(false);

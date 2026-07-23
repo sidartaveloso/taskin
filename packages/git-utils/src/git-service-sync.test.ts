@@ -87,11 +87,10 @@ describe('GitService - push', () => {
   it('should return error message on non-fast-forward rejection', async () => {
     const service = new GitService('/test');
     vi.mocked(execSync).mockImplementation(() => {
-      const error = new Error(
-        '! [rejected] tasks -> tasks (non-fast-forward)',
-      ) as NodeJS.ErrnoException & { stderr: string };
-      error.stderr =
-        '! [rejected] tasks -> tasks (non-fast-forward)';
+      const error = new Error('! [rejected] tasks -> tasks (non-fast-forward)') as NodeJS.ErrnoException & {
+        stderr: string;
+      };
+      error.stderr = '! [rejected] tasks -> tasks (non-fast-forward)';
       throw error;
     });
 

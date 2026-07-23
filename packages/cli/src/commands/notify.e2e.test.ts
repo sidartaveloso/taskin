@@ -72,10 +72,7 @@ describe.sequential('notify command E2E', () => {
       env: { ...process.env, CI: 'true' },
     });
 
-    const { stdout } = await execAsync(
-      `node ${CLI_PATH} notify --event task:done`,
-      { cwd: TEST_DIR },
-    );
+    const { stdout } = await execAsync(`node ${CLI_PATH} notify --event task:done`, { cwd: TEST_DIR });
 
     expect(stdout).toContain('No notification providers');
   }, 60000);
@@ -91,10 +88,9 @@ describe.sequential('notify command E2E', () => {
     config.notifications = {};
     writeFileSync(configPath, JSON.stringify(config, null, 2));
 
-    const { stdout } = await execAsync(
-      `node ${CLI_PATH} notify --event task:done --title "Test Title"`,
-      { cwd: TEST_DIR },
-    );
+    const { stdout } = await execAsync(`node ${CLI_PATH} notify --event task:done --title "Test Title"`, {
+      cwd: TEST_DIR,
+    });
 
     expect(stdout).toContain('sent');
   }, 60000);

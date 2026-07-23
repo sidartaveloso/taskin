@@ -2,10 +2,7 @@
  * finish command - Finish a task
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -45,10 +42,7 @@ export const finishCommand = defineCommand({
   },
 });
 
-async function finishTask(
-  taskId: string,
-  options: FinishTaskOptions,
-): Promise<void> {
+async function finishTask(taskId: string, options: FinishTaskOptions): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -144,10 +138,10 @@ async function finishTask(
       const commitType = task.type || 'feat';
       try {
         execSync('git add .', { cwd: process.cwd(), stdio: 'ignore' });
-        execSync(
-          `git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`,
-          { cwd: process.cwd(), stdio: 'ignore' },
-        );
+        execSync(`git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`, {
+          cwd: process.cwd(),
+          stdio: 'ignore',
+        });
         success('✓ Auto-committed completed work');
       } catch {
         // Ignore if nothing to commit

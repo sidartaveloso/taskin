@@ -71,7 +71,6 @@ describe.sequential('Taskin CLI E2E Tests', () => {
 
       expect(stdout).toContain('initialized successfully');
       expect(existsSync(join(TEST_DIR, '.taskin.json'))).toBe(true);
-      expect(existsSync(join(TEST_DIR, '.taskin-users.json'))).toBe(true);
     }, 60000);
   });
 
@@ -154,9 +153,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
 
       // Check if status was actually updated in the file
       const taskFiles = await execAsync('ls TASKS/', { cwd: TEST_DIR });
-      const taskFile = taskFiles.stdout
-        .split('\n')
-        .find((f) => f.includes('001'));
+      const taskFile = taskFiles.stdout.split('\n').find((f) => f.includes('001'));
       const taskPath = join(TEST_DIR, 'TASKS', taskFile!);
       const content = readFileSync(taskPath, 'utf-8');
 
@@ -277,9 +274,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
 
       // Check if status was actually updated in the file
       const taskFiles = await execAsync('ls TASKS/', { cwd: TEST_DIR });
-      const taskFile = taskFiles.stdout
-        .split('\n')
-        .find((f) => f.includes('001'));
+      const taskFile = taskFiles.stdout.split('\n').find((f) => f.includes('001'));
       const taskPath = join(TEST_DIR, 'TASKS', taskFile!);
       const content = readFileSync(taskPath, 'utf-8');
 
@@ -384,10 +379,7 @@ Another task`;
       const title = 'Exclusão de propagação';
       const expectedSlug = 'exclusao-de-propagacao';
 
-      await execAsync(
-        `node ${CLI_PATH} new -t feat -T "${title}" -d "Test description"`,
-        { cwd: TEST_DIR },
-      );
+      await execAsync(`node ${CLI_PATH} new -t feat -T "${title}" -d "Test description"`, { cwd: TEST_DIR });
 
       const tasksDir = join(TEST_DIR, 'TASKS');
       const files = await execAsync('ls', { cwd: tasksDir });

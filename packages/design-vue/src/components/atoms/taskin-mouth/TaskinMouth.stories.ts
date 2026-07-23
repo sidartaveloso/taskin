@@ -1,10 +1,7 @@
+import { FaceTrackingDebug, TrackingControls, useFaceLandmarker, WebcamVideo } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useFaceLandmarker } from '@opentask/ui-sense';
-import type { TaskinMouthProps } from './TaskinMouth.types';
-import { FaceTrackingDebug, TrackingControls } from '@opentask/ui-sense';
-import { WebcamVideo } from '@opentask/ui-sense';
-import type { MouthExpression } from './TaskinMouth.types';
+import type { MouthExpression, TaskinMouthProps } from './TaskinMouth.types';
 import TaskinMouth from './TaskinMouth.vue';
 
 const meta = {

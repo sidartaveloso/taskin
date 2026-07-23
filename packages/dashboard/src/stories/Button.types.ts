@@ -4,14 +4,8 @@ export interface ButtonType {
   emits: ButtonEmits;
 }
 
-export interface ButtonModels {
-  //TODO: Add models here
-}
+export type ButtonModels = {};
 
-export interface ButtonProps {
-  //TODO: Add props here
-}
+export type ButtonProps = {};
 
-export interface ButtonEmits {
-  //TODO: Add emits here
-}
+export type ButtonEmits = {};

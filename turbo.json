@@ -7,10 +7,7 @@
       "outputs": []
     },
     "@opentask/taskin-file-system-provider#build": {
-      "dependsOn": [
-        "@opentask/taskin-git-utils#build",
-        "@opentask/taskin-task-manager#build"
-      ]
+      "dependsOn": ["@opentask/taskin-git-utils#build", "@opentask/taskin-task-manager#build"]
     },
     "@taskin/chatbot#build": {
       "outputs": []
@@ -34,12 +31,7 @@
     "build": {
       "dependsOn": ["install", "^build"],
       "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
-      "outputs": [
-        "dist/**",
-        "build/**",
-        "generated/**",
-        "content/.vitepress/dist/**"
-      ]
+      "outputs": ["dist/**", "build/**", "generated/**", "content/.vitepress/dist/**"]
     },
     "clean": {
       "cache": false
@@ -91,20 +83,12 @@
     },
     "test": {
       "dependsOn": ["install", "build"],
-      "inputs": [
-        "src/**/*.{ts,js,tsx,jsx}",
-        "**/*.test.{ts,js}",
-        "package.json"
-      ],
+      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "**/*.test.{ts,js}", "package.json"],
       "outputs": ["coverage/**", ".turbo/**"]
     },
     "test:coverage": {
       "dependsOn": ["install", "build"],
-      "inputs": [
-        "src/**/*.{ts,js,tsx,jsx}",
-        "**/*.test.{ts,js}",
-        "package.json"
-      ],
+      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "**/*.test.{ts,js}", "package.json"],
       "outputs": ["coverage/**"]
     },
     "typecheck": {

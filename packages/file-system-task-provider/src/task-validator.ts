@@ -1,8 +1,5 @@
-import type {
-  LintResult,
-  ValidationIssue,
-} from '@opentask/taskin-task-manager';
 import { readFile, writeFile } from 'node:fs/promises';
+import type { LintResult, ValidationIssue } from '@opentask/taskin-task-manager';
 import { detectLocale, getI18n } from './i18n.js';
 
 /**
@@ -17,18 +14,9 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     const i18n = getI18n(locale);
 
     // Build regex patterns for both English and localized names
-    const statusPattern = new RegExp(
-      `##\\s*(?:Status|${i18n.status})\\s*\\n\\s*([^\\n\\r]+)`,
-      'i',
-    );
-    const typePattern = new RegExp(
-      `##\\s*(?:Type|${i18n.type})\\s*\\n\\s*([^\\n\\r]+)`,
-      'i',
-    );
-    const assigneePattern = new RegExp(
-      `##\\s*(?:Assignee|${i18n.assignee})\\s*\\n\\s*([^\\n\\r]+)`,
-      'i',
-    );
+    const statusPattern = new RegExp(`##\\s*(?:Status|${i18n.status})\\s*\\n\\s*([^\\n\\r]+)`, 'i');
+    const typePattern = new RegExp(`##\\s*(?:Type|${i18n.type})\\s*\\n\\s*([^\\n\\r]+)`, 'i');
+    const assigneePattern = new RegExp(`##\\s*(?:Assignee|${i18n.assignee})\\s*\\n\\s*([^\\n\\r]+)`, 'i');
 
     // Check if file has section-based metadata
     const hasSectionStatus = statusPattern.test(content);
@@ -58,12 +46,7 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
 
     // temporary debugging removed
 
-    if (
-      !hasSectionStatus &&
-      !hasSectionType &&
-      !hasSectionAssignee &&
-      !needsSpaceFix
-    ) {
+    if (!hasSectionStatus && !hasSectionType && !hasSectionAssignee && !needsSpaceFix) {
       return false; // Nothing to fix
     }
 
@@ -91,9 +74,7 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
       newContent = newContent.replace(/\n{3,}/g, '\n\n');
 
       // Find the title line (first # heading)
-      const titleLineIdx = newContent
-        .split('\n')
-        .findIndex((line) => line.trim().startsWith('# '));
+      const titleLineIdx = newContent.split('\n').findIndex((line) => line.trim().startsWith('# '));
       if (titleLineIdx === -1) {
         return false; // No title found, can't fix
       }
@@ -118,13 +99,7 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
       }
 
       // Reconstruct file
-      newContent = [
-        ...beforeTitle,
-        '',
-        ...inlineMetadata,
-        '',
-        ...afterTitle,
-      ].join('\n');
+      newContent = [...beforeTitle, '', ...inlineMetadata, '', ...afterTitle].join('\n');
     }
 
     // Fix inline metadata missing trailing spaces
@@ -149,8 +124,7 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
 
     // Normalize the blank-line pattern after the H1 title so that files with
     // one or two blank lines after the title are considered equivalent.
-    const normalizeForCompare = (s: string) =>
-      s.replace(/(^# .*?)\n+/m, '$1\n\n').trim() + '\n';
+    const normalizeForCompare = (s: string) => s.replace(/(^# .*?)\n+/m, '$1\n\n').trim() + '\n';
 
     const finalContent = normalizeForCompare(finalContentRaw);
     const normalizedOriginal = normalizeForCompare(originalContentRaw);
@@ -179,9 +153,7 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
 /**
  * Validates the format and content of a task markdown file
  */
-export async function validateTaskFile(
-  filePath: string,
-): Promise<ValidationIssue[]> {
+export async function validateTaskFile(filePath: string): Promise<ValidationIssue[]> {
   const issues: ValidationIssue[] = [];
 
   try {
@@ -196,20 +168,13 @@ export async function validateTaskFile(
     const hasTitleSection = lines.some((line) => line.trim().startsWith('# '));
 
     // Build regex patterns for both English and localized names
-    const inlineStatusPattern = new RegExp(
-      `^(?:Status|${i18n.status}):\\s*.+$`,
-      'im',
-    );
-    const sectionStatusPattern = new RegExp(
-      `##\\s*(?:Status|${i18n.status})`,
-      'i',
-    );
+    const inlineStatusPattern = new RegExp(`^(?:Status|${i18n.status}):\\s*.+$`, 'im');
+    const sectionStatusPattern = new RegExp(`##\\s*(?:Status|${i18n.status})`, 'i');
 
     // Enforce inline metadata only (no section-based '## Status')
     const hasInlineStatus = inlineStatusPattern.test(content);
     const hasSectionStatus = sectionStatusPattern.test(content);
-    const hasDescriptionSection =
-      content.includes('## Description') || content.includes('## Descrição');
+    const hasDescriptionSection = content.includes('## Description') || content.includes('## Descrição');
 
     if (!hasTitleSection) {
       issues.push({
@@ -223,14 +188,11 @@ export async function validateTaskFile(
 
     // Reject section-based metadata: we only accept the inline format
     if (hasSectionStatus) {
-      const statusLineIdx = lines.findIndex((line) =>
-        sectionStatusPattern.test(line.trim()),
-      );
+      const statusLineIdx = lines.findIndex((line) => sectionStatusPattern.test(line.trim()));
       issues.push({
         file: filePath,
         line: statusLineIdx >= 0 ? statusLineIdx + 1 : undefined,
-        message:
-          'Section-based metadata ("## Status") is not allowed. Use inline format instead.',
+        message: 'Section-based metadata ("## Status") is not allowed. Use inline format instead.',
         severity: 'error',
         suggestion: `Replace section with inline metadata:\n${i18n.status}: <todo|in-progress|done>`,
       });
@@ -247,30 +209,15 @@ export async function validateTaskFile(
     } else {
       const statusMatch = content.match(inlineStatusPattern);
       // Extract value after colon
-      const statusValue = statusMatch
-        ? statusMatch[0].split(':')[1]?.trim().toLowerCase() || ''
-        : '';
-      if (
-        ![
-          'todo',
-          'in-progress',
-          'done',
-          'pending',
-          'blocked',
-          'canceled',
-        ].includes(statusValue)
-      ) {
-        const statusLineIdx = lines.findIndex((line) =>
-          inlineStatusPattern.test(line.trim()),
-        );
+      const statusValue = statusMatch ? statusMatch[0].split(':')[1]?.trim().toLowerCase() || '' : '';
+      if (!['todo', 'in-progress', 'done', 'pending', 'blocked', 'canceled'].includes(statusValue)) {
+        const statusLineIdx = lines.findIndex((line) => inlineStatusPattern.test(line.trim()));
         issues.push({
           file: filePath,
           line: statusLineIdx >= 0 ? statusLineIdx + 1 : undefined,
-          message:
-            'Status must be one of: todo, in-progress, done, pending, blocked, canceled',
+          message: 'Status must be one of: todo, in-progress, done, pending, blocked, canceled',
           severity: 'error',
-          suggestion:
-            'Set status to: todo, in-progress, done, pending, blocked, or canceled',
+          suggestion: 'Set status to: todo, in-progress, done, pending, blocked, or canceled',
         });
       }
     }
@@ -278,8 +225,7 @@ export async function validateTaskFile(
     if (!hasDescriptionSection) {
       issues.push({
         file: filePath,
-        message:
-          'Task file should have a description section (## Description or ## Descrição)',
+        message: 'Task file should have a description section (## Description or ## Descrição)',
         severity: 'warning',
         suggestion: 'Add a description section to explain the task',
       });
@@ -290,11 +236,9 @@ export async function validateTaskFile(
     if (!fileName.match(/^task-\d{3}-.*\.md$/)) {
       issues.push({
         file: filePath,
-        message:
-          'Task filename should follow pattern: task-NNN-description.md (e.g., task-001-my-task.md)',
+        message: 'Task filename should follow pattern: task-NNN-description.md (e.g., task-001-my-task.md)',
         severity: 'warning',
-        suggestion:
-          'Rename the file to match the pattern task-001-description.md',
+        suggestion: 'Rename the file to match the pattern task-001-description.md',
       });
     }
 
@@ -324,15 +268,9 @@ export async function validateTaskFile(
  * Aggregates validation issues into a LintResult
  */
 export function createLintResult(allIssues: ValidationIssue[]): LintResult {
-  const errorCount = allIssues.filter(
-    (issue) => issue.severity === 'error',
-  ).length;
-  const warningCount = allIssues.filter(
-    (issue) => issue.severity === 'warning',
-  ).length;
-  const infoCount = allIssues.filter(
-    (issue) => issue.severity === 'info',
-  ).length;
+  const errorCount = allIssues.filter((issue) => issue.severity === 'error').length;
+  const warningCount = allIssues.filter((issue) => issue.severity === 'warning').length;
+  const infoCount = allIssues.filter((issue) => issue.severity === 'info').length;
 
   return {
     valid: errorCount === 0,

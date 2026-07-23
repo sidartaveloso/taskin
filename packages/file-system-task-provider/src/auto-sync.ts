@@ -48,15 +48,10 @@ function isNonFastForwardError(error: unknown): boolean {
 // syncBeforeCreate — Ciclo 3
 // ============================================================================
 
-export async function syncBeforeCreate(
-  git: IGitService,
-  config: SyncConfig,
-): Promise<void> {
+export async function syncBeforeCreate(git: IGitService, config: SyncConfig): Promise<void> {
   if (!config.autoSync || !config.defaultBranch) {
     if (config.autoSync && !config.defaultBranch) {
-      console.warn(
-        'autoSync is enabled but no defaultBranch is configured. Nothing will be synced.',
-      );
+      console.warn('autoSync is enabled but no defaultBranch is configured. Nothing will be synced.');
     }
     return;
   }
@@ -116,39 +111,24 @@ async function attemptPushWithRetry(
         throw error;
       }
       if (attempt >= maxAttempts) {
-        throw new Error(
-          `Push rejected after ${maxAttempts} retries. Exhausted retry limit.`,
-        );
+        throw new Error(`Push rejected after ${maxAttempts} retries. Exhausted retry limit.`);
       }
       continue;
     }
 
     if (attempt >= maxAttempts) {
-      throw new Error(
-        `Push rejected after ${maxAttempts} retries. Exhausted retry limit.`,
-      );
+      throw new Error(`Push rejected after ${maxAttempts} retries. Exhausted retry limit.`);
     }
   }
 
-  throw new Error(
-    `Push rejected after ${maxAttempts} retries. Exhausted retry limit.`,
-  );
+  throw new Error(`Push rejected after ${maxAttempts} retries. Exhausted retry limit.`);
 }
 
-export async function pushAfterCreate(
-  git: IGitService,
-  options: PushAfterCreateOptions,
-): Promise<boolean> {
+export async function pushAfterCreate(git: IGitService, options: PushAfterCreateOptions): Promise<boolean> {
   const pattern = `TASKS/task-${options.taskId}-*.md`;
   const message = `docs(TASKS): task-${options.taskId} - ${options.title} [skip-ci]`;
 
-  await attemptPushWithRetry(
-    git,
-    pattern,
-    message,
-    options.defaultBranch,
-    MAX_RETRY_ATTEMPTS,
-  );
+  await attemptPushWithRetry(git, pattern, message, options.defaultBranch, MAX_RETRY_ATTEMPTS);
 
   return true;
 }
@@ -157,9 +137,7 @@ export async function pushAfterCreate(
 // getNextTaskNumberAfterSync — Ciclo 4
 // ============================================================================
 
-export async function getNextTaskNumberAfterSync(
-  options: GetNextTaskNumberOptions,
-): Promise<number> {
+export async function getNextTaskNumberAfterSync(options: GetNextTaskNumberOptions): Promise<number> {
   const maxLocal = options.localCount;
   const maxRemote = options.remoteCount;
 
@@ -205,10 +183,7 @@ export async function createTaskWithSync(
 // squashTaskFileOnDone — Ciclo 7
 // ============================================================================
 
-export async function squashTaskFileOnDone(
-  git: IGitService,
-  options: SquashTaskFileOnDoneOptions,
-): Promise<boolean> {
+export async function squashTaskFileOnDone(git: IGitService, options: SquashTaskFileOnDoneOptions): Promise<boolean> {
   if (!options.originBranch) {
     return false;
   }
@@ -270,16 +245,12 @@ export async function squashTaskFileOnDone(
 
       if (attempt >= MAX_RETRY_ATTEMPTS) {
         await git.checkoutBranch(currentBranch);
-        throw new Error(
-          `Squash push rejected after ${MAX_RETRY_ATTEMPTS} retries.`,
-        );
+        throw new Error(`Squash push rejected after ${MAX_RETRY_ATTEMPTS} retries.`);
       }
     }
 
     await git.checkoutBranch(currentBranch);
-    throw new Error(
-      `Squash push rejected after ${MAX_RETRY_ATTEMPTS} retries.`,
-    );
+    throw new Error(`Squash push rejected after ${MAX_RETRY_ATTEMPTS} retries.`);
   } catch (error: unknown) {
     await git.checkoutBranch(currentBranch);
     if (error instanceof Error) {

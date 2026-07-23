@@ -103,9 +103,7 @@ export async function loadProvider(packageName: string): Promise<unknown> {
 /**
  * Ensure provider is installed and load it
  */
-export async function ensureProviderInstalled(
-  provider: ProviderInfo,
-): Promise<unknown> {
+export async function ensureProviderInstalled(provider: ProviderInfo): Promise<unknown> {
   const { packageName } = provider;
 
   // Check if already installed

@@ -47,15 +47,9 @@ describe('slugify', () => {
   });
 
   it('should handle complex real-world examples', () => {
-    expect(slugify('Feature: Implementação da API REST')).toBe(
-      'feature-implementacao-da-api-rest',
-    );
-    expect(slugify('Bug: Correção no módulo de autenticação')).toBe(
-      'bug-correcao-no-modulo-de-autenticacao',
-    );
-    expect(slugify('Docs: Atualização do README.md')).toBe(
-      'docs-atualizacao-do-readme-md',
-    );
+    expect(slugify('Feature: Implementação da API REST')).toBe('feature-implementacao-da-api-rest');
+    expect(slugify('Bug: Correção no módulo de autenticação')).toBe('bug-correcao-no-modulo-de-autenticacao');
+    expect(slugify('Docs: Atualização do README.md')).toBe('docs-atualizacao-do-readme-md');
   });
 
   it('should preserve numbers', () => {

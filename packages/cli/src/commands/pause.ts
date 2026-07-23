@@ -2,10 +2,7 @@
  * pause command - Pause an in-progress task
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import type { PauseTaskOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -42,10 +39,7 @@ export const pauseCommand = defineCommand({
   },
 });
 
-async function pauseTask(
-  taskId: string,
-  options: PauseTaskOptions,
-): Promise<void> {
+async function pauseTask(taskId: string, options: PauseTaskOptions): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -83,8 +77,7 @@ async function pauseTask(
     info('🔍 Dry run mode - showing what would be executed:');
     console.log();
 
-    const commitMessage =
-      options.message || `WIP: task-${normalizedId} - ${task.title}`;
+    const commitMessage = options.message || `WIP: task-${normalizedId} - ${task.title}`;
 
     info('Status change:');
     console.log(colors.secondary(`  - Task status: in-progress → pending`));
@@ -92,9 +85,7 @@ async function pauseTask(
 
     info('Git operations:');
     console.log(colors.secondary(`  - Add all changes: git add -A`));
-    console.log(
-      colors.secondary(`  - Commit: git commit -m "${commitMessage}"`),
-    );
+    console.log(colors.secondary(`  - Commit: git commit -m "${commitMessage}"`));
     console.log();
 
     info('✓ Dry run complete');
@@ -107,8 +98,7 @@ async function pauseTask(
     process.exit(1);
   }
 
-  const commitMessage =
-    options.message || `WIP: task-${normalizedId} - ${task.title}`;
+  const commitMessage = options.message || `WIP: task-${normalizedId} - ${task.title}`;
 
   // Load automation config
   const configManager = new ConfigManager(monorepoRoot);
@@ -122,9 +112,7 @@ async function pauseTask(
   } else if (!behavior.autoCommitPause) {
     // Manual mode - just show suggestions
     info('Commit suggestion (manual mode):');
-    console.log(
-      colors.secondary(`  git add -A && git commit -m "${commitMessage}"`),
-    );
+    console.log(colors.secondary(`  git add -A && git commit -m "${commitMessage}"`));
     console.log();
     info('Status will be updated to pending');
   } else {
@@ -153,9 +141,7 @@ async function pauseTask(
     console.log();
     info('Next steps:');
     console.log(colors.secondary('  1. Switch to another task'));
-    console.log(
-      colors.secondary('  2. Or continue later with the same branch'),
-    );
+    console.log(colors.secondary('  2. Or continue later with the same branch'));
 
     // Play stop sound if not disabled
     if (options.sound !== false) {

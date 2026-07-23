@@ -3,8 +3,8 @@
  * Quando autoSync está ativo, o output "Next steps" não deve incluir git push manual.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IGitService } from '@opentask/taskin-git-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('finish command - auto-sync output', () => {
   let _mockGitService: IGitService;
@@ -167,9 +167,7 @@ describe('finish command - auto-sync output', () => {
       const defaultBranch = undefined;
 
       if (autoSync && !defaultBranch) {
-        console.warn(
-          '⚠ autoSync is enabled but no defaultBranch is configured. Nothing will be synced.',
-        );
+        console.warn('⚠ autoSync is enabled but no defaultBranch is configured. Nothing will be synced.');
       }
 
       expect(warnSpy).toHaveBeenCalled();

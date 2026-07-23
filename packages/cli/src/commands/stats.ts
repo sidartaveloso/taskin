@@ -2,17 +2,9 @@
  * stats command - Show user and team metrics/statistics
  */
 
-import {
-  FileSystemMetricsAdapter,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemMetricsAdapter, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { GitAnalyzer } from '@opentask/taskin-git-utils';
-import type {
-  StatsQuery,
-  TaskStats,
-  TeamStats,
-  UserStats,
-} from '@opentask/taskin-types';
+import type { StatsQuery, TaskStats, TeamStats, UserStats } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import path from 'path';
 import { printHeader } from '../lib/colors.js';
@@ -69,11 +61,7 @@ async function showStats(options: StatsOptions): Promise<void> {
   await userRegistry.load();
 
   const gitAnalyzer = new GitAnalyzer(process.cwd());
-  const metricsAdapter = new FileSystemMetricsAdapter(
-    tasksDir,
-    userRegistry,
-    gitAnalyzer,
-  );
+  const metricsAdapter = new FileSystemMetricsAdapter(tasksDir, userRegistry, gitAnalyzer);
 
   const query: StatsQuery = {
     period: options.period || 'week',
@@ -107,65 +95,42 @@ function displayUserStats(stats: UserStats, detailed = false): void {
 
   // Code Metrics
   console.log(chalk.bold('📝 Code Metrics'));
-  console.log(
-    `  ${chalk.green('+')}${stats.codeMetrics.linesAdded} lines added`,
-  );
-  console.log(
-    `  ${chalk.red('-')}${stats.codeMetrics.linesRemoved} lines removed`,
-  );
+  console.log(`  ${chalk.green('+')}${stats.codeMetrics.linesAdded} lines added`);
+  console.log(`  ${chalk.red('-')}${stats.codeMetrics.linesRemoved} lines removed`);
   console.log(`  ${chalk.cyan('=')}${stats.codeMetrics.netChange} net change`);
   console.log(`  📁 ${stats.codeMetrics.filesChanged} files changed`);
   console.log(`  💾 ${stats.codeMetrics.commits} commits\n`);
 
   // Contribution Metrics
   console.log(chalk.bold('🎯 Contribution'));
-  console.log(
-    `  ✅ ${stats.contributionMetrics.tasksCompleted} tasks completed`,
-  );
-  console.log(
-    `  📊 ${stats.contributionMetrics.activityFrequency.toFixed(2)} commits/day\n`,
-  );
+  console.log(`  ✅ ${stats.contributionMetrics.tasksCompleted} tasks completed`);
+  console.log(`  📊 ${stats.contributionMetrics.activityFrequency.toFixed(2)} commits/day\n`);
 
   // Engagement
   console.log(chalk.bold('⚡ Engagement'));
-  console.log(
-    `  🔥 ${(stats.engagementMetrics.completionRate * 100).toFixed(1)}% completion rate`,
-  );
-  console.log(
-    `  📈 ${stats.engagementMetrics.activeTasksCount} active tasks\n`,
-  );
+  console.log(`  🔥 ${(stats.engagementMetrics.completionRate * 100).toFixed(1)}% completion rate`);
+  console.log(`  📈 ${stats.engagementMetrics.activeTasksCount} active tasks\n`);
 
   if (detailed) {
     // Temporal Metrics
     console.log(chalk.bold('⏰ Temporal Patterns'));
     console.log('  By Day of Week:');
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    Object.entries(stats.temporalMetrics.byDayOfWeek).forEach(
-      ([day, count]) => {
-        const dayName = days[parseInt(day)];
-        const bar = createBar(
-          count,
-          Math.max(...Object.values(stats.temporalMetrics.byDayOfWeek)),
-        );
-        console.log(`    ${dayName}: ${bar} ${count}`);
-      },
-    );
+    Object.entries(stats.temporalMetrics.byDayOfWeek).forEach(([day, count]) => {
+      const dayName = days[parseInt(day)];
+      const bar = createBar(count, Math.max(...Object.values(stats.temporalMetrics.byDayOfWeek)));
+      console.log(`    ${dayName}: ${bar} ${count}`);
+    });
 
     console.log('\n  By Time of Day:');
-    Object.entries(stats.temporalMetrics.byTimeOfDay).forEach(
-      ([time, count]) => {
-        const maxTime = Math.max(
-          ...Object.values(stats.temporalMetrics.byTimeOfDay),
-        );
-        const bar = createBar(count, maxTime);
-        console.log(`    ${time.padEnd(10)}: ${bar} ${count}`);
-      },
-    );
+    Object.entries(stats.temporalMetrics.byTimeOfDay).forEach(([time, count]) => {
+      const maxTime = Math.max(...Object.values(stats.temporalMetrics.byTimeOfDay));
+      const bar = createBar(count, maxTime);
+      console.log(`    ${time.padEnd(10)}: ${bar} ${count}`);
+    });
 
     console.log(`\n  🔥 Streak: ${stats.temporalMetrics.streak} days`);
-    console.log(
-      `  📈 Trend: ${getTrendEmoji(stats.temporalMetrics.trend)} ${stats.temporalMetrics.trend}\n`,
-    );
+    console.log(`  📈 Trend: ${getTrendEmoji(stats.temporalMetrics.trend)} ${stats.temporalMetrics.trend}\n`);
   }
 }
 
@@ -180,12 +145,8 @@ function displayTeamStats(stats: TeamStats, detailed = false): void {
   console.log(`  ✅ ${stats.totalTasksCompleted} tasks completed\n`);
 
   console.log(chalk.bold('📝 Code Metrics'));
-  console.log(
-    `  ${chalk.green('+')}${stats.codeMetrics.linesAdded} lines added`,
-  );
-  console.log(
-    `  ${chalk.red('-')}${stats.codeMetrics.linesRemoved} lines removed`,
-  );
+  console.log(`  ${chalk.green('+')}${stats.codeMetrics.linesAdded} lines added`);
+  console.log(`  ${chalk.red('-')}${stats.codeMetrics.linesRemoved} lines removed`);
   console.log(`  📁 ${stats.codeMetrics.filesChanged} files changed\n`);
 
   if (detailed && stats.contributors.length > 0) {
@@ -205,9 +166,7 @@ function displayTeamStats(stats: TeamStats, detailed = false): void {
       })
       .slice(0, 5)
       .forEach((contrib, idx) => {
-        console.log(
-          `  ${idx + 1}. ${contrib.username}: ${contrib.commits} commits, ${contrib.tasksCompleted} tasks`,
-        );
+        console.log(`  ${idx + 1}. ${contrib.username}: ${contrib.commits} commits, ${contrib.tasksCompleted} tasks`);
       });
   }
 }
@@ -221,12 +180,8 @@ function displayTaskStats(stats: TaskStats, _detailed = false): void {
   console.log(`  Assignee: ${stats.assignee || 'unassigned'}\n`);
 
   console.log(chalk.bold('📝 Code Metrics'));
-  console.log(
-    `  ${chalk.green('+')}${stats.codeMetrics.linesAdded} lines added`,
-  );
-  console.log(
-    `  ${chalk.red('-')}${stats.codeMetrics.linesRemoved} lines removed`,
-  );
+  console.log(`  ${chalk.green('+')}${stats.codeMetrics.linesAdded} lines added`);
+  console.log(`  ${chalk.red('-')}${stats.codeMetrics.linesRemoved} lines removed`);
   console.log(`  📁 ${stats.codeMetrics.filesChanged} files changed\n`);
 
   if (stats.contributors.length > 0) {
@@ -245,9 +200,7 @@ function formatDate(isoString: string): string {
 function createBar(value: number, max: number, length = 20): string {
   if (max === 0) return '░'.repeat(length);
   const filled = Math.round((value / max) * length);
-  return (
-    chalk.cyan('█'.repeat(filled)) + chalk.dim('░'.repeat(length - filled))
-  );
+  return chalk.cyan('█'.repeat(filled)) + chalk.dim('░'.repeat(length - filled));
 }
 
 function getTrendEmoji(trend: string): string {

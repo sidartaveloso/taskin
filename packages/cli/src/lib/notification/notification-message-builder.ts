@@ -1,7 +1,4 @@
-import type {
-  NotificationField,
-  NotificationMessage,
-} from '@opentask/taskin-types';
+import type { NotificationField, NotificationMessage } from '@opentask/taskin-types';
 
 export class NotificationMessageBuilder {
   private title = '';
@@ -36,13 +33,8 @@ export class NotificationMessageBuilder {
     return this;
   }
 
-  resolveMentions(
-    names: string[],
-    mapping: Record<string, string>,
-  ): this {
-    const resolved = names
-      .map((name) => mapping[name])
-      .filter((id): id is string => !!id);
+  resolveMentions(names: string[], mapping: Record<string, string>): this {
+    const resolved = names.map((name) => mapping[name]).filter((id): id is string => !!id);
 
     if (resolved.length > 0) {
       this.mentions = [...(this.mentions ?? []), ...resolved];

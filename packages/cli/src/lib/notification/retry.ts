@@ -19,14 +19,11 @@ function delay(ms: number): Promise<void> {
 }
 
 function calculateDelay(attempt: number, baseDelay: number, maxDelay: number): number {
-  const exponentialDelay = baseDelay * Math.pow(2, attempt - 1);
+  const exponentialDelay = baseDelay * 2 ** (attempt - 1);
   return Math.min(exponentialDelay, maxDelay);
 }
 
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions,
-): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions): Promise<T> {
   const { maxRetries, baseDelay } = options;
   const maxDelay = options.maxDelay ?? 10000;
   let lastError: unknown;

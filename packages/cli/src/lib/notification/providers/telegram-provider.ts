@@ -1,8 +1,4 @@
-import type {
-  INotificationProvider,
-  NotificationMessage,
-  NotificationResult,
-} from '@opentask/taskin-types';
+import type { INotificationProvider, NotificationMessage, NotificationResult } from '@opentask/taskin-types';
 
 function escapeMarkdown(text: string): string {
   return text.replace(/[_*[\]()~`>#+\-=|{}!.]/g, '\\$&');
@@ -20,9 +16,7 @@ function formatMessage(message: NotificationMessage): string {
   }
 
   if (message.fields && message.fields.length > 0) {
-    const fieldLines = message.fields.map(
-      (f) => `*${escapeMarkdown(f.name)}:* ${escapeMarkdown(f.value)}`,
-    );
+    const fieldLines = message.fields.map((f) => `*${escapeMarkdown(f.name)}:* ${escapeMarkdown(f.value)}`);
     parts.push(fieldLines.join('\n'));
   }
 

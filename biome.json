@@ -29,10 +29,10 @@
       },
       "style": {
         "noNonNullAssertion": "off",
-        "useVueMultiWordComponentNames": "off",
         "useConst": "error",
         "useImportType": "error",
-        "useNodejsImportProtocol": "off"
+        "useNodejsImportProtocol": "off",
+        "useVueMultiWordComponentNames": "off"
       },
       "suspicious": {
         "noConsole": {

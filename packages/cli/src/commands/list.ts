@@ -2,15 +2,8 @@
  * list command - List all tasks in the project
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
-import type {
-  ListTasksOptions,
-  TaskStatus,
-  TaskType,
-} from '@opentask/taskin-types';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
+import type { ListTasksOptions, TaskStatus, TaskType } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, printHeader } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
@@ -47,10 +40,7 @@ export const listCommand = defineCommand({
   },
 });
 
-async function listTasks(
-  filter: string | undefined,
-  options: ListTasksOptions,
-): Promise<void> {
+async function listTasks(filter: string | undefined, options: ListTasksOptions): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -86,13 +76,9 @@ async function listTasks(
   if (options.status) {
     filteredTasks = filteredTasks.filter((t) => t.status === options.status);
   } else if (options.open) {
-    filteredTasks = filteredTasks.filter(
-      (t) => t.status && openStatuses.includes(t.status),
-    );
+    filteredTasks = filteredTasks.filter((t) => t.status && openStatuses.includes(t.status));
   } else if (options.closed) {
-    filteredTasks = filteredTasks.filter(
-      (t) => t.status && closedStatuses.includes(t.status),
-    );
+    filteredTasks = filteredTasks.filter((t) => t.status && closedStatuses.includes(t.status));
   }
 
   if (options.type) {
@@ -102,9 +88,7 @@ async function listTasks(
   if (options.assignee) {
     filteredTasks = filteredTasks.filter(
       (t) =>
-        t.assignee?.name
-          .toLowerCase()
-          .includes(options.assignee!.toLowerCase()) ||
+        t.assignee?.name.toLowerCase().includes(options.assignee!.toLowerCase()) ||
         t.assignee?.id.toLowerCase().includes(options.assignee!.toLowerCase()),
     );
   }
@@ -128,9 +112,7 @@ async function listTasks(
 
   // Display tasks
   console.log(
-    colors.highlight(
-      `${'ID'.padEnd(15)} ${'Status'.padEnd(15)} ${'Type'.padEnd(12)} ${'User'.padEnd(15)} ${'Title'}`,
-    ),
+    colors.highlight(`${'ID'.padEnd(15)} ${'Status'.padEnd(15)} ${'Type'.padEnd(12)} ${'User'.padEnd(15)} ${'Title'}`),
   );
   console.log(colors.secondary('─'.repeat(100)));
 
@@ -149,8 +131,7 @@ async function listTasks(
   // Summary
   const statusCounts = {
     pending: filteredTasks.filter((t) => t.status === 'pending').length,
-    'in-progress': filteredTasks.filter((t) => t.status === 'in-progress')
-      .length,
+    'in-progress': filteredTasks.filter((t) => t.status === 'in-progress').length,
     done: filteredTasks.filter((t) => t.status === 'done').length,
     blocked: filteredTasks.filter((t) => t.status === 'blocked').length,
   };

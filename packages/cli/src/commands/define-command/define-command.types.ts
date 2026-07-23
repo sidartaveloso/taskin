@@ -50,6 +50,4 @@ export type CommandRegistration = (program: Command) => void;
  * });
  * ```
  */
-export type DefineCommandFunction = (
-  config: CommandConfig,
-) => CommandRegistration;
+export type DefineCommandFunction = (config: CommandConfig) => CommandRegistration;

@@ -19,14 +19,9 @@ export class NotificationManager {
     private config?: NotificationManagerConfig,
   ) {}
 
-  async notify(
-    message: NotificationMessage,
-    options?: NotificationOptions,
-  ): Promise<NotificationResult[]> {
+  async notify(message: NotificationMessage, options?: NotificationOptions): Promise<NotificationResult[]> {
     const filtered = this.filterProviders(options?.event);
-    const results = await Promise.all(
-      filtered.map((provider) => provider.send(message)),
-    );
+    const results = await Promise.all(filtered.map((provider) => provider.send(message)));
     return results;
   }
 

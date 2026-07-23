@@ -18,12 +18,7 @@ const VALID_TYPES = ['feat', 'fix', 'chore', 'docs', 'refactor', 'test'];
 export class FileSystemTaskLinter implements IFileSystemTaskLinter {
   private errors: FileValidationError[] = [];
 
-  private addError(
-    file: string,
-    message: string,
-    severity: 'error' | 'warning' = 'error',
-    line?: number,
-  ): void {
+  private addError(file: string, message: string, severity: 'error' | 'warning' = 'error', line?: number): void {
     this.errors.push({ file, message, severity, line });
   }
 
@@ -58,10 +53,7 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
   /**
    * Validate task metadata (FileSystem-specific)
    */
-  validateMetadata(
-    metadata: TaskMetadata,
-    filePath: string,
-  ): FileValidationError[] {
+  validateMetadata(metadata: TaskMetadata, filePath: string): FileValidationError[] {
     const errors: FileValidationError[] = [];
 
     if (!metadata.status) {
@@ -108,22 +100,12 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
 
     // Check H1 heading
     if (!lines[0]?.trim().startsWith('# ')) {
-      this.addError(
-        filename,
-        'Task file must start with a level 1 heading (# Task NNN — Title)',
-        'error',
-        1,
-      );
+      this.addError(filename, 'Task file must start with a level 1 heading (# Task NNN — Title)', 'error', 1);
     }
 
     const h1Pattern = /^#\s+(?:🧩\s+)?Task\s+\d{2,3}\s+[—-]\s+.+$/i;
     if (lines[0] && !h1Pattern.test(lines[0])) {
-      this.addError(
-        filename,
-        'H1 heading must follow format: "# Task NNN — Title"',
-        'error',
-        1,
-      );
+      this.addError(filename, 'H1 heading must follow format: "# Task NNN — Title"', 'error', 1);
     }
 
     const metadata = this.extractMetadata(content);
@@ -134,26 +116,14 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
 
     const h2Sections = content.match(/^##\s+.+$/gm);
     if (!h2Sections || h2Sections.length === 0) {
-      this.addError(
-        filename,
-        'Task should have at least one section (## heading)',
-        'warning',
-      );
+      this.addError(filename, 'Task should have at least one section (## heading)', 'warning');
     }
 
     const firstH2Index = content.indexOf('\n##');
     if (firstH2Index > -1) {
       const afterH2 = content.substring(firstH2Index);
-      if (
-        afterH2.match(/^Status:/im) ||
-        afterH2.match(/^Type:/im) ||
-        afterH2.match(/^Assignee:/im)
-      ) {
-        this.addError(
-          filename,
-          'Metadata must be placed BEFORE the first ## section',
-          'error',
-        );
+      if (afterH2.match(/^Status:/im) || afterH2.match(/^Type:/im) || afterH2.match(/^Assignee:/im)) {
+        this.addError(filename, 'Metadata must be placed BEFORE the first ## section', 'error');
       }
     }
   }
@@ -224,17 +194,11 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
 
   static printResults(result: FileLintResult): void {
     if (result.errors.length === 0 && result.warnings.length === 0) {
-      console.log(
-        chalk.green(`✅ All ${result.filesChecked} task files are valid!\n`),
-      );
+      console.log(chalk.green(`✅ All ${result.filesChecked} task files are valid!\n`));
       return;
     }
 
-    console.log(
-      chalk.bold(
-        `\n📊 Validation Results (${result.filesChecked} files checked):\n`,
-      ),
-    );
+    console.log(chalk.bold(`\n📊 Validation Results (${result.filesChecked} files checked):\n`));
 
     const errorsByFile = new Map<string, FileValidationError[]>();
     [...result.errors, ...result.warnings].forEach((error) => {
@@ -247,8 +211,7 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
     for (const [file, fileErrors] of errorsByFile) {
       console.log(chalk.cyan(`\n📄 ${file}`));
       for (const error of fileErrors) {
-        const icon =
-          error.severity === 'error' ? chalk.red('❌') : chalk.yellow('⚠️');
+        const icon = error.severity === 'error' ? chalk.red('❌') : chalk.yellow('⚠️');
         const location = error.line ? `:${error.line}` : '';
         console.log(`  ${icon} ${error.message}${location}`);
       }

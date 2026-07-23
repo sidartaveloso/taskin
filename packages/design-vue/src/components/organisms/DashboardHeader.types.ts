@@ -4,14 +4,8 @@ export interface DashboardHeaderType {
   emits: DashboardHeaderEmits;
 }
 
-export interface DashboardHeaderModels {
-  //TODO: Add models here
-}
+export type DashboardHeaderModels = {};
 
-export interface DashboardHeaderProps {
-  //TODO: Add props here
-}
+export type DashboardHeaderProps = {};
 
-export interface DashboardHeaderEmits {
-  //TODO: Add emits here
-}
+export type DashboardHeaderEmits = {};

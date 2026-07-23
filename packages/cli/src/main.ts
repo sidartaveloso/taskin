@@ -3,10 +3,7 @@
  * Handles dependency injection and initialization
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { dirname, join } from 'path';
 import { FileSystemTaskLinter } from './lib/file-system-task-linter/index.js';
@@ -21,10 +18,7 @@ export function createTaskin(tasksDir?: string): Taskin {
 
   // Initialize dependencies
   const userRegistry = new UserRegistry({ taskinDir });
-  const taskProvider = new FileSystemTaskProvider(
-    resolvedTasksDir,
-    userRegistry,
-  );
+  const taskProvider = new FileSystemTaskProvider(resolvedTasksDir, userRegistry);
   const taskManager = new TaskManager(taskProvider);
   const linter = new FileSystemTaskLinter();
 

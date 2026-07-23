@@ -11,16 +11,14 @@
 
 import path, { join } from 'path';
 import { exit } from 'process';
-import type {
-  ITaskProvider,
-  ValidationIssue,
-} from '../../packages/task-manager/dist/index.js';
+import type { ITaskProvider, ValidationIssue } from '../../packages/task-manager/dist/index.js';
 import { TaskManager } from '../../packages/task-manager/dist/index.js';
 
 // Dynamic import to avoid TypeScript rootDir issues
 async function createProvider(tasksDir: string): Promise<ITaskProvider> {
-  const { FileSystemTaskProvider, UserRegistry } =
-    await import('../../packages/file-system-task-provider/dist/index.js');
+  const { FileSystemTaskProvider, UserRegistry } = await import(
+    '../../packages/file-system-task-provider/dist/index.js'
+  );
 
   // Create a simple user registry (empty for linting purposes)
   const userRegistry = new UserRegistry({
@@ -31,12 +29,7 @@ async function createProvider(tasksDir: string): Promise<ITaskProvider> {
   return new FileSystemTaskProvider(tasksDir, userRegistry);
 }
 
-function printResults(
-  issues: ValidationIssue[],
-  errorCount: number,
-  warningCount: number,
-  infoCount: number,
-): void {
+function printResults(issues: ValidationIssue[], errorCount: number, warningCount: number, infoCount: number): void {
   if (issues.length === 0) {
     console.log('✅ All task files are valid!\n');
     return;
@@ -60,12 +53,7 @@ function printResults(
     console.log(`\n📄 ${filename}`);
 
     for (const issue of fileIssues) {
-      const icon =
-        issue.severity === 'error'
-          ? '❌'
-          : issue.severity === 'warning'
-            ? '⚠️'
-            : 'ℹ️';
+      const icon = issue.severity === 'error' ? '❌' : issue.severity === 'warning' ? '⚠️' : 'ℹ️';
       const location = issue.line ? ` (line ${issue.line})` : '';
       console.log(`  ${icon} ${issue.message}${location}`);
 
@@ -76,9 +64,7 @@ function printResults(
   }
 
   console.log('\n' + '─'.repeat(60));
-  console.log(
-    `\n📊 Summary: ${errorCount} error(s), ${warningCount} warning(s), ${infoCount} info\n`,
-  );
+  console.log(`\n📊 Summary: ${errorCount} error(s), ${warningCount} warning(s), ${infoCount} info\n`);
 
   if (errorCount > 0) {
     exit(1);
@@ -111,12 +97,7 @@ async function main(): Promise<void> {
     const result = await taskManager.lint(shouldFix);
 
     // Print results
-    printResults(
-      result.issues,
-      result.errorCount,
-      result.warningCount,
-      result.infoCount,
-    );
+    printResults(result.issues, result.errorCount, result.warningCount, result.infoCount);
   } catch (error) {
     console.error('❌ Fatal error:', error);
     exit(1);

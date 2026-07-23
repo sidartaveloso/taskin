@@ -1,8 +1,4 @@
-import type {
-  INotificationProvider,
-  NotificationMessage,
-  NotificationResult,
-} from '@opentask/taskin-types';
+import type { INotificationProvider, NotificationMessage, NotificationResult } from '@opentask/taskin-types';
 import { colors } from '../../colors.js';
 
 export interface ConsoleProviderOptions {

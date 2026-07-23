@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../lib/project-check.js', () => ({
   requireTaskinProject: vi.fn(),
@@ -32,9 +32,7 @@ describe('notify command handler', () => {
   it('should load notification config from .taskin.json', async () => {
     const configManager = new ConfigManager('/test');
     const config = configManager.loadConfig();
-    expect(config.notifications?.discord?.webhookUrl).toBe(
-      'https://discord.com/api/webhooks/123/abc',
-    );
+    expect(config.notifications?.discord?.webhookUrl).toBe('https://discord.com/api/webhooks/123/abc');
   });
 
   it('should have events configured for all notification types', async () => {

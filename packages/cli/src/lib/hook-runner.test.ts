@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { HookRunner } from './hook-runner';
 
 vi.mock('child_process', () => ({
@@ -18,9 +18,7 @@ describe('HookRunner (IHookRunner implementation)', () => {
 
   describe('executeHooks', () => {
     it('should execute hooks sequentially', async () => {
-      mockedExecSync
-        .mockReturnValueOnce(Buffer.from('output1'))
-        .mockReturnValueOnce(Buffer.from('output2'));
+      mockedExecSync.mockReturnValueOnce(Buffer.from('output1')).mockReturnValueOnce(Buffer.from('output2'));
 
       const results = await hookRunner.executeHooks(
         ['echo test1', 'echo test2'],
@@ -63,10 +61,7 @@ describe('HookRunner (IHookRunner implementation)', () => {
         { timeout: 5000, continueOnError: false, cwd: '.' },
       );
 
-      expect(mockedExecSync).toHaveBeenCalledWith(
-        'git commit -m "WIP: task-014 - Add review"',
-        expect.any(Object),
-      );
+      expect(mockedExecSync).toHaveBeenCalledWith('git commit -m "WIP: task-014 - Add review"', expect.any(Object));
     });
 
     it('should substitute baseBranch variable', async () => {
@@ -78,10 +73,7 @@ describe('HookRunner (IHookRunner implementation)', () => {
         { timeout: 5000, continueOnError: false, cwd: '.' },
       );
 
-      expect(mockedExecSync).toHaveBeenCalledWith(
-        'git merge origin/develop',
-        expect.any(Object),
-      );
+      expect(mockedExecSync).toHaveBeenCalledWith('git merge origin/develop', expect.any(Object));
     });
 
     it('should stop on error when continueOnError is false', async () => {
@@ -187,10 +179,7 @@ describe('HookRunner (IHookRunner implementation)', () => {
         { timeout: 5000, continueOnError: false, cwd: '.' },
       );
 
-      expect(mockedExecSync).toHaveBeenCalledWith(
-        'echo "Task: Test & Review" > output.txt',
-        expect.any(Object),
-      );
+      expect(mockedExecSync).toHaveBeenCalledWith('echo "Task: Test & Review" > output.txt', expect.any(Object));
     });
 
     it('should preserve undefined optional variables', async () => {
@@ -203,10 +192,7 @@ describe('HookRunner (IHookRunner implementation)', () => {
       );
 
       // Should not substitute undefined variables
-      expect(mockedExecSync).toHaveBeenCalledWith(
-        'echo {{baseBranch}}',
-        expect.any(Object),
-      );
+      expect(mockedExecSync).toHaveBeenCalledWith('echo {{baseBranch}}', expect.any(Object));
     });
 
     it('should handle error objects correctly', async () => {

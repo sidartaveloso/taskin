@@ -1,8 +1,4 @@
-import type {
-  ITaskManager,
-  ITaskProvider,
-  TaskFile,
-} from '@opentask/taskin-task-manager';
+import type { ITaskManager, ITaskProvider, TaskFile } from '@opentask/taskin-task-manager';
 import { randomUUID } from 'crypto';
 import { WebSocket, WebSocketServer } from 'ws';
 import type {
@@ -65,9 +61,7 @@ export class TaskWebSocketServer implements ITaskServer {
 
         this.wss.on('listening', () => {
           this.isRunning = true;
-          this.log(
-            `Server started on ws://${this.options.host}:${this.options.port}`,
-          );
+          this.log(`Server started on ws://${this.options.host}:${this.options.port}`);
           this.startHeartbeat();
           resolve();
         });
@@ -228,8 +222,7 @@ export class TaskWebSocketServer implements ITaskServer {
       this.sendToClient(client.id, {
         type: 'error',
         payload: {
-          message:
-            error instanceof Error ? error.message : 'Failed to load tasks',
+          message: error instanceof Error ? error.message : 'Failed to load tasks',
         },
       });
     }
@@ -238,10 +231,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle incoming message from client
    */
-  private async handleMessage(
-    client: ClientConnection,
-    data: Buffer,
-  ): Promise<void> {
+  private async handleMessage(client: ClientConnection, data: Buffer): Promise<void> {
     client.lastActivity = Date.now();
 
     try {
@@ -288,10 +278,7 @@ export class TaskWebSocketServer implements ITaskServer {
       this.sendToClient(client.id, {
         type: 'error',
         payload: {
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Failed to process message',
+          message: error instanceof Error ? error.message : 'Failed to process message',
         },
       });
     }
@@ -300,10 +287,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle list request
    */
-  private async handleListRequest(
-    client: ClientConnection,
-    message: WSMessage,
-  ): Promise<void> {
+  private async handleListRequest(client: ClientConnection, message: WSMessage): Promise<void> {
     const tasks = await this.taskProvider.getAllTasks();
 
     // Debug log
@@ -322,10 +306,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle find request
    */
-  private async handleFindRequest(
-    client: ClientConnection,
-    message: WSMessage,
-  ): Promise<void> {
+  private async handleFindRequest(client: ClientConnection, message: WSMessage): Promise<void> {
     const { taskId } = message.payload as { taskId: string };
     const task = await this.taskProvider.findTask(taskId);
 
@@ -339,10 +320,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle update request
    */
-  private async handleUpdateRequest(
-    client: ClientConnection,
-    message: WSMessage,
-  ): Promise<void> {
+  private async handleUpdateRequest(client: ClientConnection, message: WSMessage): Promise<void> {
     const task = message.payload as TaskFile;
     await this.taskProvider.updateTask(task);
 
@@ -356,10 +334,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle start task request
    */
-  private async handleStartRequest(
-    client: ClientConnection,
-    message: WSMessage,
-  ): Promise<void> {
+  private async handleStartRequest(client: ClientConnection, message: WSMessage): Promise<void> {
     const { taskId } = message.payload as { taskId: string };
     const task = await this.taskManager.startTask(taskId);
 
@@ -373,10 +348,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle finish task request
    */
-  private async handleFinishRequest(
-    client: ClientConnection,
-    message: WSMessage,
-  ): Promise<void> {
+  private async handleFinishRequest(client: ClientConnection, message: WSMessage): Promise<void> {
     const { taskId } = message.payload as { taskId: string };
     const task = await this.taskManager.finishTask(taskId);
 
@@ -390,10 +362,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle pause task request
    */
-  private async handlePauseRequest(
-    client: ClientConnection,
-    message: WSMessage,
-  ): Promise<void> {
+  private async handlePauseRequest(client: ClientConnection, message: WSMessage): Promise<void> {
     const { taskId } = message.payload as { taskId: string };
     // Note: Assuming TaskManager will have a pauseTask method
     // For now, we'll update the task status manually

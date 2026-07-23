@@ -17,9 +17,7 @@ const checkManifests = async () => {
       const missingFields = requiredFields.filter((field) => !manifest[field]);
 
       if (missingFields.length > 0) {
-        console.error(
-          `❌ ${manifest.name} → missing fields: ${missingFields.join(', ')}`,
-        );
+        console.error(`❌ ${manifest.name} → missing fields: ${missingFields.join(', ')}`);
         failed++;
       } else {
         console.log(`✅ ${manifest.name} → OK`);

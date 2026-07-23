@@ -6,14 +6,7 @@
 import type { GitCommit } from '@opentask/taskin-types';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import type {
-  Author,
-  BlameInfo,
-  CommitQueryOptions,
-  Diff,
-  FileDiff,
-  IGitAnalyzer,
-} from './git-analyzer.types';
+import type { Author, BlameInfo, CommitQueryOptions, Diff, FileDiff, IGitAnalyzer } from './git-analyzer.types';
 
 const execAsync = promisify(exec);
 
@@ -59,10 +52,7 @@ export class GitAnalyzer implements IGitAnalyzer {
 
   async isValidRepository(): Promise<boolean> {
     try {
-      const result = await executeGit(
-        'rev-parse --is-inside-work-tree',
-        this.repositoryPath,
-      );
+      const result = await executeGit('rev-parse --is-inside-work-tree', this.repositoryPath);
       return result === 'true';
     } catch {
       return false;
@@ -70,10 +60,7 @@ export class GitAnalyzer implements IGitAnalyzer {
   }
 
   async getRepositoryRoot(): Promise<string> {
-    const result = await executeGit(
-      'rev-parse --show-toplevel',
-      this.repositoryPath,
-    );
+    const result = await executeGit('rev-parse --show-toplevel', this.repositoryPath);
     if (!result) {
       throw new Error('Not a git repository');
     }
@@ -153,13 +140,10 @@ export class GitAnalyzer implements IGitAnalyzer {
 
         // Split by null byte (character code 0)
         const nullByteIndex = messageWithBody?.indexOf('\0') ?? -1;
-        const subject =
-          nullByteIndex !== -1
-            ? messageWithBody.substring(0, nullByteIndex)
-            : messageWithBody || '';
+        const subject = nullByteIndex !== -1 ? messageWithBody.substring(0, nullByteIndex) : messageWithBody || '';
 
         // Body might span multiple lines until we hit numstat
-        let bodyLines: string[] = [];
+        const bodyLines: string[] = [];
         if (nullByteIndex !== -1) {
           // Get rest of body from current line
           bodyLines.push(messageWithBody.substring(nullByteIndex + 1));
@@ -167,11 +151,7 @@ export class GitAnalyzer implements IGitAnalyzer {
 
         // Collect body lines until we hit numstat (lines with \t) or next commit (lines with |)
         i++;
-        while (
-          i < lines.length &&
-          !lines[i].includes('|') &&
-          !lines[i].includes('\t')
-        ) {
+        while (i < lines.length && !lines[i].includes('|') && !lines[i].includes('\t')) {
           if (lines[i].trim()) {
             bodyLines.push(lines[i]);
           }
@@ -300,11 +280,7 @@ export class GitAnalyzer implements IGitAnalyzer {
     };
   }
 
-  async getFileDiff(
-    filePath: string,
-    from: string = 'HEAD',
-    to: string = '',
-  ): Promise<FileDiff | null> {
+  async getFileDiff(filePath: string, from: string = 'HEAD', to: string = ''): Promise<FileDiff | null> {
     const args = ['diff', '--numstat'];
 
     if (to) {
@@ -438,10 +414,7 @@ export class GitAnalyzer implements IGitAnalyzer {
     return authors;
   }
 
-  async getFileHistory(
-    filePath: string,
-    options: CommitQueryOptions = {},
-  ): Promise<GitCommit[]> {
+  async getFileHistory(filePath: string, options: CommitQueryOptions = {}): Promise<GitCommit[]> {
     return this.getCommits({
       ...options,
       filePath,

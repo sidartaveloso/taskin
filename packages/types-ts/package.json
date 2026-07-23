@@ -52,7 +52,7 @@
     "build": "tsc && pnpm run generate:schemas",
     "dev": "tsc --watch",
     "generate:schemas": "tsx scripts/generate-schemas.ts",
-    "lint": "eslint .",
+    "lint": "biome check .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -60,7 +60,6 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "eslint": "^9.39.1",
     "tsx": "^4.20.6",
     "typescript": "^6.0.0",
     "vitest": "^1.6.1",

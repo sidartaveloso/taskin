@@ -1,10 +1,7 @@
+import { FaceTrackingDebug, TrackingControls, useFaceLandmarker, WebcamVideo } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useFaceLandmarker } from '@opentask/ui-sense';
-import type { TaskinEyesProps } from './TaskinEyes.types';
-import type { EyeState } from './TaskinEyes.types';
-import { FaceTrackingDebug, TrackingControls } from '@opentask/ui-sense';
-import { WebcamVideo } from '@opentask/ui-sense';
+import type { EyeState, TaskinEyesProps } from './TaskinEyes.types';
 import TaskinEyes from './TaskinEyes.vue';
 
 const meta = {

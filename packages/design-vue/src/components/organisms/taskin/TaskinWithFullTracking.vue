@@ -64,9 +64,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useFaceLandmarker, usePoseLandmarker, FaceTrackingDebug, TrackingControls } from '@opentask/ui-sense';
 import type { WebcamVideo } from '@opentask/ui-sense';
+import { FaceTrackingDebug, TrackingControls, useFaceLandmarker, usePoseLandmarker } from '@opentask/ui-sense';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { ArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
 import { NEUTRAL_ARM_POSITION } from '../../atoms/taskin-arms/TaskinArms.types';
 import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';

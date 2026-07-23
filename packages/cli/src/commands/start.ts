@@ -2,10 +2,7 @@
  * start command - Start a task
  */
 
-import {
-  FileSystemTaskProvider,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import path from 'path';
@@ -50,11 +47,7 @@ export const startCommand = defineCommand({
   },
 });
 
-async function startTask(
-  taskId: string,
-  _options: StartTaskOptions,
-  gitService?: IGitService,
-): Promise<void> {
+async function startTask(taskId: string, _options: StartTaskOptions, gitService?: IGitService): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -71,6 +64,9 @@ async function startTask(
   const taskinDir = path.join(monorepoRoot, '.taskin');
   const userRegistry = new UserRegistry({ taskinDir });
   await userRegistry.load();
+
+  // Ensure the current user exists in the registry
+  await userRegistry.ensureCurrentUser();
 
   // Initialize task manager
   const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
@@ -94,17 +90,11 @@ async function startTask(
     console.log();
 
     info('Status change:');
-    console.log(
-      colors.secondary(`  - Task status: ${task.status} → in-progress`),
-    );
+    console.log(colors.secondary(`  - Task status: ${task.status} → in-progress`));
     console.log();
 
     info('Git operations:');
-    console.log(
-      colors.secondary(
-        `  - Create branch: git checkout -b feat/task-${normalizedId}`,
-      ),
-    );
+    console.log(colors.secondary(`  - Create branch: git checkout -b feat/task-${normalizedId}`));
     console.log(
       colors.secondary(
         `  - Commit status: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip-ci]"`,
@@ -144,11 +134,7 @@ async function startTask(
 
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
-    const committed = await git.commitTaskStatusChangeOnBranch(
-      normalizedId,
-      'in-progress',
-      behavior.defaultBranch,
-    );
+    const committed = await git.commitTaskStatusChangeOnBranch(normalizedId, 'in-progress', behavior.defaultBranch);
     if (committed) {
       success('✓ Auto-committed status change');
       // Ignore if nothing to commit
@@ -165,20 +151,12 @@ async function startTask(
         `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip ci]"`,
       ),
     );
-    console.log(
-      colors.secondary(
-        '  2. Create a branch: git checkout -b feat/task-' + normalizedId,
-      ),
-    );
+    console.log(colors.secondary('  2. Create a branch: git checkout -b feat/task-' + normalizedId));
     console.log(colors.secondary('  3. Start coding! 💻'));
     console.log(colors.secondary('  4. Use "taskin pause" to save progress'));
   } else {
     info('Next steps:');
-    console.log(
-      colors.secondary(
-        '  1. Create a branch: git checkout -b feat/task-' + normalizedId,
-      ),
-    );
+    console.log(colors.secondary('  1. Create a branch: git checkout -b feat/task-' + normalizedId));
     console.log(colors.secondary('  2. Start coding! 💻'));
     console.log(colors.secondary('  3. Use "taskin pause" to save progress'));
   }

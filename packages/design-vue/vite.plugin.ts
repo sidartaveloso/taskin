@@ -13,8 +13,8 @@ export function patchVueCompilerCjs() {
   const cjsPath = require.resolve('@vue/compiler-core/dist/compiler-core.cjs.js');
   const original = readFileSync(cjsPath, 'utf8');
   const patched = original.replace(
-    "decodeEntities option is passed but will be ignored in non-browser builds",
-    "decodeEntities option is passed but will be ignored",
+    'decodeEntities option is passed but will be ignored in non-browser builds',
+    'decodeEntities option is passed but will be ignored',
   );
   if (original !== patched) {
     writeFileSync(cjsPath, patched);

@@ -1,4 +1,6 @@
 import type { User } from '@opentask/taskin-types';
+import { execSync } from 'child_process';
+import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -11,17 +13,43 @@ export interface UsersData {
   users: Record<string, User>;
 }
 
+export interface ILogger {
+  info(message: string): void;
+  warn(message: string): void;
+}
+
+export const NullLogger: ILogger = {
+  info: () => {},
+  warn: () => {},
+};
+
+export interface IUserRegistry {
+  load(): Promise<void>;
+  getUser(userId: string): User | undefined;
+  resolveUser(nameOrId: string): User | undefined;
+  ensureCurrentUser(gitConfig?: { name: string; email: string }): Promise<User>;
+  createTemporaryUser(nameOrId: string): User;
+  getAllUsers(): User[];
+  saveUser(user: User): Promise<void>;
+}
+
 /**
  * Registry for managing user information
  * Loads users from .taskin-users.json
  */
-export class UserRegistry {
+function getGravatarUrl(email: string): string {
+  const hash = createHash('md5').update(email.trim().toLowerCase()).digest('hex');
+  return `https://www.gravatar.com/avatar/${hash}?d=mp`;
+}
+
+export class UserRegistry implements IUserRegistry {
   private users: Map<string, User> = new Map();
   private usersFilePath: string;
+  private logger: ILogger;
 
-  constructor(private config: UserRegistryConfig) {
-    // .taskin-users.json na raiz do projeto
+  constructor(config: UserRegistryConfig, logger?: ILogger) {
     this.usersFilePath = path.join(config.taskinDir, '.taskin-users.json');
+    this.logger = logger ?? NullLogger;
   }
 
   /**
@@ -37,12 +65,10 @@ export class UserRegistry {
         this.users.set(id, user);
       }
 
-      console.log(`[UserRegistry] Loaded ${this.users.size} users`);
+      this.logger.info(`[UserRegistry] Loaded ${this.users.size} users`);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        console.warn(
-          '[UserRegistry] .taskin-users.json not found, starting with empty registry',
-        );
+        this.logger.warn('[UserRegistry] .taskin-users.json not found, starting with empty registry');
         this.users.clear();
       } else {
         throw error;
@@ -64,21 +90,47 @@ export class UserRegistry {
   resolveUser(nameOrId: string): User | undefined {
     // Try exact ID match first
     const byId = this.users.get(nameOrId);
-    if (byId) return byId;
+    if (byId) return { ...byId, avatar: getGravatarUrl(byId.email) };
 
     // Try slug version of name
     const slug = nameOrId.toLowerCase().replace(/\s+/g, '-');
     const bySlug = this.users.get(slug);
-    if (bySlug) return bySlug;
+    if (bySlug) return { ...bySlug, avatar: getGravatarUrl(bySlug.email) };
 
     // Try to find by name (case-insensitive)
     for (const user of this.users.values()) {
       if (user.name.toLowerCase() === nameOrId.toLowerCase()) {
-        return user;
+        return { ...user, avatar: getGravatarUrl(user.email) };
       }
     }
 
     return undefined;
+  }
+
+  /**
+   * Ensure a user matching the current git config exists in the registry.
+   * Tries to find by email first; if not found, creates and persists a new user.
+   * Falls back to process.env / defaults when no git config is available.
+   */
+  async ensureCurrentUser(gitConfig?: { name: string; email: string }): Promise<User> {
+    let name: string;
+    let email: string;
+
+    if (gitConfig) {
+      name = gitConfig.name;
+      email = gitConfig.email;
+    } else {
+      name = this.readGitConfig('user.name') || process.env.USER || process.env.USERNAME || 'developer';
+      email = this.readGitConfig('user.email') || `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`;
+    }
+
+    const existing = this.findByEmail(email);
+    if (existing) return existing;
+
+    const id = name.toLowerCase().replace(/\s+/g, '-');
+    const user: User = { id, name, email };
+    await this.saveUser(user);
+    return user;
   }
 
   /**
@@ -87,11 +139,33 @@ export class UserRegistry {
    */
   createTemporaryUser(nameOrId: string): User {
     const slug = nameOrId.toLowerCase().replace(/\s+/g, '-');
+    const email = `${slug.replace(/\s+/g, '.')}@example.com`;
     return {
       id: slug,
       name: nameOrId,
-      email: `${slug.replace(/\s+/g, '.')}@example.com`,
+      email,
+      avatar: getGravatarUrl(email),
     };
+  }
+
+  private findByEmail(email: string): User | undefined {
+    for (const user of this.users.values()) {
+      if (user.email.toLowerCase() === email.toLowerCase()) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  private readGitConfig(key: string): string | null {
+    try {
+      return execSync(`git config ${key}`, {
+        encoding: 'utf-8',
+        stdio: 'pipe',
+      }).trim();
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -117,10 +191,7 @@ export class UserRegistry {
       users: Object.fromEntries(this.users.entries()),
     };
 
-    await fs.writeFile(
-      this.usersFilePath,
-      JSON.stringify(data, null, 2),
-      'utf-8',
-    );
+    await fs.mkdir(path.dirname(this.usersFilePath), { recursive: true });
+    await fs.writeFile(this.usersFilePath, JSON.stringify(data, null, 2), 'utf-8');
   }
 }

@@ -44,11 +44,7 @@ export interface IGitService {
    * @param defaultBranch - Optional target branch for the commit
    * @returns True if commit was created successfully
    */
-  commitTaskStatusChangeOnBranch(
-    taskId: string,
-    status: string,
-    defaultBranch?: string,
-  ): Promise<boolean>;
+  commitTaskStatusChangeOnBranch(taskId: string, status: string, defaultBranch?: string): Promise<boolean>;
 
   /**
    * Check if repository has uncommitted changes.

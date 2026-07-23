@@ -3,8 +3,8 @@
  * Quando autoSync está ativo, o output não deve mencionar push manual.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IGitService } from '@opentask/taskin-git-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('new command - auto-sync output', () => {
   let mockGitService: IGitService;

@@ -23,11 +23,7 @@ const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
 const DAYS_PER_WEEK = 7;
 
-const MILLISECONDS_PER_DAY =
-  HOURS_PER_DAY *
-  MINUTES_PER_HOUR *
-  SECONDS_PER_MINUTE *
-  MILLISECONDS_PER_SECOND;
+const MILLISECONDS_PER_DAY = HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLISECONDS_PER_SECOND;
 
 /**
  * Task file parsing patterns
@@ -103,9 +99,7 @@ function removeCodeBlocks(content: string): string {
  * @param period - The time period (day, week, month, year)
  * @returns Object with since and until dates
  */
-function resolvePeriod(
-  period: 'day' | 'week' | 'month' | 'year' | 'quarter' | 'all' = 'week',
-): {
+function resolvePeriod(period: 'day' | 'week' | 'month' | 'year' | 'quarter' | 'all' = 'week'): {
   since: Date;
   until: Date;
 } {
@@ -289,8 +283,7 @@ async function calculateTemporalMetrics(
       } else {
         const prevDate = new Date(sortedDates[i - 1]);
         const currDate = new Date(sortedDates[i]);
-        const daysDiff =
-          (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+        const daysDiff = (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
 
         if (daysDiff === 1) {
           currentStreak++;
@@ -307,12 +300,8 @@ async function calculateTemporalMetrics(
     const firstHalf = commits.slice(0, midpoint);
     const secondHalf = commits.slice(midpoint);
 
-    const firstHalfAvg = firstHalf.length
-      ? firstHalf.length / Math.max(1, sortedDates.length / 2)
-      : 0;
-    const secondHalfAvg = secondHalf.length
-      ? secondHalf.length / Math.max(1, sortedDates.length / 2)
-      : 0;
+    const firstHalfAvg = firstHalf.length ? firstHalf.length / Math.max(1, sortedDates.length / 2) : 0;
+    const secondHalfAvg = secondHalf.length ? secondHalf.length / Math.max(1, sortedDates.length / 2) : 0;
 
     let trend: 'increasing' | 'decreasing' | 'stable' = 'stable';
     if (secondHalfAvg > firstHalfAvg * 1.2) trend = 'increasing';
@@ -362,12 +351,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     try {
       files = await fs.readdir(this.tasksDirectory);
     } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        error.code === 'ENOENT'
-      ) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
         console.warn(`Tasks directory not found: ${this.tasksDirectory}`);
         return [];
       }
@@ -376,9 +360,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
       throw new Error(`Failed to read tasks directory: ${message}`);
     }
 
-    const taskFiles = files.filter(
-      (f) => f.startsWith('task-') && f.endsWith('.md'),
-    );
+    const taskFiles = files.filter((f) => f.startsWith('task-') && f.endsWith('.md'));
     const tasks: TaskFileData[] = [];
 
     for (const file of taskFiles) {
@@ -394,9 +376,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
 
       const idMatch = file.match(TASK_FILENAME_PATTERN);
       const id = idMatch ? idMatch[1] : file;
-      const titleMatch =
-        content.match(TASK_TITLE_PATTERNS.withDash) ||
-        content.match(TASK_TITLE_PATTERNS.withNumber);
+      const titleMatch = content.match(TASK_TITLE_PATTERNS.withDash) || content.match(TASK_TITLE_PATTERNS.withNumber);
       const title = titleMatch ? titleMatch[1] : file.replace(/\.md$/, '');
 
       // Remove code blocks before extracting metadata to avoid parsing examples
@@ -413,28 +393,11 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
       const typeValue = extract('Type');
 
       // Validate and cast to proper types
-      const validStatuses: TaskStatus[] = [
-        'pending',
-        'in-progress',
-        'done',
-        'blocked',
-        'canceled',
-      ];
-      const validTypes: TaskType[] = [
-        'feat',
-        'fix',
-        'refactor',
-        'docs',
-        'test',
-        'chore',
-      ];
+      const validStatuses: TaskStatus[] = ['pending', 'in-progress', 'done', 'blocked', 'canceled'];
+      const validTypes: TaskType[] = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'];
 
-      const status = validStatuses.includes(statusValue as TaskStatus)
-        ? (statusValue as TaskStatus)
-        : undefined;
-      const type = validTypes.includes(typeValue as TaskType)
-        ? (typeValue as TaskType)
-        : undefined;
+      const status = validStatuses.includes(statusValue as TaskStatus) ? (statusValue as TaskStatus) : undefined;
+      const type = validTypes.includes(typeValue as TaskType) ? (typeValue as TaskType) : undefined;
 
       tasks.push({
         id,
@@ -460,29 +423,15 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     const assigned = tasks.filter((t) => {
       if (!t.assignee) return false;
       // match by registry id or name
-      return (
-        t.assignee === user?.id ||
-        t.assignee === user?.name ||
-        t.assignee === username
-      );
+      return t.assignee === user?.id || t.assignee === user?.name || t.assignee === username;
     });
 
     const completed = assigned.filter((t) => t.status === 'done').length;
     const active = assigned.filter((t) => t.status !== 'done').length;
 
-    const codeMetrics = await calculateCodeMetrics(
-      this.gitAnalyzer,
-      username,
-      weekAgo,
-      now,
-    );
+    const codeMetrics = await calculateCodeMetrics(this.gitAnalyzer, username, weekAgo, now);
 
-    const temporalMetrics = await calculateTemporalMetrics(
-      this.gitAnalyzer,
-      username,
-      weekAgo,
-      now,
-    );
+    const temporalMetrics = await calculateTemporalMetrics(this.gitAnalyzer, username, weekAgo, now);
 
     const rawMetrics = {
       username,
@@ -496,16 +445,10 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         tasksCompleted: completed,
         averageCompletionTime: 0, // TODO: calculate from task timestamps
         taskTypeDistribution: {}, // TODO: calculate from task types
-        activityFrequency: calculateActivityFrequency(
-          codeMetrics.commits,
-          query?.period || 'week',
-        ),
+        activityFrequency: calculateActivityFrequency(codeMetrics.commits, query?.period || 'week'),
       },
       engagementMetrics: {
-        commitsPerDay: calculateActivityFrequency(
-          codeMetrics.commits,
-          query?.period || 'week',
-        ),
+        commitsPerDay: calculateActivityFrequency(codeMetrics.commits, query?.period || 'week'),
         consistency: 0, // TODO: calculate standard deviation
         activeTasksCount: active,
         completionRate: assigned.length ? completed / assigned.length : 0,
@@ -517,10 +460,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     return UserStatsSchema.parse(rawMetrics);
   }
 
-  async getTeamMetrics(
-    _teamId: string,
-    query?: StatsQuery,
-  ): Promise<TeamStats> {
+  async getTeamMetrics(_teamId: string, query?: StatsQuery): Promise<TeamStats> {
     const { since, until } = resolvePeriod(query?.period || 'week');
     const now = until;
     const weekAgo = since;
@@ -602,31 +542,17 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     // Calculate git metrics for each contributor
     for (const [_key, data] of contributors.entries()) {
       try {
-        const codeMetrics = await calculateCodeMetrics(
-          this.gitAnalyzer,
-          data.username,
-          weekAgo,
-          now,
-        );
+        const codeMetrics = await calculateCodeMetrics(this.gitAnalyzer, data.username, weekAgo, now);
         data.commits = codeMetrics.commits;
         data.codeMetrics = codeMetrics;
       } catch (error) {
-        console.error(
-          `Failed to calculate metrics for ${data.username}:`,
-          error,
-        );
+        console.error(`Failed to calculate metrics for ${data.username}:`, error);
       }
     }
 
     // Aggregate team totals
-    const totalCommits = Array.from(contributors.values()).reduce(
-      (sum, c) => sum + c.commits,
-      0,
-    );
-    const totalTasksCompleted = Array.from(contributors.values()).reduce(
-      (sum, c) => sum + c.tasksCompleted,
-      0,
-    );
+    const totalCommits = Array.from(contributors.values()).reduce((sum, c) => sum + c.commits, 0);
+    const totalTasksCompleted = Array.from(contributors.values()).reduce((sum, c) => sum + c.tasksCompleted, 0);
     const aggregatedCodeMetrics = Array.from(contributors.values()).reduce(
       (acc, c) => ({
         linesAdded: acc.linesAdded + c.codeMetrics.linesAdded,
@@ -659,31 +585,17 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     return team;
   }
 
-  async getTaskMetrics(
-    taskId: string,
-    _query?: StatsQuery,
-  ): Promise<TaskStats> {
+  async getTaskMetrics(taskId: string, _query?: StatsQuery): Promise<TaskStats> {
     const tasks = await this.readTaskFiles();
-    const found = tasks.find(
-      (t) => t.id === taskId || t.filePath.includes(taskId),
-    );
+    const found = tasks.find((t) => t.id === taskId || t.filePath.includes(taskId));
     const now = new Date();
-    const validStatuses: TaskStatus[] = [
-      'pending',
-      'in-progress',
-      'done',
-      'blocked',
-      'canceled',
-    ];
+    const validStatuses: TaskStatus[] = ['pending', 'in-progress', 'done', 'blocked', 'canceled'];
 
     const base = {
       taskId,
       title: found ? found.title : taskId,
       type: (found && found.type) || 'feat',
-      status:
-        found?.status && validStatuses.includes(found.status)
-          ? found.status
-          : 'pending',
+      status: found?.status && validStatuses.includes(found.status) ? found.status : 'pending',
       assignee: found?.assignee,
       duration: 0,
       created: toISOString(now),

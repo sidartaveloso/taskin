@@ -7,10 +7,7 @@ import type {
   TaskFile,
 } from '@opentask/taskin-task-manager';
 import type { TaskId } from '@opentask/taskin-types';
-import type {
-  TaskServerConfig,
-  WebSocketServerOptions,
-} from './task-server-ws.types.js';
+import type { TaskServerConfig, WebSocketServerOptions } from './task-server-ws.types.js';
 
 /**
  * Mock TaskManager for testing
@@ -168,9 +165,7 @@ export class MockTaskProvider implements ITaskProvider {
 /**
  * Create mock server configuration
  */
-export function createMockServerConfig(
-  overrides?: Partial<TaskServerConfig>,
-): TaskServerConfig {
+export function createMockServerConfig(overrides?: Partial<TaskServerConfig>): TaskServerConfig {
   return {
     taskManager: new MockTaskManager(),
     taskProvider: new MockTaskProvider(),
@@ -186,9 +181,7 @@ export function createMockServerConfig(
 /**
  * Create mock WebSocket server options
  */
-export function createMockServerOptions(
-  overrides?: Partial<WebSocketServerOptions>,
-): WebSocketServerOptions {
+export function createMockServerOptions(overrides?: Partial<WebSocketServerOptions>): WebSocketServerOptions {
   return {
     port: 0, // Random port for testing
     host: 'localhost',

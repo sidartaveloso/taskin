@@ -41,9 +41,7 @@ const mode = ref<'board' | 'prioritization'>('board');
 
 // WebSocket configuration
 const wsUrl = ref(
-  (window as Window & { VITE_WS_URL?: string }).VITE_WS_URL ||
-    import.meta.env.VITE_WS_URL ||
-    'ws://localhost:3001',
+  (window as Window & { VITE_WS_URL?: string }).VITE_WS_URL || import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
 );
 const reconnectDelay = ref(5000);
 
@@ -57,7 +55,16 @@ const connectionError = computed(() => connectionStatus.value.error);
 
 // Map TaskFile[] to Task[] for the dashboard
 const tasks = computed<Task[]>(() => {
-  const mapped = taskStore.tasks.map(
+  const filter = new URLSearchParams(window.location.search).get('filter');
+
+  let filteredTaskFiles = taskStore.tasks;
+  if (filter === 'open') {
+    filteredTaskFiles = taskStore.tasks.filter((t) => t.status !== 'done' && t.status !== 'canceled');
+  } else if (filter === 'closed') {
+    filteredTaskFiles = taskStore.tasks.filter((t) => t.status === 'done' || t.status === 'canceled');
+  }
+
+  const mapped = filteredTaskFiles.map(
     (taskFile: {
       status: string;
       id: string;
@@ -65,7 +72,7 @@ const tasks = computed<Task[]>(() => {
       content: string;
       createdAt: string;
       type?: string;
-      assignee?: { id: string; name: string };
+      assignee?: { id: string; name: string; email?: string; avatar?: string };
       order?: number;
       groupId?: string;
       groupName?: string;
@@ -98,7 +105,12 @@ const tasks = computed<Task[]>(() => {
         description: taskFile.content,
         status: taskFile.status as TaskStatus,
         assignee: taskFile.assignee
-          ? { id: taskFile.assignee.id, name: taskFile.assignee.name }
+          ? {
+              id: taskFile.assignee.id,
+              name: taskFile.assignee.name,
+              email: taskFile.assignee.email,
+              avatar: taskFile.assignee.avatar,
+            }
           : undefined,
         dates: {
           created: taskFile.createdAt || new Date().toISOString(),
@@ -160,9 +172,7 @@ const handleUpdateTask = (task: Task) => {
 };
 
 // Connection status type for header component
-const connectionStatusType = computed<
-  'connected' | 'disconnected' | 'connecting' | 'error'
->(() => {
+const connectionStatusType = computed<'connected' | 'disconnected' | 'connecting' | 'error'>(() => {
   if (isConnected.value) return 'connected';
   if (connectionError.value) return 'error';
   return 'connecting';

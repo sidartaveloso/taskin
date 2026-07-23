@@ -27,10 +27,7 @@ describe('NotificationMessageBuilder', () => {
 
   it('should build minimal message', () => {
     const builder = new NotificationMessageBuilder();
-    const message = builder
-      .setTitle('Task #020')
-      .setDescription('Task completed')
-      .build();
+    const message = builder.setTitle('Task #020').setDescription('Task completed').build();
 
     expect(message.title).toBe('Task #020');
     expect(message.description).toBe('Task completed');
@@ -78,10 +75,7 @@ describe('NotificationMessageBuilder', () => {
 
   it('should handle empty title and description', () => {
     const builder = new NotificationMessageBuilder();
-    const message = builder
-      .setTitle('')
-      .setDescription('')
-      .build();
+    const message = builder.setTitle('').setDescription('').build();
 
     expect(message.title).toBe('');
     expect(message.description).toBe('');

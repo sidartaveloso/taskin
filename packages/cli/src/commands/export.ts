@@ -1,7 +1,4 @@
-import {
-  FileSystemMetricsAdapter,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { FileSystemMetricsAdapter, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { GitAnalyzer } from '@opentask/taskin-git-utils';
 import type { UserStats } from '@opentask/taskin-types';
 import type { Command } from 'commander';
@@ -80,11 +77,7 @@ export function registerExportCommand(program: Command) {
         });
         await userRegistry.load();
 
-        const metricsAdapter = new FileSystemMetricsAdapter(
-          tasksDir,
-          userRegistry,
-          gitAnalyzer,
-        );
+        const metricsAdapter = new FileSystemMetricsAdapter(tasksDir, userRegistry, gitAnalyzer);
 
         // Get user metrics
         const username = options.user || process.env.USER || 'unknown';

@@ -4,14 +4,8 @@ export interface AppType {
   emits: AppEmits;
 }
 
-export interface AppModels {
-  //TODO: Add models here
-}
+export type AppModels = {};
 
-export interface AppProps {
-  //TODO: Add props here
-}
+export type AppProps = {};
 
-export interface AppEmits {
-  //TODO: Add emits here
-}
+export type AppEmits = {};

@@ -37,8 +37,7 @@ export const HostSchema = z.string().refine(
     return hostnameRegex.test(host);
   },
   {
-    message:
-      'Invalid host. Must be localhost, a valid IPv4 address, or hostname.',
+    message: 'Invalid host. Must be localhost, a valid IPv4 address, or hostname.',
   },
 );
 
@@ -79,8 +78,7 @@ export const TaskIdSchema = z
   .min(1)
   .max(100)
   .regex(/^[a-zA-Z0-9_-]+$/, {
-    message:
-      'Task ID must contain only alphanumeric characters, hyphens, and underscores.',
+    message: 'Task ID must contain only alphanumeric characters, hyphens, and underscores.',
   });
 
 /**
@@ -92,8 +90,7 @@ export const UserIdSchema = z
   .min(1)
   .max(100)
   .regex(/^[a-zA-Z0-9._-]+$/, {
-    message:
-      'User ID must contain only alphanumeric characters, dots, hyphens, and underscores.',
+    message: 'User ID must contain only alphanumeric characters, dots, hyphens, and underscores.',
   });
 
 /**
@@ -119,8 +116,7 @@ export const SafePathSchema = z.string().refine(
     return !dangerousPatterns.some((pattern) => pattern.test(filePath));
   },
   {
-    message:
-      'Invalid path. Must be a relative path without traversal patterns.',
+    message: 'Invalid path. Must be a relative path without traversal patterns.',
   },
 );
 

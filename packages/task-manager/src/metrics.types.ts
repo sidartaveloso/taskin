@@ -1,9 +1,4 @@
-import type {
-  StatsQuery,
-  TaskStats,
-  TeamStats,
-  UserStats,
-} from '@opentask/taskin-types';
+import type { StatsQuery, TaskStats, TeamStats, UserStats } from '@opentask/taskin-types';
 
 /**
  * Manages metrics and statistics for users, teams, and tasks.
@@ -89,8 +84,4 @@ export interface IMetricsManager {
   getTaskMetrics(taskId: string, query?: StatsQuery): Promise<TaskStats>;
 }
 
-export type {
-  TaskStats as TaskMetrics,
-  TeamStats as TeamMetrics,
-  UserStats as UserMetrics,
-};
+export type { TaskStats as TaskMetrics, TeamStats as TeamMetrics, UserStats as UserMetrics };

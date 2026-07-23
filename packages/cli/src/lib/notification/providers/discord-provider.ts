@@ -1,8 +1,4 @@
-import type {
-  INotificationProvider,
-  NotificationMessage,
-  NotificationResult,
-} from '@opentask/taskin-types';
+import type { INotificationProvider, NotificationMessage, NotificationResult } from '@opentask/taskin-types';
 
 export class DiscordProvider implements INotificationProvider {
   readonly name = 'discord';

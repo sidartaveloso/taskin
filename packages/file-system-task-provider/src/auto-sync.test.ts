@@ -1,13 +1,13 @@
 import type { IGitService } from '@opentask/taskin-git-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  syncBeforeCreate,
-  pushAfterCreate,
-  getNextTaskNumberAfterSync,
-  squashTaskFileOnDone,
-  createTaskWithSync,
-} from './auto-sync';
 import type { SyncConfig } from './auto-sync';
+import {
+  createTaskWithSync,
+  getNextTaskNumberAfterSync,
+  pushAfterCreate,
+  squashTaskFileOnDone,
+  syncBeforeCreate,
+} from './auto-sync';
 
 // ============================================================================
 // MockGitService — implements IGitService + new sync methods
@@ -78,13 +78,9 @@ describe('syncBeforeCreate', () => {
   });
 
   it('should call abortRebase and throw when rebase fails with conflict', async () => {
-    mockGit.rebase = vi
-      .fn()
-      .mockRejectedValue(new Error('Merge conflict in TASKS/task-042.md'));
+    mockGit.rebase = vi.fn().mockRejectedValue(new Error('Merge conflict in TASKS/task-042.md'));
 
-    await expect(
-      syncBeforeCreate(mockGit, { autoSync: true, defaultBranch: 'tasks' }),
-    ).rejects.toThrow();
+    await expect(syncBeforeCreate(mockGit, { autoSync: true, defaultBranch: 'tasks' })).rejects.toThrow();
 
     expect(mockGit.abortRebase).toHaveBeenCalledOnce();
   });
@@ -92,9 +88,7 @@ describe('syncBeforeCreate', () => {
   it('should propagate fetch error without calling rebase', async () => {
     mockGit.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-    await expect(
-      syncBeforeCreate(mockGit, { autoSync: true, defaultBranch: 'tasks' }),
-    ).rejects.toThrow();
+    await expect(syncBeforeCreate(mockGit, { autoSync: true, defaultBranch: 'tasks' })).rejects.toThrow();
 
     expect(mockGit.rebase).not.toHaveBeenCalled();
     expect(mockGit.abortRebase).not.toHaveBeenCalled();
@@ -267,10 +261,7 @@ describe('createTaskWithSync', () => {
   });
 
   it('should retry full cycle on push failure and eventually succeed', async () => {
-    mockGit.push = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('non-fast-forward'))
-      .mockResolvedValueOnce(true);
+    mockGit.push = vi.fn().mockRejectedValueOnce(new Error('non-fast-forward')).mockResolvedValueOnce(true);
 
     const config: SyncConfig = {
       autoSync: true,
@@ -349,10 +340,7 @@ describe('squashTaskFileOnDone', () => {
   });
 
   it('should reuse retry logic when push to originBranch fails', async () => {
-    mockGit.push = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('non-fast-forward'))
-      .mockResolvedValueOnce(true);
+    mockGit.push = vi.fn().mockRejectedValueOnce(new Error('non-fast-forward')).mockResolvedValueOnce(true);
 
     const result = await squashTaskFileOnDone(mockGit, {
       taskId: '042',

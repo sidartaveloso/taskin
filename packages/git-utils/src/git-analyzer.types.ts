@@ -139,11 +139,7 @@ export interface IGitAnalyzer {
    * @param to Ending commit (default: working tree)
    * @returns Diff information for this file
    */
-  getFileDiff(
-    filePath: string,
-    from?: string,
-    to?: string,
-  ): Promise<FileDiff | null>;
+  getFileDiff(filePath: string, from?: string, to?: string): Promise<FileDiff | null>;
 
   /**
    * Get blame information for a file
@@ -165,10 +161,7 @@ export interface IGitAnalyzer {
    * @param options Additional query options
    * @returns Array of commits that modified this file
    */
-  getFileHistory(
-    filePath: string,
-    options?: CommitQueryOptions,
-  ): Promise<GitCommit[]>;
+  getFileHistory(filePath: string, options?: CommitQueryOptions): Promise<GitCommit[]>;
 
   /**
    * Check if repository exists and is accessible

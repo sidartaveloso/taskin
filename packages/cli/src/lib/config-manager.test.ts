@@ -1,11 +1,7 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  ConfigManager,
-  getAutomationBehavior,
-  type AutomationBehavior,
-} from './config-manager';
+import { type AutomationBehavior, ConfigManager, getAutomationBehavior } from './config-manager';
 
 describe('ConfigManager', () => {
   const testDir = join(process.cwd(), '.test-config-manager');
@@ -64,11 +60,7 @@ describe('ConfigManager', () => {
         },
       };
 
-      writeFileSync(
-        configPath,
-        JSON.stringify(invalidConfig, null, 2),
-        'utf-8',
-      );
+      writeFileSync(configPath, JSON.stringify(invalidConfig, null, 2), 'utf-8');
 
       const manager = new ConfigManager(testDir);
 

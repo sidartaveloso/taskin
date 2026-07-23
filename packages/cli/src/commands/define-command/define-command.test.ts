@@ -98,20 +98,14 @@ describe('defineCommand', () => {
     // Simulate command execution
     await program.parseAsync(['node', 'test', 'test', 'myarg']);
 
-    expect(handler).toHaveBeenCalledWith(
-      'myarg',
-      expect.any(Object),
-      expect.any(Object),
-    );
+    expect(handler).toHaveBeenCalledWith('myarg', expect.any(Object), expect.any(Object));
   });
 
   it('should handle async handler errors', async () => {
     const program = new Command();
     const error = new Error('Test error');
     const handler = vi.fn().mockRejectedValue(error);
-    const exitSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation((() => {}) as any);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
 
     const commandReg = defineCommand({
       name: 'test',
@@ -133,9 +127,7 @@ describe('defineCommand', () => {
     const handler = vi.fn().mockImplementation(() => {
       throw error;
     });
-    const exitSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation((() => {}) as any);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
 
     const commandReg = defineCommand({
       name: 'test',

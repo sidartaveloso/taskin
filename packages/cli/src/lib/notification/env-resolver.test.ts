@@ -1,6 +1,6 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadDotEnv, resolveEnvVars } from './env-resolver.js';
 
@@ -12,16 +12,12 @@ describe('resolveEnvVars', () => {
   });
 
   it('should return the string as-is when no env vars', () => {
-    expect(resolveEnvVars('https://example.com/webhook')).toBe(
-      'https://example.com/webhook',
-    );
+    expect(resolveEnvVars('https://example.com/webhook')).toBe('https://example.com/webhook');
   });
 
   it('should resolve a single env var', () => {
     process.env.TEST_URL = 'https://discord.com/api/webhooks/123/abc';
-    expect(resolveEnvVars('${TEST_URL}')).toBe(
-      'https://discord.com/api/webhooks/123/abc',
-    );
+    expect(resolveEnvVars('${TEST_URL}')).toBe('https://discord.com/api/webhooks/123/abc');
   });
 
   it('should resolve env var in URL path', () => {

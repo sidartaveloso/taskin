@@ -1,10 +1,7 @@
 {
   "mcpServers": {
     "taskin": {
-      "args": [
-        "/path/to/your/project/packages/cli/dist/index.js",
-        "mcp-server"
-      ],
+      "args": ["/path/to/your/project/packages/cli/dist/index.js", "mcp-server"],
       "command": "node",
       "cwd": "/path/to/your/project"
     }

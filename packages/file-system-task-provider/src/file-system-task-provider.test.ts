@@ -28,6 +28,12 @@ const mockUserRegistryInstance = {
 
 vi.mock('./user-registry', () => ({
   UserRegistry: vi.fn().mockImplementation(() => mockUserRegistryInstance),
+  NullLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
 describe('FileSystemTaskProvider', () => {
@@ -37,10 +43,7 @@ describe('FileSystemTaskProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    provider = new FileSystemTaskProvider(
-      TASKS_DIR,
-      mockUserRegistryInstance as unknown as UserRegistry,
-    );
+    provider = new FileSystemTaskProvider(TASKS_DIR, mockUserRegistryInstance as unknown as UserRegistry);
   });
 
   describe('findTask', () => {
@@ -54,10 +57,7 @@ describe('FileSystemTaskProvider', () => {
       expect(task?.id).toBe('001');
       expect(task?.title).toBe('Do Stuff');
       expect(fs.readdir).toHaveBeenCalledWith(TASKS_DIR);
-      expect(fs.readFile).toHaveBeenCalledWith(
-        '/fake/tasks/task-001-do-stuff.md',
-        'utf-8',
-      );
+      expect(fs.readFile).toHaveBeenCalledWith('/fake/tasks/task-001-do-stuff.md', 'utf-8');
     });
 
     it('should return undefined if task file is not found', async () => {
@@ -100,11 +100,7 @@ Test description`;
       await provider.updateTask(mockTask);
 
       expect(fs.readFile).toHaveBeenCalledWith(mockTask.filePath, 'utf-8');
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        mockTask.filePath,
-        expectedContent,
-        'utf-8',
-      );
+      expect(fs.writeFile).toHaveBeenCalledWith(mockTask.filePath, expectedContent, 'utf-8');
     });
   });
   describe('createTask', () => {
@@ -114,9 +110,7 @@ Test description`;
       const filePath = `${TASKS_DIR}/${fileName}`;
 
       // First readdir (getAllTasks) -> no files, second readdir (findTask) -> newly created file
-      (fs.readdir as Mock)
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([fileName]);
+      (fs.readdir as Mock).mockResolvedValueOnce([]).mockResolvedValueOnce([fileName]);
       (fs.access as Mock).mockRejectedValue(new Error('not found'));
       (fs.writeFile as Mock).mockResolvedValue(undefined);
 
@@ -125,19 +119,17 @@ Test description`;
       (fs.readFile as Mock).mockResolvedValue(createdContent);
 
       (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
-      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
-        (name: string) => ({ id: 'temp', name, email: `${name}@example.com` }),
-      );
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation((name: string) => ({
+        id: 'temp',
+        name,
+        email: `${name}@example.com`,
+      }));
 
       const result = await provider.createTask({ title, type: 'feat' });
 
       expect(result.taskId).toBe('001');
       expect(result.filePath).toBe(filePath);
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining(fileName),
-        expect.any(String),
-        'utf-8',
-      );
+      expect(fs.writeFile).toHaveBeenCalledWith(expect.stringContaining(fileName), expect.any(String), 'utf-8');
       // Ensure the generated content uses English inline metadata
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
       expect(written).toContain('Status:');
@@ -157,9 +149,7 @@ Test description`;
         'pt-BR',
       );
 
-      (fs.readdir as Mock)
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([fileName]);
+      (fs.readdir as Mock).mockResolvedValueOnce([]).mockResolvedValueOnce([fileName]);
       (fs.access as Mock).mockRejectedValue(new Error('not found'));
       (fs.writeFile as Mock).mockResolvedValue(undefined);
 
@@ -167,19 +157,17 @@ Test description`;
       (fs.readFile as Mock).mockResolvedValue(createdContent);
 
       (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
-      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
-        (name: string) => ({ id: 'temp', name, email: `${name}@example.com` }),
-      );
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation((name: string) => ({
+        id: 'temp',
+        name,
+        email: `${name}@example.com`,
+      }));
 
       const result = await providerPT.createTask({ title, type: 'feat' });
 
       expect(result.taskId).toBe('001');
       expect(result.filePath).toBe(filePath);
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining(fileName),
-        expect.any(String),
-        'utf-8',
-      );
+      expect(fs.writeFile).toHaveBeenCalledWith(expect.stringContaining(fileName), expect.any(String), 'utf-8');
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
       // Inline metadata keys use the locale-specific names
       expect(written).toContain('Status:');
@@ -197,9 +185,7 @@ Test description`;
       const fileName = `task-001-${expectedSlug}.md`;
       const filePath = `${TASKS_DIR}/${fileName}`;
 
-      (fs.readdir as Mock)
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([fileName]);
+      (fs.readdir as Mock).mockResolvedValueOnce([]).mockResolvedValueOnce([fileName]);
       (fs.access as Mock).mockRejectedValue(new Error('not found'));
       (fs.writeFile as Mock).mockResolvedValue(undefined);
 
@@ -207,9 +193,11 @@ Test description`;
       (fs.readFile as Mock).mockResolvedValue(createdContent);
 
       (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
-      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
-        (name: string) => ({ id: 'temp', name, email: `${name}@example.com` }),
-      );
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation((name: string) => ({
+        id: 'temp',
+        name,
+        email: `${name}@example.com`,
+      }));
 
       const result = await provider.createTask({ title, type: 'feat' });
 
@@ -220,11 +208,7 @@ Test description`;
       expect(result.filePath).not.toContain('ç');
 
       // Verify the file was written with normalized name
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining(expectedSlug),
-        expect.any(String),
-        'utf-8',
-      );
+      expect(fs.writeFile).toHaveBeenCalledWith(expect.stringContaining(expectedSlug), expect.any(String), 'utf-8');
     });
 
     it('should normalize various accented characters from different languages', async () => {
@@ -243,20 +227,12 @@ Test description`;
         const fileName = `task-${taskId}-${testCase.expectedSlug}.md`;
 
         (fs.readdir as Mock).mockResolvedValueOnce(
-          index === 0
-            ? []
-            : testCases
-                .slice(0, index)
-                .map(
-                  (_, i) => `task-${String(i + 1).padStart(3, '0')}-test.md`,
-                ),
+          index === 0 ? [] : testCases.slice(0, index).map((_, i) => `task-${String(i + 1).padStart(3, '0')}-test.md`),
         );
         (fs.readdir as Mock).mockResolvedValueOnce([fileName]);
         (fs.access as Mock).mockRejectedValue(new Error('not found'));
         (fs.writeFile as Mock).mockResolvedValue(undefined);
-        (fs.readFile as Mock).mockResolvedValue(
-          `# Task ${taskId}\nStatus: pending`,
-        );
+        (fs.readFile as Mock).mockResolvedValue(`# Task ${taskId}\nStatus: pending`);
 
         const result = await provider.createTask({
           title: testCase.title,
@@ -421,18 +397,14 @@ Assignee: Jane Smith
 Second task description`;
 
       (fs.readdir as Mock).mockResolvedValue(taskFiles);
-      (fs.readFile as Mock)
-        .mockResolvedValueOnce(task1Content)
-        .mockResolvedValueOnce(task2Content);
+      (fs.readFile as Mock).mockResolvedValueOnce(task1Content).mockResolvedValueOnce(task2Content);
 
       (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
-      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
-        (name: string) => ({
-          id: name.toLowerCase().replace(/\s+/g, '-'),
-          name,
-          email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-        }),
-      );
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation((name: string) => ({
+        id: name.toLowerCase().replace(/\s+/g, '-'),
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+      }));
 
       const tasks = await provider.getAllTasks();
 
@@ -516,13 +488,11 @@ Descrição da tarefa`;
       (fs.readFile as Mock).mockResolvedValue(taskContentPT);
 
       (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
-      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
-        (name: string) => ({
-          id: name.toLowerCase().replace(/\s+/g, '-'),
-          name,
-          email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-        }),
-      );
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation((name: string) => ({
+        id: name.toLowerCase().replace(/\s+/g, '-'),
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+      }));
 
       const tasks = await provider.getAllTasks();
 
@@ -555,35 +525,23 @@ Task with registered user`;
 
       (fs.readdir as Mock).mockResolvedValue(['task-001-registered.md']);
       (fs.readFile as Mock).mockResolvedValue(taskContent);
-      (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(
-        registeredUser,
-      );
+      (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(registeredUser);
 
       const tasks = await provider.getAllTasks();
 
       expect(tasks).toHaveLength(1);
       expect(tasks[0].assignee).toEqual(registeredUser);
-      expect(mockUserRegistryInstance.resolveUser).toHaveBeenCalledWith(
-        'registereduser',
-      );
+      expect(mockUserRegistryInstance.resolveUser).toHaveBeenCalledWith('registereduser');
     });
 
     it('should filter out non-task files', async () => {
-      const files = [
-        'task-001-valid.md',
-        'README.md',
-        'notes.txt',
-        'task-002-another.md',
-        '.gitignore',
-      ];
+      const files = ['task-001-valid.md', 'README.md', 'notes.txt', 'task-002-another.md', '.gitignore'];
 
       const task1Content = `# Task 001 — Valid Task\nStatus: pending`;
       const task2Content = `# Task 002 — Another Task\nStatus: pending`;
 
       (fs.readdir as Mock).mockResolvedValue(files);
-      (fs.readFile as Mock)
-        .mockResolvedValueOnce(task1Content)
-        .mockResolvedValueOnce(task2Content);
+      (fs.readFile as Mock).mockResolvedValueOnce(task1Content).mockResolvedValueOnce(task2Content);
 
       const tasks = await provider.getAllTasks();
 
@@ -609,21 +567,17 @@ Task with registered user`;
 
       // Reset user registry mocks
       (mockUserRegistryInstance.resolveUser as Mock).mockReturnValue(undefined);
-      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation(
-        (name: string) => ({
-          id: name.toLowerCase().replace(/\s+/g, '-'),
-          name,
-          email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-        }),
-      );
+      (mockUserRegistryInstance.createTemporaryUser as Mock).mockImplementation((name: string) => ({
+        id: name.toLowerCase().replace(/\s+/g, '-'),
+        name,
+        email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+      }));
 
       // Use the ACTUAL content written by createTask (captured from writeFile mock)
       let currentFileContent = '';
-      (fs.writeFile as Mock).mockImplementation(
-        async (_path: string, content: string) => {
-          currentFileContent = content;
-        },
-      );
+      (fs.writeFile as Mock).mockImplementation(async (_path: string, content: string) => {
+        currentFileContent = content;
+      });
       (fs.readFile as Mock).mockImplementation(async () => currentFileContent);
 
       const result = await provider.createTask({
@@ -707,17 +661,13 @@ Task with registered user`;
       // Create task (ID will be auto-generated as '001')
       (fs.access as Mock).mockRejectedValue(new Error('not found'));
       (fs.mkdir as Mock).mockResolvedValue(undefined);
-      (fs.readdir as Mock)
-        .mockResolvedValueOnce([])
-        .mockResolvedValue(['task-001-quick-task.md']);
+      (fs.readdir as Mock).mockResolvedValueOnce([]).mockResolvedValue(['task-001-quick-task.md']);
 
       // Capture the actual written content
       let currentFileContent = '';
-      (fs.writeFile as Mock).mockImplementation(
-        async (_path: string, content: string) => {
-          currentFileContent = content;
-        },
-      );
+      (fs.writeFile as Mock).mockImplementation(async (_path: string, content: string) => {
+        currentFileContent = content;
+      });
       (fs.readFile as Mock).mockImplementation(async () => currentFileContent);
 
       const result = await provider.createTask({
@@ -764,16 +714,12 @@ Task with registered user`;
 
       (fs.access as Mock).mockRejectedValue(new Error('not found'));
       (fs.mkdir as Mock).mockResolvedValue(undefined);
-      (fs.readdir as Mock)
-        .mockResolvedValueOnce([])
-        .mockResolvedValue(['task-001-format-test.md']);
+      (fs.readdir as Mock).mockResolvedValueOnce([]).mockResolvedValue(['task-001-format-test.md']);
 
       let writtenContent = '';
-      (fs.writeFile as Mock).mockImplementation(
-        async (_path: string, content: string) => {
-          writtenContent = content;
-        },
-      );
+      (fs.writeFile as Mock).mockImplementation(async (_path: string, content: string) => {
+        writtenContent = content;
+      });
       (fs.readFile as Mock).mockImplementation(async () => writtenContent);
 
       await provider.createTask({
@@ -843,11 +789,7 @@ Notas em português`;
 
       await provider.updateTask(mockTask);
 
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        mockTask.filePath,
-        expectedContent,
-        'utf-8',
-      );
+      expect(fs.writeFile).toHaveBeenCalledWith(mockTask.filePath, expectedContent, 'utf-8');
     });
 
     it('should preserve English section headers when updating task status', async () => {
@@ -895,11 +837,7 @@ Notes in English`;
 
       await provider.updateTask(mockTask);
 
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        mockTask.filePath,
-        expectedContent,
-        'utf-8',
-      );
+      expect(fs.writeFile).toHaveBeenCalledWith(mockTask.filePath, expectedContent, 'utf-8');
     });
 
     it('should detect locale from existing tasks when creating new task', async () => {
@@ -922,36 +860,29 @@ Tarefa em português`;
       let capturedPath = '';
 
       // Mock writeFile to capture content and path
-      (fs.writeFile as Mock).mockImplementation(
-        async (path: string, content: string) => {
-          capturedContent = content;
-          capturedPath = path;
-        },
-      );
+      (fs.writeFile as Mock).mockImplementation(async (path: string, content: string) => {
+        capturedContent = content;
+        capturedPath = path;
+      });
 
       // Mock readdir to return both existing and newly created task
       (fs.readdir as Mock).mockImplementation(async () => {
         if (capturedPath) {
-          return [
-            'task-001-tarefa-existente.md',
-            capturedPath.split('/').pop(),
-          ];
+          return ['task-001-tarefa-existente.md', capturedPath.split('/').pop()];
         }
         return ['task-001-tarefa-existente.md'];
       });
 
       // Mock readFile to return appropriate content based on filename
-      (fs.readFile as Mock).mockImplementation(
-        async (path: string): Promise<string> => {
-          if (path === capturedPath) {
-            return capturedContent;
-          }
-          if (path.includes('task-001')) {
-            return existingTaskPT;
-          }
-          throw new Error('File not found');
-        },
-      );
+      (fs.readFile as Mock).mockImplementation(async (path: string): Promise<string> => {
+        if (path === capturedPath) {
+          return capturedContent;
+        }
+        if (path.includes('task-001')) {
+          return existingTaskPT;
+        }
+        throw new Error('File not found');
+      });
 
       (fs.access as Mock).mockRejectedValue(new Error('not found'));
 
@@ -992,12 +923,10 @@ Primeira tarefa em português`;
       let capturedContent = '';
       let capturedPath = '';
 
-      (fs.writeFile as Mock).mockImplementation(
-        async (path: string, content: string) => {
-          capturedContent = content;
-          capturedPath = path;
-        },
-      );
+      (fs.writeFile as Mock).mockImplementation(async (path: string, content: string) => {
+        capturedContent = content;
+        capturedPath = path;
+      });
 
       (fs.readdir as Mock).mockImplementation(async () => {
         if (capturedPath) {
@@ -1006,17 +935,15 @@ Primeira tarefa em português`;
         return ['task-001-primeira-tarefa.md'];
       });
 
-      (fs.readFile as Mock).mockImplementation(
-        async (path: string): Promise<string> => {
-          if (path === capturedPath) {
-            return capturedContent;
-          }
-          if (path.includes('task-001')) {
-            return existingTaskPT;
-          }
-          throw new Error('File not found');
-        },
-      );
+      (fs.readFile as Mock).mockImplementation(async (path: string): Promise<string> => {
+        if (path === capturedPath) {
+          return capturedContent;
+        }
+        if (path.includes('task-001')) {
+          return existingTaskPT;
+        }
+        throw new Error('File not found');
+      });
 
       (fs.access as Mock).mockRejectedValue(new Error('not found'));
 
@@ -1047,12 +974,10 @@ Primeira tarefa em português`;
       let capturedPath = '';
 
       // Mock writeFile to capture content and path
-      (fs.writeFile as Mock).mockImplementation(
-        async (path: string, content: string) => {
-          capturedContent = content;
-          capturedPath = path;
-        },
-      );
+      (fs.writeFile as Mock).mockImplementation(async (path: string, content: string) => {
+        capturedContent = content;
+        capturedPath = path;
+      });
 
       // Mock readdir to return newly created task
       (fs.readdir as Mock).mockImplementation(async () => {
@@ -1063,14 +988,12 @@ Primeira tarefa em português`;
       });
 
       // Mock readFile to return captured content
-      (fs.readFile as Mock).mockImplementation(
-        async (path: string): Promise<string> => {
-          if (path === capturedPath) {
-            return capturedContent;
-          }
-          throw new Error('File not found');
-        },
-      );
+      (fs.readFile as Mock).mockImplementation(async (path: string): Promise<string> => {
+        if (path === capturedPath) {
+          return capturedContent;
+        }
+        throw new Error('File not found');
+      });
 
       (fs.access as Mock).mockRejectedValue(new Error('not found'));
 

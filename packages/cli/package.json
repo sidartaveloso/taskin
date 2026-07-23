@@ -72,10 +72,10 @@
     "build:dashboard": "cd ../dashboard && pnpm run build:app && cd ../cli && rm -rf dashboard-dist && cp -r ../dashboard/dist-app dashboard-dist",
     "clean": "rm -rf dist dashboard-dist coverage .turbo test-temp-e2e",
     "dev": "tsup --watch",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "format": "biome check --write .",
+    "format:check": "biome check .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "prepublishOnly": "pnpm build",
     "test": "vitest run",
     "test:e2e": "pnpm build && vitest run --config vitest.e2e.config.ts",
@@ -104,7 +104,6 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.24",
-    "eslint": "^9.39.1",
     "tsup": "^8.5.1",
     "typescript": "^6.0.0",
     "vitest": "^1.6.1"

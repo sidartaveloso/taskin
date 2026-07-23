@@ -1,8 +1,5 @@
 import { execSync } from 'child_process';
-import {
-  createBranch as createBranchUtil,
-  isGitRepository as isGitRepositoryUtil,
-} from './git';
+import { createBranch as createBranchUtil, isGitRepository as isGitRepositoryUtil } from './git';
 import type { IGitService } from './git-service.types';
 
 /**
@@ -45,21 +42,14 @@ export class GitService implements IGitService {
     return this.commit(message);
   }
 
-  async commitTaskStatusChange(
-    taskId: string,
-    status: string,
-  ): Promise<boolean> {
+  async commitTaskStatusChange(taskId: string, status: string): Promise<boolean> {
     const pattern = `TASKS/task-${taskId}-*.md`;
     const message = `docs(TASKS): task-${taskId} - atualiza status para ${status} [skip-ci]`;
 
     return this.addAndCommit(pattern, message);
   }
 
-  async commitTaskStatusChangeOnBranch(
-    taskId: string,
-    status: string,
-    defaultBranch?: string,
-  ): Promise<boolean> {
+  async commitTaskStatusChangeOnBranch(taskId: string, status: string, defaultBranch?: string): Promise<boolean> {
     // If no defaultBranch specified, use normal commit
     if (!defaultBranch) {
       return this.commitTaskStatusChange(taskId, status);
@@ -91,10 +81,7 @@ export class GitService implements IGitService {
         if (files) {
           taskFilePath = files.split('\n')[0];
           const { readFileSync } = await import('fs');
-          taskFileContent = readFileSync(
-            `${this.cwd}/${taskFilePath}`,
-            'utf-8',
-          );
+          taskFileContent = readFileSync(`${this.cwd}/${taskFilePath}`, 'utf-8');
         }
       } catch {
         // No modified task file found — try unstaged check
@@ -124,11 +111,7 @@ export class GitService implements IGitService {
         let committed = false;
         if (taskFileContent && taskFilePath) {
           const { writeFileSync } = await import('fs');
-          writeFileSync(
-            `${this.cwd}/${taskFilePath}`,
-            taskFileContent,
-            'utf-8',
-          );
+          writeFileSync(`${this.cwd}/${taskFilePath}`, taskFileContent, 'utf-8');
           const message = `docs(TASKS): task-${taskId} - atualiza status para ${status} [skip-ci]`;
           committed = await this.addAndCommit(taskPattern, message);
         } else {
@@ -206,10 +189,7 @@ export class GitService implements IGitService {
     return Promise.resolve(isGitRepositoryUtil());
   }
 
-  async createBranch(
-    branchName: string,
-    baseBranch?: string,
-  ): Promise<boolean> {
+  async createBranch(branchName: string, baseBranch?: string): Promise<boolean> {
     try {
       createBranchUtil(branchName, baseBranch);
       return true;

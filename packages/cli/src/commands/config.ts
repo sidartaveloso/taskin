@@ -62,11 +62,7 @@ async function handleConfigCommand(options: ConfigOptions): Promise<void> {
 
   // Set Discord notification
   if (options['discord-webhook']) {
-    await setDiscordNotification(
-      configManager,
-      options['discord-webhook'],
-      options['notification-events'],
-    );
+    await setDiscordNotification(configManager, options['discord-webhook'], options['notification-events']);
     return;
   }
 
@@ -91,12 +87,8 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
     console.log(
       `  Auto-commit status changes: ${behavior.autoCommitStatusChange ? chalk.green('✓ Yes') : chalk.red('✗ No')}`,
     );
-    console.log(
-      `  Auto-commit on pause: ${behavior.autoCommitPause ? chalk.green('✓ Yes') : chalk.red('✗ No')}`,
-    );
-    console.log(
-      `  Auto-commit on finish: ${behavior.autoCommitFinish ? chalk.green('✓ Yes') : chalk.red('✗ No')}\n`,
-    );
+    console.log(`  Auto-commit on pause: ${behavior.autoCommitPause ? chalk.green('✓ Yes') : chalk.red('✗ No')}`);
+    console.log(`  Auto-commit on finish: ${behavior.autoCommitFinish ? chalk.green('✓ Yes') : chalk.red('✗ No')}\n`);
 
     console.log(chalk.bold('🔔 Notifications'));
     const notifications = configManager.getNotifications();
@@ -119,15 +111,11 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
 
     // Show level descriptions
     console.log(chalk.bold('📖 Available Levels:'));
-    console.log(
-      `  ${chalk.yellow('manual')}    - You're in control: all commits are suggestions only`,
-    );
+    console.log(`  ${chalk.yellow('manual')}    - You're in control: all commits are suggestions only`);
     console.log(
       `  ${chalk.yellow('assisted')}  - Smart suggestions: auto-commits status changes, suggests work commits`,
     );
-    console.log(
-      `  ${chalk.yellow('autopilot')} - Let Taskin drive: auto-commits everything\n`,
-    );
+    console.log(`  ${chalk.yellow('autopilot')} - Let Taskin drive: auto-commits everything\n`);
   } catch (err) {
     error('Failed to load configuration');
     if (err instanceof Error) {
@@ -165,18 +153,13 @@ async function setDiscordNotification(
   }
 }
 
-async function setAutomationLevel(
-  configManager: ConfigManager,
-  level: string,
-): Promise<void> {
+async function setAutomationLevel(configManager: ConfigManager, level: string): Promise<void> {
   printHeader('Configure Automation Level', '⚙️');
 
   // Validate level
   const validLevels: AutomationLevel[] = ['manual', 'assisted', 'autopilot'];
   if (!validLevels.includes(level as AutomationLevel)) {
-    error(
-      `Invalid automation level: ${level}. Valid options: ${validLevels.join(', ')}`,
-    );
+    error(`Invalid automation level: ${level}. Valid options: ${validLevels.join(', ')}`);
     process.exit(1);
   }
 
@@ -194,21 +177,9 @@ async function setAutomationLevel(
     // Show what changed
     const behavior = configManager.getAutomationBehavior();
     console.log(chalk.dim('\nCurrent behavior:'));
-    console.log(
-      chalk.dim(
-        `  Auto-commit status changes: ${behavior.autoCommitStatusChange ? '✓' : '✗'}`,
-      ),
-    );
-    console.log(
-      chalk.dim(
-        `  Auto-commit on pause: ${behavior.autoCommitPause ? '✓' : '✗'}`,
-      ),
-    );
-    console.log(
-      chalk.dim(
-        `  Auto-commit on finish: ${behavior.autoCommitFinish ? '✓' : '✗'}`,
-      ),
-    );
+    console.log(chalk.dim(`  Auto-commit status changes: ${behavior.autoCommitStatusChange ? '✓' : '✗'}`));
+    console.log(chalk.dim(`  Auto-commit on pause: ${behavior.autoCommitPause ? '✓' : '✗'}`));
+    console.log(chalk.dim(`  Auto-commit on finish: ${behavior.autoCommitFinish ? '✓' : '✗'}`));
   } catch (err) {
     error('Failed to update configuration');
     if (err instanceof Error) {
@@ -288,26 +259,12 @@ async function configureAutomation(configManager: ConfigManager): Promise<void> 
 
   const behavior = configManager.getAutomationBehavior();
   console.log(chalk.dim('\nNew behavior:'));
-  console.log(
-    chalk.dim(
-      `  Auto-commit status changes: ${behavior.autoCommitStatusChange ? '✓' : '✗'}`,
-    ),
-  );
-  console.log(
-    chalk.dim(
-      `  Auto-commit on pause: ${behavior.autoCommitPause ? '✓' : '✗'}`,
-    ),
-  );
-  console.log(
-    chalk.dim(
-      `  Auto-commit on finish: ${behavior.autoCommitFinish ? '✓' : '✗'}`,
-    ),
-  );
+  console.log(chalk.dim(`  Auto-commit status changes: ${behavior.autoCommitStatusChange ? '✓' : '✗'}`));
+  console.log(chalk.dim(`  Auto-commit on pause: ${behavior.autoCommitPause ? '✓' : '✗'}`));
+  console.log(chalk.dim(`  Auto-commit on finish: ${behavior.autoCommitFinish ? '✓' : '✗'}`));
 }
 
-async function configureDiscordNotification(
-  configManager: ConfigManager,
-): Promise<void> {
+async function configureDiscordNotification(configManager: ConfigManager): Promise<void> {
   printHeader('Configure Discord Notification', '🔔');
 
   const notifications = configManager.getNotifications() ?? {};
@@ -330,8 +287,7 @@ async function configureDiscordNotification(
       name: 'webhookUrl',
       message: 'Discord webhook URL:',
       default: current?.webhookUrl ?? '',
-      validate: (input: string) =>
-        input.length > 0 ? true : 'Webhook URL is required',
+      validate: (input: string) => (input.length > 0 ? true : 'Webhook URL is required'),
     },
   ]);
 
@@ -343,9 +299,21 @@ async function configureDiscordNotification(
       name: 'selectedEvents',
       message: 'Select events to notify:',
       choices: [
-        { name: 'Task started (task:start)', value: 'task:start', checked: current?.events.includes('task:start') ?? true },
-        { name: 'Task completed (task:done)', value: 'task:done', checked: current?.events.includes('task:done') ?? true },
-        { name: 'Task reviewed (task:review)', value: 'task:review', checked: current?.events.includes('task:review') ?? false },
+        {
+          name: 'Task started (task:start)',
+          value: 'task:start',
+          checked: current?.events.includes('task:start') ?? true,
+        },
+        {
+          name: 'Task completed (task:done)',
+          value: 'task:done',
+          checked: current?.events.includes('task:done') ?? true,
+        },
+        {
+          name: 'Task reviewed (task:review)',
+          value: 'task:review',
+          checked: current?.events.includes('task:review') ?? false,
+        },
       ],
     },
   ]);
@@ -365,9 +333,7 @@ async function configureDiscordNotification(
   info(`Events: ${chalk.cyan(selectedEvents.join(', '))}`);
 }
 
-async function configureTelegramNotification(
-  configManager: ConfigManager,
-): Promise<void> {
+async function configureTelegramNotification(configManager: ConfigManager): Promise<void> {
   printHeader('Configure Telegram Notification', '🔔');
 
   const notifications = configManager.getNotifications() ?? {};
@@ -390,8 +356,7 @@ async function configureTelegramNotification(
       name: 'botToken',
       message: 'Telegram bot token (or ${TELEGRAM_BOT_TOKEN}):',
       default: current?.botToken ?? '',
-      validate: (input: string) =>
-        input.length > 0 ? true : 'Bot token is required',
+      validate: (input: string) => (input.length > 0 ? true : 'Bot token is required'),
     },
   ]);
 
@@ -401,8 +366,7 @@ async function configureTelegramNotification(
       name: 'chatId',
       message: 'Telegram chat/group ID:',
       default: current?.chatId ?? '',
-      validate: (input: string) =>
-        input.length > 0 ? true : 'Chat ID is required',
+      validate: (input: string) => (input.length > 0 ? true : 'Chat ID is required'),
     },
   ]);
 
@@ -414,9 +378,21 @@ async function configureTelegramNotification(
       name: 'selectedEvents',
       message: 'Select events to notify:',
       choices: [
-        { name: 'Task started (task:start)', value: 'task:start', checked: current?.events.includes('task:start') ?? true },
-        { name: 'Task completed (task:done)', value: 'task:done', checked: current?.events.includes('task:done') ?? true },
-        { name: 'Task reviewed (task:review)', value: 'task:review', checked: current?.events.includes('task:review') ?? false },
+        {
+          name: 'Task started (task:start)',
+          value: 'task:start',
+          checked: current?.events.includes('task:start') ?? true,
+        },
+        {
+          name: 'Task completed (task:done)',
+          value: 'task:done',
+          checked: current?.events.includes('task:done') ?? true,
+        },
+        {
+          name: 'Task reviewed (task:review)',
+          value: 'task:review',
+          checked: current?.events.includes('task:review') ?? false,
+        },
       ],
     },
   ]);

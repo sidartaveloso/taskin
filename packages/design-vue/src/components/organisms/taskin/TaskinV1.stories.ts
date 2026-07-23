@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import TaskinV1 from './TaskinV1';
 import { defaultTaskinProps } from './Taskin.mock';
 import type { TaskinMood, TaskinReadyPayload } from './Taskin.types';
+import TaskinV1 from './TaskinV1';
 
 const meta = {
   title: 'Organisms/Taskin/V1',

@@ -32,10 +32,7 @@ Assignee: developer
 Test task`;
 
     writeFileSync(join(tasksDir, 'task-001-test.md'), taskContent);
-    writeFileSync(
-      join(TEST_DIR, '.taskin.json'),
-      JSON.stringify({ provider: 'fs' }),
-    );
+    writeFileSync(join(TEST_DIR, '.taskin.json'), JSON.stringify({ provider: 'fs' }));
 
     // Init git
     execSync('git init', { cwd: TEST_DIR });
