@@ -4,8 +4,8 @@ export interface AppType {
   emits: AppEmits;
 }
 
-export type AppModels = {};
+export type AppModels = Record<string, never>;
 
-export type AppProps = {};
+export type AppProps = Record<string, never>;
 
-export type AppEmits = {};
+export type AppEmits = Record<string, never>;

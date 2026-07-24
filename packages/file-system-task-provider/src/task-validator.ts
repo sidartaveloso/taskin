@@ -119,24 +119,15 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     }
 
     // Clean up extra blank lines again
-    const finalContentRaw = newContent.replace(/\n{3,}/g, '\n\n').trim() + '\n';
-    const originalContentRaw = content.replace(/\n{3,}/g, '\n\n').trim() + '\n';
+    const finalContentRaw = `${newContent.replace(/\n{3,}/g, '\n\n').trim()}\n`;
+    const originalContentRaw = `${content.replace(/\n{3,}/g, '\n\n').trim()}\n`;
 
     // Normalize the blank-line pattern after the H1 title so that files with
     // one or two blank lines after the title are considered equivalent.
-    const normalizeForCompare = (s: string) => s.replace(/(^# .*?)\n+/m, '$1\n\n').trim() + '\n';
+    const normalizeForCompare = (s: string) => `${s.replace(/(^# .*?)\n+/m, '$1\n\n').trim()}\n`;
 
     const finalContent = normalizeForCompare(finalContentRaw);
     const normalizedOriginal = normalizeForCompare(originalContentRaw);
-
-    if (filePath.endsWith('/tasks/task-001.md')) {
-      console.debug('DEBUG-NORM COMPARE', {
-        finalContentRaw: finalContentRaw.replace(/\n/g, '\\n'),
-        originalContentRaw: originalContentRaw.replace(/\n/g, '\\n'),
-        finalContent: finalContent.replace(/\n/g, '\\n'),
-        normalizedOriginal: normalizedOriginal.replace(/\n/g, '\\n'),
-      });
-    }
 
     if (finalContent !== normalizedOriginal) {
       await writeFile(filePath, finalContent, 'utf-8');

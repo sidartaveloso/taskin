@@ -1,3 +1,5 @@
+import type { ITaskManager, ITaskProvider } from '@opentask/taskin-task-manager';
+import type { TaskId } from '@opentask/taskin-types';
 import { describe, expect, it } from 'vitest';
 import { TaskWebSocketServer } from './index.js';
 
@@ -9,7 +11,7 @@ describe('TaskWebSocketServer', () => {
 
   it('should be instantiable', () => {
     const mockTask = {
-      id: '1' as any,
+      id: '1' as TaskId,
       title: 'Test',
       type: 'feat' as const,
       status: 'pending' as const,
@@ -18,18 +20,16 @@ describe('TaskWebSocketServer', () => {
       filePath: '/test.md',
     };
 
-    const mockProvider = {
-      getTasks: async () => [],
-      getTask: async () => undefined,
-      createTask: async () => ({
-        task: mockTask,
-        taskId: '1',
-        filePath: '/test.md',
-      }),
-      updateTask: async () => {},
-      deleteTask: async () => {},
+    const mockProvider: ITaskProvider = {
+      initialize: async () => {},
       findTask: async () => undefined,
       getAllTasks: async () => [],
+      updateTask: async () => {},
+      createTask: async () => ({
+        task: mockTask as never,
+        taskId: '1' as TaskId,
+        filePath: '/test.md',
+      }),
       lint: async () => ({
         valid: true,
         issues: [],
@@ -37,20 +37,21 @@ describe('TaskWebSocketServer', () => {
         warningCount: 0,
         infoCount: 0,
       }),
-      initialize: async () => {},
     };
 
-    const mockManager = {
-      startTask: async () => {},
-      pauseTask: async () => {},
-      finishTask: async () => {},
+    const mockManager: ITaskManager = {
+      startTask: async () => mockTask as never,
+      finishTask: async () => mockTask as never,
+      reviewTask: async () => mockTask as never,
+      createTask: async () => ({ task: mockTask, taskId: '1' as TaskId, filePath: '/test.md' }),
+      lint: async () => ({ valid: true, issues: [], errorCount: 0, warningCount: 0, infoCount: 0 }),
     };
 
     expect(
       () =>
         new TaskWebSocketServer({
           taskProvider: mockProvider,
-          taskManager: mockManager as any,
+          taskManager: mockManager,
         }),
     ).not.toThrow();
   });

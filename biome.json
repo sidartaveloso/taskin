@@ -45,6 +45,18 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["packages/cli/**", "packages/utils/src/ui.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ],
   "assist": {
     "enabled": true,
     "actions": {

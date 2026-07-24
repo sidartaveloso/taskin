@@ -106,7 +106,7 @@ describe('AutoSync Integration', () => {
     initRepo(tempDir);
     initialCommit(tempDir);
     createBranch(tempDir, 'tasks');
-    execSync('git remote add origin ' + bareDir, {
+    execSync(`git remote add origin ${bareDir}`, {
       cwd: tempDir,
       stdio: 'ignore',
     });

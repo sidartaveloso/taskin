@@ -5,7 +5,7 @@ import type {
   LintResult,
   TaskFile,
 } from '@opentask/taskin-task-manager';
-import type { TaskId, TaskStatus, TaskType } from '@opentask/taskin-types';
+import type { TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
 import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -33,10 +33,10 @@ function parsePrioritizationFields(
   const difficulty = difficultyMatch ? Number(difficultyMatch.trim()) : undefined;
 
   return {
-    ...(order !== undefined && !isNaN(order) && { order }),
+    ...(order !== undefined && !Number.isNaN(order) && { order }),
     ...(groupMatch && { groupId: groupMatch.trim() }),
     ...(groupNameMatch && { groupName: groupNameMatch.trim() }),
-    ...(difficulty !== undefined && !isNaN(difficulty) && { difficulty }),
+    ...(difficulty !== undefined && !Number.isNaN(difficulty) && { difficulty }),
   };
 }
 
@@ -147,15 +147,11 @@ export class FileSystemTaskProvider implements ITaskProvider {
     const difficultyMatch = extractInline('Difficulty', i18n.difficulty);
 
     // Resolve assignee from registry
-    let assignee;
+    let assignee: User | undefined;
     if (assigneeMatch) {
       const assigneeValue = assigneeMatch.trim();
-      // Try to resolve from registry
       assignee = this.userRegistry.resolveUser(assigneeValue);
-
-      // Fallback: create temporary user if not in registry
       if (!assignee) {
-        console.warn(`[FS Provider] User "${assigneeValue}" not found in registry, creating temporary user`);
         assignee = this.userRegistry.createTemporaryUser(assigneeValue);
       }
     }
@@ -264,13 +260,10 @@ export class FileSystemTaskProvider implements ITaskProvider {
       const difficultyMatch = extractInline('Difficulty', i18n.difficulty);
 
       // Resolve assignee from registry
-      let assignee;
+      let assignee: User | undefined;
       if (assigneeMatch) {
         const assigneeValue = assigneeMatch.trim();
-        // Try to resolve from registry
         assignee = this.userRegistry.resolveUser(assigneeValue);
-
-        // Fallback: create temporary user if not in registry
         if (!assignee) {
           assignee = this.userRegistry.createTemporaryUser(assigneeValue);
         }
@@ -313,7 +306,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
         const match = task.id.match(/^(\d+)$/);
         return match ? parseInt(match[1], 10) : 0;
       })
-      .filter((num) => !isNaN(num));
+      .filter((num) => !Number.isNaN(num));
 
     const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
     const taskId = String(nextNumber).padStart(3, '0');
@@ -335,7 +328,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
     }
 
     // Resolve assignee from options
-    let assignee;
+    let assignee: User | undefined;
     if (options.assignee) {
       assignee = this.userRegistry.resolveUser(options.assignee);
       if (!assignee) {

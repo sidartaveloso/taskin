@@ -4,8 +4,8 @@ export interface ButtonType {
   emits: ButtonEmits;
 }
 
-export type ButtonModels = {};
+export type ButtonModels = Record<string, never>;
 
-export type ButtonProps = {};
+export type ButtonProps = Record<string, never>;
 
-export type ButtonEmits = {};
+export type ButtonEmits = Record<string, never>;

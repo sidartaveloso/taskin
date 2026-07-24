@@ -126,7 +126,7 @@ const tasks = computed<Task[]>(() => {
         difficulty: taskFile.difficulty,
       };
 
-      // Debug log
+      // biome-ignore lint/suspicious/noConsole: debug log
       console.log('Mapped task:', task.id, 'assignee:', task.assignee);
 
       return task;
