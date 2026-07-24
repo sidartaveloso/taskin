@@ -85,7 +85,7 @@ describe('TelegramProvider', () => {
     let sentBody: URLSearchParams | null = null;
     globalThis.fetch = vi.fn().mockImplementation(async (url: string, opts: any) => {
       callUrl = url;
-      sentBody = opts.body;
+      sentBody = opts.body as URLSearchParams;
       return {
         ok: true,
         status: 200,
@@ -100,14 +100,14 @@ describe('TelegramProvider', () => {
 
     await provider.send(message);
     expect(callUrl).toContain(`bot${botToken}/sendMessage`);
-    expect(sentBody?.get('chat_id')).toBe(chatId);
-    expect(sentBody?.get('parse_mode')).toBe('MarkdownV2');
+    expect((sentBody as URLSearchParams | null)?.get('chat_id')).toBe(chatId);
+    expect((sentBody as URLSearchParams | null)?.get('parse_mode')).toBe('MarkdownV2');
   });
 
   it('should format title and description into message text', async () => {
     let sentBody: URLSearchParams | null = null;
     globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
-      sentBody = opts.body;
+      sentBody = opts.body as URLSearchParams;
       return {
         ok: true,
         status: 200,
@@ -122,7 +122,7 @@ describe('TelegramProvider', () => {
     };
 
     await provider.send(message);
-    const text = sentBody?.get('text') ?? '';
+    const text = (sentBody as URLSearchParams | null)?.get('text') ?? '';
     expect(text).toContain('Task');
     expect(text).toContain('020');
     expect(text).toContain('Task completed');
@@ -133,7 +133,7 @@ describe('TelegramProvider', () => {
   it('should escape Telegram MarkdownV2 special characters in title', async () => {
     let sentBody: URLSearchParams | null = null;
     globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
-      sentBody = opts.body;
+      sentBody = opts.body as URLSearchParams;
       return {
         ok: true,
         status: 200,
@@ -147,7 +147,7 @@ describe('TelegramProvider', () => {
     };
 
     await provider.send(message);
-    const text = sentBody?.get('text') ?? '';
+    const text = (sentBody as URLSearchParams | null)?.get('text') ?? '';
     // All special chars should be escaped with backslash
     expect(text).toContain('\\_');
     expect(text).toContain('\\*');
@@ -163,7 +163,7 @@ describe('TelegramProvider', () => {
   it('should handle message with only fields (no title)', async () => {
     let sentBody: URLSearchParams | null = null;
     globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
-      sentBody = opts.body;
+      sentBody = opts.body as URLSearchParams;
       return {
         ok: true,
         status: 200,
@@ -178,7 +178,7 @@ describe('TelegramProvider', () => {
     };
 
     await provider.send(message);
-    const text = sentBody?.get('text') ?? '';
+    const text = (sentBody as URLSearchParams | null)?.get('text') ?? '';
     expect(text).toContain('Status');
     expect(text).toContain('done');
   });

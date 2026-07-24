@@ -63,7 +63,7 @@ export class TelegramProvider implements INotificationProvider {
         };
       }
 
-      const result = await response.json();
+      const result = (await response.json()) as { ok: boolean; description?: string };
 
       if (!result.ok) {
         return {

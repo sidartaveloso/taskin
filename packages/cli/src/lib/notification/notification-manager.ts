@@ -26,12 +26,13 @@ export class NotificationManager {
   }
 
   private filterProviders(event?: NotificationEvent): INotificationProvider[] {
-    if (!event || !this.config?.eventFilter) {
+    const eventFilter = this.config?.eventFilter;
+    if (!event || !eventFilter) {
       return this.providers;
     }
 
     return this.providers.filter((provider) => {
-      const events = this.config.eventFilter![provider.name];
+      const events = eventFilter[provider.name];
       return events?.includes(event) ?? true;
     });
   }

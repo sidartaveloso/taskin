@@ -5,6 +5,7 @@ import { nextTick } from 'vue';
 import App from './App.vue';
 
 function createMockTask(overrides: Record<string, unknown> = {}) {
+  // biome-ignore lint/suspicious/noExplicitAny: test helper
   return {
     id: 'task-001',
     title: 'Test task',

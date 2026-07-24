@@ -594,7 +594,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     const base = {
       taskId,
       title: found ? found.title : taskId,
-      type: (found && found.type) || 'feat',
+      type: found?.type || 'feat',
       status: found?.status && validStatuses.includes(found.status) ? found.status : 'pending',
       assignee: found?.assignee,
       duration: 0,

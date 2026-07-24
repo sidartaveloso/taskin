@@ -290,10 +290,9 @@ export class TaskWebSocketServer implements ITaskServer {
   private async handleListRequest(client: ClientConnection, message: WSMessage): Promise<void> {
     const tasks = await this.taskProvider.getAllTasks();
 
-    // Debug log
     if (tasks.length > 0) {
-      console.log('[WS Server] Sending', tasks.length, 'tasks');
-      console.log('[WS Server] First task assignee:', tasks[0].assignee);
+      this.log('[WS Server] Sending', tasks.length, 'tasks');
+      this.log('[WS Server] First task assignee:', tasks[0].assignee);
     }
 
     this.sendToClient(client.id, {
@@ -320,7 +319,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle update request
    */
-  private async handleUpdateRequest(client: ClientConnection, message: WSMessage): Promise<void> {
+  private async handleUpdateRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
     const task = message.payload as TaskFile;
     await this.taskProvider.updateTask(task);
 
@@ -334,7 +333,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle start task request
    */
-  private async handleStartRequest(client: ClientConnection, message: WSMessage): Promise<void> {
+  private async handleStartRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
     const { taskId } = message.payload as { taskId: string };
     const task = await this.taskManager.startTask(taskId);
 
@@ -348,7 +347,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle finish task request
    */
-  private async handleFinishRequest(client: ClientConnection, message: WSMessage): Promise<void> {
+  private async handleFinishRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
     const { taskId } = message.payload as { taskId: string };
     const task = await this.taskManager.finishTask(taskId);
 
@@ -362,7 +361,7 @@ export class TaskWebSocketServer implements ITaskServer {
   /**
    * Handle pause task request
    */
-  private async handlePauseRequest(client: ClientConnection, message: WSMessage): Promise<void> {
+  private async handlePauseRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
     const { taskId } = message.payload as { taskId: string };
     // Note: Assuming TaskManager will have a pauseTask method
     // For now, we'll update the task status manually
@@ -414,6 +413,7 @@ export class TaskWebSocketServer implements ITaskServer {
    */
   private log(...args: unknown[]): void {
     if (this.options.debug) {
+      // biome-ignore lint/suspicious/noConsole: debug logging wrapper
       console.log('[TaskWebSocketServer]', ...args);
     }
   }
