@@ -217,10 +217,10 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
       }
     }
 
-    console.log('\n' + '─'.repeat(60));
+    console.log(`\n${'─'.repeat(60)}`);
     console.log(
       chalk.bold(
-        `\n📊 Summary: ${chalk.red(result.errors.length + ' error(s)')}, ${chalk.yellow(result.warnings.length + ' warning(s)')}\n`,
+        `\n📊 Summary: ${chalk.red(`${result.errors.length} error(s)`)}, ${chalk.yellow(`${result.warnings.length} warning(s)`)}\n`,
       ),
     );
   }

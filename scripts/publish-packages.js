@@ -119,7 +119,7 @@ async function main() {
 
   const skipConfirm = args.includes('--yes') || args.includes('-y');
 
-  log('\n' + '='.repeat(60), colors.bright);
+  log(`\n${'='.repeat(60)}`, colors.bright);
   log('🚀 Taskin Package Publisher', colors.bright);
   log('='.repeat(60), colors.bright);
 
@@ -169,7 +169,7 @@ async function main() {
   }
 
   // Summary
-  log('\n' + '='.repeat(60), colors.bright);
+  log(`\n${'='.repeat(60)}`, colors.bright);
   log('📊 Publication Summary', colors.bright);
   log('='.repeat(60), colors.bright);
 

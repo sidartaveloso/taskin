@@ -54,7 +54,7 @@ function syncVersions() {
   }
 
   // Write back
-  writeFileSync(aliasPath, JSON.stringify(aliasPkg, null, 2) + '\n', 'utf-8');
+  writeFileSync(aliasPath, `${JSON.stringify(aliasPkg, null, 2)}\n`, 'utf-8');
 
   log(`\n✅ Synced ${aliasPkg.name}:`, colors.green);
   log(`   Version: ${oldVersion} → ${version}`, colors.cyan);

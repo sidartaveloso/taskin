@@ -156,7 +156,7 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
       const match = task.id.match(/^(\d+)$/);
       return match ? parseInt(match[1], 10) : 0;
     })
-    .filter((num) => !isNaN(num));
+    .filter((num) => !Number.isNaN(num));
 
   const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
   const taskId = String(nextNumber).padStart(3, '0');
@@ -193,7 +193,7 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
   console.log();
   console.log(colors.info('Next steps:'));
   console.log(colors.normal(`  1. Edit the task file to add more details`));
-  console.log(colors.normal(`  2. Run ${colors.highlight('taskin start ' + taskId)} to begin working on it`));
+  console.log(colors.normal(`  2. Run ${colors.highlight(`taskin start ${taskId}`)} to begin working on it`));
   console.log();
 }
 

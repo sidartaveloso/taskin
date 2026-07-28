@@ -106,7 +106,7 @@ export function showCustomHelp(): string {
 
     if (index < commands.length - 1) {
       console.log();
-      console.log(colors.normal('   ' + colors.secondary('─'.repeat(50))));
+      console.log(colors.normal(`   ${colors.secondary('─'.repeat(50))}`));
       console.log();
     }
   });
