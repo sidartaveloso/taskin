@@ -151,12 +151,12 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
         `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip ci]"`,
       ),
     );
-    console.log(colors.secondary('  2. Create a branch: git checkout -b feat/task-' + normalizedId));
+    console.log(colors.secondary(`  2. Create a branch: git checkout -b feat/task-${normalizedId}`));
     console.log(colors.secondary('  3. Start coding! 💻'));
     console.log(colors.secondary('  4. Use "taskin pause" to save progress'));
   } else {
     info('Next steps:');
-    console.log(colors.secondary('  1. Create a branch: git checkout -b feat/task-' + normalizedId));
+    console.log(colors.secondary(`  1. Create a branch: git checkout -b feat/task-${normalizedId}`));
     console.log(colors.secondary('  2. Start coding! 💻'));
     console.log(colors.secondary('  3. Use "taskin pause" to save progress'));
   }

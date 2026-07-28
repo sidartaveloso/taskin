@@ -27,7 +27,7 @@ describe('GitAnalyzer', () => {
 
   describe('isValidRepository', () => {
     it('should return true for valid git repository', async () => {
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: 'true\n', stderr: '' });
       });
 
@@ -36,7 +36,7 @@ describe('GitAnalyzer', () => {
     });
 
     it('should return false for non-git directory', async () => {
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(new Error('not a git repo'), { stdout: '', stderr: '' });
       });
 
@@ -47,7 +47,7 @@ describe('GitAnalyzer', () => {
 
   describe('getRepositoryRoot', () => {
     it('should return repository root path', async () => {
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: '/path/to/repo\n', stderr: '' });
       });
 
@@ -56,7 +56,7 @@ describe('GitAnalyzer', () => {
     });
 
     it('should throw error if not a git repository', async () => {
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(new Error('not a git repo'), { stdout: '', stderr: '' });
       });
 
@@ -73,7 +73,7 @@ describe('GitAnalyzer', () => {
 def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
 10\t5\tsrc/bug.ts`;
 
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: mockOutput, stderr: '' });
       });
 
@@ -91,7 +91,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
     });
 
     it('should handle empty repository', async () => {
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: '', stderr: '' });
       });
 
@@ -100,7 +100,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
     });
 
     it('should filter by author', async () => {
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((cmd, _opts, callback: (...args: unknown[]) => void) => {
         expect(cmd).toContain('--author="John Doe"');
         callback(null, { stdout: '', stderr: '' });
       });
@@ -109,7 +109,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
     });
 
     it('should filter by date range', async () => {
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((cmd, _opts, callback: (...args: unknown[]) => void) => {
         expect(cmd).toContain('--since="1 week ago"');
         expect(cmd).toContain('--until="2026-01-08"');
         callback(null, { stdout: '', stderr: '' });
@@ -128,7 +128,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
       const mockOutput = `abc123|John Doe|2026-01-08T10:00:00Z|feat: add feature\0${bodyText}
 5\t2\tsrc/file.ts`;
 
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: mockOutput, stderr: '' });
       });
 
@@ -144,7 +144,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
 3\t2\tsrc/other.ts
 7\t0\tsrc/new.ts`;
 
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: mockOutput, stderr: '' });
       });
 
@@ -161,7 +161,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
 -\t-\timage.png
 3\t2\tsrc/other.ts`;
 
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: mockOutput, stderr: '' });
       });
 
@@ -178,7 +178,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
     45  Jane Smith <jane@example.com>
      7  Bob Johnson <bob@example.com>`;
 
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: mockOutput, stderr: '' });
       });
 
@@ -198,7 +198,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
     });
 
     it('should handle empty author list', async () => {
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: '', stderr: '' });
       });
 
@@ -209,7 +209,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
 
   describe('getFileHistory', () => {
     it('should filter commits by file path', async () => {
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((cmd, _opts, callback: (...args: unknown[]) => void) => {
         expect(cmd).toContain('-- src/file.ts');
         callback(null, { stdout: '', stderr: '' });
       });
@@ -222,7 +222,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
     it('should return file diff', async () => {
       const mockOutput = `10\t5\tsrc/file.ts`;
 
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: mockOutput, stderr: '' });
       });
 
@@ -239,7 +239,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
     it('should return null for binary files', async () => {
       const mockOutput = `-\t-\timage.png`;
 
-      execMock.mockImplementation((cmd, opts, callback: (...args: unknown[]) => void) => {
+      execMock.mockImplementation((_cmd, _opts, callback: (...args: unknown[]) => void) => {
         callback(null, { stdout: mockOutput, stderr: '' });
       });
 

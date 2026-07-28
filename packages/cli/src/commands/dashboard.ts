@@ -206,7 +206,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     app.disable('x-powered-by');
 
     // Security: Set security headers
-    app.use((req, res, next) => {
+    app.use((_req, res, next) => {
       // Prevent clickjacking
       res.setHeader('X-Frame-Options', 'DENY');
       // Prevent MIME sniffing
@@ -257,7 +257,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     );
 
     // Security: Catch-all for undefined routes (prevent information disclosure)
-    app.use((req, res) => {
+    app.use((_req, res) => {
       res.status(404).send('Not Found');
     });
 

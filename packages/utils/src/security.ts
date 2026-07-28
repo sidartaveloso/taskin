@@ -26,7 +26,7 @@ export const HostSchema = z.string().refine(
       // Validate IPv4: each octet must be 0-255
       return parts.every((part: string) => {
         const num = parseInt(part, 10);
-        return !isNaN(num) && num >= 0 && num <= 255 && part === num.toString();
+        return !Number.isNaN(num) && num >= 0 && num <= 255 && part === num.toString();
       });
     }
 

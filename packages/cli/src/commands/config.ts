@@ -101,7 +101,7 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
     }
     if (notifications?.telegram) {
       console.log(`  Telegram: ${chalk.green('✓ Configured')}`);
-      console.log(`    Bot Token: ${chalk.cyan(notifications.telegram.botToken.slice(0, 8) + '...')}`);
+      console.log(`    Bot Token: ${chalk.cyan(`${notifications.telegram.botToken.slice(0, 8)}...`)}`);
       console.log(`    Chat ID: ${chalk.cyan(notifications.telegram.chatId)}`);
       console.log(`    Events: ${chalk.cyan(notifications.telegram.events.join(', '))}`);
     } else {
@@ -149,7 +149,7 @@ async function setDiscordNotification(
     console.log(chalk.yellow('⚠️  Security warning:'));
     console.log(chalk.dim('   The webhook URL is stored in plain text in .taskin.json.'));
     console.log(chalk.dim('   Use ${DISCORD_TASKIN_WEBHOOK_URL} and set the env var instead:'));
-    console.log(chalk.dim('   export DISCORD_TASKIN_WEBHOOK_URL=' + webhookUrl));
+    console.log(chalk.dim(`   export DISCORD_TASKIN_WEBHOOK_URL=${webhookUrl}`));
   }
 }
 
@@ -341,7 +341,7 @@ async function configureTelegramNotification(configManager: ConfigManager): Prom
 
   console.log(
     current
-      ? `Current bot: ${chalk.cyan(current.botToken.slice(0, 8) + '...')}`
+      ? `Current bot: ${chalk.cyan(`${current.botToken.slice(0, 8)}...`)}`
       : 'No Telegram notification configured',
   );
   console.log();

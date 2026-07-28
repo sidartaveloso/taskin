@@ -63,7 +63,7 @@ function printResults(issues: ValidationIssue[], errorCount: number, warningCoun
     }
   }
 
-  console.log('\n' + '─'.repeat(60));
+  console.log(`\n${'─'.repeat(60)}`);
   console.log(`\n📊 Summary: ${errorCount} error(s), ${warningCount} warning(s), ${infoCount} info\n`);
 
   if (errorCount > 0) {

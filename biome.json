@@ -55,6 +55,33 @@
           }
         }
       }
+    },
+    {
+      "includes": ["dev/scripts/**", "scripts/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedImports": "off"
+          },
+          "style": {
+            "useTemplate": "warn"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/cli/src/commands/config.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off"
+          }
+        }
+      }
     }
   ],
   "assist": {

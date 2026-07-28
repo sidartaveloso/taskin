@@ -77,7 +77,7 @@ export function getAutomationBehavior(level: AutomationLevel, commits?: CommitAu
 export class ConfigManager {
   private configPath: string;
 
-  constructor(private projectRoot: string = process.cwd()) {
+  constructor(projectRoot: string = process.cwd()) {
     this.configPath = join(projectRoot, '.taskin.json');
   }
 

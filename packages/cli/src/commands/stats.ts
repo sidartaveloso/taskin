@@ -117,7 +117,7 @@ function displayUserStats(stats: UserStats, detailed = false): void {
     console.log('  By Day of Week:');
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     Object.entries(stats.temporalMetrics.byDayOfWeek).forEach(([day, count]) => {
-      const dayName = days[parseInt(day)];
+      const dayName = days[parseInt(day, 10)];
       const bar = createBar(count, Math.max(...Object.values(stats.temporalMetrics.byDayOfWeek)));
       console.log(`    ${dayName}: ${bar} ${count}`);
     });
