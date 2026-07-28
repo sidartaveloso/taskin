@@ -1,6 +1,19 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import type { LintResult, ValidationIssue } from '@opentask/taskin-task-manager';
+import { TASK_STATUSES } from '@opentask/taskin-types';
 import { detectLocale, getI18n } from './i18n.js';
+
+/**
+ * Status values accepted in a task file.
+ *
+ * Derived from the canonical {@link TASK_STATUSES} so this validator can never
+ * drift from the domain again — `in-review` used to be rejected here even
+ * though `TaskManager.reviewTask` writes it. `todo` is kept as a legacy alias
+ * for files written before `pending` became the canonical spelling.
+ */
+const ACCEPTED_STATUSES: readonly string[] = [...TASK_STATUSES, 'todo'];
+
+const ACCEPTED_STATUSES_LABEL = ACCEPTED_STATUSES.join(', ');
 
 /**
  * Fixes section-based metadata by converting to inline format
@@ -201,14 +214,14 @@ export async function validateTaskFile(filePath: string): Promise<ValidationIssu
       const statusMatch = content.match(inlineStatusPattern);
       // Extract value after colon
       const statusValue = statusMatch ? statusMatch[0].split(':')[1]?.trim().toLowerCase() || '' : '';
-      if (!['todo', 'in-progress', 'done', 'pending', 'blocked', 'canceled'].includes(statusValue)) {
+      if (!ACCEPTED_STATUSES.includes(statusValue)) {
         const statusLineIdx = lines.findIndex((line) => inlineStatusPattern.test(line.trim()));
         issues.push({
           file: filePath,
           line: statusLineIdx >= 0 ? statusLineIdx + 1 : undefined,
-          message: 'Status must be one of: todo, in-progress, done, pending, blocked, canceled',
+          message: `Status must be one of: ${ACCEPTED_STATUSES_LABEL}`,
           severity: 'error',
-          suggestion: 'Set status to: todo, in-progress, done, pending, blocked, or canceled',
+          suggestion: `Set status to one of: ${ACCEPTED_STATUSES_LABEL}`,
         });
       }
     }

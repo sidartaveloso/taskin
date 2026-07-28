@@ -1,15 +1,10 @@
-import type {
-  CreateTaskOptions,
-  CreateTaskResult,
-  ITaskProvider,
-  LintResult,
-  TaskFile,
-} from '@opentask/taskin-task-manager';
+import type { CreateTaskOptions, ITaskProvider, LintResult } from '@opentask/taskin-task-manager';
 import type { TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
 import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
+import type { CreateTaskFileResult, TaskFile } from './task-file.types.js';
 import { createLintResult, fixTaskFile, validateTaskFile } from './task-validator.js';
 import type { ILogger, UserRegistry } from './user-registry.js';
 import { NullLogger } from './user-registry.js';
@@ -59,7 +54,7 @@ function setInlineField(content: string, fieldName: string, value: string | unde
   return content.replace(/(^#.*\n)/, `$1${fieldName}: ${value}\n`);
 }
 
-export class FileSystemTaskProvider implements ITaskProvider {
+export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   private locale: Locale;
   private logger: ILogger;
 
@@ -160,6 +155,10 @@ export class FileSystemTaskProvider implements ITaskProvider {
       id: taskId satisfies string as TaskId,
       title,
       content,
+      // Projects the file body onto the provider-agnostic `description`, so
+      // consumers that only speak `Task` (the dashboard, the WebSocket clients)
+      // never have to reach for the file-specific `content` field.
+      description: content,
       filePath,
       assignee,
       status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
@@ -273,6 +272,8 @@ export class FileSystemTaskProvider implements ITaskProvider {
         id: taskId satisfies string as TaskId,
         title,
         content,
+        // See findTask: keeps `description` usable by Task-only consumers.
+        description: content,
         filePath,
         assignee,
         status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
@@ -287,7 +288,7 @@ export class FileSystemTaskProvider implements ITaskProvider {
     return tasks;
   }
 
-  async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
+  async createTask(options: CreateTaskOptions): Promise<CreateTaskFileResult> {
     // Get all existing tasks to determine next ID and detect locale
     const allTasks = await this.getAllTasks();
 

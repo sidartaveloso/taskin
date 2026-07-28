@@ -220,6 +220,8 @@ function getStatusEmoji(status: string): string {
       return '✅';
     case 'in-progress':
       return '🔄';
+    case 'paused':
+      return '⏸️';
     case 'blocked':
       return '🚫';
     case 'pending':

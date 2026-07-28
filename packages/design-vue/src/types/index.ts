@@ -3,7 +3,16 @@
  * Provider-agnostic interfaces for task visualization
  */
 
-export type TaskStatus = 'pending' | 'in-progress' | 'paused' | 'done' | 'blocked';
+/**
+ * Task lifecycle states.
+ *
+ * Kept deliberately decoupled from `@opentask/taskin-types` so the design system
+ * stays usable without the domain packages, but the member set must match
+ * `TASK_STATUSES` exactly. The dashboard asserts that at compile time, so any
+ * drift breaks the build rather than silently reaching a component as a status
+ * its own type says cannot exist.
+ */
+export type TaskStatus = 'pending' | 'in-progress' | 'paused' | 'in-review' | 'done' | 'blocked' | 'canceled';
 
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
 

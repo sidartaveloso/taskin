@@ -3,6 +3,7 @@
  */
 
 import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
+import { TaskManager } from '@opentask/taskin-task-manager';
 import type { PauseTaskOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -59,6 +60,7 @@ async function pauseTask(taskId: string, options: PauseTaskOptions): Promise<voi
 
   // Initialize task provider
   const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
+  const taskManager = new TaskManager(taskProvider);
 
   // Find task
   const task = await taskProvider.findTask(normalizedId);
@@ -80,7 +82,7 @@ async function pauseTask(taskId: string, options: PauseTaskOptions): Promise<voi
     const commitMessage = options.message || `WIP: task-${normalizedId} - ${task.title}`;
 
     info('Status change:');
-    console.log(colors.secondary(`  - Task status: in-progress → pending`));
+    console.log(colors.secondary(`  - Task status: in-progress → paused`));
     console.log();
 
     info('Git operations:');
@@ -114,7 +116,7 @@ async function pauseTask(taskId: string, options: PauseTaskOptions): Promise<voi
     info('Commit suggestion (manual mode):');
     console.log(colors.secondary(`  git add -A && git commit -m "${commitMessage}"`));
     console.log();
-    info('Status will be updated to pending');
+    info('Status will be updated to paused');
   } else {
     info('Creating commit...');
     console.log(colors.secondary(`  Message: "${commitMessage}"`));
@@ -131,17 +133,16 @@ async function pauseTask(taskId: string, options: PauseTaskOptions): Promise<voi
       // Ignore errors - might be nothing to commit
     }
 
-    // Update task status back to pending
-    const updatedTask = { ...task, status: 'pending' as const };
-    await taskProvider.updateTask(updatedTask);
+    // Pause via the manager so the transition and its guard live in one place
+    await taskManager.pauseTask(normalizedId);
 
     success('Task paused successfully!');
     success('✓ Auto-committed work in progress');
-    info('Status updated to pending');
+    info('Status updated to paused');
     console.log();
     info('Next steps:');
     console.log(colors.secondary('  1. Switch to another task'));
-    console.log(colors.secondary('  2. Or continue later with the same branch'));
+    console.log(colors.secondary(`  2. Or resume later with: taskin start ${normalizedId}`));
 
     // Play stop sound if not disabled
     if (options.sound !== false) {

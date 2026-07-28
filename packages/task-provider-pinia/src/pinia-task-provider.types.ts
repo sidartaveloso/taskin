@@ -1,4 +1,4 @@
-import type { TaskFile } from '@opentask/taskin-task-manager';
+import type { Task } from '@opentask/taskin-types';
 
 /**
  * Configuration for PiniaTaskProvider
@@ -73,7 +73,7 @@ export interface WebSocketMessage<T = unknown> {
  */
 export interface PiniaTaskStoreState {
   /** All cached tasks */
-  tasks: TaskFile[];
+  tasks: Task[];
 
   /** Loading state */
   loading: boolean;
@@ -96,10 +96,10 @@ export interface PiniaTaskStoreState {
  */
 export interface PiniaTaskStoreGetters {
   /** Get task by ID */
-  taskById: (state: PiniaTaskStoreState) => (id: string) => TaskFile | undefined;
+  taskById: (state: PiniaTaskStoreState) => (id: string) => Task | undefined;
 
   /** Get tasks by status */
-  tasksByStatus: (state: PiniaTaskStoreState) => (status: string) => TaskFile[];
+  tasksByStatus: (state: PiniaTaskStoreState) => (status: string) => Task[];
 
   /** Get connection status info */
   connectionStatus: (state: PiniaTaskStoreState) => {
@@ -133,13 +133,13 @@ export interface PiniaTaskStoreActions {
 
   // ITaskProvider methods
   /** Find task by ID */
-  findTask(taskId: string): Promise<TaskFile | undefined>;
+  findTask(taskId: string): Promise<Task | undefined>;
 
   /** Get all tasks */
-  getAllTasks(): Promise<TaskFile[]>;
+  getAllTasks(): Promise<Task[]>;
 
   /** Update task */
-  updateTask(task: TaskFile): Promise<void>;
+  updateTask(task: Task): Promise<void>;
 }
 
 /**

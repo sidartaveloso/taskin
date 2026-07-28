@@ -37,6 +37,24 @@ import { Dashboard, PrioritizationPage } from '@opentask/taskin-design-vue';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
+// Progress bar filled per status.
+//
+// This map is where the domain's status union and the design system's have to
+// agree, and it checks both directions: annotating it `Record<TaskStatus, …>`
+// means a status added to the design system must be handled here, and indexing
+// it with the store's status (below) means a status added to the domain must be
+// renderable. Neither side can grow a status the other silently ignores — which
+// is how `paused` sat in the design system, unreachable, for so long.
+const PROGRESS_BY_STATUS: Record<TaskStatus, number> = {
+  pending: 0,
+  'in-progress': 50,
+  paused: 30,
+  'in-review': 75,
+  done: 100,
+  blocked: 20,
+  canceled: 0,
+};
+
 const mode = ref<'board' | 'prioritization'>('board');
 
 // WebSocket configuration
@@ -53,85 +71,54 @@ const connectionStatus = computed(() => taskStore.connectionStatus);
 const isConnected = computed(() => connectionStatus.value.connected);
 const connectionError = computed(() => connectionStatus.value.error);
 
-// Map TaskFile[] to Task[] for the dashboard
+// Map the store's provider-agnostic tasks onto the dashboard's Task view model.
+// The shape comes from the store, so there is no structural type to restate here.
 const tasks = computed<Task[]>(() => {
   const filter = new URLSearchParams(window.location.search).get('filter');
 
-  let filteredTaskFiles = taskStore.tasks;
+  let filtered = taskStore.tasks;
   if (filter === 'open') {
-    filteredTaskFiles = taskStore.tasks.filter((t) => t.status !== 'done' && t.status !== 'canceled');
+    filtered = taskStore.tasks.filter((t) => t.status !== 'done' && t.status !== 'canceled');
   } else if (filter === 'closed') {
-    filteredTaskFiles = taskStore.tasks.filter((t) => t.status === 'done' || t.status === 'canceled');
+    filtered = taskStore.tasks.filter((t) => t.status === 'done' || t.status === 'canceled');
   }
 
-  const mapped = filteredTaskFiles.map(
-    (taskFile: {
-      status: string;
-      id: string;
-      title: string;
-      content: string;
-      createdAt: string;
-      type?: string;
-      assignee?: { id: string; name: string; email?: string; avatar?: string };
-      order?: number;
-      groupId?: string;
-      groupName?: string;
-      difficulty?: number;
-    }) => {
-      // Calculate progress based on status
-      let progressPercentage = 0;
-      switch (taskFile.status) {
-        case 'done':
-          progressPercentage = 100;
-          break;
-        case 'in-progress':
-          progressPercentage = 50;
-          break;
-        case 'paused':
-          progressPercentage = 30;
-          break;
-        case 'pending':
-          progressPercentage = 0;
-          break;
-        case 'blocked':
-          progressPercentage = 20;
-          break;
-      }
+  const mapped = filtered.map((source) => {
+    const progressPercentage = PROGRESS_BY_STATUS[source.status];
 
-      const task: Task = {
-        id: taskFile.id,
-        number: parseInt(taskFile.id, 10) || 0,
-        title: taskFile.title,
-        description: taskFile.content,
-        status: taskFile.status as TaskStatus,
-        assignee: taskFile.assignee
-          ? {
-              id: taskFile.assignee.id,
-              name: taskFile.assignee.name,
-              email: taskFile.assignee.email,
-              avatar: taskFile.assignee.avatar,
-            }
-          : undefined,
-        dates: {
-          created: taskFile.createdAt || new Date().toISOString(),
-        },
-        tags: taskFile.type ? [taskFile.type] : [],
-        progress: {
-          percentage: progressPercentage,
-        },
-        type: taskFile.type,
-        order: taskFile.order,
-        groupId: taskFile.groupId,
-        groupName: taskFile.groupName,
-        difficulty: taskFile.difficulty,
-      };
+    const task: Task = {
+      id: source.id,
+      number: parseInt(source.id, 10) || 0,
+      title: source.title,
+      description: source.description ?? '',
+      status: source.status,
+      assignee: source.assignee
+        ? {
+            id: source.assignee.id,
+            name: source.assignee.name,
+            email: source.assignee.email,
+            avatar: source.assignee.avatar,
+          }
+        : undefined,
+      dates: {
+        created: source.createdAt || new Date().toISOString(),
+      },
+      tags: source.type ? [source.type] : [],
+      progress: {
+        percentage: progressPercentage,
+      },
+      type: source.type,
+      order: source.order,
+      groupId: source.groupId,
+      groupName: source.groupName,
+      difficulty: source.difficulty,
+    };
 
-      // biome-ignore lint/suspicious/noConsole: debug log
-      console.log('Mapped task:', task.id, 'assignee:', task.assignee);
+    // biome-ignore lint/suspicious/noConsole: debug log
+    console.log('Mapped task:', task.id, 'assignee:', task.assignee);
 
-      return task;
-    },
-  );
+    return task;
+  });
 
   return mapped;
 });

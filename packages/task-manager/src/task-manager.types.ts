@@ -1,4 +1,4 @@
-import type { Task, TaskType, User } from '@opentask/taskin-types';
+import type { Task, TaskType } from '@opentask/taskin-types';
 
 /**
  * Options for creating a new task
@@ -16,16 +16,20 @@ export interface CreateTaskOptions {
 }
 
 /**
- * Result of creating a new task
+ * Result of creating a new task.
+ *
+ * Providers are free to return a wider object (e.g. the file system provider
+ * adds `filePath`); returning extra fields is allowed because the result is
+ * only ever consumed through this contract.
+ *
+ * @typeParam TTask - The task shape produced by the provider
  * @public
  */
-export interface CreateTaskResult {
+export interface CreateTaskResult<TTask extends Task = Task> {
   /** The created task */
-  task: TaskFile;
+  task: TTask;
   /** The generated task ID */
   taskId: string;
-  /** The file path where the task was created */
-  filePath: string;
 }
 
 /**
@@ -69,28 +73,20 @@ export interface LintResult {
 }
 
 /**
- * A task with additional file system metadata.
- * Extends the base Task type with content and path information.
- * @public
- */
-export type TaskFile = Task & {
-  /** The raw markdown content of the task file */
-  content: string;
-  /** Absolute or relative path to the task file */
-  filePath: string;
-  /** The type of work this task represents */
-  type: TaskType;
-  /** Optional user assigned to this task */
-  assignee?: User;
-};
-
-/**
  * Interface for task storage providers.
  * Implementations handle reading and writing tasks from different sources
- * (e.g., file system, database, API).
+ * (e.g., file system, GitHub issues, Redmine).
+ *
+ * The task shape is a type parameter so that a provider can enrich `Task` with
+ * whatever its backing store requires — the file system provider carries
+ * `content`/`filePath`, a Redmine provider would carry its own fields — without
+ * that shape leaking into this package. Consumers that do not care about the
+ * extra fields can simply use the default and work with plain `Task`.
+ *
+ * @typeParam TTask - The task shape this provider reads and writes
  * @public
  */
-export interface ITaskProvider {
+export interface ITaskProvider<TTask extends Task = Task> {
   /**
    * Initialize the provider, performing any necessary setup or loading.
    * This may involve reading existing tasks, setting up connections, etc.
@@ -102,26 +98,26 @@ export interface ITaskProvider {
    * @param taskId - The unique identifier of the task
    * @returns The task if found, undefined otherwise
    */
-  findTask(taskId: string): Promise<TaskFile | undefined>;
+  findTask(taskId: string): Promise<TTask | undefined>;
 
   /**
    * Retrieve all tasks from the provider.
    * @returns Array of all tasks
    */
-  getAllTasks(): Promise<TaskFile[]>;
+  getAllTasks(): Promise<TTask[]>;
 
   /**
    * Update an existing task.
    * @param task - The task with updated information
    */
-  updateTask(task: TaskFile): Promise<void>;
+  updateTask(task: TTask): Promise<void>;
 
   /**
    * Create a new task.
    * @param options - Options for creating the task
    * @returns The created task information
    */
-  createTask(options: CreateTaskOptions): Promise<CreateTaskResult>;
+  createTask(options: CreateTaskOptions): Promise<CreateTaskResult<TTask>>;
 
   /**
    * Validate all tasks managed by this provider.
@@ -135,9 +131,16 @@ export interface ITaskProvider {
 /**
  * Interface for task management operations.
  * Provides high-level methods for managing task workflow and state transitions.
+ *
+ * Mirrors the provider's task shape: a manager built on top of the file system
+ * provider hands back the provider's richer task, while a manager built on any
+ * other provider hands back that provider's shape. This package never needs to
+ * know which one it is.
+ *
+ * @typeParam TTask - The task shape produced by the underlying provider
  * @public
  */
-export interface ITaskManager {
+export interface ITaskManager<TTask extends Task = Task> {
   /**
    * Mark a task as finished.
    * Transitions the task to 'done' status.
@@ -145,7 +148,7 @@ export interface ITaskManager {
    * @returns The updated task
    * @throws Error if task is not found
    */
-  finishTask(taskId: string): Promise<TaskFile>;
+  finishTask(taskId: string): Promise<TTask>;
 
   /**
    * Mark a task as ready for review.
@@ -154,23 +157,34 @@ export interface ITaskManager {
    * @returns The updated task
    * @throws Error if task is not found or not in 'in-progress' status
    */
-  reviewTask(taskId: string): Promise<TaskFile>;
+  reviewTask(taskId: string): Promise<TTask>;
 
   /**
    * Start working on a task.
    * Transitions the task to 'in-progress' status.
+   * Also used to resume a paused task.
    * @param taskId - The unique identifier of the task
    * @returns The updated task
    * @throws Error if task is not found, already in progress, or already done
    */
-  startTask(taskId: string): Promise<TaskFile>;
+  startTask(taskId: string): Promise<TTask>;
+
+  /**
+   * Pause work on a task.
+   * Transitions the task from 'in-progress' to 'paused' status.
+   * Resume with {@link ITaskManager.startTask}.
+   * @param taskId - The unique identifier of the task
+   * @returns The updated task
+   * @throws Error if task is not found or not in 'in-progress' status
+   */
+  pauseTask(taskId: string): Promise<TTask>;
 
   /**
    * Create a new task.
    * @param options - Options for creating the task
    * @returns The created task information
    */
-  createTask(options: CreateTaskOptions): Promise<CreateTaskResult>;
+  createTask(options: CreateTaskOptions): Promise<CreateTaskResult<TTask>>;
 
   /**
    * Validate all tasks in the system.

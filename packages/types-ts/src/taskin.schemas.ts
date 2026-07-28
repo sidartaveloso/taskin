@@ -22,7 +22,7 @@ export const TaskIdSchema = z.string().uuid().brand('TaskId');
  * TASK_STATUSES.forEach(status => console.log(status));
  * ```
  */
-export const TASK_STATUSES = ['pending', 'in-progress', 'in-review', 'done', 'blocked', 'canceled'] as const;
+export const TASK_STATUSES = ['pending', 'in-progress', 'paused', 'in-review', 'done', 'blocked', 'canceled'] as const;
 
 /**
  * All possible task type values.

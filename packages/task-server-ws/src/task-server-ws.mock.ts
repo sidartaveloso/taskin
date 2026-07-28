@@ -4,69 +4,47 @@ import type {
   ITaskManager,
   ITaskProvider,
   LintResult,
-  TaskFile,
 } from '@opentask/taskin-task-manager';
-import type { TaskId } from '@opentask/taskin-types';
+import type { Task, TaskId } from '@opentask/taskin-types';
 import type { TaskServerConfig, WebSocketServerOptions } from './task-server-ws.types.js';
 
+const buildTask = (taskId: string, overrides: Partial<Task> = {}): Task => ({
+  id: taskId satisfies string as TaskId,
+  title: `Task ${taskId}`,
+  status: 'pending',
+  type: 'feat',
+  createdAt: new Date().toISOString(),
+  ...overrides,
+});
+
 /**
- * Mock TaskManager for testing
+ * Mock TaskManager for testing.
+ *
+ * Speaks plain `Task`: the server is generic over the provider's shape, so the
+ * mocks have no reason to invent file system fields.
  */
 export class MockTaskManager implements ITaskManager {
-  async startTask(taskId: string): Promise<TaskFile> {
-    const task: TaskFile = {
-      id: taskId as TaskId,
-      title: `Task ${taskId}`,
-      status: 'in-progress',
-      type: 'feat',
-      filePath: `./TASKS/task-${taskId}.md`,
-      content: `# Task ${taskId}`,
-      createdAt: new Date().toISOString(),
-    };
-    return task;
+  async startTask(taskId: string): Promise<Task> {
+    return buildTask(taskId, { status: 'in-progress' });
   }
 
-  async finishTask(taskId: string): Promise<TaskFile> {
-    const task: TaskFile = {
-      id: taskId as TaskId,
-      title: `Task ${taskId}`,
-      status: 'done',
-      type: 'feat',
-      filePath: `./TASKS/task-${taskId}.md`,
-      content: `# Task ${taskId}`,
-      createdAt: new Date().toISOString(),
-    };
-    return task;
+  async pauseTask(taskId: string): Promise<Task> {
+    return buildTask(taskId, { status: 'paused' });
   }
 
-  async reviewTask(taskId: string): Promise<TaskFile> {
-    const task: TaskFile = {
-      id: taskId as TaskId,
-      title: `Task ${taskId}`,
-      status: 'in-review',
-      type: 'feat',
-      filePath: `./TASKS/task-${taskId}.md`,
-      content: `# Task ${taskId}`,
-      createdAt: new Date().toISOString(),
-    };
-    return task;
+  async finishTask(taskId: string): Promise<Task> {
+    return buildTask(taskId, { status: 'done' });
+  }
+
+  async reviewTask(taskId: string): Promise<Task> {
+    return buildTask(taskId, { status: 'in-review' });
   }
 
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
     const taskId = '001';
-    const task: TaskFile = {
-      id: taskId as TaskId,
-      title: options.title,
-      status: 'pending',
-      type: options.type,
-      filePath: `./TASKS/task-${taskId}.md`,
-      content: `# Task ${taskId}`,
-      createdAt: new Date().toISOString(),
-    };
     return {
-      task,
+      task: buildTask(taskId, { title: options.title, type: options.type }),
       taskId,
-      filePath: task.filePath,
     };
   }
 
@@ -88,21 +66,21 @@ export class MockTaskProvider implements ITaskProvider {
   async initialize(): Promise<void> {
     return;
   }
-  private tasks: TaskFile[] = [];
+  private tasks: Task[] = [];
 
-  constructor(initialTasks: TaskFile[] = []) {
+  constructor(initialTasks: Task[] = []) {
     this.tasks = initialTasks;
   }
 
-  async findTask(taskId: string): Promise<TaskFile | undefined> {
+  async findTask(taskId: string): Promise<Task | undefined> {
     return this.tasks.find((t) => t.id === taskId);
   }
 
-  async getAllTasks(): Promise<TaskFile[]> {
+  async getAllTasks(): Promise<Task[]> {
     return this.tasks;
   }
 
-  async updateTask(task: TaskFile): Promise<void> {
+  async updateTask(task: Task): Promise<void> {
     const idx = this.tasks.findIndex((t) => t.id === task.id);
     if (idx >= 0) {
       this.tasks[idx] = task;
@@ -114,7 +92,7 @@ export class MockTaskProvider implements ITaskProvider {
   /**
    * Add tasks to the mock provider
    */
-  addTasks(tasks: TaskFile[]): void {
+  addTasks(tasks: Task[]): void {
     this.tasks.push(...tasks);
   }
 
@@ -128,27 +106,15 @@ export class MockTaskProvider implements ITaskProvider {
   /**
    * Get all tasks (for testing)
    */
-  getTasks(): TaskFile[] {
+  getTasks(): Task[] {
     return this.tasks;
   }
 
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
     const taskId = String(this.tasks.length + 1).padStart(3, '0');
-    const task: TaskFile = {
-      id: taskId as TaskId,
-      title: options.title,
-      status: 'pending',
-      type: options.type,
-      filePath: `./TASKS/task-${taskId}.md`,
-      content: `# Task ${taskId}`,
-      createdAt: new Date().toISOString(),
-    };
+    const task = buildTask(taskId, { title: options.title, type: options.type });
     this.tasks.push(task);
-    return {
-      task,
-      taskId,
-      filePath: task.filePath,
-    };
+    return { task, taskId };
   }
 
   async lint(): Promise<LintResult> {

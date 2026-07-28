@@ -38,8 +38,10 @@ const tasksByStatus = computed(() => {
     inProgress: props.tasks.filter((t) => t.status === 'in-progress'),
     blocked: props.tasks.filter((t) => t.status === 'blocked'),
     paused: props.tasks.filter((t) => t.status === 'paused'),
+    inReview: props.tasks.filter((t) => t.status === 'in-review'),
     pending: props.tasks.filter((t) => t.status === 'pending'),
     done: props.tasks.filter((t) => t.status === 'done'),
+    canceled: props.tasks.filter((t) => t.status === 'canceled'),
   };
 });
 
@@ -49,8 +51,10 @@ const statusCounts = computed(() => ({
   inProgress: tasksByStatus.value.inProgress.length,
   blocked: tasksByStatus.value.blocked.length,
   paused: tasksByStatus.value.paused.length,
+  inReview: tasksByStatus.value.inReview.length,
   pending: tasksByStatus.value.pending.length,
   done: tasksByStatus.value.done.length,
+  canceled: tasksByStatus.value.canceled.length,
 }));
 </script>
 
@@ -80,6 +84,10 @@ const statusCounts = computed(() => ({
         <div class="stat stat--paused" v-if="statusCounts.paused > 0">
           <span class="stat__value">{{ statusCounts.paused }}</span>
           <span class="stat__label">Pausadas</span>
+        </div>
+        <div class="stat stat--in-review" v-if="statusCounts.inReview > 0">
+          <span class="stat__value">{{ statusCounts.inReview }}</span>
+          <span class="stat__label">Em Revisão</span>
         </div>
       </div>
     </div>
@@ -211,6 +219,14 @@ const statusCounts = computed(() => ({
 
 .stat--paused .stat__value {
   color: var(--status-paused-bg);
+}
+
+.stat--in-review {
+  background: var(--bg-section-light);
+}
+
+.stat--in-review .stat__value {
+  color: var(--bg-header);
 }
 
 /* Grid */

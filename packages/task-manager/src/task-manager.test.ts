@@ -1,13 +1,14 @@
+import type { Task } from '@opentask/taskin-types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskManager } from './task-manager';
 import { createMockTask, createMockTaskProvider } from './task-manager.mock';
-import type { ITaskProvider, TaskFile } from './task-manager.types';
+import type { ITaskProvider } from './task-manager.types';
 
 describe('TaskManager', () => {
   let taskManager: TaskManager;
   let mockTaskProvider: ITaskProvider;
-  let mockTask: TaskFile;
+  let mockTask: Task;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -37,6 +38,40 @@ describe('TaskManager', () => {
       (mockTaskProvider.findTask as Mock).mockResolvedValue(inProgressTask);
 
       await expect(taskManager.startTask('task-001')).rejects.toThrow("Task 'task-001' is already in progress.");
+    });
+  });
+
+  describe('pauseTask', () => {
+    it('should pause an in-progress task', async () => {
+      const inProgressTask = { ...mockTask, status: 'in-progress' as const };
+      (mockTaskProvider.findTask as Mock).mockResolvedValue(inProgressTask);
+
+      const updatedTask = await taskManager.pauseTask('task-001');
+
+      expect(mockTaskProvider.updateTask).toHaveBeenCalledWith(expect.objectContaining({ status: 'paused' }));
+      expect(updatedTask.status).toBe('paused');
+    });
+
+    it('should throw an error if task is not found', async () => {
+      (mockTaskProvider.findTask as Mock).mockResolvedValue(undefined);
+
+      await expect(taskManager.pauseTask('not-found')).rejects.toThrow("Task with ID 'not-found' not found.");
+    });
+
+    it('should throw an error if task is not in-progress', async () => {
+      (mockTaskProvider.findTask as Mock).mockResolvedValue({ ...mockTask, status: 'pending' as const });
+
+      await expect(taskManager.pauseTask('task-001')).rejects.toThrow(
+        "Task 'task-001' must be in 'in-progress' status to be paused",
+      );
+    });
+
+    it('should let startTask resume a paused task', async () => {
+      (mockTaskProvider.findTask as Mock).mockResolvedValue({ ...mockTask, status: 'paused' as const });
+
+      const updatedTask = await taskManager.startTask('task-001');
+
+      expect(updatedTask.status).toBe('in-progress');
     });
   });
 
@@ -95,6 +130,31 @@ describe('TaskManager', () => {
       await expect(taskManager.reviewTask('task-001')).rejects.toThrow(
         "Task 'task-001' must be in 'in-progress' status to be reviewed",
       );
+    });
+  });
+
+  describe('provider-specific fields', () => {
+    // The manager is generic over the provider's task shape, so extra fields a
+    // provider carries (filePath/content for the file system, an issue number
+    // for a tracker) must survive a status transition untouched.
+    type ProviderTask = Task & { filePath: string; content: string };
+
+    it('should preserve provider fields through a transition', async () => {
+      const providerTask: ProviderTask = {
+        ...createMockTask(),
+        filePath: '/tasks/task-001.md',
+        content: '# Task 001',
+      };
+      const provider = createMockTaskProvider() as unknown as ITaskProvider<ProviderTask>;
+      (provider.findTask as Mock).mockResolvedValue(providerTask);
+
+      const manager = new TaskManager(provider);
+      const updated = await manager.startTask('task-001');
+
+      expect(updated.filePath).toBe('/tasks/task-001.md');
+      expect(updated.content).toBe('# Task 001');
+      expect(updated.status).toBe('in-progress');
+      expect(provider.updateTask).toHaveBeenCalledWith(expect.objectContaining({ filePath: '/tasks/task-001.md' }));
     });
   });
 

@@ -1,4 +1,5 @@
-import type { ITaskManager, ITaskProvider, TaskFile } from '@opentask/taskin-task-manager';
+import type { ITaskManager, ITaskProvider } from '@opentask/taskin-task-manager';
+import type { Task } from '@opentask/taskin-types';
 import { randomUUID } from 'crypto';
 import { WebSocket, WebSocketServer } from 'ws';
 import type {
@@ -12,16 +13,16 @@ import type {
 /**
  * WebSocket server for real-time task management
  */
-export class TaskWebSocketServer implements ITaskServer {
+export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServer {
   private wss: WebSocketServer | null = null;
   private clients: Map<string, ClientConnection> = new Map();
   private heartbeatInterval: NodeJS.Timeout | null = null;
-  private taskManager: ITaskManager;
-  private taskProvider: ITaskProvider;
+  private taskManager: ITaskManager<TTask>;
+  private taskProvider: ITaskProvider<TTask>;
   private options: Required<WebSocketServerOptions>;
   private isRunning = false;
 
-  constructor(config: TaskServerConfig) {
+  constructor(config: TaskServerConfig<TTask>) {
     this.taskManager = config.taskManager;
     this.taskProvider = config.taskProvider;
     this.options = {
@@ -320,7 +321,7 @@ export class TaskWebSocketServer implements ITaskServer {
    * Handle update request
    */
   private async handleUpdateRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
-    const task = message.payload as TaskFile;
+    const task = message.payload as TTask;
     await this.taskProvider.updateTask(task);
 
     // Broadcast update to all clients
@@ -363,20 +364,13 @@ export class TaskWebSocketServer implements ITaskServer {
    */
   private async handlePauseRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
     const { taskId } = message.payload as { taskId: string };
-    // Note: Assuming TaskManager will have a pauseTask method
-    // For now, we'll update the task status manually
-    const task = await this.taskProvider.findTask(taskId);
+    const task = await this.taskManager.pauseTask(taskId);
 
-    if (task) {
-      task.status = 'pending';
-      await this.taskProvider.updateTask(task);
-
-      // Broadcast update to all clients
-      this.broadcast({
-        type: 'task:updated',
-        payload: task,
-      });
-    }
+    // Broadcast update to all clients
+    this.broadcast({
+      type: 'task:updated',
+      payload: task,
+    });
   }
 
   /**
@@ -422,12 +416,12 @@ export class TaskWebSocketServer implements ITaskServer {
 /**
  * Create and start a WebSocket server for task management
  */
-export async function createTaskWebSocketServer(
-  taskManager: ITaskManager,
-  taskProvider: ITaskProvider,
+export async function createTaskWebSocketServer<TTask extends Task = Task>(
+  taskManager: ITaskManager<TTask>,
+  taskProvider: ITaskProvider<TTask>,
   options?: WebSocketServerOptions,
-): Promise<TaskWebSocketServer> {
-  const server = new TaskWebSocketServer({
+): Promise<TaskWebSocketServer<TTask>> {
+  const server = new TaskWebSocketServer<TTask>({
     taskManager,
     taskProvider,
     options,

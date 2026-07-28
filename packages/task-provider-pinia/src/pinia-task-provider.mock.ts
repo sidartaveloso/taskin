@@ -1,18 +1,15 @@
-import type { TaskFile } from '@opentask/taskin-task-manager';
-import type { TaskId, TaskStatus, TaskType } from '@opentask/taskin-types';
+import type { Task, TaskId, TaskStatus, TaskType } from '@opentask/taskin-types';
 
 /**
  * Create mock task for testing
  */
-export function createMockTask(overrides?: Partial<TaskFile>): TaskFile {
-  const defaultTask: TaskFile = {
+export function createMockTask(overrides?: Partial<Task>): Task {
+  const defaultTask: Task = {
     id: '550e8400-e29b-41d4-a716-446655440000' as TaskId,
     title: 'Implement user authentication',
     description: 'Add JWT-based authentication to the API',
     status: 'in-progress' as TaskStatus,
     type: 'feat' as TaskType,
-    filePath: './TASKS/task-001-implement-user-authentication.md',
-    content: '# Task 001 — Implement user authentication\n\nDescription goes here',
     createdAt: '2024-01-01T00:00:00.000Z',
   };
 
@@ -22,7 +19,7 @@ export function createMockTask(overrides?: Partial<TaskFile>): TaskFile {
 /**
  * Create array of mock tasks
  */
-export function createMockTasks(count: number = 5): TaskFile[] {
+export function createMockTasks(count: number = 5): Task[] {
   const statuses: TaskStatus[] = ['pending', 'in-progress', 'done', 'blocked'];
   const types: TaskType[] = ['feat', 'fix', 'docs', 'refactor'];
 
@@ -33,7 +30,6 @@ export function createMockTasks(count: number = 5): TaskFile[] {
       title: `Task ${i + 1}`,
       status: statuses[i % statuses.length],
       type: types[i % types.length],
-      filePath: `./TASKS/task-${String(i + 1).padStart(3, '0')}-example.md`,
     });
   });
 }
@@ -99,25 +95,25 @@ export class MockWebSocket {
  * Mock WebSocket server responses
  */
 export const mockWebSocketResponses = {
-  tasksList: (tasks: TaskFile[]) => ({
+  tasksList: (tasks: Task[]) => ({
     type: 'tasks',
     payload: tasks,
     timestamp: Date.now(),
   }),
 
-  taskFound: (task: TaskFile) => ({
+  taskFound: (task: Task) => ({
     type: 'task:found',
     payload: task,
     timestamp: Date.now(),
   }),
 
-  taskUpdated: (task: TaskFile) => ({
+  taskUpdated: (task: Task) => ({
     type: 'task:updated',
     payload: task,
     timestamp: Date.now(),
   }),
 
-  taskCreated: (task: TaskFile) => ({
+  taskCreated: (task: Task) => ({
     type: 'task:created',
     payload: task,
     timestamp: Date.now(),

@@ -1,3 +1,4 @@
+import { TASK_STATUSES, TASK_TYPES } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import { readdir, readFile } from 'fs/promises';
 import { join } from 'path';
@@ -8,8 +9,10 @@ import type {
   TaskMetadata,
 } from './file-system-task-linter.types.js';
 
-const VALID_STATUSES = ['pending', 'in-progress', 'done', 'blocked'];
-const VALID_TYPES = ['feat', 'fix', 'chore', 'docs', 'refactor', 'test'];
+// Derived from the domain so the linter cannot drift from what the task
+// manager actually writes ('in-review' and 'canceled' were both rejected here).
+const VALID_STATUSES: readonly string[] = TASK_STATUSES;
+const VALID_TYPES: readonly string[] = TASK_TYPES;
 
 /**
  * FileSystem-specific task linter implementation
