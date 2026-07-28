@@ -1,4 +1,5 @@
-import type { ITaskProvider, TaskFile } from '@opentask/taskin-task-manager';
+import type { ITaskProvider } from '@opentask/taskin-task-manager';
+import type { Task } from '@opentask/taskin-types';
 import { defineStore } from 'pinia';
 import type { PiniaTaskProviderConfig, PiniaTaskStoreState, WebSocketMessage } from './pinia-task-provider.types.js';
 
@@ -34,9 +35,9 @@ interface PiniaStoreContext extends PiniaTaskStoreState {
   _startHeartbeat(): void;
   _stopHeartbeat(): void;
   _log(...args: unknown[]): void;
-  findTask(taskId: string): Promise<TaskFile | undefined>;
-  getAllTasks(): Promise<TaskFile[]>;
-  updateTask(task: TaskFile): Promise<void>;
+  findTask(taskId: string): Promise<Task | undefined>;
+  getAllTasks(): Promise<Task[]>;
+  updateTask(task: Task): Promise<void>;
 }
 
 /**
@@ -57,14 +58,14 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
      * Get task by ID
      */
     taskById(state: PiniaTaskStoreState) {
-      return (id: string) => state.tasks.find((t: TaskFile) => t.id === id);
+      return (id: string) => state.tasks.find((t: Task) => t.id === id);
     },
 
     /**
      * Get tasks filtered by status
      */
     tasksByStatus(state: PiniaTaskStoreState) {
-      return (status: string) => state.tasks.filter((t: TaskFile) => t.status === status);
+      return (status: string) => state.tasks.filter((t: Task) => t.status === status);
     },
 
     /**
@@ -211,7 +212,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
       switch (message.type) {
         case 'tasks':
           // Full task list received
-          this.tasks = (message.payload as TaskFile[]) || [];
+          this.tasks = (message.payload as Task[]) || [];
           this._log('Received tasks:', this.tasks.length);
           // Debug first task
           if (this.tasks.length > 0) {
@@ -224,8 +225,8 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
         case 'task:found':
           // Single task response
           if (message.payload) {
-            const task = message.payload as TaskFile;
-            const idx = this.tasks.findIndex((t: TaskFile) => t.id === task.id);
+            const task = message.payload as Task;
+            const idx = this.tasks.findIndex((t: Task) => t.id === task.id);
             if (idx >= 0) {
               this.tasks[idx] = task;
             } else {
@@ -237,8 +238,8 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
         case 'task:updated':
           // Task was updated
           if (message.payload) {
-            const task = message.payload as TaskFile;
-            const idx = this.tasks.findIndex((t: TaskFile) => t.id === task.id);
+            const task = message.payload as Task;
+            const idx = this.tasks.findIndex((t: Task) => t.id === task.id);
             if (idx >= 0) {
               this.tasks[idx] = task;
             }
@@ -248,7 +249,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
         case 'task:created':
           // New task created
           if (message.payload) {
-            const task = message.payload as TaskFile;
+            const task = message.payload as Task;
             this.tasks.push(task);
           }
           break;
@@ -257,7 +258,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           // Task was deleted
           if (message.payload) {
             const taskId = (message.payload as { id: string }).id;
-            this.tasks = this.tasks.filter((t: TaskFile) => t.id !== taskId);
+            this.tasks = this.tasks.filter((t: Task) => t.id !== taskId);
           }
           break;
 
@@ -367,9 +368,9 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Find a task by ID
      */
-    async findTask(this: PiniaStoreContext, taskId: string): Promise<TaskFile | undefined> {
+    async findTask(this: PiniaStoreContext, taskId: string): Promise<Task | undefined> {
       // Check cache first
-      const cached = this.tasks.find((t: TaskFile) => t.id === taskId);
+      const cached = this.tasks.find((t: Task) => t.id === taskId);
       if (cached) {
         return cached;
       }
@@ -392,7 +393,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           // request/response correlation mechanism
           setTimeout(() => {
             clearTimeout(timeout);
-            resolve(this.tasks.find((t: TaskFile) => t.id === taskId));
+            resolve(this.tasks.find((t: Task) => t.id === taskId));
           }, TASK_RESPONSE_DELAY);
         });
       }
@@ -403,7 +404,7 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Get all tasks
      */
-    async getAllTasks(this: PiniaStoreContext): Promise<TaskFile[]> {
+    async getAllTasks(this: PiniaStoreContext): Promise<Task[]> {
       // Return cached tasks if available
       if (this.tasks.length > 0) {
         return this.tasks;
@@ -439,13 +440,13 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     /**
      * Update a task
      */
-    async updateTask(this: PiniaStoreContext, task: TaskFile): Promise<void> {
+    async updateTask(this: PiniaStoreContext, task: Task): Promise<void> {
       if (!this.connected) {
         throw new Error('Not connected to server');
       }
 
       // Optimistically update cache
-      const idx = this.tasks.findIndex((t: TaskFile) => t.id === task.id);
+      const idx = this.tasks.findIndex((t: Task) => t.id === task.id);
       if (idx >= 0) {
         this.tasks[idx] = task;
       }
@@ -474,7 +475,7 @@ export function createPiniaTaskProvider(config: PiniaTaskProviderConfig): ITaskP
   return {
     findTask: (taskId: string) => store.findTask(taskId),
     getAllTasks: () => store.getAllTasks(),
-    updateTask: (task: TaskFile) => store.updateTask(task),
+    updateTask: (task: Task) => store.updateTask(task),
     createTask: async () => {
       throw new Error('createTask not supported in Pinia provider (WebSocket-based)');
     },

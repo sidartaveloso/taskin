@@ -22,7 +22,7 @@ const meta: Meta<typeof TaskCard> = {
     },
     status: {
       control: 'select',
-      options: ['pending', 'in-progress', 'paused', 'done', 'blocked'],
+      options: ['pending', 'in-progress', 'paused', 'in-review', 'done', 'blocked', 'canceled'],
       description: 'Task status',
     },
     variant: {

@@ -67,7 +67,7 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
   }
 
   // Define status categories
-  const openStatuses: TaskStatus[] = ['pending', 'in-progress', 'blocked'];
+  const openStatuses: TaskStatus[] = ['pending', 'in-progress', 'paused', 'in-review', 'blocked'];
   const closedStatuses: TaskStatus[] = ['done', 'canceled'];
 
   // Apply filters
@@ -132,13 +132,14 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
   const statusCounts = {
     pending: filteredTasks.filter((t) => t.status === 'pending').length,
     'in-progress': filteredTasks.filter((t) => t.status === 'in-progress').length,
+    paused: filteredTasks.filter((t) => t.status === 'paused').length,
     done: filteredTasks.filter((t) => t.status === 'done').length,
     blocked: filteredTasks.filter((t) => t.status === 'blocked').length,
   };
 
   console.log(
     colors.info(
-      `📊 Total: ${filteredTasks.length} tasks | ⏳ Pending: ${statusCounts.pending} | 🚀 In Progress: ${statusCounts['in-progress']} | ✅ Done: ${statusCounts.done} | 🚫 Blocked: ${statusCounts.blocked}`,
+      `📊 Total: ${filteredTasks.length} tasks | ⏳ Pending: ${statusCounts.pending} | 🚀 In Progress: ${statusCounts['in-progress']} | ⏸️  Paused: ${statusCounts.paused} | ✅ Done: ${statusCounts.done} | 🚫 Blocked: ${statusCounts.blocked}`,
     ),
   );
   console.log();
@@ -150,6 +151,8 @@ function getStatusColor(status: TaskStatus): (text: string) => string {
       return colors.secondary;
     case 'in-progress':
       return colors.info;
+    case 'paused':
+      return colors.warning;
     case 'done':
       return colors.success;
     case 'blocked':

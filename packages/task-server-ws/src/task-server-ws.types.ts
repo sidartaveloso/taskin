@@ -1,19 +1,24 @@
 import type { ITaskManager, ITaskProvider } from '@opentask/taskin-task-manager';
+import type { Task } from '@opentask/taskin-types';
 import type { WebSocket as WSType } from 'ws';
 
 /**
- * WebSocket server configuration
+ * WebSocket server configuration.
+ *
+ * @typeParam TTask - The task shape the wired manager and provider speak; it is
+ * what gets serialized to clients, so a file-backed setup broadcasts the file
+ * fields while any other provider broadcasts its own.
  */
-export interface TaskServerConfig {
+export interface TaskServerConfig<TTask extends Task = Task> {
   /**
    * TaskManager instance to expose via WebSocket
    */
-  taskManager: ITaskManager;
+  taskManager: ITaskManager<TTask>;
 
   /**
    * TaskProvider instance for reading tasks
    */
-  taskProvider: ITaskProvider;
+  taskProvider: ITaskProvider<TTask>;
 
   /**
    * Server options

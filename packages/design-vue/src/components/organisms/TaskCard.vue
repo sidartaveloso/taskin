@@ -75,12 +75,14 @@ const computedTask = computed((): Task => {
 });
 
 // Status badge variant mapping
-const statusVariantMap: Record<TaskStatus, 'default' | 'primary' | 'warning' | 'success' | 'danger'> = {
+const statusVariantMap: Record<TaskStatus, 'default' | 'primary' | 'info' | 'warning' | 'success' | 'danger'> = {
   pending: 'default',
   'in-progress': 'primary',
   paused: 'warning',
+  'in-review': 'info',
   done: 'success',
   blocked: 'danger',
+  canceled: 'default',
 };
 
 // Progress bar variant based on status
@@ -101,8 +103,10 @@ const statusLabel = computed(() => {
     pending: 'Pendente',
     'in-progress': 'Em Progresso',
     paused: 'Pausada',
+    'in-review': 'Em Revisão',
     done: 'Concluída',
     blocked: 'Bloqueada',
+    canceled: 'Cancelada',
   };
   return labels[computedTask.value.status];
 });
@@ -281,6 +285,15 @@ const formatDate = (date: Date | string): string => {
 
 .task-card--paused {
   border-color: var(--status-paused-bg);
+}
+
+.task-card--in-review {
+  border-color: var(--bg-header);
+}
+
+.task-card--canceled {
+  border-color: var(--border-muted);
+  opacity: 0.6;
 }
 
 /* Warning state */

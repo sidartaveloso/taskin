@@ -3,6 +3,8 @@ import type { IMetricsManager } from '@opentask/taskin-task-manager';
 import {
   type GitCommit,
   type StatsQuery,
+  TASK_STATUSES,
+  TASK_TYPES,
   type TaskStats,
   type TaskStatus,
   type TaskType,
@@ -393,8 +395,8 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
       const typeValue = extract('Type');
 
       // Validate and cast to proper types
-      const validStatuses: TaskStatus[] = ['pending', 'in-progress', 'done', 'blocked', 'canceled'];
-      const validTypes: TaskType[] = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'];
+      const validStatuses: readonly TaskStatus[] = TASK_STATUSES;
+      const validTypes: readonly TaskType[] = TASK_TYPES;
 
       const status = validStatuses.includes(statusValue as TaskStatus) ? (statusValue as TaskStatus) : undefined;
       const type = validTypes.includes(typeValue as TaskType) ? (typeValue as TaskType) : undefined;
@@ -589,7 +591,7 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     const tasks = await this.readTaskFiles();
     const found = tasks.find((t) => t.id === taskId || t.filePath.includes(taskId));
     const now = new Date();
-    const validStatuses: TaskStatus[] = ['pending', 'in-progress', 'done', 'blocked', 'canceled'];
+    const validStatuses: readonly TaskStatus[] = TASK_STATUSES;
 
     const base = {
       taskId,

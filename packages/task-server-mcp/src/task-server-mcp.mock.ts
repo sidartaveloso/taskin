@@ -1,44 +1,38 @@
-import type {
-  CreateTaskOptions,
-  CreateTaskResult,
-  ITaskManager,
-  LintResult,
-  TaskFile,
-} from '@opentask/taskin-task-manager';
+import type { CreateTaskOptions, CreateTaskResult, ITaskManager, LintResult } from '@opentask/taskin-task-manager';
+import type { Task, TaskId } from '@opentask/taskin-types';
 import type { MCPServerConfig } from './task-server-mcp.types.js';
 
 /**
- * Mock TaskManager for MCP testing
+ * Mock TaskManager for MCP testing.
+ *
+ * The MCP server only ever exposes id/title/status/type, so the mock stores
+ * plain `Task` — there is nothing file-shaped for it to model.
  */
 export class MockMCPTaskManager implements ITaskManager {
-  private tasks: Map<string, TaskFile> = new Map();
+  private tasks: Map<string, Task> = new Map();
 
   constructor() {
     // Add some mock tasks
     this.tasks.set('550e8400-e29b-41d4-a716-446655440001', {
-      id: '550e8400-e29b-41d4-a716-446655440001' as any,
+      id: '550e8400-e29b-41d4-a716-446655440001' satisfies string as TaskId,
       title: 'Implement user authentication',
       description: 'Add JWT-based authentication',
       status: 'pending',
       type: 'feat',
-      filePath: './TASKS/task-001.md',
-      content: '# Task 001',
       createdAt: new Date().toISOString(),
     });
 
     this.tasks.set('550e8400-e29b-41d4-a716-446655440002', {
-      id: '550e8400-e29b-41d4-a716-446655440002' as any,
+      id: '550e8400-e29b-41d4-a716-446655440002' satisfies string as TaskId,
       title: 'Fix login bug',
       description: 'Users cannot login with special characters',
       status: 'in-progress',
       type: 'fix',
-      filePath: './TASKS/task-002.md',
-      content: '# Task 002',
       createdAt: new Date().toISOString(),
     });
   }
 
-  async startTask(taskId: string): Promise<TaskFile> {
+  async startTask(taskId: string): Promise<Task> {
     const task = this.tasks.get(taskId);
     if (!task) {
       throw new Error(`Task ${taskId} not found`);
@@ -57,7 +51,22 @@ export class MockMCPTaskManager implements ITaskManager {
     return task;
   }
 
-  async finishTask(taskId: string): Promise<TaskFile> {
+  async pauseTask(taskId: string): Promise<Task> {
+    const task = this.tasks.get(taskId);
+    if (!task) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+
+    if (task.status !== 'in-progress') {
+      throw new Error(`Task must be in 'in-progress' status to be paused`);
+    }
+
+    task.status = 'paused';
+    this.tasks.set(taskId, task);
+    return task;
+  }
+
+  async finishTask(taskId: string): Promise<Task> {
     const task = this.tasks.get(taskId);
     if (!task) {
       throw new Error(`Task ${taskId} not found`);
@@ -68,7 +77,7 @@ export class MockMCPTaskManager implements ITaskManager {
     return task;
   }
 
-  async reviewTask(taskId: string): Promise<TaskFile> {
+  async reviewTask(taskId: string): Promise<Task> {
     const task = this.tasks.get(taskId);
     if (!task) {
       throw new Error(`Task ${taskId} not found`);
@@ -85,21 +94,15 @@ export class MockMCPTaskManager implements ITaskManager {
 
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
     const taskId = String(this.tasks.size + 1).padStart(3, '0');
-    const task: TaskFile = {
-      id: taskId as any,
+    const task: Task = {
+      id: taskId satisfies string as TaskId,
       title: options.title,
       status: 'pending',
       type: options.type,
-      filePath: `./TASKS/task-${taskId}.md`,
-      content: `# Task ${taskId}`,
       createdAt: new Date().toISOString(),
     };
     this.tasks.set(taskId, task);
-    return {
-      task,
-      taskId,
-      filePath: task.filePath,
-    };
+    return { task, taskId };
   }
 
   async lint(): Promise<LintResult> {
@@ -115,14 +118,14 @@ export class MockMCPTaskManager implements ITaskManager {
   /**
    * Get all tasks (for testing)
    */
-  getAllTasks(): TaskFile[] {
+  getAllTasks(): Task[] {
     return Array.from(this.tasks.values());
   }
 
   /**
    * Get task by ID (for testing)
    */
-  getTask(taskId: string): TaskFile | undefined {
+  getTask(taskId: string): Task | undefined {
     return this.tasks.get(taskId);
   }
 }

@@ -1,12 +1,10 @@
-import type { TaskId } from '@opentask/taskin-types';
+import type { Task, TaskId } from '@opentask/taskin-types';
 import { vi } from 'vitest';
-import type { ITaskProvider, TaskFile } from './task-manager.types';
+import type { ITaskProvider } from './task-manager.types';
 
-export const createMockTask = (overrides?: Partial<TaskFile>): TaskFile => ({
-  content: '# Task 001 - Implement feature',
+export const createMockTask = (overrides?: Partial<Task>): Task => ({
   createdAt: new Date().toISOString(),
   description: 'A test feature',
-  filePath: '/tasks/task-001.md',
   id: 'task-001' satisfies string as TaskId,
   status: 'pending',
   title: 'Implement feature',
