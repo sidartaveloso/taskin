@@ -58,7 +58,7 @@
     "@vitest/coverage-v8": "^4.0.18",
     "storytype": "^0.2.6",
     "tsx": "^4.21.0",
-    "turbo": "2.9.6",
+    "turbo": "2.10.7",
     "typescript": "^6.0.0",
     "vitest": "^4.0.18"
   },
