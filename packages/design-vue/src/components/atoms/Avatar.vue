@@ -7,12 +7,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-
-export interface AvatarProps {
-  name: string;
-  src?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-}
+import type { AvatarProps } from './Avatar.types';
 
 const props = withDefaults(defineProps<AvatarProps>(), {
   size: 'md',
