@@ -1,6 +1,6 @@
 # Task 031 — revisar se task-manager deveria lidar com taskfile ou task
 
-Status: in-progress
+Status: done
 Type: chore
 Assignee: A definir
 
