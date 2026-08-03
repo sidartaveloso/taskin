@@ -5,6 +5,12 @@ Type: `feat`
 Assignee: sidartaveloso
 Epic: (Vincule à Epic de Controle por Gestos, se houver)
 
+> **Nota (registro histórico):** Spec original do sistema de gestos de atalho
+> configuráveis. A implementação foi distribuída entre a task-022 (núcleo de
+> reconhecimento), task-024 (wizard reutilizável) e task-025 (integração na
+> priorização), no package `@opentask/ui-sense`. Mantida como referência do
+> comportamento desejado do wizard; não reflete a estrutura atual de arquivos.
+
 ## Description
 
 Implementar um sistema de "Atalhos por Gestos", análogo aos atalhos de teclado, mas controlado por movimentos da mão capturados pela webcam. O sistema será integrado ao módulo de reconhecimento facial, permitindo que cada usuário (pessoa identificada) possua e gerencie seu próprio conjunto de gestos de atalho.
