@@ -9,6 +9,8 @@ Depends on: task-024
 
 Após o `GestureWizard` estar reutilizável (task-024), integrá-lo na `PrioritizationScreen` e `PrioritizationPage` substituindo o mapeamento fixo atual por funções configuráveis via wizard. O usuário pode reconfigurar a qualquer momento qual gesto executa qual ação de priorização.
 
+> **Estado atual:** a integração base já existe — `PrioritizationPage.vue`/`PrioritizationScreen.vue` (em `packages/design-vue/`) já consomem o `GestureSystem` com `defaultFunctions` (definido em `packages/ui-sense/src/components/organisms/gesture-system/gesture-system.types.ts`), `focusedId` e `onGestureAction`. Esta task completa o fluxo usando a **nova API do wizard da task-024** (funções configuráveis + persistência por `userId` via `onComplete`).
+
 ## Funções expostas no wizard da tela de tasks
 
 | id               | title            | Descrição                              | Atalho teclado | Gesto padrão  |
@@ -53,14 +55,15 @@ Aproveitar a estrutura de testes existente em `PrioritizationPage.stories.ts` (m
 - [ ] Substituir `useGestureShortcuts` pelo novo fluxo baseado em array
 - [ ] Conectar `onComplete` para salvar mappings no `localStorage`
 - [ ] Adicionar `KeyboardShortcut` opcional ao `ConfigurableFunction` (se task-024 já suportar)
-- [ ] Criar `src/components/pages/PrioritizationPage.play.test.ts` com play functions
+- [ ] Criar `packages/design-vue/src/components/pages/PrioritizationPage.play.test.ts` com play functions
 - [ ] Reaproveitar `getCard`, `dragOnto`, `dragIntoGroup` dos testes existentes
 - [ ] Verificar que todos os testes de drag-and-drop existentes ainda passam
 - [ ] Typecheck + lint limpos
 
 ## Arquivos relevantes
 
-- `src/components/pages/PrioritizationPage.vue`
-- `src/components/pages/PrioritizationPage.stories.ts`
-- `src/components/molecules/gesture-wizard/gesture-wizard.vue`
-- `src/composables/use-gesture-shortcuts.ts`
+- `packages/design-vue/src/components/pages/PrioritizationPage.vue`
+- `packages/design-vue/src/components/pages/PrioritizationPage.stories.ts`
+- `packages/ui-sense/src/components/molecules/gesture-wizard/gesture-wizard.vue`
+- `packages/ui-sense/src/composables/use-gesture-shortcuts.ts`
+- `packages/ui-sense/src/components/organisms/gesture-system/gesture-system.types.ts` (`defaultFunctions`)

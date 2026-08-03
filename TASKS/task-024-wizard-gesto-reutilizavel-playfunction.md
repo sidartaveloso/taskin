@@ -6,7 +6,9 @@ Assignee: fernandogatti
 
 ## Description
 
-Refatorar o `GestureWizard` (molécula) para ser reutilizável em qualquer tela que queira expor atalhos por gestos. Em vez de hardcodar as ações de priorização, o componente deve receber um **array de funções configuráveis** como prop, e o wizard itera sobre cada uma permitindo ao usuário associar um gesto.
+Refatorar o `GestureWizard` (molécula em `packages/ui-sense/`) para ser reutilizável em qualquer tela que queira expor atalhos por gestos. Em vez de hardcodar as ações de priorização, o componente deve receber um **array de funções configuráveis** como prop, e o wizard itera sobre cada uma permitindo ao usuário associar um gesto.
+
+**Estado atual:** o `GestureWizard.types.ts` ainda usa a API antiga (`availableActions: PrioritizationAction[]` + `selectedActionIndex`), e o estado vive no `useGestureShortcuts`. O gesto candidato é selecionado navegando por ações, e não "capturando" o gesto do usuário por função.
 
 ## Requisitos
 
@@ -77,7 +79,7 @@ interface GestureWizardProps {
 
 Seguir o padrão já estabelecido em `PrioritizationPage.stories.ts` (`DragAndDropInteractions`):
 
-1. **Storybook test file:** `src/components/molecules/gesture-wizard/gesture-wizard.play.test.ts`
+1. **Storybook test file:** `packages/ui-sense/src/components/molecules/gesture-wizard/gesture-wizard.play.test.ts`
 2. **Mockar `getStableGesture` e `isGestureHeld`** para simular gestos sem webcam real
 3. **Testes:**
 
@@ -113,8 +115,9 @@ Cada story deve usar `getStableGesture` e `isGestureHeld` mockados (sem webcam) 
 
 ## Arquivos relevantes
 
-- `src/components/molecules/gesture-wizard/gesture-wizard.vue`
-- `src/components/molecules/gesture-wizard/gesture-wizard.types.ts`
-- `src/composables/use-gesture-shortcuts.ts`
-- `src/components/pages/PrioritizationPage.vue`
+- `packages/ui-sense/src/components/molecules/gesture-wizard/gesture-wizard.vue`
+- `packages/ui-sense/src/components/molecules/gesture-wizard/gesture-wizard.types.ts`
+- `packages/ui-sense/src/composables/use-gesture-shortcuts.ts`
+- `packages/ui-sense/src/components/organisms/gesture-system/gesture-system.vue`
+- `packages/design-vue/src/components/pages/PrioritizationPage.vue`
 - Referência: `PrioritizationPage.stories.ts` (padrão de play function com time mocking)

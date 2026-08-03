@@ -1,6 +1,6 @@
 # Task 027 — criar package ui-sense
 
-Status: in-progress
+Status: done
 Type: refactor
 Assignee: sidartaveloso
 
@@ -10,10 +10,11 @@ pacote de sensores e reações que possibilitam melhor interação com os usuár
 
 ## Tasks
 
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [x] Package `@opentask/ui-sense` criado em `packages/ui-sense/`
+- [x] Composables de sensores: `use-gesture-recognizer`, `use-gesture-shortcuts`, `use-face-landmarker`, `use-pose-landmarker`, `use-eye-tracking`, `use-mouse-tracking`, `use-element-tracking`
+- [x] Componentes de gesto: `GestureIcon`, `WebcamVideo`, `GestureLegend`, `GestureWizard`, `TrackingControls`, `GestureSystem`
+- [x] Consumido por design-vue (`PrioritizationPage`/`PrioritizationScreen`)
 
 ## Notes
 
-Add any relevant notes or links here.
+Estrutura atual e integração documentadas na task-022. Wizard e mapeamento configurável: tasks 024 e 025.

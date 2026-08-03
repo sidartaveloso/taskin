@@ -1,4 +1,4 @@
-# Task 022 — Gesture Recognition with MediaPipe GestureRecognizer
+# Task 022 — Gesture Recognition com MediaPipe GestureRecognizer (núcleo)
 
 Status: pending  
 Type: feat  
@@ -6,93 +6,52 @@ Assignee: developer
 
 ## Description
 
-Implementar sistema de reconhecimento de gestos manuais usando MediaPipe GestureRecognizer. O sistema deve detectar gestos das mãos do usuário via webcam e mapeá-los para ações de priorização — subir/descer task, agrupar/desagrupar, etc.
+Núcleo de reconhecimento de gestos manuais usando MediaPipe `GestureRecognizer`. Detecta gestos das mãos do usuário via webcam e expõe o estado de reconhecimento (gesto + confiança + landmarks) para consumo por outras camadas.
 
-O pacote `@opentask/ui-sense` (`packages/ui-sense/`) já contém a infraestrutura base (composables, componentes atômicos e moleculares). Esta task cobre o que ainda está pendente para completar o pipeline.
+O mapeamento gesto→ação e o wizard de configuração não fazem parte desta task — são cobertos pelas tasks 024 e 025 (e pela spec histórica 023). O package `@opentask/ui-sense` (`packages/ui-sense/`) já contém o composable base e os componentes; esta task cobre a revisão e os testes do núcleo de reconhecimento.
+
+> **Scope desta task:** `useGestureRecognizer` + componentes de apoio de reconhecimento. Wizard, mapeamento configurável e integração na priorização → ver task-024 e task-025.
 
 ## Objectives
 
-### Phase 1: Composables (done — review only)
+### Phase 1: Composable `useGestureRecognizer` (done — review only)
 
-Os seguintes composables já existem em `packages/ui-sense/src/composables/`:
+Já existe em `packages/ui-sense/src/composables/use-gesture-recognizer.ts`:
 
-- [x] `useGestureRecognizer` — reconhecimento de gestos via MediaPipe `GestureRecognizer`
-- [x] `useGestureShortcuts` — mapeamento gesto→ação configurável por usuário com wizard de calibração
+- [x] Detecção de landmarks de mãos (21 pontos por mão) via MediaPipe `GestureRecognizer`
+- [x] Canned gestures: `None`, `Closed_Fist`, `Open_Palm`, `Pointing_Up`, `Thumb_Down`, `Thumb_Up`, `Victory`, `ILoveYou`
+- [x] Tipos TypeScript: `CannedGesture`, `RecognizedGesture`, `HandLandmark`, `GestureRecognizerState`, `Handedness`, `UseGestureRecognizerOptions`
+- [x] Histerese via `isGestureHeld(gesture, minHoldMs)`
+- [x] `getStableGesture()` com threshold de confiança (default 0.6)
+- [x] `startDetection`/`stopDetection` + cleanup no `onUnmounted`
+- [x] Tratamento de erro de câmera/permissão (`state.error`)
 
 **Revisar/melhorar se necessário:**
-- [ ] Tipos: `CannedGesture`, `RecognizedGesture`, `HandLandmark`, `GestureRecognizerState`, `PrioritizationAction`, `WizardState`, `GestureMapping`
-- [ ] Histerese via `isGestureHeld(gesture, minHoldMs)` no `useGestureRecognizer`
-- [ ] `getStableGesture` com threshold de confiança (0.6)
-- [ ] Persistência de mapeamentos por `userId` no `localStorage`
+- [ ] Verificar `GestureRecognizer.createFromOptions` com `runningMode: 'IMAGE'` em loop via `requestAnimationFrame`
+- [ ] Revisar pooling/histerese de gestos (bouncing entre frames)
 
-### Phase 2: Gesture-to-Action Mapping (done — review only)
+### Phase 2: Testes do núcleo (Priority 2)
 
-O `useGestureShortcuts` já implementa o mapeamento completo com wizard:
-
-| Gesto | Ação padrão | Status |
-|-------|-------------|--------|
-| `Pointing_Up` | `moveUp` | ✅ |
-| `Thumb_Down` | `moveDown` | ✅ |
-| `Victory` | `groupWith` | ✅ |
-| `Open_Palm` | `ungroup` | ✅ |
-| `Closed_Fist` | `undo` | ✅ |
-
-Gestos adicionais disponíveis para mapeamento customizável pelo wizard:
-- `Thumb_Up`, `ILoveYou`, `None`
-
-Ações disponíveis no wizard:
-- `moveUp`, `moveDown`, `groupWith`, `ungroup`, `undo`, `copyCard`
-- `setDifficulty1`–`setDifficulty5`, `none`
-
-- [ ] Revisar polling interval (300ms no `GestureSystem`) com debounce adequado
-
-### Phase 3: UI Components (partially done)
-
-Componentes já existentes em `packages/ui-sense/src/components/`:
-
-| Componente | Tipo | Caminho | Status |
-|------------|------|---------|--------|
-| `WebcamVideo` | Atom | `atoms/webcam-video/` | ✅ |
-| `GestureIcon` | Atom | `atoms/gesture-icon/` | ✅ |
-| `GestureLegend` | Molecule | `molecules/gesture-legend/` | ✅ |
-| `GestureWizard` + `GestureWizardCard` | Molecule | `molecules/gesture-wizard/` | ✅ |
-| `TrackingControls` | Molecule | `molecules/tracking-controls/` | ✅ |
-| `GestureSystem` | Organism | `organisms/gesture-system/` | ✅ |
-
-**Integração com design-vue:**
-
-- [x] `PrioritizationPage.vue` em `packages/design-vue/src/components/pages/` — já possui `focusedId`, chama `onGestureAction`, passa `gesture-functions` e `gesture-user-id`
-- [x] `PrioritizationScreen.vue` em `packages/design-vue/src/components/templates/` — já renderiza `TrackingControls` + `GestureSystem` com webcam oculta
-
-**Pendente:**
-- [ ] Testar/validar o fluxo completo: webcam → `useGestureRecognizer` → `useGestureShortcuts` → `GestureSystem` → `PrioritizationPage.onGestureAction`
-- [ ] Feedback visual do gesto reconhecido na tela de priorização (tooltip/overlay com `GestureIcon`)
-- [ ] Storybook para `GestureSystem` já existe — verificar play function tests
-
-### Phase 4: Polish & Tests (Priority 3)
-
-- [ ] Testes unitários para `use-gesture-recognizer.ts`
-- [ ] Testes unitários para `use-gesture-shortcuts.ts` (mapeamento gesto→ação + wizard)
-- [ ] Testes de play function no storybook do `GestureSystem`
-- [ ] Testes dos componentes: `GestureIcon.spec.ts` (existe), `GestureWizardCard.spec.ts` (existe)
-- [ ] Tratamento de erro (câmera não disponível, permissão negada) — já existe no `useGestureRecognizer`, verificar UX
-- [ ] Typecheck limpo em ambos os pacotes
+- [ ] Testes unitários para `use-gesture-recognizer.ts` (estado, threshold, histerese, erro)
+- [ ] Testes dos componentes de apoio: `GestureIcon.spec.ts` (existe), `WebcamVideo.spec.ts` (existe)
+- [ ] Tratamento de erro UX (câmera não disponível, permissão negada) — verificar exposição no componente
+- [ ] Typecheck limpo em `ui-sense`
 
 ## Technical Details
 
 ### MediaPipe Gesture Recognizer
 
 **Canned gestures (built-in):**
-| Gesture | Significado | Ação padrão |
-|---------|-------------|-------------|
-| `None` | Mão não detectada/gesto neutro | Nenhuma |
-| `Closed_Fist` | Punho fechado | Undo |
-| `Open_Palm` | Mão aberta | Ungroup ou iniciar wizard |
-| `Pointing_Up` | Dedo indicador levantado | Move Up |
-| `Thumb_Down` | Polegar para baixo | Move Down |
-| `Thumb_Up` | Polegar para cima | Navegar opções no wizard |
-| `Victory` | V (paz/vitória) | Group With |
-| `ILoveYou` | 🤟 (rock on) | Configurável via wizard |
+| Gesture | Significado |
+|---------|-------------|
+| `None` | Mão não detectada/gesto neutro |
+| `Closed_Fist` | Punho fechado |
+| `Open_Palm` | Mão aberta |
+| `Pointing_Up` | Dedo indicador levantado |
+| `Thumb_Down` | Polegar para baixo |
+| `Thumb_Up` | Polegar para cima |
+| `Victory` | V (paz/vitória) |
+| `ILoveYou` | 🤟 (rock on) |
 
 **Hand Landmarks (21 points):**
 ```
@@ -121,88 +80,44 @@ Componentes já existentes em `packages/ui-sense/src/components/`:
 
 ### Histerese
 
-Implementada via `isGestureHeld()` no `use-gesture-recognizer.ts`:
+Implementada no `use-gesture-recognizer.ts`:
 - `isGestureHeld(gesture, minHoldMs)` — só retorna `true` se o gesto for mantido por `minHoldMs`
 - `getStableGesture()` — retorna o gesto com maior score que ultrapasse `gestureScoreThreshold` (default 0.6)
-
-### Wizard de Configuração
-
-O `useGestureShortcuts` implementa um wizard com estados:
-1. `IDLE` — mão aberta por 2s → `READY`
-2. `READY` — manter mão aberta por 5s ou trocar gesto → `RECORDING`
-3. `RECORDING` — fazer um gesto e segurar 2s → `SELECTING`
-4. `SELECTING` — `Thumb_Up`/`Thumb_Down` para navegar ações, `Closed_Fist` para confirmar → `CONFIRMING`
-5. `CONFIRMING` — `Closed_Fist` para salvar, `Open_Palm`/`Thumb_Down` para cancelar → `SAVED`
-
-Mapeamentos são persistidos por `userId` no `localStorage`.
-
-### Focus Tracking
-
-O item "focado" é o último item (task ou grupo) que recebeu clique ou hover:
-```typescript
-// Em PrioritizationPage.vue:
-const focusedId = ref<string | null>(null);
-// Passado para PrioritizationScreen que o injeta no drag context
-```
 
 ## File Structure (current)
 
 ```
-packages/
-├── ui-sense/src/
-│   ├── composables/
-│   │   ├── use-gesture-recognizer.ts     (gestão do MediaPipe GestureRecognizer)
-│   │   ├── use-gesture-shortcuts.ts      (mapeamento gesto→ação + wizard)
-│   │   └── index.ts                      (re-exporta ambos)
-│   └── components/
-│       ├── atoms/
-│       │   ├── gesture-icon/             (GestureIcon.vue + types/spec/stories)
-│       │   └── webcam-video/             (WebcamVideo.vue + types/spec/stories)
-│       ├── molecules/
-│       │   ├── gesture-legend/           (GestureLegend.vue + types/spec/stories)
-│       │   ├── gesture-wizard/           (GestureWizard + GestureWizardCard)
-│       │   ├── tracking-controls/        (TrackingControls.vue)
-│       │   └── ...
-│       └── organisms/
-│           └── gesture-system/           (GestureSystem.vue — orchestrator)
-└── design-vue/src/
-    ├── composables/
-    │   └── use-prioritization.ts         (existing — ações exportadas)
-    └── components/
-        ├── pages/
-        │   └── PrioritizationPage.vue    (já integra GestureSystem)
-        └── templates/
-            └── PrioritizationScreen.vue  (já renderiza TrackingControls + GestureSystem)
+packages/ui-sense/src/
+├── composables/
+│   ├── use-gesture-recognizer.ts     (núcleo — MediaPipe GestureRecognizer)
+│   └── index.ts                      (re-exporta o composable)
+└── components/
+    ├── atoms/
+    │   ├── gesture-icon/             (GestureIcon.vue + types/spec/stories)
+    │   └── webcam-video/             (WebcamVideo.vue + types/spec/stories)
+    └── organisms/
+        └── gesture-system/           (GestureSystem.vue — consome o núcleo)
 ```
+
+## Implementation Steps
+
+### Step 1: Review Composables
+
+- Revisar `use-gesture-recognizer.ts` — verificar loop `requestAnimationFrame`, cleanup, histerese
+- Adicionar testes unitários faltantes
+
+### Step 2: Polish Error UX
+
+- Garantir tratamento de erro amigável no componente (câmera negada, ausente, etc.)
 
 ## Dependencies
 
 - `@mediapipe/tasks-vision` (já instalado em `ui-sense`)
-- `@opentask/ui-sense` (já é dependência de `design-vue`)
-
-## Implementation Steps
-
-### Step 1: Review & Test Composables
-
-- Revisar `use-gesture-recognizer.ts` — verificar se `GestureRecognizer.createFromOptions` com `runningMode: 'IMAGE'` funciona corretamente em loop via `requestAnimationFrame`
-- Revisar `use-gesture-shorts.ts` — testar wizard flow, persistência, edge cases
-- Adicionar testes unitários faltantes
-
-### Step 2: Validate Integration
-
-- Testar `GestureSystem` em storybook com webcam real (play function)
-- Verificar fluxo completo em `PrioritizationPage`: webcam → gesto → ação de priorização
-- Verificar que `focusedId` está sendo populado corretamente para que `onGestureAction` tenha alvo
-
-### Step 3: Polish UI Feedback
-
-- Adicionar feedback visual do gesto reconhecido na `PrioritizationScreen` (ex.: tooltip com `GestureIcon`)
-- Garantir tratamento de erro amigável (câmera negada, ausente, etc.)
 
 ## References
 
 - MediaPipe GestureRecognizer: https://mediapipe-studio.webapps.google.com/studio/demo/gesture_recognizer
 - MediaPipe Docs: https://developers.google.com/mediapipe/solutions/vision/gesture_recognizer
-- Composables existentes: `use-gesture-recognizer.ts`, `use-gesture-shorts.ts`
-- Componentes existentes: `GestureSystem`, `GestureWizard`, `GestureLegend`, `GestureIcon`, `TrackingControls`
-- Páginas: `PrioritizationPage.vue`, `PrioritizationScreen.vue`
+- Composable: `use-gesture-recognizer.ts`
+- Componentes: `GestureIcon`, `WebcamVideo`, `GestureSystem`
+- Wizard/mapeamento/integração: task-023 (spec), task-024 (wizard), task-025 (integração)
