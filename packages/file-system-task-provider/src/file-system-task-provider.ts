@@ -10,6 +10,13 @@ import type { ILogger, UserRegistry } from './user-registry.js';
 import { NullLogger } from './user-registry.js';
 
 /**
+ * Matches the H1 heading `# [🧩] Task NNN — Title`. The separator is anchored
+ * right after the task id so a "Task"/"task" inside the title doesn't get
+ * matched greedily (e.g. `# Task 031 — revisar se task-manager deveria...`).
+ */
+const TITLE_PATTERN = /^#\s+(?:🧩\s+)?Task\s+\d+\s*[—-]\s*(.+)$/im;
+
+/**
  * Parses the raw inline matches for the prioritization fields (Priority/Group/
  * GroupName/Difficulty) into the typed shape expected on TaskFile.
  */
@@ -110,7 +117,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const content = await fs.readFile(filePath, 'utf-8');
 
     // Extract title from first heading
-    const titleMatch = content.match(/^# .*Task.*?[—-]\s*(.+)$/im);
+    const titleMatch = content.match(TITLE_PATTERN);
     const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
 
     // Auto-detect locale from content if possible, fallback to provider's locale
@@ -227,7 +234,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       const taskId = idMatch ? idMatch[1] : 'unknown';
 
       // Extract title from first heading
-      const titleMatch = content.match(/^# .*Task.*?[—-]\s*(.+)$/im);
+      const titleMatch = content.match(TITLE_PATTERN);
       const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
 
       // Auto-detect locale from content if possible, fallback to provider's locale
