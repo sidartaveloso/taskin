@@ -1,6 +1,6 @@
 # Task 028 — Auto-criar primeiro usuário no init/new/start
 
-Status: pending
+Status: in-progress
 Type: feat
 Assignee: developer
 
