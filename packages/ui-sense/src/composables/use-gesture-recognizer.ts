@@ -1,7 +1,7 @@
 import { FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: MediaPipe não exporta tipos TypeScript completos
 type GestureRecognizerInstance = any;
 
 export type CannedGesture =

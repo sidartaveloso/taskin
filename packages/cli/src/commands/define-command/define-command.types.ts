@@ -12,7 +12,7 @@ export interface CommandOption {
 
 export interface CommandConfig {
   description: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: handler args are passed through to Commander
   handler: (...args: any[]) => Promise<void> | void;
   name: string;
   alias?: string;

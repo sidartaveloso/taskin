@@ -1,4 +1,4 @@
-import { h, type PropType } from 'vue';
+import { h, type PropType, type SetupContext } from 'vue';
 
 export type TentaclePathGenerator = (progress: number) => string;
 export type TentacleAnimationKeyframes = Record<string, string>;
@@ -148,7 +148,7 @@ export default {
       curl?: boolean;
       uncurl?: boolean;
     },
-    { slots }: any,
+    { slots }: SetupContext,
   ) {
     return () => {
       const animationDuration = props.animationsEnabled && props.speed > 0 ? `${2 / props.speed}s` : '0s';
