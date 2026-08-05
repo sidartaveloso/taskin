@@ -65,6 +65,17 @@ describe('FileSystemTaskProvider', () => {
       const task = await provider.findTask('001');
       expect(task).toBeUndefined();
     });
+
+    it('should extract the full title even when it contains the word "task"', async () => {
+      (fs.readdir as Mock).mockResolvedValue(['task-031-revisar-se-task-manager-deveria.md']);
+      (fs.readFile as Mock).mockResolvedValue(
+        '# Task 031 — revisar se task-manager deveria lidar com taskfile ou task',
+      );
+
+      const task = await provider.findTask('031');
+
+      expect(task?.title).toBe('revisar se task-manager deveria lidar com taskfile ou task');
+    });
   });
 
   describe('updateTask', () => {
