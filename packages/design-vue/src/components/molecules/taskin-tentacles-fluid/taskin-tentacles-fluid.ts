@@ -89,9 +89,10 @@ export const TaskinTentaclesFluid = {
       for (let i = 0; i < props.count; i++) {
         const x = startX + i * props.spacing;
         const speedVariation = 0.8 + i * 0.1; // Slight speed variation per tentacle
+        const side: 'left' | 'right' = x < 0 ? 'left' : 'right';
 
         tentacles.push(
-          h(TaskinTentacle as any, {
+          h(TaskinTentacle, {
             key: `tentacle-${i}`,
             color: props.color,
             animationsEnabled: props.animationsEnabled,
@@ -99,7 +100,11 @@ export const TaskinTentaclesFluid = {
             fluid: true,
             x,
             y: 0,
+            side,
+            index: i,
             strokeWidth: 8,
+            animationDelay: 0,
+            length: 60,
             animationKeyframes: props.animationKeyframes,
           }),
         );

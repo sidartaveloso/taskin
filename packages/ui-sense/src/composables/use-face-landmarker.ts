@@ -2,7 +2,7 @@ import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
 
 // Tipos do MediaPipe Face Landmarker
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: MediaPipe não exporta tipos TypeScript completos
 type FaceLandmarkerInstance = any; // MediaPipe não exporta tipos TypeScript completos
 export interface FaceLandmarkerBlendShapes {
   eyeBlinkLeft: number;

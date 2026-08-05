@@ -1,7 +1,7 @@
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: MediaPipe não exporta tipos TypeScript completos
 type PoseLandmarkerInstance = any;
 
 export interface PoseLandmark {

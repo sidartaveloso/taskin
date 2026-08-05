@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: tests pass invalid inputs to probe null/undefined handling
 import { describe, expect, it } from 'vitest';
 import {
   escapeHtml,
@@ -11,8 +12,6 @@ import {
   sanitizeInput,
   validateDashboardOptions,
 } from './security';
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 describe('Security Utils', () => {
   describe('isValidHost', () => {
