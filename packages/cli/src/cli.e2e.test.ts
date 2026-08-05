@@ -72,6 +72,27 @@ describe.sequential('Taskin CLI E2E Tests', () => {
       expect(stdout).toContain('initialized successfully');
       expect(existsSync(join(TEST_DIR, '.taskin.json'))).toBe(true);
     }, 60000);
+
+    it('should create and persist first user when prompted interactively', async () => {
+      const answers = "(printf 'y\\n'; sleep 1; printf 'Test User\\n'; sleep 1; printf 'test@test.com\\n') | node";
+
+      const { stdout } = await execAsync(`${answers} ${CLI_PATH} init -p fs`, {
+        cwd: TEST_DIR,
+        env: { ...process.env, CI: 'false' },
+      });
+
+      expect(stdout).toContain('User "Test User" (test@test.com) created successfully');
+
+      const usersPath = join(TEST_DIR, '.taskin', '.taskin-users.json');
+      expect(existsSync(usersPath)).toBe(true);
+
+      const data = JSON.parse(readFileSync(usersPath, 'utf-8'));
+      expect(data.users['test-user']).toEqual({
+        id: 'test-user',
+        name: 'Test User',
+        email: 'test@test.com',
+      });
+    }, 60000);
   });
 
   describe.sequential('taskin list', () => {

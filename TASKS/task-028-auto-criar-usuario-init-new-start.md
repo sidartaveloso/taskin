@@ -16,13 +16,13 @@ Atualmente o `taskin init` nunca cria o arquivo `.taskin-users.json`. O `taskin 
 
 ## Tasks
 
-- [ ] UserRegistry: método `ensureCurrentUser()` que lê git config e cria usuário se registry vazio
-- [ ] UserRegistry.test.ts: testes para `ensureCurrentUser()`
-- [ ] init: após setup do provider, perguntar se quer criar primeiro usuário (interativo)
-- [ ] init: em CI (`CI=true`), pular pergunta e não criar
-- [ ] new: chamar `ensureCurrentUser()` após `userRegistry.load()`
-- [ ] start: chamar `ensureCurrentUser()` após `userRegistry.load()`
-- [ ] e2e test: verificar que .taskin-users.json existe após init com usuário criado
+- [x] UserRegistry: método `ensureCurrentUser()` que lê git config e cria usuário se registry vazio
+- [x] UserRegistry.test.ts: testes para `ensureCurrentUser()`
+- [x] init: após setup do provider, perguntar se quer criar primeiro usuário (interativo)
+- [x] init: em CI (`CI=true`), pular pergunta e não criar
+- [x] new: chamar `ensureCurrentUser()` após `userRegistry.load()`
+- [x] start: chamar `ensureCurrentUser()` após `userRegistry.load()`
+- [x] e2e test: verificar que .taskin-users.json existe após init com usuário criado
 
 ## Notes
 
