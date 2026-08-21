@@ -1,9 +1,5 @@
 import { onMounted, onUnmounted, ref } from 'vue';
-
-export interface MousePosition {
-  x: number;
-  y: number;
-}
+import type { MousePosition } from './use-mouse-tracking.types';
 
 export function useMouseTracking() {
   const position = ref<MousePosition>({ x: 0, y: 0 });

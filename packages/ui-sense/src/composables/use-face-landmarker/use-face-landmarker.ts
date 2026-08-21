@@ -1,56 +1,10 @@
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
-
-// Tipos do MediaPipe Face Landmarker
-// biome-ignore lint/suspicious/noExplicitAny: MediaPipe não exporta tipos TypeScript completos
-type FaceLandmarkerInstance = any; // MediaPipe não exporta tipos TypeScript completos
-export interface FaceLandmarkerBlendShapes {
-  eyeBlinkLeft: number;
-  eyeBlinkRight: number;
-  eyeLookDownLeft: number;
-  eyeLookDownRight: number;
-  eyeLookInLeft: number;
-  eyeLookInRight: number;
-  eyeLookOutLeft: number;
-  eyeLookOutRight: number;
-  eyeLookUpLeft: number;
-  eyeLookUpRight: number;
-  eyeSquintLeft: number;
-  eyeSquintRight: number;
-  eyeWideLeft: number;
-  eyeWideRight: number;
-  jawOpen: number;
-  mouthClose: number;
-  mouthSmileLeft: number;
-  mouthSmileRight: number;
-  mouthFrownLeft: number;
-  mouthFrownRight: number;
-  mouthPucker: number;
-  [key: string]: number;
-}
-
-export interface FaceLandmarkerResult {
-  faceLandmarks: Array<{ x: number; y: number; z: number }[]>;
-  faceBlendshapes?: Array<{
-    categories: Array<{ categoryName: string; score: number }>;
-  }>;
-}
-
-export interface FaceLandmarkerState {
-  isReady: boolean;
-  isDetecting: boolean;
-  error: string | null;
-  blendShapes: FaceLandmarkerBlendShapes | null;
-  landmarks: Array<{ x: number; y: number; z: number }> | null;
-}
-
-export interface UseFaceLandmarkerOptions {
-  enableBlendshapes?: boolean;
-  minDetectionConfidence?: number;
-  minTrackingConfidence?: number;
-  mirrorEyeTracking?: boolean;
-  onDetection?: (result: FaceLandmarkerResult) => void;
-}
+import type {
+  FaceLandmarkerBlendShapes,
+  FaceLandmarkerState,
+  UseFaceLandmarkerOptions,
+} from './use-face-landmarker.types';
 
 /**
  * Composable para usar MediaPipe Face Landmarker
@@ -65,7 +19,7 @@ export function useFaceLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
     landmarks: null,
   });
 
-  let faceLandmarker: FaceLandmarkerInstance = null;
+  let faceLandmarker: FaceLandmarker | null = null;
   let animationFrameId: number | null = null;
   let stream: MediaStream | null = null;
 

@@ -82,6 +82,22 @@
           }
         }
       }
+    },
+    {
+      "includes": [
+        "packages/api/**",
+        "packages/task-provider-pinia/**",
+        "packages/task-server-ws/**",
+        "packages/types-ts/scripts/**",
+        "packages/dashboard/src/App.vue"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
     }
   ],
   "assist": {

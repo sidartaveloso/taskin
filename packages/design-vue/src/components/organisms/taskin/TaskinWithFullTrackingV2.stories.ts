@@ -1,5 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { expect } from 'storybook/test';
 import TaskinWithFullTracking from './TaskinWithFullTracking.vue';
+
+function getWebcam(canvasElement: HTMLElement): HTMLVideoElement | null {
+  return canvasElement.querySelector('video.webcam-video');
+}
 
 const meta = {
   title: 'Organisms/Taskin/Full Tracking',
@@ -83,6 +88,11 @@ export const Default: Story = {
     showWebcam: false,
     showDebug: false,
   },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('.taskin-full-tracking')).not.toBeNull();
+    expect(canvasElement.querySelector('g#body')).not.toBeNull();
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(false);
+  },
 };
 
 /**
@@ -93,6 +103,9 @@ export const WithWebcamVisible: Story = {
     mascotSize: 320,
     showWebcam: true,
     showDebug: false,
+  },
+  play: async ({ canvasElement }) => {
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
   },
 };
 
@@ -106,6 +119,11 @@ export const DebugMode: Story = {
     showWebcam: true,
     showDebug: true,
   },
+  play: async ({ canvasElement }) => {
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
+    const button = canvasElement.querySelector('button.control-button');
+    expect(button?.textContent).toContain('Iniciar');
+  },
 };
 
 /**
@@ -116,5 +134,10 @@ export const LargeMascot: Story = {
     mascotSize: 400,
     showWebcam: true,
     showDebug: false,
+  },
+  play: async ({ canvasElement }) => {
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
+    const svg = canvasElement.querySelector('.mascot-container svg');
+    expect(svg?.getAttribute('width')).toBe('800');
   },
 };

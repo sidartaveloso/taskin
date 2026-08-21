@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { expect } from 'storybook/test';
 import { defaultTaskinProps } from './Taskin.mock';
 import TaskinWithShhh from './TaskinWithShhh.vue';
 
@@ -41,6 +42,11 @@ export const Default: Story = {
       </div>
     `,
   }),
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('.mascot-container')).not.toBeNull();
+    expect(canvasElement.querySelector('g#body')).not.toBeNull();
+    expect(canvasElement.querySelector('video.webcam-video')?.classList.contains('visible')).toBe(false);
+  },
 };
 
 export const WithWebcam: Story = {
@@ -58,6 +64,10 @@ export const WithWebcam: Story = {
   args: {
     showWebcam: true,
     showDebug: true,
+  },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('video.webcam-video')?.classList.contains('visible')).toBe(true);
+    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Iniciar');
   },
 };
 
@@ -79,5 +89,9 @@ export const NoiseOnly: Story = {
     enableNoiseReactions: true,
     noiseThreshold: 0.05,
     noiseDebounceMs: 1000,
+  },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('.mascot-container')).not.toBeNull();
+    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Iniciar');
   },
 };

@@ -4,8 +4,8 @@ export interface DashboardType {
   emits: DashboardEmits;
 }
 
-export type DashboardModels = {};
+export type DashboardModels = Record<string, never>;
 
-export type DashboardProps = {};
+export type DashboardProps = Record<string, never>;
 
-export type DashboardEmits = {};
+export type DashboardEmits = Record<string, never>;

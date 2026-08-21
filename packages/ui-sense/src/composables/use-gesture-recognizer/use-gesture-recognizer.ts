@@ -1,49 +1,12 @@
 import { FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
-
-// biome-ignore lint/suspicious/noExplicitAny: MediaPipe não exporta tipos TypeScript completos
-type GestureRecognizerInstance = any;
-
-export type CannedGesture =
-  | 'None'
-  | 'Closed_Fist'
-  | 'Open_Palm'
-  | 'Pointing_Up'
-  | 'Thumb_Down'
-  | 'Thumb_Up'
-  | 'Victory'
-  | 'ILoveYou';
-
-export type Handedness = 'Left' | 'Right';
-
-export interface RecognizedGesture {
-  gesture: CannedGesture;
-  score: number;
-  handedness: Handedness;
-}
-
-export interface HandLandmark {
-  x: number;
-  y: number;
-  z: number;
-}
-
-export interface GestureRecognizerState {
-  isReady: boolean;
-  isDetecting: boolean;
-  error: string | null;
-  gestures: RecognizedGesture[];
-  landmarks: HandLandmark[][] | null;
-}
-
-export interface UseGestureRecognizerOptions {
-  numHands?: number;
-  minHandDetectionConfidence?: number;
-  minHandPresenceConfidence?: number;
-  minTrackingConfidence?: number;
-  gestureScoreThreshold?: number;
-  hysteresisMs?: number;
-}
+import type {
+  CannedGesture,
+  GestureRecognizerState,
+  Handedness,
+  RecognizedGesture,
+  UseGestureRecognizerOptions,
+} from './use-gesture-recognizer.types';
 
 const CANNED_GESTURES: CannedGesture[] = [
   'None',
@@ -68,7 +31,7 @@ export function useGestureRecognizer(
     gestureScoreThreshold = 0.6,
   } = options;
 
-  const gestureRecognizer = ref<GestureRecognizerInstance | null>(null);
+  const gestureRecognizer = ref<GestureRecognizer | null>(null);
   const state = ref<GestureRecognizerState>({
     isReady: false,
     isDetecting: false,
@@ -175,7 +138,7 @@ export function useGestureRecognizer(
       if (result.gestures && result.gestures.length > 0) {
         for (let i = 0; i < result.gestures.length; i++) {
           const top = result.gestures[i][0];
-          if (top?.categoryName && CANNED_GESTURES.includes(top.categoryName)) {
+          if (top?.categoryName && CANNED_GESTURES.includes(top.categoryName as CannedGesture)) {
             recognized.push({
               gesture: top.categoryName as CannedGesture,
               score: top.score,

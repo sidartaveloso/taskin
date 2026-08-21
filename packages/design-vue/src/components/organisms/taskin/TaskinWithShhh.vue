@@ -59,13 +59,13 @@
 </template>
 
 <script setup lang="ts">
-import type { WebcamVideo } from '@opentask/ui-sense';
 import {
   createNoiseWatcher,
   FaceTrackingDebug,
   NoiseTrackingControls,
   TrackingControls,
   useFaceLandmarker,
+  WebcamVideo,
 } from '@opentask/ui-sense';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import Taskin from './Taskin';
@@ -92,7 +92,7 @@ const props = withDefaults(defineProps<Props>(), {
   noiseSound: false,
 });
 
-const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
+const webcamVideoRef = ref<{ videoElement: HTMLVideoElement | null } | null>(null);
 const mascotContainer = ref<HTMLDivElement | null>(null);
 const showWebcam = ref(props.showWebcam);
 const syncEyes = ref(true);

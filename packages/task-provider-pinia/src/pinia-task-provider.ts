@@ -356,7 +356,6 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     _log(this: PiniaStoreContext, ...args: unknown[]): void {
       const config = wsConfigs.get(this.$id);
       if (config?.debug) {
-        // biome-ignore lint/suspicious/noConsole: debug logging wrapper
         console.log('[PiniaTaskProvider]', ...args);
       }
     },

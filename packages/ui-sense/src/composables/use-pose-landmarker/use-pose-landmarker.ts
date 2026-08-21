@@ -1,47 +1,12 @@
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
-
-// biome-ignore lint/suspicious/noExplicitAny: MediaPipe não exporta tipos TypeScript completos
-type PoseLandmarkerInstance = any;
-
-export interface PoseLandmark {
-  x: number;
-  y: number;
-  z: number;
-  visibility?: number;
-}
-
-export interface PoseLandmarkerResult {
-  landmarks: PoseLandmark[][];
-  worldLandmarks?: PoseLandmark[][];
-}
-
-export interface ArmAngles {
-  left: {
-    shoulder: number;
-    elbow: number;
-    wrist: number;
-  };
-  right: {
-    shoulder: number;
-    elbow: number;
-    wrist: number;
-  };
-}
-
-export interface PoseLandmarkerState {
-  isReady: boolean;
-  isDetecting: boolean;
-  error: string | null;
-  landmarks: PoseLandmark[] | null;
-  worldLandmarks: PoseLandmark[] | null;
-}
-
-export interface UsePoseLandmarkerOptions {
-  minDetectionConfidence?: number;
-  minTrackingConfidence?: number;
-  mirrorPose?: boolean;
-}
+import type {
+  ArmAngles,
+  PoseLandmark,
+  PoseLandmarkerResult,
+  PoseLandmarkerState,
+  UsePoseLandmarkerOptions,
+} from './use-pose-landmarker.types';
 
 // MediaPipe Pose Landmark indices
 export const POSE_LANDMARKS = {
@@ -83,7 +48,7 @@ export const POSE_LANDMARKS = {
 export function usePoseLandmarker(videoElement: Ref<HTMLVideoElement | null>, options: UsePoseLandmarkerOptions = {}) {
   const { minDetectionConfidence = 0.5, minTrackingConfidence = 0.5, mirrorPose = true } = options;
 
-  const poseLandmarker = ref<PoseLandmarkerInstance | null>(null);
+  const poseLandmarker = ref<PoseLandmarker | null>(null);
   const state = ref<PoseLandmarkerState>({
     isReady: false,
     isDetecting: false,

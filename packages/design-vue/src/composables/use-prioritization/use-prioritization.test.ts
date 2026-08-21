@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ref } from 'vue';
-import type { Task } from '../types';
-import type { PriorityGroupNode, PriorityNode } from './use-prioritization';
+import type { Task } from '../../types';
 import {
   buildPriorityTree,
   diffAgainstBaseline,
@@ -9,6 +8,7 @@ import {
   renumber,
   usePrioritization,
 } from './use-prioritization';
+import type { PriorityGroupNode, PriorityNode } from './use-prioritization.types';
 
 function makeTask(overrides: Partial<Task> & { id: string }): Task {
   return {

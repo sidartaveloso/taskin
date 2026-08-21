@@ -6,6 +6,7 @@ import {
   WebcamVideo,
 } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { expect } from 'storybook/test';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { ArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
 import { NEUTRAL_ARM_POSITION } from '../../atoms/taskin-arms/TaskinArms.types';
@@ -26,8 +27,7 @@ type Story = StoryObj<typeof meta>;
 export const FullTracking: Story = {
   render: () => ({
     setup() {
-      const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
-      const videoElement = ref<HTMLVideoElement | null>(null);
+      const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);      const videoElement = ref<HTMLVideoElement | null>(null);
       const showWebcam = ref(false);
 
       // Sync controls
@@ -285,5 +285,11 @@ export const FullTracking: Story = {
           '🎥 Complete Taskin tracking! Face controls eyes & mouth, pose controls arms. Click "Iniciar Detecção" to start.',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('svg')).not.toBeNull();
+    expect(canvasElement.querySelector('g#body')).not.toBeNull();
+    expect(canvasElement.querySelector('video.webcam-video')?.classList.contains('visible')).toBe(false);
+    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Iniciar');
   },
 };

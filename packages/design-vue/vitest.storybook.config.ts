@@ -22,9 +22,9 @@ export default mergeConfig(
       browser: {
         enabled: true,
         headless: true,
-        provider: playwright(),
+        provider: playwright() as never,
         instances: [{ browser: 'chromium' }],
       },
     },
-  }),
+  }) as UserConfig,
 );
