@@ -1,2 +1,2 @@
-export { default as TaskinEffectThoughtBubble } from './taskin-effect-thought-bubble';
-export * from './taskin-effect-thought-bubble.types';
+export { default as TaskinEffectThoughtBubble } from './TaskinEffectThoughtBubble';
+export * from './TaskinEffectThoughtBubble.types';

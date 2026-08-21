@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import TaskinEffectHearts from './taskin-effect-hearts';
-import type { TaskinEffectHeartsProps } from './taskin-effect-hearts.types';
+import TaskinEffectZzz from './TaskinEffectZzz';
+import type { TaskinEffectZzzProps } from './TaskinEffectZzz.types';
 
 const meta = {
-  title: 'Molecules/Effects/Hearts',
-  component: TaskinEffectHearts,
+  title: 'Molecules/Effects/Zzz',
+  component: TaskinEffectZzz,
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },
@@ -14,17 +14,17 @@ const meta = {
     animationsEnabled: true,
   },
   render: (args) => ({
-    components: { TaskinEffectHearts },
+    components: { TaskinEffectZzz },
     setup() {
       return { args };
     },
     template: `
       <svg width="200" height="200" viewBox="0 0 320 260" style="background: #f0f0f0;">
-        <TaskinEffectHearts v-bind="args" />
+        <TaskinEffectZzz v-bind="args" />
       </svg>
     `,
   }),
-} satisfies Meta<TaskinEffectHeartsProps>;
+} satisfies Meta<TaskinEffectZzzProps>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -34,7 +34,7 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Hearts floating animation with scale and translation effects',
+        story: 'Z letters rising and fading animation with staggered delays',
       },
     },
   },
@@ -47,7 +47,7 @@ export const NoAnimation: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Hearts without animation (static)',
+        story: 'Z letters without animation (static)',
       },
     },
   },

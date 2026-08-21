@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import TaskinEffectVomit from './taskin-effect-vomit';
-import type { TaskinEffectVomitProps } from './taskin-effect-vomit.types';
+import TaskinEffectHearts from './TaskinEffectHearts';
+import type { TaskinEffectHeartsProps } from './TaskinEffectHearts.types';
 
 const meta = {
-  title: 'Molecules/Effects/Vomit',
-  component: TaskinEffectVomit,
+  title: 'Molecules/Effects/Hearts',
+  component: TaskinEffectHearts,
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },
@@ -14,17 +14,17 @@ const meta = {
     animationsEnabled: true,
   },
   render: (args) => ({
-    components: { TaskinEffectVomit },
+    components: { TaskinEffectHearts },
     setup() {
       return { args };
     },
     template: `
       <svg width="200" height="200" viewBox="0 0 320 260" style="background: #f0f0f0;">
-        <TaskinEffectVomit v-bind="args" />
+        <TaskinEffectHearts v-bind="args" />
       </svg>
     `,
   }),
-} satisfies Meta<TaskinEffectVomitProps>;
+} satisfies Meta<TaskinEffectHeartsProps>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -34,7 +34,7 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Vomit drops falling animation with sequential delays',
+        story: 'Hearts floating animation with scale and translation effects',
       },
     },
   },
@@ -47,7 +47,7 @@ export const NoAnimation: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Vomit drops without animation (static)',
+        story: 'Hearts without animation (static)',
       },
     },
   },

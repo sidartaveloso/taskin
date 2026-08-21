@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h } from 'vue';
-import type { TentacleAnimationKeyframes } from './taskin-tentacle';
-import TaskinTentacle from './taskin-tentacle';
+import type { TentacleAnimationKeyframes } from './TaskinTentacle';
+import TaskinTentacle from './TaskinTentacle';
 
 // Custom animation keyframes
 const swayKeyframes: TentacleAnimationKeyframes = {

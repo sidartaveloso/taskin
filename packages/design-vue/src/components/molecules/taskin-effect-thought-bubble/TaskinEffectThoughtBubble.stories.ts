@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import TaskinEffectThoughtBubble from './taskin-effect-thought-bubble';
-import type { TaskinEffectThoughtBubbleProps } from './taskin-effect-thought-bubble.types';
+import TaskinEffectThoughtBubble from './TaskinEffectThoughtBubble';
+import type { TaskinEffectThoughtBubbleProps } from './TaskinEffectThoughtBubble.types';
 
 const meta = {
   title: 'Molecules/Effects/ThoughtBubble',
