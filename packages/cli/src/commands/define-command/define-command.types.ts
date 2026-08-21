@@ -10,10 +10,9 @@ export interface CommandOption {
   defaultValue?: string | boolean | string[];
 }
 
-export interface CommandConfig {
+export interface CommandConfig<Args extends unknown[] = never[]> {
   description: string;
-  // biome-ignore lint/suspicious/noExplicitAny: handler args are passed through to Commander
-  handler: (...args: any[]) => Promise<void> | void;
+  handler: (...args: Args) => Promise<void> | void;
   name: string;
   alias?: string;
   options?: CommandOption[];
@@ -50,4 +49,6 @@ export type CommandRegistration = (program: Command) => void;
  * });
  * ```
  */
-export type DefineCommandFunction = (config: CommandConfig) => CommandRegistration;
+export type DefineCommandFunction = <Args extends unknown[] = never[]>(
+  config: CommandConfig<Args>,
+) => CommandRegistration;

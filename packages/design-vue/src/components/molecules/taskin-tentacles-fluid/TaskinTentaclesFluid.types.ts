@@ -4,8 +4,8 @@ export interface TaskinTentaclesFluidType {
   emits: TaskinTentaclesFluidEmits;
 }
 
-export type TaskinTentaclesFluidModels = {};
+export type TaskinTentaclesFluidModels = Record<string, never>;
 
-export type TaskinTentaclesFluidProps = {};
+export type TaskinTentaclesFluidProps = Record<string, never>;
 
-export type TaskinTentaclesFluidEmits = {};
+export type TaskinTentaclesFluidEmits = Record<string, never>;

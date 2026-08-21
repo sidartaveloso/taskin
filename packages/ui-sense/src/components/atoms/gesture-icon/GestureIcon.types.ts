@@ -4,8 +4,8 @@ export interface GestureIconType {
   emits: GestureIconEmits;
 }
 
-export type GestureIconModels = {};
+export type GestureIconModels = Record<string, never>;
 
-export type GestureIconProps = {};
+export type GestureIconProps = Record<string, never>;
 
-export type GestureIconEmits = {};
+export type GestureIconEmits = Record<string, never>;

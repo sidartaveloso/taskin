@@ -64,8 +64,13 @@
 </template>
 
 <script setup lang="ts">
-import type { WebcamVideo } from '@opentask/ui-sense';
-import { FaceTrackingDebug, TrackingControls, useFaceLandmarker, usePoseLandmarker } from '@opentask/ui-sense';
+import {
+  FaceTrackingDebug,
+  TrackingControls,
+  useFaceLandmarker,
+  usePoseLandmarker,
+  WebcamVideo,
+} from '@opentask/ui-sense';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { ArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
 import { NEUTRAL_ARM_POSITION } from '../../atoms/taskin-arms/TaskinArms.types';
@@ -88,7 +93,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 // Refs
-const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
+const webcamVideoRef = ref<{ videoElement: HTMLVideoElement | null } | null>(null);
 const mascotContainer = ref<HTMLDivElement | null>(null);
 const showWebcam = ref(props.showWebcam);
 const syncEyes = ref(true);

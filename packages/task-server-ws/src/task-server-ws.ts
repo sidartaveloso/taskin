@@ -407,7 +407,6 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
    */
   private log(...args: unknown[]): void {
     if (this.options.debug) {
-      // biome-ignore lint/suspicious/noConsole: debug logging wrapper
       console.log('[TaskWebSocketServer]', ...args);
     }
   }

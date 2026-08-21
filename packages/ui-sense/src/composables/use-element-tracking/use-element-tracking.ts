@@ -1,9 +1,5 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-
-export interface ElementPosition {
-  x: number;
-  y: number;
-}
+import type { ElementPosition } from './use-element-tracking.types';
 
 export function useElementTracking(targetSelector: () => string | HTMLElement | undefined) {
   const position = ref<ElementPosition>({ x: 0, y: 0 });

@@ -1,21 +1,5 @@
 import { computed, type Ref } from 'vue';
-
-export interface TrackingPosition {
-  x: number;
-  y: number;
-}
-
-export interface EyeOffset {
-  x: number;
-  y: number;
-}
-
-export interface EyeTrackingOptions {
-  eyeCenterX: number;
-  eyeCenterY: number;
-  maxOffset?: number;
-  containerElement?: Ref<SVGElement | null>;
-}
+import type { EyeOffset, EyeTrackingOptions, TrackingPosition } from './use-eye-tracking.types';
 
 /**
  * Calcula o offset da pupila baseado na posição do alvo

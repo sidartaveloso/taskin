@@ -33,19 +33,4 @@ export {
   useMouseTracking,
   usePoseLandmarker,
 } from '@opentask/ui-sense';
-export type {
-  PrioritizationSortMode,
-  PrioritizationViewMode,
-  PriorityGroupNode,
-  PriorityNode,
-  PriorityTaskNode,
-  UsePrioritization,
-  UsePrioritizationOptions,
-} from './use-prioritization';
-export {
-  buildPriorityTree,
-  diffAgainstBaseline,
-  flattenPriorityTree,
-  renumber,
-  usePrioritization,
-} from './use-prioritization';
+export * from './use-prioritization';

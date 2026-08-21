@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noExplicitAny: tests pass invalid inputs to probe null/undefined handling
 import { describe, expect, it } from 'vitest';
 import {
   escapeHtml,
@@ -54,9 +53,9 @@ describe('Security Utils', () => {
 
     it('should reject empty or invalid types', () => {
       expect(isValidHost('')).toBe(false);
-      expect(isValidHost(null as any)).toBe(false);
-      expect(isValidHost(undefined as any)).toBe(false);
-      expect(isValidHost(123 as any)).toBe(false);
+      expect(isValidHost(null as never)).toBe(false);
+      expect(isValidHost(undefined as never)).toBe(false);
+      expect(isValidHost(123 as never)).toBe(false);
     });
   });
 
@@ -92,8 +91,8 @@ describe('Security Utils', () => {
 
     it('should reject empty or invalid types', () => {
       expect(isValidPort('')).toBe(false);
-      expect(isValidPort(null as any)).toBe(false);
-      expect(isValidPort(undefined as any)).toBe(false);
+      expect(isValidPort(null as never)).toBe(false);
+      expect(isValidPort(undefined as never)).toBe(false);
     });
   });
 
@@ -111,9 +110,9 @@ describe('Security Utils', () => {
     });
 
     it('should handle invalid input', () => {
-      expect(escapeHtml(null as any)).toBe('');
-      expect(escapeHtml(undefined as any)).toBe('');
-      expect(escapeHtml(123 as any)).toBe('');
+      expect(escapeHtml(null as never)).toBe('');
+      expect(escapeHtml(undefined as never)).toBe('');
+      expect(escapeHtml(123 as never)).toBe('');
     });
 
     it('should prevent XSS attacks', () => {
@@ -161,8 +160,8 @@ describe('Security Utils', () => {
 
     it('should reject empty or invalid types', () => {
       expect(isValidPath('')).toBe(false);
-      expect(isValidPath(null as any)).toBe(false);
-      expect(isValidPath(undefined as any)).toBe(false);
+      expect(isValidPath(null as never)).toBe(false);
+      expect(isValidPath(undefined as never)).toBe(false);
     });
   });
 
@@ -186,8 +185,8 @@ describe('Security Utils', () => {
     });
 
     it('should reject empty or invalid types', () => {
-      expect(isValidWebSocketUrl(null as any)).toBe(false);
-      expect(isValidWebSocketUrl(undefined as any)).toBe(false);
+      expect(isValidWebSocketUrl(null as never)).toBe(false);
+      expect(isValidWebSocketUrl(undefined as never)).toBe(false);
     });
   });
 
@@ -213,8 +212,8 @@ describe('Security Utils', () => {
 
     it('should reject empty or invalid types', () => {
       expect(isValidTaskId('')).toBe(false);
-      expect(isValidTaskId(null as any)).toBe(false);
-      expect(isValidTaskId(undefined as any)).toBe(false);
+      expect(isValidTaskId(null as never)).toBe(false);
+      expect(isValidTaskId(undefined as never)).toBe(false);
     });
   });
 
@@ -240,8 +239,8 @@ describe('Security Utils', () => {
 
     it('should reject empty or invalid types', () => {
       expect(isValidUserId('')).toBe(false);
-      expect(isValidUserId(null as any)).toBe(false);
-      expect(isValidUserId(undefined as any)).toBe(false);
+      expect(isValidUserId(null as never)).toBe(false);
+      expect(isValidUserId(undefined as never)).toBe(false);
     });
   });
 
@@ -266,8 +265,8 @@ describe('Security Utils', () => {
 
     it('should reject empty or invalid types', () => {
       expect(isValidEmail('')).toBe(false);
-      expect(isValidEmail(null as any)).toBe(false);
-      expect(isValidEmail(undefined as any)).toBe(false);
+      expect(isValidEmail(null as never)).toBe(false);
+      expect(isValidEmail(undefined as never)).toBe(false);
     });
   });
 
@@ -290,8 +289,8 @@ describe('Security Utils', () => {
     });
 
     it('should handle invalid input', () => {
-      expect(sanitizeInput(null as any)).toBe('');
-      expect(sanitizeInput(undefined as any)).toBe('');
+      expect(sanitizeInput(null as never)).toBe('');
+      expect(sanitizeInput(undefined as never)).toBe('');
     });
   });
 

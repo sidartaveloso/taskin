@@ -39,11 +39,9 @@ function generateSchemas(): void {
 
       writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2), 'utf-8');
 
-      // biome-ignore lint/suspicious/noConsole: build script
       console.log(`  ✓ Generated ${outputFile}`);
     }
 
-    // biome-ignore lint/suspicious/noConsole: build script
     console.log(`\n✅ Successfully generated ${schemas.length} JSON schema(s)`);
   } catch (error) {
     console.error('❌ Failed to generate JSON schemas:', error);
