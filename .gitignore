@@ -78,6 +78,7 @@ generated/
 .cache/
 .temp/
 tmp/
+test-temp-e2e/
 
 # VitePress
 .vitepress/cache/
