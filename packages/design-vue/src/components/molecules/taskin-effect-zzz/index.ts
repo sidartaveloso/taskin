@@ -1,2 +1,2 @@
-export { default as TaskinEffectZzz } from './taskin-effect-zzz';
-export * from './taskin-effect-zzz.types';
+export { default as TaskinEffectZzz } from './TaskinEffectZzz';
+export * from './TaskinEffectZzz.types';

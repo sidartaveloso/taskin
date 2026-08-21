@@ -1,2 +1,2 @@
-export { default as TaskinEffectPhone } from './taskin-effect-phone';
-export * from './taskin-effect-phone.types';
+export { default as TaskinEffectPhone } from './TaskinEffectPhone';
+export * from './TaskinEffectPhone.types';

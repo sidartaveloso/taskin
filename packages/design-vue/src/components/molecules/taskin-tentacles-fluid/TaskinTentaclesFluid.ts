@@ -1,6 +1,6 @@
 import { h, type PropType } from 'vue';
-import type { TentacleAnimationKeyframes } from '../../atoms/taskin-tentacle/taskin-tentacle';
-import TaskinTentacle from '../../atoms/taskin-tentacle/taskin-tentacle';
+import type { TentacleAnimationKeyframes } from '../../atoms/taskin-tentacle/TaskinTentacle';
+import TaskinTentacle from '../../atoms/taskin-tentacle/TaskinTentacle';
 
 export interface TaskinTentaclesFluidProps {
   /**

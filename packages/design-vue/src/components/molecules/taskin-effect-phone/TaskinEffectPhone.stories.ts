@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import TaskinEffectFartCloud from './taskin-effect-fart-cloud';
-import type { TaskinEffectFartCloudProps } from './taskin-effect-fart-cloud.types';
+import TaskinEffectPhone from './TaskinEffectPhone';
+import type { TaskinEffectPhoneProps } from './TaskinEffectPhone.types';
 
 const meta = {
-  title: 'Molecules/Effects/FartCloud',
-  component: TaskinEffectFartCloud,
+  title: 'Molecules/Effects/Phone',
+  component: TaskinEffectPhone,
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },
@@ -14,17 +14,17 @@ const meta = {
     animationsEnabled: true,
   },
   render: (args) => ({
-    components: { TaskinEffectFartCloud },
+    components: { TaskinEffectPhone },
     setup() {
       return { args };
     },
     template: `
       <svg width="200" height="200" viewBox="0 0 320 260" style="background: #f0f0f0;">
-        <TaskinEffectFartCloud v-bind="args" />
+        <TaskinEffectPhone v-bind="args" />
       </svg>
     `,
   }),
-} satisfies Meta<TaskinEffectFartCloudProps>;
+} satisfies Meta<TaskinEffectPhoneProps>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -34,7 +34,7 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Fart cloud expanding and fading animation with staggered delays',
+        story: 'Phone shaking animation for selfie mood',
       },
     },
   },
@@ -47,7 +47,7 @@ export const NoAnimation: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Fart cloud without animation (static)',
+        story: 'Phone without animation (static)',
       },
     },
   },

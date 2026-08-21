@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import TaskinEffectZzz from './taskin-effect-zzz';
-import type { TaskinEffectZzzProps } from './taskin-effect-zzz.types';
+import TaskinEffectTears from './TaskinEffectTears';
+import type { TaskinEffectTearsProps } from './TaskinEffectTears.types';
 
 const meta = {
-  title: 'Molecules/Effects/Zzz',
-  component: TaskinEffectZzz,
+  title: 'Molecules/Effects/Tears',
+  component: TaskinEffectTears,
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },
@@ -14,17 +14,17 @@ const meta = {
     animationsEnabled: true,
   },
   render: (args) => ({
-    components: { TaskinEffectZzz },
+    components: { TaskinEffectTears },
     setup() {
       return { args };
     },
     template: `
       <svg width="200" height="200" viewBox="0 0 320 260" style="background: #f0f0f0;">
-        <TaskinEffectZzz v-bind="args" />
+        <TaskinEffectTears v-bind="args" />
       </svg>
     `,
   }),
-} satisfies Meta<TaskinEffectZzzProps>;
+} satisfies Meta<TaskinEffectTearsProps>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -34,7 +34,7 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Z letters rising and fading animation with staggered delays',
+        story: 'Tears dropping animation with scale and fade effects',
       },
     },
   },
@@ -47,7 +47,7 @@ export const NoAnimation: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Z letters without animation (static)',
+        story: 'Tears without animation (static)',
       },
     },
   },

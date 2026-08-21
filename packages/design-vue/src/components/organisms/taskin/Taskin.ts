@@ -6,12 +6,12 @@ import TaskinEyes from '../../atoms/taskin-eyes/TaskinEyes.vue';
 import type { MouthExpression } from '../../atoms/taskin-mouth/TaskinMouth.types';
 import TaskinMouth from '../../atoms/taskin-mouth/TaskinMouth.vue';
 import TaskinArmWithPhone from '../../molecules/taskin-arm-with-phone/TaskinArmWithPhone.vue';
-import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/taskin-effect-fart-cloud';
-import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/taskin-effect-hearts';
-import TaskinEffectTears from '../../molecules/taskin-effect-tears/taskin-effect-tears';
-import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/taskin-effect-thought-bubble';
-import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/taskin-effect-vomit';
-import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/taskin-effect-zzz';
+import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/TaskinEffectFartCloud';
+import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/TaskinEffectHearts';
+import TaskinEffectTears from '../../molecules/taskin-effect-tears/TaskinEffectTears';
+import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/TaskinEffectThoughtBubble';
+import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/TaskinEffectVomit';
+import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/TaskinEffectZzz';
 import TaskinTentacleWithItem from '../../molecules/taskin-tentacle-with-item/TaskinTentacleWithItem.vue';
 import type { TaskinMood } from './Taskin.types';
 
