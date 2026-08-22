@@ -2,11 +2,12 @@
  * finish command - Finish a task
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
+import { FileSystemTaskProvider, squashTaskFileOnDone, UserRegistry } from '@opentask/taskin-file-system-provider';
+import { GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { execSync } from 'child_process';
 import path from 'path';
-import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
@@ -42,7 +43,7 @@ export const finishCommand = defineCommand({
   },
 });
 
-async function finishTask(taskId: string, options: FinishTaskOptions): Promise<void> {
+export async function finishTask(taskId: string, options: FinishTaskOptions, gitService?: IGitService): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -113,6 +114,14 @@ async function finishTask(taskId: string, options: FinishTaskOptions): Promise<v
   // Load automation config
   const configManager = new ConfigManager(monorepoRoot);
   const behavior = configManager.getAutomationBehavior();
+  const autoSyncActive = behavior.autoSync && !!behavior.defaultBranch;
+
+  if (behavior.autoSync && !behavior.defaultBranch) {
+    warning('autoSync is enabled but no defaultBranch is configured. Nothing will be synced.');
+  }
+
+  // Initialize Git service
+  const git = gitService ?? new GitService(process.cwd());
 
   if (!options.skipUpdate) {
     info('Marking task as done...');
@@ -122,14 +131,29 @@ async function finishTask(taskId: string, options: FinishTaskOptions): Promise<v
 
     // Auto-commit status change if enabled
     if (behavior.autoCommitStatusChange) {
-      try {
-        execSync(
-          `git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para done [skip-ci]"`,
-          { cwd: process.cwd(), stdio: 'ignore' },
-        );
+      const committed = await git.commitTaskStatusChangeOnBranch(normalizedId, 'done', behavior.defaultBranch);
+      if (committed) {
         success('✓ Auto-committed status change');
-      } catch {
-        // Ignore if nothing to commit
+      }
+    }
+
+    // Squash the task file into a single commit on originBranch when done
+    if (behavior.autoSync && behavior.originBranch && behavior.defaultBranch) {
+      try {
+        const squashed = await squashTaskFileOnDone(git, {
+          taskId: normalizedId,
+          defaultBranch: behavior.defaultBranch,
+          originBranch: behavior.originBranch,
+        });
+        if (squashed) {
+          success(`✓ Squash commit pushed to ${behavior.originBranch}`);
+        }
+      } catch (squashError) {
+        error(
+          squashError instanceof Error
+            ? `Squash failed: ${squashError.message}`
+            : 'Squash failed. Task marked as done locally.',
+        );
       }
     }
 
@@ -156,38 +180,42 @@ async function finishTask(taskId: string, options: FinishTaskOptions): Promise<v
   // Show suggestions only if not auto-committing
   if (!behavior.autoCommitFinish || options.skipUpdate) {
     info('Next steps (suggestions):');
+    const steps: string[] = [];
+    const commitType = task.type || 'feat';
+
     if (!options.skipUpdate) {
-      const commitType = task.type || 'feat';
-      console.log(
-        colors.secondary(
-          `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para done [skip-ci]"`,
-        ),
-      );
-      console.log(colors.secondary('  2. Review your changes'));
-      console.log(
-        colors.secondary(
-          `  3. Commit your work: git add . && git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`,
-        ),
-      );
-      console.log(colors.secondary('  4. Push: git push'));
-      console.log(colors.secondary('  5. Create a Pull Request'));
+      if (!behavior.autoCommitStatusChange) {
+        steps.push(
+          `Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para done [skip-ci]"`,
+        );
+      }
+      steps.push('Review your changes');
+      if (!behavior.autoCommitFinish) {
+        steps.push(`Commit your work: git add . && git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`);
+      }
+      if (!autoSyncActive) {
+        steps.push('Push: git push');
+      }
+      steps.push('Create a Pull Request');
     } else {
-      const commitType = task.type || 'feat';
-      console.log(colors.secondary('  1. Review your changes'));
-      console.log(
-        colors.secondary(
-          `  2. Commit your work: git add . && git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`,
-        ),
-      );
-      console.log(colors.secondary('  3. Push: git push'));
-      console.log(colors.secondary('  4. Create a Pull Request'));
+      steps.push('Review your changes');
+      if (!behavior.autoCommitFinish) {
+        steps.push(`Commit your work: git add . && git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`);
+      }
+      if (!autoSyncActive) {
+        steps.push('Push: git push');
+      }
+      steps.push('Create a Pull Request');
     }
+
+    steps.forEach((step, index) => {
+      console.log(colors.secondary(`  ${index + 1}. ${step}`));
+    });
     console.log();
   } else {
     info('All commits done automatically (autopilot mode)');
     info('Next steps:');
-    console.log(colors.secondary('  1. Push: git push'));
-    console.log(colors.secondary('  2. Create a Pull Request'));
+    console.log(colors.secondary('  1. Create a Pull Request'));
     console.log();
   }
 

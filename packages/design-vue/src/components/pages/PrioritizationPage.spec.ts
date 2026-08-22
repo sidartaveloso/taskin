@@ -1,11 +1,11 @@
 import { mount } from '@vue/test-utils';
-import { h } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 
 vi.mock('@opentask/ui-sense', () => import('@opentask/ui-sense/mocks'));
-vi.mock('../../composables/use-prioritization', () =>
-  import('../../composables/use-prioritization/use-prioritization.mock'),
+vi.mock(
+  '../../composables/use-prioritization',
+  () => import('../../composables/use-prioritization/use-prioritization.mock'),
 );
 
 import {
@@ -17,7 +17,20 @@ import PrioritizationPage from './PrioritizationPage.vue';
 
 const ScreenStub = {
   name: 'PrioritizationScreen',
-  props: ['tree', 'filter', 'viewMode', 'sortMode', 'dragEnabled', 'canUndo', 'canRedo', 'focusedId', 'detecting', 'cameraActive', 'gestureFunctions', 'gestureUserId'],
+  props: [
+    'tree',
+    'filter',
+    'viewMode',
+    'sortMode',
+    'dragEnabled',
+    'canUndo',
+    'canRedo',
+    'focusedId',
+    'detecting',
+    'cameraActive',
+    'gestureFunctions',
+    'gestureUserId',
+  ],
   emits: [
     'toggle-tracking',
     'gesture-action',

@@ -15,7 +15,12 @@ describe('TaskinMouth', () => {
   });
 
   it('fills the mouth for open expressions', () => {
-    const openExpressions: Array<'open' | 'wide-open' | 'o-shape' | 'surprised'> = ['open', 'wide-open', 'o-shape', 'surprised'];
+    const openExpressions: Array<'open' | 'wide-open' | 'o-shape' | 'surprised'> = [
+      'open',
+      'wide-open',
+      'o-shape',
+      'surprised',
+    ];
     for (const expression of openExpressions) {
       const wrapper = mount(TaskinMouth, { props: { expression } });
       expect(wrapper.find('#mouth').attributes('fill')).not.toBe('none');

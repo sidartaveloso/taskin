@@ -152,11 +152,11 @@ taskin mcp-server
 }
 ```
 
-## 🔀 Git Flow: Automatic Sync (Roadmap)
+## 🔀 Git Flow: Automatic Sync
 
-> 🚧 **Planned feature** — described here as the target workflow for [TASKS/task-019](./TASKS/task-019-fazer-push-automatico-e-pull-automatico.md). Not implemented yet; `automation.autoSync` and `automation.originBranch` don't exist in the codebase until that task ships.
+Implemented in [TASKS/task-019](./TASKS/task-019-fazer-push-automatico-e-pull-automatico.md): `automation.autoSync` and `automation.originBranch` control remote sync of task bookkeeping commits. `autoSync` defaults to `true` but is only active when `automation.defaultBranch` is configured.
 
-Example configuration once implemented, using `tasks` as the shared `defaultBranch` and `develop` as the `originBranch`:
+Example configuration, using `tasks` as the shared `defaultBranch` and `develop` as the `originBranch`:
 
 ```json
 {
@@ -171,10 +171,10 @@ Example configuration once implemented, using `tasks` as the shared `defaultBran
 
 With this config:
 
-1. `tasks` is a long-lived shared branch (branched once from `develop`) where every `taskin new` and `taskin update --status` commit lands — regardless of which local branch the user is on.
+1. `tasks` is a long-lived shared branch (branched once from `develop`) where every `taskin new` and status-change commit lands — regardless of which local branch the user is on.
 2. **`taskin new`**: before computing the next task number, `autoSync` does `fetch` + `rebase` on `tasks`, then commits the new task file and pushes. If the push is rejected (another user pushed first), it retries the whole cycle (fetch → rebase → renumber → commit → push) up to 3 times.
-3. **`taskin update <id> --status ...`**: same `autoSync` cycle — status changes are committed and pushed to `tasks` automatically.
-4. **When a task's status becomes `done`**: taskin takes the final content of *that task's file only* from `tasks` and creates a single squash commit directly on `develop` (`originBranch`) — without dragging in other tasks still open on `tasks`.
+3. **Status changes (`taskin start`/`taskin pause`/`taskin finish`)**: committed to `tasks` automatically (`commitTaskStatusChangeOnBranch`).
+4. **When a task's status becomes `done`** (`taskin finish`): taskin takes the final content of *that task's file only* from `tasks` and creates a single squash commit directly on `develop` (`originBranch`) — without dragging in other tasks still open on `tasks`.
 5. `tasks` keeps accumulating many small bookkeeping commits; `develop` only ever receives one clean commit per finished task.
 
 ```mermaid

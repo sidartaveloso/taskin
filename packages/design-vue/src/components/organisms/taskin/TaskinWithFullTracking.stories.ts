@@ -27,7 +27,8 @@ type Story = StoryObj<typeof meta>;
 export const FullTracking: Story = {
   render: () => ({
     setup() {
-      const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);      const videoElement = ref<HTMLVideoElement | null>(null);
+      const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
+      const videoElement = ref<HTMLVideoElement | null>(null);
       const showWebcam = ref(false);
 
       // Sync controls

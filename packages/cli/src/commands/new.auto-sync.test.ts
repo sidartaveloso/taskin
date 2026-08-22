@@ -1,121 +1,143 @@
 /**
- * Tests for new command auto-sync behavior and output messages.
- * Quando autoSync está ativo, o output não deve mencionar push manual.
+ * Tests for new command auto-sync wiring.
+ * Exercita o handler real `createTask` com um GitService mock e um projeto temporário.
  */
 
 import type { IGitService } from '@opentask/taskin-git-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { createTask } from './new.js';
 
-describe('new command - auto-sync output', () => {
-  let mockGitService: IGitService;
+function createMockGitService(): IGitService {
+  return {
+    addFiles: vi.fn().mockResolvedValue(true),
+    commit: vi.fn().mockResolvedValue(true),
+    addAndCommit: vi.fn().mockResolvedValue(true),
+    commitTaskStatusChange: vi.fn().mockResolvedValue(true),
+    commitTaskStatusChangeOnBranch: vi.fn().mockResolvedValue(true),
+    hasUncommittedChanges: vi.fn().mockResolvedValue(false),
+    getCurrentBranch: vi.fn().mockResolvedValue('main'),
+    isGitRepository: vi.fn().mockResolvedValue(true),
+    createBranch: vi.fn().mockResolvedValue(true),
+    checkoutBranch: vi.fn().mockResolvedValue(true),
+    fetch: vi.fn().mockResolvedValue(true),
+    rebase: vi.fn().mockResolvedValue(true),
+    push: vi.fn().mockResolvedValue(true),
+    abortRebase: vi.fn().mockResolvedValue(true),
+    checkoutFile: vi.fn().mockResolvedValue(true),
+  };
+}
+
+function writeConfig(dir: string, automation: Record<string, unknown>): void {
+  writeFileSync(
+    join(dir, '.taskin.json'),
+    JSON.stringify(
+      {
+        version: '1.0.0',
+        automation: { level: 'assisted', ...automation },
+        provider: { type: 'fs', config: {} },
+      },
+      null,
+      2,
+    ),
+    'utf-8',
+  );
+}
+
+describe('new command - auto-sync wiring', () => {
+  let tempDir: string;
+  let cwdSpy: MockInstance;
+  let logSpy: MockInstance;
+  let warnSpy: MockInstance;
+  let errorSpy: MockInstance;
 
   beforeEach(() => {
-    mockGitService = {
-      addFiles: vi.fn().mockResolvedValue(true),
-      commit: vi.fn().mockResolvedValue(true),
-      addAndCommit: vi.fn().mockResolvedValue(true),
-      commitTaskStatusChange: vi.fn().mockResolvedValue(true),
-      commitTaskStatusChangeOnBranch: vi.fn().mockResolvedValue(true),
-      hasUncommittedChanges: vi.fn().mockResolvedValue(false),
-      getCurrentBranch: vi.fn().mockResolvedValue('feature/test'),
-      isGitRepository: vi.fn().mockResolvedValue(true),
-      createBranch: vi.fn().mockResolvedValue(true),
-      checkoutBranch: vi.fn().mockResolvedValue(true),
-      fetch: vi.fn().mockResolvedValue(true),
-      rebase: vi.fn().mockResolvedValue(true),
-      push: vi.fn().mockResolvedValue(true),
-      abortRebase: vi.fn().mockResolvedValue(true),
-      checkoutFile: vi.fn().mockResolvedValue(true),
-    };
+    tempDir = mkdtempSync(join(tmpdir(), 'taskin-new-autosync-'));
+    mkdirSync(join(tempDir, 'TASKS'), { recursive: true });
+    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('should call syncBeforeCreate when autoSync=true', async () => {
-    expect(mockGitService.fetch).not.toHaveBeenCalled();
-    expect(mockGitService.rebase).not.toHaveBeenCalled();
-  });
-
-  it('should call pushAfterCreate when autoSync=true', async () => {
-    expect(mockGitService.push).not.toHaveBeenCalled();
-  });
-
-  it('should NOT call syncBeforeCreate when autoSync=false', async () => {
-    // autoSync disabled — fetch/rebase não devem ser chamados
-    const autoSync = false;
-    if (!autoSync) {
-      // skip sync
+  afterEach(() => {
+    cwdSpy.mockRestore();
+    logSpy.mockRestore();
+    warnSpy.mockRestore();
+    errorSpy.mockRestore();
+    if (existsSync(tempDir)) {
+      rmSync(tempDir, { recursive: true, force: true });
     }
-    expect(mockGitService.fetch).not.toHaveBeenCalled();
-    expect(mockGitService.rebase).not.toHaveBeenCalled();
   });
 
-  it('should NOT call pushAfterCreate when autoSync=false', async () => {
-    const autoSync = false;
-    if (!autoSync) {
-      // skip push
-    }
-    expect(mockGitService.push).not.toHaveBeenCalled();
+  it('should sync before numbering and push after creating when autoSync is active', async () => {
+    writeConfig(tempDir, { autoSync: true, defaultBranch: 'tasks', originBranch: 'develop' });
+    const git = createMockGitService();
+
+    await createTask({ type: 'feat', title: 'Test Feature' }, git);
+
+    // syncBeforeCreate: fetch + rebase on origin/tasks
+    expect(git.fetch).toHaveBeenCalled();
+    expect(git.rebase).toHaveBeenCalledWith('origin/tasks');
+    // pushAfterCreate: push to defaultBranch
+    expect(git.push).toHaveBeenCalledWith('tasks');
+
+    // Task file created with the next number
+    const taskFile = join(tempDir, 'TASKS', 'task-001-test-feature.md');
+    expect(existsSync(taskFile)).toBe(true);
+    expect(readFileSync(taskFile, 'utf-8')).toContain('Task 001');
   });
 
-  it('should use syncBeforeCreate before calculating next task number', async () => {
-    const order: string[] = [];
+  it('should NOT sync or push when autoSync=false', async () => {
+    writeConfig(tempDir, { autoSync: false, defaultBranch: 'tasks' });
+    const git = createMockGitService();
 
-    // Simula a ordem: sync → numbering → create → push
-    order.push('sync');
-    order.push('numbering');
-    order.push('create');
-    order.push('push');
+    await createTask({ type: 'feat', title: 'Offline Feature' }, git);
 
-    expect(order).toEqual(['sync', 'numbering', 'create', 'push']);
+    expect(git.fetch).not.toHaveBeenCalled();
+    expect(git.rebase).not.toHaveBeenCalled();
+    expect(git.push).not.toHaveBeenCalled();
+
+    expect(existsSync(join(tempDir, 'TASKS', 'task-001-offline-feature.md'))).toBe(true);
   });
 
-  it('should use nextTaskNumber that considers remote tasks after sync', async () => {
-    // After sync, remote tasks are visible locally
-    const localNumbers = [1, 2, 3];
-    const remoteNumbers = [4, 5];
-    const allNumbers = [...localNumbers, ...remoteNumbers];
-    const nextNumber = allNumbers.length > 0 ? Math.max(...allNumbers) + 1 : 1;
+  it('should warn and skip sync when autoSync=true but no defaultBranch is set', async () => {
+    writeConfig(tempDir, { autoSync: true });
+    const git = createMockGitService();
 
-    expect(nextNumber).toBe(6);
+    await createTask({ type: 'feat', title: 'No Branch' }, git);
+
+    const allLogs = logSpy.mock.calls.map((call) => call.join(' ')).join(' ');
+    expect(allLogs).toContain('defaultBranch');
+    expect(git.fetch).not.toHaveBeenCalled();
+    expect(git.rebase).not.toHaveBeenCalled();
+    expect(git.push).not.toHaveBeenCalled();
+
+    expect(existsSync(join(tempDir, 'TASKS', 'task-001-no-branch.md'))).toBe(true);
   });
 
-  it('should output success message without manual push instruction', async () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  it('should abort creation and NOT create the task when sync fails', async () => {
+    writeConfig(tempDir, { autoSync: true, defaultBranch: 'tasks' });
+    const git = createMockGitService();
+    vi.mocked(git.fetch).mockRejectedValue(new Error('network down'));
 
-    // Simula a mensagem de sucesso sem instrução de push manual
-    const autoSync = true;
-    const taskId = '042';
+    await createTask({ type: 'feat', title: 'Failing Sync' }, git);
 
-    if (autoSync) {
-      console.log(`✓ Task ${taskId} created and synced to remote`);
-      console.log(`📄 File: task-042-feature.md`);
-    }
-
-    const calls = consoleSpy.mock.calls.map((c) => c[0]);
-    const allOutput = calls.join('\n');
-    expect(allOutput).toContain('Task 042');
-    // Não deve mencionar push manual quando autoSync está ativo
-    expect(allOutput).not.toContain('git push');
-
-    consoleSpy.mockRestore();
+    expect(errorSpy).toHaveBeenCalled();
+    expect(git.push).not.toHaveBeenCalled();
+    expect(existsSync(join(tempDir, 'TASKS', 'task-001-failing-sync.md'))).toBe(false);
   });
 
-  it('should output push instruction only when autoSync=false', async () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  it('should number considering tasks brought by the sync (remote already present locally)', async () => {
+    writeConfig(tempDir, { autoSync: true, defaultBranch: 'tasks' });
+    // Simula um task remota já presente localmente após o rebase
+    writeFileSync(join(tempDir, 'TASKS', 'task-001-remote.md'), '# Task 001 — Remote\n\nStatus: pending\n');
+    const git = createMockGitService();
 
-    const autoSync = false;
-    const taskId = '042';
+    await createTask({ type: 'feat', title: 'Second Feature' }, git);
 
-    if (!autoSync) {
-      console.log(`✓ Task ${taskId} created successfully!`);
-      console.log(`📄 File: task-042-feature.md`);
-      console.log(`   Then run: git add TASKS/ && git push`);
-    }
-
-    const calls = consoleSpy.mock.calls.map((c) => c[0]);
-    const allOutput = calls.join('\n');
-    // Quando autoSync=false, pode mencionar push manual
-    expect(allOutput).toContain('git push');
-
-    consoleSpy.mockRestore();
+    expect(existsSync(join(tempDir, 'TASKS', 'task-002-second-feature.md'))).toBe(true);
   });
 });

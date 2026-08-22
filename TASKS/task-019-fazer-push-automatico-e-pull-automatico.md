@@ -42,21 +42,33 @@ Outra motivação importante é evitar que tasks sejam criadas com o mesmo códi
 
 ## Tasks
 
-- [ ] Adicionar campo `autoSync` (boolean, default `true`) ao `AutomationConfigSchema` (`packages/types-ts/src/taskin.schemas.ts`) e ao `ConfigManager` (`packages/cli/src/lib/config-manager.ts`)
-- [ ] Implementar `syncBeforeCreate()` no git-service: `git fetch` + `git rebase origin/<defaultBranch>` no branch de trabalho atual
-- [ ] Mover o cálculo do próximo número de task (`packages/cli/src/commands/new.ts`) para depois do sync, quando `autoSync` estiver ativo
-- [ ] Implementar `pushAfterCreate()`: commit da task nova + `git push`
-- [ ] Implementar estratégia de retry (máx. 3 tentativas) quando `push` falhar por non-fast-forward: novo `fetch/rebase`, recalcular número, recriar commit, tentar `push` de novo
-- [ ] Tratar falha de rebase por conflito real (não apenas non-fast-forward): abortar com `git rebase --abort`, restaurar estado original e reportar erro ao usuário (não tentar resolver conflito automaticamente)
-- [ ] Respeitar `autoSync: false`: pular fetch/rebase/push e manter comportamento atual (100% local)
-- [ ] Atualizar mensagens de ajuda do CLI que hoje instruem push manual (ex.: `finish.ts`) para refletir o novo comportamento automático
-- [ ] Testes unitários com mocks para `syncBeforeCreate`/`pushAfterCreate` e a lógica de retry
-- [ ] Testes de integração com repositórios git temporários (seguindo o padrão da Task 018): dois "clones" simulando dois usuários criando task em paralelo, validando que não colidem número e que o segundo faz retry corretamente
-- [ ] Adicionar campo `automation.originBranch` (string, opcional) ao `AutomationConfigSchema` e ao `ConfigManager`
-- [ ] Implementar `squashTaskFileOnDone()`: ao status virar `done`, extrair o conteúdo final do arquivo da task no `defaultBranch` e commitar isoladamente em `originBranch` (sem trazer mudanças de outras tasks ainda em andamento)
-- [ ] Reaproveitar fetch/rebase/push/retry (mesma lógica do restante da task) para esse commit em `originBranch`
-- [ ] Se `automation.originBranch` não estiver configurado, a funcionalidade fica inativa (no-op) — não quebra o fluxo normal de status `done`
-- [ ] Testes de integração garantindo que o squash traz **apenas** o arquivo da task concluída, mesmo com outras tasks em progresso no `defaultBranch`
+- [x] Adicionar campo `autoSync` (boolean, default `true`) ao `AutomationConfigSchema` (`packages/types-ts/src/taskin.schemas.ts`) e ao `ConfigManager` (`packages/cli/src/lib/config-manager.ts`)
+- [x] Implementar `syncBeforeCreate()` no git-service: `git fetch` + `git rebase origin/<defaultBranch>` no branch de trabalho atual
+- [x] Mover o cálculo do próximo número de task (`packages/cli/src/commands/new.ts`) para depois do sync, quando `autoSync` estiver ativo
+- [x] Implementar `pushAfterCreate()`: commit da task nova + `git push`
+- [x] Implementar estratégia de retry (máx. 3 tentativas) quando `push` falhar por non-fast-forward: novo `fetch/rebase`, recalcular número, recriar commit, tentar `push` de novo
+- [x] Tratar falha de rebase por conflito real (não apenas non-fast-forward): abortar com `git rebase --abort`, restaurar estado original e reportar erro ao usuário (não tentar resolver conflito automaticamente)
+- [x] Respeitar `autoSync: false`: pular fetch/rebase/push e manter comportamento atual (100% local)
+- [x] Atualizar mensagens de ajuda do CLI que hoje instruem push manual (ex.: `finish.ts`) para refletir o novo comportamento automático
+- [x] Testes unitários com mocks para `syncBeforeCreate`/`pushAfterCreate` e a lógica de retry
+- [x] Testes de integração com repositórios git temporários (seguindo o padrão da Task 018): dois "clones" simulando dois usuários criando task em paralelo, validando que não colidem número e que o segundo faz retry corretamente
+- [x] Adicionar campo `automation.originBranch` (string, opcional) ao `AutomationConfigSchema` e ao `ConfigManager`
+- [x] Implementar `squashTaskFileOnDone()`: ao status virar `done`, extrair o conteúdo final do arquivo da task no `defaultBranch` e commitar isoladamente em `originBranch` (sem trazer mudanças de outras tasks ainda em andamento)
+- [x] Reaproveitar fetch/rebase/push/retry (mesma lógica do restante da task) para esse commit em `originBranch`
+- [x] Se `automation.originBranch` não estiver configurado, a funcionalidade fica inativa (no-op) — não quebra o fluxo normal de status `done`
+- [x] Testes de integração garantindo que o squash traz **apenas** o arquivo da task concluída, mesmo com outras tasks em progresso no `defaultBranch`
+
+## Pendências de integração (revisão — resolvidas)
+
+O núcleo (schema/config, `IGitService`, módulo `auto-sync.ts` e testes unit/integração com mocks/repos temporários) já existia e estava GREEN. As pendências abaixo foram implementadas para conectar o fluxo real da CLI ao módulo:
+
+- [x] Exportar `auto-sync` no `index.ts` do `file-system-task-provider` (hoje `packages/file-system-task-provider/src/index.ts` não reexporta `auto-sync.ts`)
+- [x] `taskin new` (`packages/cli/src/commands/new.ts`): chamar `syncBeforeCreate` (fetch + rebase em `origin/<defaultBranch>`) **antes** de numerar e `pushAfterCreate` (commit + push, com retry) depois de criar — hoje a numeração é 100% local (`new.ts:153-161`) e nada é enviado ao remoto
+- [x] `taskin finish` (`packages/cli/src/commands/finish.ts`): disparar `squashTaskFileOnDone` quando o status virar `done` e `originBranch` estiver configurado (hoje nenhum código de produção chama `squashTaskFileOnDone`)
+- [x] Remover as instruções de `git push` manual do `finish.ts` (linhas ~172, 182, 189) quando `autoSync` estiver ativo, e ajustar a saída do `new.ts` para refletir o sync automático
+- [x] Emitir o warning "autoSync enabled but no defaultBranch" a partir do fluxo real da CLI (hoje só existe dentro de `syncBeforeCreate`, que não é chamado por nenhum comando)
+- [x] Substituir os testes falsos `new.auto-sync.test.ts`/`finish.auto-sync.test.ts` (simulam a lógica inline com `if (autoSync)`) por testes que exercitem os comandos reais com o módulo de sync integrado
+- [x] Atualizar README: remover a marcação "Planned feature — Not implemented yet" (README.md:157) e documentar `autoSync`/`originBranch` como implementados
 
 ## Technical Details
 
@@ -228,18 +240,18 @@ Testes a escrever primeiro:
 
 ## Acceptance Criteria
 
-- [ ] `automation.autoSync` existe no schema, default `true`, documentado no README/config docs
-- [ ] Numeração de task considera o estado remoto após sync (Task 017's `defaultBranch`, sem novo branch dedicado)
-- [ ] Retry automático funciona até 3 tentativas em caso de non-fast-forward
-- [ ] Conflito real de rebase aborta com segurança e restaura estado original (sem perda de trabalho local)
-- [ ] `autoSync: false` preserva 100% o comportamento atual (sem rede)
-- [ ] Testes de integração cobrindo corrida entre dois "usuários" (dois clones)
-- [ ] Nenhuma operação destrutiva (`push --force`, `rebase` sem abort seguro) usada em nenhum cenário
-- [ ] Ao marcar task como `done`, exatamente 1 commit novo aparece em `originBranch`, contendo só o arquivo daquela task
-- [ ] Squash não vaza mudanças de outras tasks em progresso no `defaultBranch`
-- [ ] `automation.originBranch` ausente = feature inativa, sem quebrar o fluxo de `done` existente
-- [ ] CLI avisa (warning) quando `autoSync: true` mas `defaultBranch` não configurado, deixando claro que nada será sincronizado
-- [ ] A implementação do sync git (fetch, rebase, push, squash) está contida no `file-system-task-provider`; os campos de config permanecem no schema global
+- [x] `automation.autoSync` existe no schema, default `true`, documentado no README/config docs
+- [x] Numeração de task considera o estado remoto após sync (Task 017's `defaultBranch`, sem novo branch dedicado)
+- [x] Retry automático funciona até 3 tentativas em caso de non-fast-forward
+- [x] Conflito real de rebase aborta com segurança e restaura estado original (sem perda de trabalho local)
+- [x] `autoSync: false` preserva 100% o comportamento atual (sem rede)
+- [x] Testes de integração cobrindo corrida entre dois "usuários" (dois clones)
+- [x] Nenhuma operação destrutiva (`push --force`, `rebase` sem abort seguro) usada em nenhum cenário
+- [x] Ao marcar task como `done`, exatamente 1 commit novo aparece em `originBranch`, contendo só o arquivo daquela task
+- [x] Squash não vaza mudanças de outras tasks em progresso no `defaultBranch`
+- [x] `automation.originBranch` ausente = feature inativa, sem quebrar o fluxo de `done` existente
+- [x] CLI avisa (warning) quando `autoSync: true` mas `defaultBranch` não configurado, deixando claro que nada será sincronizado
+- [x] A implementação do sync git (fetch, rebase, push, squash) está contida no `file-system-task-provider`; os campos de config permanecem no schema global
 
 ## Related Tasks
 
