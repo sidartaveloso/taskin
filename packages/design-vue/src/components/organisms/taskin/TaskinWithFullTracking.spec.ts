@@ -4,7 +4,12 @@ import { nextTick } from 'vue';
 
 vi.mock('@opentask/ui-sense', () => import('@opentask/ui-sense/mocks'));
 
-import { createFaceLandmarkerMock, createPoseLandmarkerMock, useFaceLandmarker, usePoseLandmarker } from '@opentask/ui-sense/mocks';
+import {
+  createFaceLandmarkerMock,
+  createPoseLandmarkerMock,
+  useFaceLandmarker,
+  usePoseLandmarker,
+} from '@opentask/ui-sense/mocks';
 import TaskinWithFullTracking from './TaskinWithFullTracking.vue';
 
 const baseBlendShapes = {

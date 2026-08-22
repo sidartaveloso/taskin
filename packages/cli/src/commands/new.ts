@@ -2,12 +2,19 @@
  * New command - Create a new task
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
+import {
+  FileSystemTaskProvider,
+  pushAfterCreate,
+  syncBeforeCreate,
+  UserRegistry,
+} from '@opentask/taskin-file-system-provider';
+import { GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { slugify } from '@opentask/taskin-utils';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import path from 'path';
-import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
+import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
 
@@ -45,7 +52,7 @@ export const createCommand = defineCommand({
   },
 });
 
-async function createTask(options: CreateTaskOptions): Promise<void> {
+export async function createTask(options: CreateTaskOptions, gitService?: IGitService): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -146,6 +153,32 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
   // Ensure the current user exists in the registry
   await userRegistry.ensureCurrentUser();
 
+  // Load automation config
+  const configManager = new ConfigManager(monorepoRoot);
+  const behavior = configManager.getAutomationBehavior();
+  const autoSyncActive = behavior.autoSync && !!behavior.defaultBranch;
+
+  if (behavior.autoSync && !behavior.defaultBranch) {
+    warning('autoSync is enabled but no defaultBranch is configured. Nothing will be synced.');
+  }
+
+  // Initialize Git service
+  const git = gitService ?? new GitService(process.cwd());
+
+  // Sync with remote before numbering (fetch + rebase) when autoSync is active
+  if (autoSyncActive) {
+    try {
+      await syncBeforeCreate(git, {
+        autoSync: autoSyncActive,
+        defaultBranch: behavior.defaultBranch,
+      });
+      info('Synced with remote before numbering.');
+    } catch (syncError) {
+      error(syncError instanceof Error ? `Sync failed: ${syncError.message}` : 'Sync failed. Aborting task creation.');
+      return;
+    }
+  }
+
   // Initialize task provider to get existing tasks
   const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
   const allTasks = await taskProvider.getAllTasks();
@@ -185,11 +218,32 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
   // Write task file
   writeFileSync(filePath, taskContent, 'utf-8');
 
+  // Commit and push the new task when autoSync is active
+  if (autoSyncActive && behavior.defaultBranch) {
+    try {
+      await pushAfterCreate(git, {
+        taskId,
+        title: options.title,
+        defaultBranch: behavior.defaultBranch,
+      });
+    } catch (pushError) {
+      error(
+        pushError instanceof Error
+          ? `Push failed: ${pushError.message}`
+          : 'Push failed. Task file was created but not pushed.',
+      );
+      return;
+    }
+  }
+
   // Show success message
   console.log();
   success(`Task ${taskId} created successfully!`);
   console.log(colors.secondary(`📄 File: ${fileName}`));
   console.log(colors.secondary(`📁 Path: ${filePath}`));
+  if (autoSyncActive) {
+    success('✓ Task committed and pushed to remote');
+  }
   console.log();
   console.log(colors.info('Next steps:'));
   console.log(colors.normal(`  1. Edit the task file to add more details`));
