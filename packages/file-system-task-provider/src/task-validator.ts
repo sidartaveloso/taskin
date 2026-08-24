@@ -237,10 +237,11 @@ export async function validateTaskFile(filePath: string): Promise<ValidationIssu
 
     // Check for proper task ID format in filename
     const fileName = filePath.split('/').pop() || '';
-    if (!fileName.match(/^task-\d{3}-.*\.md$/)) {
+    if (!fileName.match(/^task-\d{3}(?:-.*)?\.md$/)) {
       issues.push({
         file: filePath,
-        message: 'Task filename should follow pattern: task-NNN-description.md (e.g., task-001-my-task.md)',
+        message:
+          'Task filename should follow pattern: task-NNN-description.md (e.g., task-001-my-task.md or task-001.md)',
         severity: 'warning',
         suggestion: 'Rename the file to match the pattern task-001-description.md',
       });

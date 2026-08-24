@@ -17,6 +17,16 @@ import { NullLogger } from './user-registry.js';
 const TITLE_PATTERN = /^#\s+(?:🧩\s+)?Task\s+\d+\s*[—-]\s*(.+)$/im;
 
 /**
+ * Extracts the numeric task id from a task file name.
+ * Accepts both `task-004-my-task.md` and `task-004.md`. Returns `undefined`
+ * for anything that is not a numeric task file (e.g. README.md, task-foo.md).
+ */
+function extractTaskIdFromFileName(fileName: string): string | undefined {
+  const match = fileName.match(/^task-(\d+)(?:-.+)?\.md$/);
+  return match ? match[1] : undefined;
+}
+
+/**
  * Parses the raw inline matches for the prioritization fields (Priority/Group/
  * GroupName/Difficulty) into the typed shape expected on TaskFile.
  */
@@ -107,7 +117,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
   async findTask(taskId: string): Promise<TaskFile | undefined> {
     const files = await fs.readdir(this.tasksDirectory);
-    const taskFile = files.find((file) => file.startsWith(`task-${taskId}-`) && file.endsWith('.md'));
+    const taskFile = files.find((file) => extractTaskIdFromFileName(file) === taskId);
 
     if (!taskFile) {
       return undefined;
@@ -229,9 +239,8 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       const filePath = path.join(this.tasksDirectory, file);
       const content = await fs.readFile(filePath, 'utf-8');
 
-      // Extract task ID from filename: task-001-title.md -> 001
-      const idMatch = file.match(/^task-(\d+)-/);
-      const taskId = idMatch ? idMatch[1] : 'unknown';
+      // Extract task ID from filename: task-001-title.md -> 001 (also task-001.md)
+      const taskId = extractTaskIdFromFileName(file) ?? 'unknown';
 
       // Extract title from first heading
       const titleMatch = content.match(TITLE_PATTERN);

@@ -31,7 +31,7 @@ const MILLISECONDS_PER_DAY = HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINU
  * Task file parsing patterns
  * Extracted as constants for maintainability and testing
  */
-const TASK_FILENAME_PATTERN = /^task-(\d+)-/;
+const TASK_FILENAME_PATTERN = /^task-(\d+)(?:-.+)?\.md$/;
 const TASK_TITLE_PATTERNS = {
   withDash: /^# .*?[—-]\s*(.+)$/im,
   withNumber: /^# .*?\s+(\d+)\s*-\s*(.+)$/im,

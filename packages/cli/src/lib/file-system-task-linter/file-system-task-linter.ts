@@ -29,11 +29,11 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
    * Validate task file name format (FileSystem-specific)
    */
   validateFileName(fileName: string): FileValidationError | null {
-    const pattern = /^task-\d{2,3}-[a-z0-9-]+\.md$/;
+    const pattern = /^task-\d{2,3}(?:-[a-z0-9-]+)?\.md$/;
     if (!pattern.test(fileName)) {
       return {
         file: fileName,
-        message: 'Invalid filename. Expected: task-NNN-kebab-case-title.md',
+        message: 'Invalid filename. Expected: task-NNN-kebab-case-title.md (or task-NNN.md)',
         severity: 'error',
       };
     }
