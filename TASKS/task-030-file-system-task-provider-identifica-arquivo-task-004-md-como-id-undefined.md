@@ -1,6 +1,6 @@
 # Task 030 — file-system-task-provider identifica arquivo task-004.md como id undefined
 
-Status: in-progress
+Status: done
 Type: fix
 Assignee: A definir
 
