@@ -76,6 +76,20 @@ describe('FileSystemTaskProvider', () => {
 
       expect(task?.title).toBe('revisar se task-manager deveria lidar com taskfile ou task');
     });
+
+    it('should find a task file named without a title slug (task-004.md)', async () => {
+      (fs.readdir as Mock).mockResolvedValue(['task-004.md']);
+      (fs.readFile as Mock).mockResolvedValue(
+        '# Task 004 — Sem titulo\n\nStatus: pending\nType: feat\nAssignee: A definir',
+      );
+
+      const task = await provider.findTask('004');
+
+      expect(task).toBeDefined();
+      expect(task?.id).toBe('004');
+      expect(task?.filePath).toBe('/fake/tasks/task-004.md');
+      expect(fs.readFile).toHaveBeenCalledWith('/fake/tasks/task-004.md', 'utf-8');
+    });
   });
 
   describe('updateTask', () => {
@@ -484,6 +498,25 @@ Minimal task with no status or type`;
       expect(tasks[0].id).toBe('001');
       expect(tasks[0].status).toBe('pending');
       expect(tasks[0].type).toBe('feat');
+    });
+
+    it('should extract the numeric id from a file without a title slug (task-004.md)', async () => {
+      const taskContent = `# Task 004 — Sem titulo
+Status: pending
+Type: feat
+Assignee: A definir
+
+## Description
+Descrição`;
+
+      (fs.readdir as Mock).mockResolvedValue(['task-004.md']);
+      (fs.readFile as Mock).mockResolvedValue(taskContent);
+
+      const tasks = await provider.getAllTasks();
+
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].id).toBe('004');
+      expect(tasks[0].filePath).toBe('/fake/tasks/task-004.md');
     });
 
     it('should parse pt-BR localized task files', async () => {
