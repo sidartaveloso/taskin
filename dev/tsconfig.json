@@ -3,13 +3,24 @@
     "composite": true,
     "outDir": "./dist",
     "rootDir": "./",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023"],
+    "target": "ES2023"
   },
   "extends": "../tsconfig.base.json",
   "include": ["scripts/**/*"],
   "references": [
-    { "path": "../packages/types-ts" },
-    { "path": "../packages/task-manager" },
-    { "path": "../packages/file-system-task-provider" }
+    {
+      "path": "../packages/types-ts"
+    },
+    {
+      "path": "../packages/task-manager"
+    },
+    {
+      "path": "../packages/file-system-task-provider"
+    }
   ]
 }

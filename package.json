@@ -30,7 +30,7 @@
     "lint:root": "biome check .",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
-    "test": "turbo run test",
+    "test": "turbo run test && pnpm test:dev-scripts",
     "test:coverage": "turbo run test:coverage",
     "format": "biome check --write .",
     "format:check": "biome check .",
@@ -48,7 +48,9 @@
     "publish:pypi:check": "turbo run publish:pypi:check",
     "publish:packages": "node scripts/publish-packages.js",
     "publish:beta": "node scripts/publish-packages.js --tag beta",
-    "publish:latest": "node scripts/publish-packages.js --tag latest"
+    "publish:latest": "node scripts/publish-packages.js --tag latest",
+    "confianca:publicacao": "tsx dev/scripts/configurar-confianca-de-publicacao.ts",
+    "test:dev-scripts": "vitest run --config dev/vitest.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
