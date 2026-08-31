@@ -10,6 +10,8 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write
   pull-requests: write
+  # Trusted publishing do npm (OIDC). O publish nao usa token nenhum: o runner
+  # troca este id-token por uma credencial efemera, com escopo de um pacote so.
   id-token: write
 
 jobs:
@@ -44,10 +46,26 @@ jobs:
             .tool-versions
             pyproject.toml
 
+      # `changeset publish` publica via `pnpm publish`, nao `npm publish`, entao
+      # quem precisa suportar OIDC aqui e o pnpm. Versoes 11.0.x ate 11.1.2 tem
+      # uma regressao que devolve 404 no trusted publishing (pnpm/pnpm#11513).
+      # A versao vem do .tool-versions e hoje e 11.20.0, acima do corte.
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ steps.tool-versions.outputs.pnpm-version }}
+
+      - name: Assert pnpm supports OIDC trusted publishing
+        run: |
+          CURRENT=$(pnpm --version)
+          # A regressao vive so na faixa [11.0.0, 11.1.3). O pnpm 10 publica
+          # via OIDC normalmente, entao nao da para exigir apenas ">= 11.1.3".
+          if [ "${CURRENT%%.*}" = "11" ] && \
+             [ "$(printf '%s\n' "11.1.3" "$CURRENT" | sort -V | head -1)" != "11.1.3" ]; then
+            echo "pnpm $CURRENT tem a regressao de OIDC (pnpm/pnpm#11513); use >= 11.1.3" >&2
+            exit 1
+          fi
+          echo "pnpm $CURRENT OK para trusted publishing"
 
       - name: Get pnpm store directory
         shell: bash
@@ -78,4 +96,3 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

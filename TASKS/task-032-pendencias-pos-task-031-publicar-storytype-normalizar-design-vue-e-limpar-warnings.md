@@ -20,7 +20,7 @@ bloco 1 — e ele era mais complicado do que o descrito. Ver `## Notes`.
 
 | Bloco | Estado | Evidencia |
 | --- | --- | --- |
-| 1. Publicar storytype | preparado, falta `npm publish` | commit `16e7438` no repo storytype |
+| 1. Publicar storytype | automatizado no CI, falta merge para `main` | commits `16e7438` e `aa87d8e` no repo storytype |
 | 2. Normalizar design-vue | ja aplicado | `7eb07bb`, `cb35884`; normalize --dry-run reporta 0 renomeacoes |
 | 3. Bumps do changeset | feito | `design-vue` e `task-server-ws` para `minor` |
 | 4. Warnings de lint | feito no codigo de producao | `c5927c4`, `63f4b4c`; 97 → 46 warnings, so 1 fora de teste/story |
@@ -53,9 +53,15 @@ Não era uma publicação, eram duas — ver `## Notes`.
 - [x] `npm pack --dry-run` valida o conteudo do tarball (17 arquivos, sem lixo)
 - [x] Confirmar que o cli buildado localmente conserta a deteccao: `audit` no
       design-vue sai de "Diretorio de componentes nao encontrado" para 37 componentes
-- [ ] **Bloqueado:** `npm publish` dos dois pacotes — o token do npm em `~/.npmrc`
-      esta invalido (`npm profile get` → "authentication token seems to be invalid").
-      Precisa de `npm login`
+- [x] O publish manual foi abandonado: o npm exige OTP a cada pacote e vai remover
+      a publicacao direta por token que dispensa 2FA em janeiro de 2027. O release
+      dos dois pacotes passou a ser trusted publishing (OIDC) no GitHub Actions,
+      commit `aa87d8e` — ver a task de CI
+- [x] Tag `v0.2.6` criada em `fd19501` para reconciliar o historico do
+      semantic-release com o que ja estava publicado a mao. Sem ela o proximo
+      release calcularia 0.2.5, que ja existe, e morreria em conflito
+- [ ] Publicar: merge de `develop` em `main` no storytype. Sai **0.2.7** nos dois
+      pacotes, com a dependencia do alias sincronizada automaticamente
 - [ ] Atualizar a devDependency no taskin de `^0.2.6` para `^0.2.7` — so depois de
       publicar, senao `pnpm install` quebra no repo inteiro
 
