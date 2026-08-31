@@ -1,8 +1,8 @@
 ---
 '@opentask/taskin-task-manager': major
 '@opentask/taskin-task-provider-pinia': major
-'@opentask/taskin-task-server-ws': major
-'@opentask/taskin-design-vue': major
+'@opentask/taskin-task-server-ws': minor
+'@opentask/taskin-design-vue': minor
 '@opentask/taskin-types': major
 '@opentask/taskin-file-system-provider': minor
 '@opentask/taskin-task-server-mcp': minor
