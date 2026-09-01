@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { h } from 'vue';
+import { type Component, h } from 'vue';
 import TaskinEffectFartCloud from './taskin-effect-fart-cloud/TaskinEffectFartCloud';
 import TaskinEffectHearts from './taskin-effect-hearts/TaskinEffectHearts';
 import TaskinEffectPhone from './taskin-effect-phone/TaskinEffectPhone';
@@ -95,7 +95,7 @@ export const Documentation: Story = {
                     },
                   },
                   [
-                    h(effect.component as any, {
+                    h(effect.component as Component, {
                       animationsEnabled: true,
                       ...effect.props,
                     }),

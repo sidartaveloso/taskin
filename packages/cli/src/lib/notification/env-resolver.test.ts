@@ -17,11 +17,13 @@ describe('resolveEnvVars', () => {
 
   it('should resolve a single env var', () => {
     process.env.TEST_URL = 'https://discord.com/api/webhooks/123/abc';
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal ${VAR} placeholder consumed by resolveEnvVars
     expect(resolveEnvVars('${TEST_URL}')).toBe('https://discord.com/api/webhooks/123/abc');
   });
 
   it('should resolve env var in URL path', () => {
     process.env.TOKEN = 'abc123';
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal ${VAR} placeholder consumed by resolveEnvVars
     expect(resolveEnvVars('https://api.telegram.org/bot${TOKEN}/sendMessage')).toBe(
       'https://api.telegram.org/botabc123/sendMessage',
     );
@@ -30,14 +32,17 @@ describe('resolveEnvVars', () => {
   it('should resolve multiple env vars', () => {
     process.env.BOT_TOKEN = '123:ABC';
     process.env.CHAT_ID = '-100123';
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal ${VAR} placeholder consumed by resolveEnvVars
     expect(resolveEnvVars('${BOT_TOKEN}:${CHAT_ID}')).toBe('123:ABC:-100123');
   });
 
   it('should return empty string for unresolved env var', () => {
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal ${VAR} placeholder consumed by resolveEnvVars
     expect(resolveEnvVars('${UNSET_VAR}')).toBe('');
   });
 
   it('should replace unresolved var with empty string in mixed content', () => {
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal ${VAR} placeholder consumed by resolveEnvVars
     expect(resolveEnvVars('prefix-${UNSET_VAR}-suffix')).toBe('prefix--suffix');
   });
 

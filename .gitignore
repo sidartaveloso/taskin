@@ -6,6 +6,12 @@ node_modules/
 # Testing
 coverage/
 .nyc_output/
+__screenshots__/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+test-results-report.html
 
 # Build outputs
 dist/

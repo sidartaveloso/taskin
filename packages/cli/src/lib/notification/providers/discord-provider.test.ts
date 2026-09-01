@@ -2,6 +2,16 @@ import type { NotificationMessage } from '@opentask/taskin-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DiscordProvider } from './discord-provider.js';
 
+interface SentDiscordBody {
+  content?: string;
+  embeds: Array<{
+    title: string;
+    color: number;
+    fields: unknown[];
+    footer: { text: string };
+  }>;
+}
+
 describe('DiscordProvider', () => {
   let provider: DiscordProvider;
   const webhookUrl = 'https://discord.com/api/webhooks/123/abc';
@@ -81,9 +91,9 @@ describe('DiscordProvider', () => {
   });
 
   it('should format embed message correctly', async () => {
-    let sentBody: any;
-    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
-      sentBody = JSON.parse(opts.body);
+    let sentBody!: SentDiscordBody;
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: RequestInit) => {
+      sentBody = JSON.parse(opts.body as string) as SentDiscordBody;
       return { ok: true, status: 204 };
     });
 
@@ -103,9 +113,9 @@ describe('DiscordProvider', () => {
   });
 
   it('should include content when message has mentions', async () => {
-    let sentBody: any;
-    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
-      sentBody = JSON.parse(opts.body);
+    let sentBody!: SentDiscordBody;
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: RequestInit) => {
+      sentBody = JSON.parse(opts.body as string) as SentDiscordBody;
       return { ok: true, status: 204 };
     });
 
@@ -147,9 +157,9 @@ describe('DiscordProvider', () => {
   });
 
   it('should handle empty mentions array', async () => {
-    let sentBody: any;
-    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
-      sentBody = JSON.parse(opts.body);
+    let sentBody!: SentDiscordBody;
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: RequestInit) => {
+      sentBody = JSON.parse(opts.body as string) as SentDiscordBody;
       return { ok: true, status: 204 };
     });
 
