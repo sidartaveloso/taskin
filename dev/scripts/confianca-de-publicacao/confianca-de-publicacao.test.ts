@@ -30,7 +30,7 @@ describe('ConfiguradorDeConfianca', () => {
   });
 
   it('segue nos demais pacotes quando um falha, e relata qual', async () => {
-    const npm = new ClienteNpmMock({ '@escopo/dois': 'EOTP' });
+    const npm = new ClienteNpmMock({ falhasPorPacote: { '@escopo/dois': 'EOTP' } });
     const configurador = new ConfiguradorDeConfianca(npm, [
       repo('dono/alfa', ['@escopo/um', '@escopo/dois', '@escopo/tres']),
     ]);
@@ -58,6 +58,28 @@ describe('ConfiguradorDeConfianca', () => {
     await configurador.configurar();
 
     expect(vistos.map((item) => item.pacote)).toEqual(['@escopo/dois', '@escopo/um']);
+  });
+
+  it('repassa o mesmo otp em todas as chamadas', async () => {
+    const npm = new ClienteNpmMock();
+    const configurador = new ConfiguradorDeConfianca(
+      npm,
+      [repo('dono/alfa', ['@escopo/um', '@escopo/dois'])],
+      () => {},
+      '123456',
+    );
+
+    await configurador.configurar();
+
+    expect(npm.otpsRecebidos).toEqual(['123456', '123456']);
+  });
+
+  it('nao inventa otp quando nenhum foi informado', async () => {
+    const npm = new ClienteNpmMock();
+
+    await new ConfiguradorDeConfianca(npm, [repo('dono/alfa', ['@escopo/um'])]).configurar();
+
+    expect(npm.otpsRecebidos).toEqual([undefined]);
   });
 
   it('devolve relatorio vazio quando nenhum repo tem pacote publicavel', async () => {

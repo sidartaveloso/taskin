@@ -3,13 +3,16 @@
  * Configura trusted publishing (OIDC) nos pacotes publicaveis do taskin e do
  * storytype, para que o release rode sem token e sem OTP.
  *
- *   pnpm confianca:publicacao
- *   pnpm confianca:publicacao --dry-run
+ *   pnpm confianca:publicacao                 interativo: loga e pergunta o 2FA
+ *   pnpm confianca:publicacao --otp=123456    passa o codigo em vez de digitar
+ *   pnpm confianca:publicacao --nao-interativo   falha em vez de perguntar
+ *   pnpm confianca:publicacao --dry-run       so lista os pacotes
  *
- * O npm exige 2FA para alterar configuracao de trusted publishing, num fluxo de
- * navegador. Se ele imprimir uma URL, autentique e a execucao segue.
+ * Um codigo de 2FA vive cerca de 30 segundos, entao um `--otp` nao cobre os 15
+ * pacotes. Serve para retomar os que faltaram: o relatorio final diz quais sao.
  */
 import { resolve } from 'node:path';
+import type { ModoDeExecucao } from './cliente-npm';
 import { ClienteNpm, VERSAO_MINIMA_DO_NPM, versaoAtende } from './cliente-npm';
 import type { ItemDoRelatorio, RepoAlvo } from './confianca-de-publicacao';
 import { ConfiguradorDeConfianca } from './confianca-de-publicacao';
@@ -19,6 +22,16 @@ const WORKFLOW = 'release.yml';
 const binario = process.env.NPM_BIN ?? 'npm';
 const raizDoTaskin = resolve(__dirname, '..', '..');
 const raizDoStorytype = process.env.STORYTYPE_DIR ?? resolve(raizDoTaskin, '..', 'storytype');
+
+const argumentos = process.argv.slice(2);
+const otp = argumentos.find((a) => a.startsWith('--otp='))?.slice('--otp='.length);
+
+/** Sem terminal nao ha quem responda a um prompt, entao o padrao acompanha o TTY. */
+const modo: ModoDeExecucao = argumentos.includes('--nao-interativo')
+  ? { tipo: 'nao-interativo' }
+  : argumentos.includes('--interativo') || process.stdin.isTTY
+    ? { tipo: 'interativo' }
+    : { tipo: 'nao-interativo' };
 
 const repos: RepoAlvo[] = [
   {
@@ -54,8 +67,26 @@ function imprimir(item: ItemDoRelatorio): void {
   );
 }
 
+async function garantirSessao(npm: ClienteNpm): Promise<string | undefined> {
+  const jaAutenticado = await npm.usuarioAutenticado();
+  if (jaAutenticado) return jaAutenticado;
+
+  if (modo.tipo === 'nao-interativo') {
+    console.error('sem sessao no npm. Rode `npm login` antes, ou execute em modo interativo.');
+    return undefined;
+  }
+
+  console.log('sem sessao no npm, abrindo login...\n');
+  const resultado = await npm.autenticar();
+  if (resultado.tipo === 'falha') {
+    console.error(`\nnao foi possivel autenticar: ${resultado.motivo}`);
+    return undefined;
+  }
+  return resultado.usuario;
+}
+
 async function principal(): Promise<number> {
-  const npm = new ClienteNpm(binario);
+  const npm = new ClienteNpm(binario, modo);
 
   const versao = await npm.versao().catch(() => undefined);
   if (!versao || !versaoAtende(versao)) {
@@ -64,7 +95,7 @@ async function principal(): Promise<number> {
     return 1;
   }
 
-  if (process.argv.includes('--dry-run')) {
+  if (argumentos.includes('--dry-run')) {
     for (const { repositorio, listador } of repos) {
       console.log(`\n${repositorio} (workflow ${WORKFLOW})`);
       for (const pacote of await listador.listar()) console.log(`  - ${pacote}`);
@@ -72,11 +103,16 @@ async function principal(): Promise<number> {
     return 0;
   }
 
-  const relatorio = await new ConfiguradorDeConfianca(npm, repos, imprimir).configurar();
+  const usuario = await garantirSessao(npm);
+  if (!usuario) return 1;
+  console.log(`npm ${versao}, autenticado como ${usuario}, modo ${modo.tipo}`);
+
+  const relatorio = await new ConfiguradorDeConfianca(npm, repos, imprimir, otp).configurar();
 
   console.log(`\nconfigurados: ${relatorio.configurados}`);
   if (relatorio.falhas > 0) {
     console.log(`falharam: ${relatorio.falhas}`);
+    console.log('rode de novo para retomar os que faltaram — a operacao e idempotente.');
     return 1;
   }
   console.log('o release agora publica sem token e sem OTP.');

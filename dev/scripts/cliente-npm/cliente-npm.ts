@@ -1,27 +1,65 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { AlvoDeConfianca, IClienteNpm, ResultadoDeConfianca } from './cliente-npm.types';
+import type {
+  AlvoDeConfianca,
+  IClienteNpm,
+  ModoDeExecucao,
+  ResultadoDeAutenticacao,
+  ResultadoDeConfianca,
+} from './cliente-npm.types';
 
-const executar = promisify(execFile);
+const capturar = promisify(execFile);
 
 export const VERSAO_MINIMA_DO_NPM = '11.15.0';
 
 export class ClienteNpm implements IClienteNpm {
-  constructor(private readonly binario: string) {}
+  constructor(
+    private readonly binario: string,
+    private readonly modo: ModoDeExecucao,
+  ) {}
 
-  async confiarEmGithubActions({ pacote, repositorio, workflow }: AlvoDeConfianca): Promise<ResultadoDeConfianca> {
+  async usuarioAutenticado(): Promise<string | undefined> {
     try {
-      await executar(this.binario, [
-        'trust',
-        'github',
-        pacote,
-        '--repo',
-        repositorio,
-        '--file',
-        workflow,
-        '--allow-publish',
-        '--yes',
-      ]);
+      const { stdout } = await capturar(this.binario, ['whoami']);
+      return stdout.trim() || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async autenticar(): Promise<ResultadoDeAutenticacao> {
+    if (this.modo.tipo === 'nao-interativo') {
+      return { tipo: 'falha', motivo: 'login exige modo interativo; autentique antes ou rode sem --nao-interativo' };
+    }
+
+    const codigo = await this.herdandoTerminal(['login']);
+    if (codigo !== 0) return { tipo: 'falha', motivo: `npm login saiu com codigo ${codigo}` };
+
+    const usuario = await this.usuarioAutenticado();
+    return usuario ? { tipo: 'autenticado', usuario } : { tipo: 'falha', motivo: 'login terminou sem sessao valida' };
+  }
+
+  async confiarEmGithubActions(alvo: AlvoDeConfianca, otp?: string): Promise<ResultadoDeConfianca> {
+    const argumentos = [
+      'trust',
+      'github',
+      alvo.pacote,
+      '--repo',
+      alvo.repositorio,
+      '--file',
+      alvo.workflow,
+      '--allow-publish',
+      '--yes',
+      ...(otp ? ['--otp', otp] : []),
+    ];
+
+    if (this.modo.tipo === 'interativo') {
+      const codigo = await this.herdandoTerminal(argumentos);
+      return codigo === 0 ? { tipo: 'configurado' } : { tipo: 'falha', motivo: `npm saiu com codigo ${codigo}` };
+    }
+
+    try {
+      await capturar(this.binario, argumentos);
       return { tipo: 'configurado' };
     } catch (erro) {
       return { tipo: 'falha', motivo: mensagemDe(erro) };
@@ -29,8 +67,16 @@ export class ClienteNpm implements IClienteNpm {
   }
 
   async versao(): Promise<string> {
-    const { stdout } = await executar(this.binario, ['--version']);
+    const { stdout } = await capturar(this.binario, ['--version']);
     return stdout.trim();
+  }
+
+  private herdandoTerminal(argumentos: string[]): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const processo = spawn(this.binario, argumentos, { stdio: 'inherit' });
+      processo.on('error', reject);
+      processo.on('close', (codigo) => resolve(codigo ?? 1));
+    });
   }
 }
 
