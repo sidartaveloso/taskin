@@ -82,9 +82,20 @@ describe('ConfiguradorDeConfianca', () => {
     expect(npm.otpsRecebidos).toEqual([undefined]);
   });
 
+  it('conta o 409 do registry como ja configurado, nao como falha', async () => {
+    const npm = new ClienteNpmMock({ falhasPorPacote: {} });
+    npm.resultadoFixo = { tipo: 'ja-configurado' };
+
+    const relatorio = await new ConfiguradorDeConfianca(npm, [repo('dono/alfa', ['@escopo/um'])]).configurar();
+
+    expect(relatorio.jaConfigurados).toBe(1);
+    expect(relatorio.falhas).toBe(0);
+    expect(relatorio.configurados).toBe(0);
+  });
+
   it('devolve relatorio vazio quando nenhum repo tem pacote publicavel', async () => {
     const relatorio = await new ConfiguradorDeConfianca(new ClienteNpmMock(), [repo('dono/alfa', [])]).configurar();
 
-    expect(relatorio).toEqual({ itens: [], configurados: 0, falhas: 0 });
+    expect(relatorio).toEqual({ itens: [], configurados: 0, jaConfigurados: 0, falhas: 0 });
   });
 });

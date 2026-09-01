@@ -18,6 +18,16 @@ export type AlvoDeConfianca = {
   workflow: string;
 };
 
-export type ResultadoDeConfianca = { tipo: 'configurado' } | { tipo: 'falha'; motivo: string };
+/**
+ * `ja-configurado` nasce do 409 do registry: cada pacote aceita uma unica
+ * configuracao de trusted publisher, entao tentar criar a segunda conflita.
+ * E o resultado esperado ao reexecutar, nao um erro — mas fica como variante
+ * propria em vez de virar `configurado`, para nao mascarar um 409 que venha
+ * por outro motivo.
+ */
+export type ResultadoDeConfianca =
+  | { tipo: 'configurado' }
+  | { tipo: 'ja-configurado' }
+  | { tipo: 'falha'; motivo: string };
 
 export type ResultadoDeAutenticacao = { tipo: 'autenticado'; usuario: string } | { tipo: 'falha'; motivo: string };

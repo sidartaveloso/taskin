@@ -11,6 +11,7 @@ export class ClienteNpmMock implements IClienteNpm {
   readonly chamadas: AlvoDeConfianca[] = [];
   readonly otpsRecebidos: (string | undefined)[] = [];
   tentativasDeLogin = 0;
+  resultadoFixo?: ResultadoDeConfianca;
 
   private usuario?: string;
 
@@ -38,6 +39,7 @@ export class ClienteNpmMock implements IClienteNpm {
   confiarEmGithubActions(alvo: AlvoDeConfianca, otp?: string): Promise<ResultadoDeConfianca> {
     this.chamadas.push(alvo);
     this.otpsRecebidos.push(otp);
+    if (this.resultadoFixo) return Promise.resolve(this.resultadoFixo);
     const motivo = this.estado.falhasPorPacote?.[alvo.pacote];
     return Promise.resolve(motivo ? { tipo: 'falha', motivo } : { tipo: 'configurado' });
   }

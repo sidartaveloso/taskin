@@ -21,9 +21,9 @@ export class ConfiguradorDeConfianca implements IConfiguradorDeConfianca {
       for (const pacote of await listador.listar()) {
         const resultado = await this.npm.confiarEmGithubActions({ pacote, repositorio, workflow }, this.otp);
         const item: ItemDoRelatorio =
-          resultado.tipo === 'configurado'
-            ? { tipo: 'configurado', pacote, repositorio }
-            : { tipo: 'falha', pacote, repositorio, motivo: resultado.motivo };
+          resultado.tipo === 'falha'
+            ? { tipo: 'falha', pacote, repositorio, motivo: resultado.motivo }
+            : { tipo: resultado.tipo, pacote, repositorio };
         itens.push(item);
         this.aoProgredir(item);
       }
@@ -32,6 +32,7 @@ export class ConfiguradorDeConfianca implements IConfiguradorDeConfianca {
     return {
       itens,
       configurados: itens.filter((item) => item.tipo === 'configurado').length,
+      jaConfigurados: itens.filter((item) => item.tipo === 'ja-configurado').length,
       falhas: itens.filter((item) => item.tipo === 'falha').length,
     };
   }

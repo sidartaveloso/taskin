@@ -32,7 +32,7 @@ export class ClienteNpm implements IClienteNpm {
       return { tipo: 'falha', motivo: 'login exige modo interativo; autentique antes ou rode sem --nao-interativo' };
     }
 
-    const codigo = await this.herdandoTerminal(['login']);
+    const { codigo } = await this.herdandoTerminal(['login']);
     if (codigo !== 0) return { tipo: 'falha', motivo: `npm login saiu com codigo ${codigo}` };
 
     const usuario = await this.usuarioAutenticado();
@@ -54,15 +54,16 @@ export class ClienteNpm implements IClienteNpm {
     ];
 
     if (this.modo.tipo === 'interativo') {
-      const codigo = await this.herdandoTerminal(argumentos);
-      return codigo === 0 ? { tipo: 'configurado' } : { tipo: 'falha', motivo: `npm saiu com codigo ${codigo}` };
+      const { codigo, saida } = await this.herdandoTerminal(argumentos);
+      return codigo === 0 ? { tipo: 'configurado' } : classificarFalha(saida, `npm saiu com codigo ${codigo}`);
     }
 
     try {
       await capturar(this.binario, argumentos);
       return { tipo: 'configurado' };
     } catch (erro) {
-      return { tipo: 'falha', motivo: mensagemDe(erro) };
+      const motivo = mensagemDe(erro);
+      return classificarFalha(motivo, motivo);
     }
   }
 
@@ -71,13 +72,35 @@ export class ClienteNpm implements IClienteNpm {
     return stdout.trim();
   }
 
-  private herdandoTerminal(argumentos: string[]): Promise<number> {
+  /**
+   * stdin fica herdado para o usuario responder o 2FA; stdout e stderr sao
+   * espelhados no terminal e acumulados ao mesmo tempo. Sem guardar o texto nao
+   * da para distinguir um 409 (ja configurado) de uma falha de verdade, e sem
+   * espelhar o prompt do npm ninguem veria a pergunta.
+   */
+  private herdandoTerminal(argumentos: string[]): Promise<{ codigo: number; saida: string }> {
     return new Promise((resolve, reject) => {
-      const processo = spawn(this.binario, argumentos, { stdio: 'inherit' });
+      const processo = spawn(this.binario, argumentos, { stdio: ['inherit', 'pipe', 'pipe'] });
+      let saida = '';
+
+      const espelhar = (fluxo: NodeJS.ReadableStream | null, destino: NodeJS.WriteStream) => {
+        fluxo?.on('data', (pedaco: Buffer) => {
+          saida += pedaco.toString();
+          destino.write(pedaco);
+        });
+      };
+      espelhar(processo.stdout, process.stdout);
+      espelhar(processo.stderr, process.stderr);
+
       processo.on('error', reject);
-      processo.on('close', (codigo) => resolve(codigo ?? 1));
+      processo.on('close', (codigo) => resolve({ codigo: codigo ?? 1, saida }));
     });
   }
+}
+
+function classificarFalha(saida: string, motivo: string): ResultadoDeConfianca {
+  const conflito = /E409|409 Conflict/.test(saida);
+  return conflito ? { tipo: 'ja-configurado' } : { tipo: 'falha', motivo };
 }
 
 function mensagemDe(erro: unknown): string {

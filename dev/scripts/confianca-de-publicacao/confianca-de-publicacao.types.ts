@@ -12,10 +12,12 @@ export type RepoAlvo = {
 
 export type ItemDoRelatorio =
   | { tipo: 'configurado'; pacote: string; repositorio: string }
+  | { tipo: 'ja-configurado'; pacote: string; repositorio: string }
   | { tipo: 'falha'; pacote: string; repositorio: string; motivo: string };
 
 export type RelatorioDeConfianca = {
   itens: ItemDoRelatorio[];
   configurados: number;
+  jaConfigurados: number;
   falhas: number;
 };
