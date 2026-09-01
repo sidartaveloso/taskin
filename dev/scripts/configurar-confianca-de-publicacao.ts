@@ -33,7 +33,13 @@ const repos: RepoAlvo[] = [
   },
 ];
 
+let repoImpresso: string | undefined;
+
 function imprimir(item: ItemDoRelatorio): void {
+  if (item.repositorio !== repoImpresso) {
+    repoImpresso = item.repositorio;
+    console.log(`\n${item.repositorio} (workflow ${WORKFLOW})`);
+  }
   if (item.tipo === 'configurado') {
     console.log(`  ✓ ${item.pacote}`);
     return;
@@ -66,7 +72,6 @@ async function principal(): Promise<number> {
     return 0;
   }
 
-  for (const repo of repos) console.log(`\n${repo.repositorio} (workflow ${WORKFLOW})`);
   const relatorio = await new ConfiguradorDeConfianca(npm, repos, imprimir).configurar();
 
   console.log(`\nconfigurados: ${relatorio.configurados}`);
