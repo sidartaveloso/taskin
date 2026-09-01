@@ -36,6 +36,7 @@ export function createPrioritizationMock(): UsePrioritization {
     moveDown: vi.fn(),
     ungroup: vi.fn(),
     exportJson: vi.fn(() => '[]'),
+    exportTreeJson: vi.fn(() => '[]'),
     copyCardText: vi.fn(() => ''),
     copyGroupText: vi.fn(() => ''),
     acknowledgeChanges: vi.fn(),

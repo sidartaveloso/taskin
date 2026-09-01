@@ -219,6 +219,9 @@ importers:
       '@mediapipe/tasks-vision':
         specifier: 0.10.22-rc.20250304
         version: 0.10.22-rc.20250304
+      '@opentask/taskin-types':
+        specifier: workspace:*
+        version: link:../types-ts
       '@opentask/ui-sense':
         specifier: workspace:*
         version: link:../ui-sense

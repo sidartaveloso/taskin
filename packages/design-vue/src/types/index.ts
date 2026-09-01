@@ -3,6 +3,39 @@
  * Provider-agnostic interfaces for task visualization
  */
 
+// ---------------------------------------------------------------------------
+// Branded types — prevent mixing TaskId and GroupId at compile time
+// ---------------------------------------------------------------------------
+
+/**
+ * Os ids vem do dominio, nao sao redeclarados aqui. Duas marcas distintas para
+ * o mesmo conceito nao acrescentam seguranca: obrigam um cast em toda fronteira,
+ * e foi um desses casts que engoliu campos calado na migracao para `parent`.
+ *
+ * O import e `import type`, entao nada de `@opentask/taskin-types` (nem do zod)
+ * entra no bundle do design system — so a declaracao de tipo.
+ */
+export type { GroupId, TaskId } from '@opentask/taskin-types';
+
+import type { GroupId, TaskId } from '@opentask/taskin-types';
+
+/** Create a branded TaskId from a plain string. */
+export const taskId = (id: string): TaskId => id as TaskId;
+
+/** Create a branded GroupId from a plain string. */
+export const groupId = (id: string): GroupId => id as GroupId;
+
+// ---------------------------------------------------------------------------
+// Parent reference — discriminated union
+// ---------------------------------------------------------------------------
+
+/** A task's parent can be a group or another task (subtask). */
+export type ParentRef = { type: 'group'; id: GroupId } | { type: 'task'; id: TaskId };
+
+// ---------------------------------------------------------------------------
+// Domain enums
+// ---------------------------------------------------------------------------
+
 /**
  * Task lifecycle states.
  *
@@ -52,7 +85,7 @@ export interface TaskProgress {
 }
 
 export interface Task {
-  id: string;
+  id: TaskId;
   number: number; // Task number (e.g., 001, 002)
   title: string;
   description?: string;
@@ -67,8 +100,14 @@ export interface Task {
   warnings?: string[]; // Alert messages (e.g., "No task in progress", "Task blocked")
   type?: string; // Task type (feat, fix, refactor, docs, test, chore, ...)
   order?: number; // Manual priority rank (lower = higher priority), set via the prioritization board
-  groupId?: string; // Opaque id of the ad hoc prioritization group this task belongs to, if any
-  groupName?: string; // Display label of the prioritization group, if the user named it
+  parent?: ParentRef; // Grouping / nesting reference (replaces former groupId)
+  /**
+   * TEMPORARIO — o nome do grupo repetido em cada membro, espelhando o dominio,
+   * que hoje tambem guarda `groupName` por task. Some quando a RDT
+   * `decisoes/identidade-de-grupo-de-tasks.md` decidir onde a identidade do
+   * grupo mora. Nao construa nada novo em cima deste campo.
+   */
+  groupName?: string;
   difficulty?: number; // Perceived difficulty (1 trivial - 5 very hard)
 }
 

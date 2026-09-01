@@ -9,6 +9,18 @@ import { z } from 'zod';
 export const TaskIdSchema = z.string().uuid().brand('TaskId');
 
 /**
+ * Group identifier schema.
+ * Represents a unique identifier for a task group.
+ *
+ * Deliberately not `.uuid()`: os ids de grupo em uso sao opacos e curtos
+ * (`g1`, `g-...`), nao UUIDs. Ver task-034 para a decisao de dominio sobre a
+ * forma dos ids.
+ *
+ * @public
+ */
+export const GroupIdSchema = z.string().min(1).brand('GroupId');
+
+/**
  * All possible task status values.
  * Use this for runtime operations like iteration, mapping, or validation.
  *

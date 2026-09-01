@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { Task } from '../../types';
+import type { GroupId, Task } from '../../types';
 
 export type PrioritizationViewMode = 'cards' | 'icons' | 'grid';
 export type PrioritizationSortMode = 'manual' | 'diff-asc' | 'diff-desc';
@@ -11,7 +11,7 @@ export interface PriorityTaskNode {
 
 export interface PriorityGroupNode {
   kind: 'group';
-  groupId: string;
+  groupId: GroupId;
   groupName: string | null;
   collapsed: boolean;
   items: PriorityNode[];
@@ -52,6 +52,7 @@ export interface UsePrioritization {
   moveDown(id: string): void;
   ungroup(groupId: string): void;
   exportJson(): string;
+  exportTreeJson(): string;
   copyCardText(taskId: string): string;
   copyGroupText(groupId: string): string;
   acknowledgeChanges(): void;

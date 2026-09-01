@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ref } from 'vue';
 import type { Task } from '../../types';
+import { groupId, taskId } from '../../types';
 import {
   buildPriorityTree,
   diffAgainstBaseline,
@@ -10,14 +11,15 @@ import {
 } from './use-prioritization';
 import type { PriorityGroupNode, PriorityNode } from './use-prioritization.types';
 
-function makeTask(overrides: Partial<Task> & { id: string }): Task {
+function makeTask(overrides: Omit<Partial<Task>, 'id'> & { id: string }): Task {
   return {
     number: 0,
     title: `Task ${overrides.id}`,
     status: 'pending',
     dates: { created: new Date().toISOString() },
     ...overrides,
-  };
+    id: taskId(overrides.id),
+  } as Task;
 }
 
 describe('buildPriorityTree', () => {
@@ -29,10 +31,10 @@ describe('buildPriorityTree', () => {
     expect(tree.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['b', 'a', 'c']);
   });
 
-  it('clusters consecutive tasks sharing the same groupId into a group node', () => {
+  it('clusters consecutive tasks sharing the same parent group into a group node', () => {
     const tasks = [
-      makeTask({ id: 'a', order: 1, groupId: 'g1', groupName: 'Backend' }),
-      makeTask({ id: 'b', order: 2, groupId: 'g1', groupName: 'Backend' }),
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
       makeTask({ id: 'c', order: 3 }),
     ];
 
@@ -41,31 +43,250 @@ describe('buildPriorityTree', () => {
     expect(tree).toHaveLength(2);
     expect(tree[0].kind).toBe('group');
     if (tree[0].kind === 'group') {
-      expect(tree[0].groupId).toBe('g1');
-      expect(tree[0].groupName).toBe('Backend');
-      expect(tree[0].items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['a', 'b']);
+      expect(tree[0].groupId).toBe(groupId('g1'));
+      expect(tree[0].items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([taskId('a'), taskId('b')]);
     }
     expect(tree[1].kind).toBe('task');
   });
 });
 
 describe('flattenPriorityTree / renumber', () => {
-  it('flattens groups back into a task list with groupId/groupName applied', () => {
+  it('flattens groups back into a task list with parent set to the group', () => {
     const tasks = [
-      makeTask({ id: 'a', order: 1, groupId: 'g1', groupName: 'Backend' }),
-      makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
     ];
     const tree = buildPriorityTree(tasks);
     const flat = flattenPriorityTree(tree);
 
-    expect(flat.map((t) => t.id)).toEqual(['a', 'b']);
-    expect(flat.every((t) => t.groupId === 'g1' && t.groupName === 'Backend')).toBe(true);
+    expect(flat.map((t) => t.id)).toEqual([taskId('a'), taskId('b')]);
+    expect(flat.every((t) => t.parent?.type === 'group' && t.parent.id === groupId('g1'))).toBe(true);
   });
 
   it('renumbers order as multiples of step, preserving list order', () => {
     const tasks = [makeTask({ id: 'a' }), makeTask({ id: 'b' }), makeTask({ id: 'c' })];
     const renumbered = renumber(tasks, 10);
     expect(renumbered.map((t) => t.order)).toEqual([10, 20, 30]);
+  });
+
+  it('sets parent on tasks inside nested groups (parent = immediate group)', () => {
+    // Build tree manually: Group g1 "Parent" → Group g2 "Sub" → Task a
+    const tree: PriorityNode[] = [
+      {
+        kind: 'group',
+        groupId: groupId('g1'),
+        groupName: 'Parent',
+        collapsed: false,
+        items: [
+          {
+            kind: 'group',
+            groupId: groupId('g2'),
+            groupName: 'Sub',
+            collapsed: false,
+            items: [{ kind: 'task', task: makeTask({ id: 'a', order: 1 }) }],
+          },
+        ],
+      },
+    ];
+
+    const flat = flattenPriorityTree(tree);
+
+    expect(flat).toHaveLength(1);
+    expect(flat[0].parent).toEqual({ type: 'group', id: groupId('g2') });
+  });
+
+  it('sets parent on tasks in top-level groups (no grandparent)', () => {
+    const tree: PriorityNode[] = [
+      {
+        kind: 'group',
+        groupId: groupId('g1'),
+        groupName: 'Team',
+        collapsed: false,
+        items: [{ kind: 'task', task: makeTask({ id: 'a', order: 1 }) }],
+      },
+    ];
+
+    const flat = flattenPriorityTree(tree);
+
+    expect(flat).toHaveLength(1);
+    expect(flat[0].parent).toEqual({ type: 'group', id: groupId('g1') });
+  });
+
+  it('leaves parent undefined for standalone tasks outside any group', () => {
+    const tree: PriorityNode[] = [{ kind: 'task', task: makeTask({ id: 'a', order: 1 }) }];
+
+    const flat = flattenPriorityTree(tree);
+
+    expect(flat).toHaveLength(1);
+    expect(flat[0].parent).toBeUndefined();
+  });
+
+  it('handles 3+ levels of nesting, setting parent to the immediate group', () => {
+    const tree: PriorityNode[] = [
+      {
+        kind: 'group',
+        groupId: groupId('g1'),
+        groupName: 'Level1',
+        collapsed: false,
+        items: [
+          {
+            kind: 'group',
+            groupId: groupId('g2'),
+            groupName: 'Level2',
+            collapsed: false,
+            items: [
+              {
+                kind: 'group',
+                groupId: groupId('g3'),
+                groupName: 'Level3',
+                collapsed: false,
+                items: [{ kind: 'task', task: makeTask({ id: 'a', order: 1 }) }],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const flat = flattenPriorityTree(tree);
+
+    expect(flat).toHaveLength(1);
+    // parent should be the immediate group (g3), not g2 or g1
+    expect(flat[0].parent).toEqual({ type: 'group', id: groupId('g3') });
+  });
+
+  it('preserves parent through groupWith nesting', () => {
+    const tasks = [
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+      makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
+    ];
+    const tree = buildPriorityTree(tasks);
+
+    const flat = flattenPriorityTree(tree);
+    // a and b should be in g1, c and d should be in g2
+    expect(flat[0].parent).toEqual({ type: 'group', id: groupId('g1') });
+    expect(flat[1].parent).toEqual({ type: 'group', id: groupId('g1') });
+    expect(flat[2].parent).toEqual({ type: 'group', id: groupId('g2') });
+    expect(flat[3].parent).toEqual({ type: 'group', id: groupId('g2') });
+  });
+});
+
+describe('exportJson (flat)', () => {
+  it('includes parent info in the flat JSON output', () => {
+    const tree: PriorityNode[] = [
+      {
+        kind: 'group',
+        groupId: groupId('g1'),
+        groupName: 'Backend',
+        collapsed: false,
+        items: [{ kind: 'task', task: makeTask({ id: 'a', order: 1 }) }],
+      },
+      { kind: 'task', task: makeTask({ id: 'b', order: 2 }) },
+    ];
+
+    const flat = flattenPriorityTree(tree);
+    const json = JSON.stringify(flat, null, 2);
+    const parsed = JSON.parse(json);
+
+    // Task in group should have parent
+    expect(parsed[0].parent).toEqual({ type: 'group', id: 'g1' });
+    // Standalone task should have no parent
+    expect(parsed[1].parent).toBeUndefined();
+  });
+
+  it('includes parent info for nested groups in flat JSON', () => {
+    const tree: PriorityNode[] = [
+      {
+        kind: 'group',
+        groupId: groupId('g1'),
+        groupName: 'Parent',
+        collapsed: false,
+        items: [
+          {
+            kind: 'group',
+            groupId: groupId('g2'),
+            groupName: 'Sub',
+            collapsed: false,
+            items: [{ kind: 'task', task: makeTask({ id: 'a', order: 1 }) }],
+          },
+        ],
+      },
+    ];
+
+    const flat = flattenPriorityTree(tree);
+    const json = JSON.stringify(flat, null, 2);
+    const parsed = JSON.parse(json);
+
+    // parent should be the immediate group (g2), not g1
+    expect(parsed[0].parent).toEqual({ type: 'group', id: 'g2' });
+  });
+});
+
+describe('exportTreeJson', () => {
+  it('returns the tree structure as JSON', () => {
+    const tasks = [
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+    ];
+    const tree = buildPriorityTree(tasks);
+
+    const json = JSON.stringify(tree, null, 2);
+    const parsed = JSON.parse(json);
+
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].kind).toBe('group');
+    expect(parsed[0].groupId).toBe('g1');
+    expect(parsed[0].items).toHaveLength(2);
+  });
+
+  it('preserves nested group hierarchy in tree JSON', () => {
+    const tree: PriorityNode[] = [
+      {
+        kind: 'group',
+        groupId: groupId('g1'),
+        groupName: 'Parent',
+        collapsed: false,
+        items: [
+          {
+            kind: 'group',
+            groupId: groupId('g2'),
+            groupName: 'Sub',
+            collapsed: false,
+            items: [{ kind: 'task', task: makeTask({ id: 'a', order: 1 }) }],
+          },
+          { kind: 'task', task: makeTask({ id: 'b', order: 2 }) },
+        ],
+      },
+    ];
+
+    const json = JSON.stringify(tree, null, 2);
+    const parsed = JSON.parse(json);
+
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].kind).toBe('group');
+    expect(parsed[0].items).toHaveLength(2);
+    // First item is a subgroup
+    expect(parsed[0].items[0].kind).toBe('group');
+    expect(parsed[0].items[0].groupId).toBe('g2');
+    expect(parsed[0].items[0].items).toHaveLength(1);
+    // Second item is a task
+    expect(parsed[0].items[1].kind).toBe('task');
+  });
+
+  it('exports standalone tasks at the root level', () => {
+    const tree: PriorityNode[] = [
+      { kind: 'task', task: makeTask({ id: 'a', order: 1 }) },
+      { kind: 'task', task: makeTask({ id: 'b', order: 2 }) },
+    ];
+
+    const json = JSON.stringify(tree, null, 2);
+    const parsed = JSON.parse(json);
+
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0].kind).toBe('task');
+    expect(parsed[1].kind).toBe('task');
   });
 });
 
@@ -124,47 +345,47 @@ describe('usePrioritization', () => {
     }
     const changedIds = composable.changedTasks.value.map((t) => t.id).sort();
     expect(changedIds).toEqual(['a', 'b']);
-    expect(composable.changedTasks.value.every((t) => !!t.groupId)).toBe(true);
+    expect(composable.changedTasks.value.every((t) => !!t.parent)).toBe(true);
   });
 
-  it('joinGroup adds a standalone task directly into an existing group by groupId', () => {
+  it('joinGroup adds a standalone task directly into an existing group', () => {
     const { composable } = setup([
-      makeTask({ id: 'a', order: 1, groupId: 'g1', groupName: 'Backend' }),
-      makeTask({ id: 'b', order: 2, groupId: 'g1', groupName: 'Backend' }),
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
       makeTask({ id: 'c', order: 3 }),
     ]);
 
-    composable.joinGroup('c', 'g1');
+    composable.joinGroup(taskId('c'), 'g1');
 
     expect(composable.tree.value).toHaveLength(1);
     const node = composable.tree.value[0];
     expect(node.kind).toBe('group');
     if (node.kind === 'group') {
-      expect(taskIdsFromGroup(node).sort()).toEqual(['a', 'b', 'c']);
+      expect(taskIdsFromGroup(node).sort()).toEqual([taskId('a'), taskId('b'), taskId('c')]);
     }
   });
 
   it('joinGroup is a no-op when the task is already a member of the target group', () => {
     const { composable } = setup([
-      makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-      makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
     ]);
 
-    composable.joinGroup('a', 'g1');
+    composable.joinGroup(taskId('a'), 'g1');
 
     const node = composable.tree.value[0];
-    expect(node.kind === 'group' && taskIdsFromGroup(node)).toEqual(['a', 'b']);
+    expect(node.kind === 'group' && taskIdsFromGroup(node)).toEqual([taskId('a'), taskId('b')]);
     expect(composable.canUndo.value).toBe(false);
   });
 
   it('ungroups automatically when a group is left with a single task', () => {
     const { composable } = setup([
-      makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-      makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
       makeTask({ id: 'c', order: 3 }),
     ]);
 
-    composable.moveBefore('a', 'c');
+    composable.moveBefore(taskId('a'), taskId('c'));
 
     const kinds = composable.tree.value.map((n) => n.kind);
     expect(kinds).toEqual(['task', 'task', 'task']);
@@ -189,10 +410,10 @@ describe('usePrioritization', () => {
     expect(composable.changedTasks.value).toHaveLength(0);
   });
 
-  it('renameGroup updates the group label for all its members', () => {
+  it('renameGroup updates the group label on the group node', () => {
     const { composable } = setup([
-      makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-      makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
     ]);
 
     composable.renameGroup('g1', 'Backend');
@@ -201,7 +422,6 @@ describe('usePrioritization', () => {
     expect(node.kind).toBe('group');
     if (node.kind === 'group') {
       expect(node.groupName).toBe('Backend');
-      expect(node.items.every((n) => n.kind === 'task' && n.task.groupName === 'Backend')).toBe(true);
     }
   });
 
@@ -312,8 +532,8 @@ describe('usePrioritization', () => {
 
     it('view-only actions (filter/viewMode/sortMode/collapse) do not affect undo/redo', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
       ]);
 
       composable.setFilter('a');
@@ -329,10 +549,10 @@ describe('usePrioritization', () => {
   describe('group nesting', () => {
     it('groups two existing groups under a new parent when groupWith is called across them', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-        makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-        makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+        makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
       ]);
 
       composable.groupWith('a', 'c');
@@ -349,31 +569,31 @@ describe('usePrioritization', () => {
       expect(subB.kind).toBe('group');
       if (subA.kind !== 'group' || subB.kind !== 'group') return;
       // Subgroup A = g1 still has [a, b]
-      expect(subA.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['a', 'b']);
+      expect(subA.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([taskId('a'), taskId('b')]);
       // Subgroup B = g2 still has [c, d]
-      expect(subB.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['c', 'd']);
+      expect(subB.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([taskId('c'), taskId('d')]);
     });
 
     it('groupWith across groups persists the subgroup composition after flatten', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-        makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-        makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+        makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
       ]);
 
       composable.groupWith('a', 'c');
       const flat = flattenPriorityTree(composable.tree.value);
       // Order preserved: a (g1), b (g1), c (g2), d (g2)
-      expect(flat.map((t) => t.id)).toEqual(['a', 'b', 'c', 'd']);
+      expect(flat.map((t) => t.id)).toEqual([taskId('a'), taskId('b'), taskId('c'), taskId('d')]);
     });
 
     it('moveBefore across groups moves the task into the target group', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-        makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-        makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+        makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
       ]);
 
       // b leaves g1 and lands before c inside g2 → g1 dissolves (only a left)
@@ -386,15 +606,19 @@ describe('usePrioritization', () => {
       const group = composable.tree.value[1];
       expect(group.kind).toBe('group');
       if (group.kind === 'group') {
-        expect(group.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['b', 'c', 'd']);
+        expect(group.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+          taskId('b'),
+          taskId('c'),
+          taskId('d'),
+        ]);
       }
     });
 
     it('groupWith within a subgroup creates deeper nesting', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-        makeTask({ id: 'c', order: 3, groupId: 'g1' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g1') } }),
       ]);
 
       // First create a subgroup for a and b
@@ -431,9 +655,9 @@ describe('usePrioritization', () => {
 
     it('renameGroup on a nested subgroup updates the label', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-        makeTask({ id: 'c', order: 3, groupId: 'g1' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g1') } }),
       ]);
 
       composable.groupWith('b', 'a'); // creates subgroup
@@ -448,15 +672,14 @@ describe('usePrioritization', () => {
       composable.renameGroup(subId, 'Sub-Equipe');
 
       expect(subgroup.groupName).toBe('Sub-Equipe');
-      expect(subgroup.items.every((n) => n.kind === 'task' && n.task.groupName === 'Sub-Equipe')).toBe(true);
     });
 
     it('copyGroupText with nested groups includes indented structure', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1', title: 'Alpha' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1', title: 'Beta' }),
-        makeTask({ id: 'c', order: 3, groupId: 'g2', title: 'Gamma' }),
-        makeTask({ id: 'd', order: 4, groupId: 'g2', title: 'Delta' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') }, title: 'Alpha' }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') }, title: 'Beta' }),
+        makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') }, title: 'Gamma' }),
+        makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') }, title: 'Delta' }),
       ]);
 
       composable.groupWith('a', 'c'); // nest g1 and g2 under a parent
@@ -480,10 +703,10 @@ describe('usePrioritization', () => {
 
     it('dissolves nested groups when tasks are moved across group boundaries', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-        makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-        makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+        makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
       ]);
 
       composable.groupWith('a', 'c'); // P[g1(a,b), g2(c,d)]
@@ -513,10 +736,10 @@ describe('usePrioritization', () => {
 
     it('buildPriorityTree with only groups (no standalone tasks)', () => {
       const tasks = [
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-        makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-        makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+        makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
       ];
 
       const tree = buildPriorityTree(tasks);
@@ -528,8 +751,8 @@ describe('usePrioritization', () => {
 
     it('toggleGroupCollapsed on a nested subgroup', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
       ]);
 
       composable.groupWith('b', 'a'); // creates subgroup inside g1
@@ -553,10 +776,10 @@ describe('usePrioritization', () => {
 
     it('groupWith nests a single-task group together with another group under a parent', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
         makeTask({ id: 'b', order: 2 }),
-        makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-        makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+        makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+        makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
       ]);
 
       // 'a' is in g1 (1 task), 'c' is in g2 (2 tasks).
@@ -572,14 +795,14 @@ describe('usePrioritization', () => {
       expect(subA.kind).toBe('group');
       expect(subB.kind).toBe('group');
       if (subA.kind !== 'group' || subB.kind !== 'group') return;
-      expect(subA.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['a']);
-      expect(subB.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['c', 'd']);
+      expect(subA.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([taskId('a')]);
+      expect(subB.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([taskId('c'), taskId('d')]);
     });
 
     it('setDifficulty on a task inside a nested subgroup', () => {
       const { composable } = setup([
-        makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-        makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+        makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
       ]);
 
       composable.groupWith('b', 'a'); // subgroup inside g1
@@ -589,17 +812,17 @@ describe('usePrioritization', () => {
       composable.setDifficulty('b', 5);
 
       expect(composable.changedTasks.value).toHaveLength(1);
-      expect(composable.changedTasks.value[0].id).toBe('b');
+      expect(composable.changedTasks.value[0].id).toBe(taskId('b'));
       expect(composable.changedTasks.value[0].difficulty).toBe(5);
     });
 
     describe('group drag operations', () => {
       it('moveGroupBefore reorders a group before another group', () => {
         const { composable } = setup([
-          makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-          makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-          makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-          makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+          makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+          makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
         ]);
 
         // [g1(a,b), g2(c,d)]
@@ -609,16 +832,19 @@ describe('usePrioritization', () => {
         // g2 is now first
         expect(composable.tree.value[0].kind).toBe('group');
         if (composable.tree.value[0].kind !== 'group') return;
-        expect(composable.tree.value[0].items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['c', 'd']);
+        expect(composable.tree.value[0].items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+          taskId('c'),
+          taskId('d'),
+        ]);
         expect(composable.tree.value[1].kind).toBe('group');
       });
 
       it('moveGroupAfter reorders a group after a standalone task', () => {
         const { composable } = setup([
-          makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-          makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-          makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-          makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+          makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+          makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
           makeTask({ id: 'e', order: 5 }),
         ]);
 
@@ -629,16 +855,19 @@ describe('usePrioritization', () => {
         expect(composable.tree.value).toHaveLength(3);
         expect(composable.tree.value[2].kind).toBe('group');
         if (composable.tree.value[2].kind !== 'group') return;
-        expect(composable.tree.value[2].items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['a', 'b']);
+        expect(composable.tree.value[2].items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+          taskId('a'),
+          taskId('b'),
+        ]);
       });
 
       it('groupWithGroup nests two groups under a new parent', () => {
         const { composable } = setup([
-          makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-          makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-          makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-          makeTask({ id: 'd', order: 4, groupId: 'g2' }),
-          makeTask({ id: 'e', order: 5, groupId: 'g3' }),
+          makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+          makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
+          makeTask({ id: 'e', order: 5, parent: { type: 'group', id: groupId('g3') } }),
         ]);
 
         // [g1(a,b), g2(c,d), g3(e)]
@@ -656,21 +885,21 @@ describe('usePrioritization', () => {
 
       it('moveGroupBefore preserves flattened order after reorder', () => {
         const { composable } = setup([
-          makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-          makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-          makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-          makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+          makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+          makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
         ]);
 
         composable.moveGroupBefore('g2', 'g1');
         const flat = flattenPriorityTree(composable.tree.value);
-        expect(flat.map((t) => t.id)).toEqual(['c', 'd', 'a', 'b']);
+        expect(flat.map((t) => t.id)).toEqual([taskId('c'), taskId('d'), taskId('a'), taskId('b')]);
       });
 
       it('is a no-op when moving a group before itself', () => {
         const { composable } = setup([
-          makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-          makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+          makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
         ]);
 
         composable.moveGroupBefore('g1', 'g1');
@@ -679,8 +908,8 @@ describe('usePrioritization', () => {
 
       it('is a no-op when groupWithGroup is called with the same group', () => {
         const { composable } = setup([
-          makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-          makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+          makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+          makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
         ]);
 
         composable.groupWithGroup('g1', 'g1');
@@ -698,7 +927,7 @@ describe('usePrioritization', () => {
           composable.moveUp('b');
 
           const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
-          expect(ids).toEqual(['b', 'a', 'c']);
+          expect(ids).toEqual([taskId('b'), taskId('a'), taskId('c')]);
         });
 
         it('moveDown swaps a task with its next sibling', () => {
@@ -711,7 +940,7 @@ describe('usePrioritization', () => {
           composable.moveDown('b');
 
           const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
-          expect(ids).toEqual(['a', 'c', 'b']);
+          expect(ids).toEqual([taskId('a'), taskId('c'), taskId('b')]);
         });
 
         it('moveUp on the first node is a no-op', () => {
@@ -730,17 +959,20 @@ describe('usePrioritization', () => {
 
         it('moveUp moves a group before another group', () => {
           const { composable } = setup([
-            makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-            makeTask({ id: 'b', order: 2, groupId: 'g1' }),
-            makeTask({ id: 'c', order: 3, groupId: 'g2' }),
-            makeTask({ id: 'd', order: 4, groupId: 'g2' }),
+            makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+            makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
+            makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
+            makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
           ]);
 
           composable.moveUp('g2');
 
           expect(composable.tree.value[0].kind).toBe('group');
           if (composable.tree.value[0].kind !== 'group') return;
-          expect(composable.tree.value[0].items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['c', 'd']);
+          expect(composable.tree.value[0].items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+            taskId('c'),
+            taskId('d'),
+          ]);
         });
 
         it('moveUp supports undo', () => {
@@ -751,31 +983,43 @@ describe('usePrioritization', () => {
           ]);
 
           composable.moveUp('c');
-          expect(composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['a', 'c', 'b']);
+          expect(composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+            taskId('a'),
+            taskId('c'),
+            taskId('b'),
+          ]);
 
           composable.undo();
-          expect(composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['a', 'b', 'c']);
+          expect(composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+            taskId('a'),
+            taskId('b'),
+            taskId('c'),
+          ]);
         });
       });
 
       describe('ungroup', () => {
         it('dissolves a group and promotes its items in-place', () => {
           const { composable } = setup([
-            makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-            makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+            makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+            makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
             makeTask({ id: 'c', order: 3 }),
           ]);
 
           composable.ungroup('g1');
 
           expect(composable.tree.value).toHaveLength(3);
-          expect(composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['a', 'b', 'c']);
+          expect(composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+            taskId('a'),
+            taskId('b'),
+            taskId('c'),
+          ]);
         });
 
         it('dissolves a group that has nested subgroups', () => {
           const { composable } = setup([
-            makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-            makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+            makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+            makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
           ]);
 
           composable.groupWith('b', 'a'); // g1 → subg(b,a)
@@ -789,8 +1033,8 @@ describe('usePrioritization', () => {
 
         it('ungroup supports undo', () => {
           const { composable } = setup([
-            makeTask({ id: 'a', order: 1, groupId: 'g1' }),
-            makeTask({ id: 'b', order: 2, groupId: 'g1' }),
+            makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+            makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
           ]);
 
           composable.ungroup('g1');

@@ -4,6 +4,7 @@ import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { h, ref, toRef } from 'vue';
 import { buildPriorityTree, usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
+import { groupId } from '../../types';
 import PrioritizationScreen from './PrioritizationScreen.vue';
 
 const meta: Meta<typeof PrioritizationScreen> = {
@@ -39,14 +40,14 @@ const defaultTasks: Task[] = [
   createTask('002', {
     order: 20,
     type: 'fix',
-    groupId: 'g1',
+    parent: { type: 'group', id: groupId('g1') },
     groupName: 'Backend',
     difficulty: 4,
   }),
   createTask('003', {
     order: 30,
     type: 'refactor',
-    groupId: 'g1',
+    parent: { type: 'group', id: groupId('g1') },
     groupName: 'Backend',
   }),
   createTask('004', { order: 40, type: 'docs' }),

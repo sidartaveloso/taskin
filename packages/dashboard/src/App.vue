@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import type { Task, TaskStatus } from '@opentask/taskin-design-vue';
-import { Dashboard, PrioritizationPage } from '@opentask/taskin-design-vue';
+import { Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
@@ -109,7 +109,7 @@ const tasks = computed<Task[]>(() => {
       },
       type: source.type,
       order: source.order,
-      groupId: source.groupId,
+      parent: source.groupId ? { type: 'group', id: groupId(source.groupId) } : undefined,
       groupName: source.groupName,
       difficulty: source.difficulty,
     };
@@ -151,7 +151,7 @@ const handleUpdateTask = (task: Task) => {
   taskStore.updateTask({
     ...original,
     order: task.order,
-    groupId: task.groupId,
+    groupId: task.parent?.type === 'group' ? task.parent.id : undefined,
     groupName: task.groupName,
     difficulty: task.difficulty,
   });

@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { h, type SetupContext } from 'vue';
+import { taskId } from '../../types';
 import Dashboard from './Dashboard.vue';
 
 const SlotLayoutStub = {
@@ -32,7 +33,16 @@ describe('Dashboard', () => {
   it('renders the task grid when tasks are provided', () => {
     const wrapper = mount(Dashboard, {
       props: {
-        tasks: [{ id: '1', number: 1, title: 'T1', status: 'pending', type: 'feat', dates: { created: '2026-01-01' } }],
+        tasks: [
+          {
+            id: taskId('1'),
+            number: 1,
+            title: 'T1',
+            status: 'pending',
+            type: 'feat',
+            dates: { created: '2026-01-01' },
+          },
+        ],
       },
       global: { stubs: { DashboardLayout: SlotLayoutStub, TaskGrid: true } },
     });
