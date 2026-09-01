@@ -93,9 +93,20 @@ describe('ConfiguradorDeConfianca', () => {
     expect(relatorio.configurados).toBe(0);
   });
 
+  it('nao tenta configurar pacote ausente do registry', async () => {
+    const npm = new ClienteNpmMock({ naoPublicados: ['@escopo/inedito'] });
+    const configurador = new ConfiguradorDeConfianca(npm, [repo('dono/alfa', ['@escopo/um', '@escopo/inedito'])]);
+
+    const relatorio = await configurador.configurar();
+
+    expect(relatorio.naoPublicados).toBe(1);
+    expect(relatorio.configurados).toBe(1);
+    expect(npm.chamadas.map((c) => c.pacote)).toEqual(['@escopo/um']);
+  });
+
   it('devolve relatorio vazio quando nenhum repo tem pacote publicavel', async () => {
     const relatorio = await new ConfiguradorDeConfianca(new ClienteNpmMock(), [repo('dono/alfa', [])]).configurar();
 
-    expect(relatorio).toEqual({ itens: [], configurados: 0, jaConfigurados: 0, falhas: 0 });
+    expect(relatorio).toEqual({ itens: [], configurados: 0, jaConfigurados: 0, naoPublicados: 0, falhas: 0 });
   });
 });

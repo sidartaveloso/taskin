@@ -1,14 +1,14 @@
 export interface IClienteNpm {
   usuarioAutenticado(): Promise<string | undefined>;
   autenticar(): Promise<ResultadoDeAutenticacao>;
+  estadoNoRegistry(pacote: string): Promise<EstadoNoRegistry>;
   confiarEmGithubActions(alvo: AlvoDeConfianca, otp?: string): Promise<ResultadoDeConfianca>;
 }
 
 /**
- * Interativo herda os descritores do terminal: o npm pergunta o 2FA e o usuario
- * responde. Nao interativo captura a saida e nunca pergunta nada — o que num
- * runner de CI e a diferenca entre falhar com mensagem e pendurar para sempre
- * num prompt que ninguem ve.
+ * Interativo herda o stdin do terminal: o npm pergunta o 2FA e o usuario
+ * responde. Nao interativo captura tudo e nunca pergunta — num runner e a
+ * diferenca entre falhar com mensagem e pendurar num prompt que ninguem ve.
  */
 export type ModoDeExecucao = { tipo: 'interativo' } | { tipo: 'nao-interativo' };
 
@@ -19,11 +19,20 @@ export type AlvoDeConfianca = {
 };
 
 /**
+ * `indeterminado` existe para nao confundir "o registry disse que nao existe"
+ * com "nao deu para perguntar". Tratar queda de rede como pacote ausente faria
+ * o script recomendar publicar algo que ja esta publicado.
+ */
+export type EstadoNoRegistry =
+  | { tipo: 'publicado'; versao: string }
+  | { tipo: 'ausente' }
+  | { tipo: 'indeterminado'; motivo: string };
+
+/**
  * `ja-configurado` nasce do 409 do registry: cada pacote aceita uma unica
- * configuracao de trusted publisher, entao tentar criar a segunda conflita.
- * E o resultado esperado ao reexecutar, nao um erro — mas fica como variante
- * propria em vez de virar `configurado`, para nao mascarar um 409 que venha
- * por outro motivo.
+ * configuracao de trusted publisher, entao criar a segunda conflita. Fica como
+ * variante propria em vez de virar `configurado` para nao mascarar um 409 que
+ * venha por outro motivo.
  */
 export type ResultadoDeConfianca =
   | { tipo: 'configurado' }

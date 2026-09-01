@@ -1,7 +1,15 @@
-import type { AlvoDeConfianca, IClienteNpm, ResultadoDeAutenticacao, ResultadoDeConfianca } from './cliente-npm.types';
+import type {
+  AlvoDeConfianca,
+  EstadoNoRegistry,
+  IClienteNpm,
+  ResultadoDeAutenticacao,
+  ResultadoDeConfianca,
+} from './cliente-npm.types';
 
 export type EstadoDoClienteNpmMock = {
   usuario?: string;
+  /** Pacotes ausentes do registry; os demais respondem como publicados. */
+  naoPublicados?: string[];
   usuarioAposLogin?: string;
   loginFalhaCom?: string;
   falhasPorPacote?: Record<string, string>;
@@ -17,6 +25,12 @@ export class ClienteNpmMock implements IClienteNpm {
 
   constructor(private readonly estado: EstadoDoClienteNpmMock = {}) {
     this.usuario = estado.usuario;
+  }
+
+  estadoNoRegistry(pacote: string): Promise<EstadoNoRegistry> {
+    return Promise.resolve(
+      this.estado.naoPublicados?.includes(pacote) ? { tipo: 'ausente' } : { tipo: 'publicado', versao: '1.0.0' },
+    );
   }
 
   usuarioAutenticado(): Promise<string | undefined> {
