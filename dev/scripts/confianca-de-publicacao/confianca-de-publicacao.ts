@@ -11,6 +11,7 @@ export class ConfiguradorDeConfianca implements IConfiguradorDeConfianca {
     private readonly npm: IClienteNpm,
     private readonly repos: RepoAlvo[],
     private readonly aoProgredir: (item: ItemDoRelatorio) => void = () => {},
+    private readonly otp?: string,
   ) {}
 
   async configurar(): Promise<RelatorioDeConfianca> {
@@ -18,7 +19,7 @@ export class ConfiguradorDeConfianca implements IConfiguradorDeConfianca {
 
     for (const { repositorio, workflow, listador } of this.repos) {
       for (const pacote of await listador.listar()) {
-        const resultado = await this.npm.confiarEmGithubActions({ pacote, repositorio, workflow });
+        const resultado = await this.npm.confiarEmGithubActions({ pacote, repositorio, workflow }, this.otp);
         const item: ItemDoRelatorio =
           resultado.tipo === 'configurado'
             ? { tipo: 'configurado', pacote, repositorio }
