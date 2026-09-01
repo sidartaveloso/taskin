@@ -2,6 +2,7 @@ import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import type {
   AlvoDeConfianca,
+  EstadoNoRegistry,
   IClienteNpm,
   ModoDeExecucao,
   ResultadoDeAutenticacao,
@@ -37,6 +38,17 @@ export class ClienteNpm implements IClienteNpm {
 
     const usuario = await this.usuarioAutenticado();
     return usuario ? { tipo: 'autenticado', usuario } : { tipo: 'falha', motivo: 'login terminou sem sessao valida' };
+  }
+
+  /** `npm view` nao exige autenticacao, entao esta checagem sai de graca. */
+  async estadoNoRegistry(pacote: string): Promise<EstadoNoRegistry> {
+    try {
+      const { stdout } = await capturar(this.binario, ['view', pacote, 'version']);
+      return { tipo: 'publicado', versao: stdout.trim() };
+    } catch (erro) {
+      const motivo = mensagemDe(erro);
+      return /E404|404 Not Found/.test(motivo) ? { tipo: 'ausente' } : { tipo: 'indeterminado', motivo };
+    }
   }
 
   async confiarEmGithubActions(alvo: AlvoDeConfianca, otp?: string): Promise<ResultadoDeConfianca> {

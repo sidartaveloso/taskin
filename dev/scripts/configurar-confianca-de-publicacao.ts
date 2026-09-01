@@ -61,6 +61,10 @@ function imprimir(item: ItemDoRelatorio): void {
     console.log(`  = ${item.pacote} (ja configurado)`);
     return;
   }
+  if (item.tipo === 'nao-publicado') {
+    console.log(`  ! ${item.pacote} (ainda nao publicado no npm — publique uma vez antes)`);
+    return;
+  }
   console.log(`  ✗ ${item.pacote}`);
   console.log(
     item.motivo
@@ -115,8 +119,13 @@ async function principal(): Promise<number> {
 
   console.log(`\nconfigurados: ${relatorio.configurados}`);
   if (relatorio.jaConfigurados > 0) console.log(`ja configurados: ${relatorio.jaConfigurados}`);
-  if (relatorio.falhas > 0) {
-    console.log(`falharam: ${relatorio.falhas}`);
+  if (relatorio.naoPublicados > 0) console.log(`nao publicados: ${relatorio.naoPublicados}`);
+  if (relatorio.naoPublicados > 0) {
+    console.log('\nUm pacote so aceita trusted publisher depois de existir no registry.');
+    console.log('Publique-o uma vez a mao e rode de novo.');
+  }
+  if (relatorio.falhas > 0 || relatorio.naoPublicados > 0) {
+    if (relatorio.falhas > 0) console.log(`falharam: ${relatorio.falhas}`);
     console.log('rode de novo para retomar os que faltaram — a operacao e idempotente.');
     return 1;
   }
