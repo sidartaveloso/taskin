@@ -57,6 +57,10 @@ function imprimir(item: ItemDoRelatorio): void {
     console.log(`  ✓ ${item.pacote}`);
     return;
   }
+  if (item.tipo === 'ja-configurado') {
+    console.log(`  = ${item.pacote} (ja configurado)`);
+    return;
+  }
   console.log(`  ✗ ${item.pacote}`);
   console.log(
     item.motivo
@@ -110,6 +114,7 @@ async function principal(): Promise<number> {
   const relatorio = await new ConfiguradorDeConfianca(npm, repos, imprimir, otp).configurar();
 
   console.log(`\nconfigurados: ${relatorio.configurados}`);
+  if (relatorio.jaConfigurados > 0) console.log(`ja configurados: ${relatorio.jaConfigurados}`);
   if (relatorio.falhas > 0) {
     console.log(`falharam: ${relatorio.falhas}`);
     console.log('rode de novo para retomar os que faltaram — a operacao e idempotente.');
