@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { h } from 'vue';
 import type { Task } from '../../types';
+import { groupId } from '../../types';
 import PrioritizationPage from './PrioritizationPage.vue';
 
 const meta: Meta<typeof PrioritizationPage> = {
@@ -37,14 +38,14 @@ const mockTasks: Task[] = [
   createTask('002', {
     order: 20,
     type: 'fix',
-    groupId: 'g1',
+    parent: { type: 'group', id: groupId('g1') },
     groupName: 'Backend',
     difficulty: 4,
   }),
   createTask('003', {
     order: 30,
     type: 'refactor',
-    groupId: 'g1',
+    parent: { type: 'group', id: groupId('g1') },
     groupName: 'Backend',
   }),
   createTask('004', { order: 40, type: 'docs' }),
@@ -222,10 +223,10 @@ export const DragAndDropInteractions: Story = {
 // ---------------------------------------------------------------------------
 
 const groupedTasks: Task[] = [
-  createTask('001', { order: 10, groupId: 'g1', groupName: 'Alpha' }),
-  createTask('002', { order: 20, groupId: 'g1', groupName: 'Alpha' }),
-  createTask('003', { order: 30, groupId: 'g2', groupName: 'Beta' }),
-  createTask('004', { order: 40, groupId: 'g2', groupName: 'Beta' }),
+  createTask('001', { order: 10, parent: { type: 'group', id: groupId('g1') }, groupName: 'Alpha' }),
+  createTask('002', { order: 20, parent: { type: 'group', id: groupId('g1') }, groupName: 'Alpha' }),
+  createTask('003', { order: 30, parent: { type: 'group', id: groupId('g2') }, groupName: 'Beta' }),
+  createTask('004', { order: 40, parent: { type: 'group', id: groupId('g2') }, groupName: 'Beta' }),
   createTask('005', { order: 50 }),
   createTask('006', { order: 60 }),
 ];

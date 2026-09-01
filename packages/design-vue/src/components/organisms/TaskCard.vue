@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { ProjectPath, Task, TaskProgress, TaskStatus, TimeEstimate as TimeEstimateType, User } from '../../types';
+import { taskId } from '../../types';
 import { Badge, ProgressBar } from '../atoms';
 import { DayBar, ProjectBreadcrumb, TaskHeader, TimeEstimate } from '../molecules';
 
@@ -37,7 +38,7 @@ const computedTask = computed((): Task => {
     return {
       ...props.task,
       // Individual props override task object if provided
-      ...(props.id && { id: props.id }),
+      ...(props.id && { id: taskId(props.id) }),
       ...(props.number !== undefined && { number: props.number }),
       ...(props.title && { title: props.title }),
       ...(props.status && { status: props.status }),
@@ -52,7 +53,7 @@ const computedTask = computed((): Task => {
 
   // Build task from individual props
   return {
-    id: props.id || '',
+    id: taskId(props.id || ''),
     number: props.number || 0,
     title: props.title || '',
     status: props.status || 'pending',

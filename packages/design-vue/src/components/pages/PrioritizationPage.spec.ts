@@ -13,6 +13,7 @@ import {
   usePrioritization,
 } from '../../composables/use-prioritization/use-prioritization.mock';
 import type { Task } from '../../types';
+import { taskId } from '../../types';
 import PrioritizationPage from './PrioritizationPage.vue';
 
 const ScreenStub = {
@@ -64,7 +65,7 @@ const ScreenStub = {
 
 function makeTask(id: string): Task {
   return {
-    id,
+    id: taskId(id),
     number: Number(id),
     title: `Task ${id}`,
     status: 'pending',

@@ -15,6 +15,7 @@ import type {
   DayOfWeekSchema,
   EngagementMetricsSchema,
   GitCommitSchema,
+  GroupIdSchema,
   HookConfigSchema,
   HookContextSchema,
   HookOptionsSchema,
@@ -177,6 +178,14 @@ export interface ITaskin {
  * ```
  */
 export type TaskId = z.infer<typeof TaskIdSchema>;
+
+/**
+ * Unique identifier for a task group (branded type).
+ * Distinto de {@link TaskId} no compilador: trocar um pelo outro nao compila.
+ *
+ * @public
+ */
+export type GroupId = z.infer<typeof GroupIdSchema>;
 
 /**
  * Status of a task in its lifecycle.

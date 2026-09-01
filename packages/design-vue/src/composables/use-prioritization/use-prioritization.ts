@@ -1,5 +1,5 @@
 import { computed, type Ref, ref, shallowRef, watch } from 'vue';
-import type { Task } from '../../types';
+import type { GroupId, Task } from '../../types';
 import type {
   PrioritizationSortMode,
   PrioritizationViewMode,
@@ -12,8 +12,7 @@ import type {
 /** Minimal set of prioritization fields tracked for change detection */
 interface PrioritizationSnapshot {
   order?: number;
-  groupId?: string;
-  groupName?: string;
+  parentId?: string;
   difficulty?: number;
 }
 
@@ -57,7 +56,7 @@ function savePrefs(storageKey: string, prefs: PersistedPrefs): void {
 /**
  * Builds the ordered task/group tree from a flat task list.
  * Tasks are sorted by `order` (undefined last, stable otherwise), then
- * consecutive tasks sharing the same non-empty `groupId` are clustered
+ * consecutive tasks sharing the same parent group are clustered
  * into a single group node.
  */
 export function buildPriorityTree(tasks: Task[], collapsedGroups: Record<string, boolean> = {}): PriorityNode[] {
@@ -78,16 +77,17 @@ export function buildPriorityTree(tasks: Task[], collapsedGroups: Record<string,
   let currentGroup: PriorityGroupNode | null = null;
 
   for (const task of sorted) {
-    if (task.groupId) {
-      if (currentGroup && currentGroup.groupId === task.groupId) {
+    const parentId = task.parent?.type === 'group' ? task.parent.id : undefined;
+    if (parentId) {
+      if (currentGroup && currentGroup.groupId === parentId) {
         currentGroup.items.push({ kind: 'task', task });
         continue;
       }
       currentGroup = {
         kind: 'group',
-        groupId: task.groupId,
+        groupId: parentId,
         groupName: task.groupName ?? null,
-        collapsed: !!collapsedGroups[task.groupId],
+        collapsed: !!collapsedGroups[parentId],
         items: [{ kind: 'task', task }],
       };
       nodes.push(currentGroup);
@@ -100,20 +100,26 @@ export function buildPriorityTree(tasks: Task[], collapsedGroups: Record<string,
   return nodes;
 }
 
-/** Flattens the tree back into an ordered list of tasks (grouping preserved via innermost groupId/groupName). */
+/** Flattens the tree back into an ordered list of tasks (parent info preserved via innermost group). */
 export function flattenPriorityTree(nodes: PriorityNode[]): Task[] {
   const flat: Task[] = [];
-  function walk(list: PriorityNode[], parentGroupId?: string, parentGroupName?: string): void {
+  function walk(
+    list: PriorityNode[],
+    currentGroupId?: GroupId,
+    currentGroupName?: string,
+    _parentGroupId?: GroupId,
+    _parentGroupName?: string,
+  ): void {
     for (const node of list) {
       if (node.kind === 'group') {
         for (const child of node.items) {
-          walk([child], node.groupId, node.groupName ?? undefined);
+          walk([child], node.groupId, node.groupName ?? undefined, currentGroupId, currentGroupName);
         }
       } else {
         flat.push({
           ...node.task,
-          groupId: parentGroupId,
-          groupName: parentGroupName,
+          parent: currentGroupId ? { type: 'group' as const, id: currentGroupId } : undefined,
+          groupName: currentGroupName,
         });
       }
     }
@@ -139,15 +145,14 @@ function cloneTree(nodes: PriorityNode[]): PriorityNode[] {
 function snapshotOf(task: Task): PrioritizationSnapshot {
   return {
     order: task.order,
-    groupId: task.groupId,
-    groupName: task.groupName,
+    parentId: task.parent?.type === 'group' ? task.parent.id : undefined,
     difficulty: task.difficulty,
   };
 }
 
 function snapshotsEqual(a: PrioritizationSnapshot | undefined, b: PrioritizationSnapshot): boolean {
   if (!a) return false;
-  return a.order === b.order && a.groupId === b.groupId && a.groupName === b.groupName && a.difficulty === b.difficulty;
+  return a.order === b.order && a.parentId === b.parentId && a.difficulty === b.difficulty;
 }
 
 /** Returns only the tasks whose prioritization fields differ from the baseline snapshot. */
@@ -370,8 +375,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
         kind: 'task',
         task: {
           ...task,
-          groupId: parentGroup?.groupId,
-          groupName: parentGroup?.groupName ?? undefined,
+          parent: parentGroup ? { type: 'group', id: parentGroup.groupId } : undefined,
         },
       });
     }
@@ -395,8 +399,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
         kind: 'task',
         task: {
           ...task,
-          groupId: parentGroup?.groupId,
-          groupName: parentGroup?.groupName ?? undefined,
+          parent: parentGroup ? { type: 'group', id: parentGroup.groupId } : undefined,
         },
       });
     }
@@ -469,7 +472,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
       const parentGroupId = `g-${Math.random().toString(36).slice(2, 10)}`;
       const newParent: PriorityGroupNode = {
         kind: 'group',
-        groupId: parentGroupId,
+        groupId: parentGroupId as GroupId,
         groupName: null,
         collapsed: false,
         items: [{ ...draggedParentGroup }, { ...targetParentGroup }],
@@ -497,17 +500,17 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
       const subgroup: PriorityGroupNode = {
         kind: 'group',
-        groupId: subId,
+        groupId: subId as GroupId,
         groupName: null,
         collapsed: false,
         items: [
           {
             kind: 'task',
-            task: { ...draggedTask.task, groupId: subId, groupName: undefined },
+            task: { ...draggedTask.task, parent: { type: 'group', id: subId as GroupId } },
           },
           {
             kind: 'task',
-            task: { ...targetTask.task, groupId: subId, groupName: undefined },
+            task: { ...targetTask.task, parent: { type: 'group', id: subId as GroupId } },
           },
         ],
       };
@@ -550,8 +553,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
         kind: 'task',
         task: {
           ...task,
-          groupId: loc.parentGroup.groupId,
-          groupName: loc.parentGroup.groupName ?? undefined,
+          parent: { type: 'group', id: loc.parentGroup.groupId },
         },
       });
     } else {
@@ -559,15 +561,15 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
       const groupId = `g-${Math.random().toString(36).slice(2, 10)}`;
       loc.container.splice(loc.index, 1, {
         kind: 'group',
-        groupId,
+        groupId: groupId as GroupId,
         groupName: null,
         collapsed: false,
         items: [
           {
             kind: 'task',
-            task: { ...targetNodeAfter.task, groupId, groupName: undefined },
+            task: { ...targetNodeAfter.task, parent: { type: 'group', id: groupId as GroupId } },
           },
-          { kind: 'task', task: { ...task, groupId, groupName: undefined } },
+          { kind: 'task', task: { ...task, parent: { type: 'group', id: groupId as GroupId } } },
         ],
       });
     }
@@ -596,8 +598,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
         kind: 'task',
         task: {
           ...task,
-          groupId: group.groupId,
-          groupName: group.groupName ?? undefined,
+          parent: { type: 'group', id: group.groupId },
         },
       });
     }
@@ -683,7 +684,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const groupB = container[targetIdx];
     const newParent: PriorityGroupNode = {
       kind: 'group',
-      groupId: parentGroupId,
+      groupId: parentGroupId as GroupId,
       groupName: null,
       collapsed: false,
       items: [{ ...groupA }, { ...groupB }],
@@ -765,21 +766,15 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     if (!node) return;
     pushHistory(cloneTree(treeInternal.value));
     node.groupName = name;
-    function updateNames(nodes: PriorityNode[]): void {
-      for (const n of nodes) {
-        if (n.kind === 'task') {
-          n.task = { ...n.task, groupName: name ?? undefined };
-        } else {
-          updateNames(n.items);
-        }
-      }
-    }
-    updateNames(node.items);
     commit();
   }
 
   function exportJson(): string {
     return JSON.stringify(flattenPriorityTree(treeInternal.value), null, 2);
+  }
+
+  function exportTreeJson(): string {
+    return JSON.stringify(treeInternal.value, null, 2);
   }
 
   function copyCardText(taskId: string): string {
@@ -886,6 +881,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     moveDown,
     ungroup,
     exportJson,
+    exportTreeJson,
     copyCardText,
     copyGroupText,
     acknowledgeChanges,
