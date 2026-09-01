@@ -31,7 +31,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinWithShhh },
     setup() {
       return { args };
@@ -50,7 +50,7 @@ export const Default: Story = {
 };
 
 export const WithWebcam: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinWithShhh },
     setup() {
       return { args };
@@ -72,7 +72,7 @@ export const WithWebcam: Story = {
 };
 
 export const NoiseOnly: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinWithShhh },
     setup() {
       return { args };

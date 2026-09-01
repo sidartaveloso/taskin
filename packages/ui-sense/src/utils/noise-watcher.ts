@@ -14,7 +14,9 @@ export async function createNoiseWatcher(): Promise<NoiseWatcher> {
   }
 
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  type AudioWindow = Window & { webkitAudioContext?: typeof AudioContext };
+  const AudioContextClass = window.AudioContext ?? (window as AudioWindow).webkitAudioContext;
+  const audioCtx = new AudioContextClass();
   const source = audioCtx.createMediaStreamSource(stream);
   const analyser = audioCtx.createAnalyser();
   analyser.fftSize = 2048;

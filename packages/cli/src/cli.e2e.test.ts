@@ -454,8 +454,9 @@ Another task`;
       try {
         await execAsync(`node ${CLI_PATH} list`, { cwd: TEST_DIR });
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.stderr || error.stdout).toContain('not initialized');
+      } catch (error) {
+        const err = error as { stderr?: string; stdout?: string };
+        expect(err.stderr || err.stdout).toContain('not initialized');
       }
     }, 60000);
 
@@ -465,8 +466,9 @@ Another task`;
       try {
         await execAsync(`node ${CLI_PATH} list`, { cwd: TEST_DIR });
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.stderr || error.stdout).toContain('TASKS');
+      } catch (error) {
+        const err = error as { stderr?: string; stdout?: string };
+        expect(err.stderr || err.stdout).toContain('TASKS');
       }
     }, 60000);
   });
