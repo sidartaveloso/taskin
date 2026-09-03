@@ -14,6 +14,7 @@ import { HookRunner } from '../lib/hook-runner.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { playSound } from '../lib/sound-player.js';
+import { normalizeTaskId } from '../lib/task-id.js';
 import { defineCommand } from './define-command/index.js';
 
 interface ReviewTaskOptions {
@@ -57,7 +58,11 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
   printHeader(`Reviewing Task ${taskId}`, '🔍');
 
   // Normalize task ID
-  const normalizedId = taskId.replace(/^task-/, '').padStart(3, '0');
+  const normalizedId = normalizeTaskId(taskId);
+  if (!normalizedId) {
+    error(`'${taskId}' is not a task id. Expected something like 020 or task-020.`);
+    process.exit(1);
+  }
 
   // Find TASKS directory
   const tasksDir = path.join(process.cwd(), 'TASKS');

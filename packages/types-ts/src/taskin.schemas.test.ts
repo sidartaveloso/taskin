@@ -15,6 +15,8 @@ import {
   NotificationMessageSchema,
   NotificationResultSchema,
   NotificationTelegramConfigSchema,
+  parseGroupId,
+  parseTaskId,
   RefactoringMetricsSchema,
   StatsPeriodSchema,
   StatsQuerySchema,
@@ -35,14 +37,35 @@ import {
 
 describe('Taskin Schemas', () => {
   describe('TaskIdSchema', () => {
-    it('should accept valid UUID', () => {
-      const validUUID = '550e8400-e29b-41d4-a716-446655440000';
-      expect(TaskIdSchema.parse(validUUID)).toBe(validUUID);
+    it.each(['001', '020', '123', '1000'])('should accept the numeric id %j', (id) => {
+      expect(TaskIdSchema.parse(id)).toBe(id);
     });
 
-    it('should reject invalid UUID', () => {
-      expect(() => TaskIdSchema.parse('not-a-uuid')).toThrow();
-      expect(() => TaskIdSchema.parse('123')).toThrow();
+    it('should reject anything that is not a task id', () => {
+      // 'unknown' era o fallback do provider e chegava a virar id de task
+      expect(() => TaskIdSchema.parse('unknown')).toThrow();
+      expect(() => TaskIdSchema.parse('task-020')).toThrow();
+      expect(() => TaskIdSchema.parse('')).toThrow();
+      // O schema antigo exigia isto — e nenhuma task real se parecia com isso
+      expect(() => TaskIdSchema.parse('550e8400-e29b-41d4-a716-446655440000')).toThrow();
+    });
+  });
+
+  describe('parseTaskId / parseGroupId', () => {
+    it('should build a branded TaskId from a real id', () => {
+      expect(parseTaskId('020')).toBe('020');
+    });
+
+    it('should refuse to build a TaskId from garbage', () => {
+      expect(() => parseTaskId('nao-e-id')).toThrow();
+    });
+
+    it('should build a branded GroupId from an opaque short id', () => {
+      expect(parseGroupId('g-4f2a')).toBe('g-4f2a');
+    });
+
+    it('should refuse an empty GroupId', () => {
+      expect(() => parseGroupId('')).toThrow();
     });
   });
 
@@ -93,7 +116,7 @@ describe('Taskin Schemas', () => {
   describe('TaskSchema', () => {
     it('should accept valid task', () => {
       const task = {
-        id: '550e8400-e29b-41d4-a716-446655440000',
+        id: '020',
         title: 'Implement feature',
         type: 'feat' as const,
         status: 'in-progress' as const,
@@ -105,7 +128,7 @@ describe('Taskin Schemas', () => {
 
     it('should accept task with optional fields', () => {
       const minimalTask = {
-        id: '550e8400-e29b-41d4-a716-446655440000',
+        id: '020',
         title: 'Task',
         type: 'feat' as const,
         status: 'pending' as const,
@@ -463,7 +486,7 @@ describe('Stats & Track Record Schemas', () => {
 
   describe('TaskStatsSchema', () => {
     const validTaskStats = {
-      taskId: '550e8400-e29b-41d4-a716-446655440000',
+      taskId: '020',
       title: 'Refactor authentication',
       type: 'refactor' as const,
       status: 'done' as const,
@@ -580,12 +603,12 @@ describe('Stats & Track Record Schemas', () => {
       },
       topTasks: [
         {
-          taskId: '550e8400-e29b-41d4-a716-446655440000',
+          taskId: '020',
           title: 'Task 1',
           commits: 10,
         },
         {
-          taskId: '550e8400-e29b-41d4-a716-446655440001',
+          taskId: '021',
           title: 'Task 2',
           commits: 8,
         },
@@ -700,7 +723,7 @@ describe('Stats & Track Record Schemas', () => {
       const query = {
         period: 'week' as const,
         user: 'sidarta',
-        taskId: '550e8400-e29b-41d4-a716-446655440000',
+        taskId: '020',
         detailed: true,
         format: 'json' as const,
       };
@@ -729,7 +752,7 @@ describe('Stats & Track Record Schemas', () => {
 
     it('should accept taskId filter for task-specific stats', () => {
       const query = {
-        taskId: '550e8400-e29b-41d4-a716-446655440000',
+        taskId: '020',
         detailed: true,
       };
       expect(StatsQuerySchema.parse(query)).toEqual(query);

@@ -1,4 +1,4 @@
-import type { Task } from '@opentask/taskin-types';
+import { parseTaskId, type Task } from '@opentask/taskin-types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskManager } from './task-manager';
@@ -21,23 +21,23 @@ describe('TaskManager', () => {
     it('should start a pending task', async () => {
       (mockTaskProvider.findTask as Mock).mockResolvedValue(mockTask);
 
-      const updatedTask = await taskManager.startTask('task-001');
+      const updatedTask = await taskManager.startTask(parseTaskId('001'));
 
-      expect(mockTaskProvider.findTask).toHaveBeenCalledWith('task-001');
+      expect(mockTaskProvider.findTask).toHaveBeenCalledWith('001');
       expect(mockTaskProvider.updateTask).toHaveBeenCalledWith(expect.objectContaining({ status: 'in-progress' }));
       expect(updatedTask.status).toBe('in-progress');
     });
 
     it('should throw an error if task is not found', async () => {
       (mockTaskProvider.findTask as Mock).mockResolvedValue(undefined);
-      await expect(taskManager.startTask('not-found')).rejects.toThrow("Task with ID 'not-found' not found.");
+      await expect(taskManager.startTask(parseTaskId('999'))).rejects.toThrow("Task with ID '999' not found.");
     });
 
     it('should throw an error if task is already in progress', async () => {
       const inProgressTask = { ...mockTask, status: 'in-progress' as const };
       (mockTaskProvider.findTask as Mock).mockResolvedValue(inProgressTask);
 
-      await expect(taskManager.startTask('task-001')).rejects.toThrow("Task 'task-001' is already in progress.");
+      await expect(taskManager.startTask(parseTaskId('001'))).rejects.toThrow("Task '001' is already in progress.");
     });
   });
 
@@ -46,7 +46,7 @@ describe('TaskManager', () => {
       const inProgressTask = { ...mockTask, status: 'in-progress' as const };
       (mockTaskProvider.findTask as Mock).mockResolvedValue(inProgressTask);
 
-      const updatedTask = await taskManager.pauseTask('task-001');
+      const updatedTask = await taskManager.pauseTask(parseTaskId('001'));
 
       expect(mockTaskProvider.updateTask).toHaveBeenCalledWith(expect.objectContaining({ status: 'paused' }));
       expect(updatedTask.status).toBe('paused');
@@ -55,21 +55,21 @@ describe('TaskManager', () => {
     it('should throw an error if task is not found', async () => {
       (mockTaskProvider.findTask as Mock).mockResolvedValue(undefined);
 
-      await expect(taskManager.pauseTask('not-found')).rejects.toThrow("Task with ID 'not-found' not found.");
+      await expect(taskManager.pauseTask(parseTaskId('999'))).rejects.toThrow("Task with ID '999' not found.");
     });
 
     it('should throw an error if task is not in-progress', async () => {
       (mockTaskProvider.findTask as Mock).mockResolvedValue({ ...mockTask, status: 'pending' as const });
 
-      await expect(taskManager.pauseTask('task-001')).rejects.toThrow(
-        "Task 'task-001' must be in 'in-progress' status to be paused",
+      await expect(taskManager.pauseTask(parseTaskId('001'))).rejects.toThrow(
+        "Task '001' must be in 'in-progress' status to be paused",
       );
     });
 
     it('should let startTask resume a paused task', async () => {
       (mockTaskProvider.findTask as Mock).mockResolvedValue({ ...mockTask, status: 'paused' as const });
 
-      const updatedTask = await taskManager.startTask('task-001');
+      const updatedTask = await taskManager.startTask(parseTaskId('001'));
 
       expect(updatedTask.status).toBe('in-progress');
     });
@@ -80,7 +80,7 @@ describe('TaskManager', () => {
       const inProgressTask = { ...mockTask, status: 'in-progress' as const };
       (mockTaskProvider.findTask as Mock).mockResolvedValue(inProgressTask);
 
-      const updatedTask = await taskManager.finishTask('task-001');
+      const updatedTask = await taskManager.finishTask(parseTaskId('001'));
 
       expect(mockTaskProvider.updateTask).toHaveBeenCalledWith(expect.objectContaining({ status: 'done' }));
       expect(updatedTask.status).toBe('done');
@@ -92,9 +92,9 @@ describe('TaskManager', () => {
       const inProgressTask = { ...mockTask, status: 'in-progress' as const };
       (mockTaskProvider.findTask as Mock).mockResolvedValue(inProgressTask);
 
-      const updatedTask = await taskManager.reviewTask('task-001');
+      const updatedTask = await taskManager.reviewTask(parseTaskId('001'));
 
-      expect(mockTaskProvider.findTask).toHaveBeenCalledWith('task-001');
+      expect(mockTaskProvider.findTask).toHaveBeenCalledWith('001');
       expect(mockTaskProvider.updateTask).toHaveBeenCalledWith(expect.objectContaining({ status: 'in-review' }));
       expect(updatedTask.status).toBe('in-review');
     });
@@ -102,15 +102,15 @@ describe('TaskManager', () => {
     it('should throw an error if task is not found', async () => {
       (mockTaskProvider.findTask as Mock).mockResolvedValue(undefined);
 
-      await expect(taskManager.reviewTask('not-found')).rejects.toThrow("Task with ID 'not-found' not found.");
+      await expect(taskManager.reviewTask(parseTaskId('999'))).rejects.toThrow("Task with ID '999' not found.");
     });
 
     it('should throw an error if task is not in-progress', async () => {
       const pendingTask = { ...mockTask, status: 'pending' as const };
       (mockTaskProvider.findTask as Mock).mockResolvedValue(pendingTask);
 
-      await expect(taskManager.reviewTask('task-001')).rejects.toThrow(
-        "Task 'task-001' must be in 'in-progress' status to be reviewed",
+      await expect(taskManager.reviewTask(parseTaskId('001'))).rejects.toThrow(
+        "Task '001' must be in 'in-progress' status to be reviewed",
       );
     });
 
@@ -118,8 +118,8 @@ describe('TaskManager', () => {
       const doneTask = { ...mockTask, status: 'done' as const };
       (mockTaskProvider.findTask as Mock).mockResolvedValue(doneTask);
 
-      await expect(taskManager.reviewTask('task-001')).rejects.toThrow(
-        "Task 'task-001' must be in 'in-progress' status to be reviewed",
+      await expect(taskManager.reviewTask(parseTaskId('001'))).rejects.toThrow(
+        "Task '001' must be in 'in-progress' status to be reviewed",
       );
     });
 
@@ -127,8 +127,8 @@ describe('TaskManager', () => {
       const reviewTask = { ...mockTask, status: 'in-review' as const };
       (mockTaskProvider.findTask as Mock).mockResolvedValue(reviewTask);
 
-      await expect(taskManager.reviewTask('task-001')).rejects.toThrow(
-        "Task 'task-001' must be in 'in-progress' status to be reviewed",
+      await expect(taskManager.reviewTask(parseTaskId('001'))).rejects.toThrow(
+        "Task '001' must be in 'in-progress' status to be reviewed",
       );
     });
   });
@@ -149,7 +149,7 @@ describe('TaskManager', () => {
       (provider.findTask as Mock).mockResolvedValue(providerTask);
 
       const manager = new TaskManager(provider);
-      const updated = await manager.startTask('task-001');
+      const updated = await manager.startTask(parseTaskId('001'));
 
       expect(updated.filePath).toBe('/tasks/task-001.md');
       expect(updated.content).toBe('# Task 001');
@@ -163,7 +163,6 @@ describe('TaskManager', () => {
       const createOptions = { title: 'New Task', type: 'feat' as const };
       const createResult = {
         task: mockTask,
-        taskId: '001',
         filePath: '/tasks/task-001.md',
       };
 
@@ -182,9 +181,11 @@ describe('TaskManager', () => {
         description: 'Fix something',
         assignee: 'john-doe',
       };
+      // Antes o assert batia no campo `taskId` do result, que dizia '002'
+      // enquanto o `task` dizia outro id. Com um campo so, o teste tem que
+      // devolver a task que ele afirma ter criado.
       const createResult = {
-        task: mockTask,
-        taskId: '002',
+        task: createMockTask({ id: parseTaskId('002') }),
         filePath: '/tasks/task-002.md',
       };
 
@@ -193,7 +194,7 @@ describe('TaskManager', () => {
       const result = await taskManager.createTask(createOptions);
 
       expect(mockTaskProvider.createTask).toHaveBeenCalledWith(createOptions);
-      expect(result.taskId).toBe('002');
+      expect(result.task.id).toBe('002');
     });
   });
 

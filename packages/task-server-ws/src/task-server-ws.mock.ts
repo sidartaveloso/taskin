@@ -5,11 +5,11 @@ import type {
   ITaskProvider,
   LintResult,
 } from '@opentask/taskin-task-manager';
-import type { Task, TaskId } from '@opentask/taskin-types';
+import { parseTaskId, type Task, type TaskId } from '@opentask/taskin-types';
 import type { TaskServerConfig, WebSocketServerOptions } from './task-server-ws.types.js';
 
-const buildTask = (taskId: string, overrides: Partial<Task> = {}): Task => ({
-  id: taskId satisfies string as TaskId,
+const buildTask = (taskId: TaskId, overrides: Partial<Task> = {}): Task => ({
+  id: taskId,
   title: `Task ${taskId}`,
   status: 'pending',
   type: 'feat',
@@ -24,27 +24,26 @@ const buildTask = (taskId: string, overrides: Partial<Task> = {}): Task => ({
  * mocks have no reason to invent file system fields.
  */
 export class MockTaskManager implements ITaskManager {
-  async startTask(taskId: string): Promise<Task> {
+  async startTask(taskId: TaskId): Promise<Task> {
     return buildTask(taskId, { status: 'in-progress' });
   }
 
-  async pauseTask(taskId: string): Promise<Task> {
+  async pauseTask(taskId: TaskId): Promise<Task> {
     return buildTask(taskId, { status: 'paused' });
   }
 
-  async finishTask(taskId: string): Promise<Task> {
+  async finishTask(taskId: TaskId): Promise<Task> {
     return buildTask(taskId, { status: 'done' });
   }
 
-  async reviewTask(taskId: string): Promise<Task> {
+  async reviewTask(taskId: TaskId): Promise<Task> {
     return buildTask(taskId, { status: 'in-review' });
   }
 
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
-    const taskId = '001';
+    const taskId = parseTaskId('001');
     return {
       task: buildTask(taskId, { title: options.title, type: options.type }),
-      taskId,
     };
   }
 
@@ -72,7 +71,7 @@ export class MockTaskProvider implements ITaskProvider {
     this.tasks = initialTasks;
   }
 
-  async findTask(taskId: string): Promise<Task | undefined> {
+  async findTask(taskId: TaskId): Promise<Task | undefined> {
     return this.tasks.find((t) => t.id === taskId);
   }
 
@@ -111,10 +110,10 @@ export class MockTaskProvider implements ITaskProvider {
   }
 
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
-    const taskId = String(this.tasks.length + 1).padStart(3, '0');
+    const taskId = parseTaskId(String(this.tasks.length + 1).padStart(3, '0'));
     const task = buildTask(taskId, { title: options.title, type: options.type });
     this.tasks.push(task);
-    return { task, taskId };
+    return { task };
   }
 
   async lint(): Promise<LintResult> {

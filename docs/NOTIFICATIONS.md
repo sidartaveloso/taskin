@@ -135,6 +135,24 @@ taskin notify --event task:done --title "Teste" --description "Apenas um teste" 
 
 O `--dry-run` mostra a mensagem que seria enviada sem chamar nenhuma API externa.
 
+## Descobrir por que uma notificação não chegou
+
+As notificações disparadas por `start`, `finish` e `review` são deliberadamente
+silenciosas: um webhook fora do ar não pode fazer o comando falhar nem poluir a
+saída. Isso significa que, por padrão, uma falha não aparece em lugar nenhum.
+
+Para vê-las, ligue `TASKIN_DEBUG`:
+
+```bash
+TASKIN_DEBUG=1 taskin finish
+```
+
+Com a flag ligada, cada provider que falhou imprime um aviso com o motivo
+(`⚠ Notification via discord failed: Discord webhook responded with 401: Unauthorized`).
+O comando continua terminando com sucesso de qualquer forma.
+
+O `taskin notify` sempre reporta o resultado de cada provider, com ou sem a flag.
+
 ## Troubleshooting
 
 1. **"No notification providers configured"** → configure via `taskin config`
@@ -142,3 +160,4 @@ O `--dry-run` mostra a mensagem que seria enviada sem chamar nenhuma API externa
 3. **Telegram retorna 401** → bot token inválido ou revogado
 4. **Telegram retorna 403** → bot não é membro do grupo
 5. **Notificações não disparam** → verifique se os eventos estão configurados corretamente no `.taskin.json`
+6. **Nenhum erro aparece, mas nada chega** → rode o comando com `TASKIN_DEBUG=1` (ver seção acima)

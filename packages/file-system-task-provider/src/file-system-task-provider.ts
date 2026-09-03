@@ -1,5 +1,6 @@
 import type { CreateTaskOptions, ITaskProvider, LintResult } from '@opentask/taskin-task-manager';
-import type { TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
+import type { GroupId, TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
+import { parseGroupId, parseTaskId } from '@opentask/taskin-types';
 import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -37,7 +38,7 @@ function parsePrioritizationFields(
   difficultyMatch: string | null,
 ): {
   order?: number;
-  groupId?: string;
+  groupId?: GroupId;
   groupName?: string;
   difficulty?: number;
 } {
@@ -46,7 +47,7 @@ function parsePrioritizationFields(
 
   return {
     ...(order !== undefined && !Number.isNaN(order) && { order }),
-    ...(groupMatch && { groupId: groupMatch.trim() }),
+    ...(groupMatch && { groupId: parseGroupId(groupMatch.trim()) }),
     ...(groupNameMatch && { groupName: groupNameMatch.trim() }),
     ...(difficulty !== undefined && !Number.isNaN(difficulty) && { difficulty }),
   };
@@ -115,7 +116,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     }
   }
 
-  async findTask(taskId: string): Promise<TaskFile | undefined> {
+  async findTask(taskId: TaskId): Promise<TaskFile | undefined> {
     const files = await fs.readdir(this.tasksDirectory);
     const taskFile = files.find((file) => extractTaskIdFromFileName(file) === taskId);
 
@@ -169,7 +170,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     }
 
     const task: TaskFile = {
-      id: taskId satisfies string as TaskId,
+      id: parseTaskId(taskId),
       title,
       content,
       // Projects the file body onto the provider-agnostic `description`, so
@@ -236,11 +237,13 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const tasks: TaskFile[] = [];
 
     for (const file of taskFiles) {
+      // `task-foo.md` passa pelo filtro acima mas nao tem id: nao e uma task.
+      // Antes virava uma task fantasma de id 'unknown' — e duas delas colidiam.
+      const taskId = extractTaskIdFromFileName(file);
+      if (!taskId) continue;
+
       const filePath = path.join(this.tasksDirectory, file);
       const content = await fs.readFile(filePath, 'utf-8');
-
-      // Extract task ID from filename: task-001-title.md -> 001 (also task-001.md)
-      const taskId = extractTaskIdFromFileName(file) ?? 'unknown';
 
       // Extract title from first heading
       const titleMatch = content.match(TITLE_PATTERN);
@@ -285,7 +288,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       }
 
       const task: TaskFile = {
-        id: taskId satisfies string as TaskId,
+        id: parseTaskId(taskId),
         title,
         content,
         // See findTask: keeps `description` usable by Task-only consumers.
@@ -326,7 +329,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       .filter((num) => !Number.isNaN(num));
 
     const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
-    const taskId = String(nextNumber).padStart(3, '0');
+    const taskId = parseTaskId(String(nextNumber).padStart(3, '0'));
 
     // Create task file name with slugified title (removes accents)
     const titleSlug = slugify(options.title);
@@ -374,7 +377,6 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     return {
       task,
-      taskId,
       filePath,
     };
   }

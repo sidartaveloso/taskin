@@ -1,5 +1,5 @@
 import type { ITaskManager, ITaskProvider } from '@opentask/taskin-task-manager';
-import type { Task } from '@opentask/taskin-types';
+import { type Task, type TaskId, TaskIdSchema } from '@opentask/taskin-types';
 import { randomUUID } from 'crypto';
 import { WebSocket, WebSocketServer } from 'ws';
 import type {
@@ -9,6 +9,7 @@ import type {
   WebSocketServerOptions,
   WSMessage,
 } from './task-server-ws.types.js';
+import { applyTaskUpdate } from './task-update/index.js';
 
 /**
  * WebSocket server for real-time task management
@@ -286,6 +287,34 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
   }
 
   /**
+   * Reads the task id out of an incoming message.
+   *
+   * Ids on the wire are untrusted strings: a branded `TaskId` is only worth
+   * something if the boundary that produces it actually validates. Answers the
+   * client with a clear error instead of letting a ZodError leak out of the
+   * generic catch.
+   */
+  private readTaskId(
+    client: ClientConnection,
+    message: WSMessage,
+    field: 'taskId' | 'id' = 'taskId',
+  ): TaskId | undefined {
+    const raw = (message.payload as Record<string, unknown> | undefined)?.[field];
+    const parsed = typeof raw === 'string' ? TaskIdSchema.safeParse(raw) : undefined;
+
+    if (!parsed?.success) {
+      this.sendToClient(client.id, {
+        type: 'error',
+        payload: { message: `Invalid task id in '${message.type}' request` },
+        requestId: message.requestId,
+      });
+      return undefined;
+    }
+
+    return parsed.data;
+  }
+
+  /**
    * Handle list request
    */
   private async handleListRequest(client: ClientConnection, message: WSMessage): Promise<void> {
@@ -307,7 +336,9 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
    * Handle find request
    */
   private async handleFindRequest(client: ClientConnection, message: WSMessage): Promise<void> {
-    const { taskId } = message.payload as { taskId: string };
+    const taskId = this.readTaskId(client, message);
+    if (!taskId) return;
+
     const task = await this.taskProvider.findTask(taskId);
 
     this.sendToClient(client.id, {
@@ -320,22 +351,48 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
   /**
    * Handle update request
    */
-  private async handleUpdateRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
-    const task = message.payload as TTask;
-    await this.taskProvider.updateTask(task);
+  private async handleUpdateRequest(client: ClientConnection, message: WSMessage): Promise<void> {
+    const taskId = this.readTaskId(client, message, 'id');
+    if (!taskId) return;
+
+    // O payload nao e a task: o servidor releu a dele e aplica so o que o
+    // cliente tem direito de mudar. Ver applyTaskUpdate.
+    const stored = await this.taskProvider.findTask(taskId);
+    if (!stored) {
+      this.sendToClient(client.id, {
+        type: 'error',
+        payload: { message: `Task ${taskId} not found` },
+        requestId: message.requestId,
+      });
+      return;
+    }
+
+    const outcome = applyTaskUpdate(stored, message.payload);
+    if (!outcome.ok) {
+      this.sendToClient(client.id, {
+        type: 'error',
+        payload: { message: outcome.message },
+        requestId: message.requestId,
+      });
+      return;
+    }
+
+    await this.taskProvider.updateTask(outcome.task);
 
     // Broadcast update to all clients
     this.broadcast({
       type: 'task:updated',
-      payload: task,
+      payload: outcome.task,
     });
   }
 
   /**
    * Handle start task request
    */
-  private async handleStartRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
-    const { taskId } = message.payload as { taskId: string };
+  private async handleStartRequest(client: ClientConnection, message: WSMessage): Promise<void> {
+    const taskId = this.readTaskId(client, message);
+    if (!taskId) return;
+
     const task = await this.taskManager.startTask(taskId);
 
     // Broadcast update to all clients
@@ -348,8 +405,10 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
   /**
    * Handle finish task request
    */
-  private async handleFinishRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
-    const { taskId } = message.payload as { taskId: string };
+  private async handleFinishRequest(client: ClientConnection, message: WSMessage): Promise<void> {
+    const taskId = this.readTaskId(client, message);
+    if (!taskId) return;
+
     const task = await this.taskManager.finishTask(taskId);
 
     // Broadcast update to all clients
@@ -362,8 +421,10 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
   /**
    * Handle pause task request
    */
-  private async handlePauseRequest(_client: ClientConnection, message: WSMessage): Promise<void> {
-    const { taskId } = message.payload as { taskId: string };
+  private async handlePauseRequest(client: ClientConnection, message: WSMessage): Promise<void> {
+    const taskId = this.readTaskId(client, message);
+    if (!taskId) return;
+
     const task = await this.taskManager.pauseTask(taskId);
 
     // Broadcast update to all clients

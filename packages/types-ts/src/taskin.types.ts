@@ -26,6 +26,7 @@ import type {
   NotificationEventSchema,
   NotificationFieldSchema,
   NotificationMessageSchema,
+  NotificationProviderNameSchema,
   NotificationResultSchema,
   NotificationTelegramConfigSchema,
   ProviderConfigSchema,
@@ -34,6 +35,7 @@ import type {
   StatsQuerySchema,
   TaskIdSchema,
   TaskinConfigSchema,
+  TaskPrioritizationUpdateSchema,
   TaskSchema,
   TaskStatsSchema,
   TaskStatusSchema,
@@ -167,14 +169,17 @@ export interface ITaskin {
 }
 
 /**
- * Unique identifier for a task (UUID branded type).
+ * Unique identifier for a task (branded type).
  * Use this type for type-safe task ID handling across the system.
+ *
+ * Produza um com `parseTaskId`, nunca com `as`: a marca so vale enquanto o
+ * unico caminho ate ela passar pela validacao.
  *
  * @public
  * @example
  * ```ts
  * function getTask(id: TaskId): Task { ... }
- * const taskId: TaskId = '550e8400-e29b-41d4-a716-446655440000' as TaskId;
+ * const id = parseTaskId('020');
  * ```
  */
 export type TaskId = z.infer<typeof TaskIdSchema>;
@@ -210,6 +215,13 @@ export type TaskType = z.infer<typeof TaskTypeSchema>;
  * @public
  */
 export type Task = z.infer<typeof TaskSchema>;
+
+/**
+ * The mutable slice of a task, as accepted from a client.
+ *
+ * @public
+ */
+export type TaskPrioritizationUpdate = z.infer<typeof TaskPrioritizationUpdateSchema>;
 
 /**
  * Represents a user in the Taskin system.
@@ -455,6 +467,13 @@ export interface IHookRunner {
 export type NotificationEvent = z.infer<typeof NotificationEventSchema>;
 
 /**
+ * Name of a notification channel.
+ *
+ * @public
+ */
+export type NotificationProviderName = z.infer<typeof NotificationProviderNameSchema>;
+
+/**
  * A single field in a structured notification message.
  *
  * @public
@@ -512,8 +531,8 @@ export type NotificationConfig = z.infer<typeof NotificationConfigSchema>;
  * ```
  */
 export interface INotificationProvider {
-  /** Provider name identifier */
-  readonly name: string;
+  /** Provider name identifier — also the key used by the event filter */
+  readonly name: NotificationProviderName;
   /**
    * Send a notification message.
    *

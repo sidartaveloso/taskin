@@ -1,4 +1,9 @@
-import type { INotificationProvider, NotificationEvent, NotificationMessage } from '@opentask/taskin-types';
+import type {
+  INotificationProvider,
+  NotificationEvent,
+  NotificationMessage,
+  NotificationProviderName,
+} from '@opentask/taskin-types';
 import { error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { resolveEnvVars } from '../lib/notification/env-resolver.js';
@@ -104,12 +109,12 @@ async function notifyTask(options: NotifyOptions): Promise<void> {
 
   providers.push(new ConsoleProvider());
 
-  const eventFilter: Record<string, NotificationEvent[]> = {};
+  const eventFilter: Partial<Record<NotificationProviderName, NotificationEvent[]>> = {};
   if (config.notifications.discord) {
-    eventFilter.discord = config.notifications.discord.events as NotificationEvent[];
+    eventFilter.discord = config.notifications.discord.events;
   }
   if (config.notifications.telegram) {
-    eventFilter.telegram = config.notifications.telegram.events as NotificationEvent[];
+    eventFilter.telegram = config.notifications.telegram.events;
   }
 
   const manager = new NotificationManager(providers, { eventFilter });

@@ -2,11 +2,18 @@ import { z } from 'zod';
 
 /**
  * Task identifier schema.
- * Represents a unique identifier for a task (UUID format).
+ *
+ * O id de uma task e a parte numerica do nome do arquivo: `task-020-foo.md`
+ * produz `020`. Nao e UUID — a versao anterior deste schema exigia `.uuid()`,
+ * o que rejeitava 100% das tasks reais e transformava a marca `TaskId` em
+ * promessa vazia, ja que o unico jeito de obter uma era com `as`.
  *
  * @public
  */
-export const TaskIdSchema = z.string().uuid().brand('TaskId');
+export const TaskIdSchema = z
+  .string()
+  .regex(/^\d+$/, 'Task id must be the numeric part of the file name (e.g. "020")')
+  .brand('TaskId');
 
 /**
  * Group identifier schema.
@@ -19,6 +26,29 @@ export const TaskIdSchema = z.string().uuid().brand('TaskId');
  * @public
  */
 export const GroupIdSchema = z.string().min(1).brand('GroupId');
+
+/**
+ * Builds a validated {@link TaskId}.
+ *
+ * This is the only supported way to produce one: the brand is meaningless if
+ * callers can reach it with a cast.
+ *
+ * @throws ZodError when `value` is not a task id
+ * @public
+ * @example
+ * ```ts
+ * const id = parseTaskId('020');
+ * ```
+ */
+export const parseTaskId = (value: string) => TaskIdSchema.parse(value);
+
+/**
+ * Builds a validated {@link GroupId}. Same contract as {@link parseTaskId}.
+ *
+ * @throws ZodError when `value` is empty
+ * @public
+ */
+export const parseGroupId = (value: string) => GroupIdSchema.parse(value);
 
 /**
  * All possible task status values.
@@ -108,11 +138,32 @@ export const TaskSchema = z.object({
   /** Manual priority rank (lower = higher priority); set via the prioritization board */
   order: z.number().optional(),
   /** Opaque id of the ad hoc prioritization group this task belongs to, if any */
-  groupId: z.string().optional(),
+  groupId: GroupIdSchema.optional(),
   /** Display label of the prioritization group, if the user named it */
   groupName: z.string().optional(),
   /** Perceived difficulty from 1 (trivial) to 5 (very hard) */
   difficulty: z.number().int().min(1).max(5).optional(),
+});
+
+/**
+ * The fields a client may change through a task update.
+ *
+ * Derived from {@link TaskSchema} so it cannot drift: everything NOT listed
+ * here — `id`, `status`, `title`, and whatever provider-specific fields the
+ * backing store carries (`filePath`, `content`) — belongs to the server and is
+ * never taken from an incoming payload.
+ *
+ * Absent means cleared, not unchanged: the prioritization block is replaced as
+ * a whole, because `JSON.stringify` drops `undefined` keys and "ungroup this
+ * task" has to survive the trip.
+ *
+ * @public
+ */
+export const TaskPrioritizationUpdateSchema = TaskSchema.pick({
+  order: true,
+  groupId: true,
+  groupName: true,
+  difficulty: true,
 });
 
 // ============================================================================
@@ -553,6 +604,24 @@ export const NOTIFICATION_EVENTS = ['task:start', 'task:done', 'task:review'] as
  * @public
  */
 export const NotificationEventSchema = z.enum(NOTIFICATION_EVENTS);
+
+/**
+ * Every notification channel the CLI knows how to talk to.
+ *
+ * A closed set on purpose: the provider name is the key used to look up which
+ * events a channel wants, and `Record<string, …>` let a typo like
+ * `eventFilter.discrod` compile and silently filter nothing.
+ *
+ * @public
+ */
+export const NOTIFICATION_PROVIDERS = ['discord', 'telegram', 'console'] as const;
+
+/**
+ * Runtime validator for notification provider names.
+ *
+ * @public
+ */
+export const NotificationProviderNameSchema = z.enum(NOTIFICATION_PROVIDERS);
 
 /**
  * Schema for a single field in a notification message.

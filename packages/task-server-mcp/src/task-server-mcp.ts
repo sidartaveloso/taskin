@@ -9,6 +9,7 @@ import {
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import type { ITaskManager } from '@opentask/taskin-task-manager';
+import { type TaskId, TaskIdSchema } from '@opentask/taskin-types';
 import type {
   ITaskMCPServer,
   MCPConnectionOptions,
@@ -26,6 +27,29 @@ import type {
 /**
  * MCP Server for task management integration with LLMs
  */
+/**
+ * Tool arguments arrive as untyped JSON from the MCP client, so the id has to
+ * be validated before it enters the domain — the branded `TaskId` is only
+ * worth something if the boundary that mints it actually checks.
+ */
+function readTaskId(raw: unknown): TaskId | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const parsed = TaskIdSchema.safeParse(raw);
+  return parsed.success ? parsed.data : undefined;
+}
+
+function invalidTaskId(raw: unknown): MCPToolCallResult {
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: `Invalid task id: ${JSON.stringify(raw)}. Expected the numeric id of a task, e.g. "020".`,
+      },
+    ],
+    isError: true,
+  };
+}
+
 export class TaskMCPServer implements ITaskMCPServer {
   private server: Server;
   private taskManager: ITaskManager;
@@ -204,11 +228,15 @@ export class TaskMCPServer implements ITaskMCPServer {
       this.log(`Calling tool: ${params.name}`, params.arguments);
 
       switch (params.name) {
-        case 'start_task':
-          return await this.handleStartTask(params.arguments?.taskId as string);
+        case 'start_task': {
+          const taskId = readTaskId(params.arguments?.taskId);
+          return taskId ? await this.handleStartTask(taskId) : invalidTaskId(params.arguments?.taskId);
+        }
 
-        case 'finish_task':
-          return await this.handleFinishTask(params.arguments?.taskId as string);
+        case 'finish_task': {
+          const taskId = readTaskId(params.arguments?.taskId);
+          return taskId ? await this.handleFinishTask(taskId) : invalidTaskId(params.arguments?.taskId);
+        }
 
         default:
           return {
@@ -238,7 +266,7 @@ export class TaskMCPServer implements ITaskMCPServer {
   /**
    * Handle start_task tool
    */
-  private async handleStartTask(taskId: string): Promise<MCPToolCallResult> {
+  private async handleStartTask(taskId: TaskId): Promise<MCPToolCallResult> {
     const task = await this.taskManager.startTask(taskId);
 
     return {
@@ -267,7 +295,7 @@ export class TaskMCPServer implements ITaskMCPServer {
   /**
    * Handle finish_task tool
    */
-  private async handleFinishTask(taskId: string): Promise<MCPToolCallResult> {
+  private async handleFinishTask(taskId: TaskId): Promise<MCPToolCallResult> {
     const task = await this.taskManager.finishTask(taskId);
 
     return {

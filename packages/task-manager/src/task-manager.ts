@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from '@opentask/taskin-types';
+import type { Task, TaskId, TaskStatus } from '@opentask/taskin-types';
 import type {
   CreateTaskOptions,
   CreateTaskResult,
@@ -27,7 +27,7 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return { ...task, status } as TTask;
   }
 
-  async startTask(taskId: string): Promise<TTask> {
+  async startTask(taskId: TaskId): Promise<TTask> {
     const task = await this.taskProvider.findTask(taskId);
 
     if (!task) {
@@ -48,7 +48,7 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return updatedTask;
   }
 
-  async pauseTask(taskId: string): Promise<TTask> {
+  async pauseTask(taskId: TaskId): Promise<TTask> {
     const task = await this.taskProvider.findTask(taskId);
 
     if (!task) {
@@ -65,7 +65,7 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return updatedTask;
   }
 
-  async finishTask(taskId: string): Promise<TTask> {
+  async finishTask(taskId: TaskId): Promise<TTask> {
     const task = await this.taskProvider.findTask(taskId);
 
     if (!task) {
@@ -78,7 +78,7 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return updatedTask;
   }
 
-  async reviewTask(taskId: string): Promise<TTask> {
+  async reviewTask(taskId: TaskId): Promise<TTask> {
     const task = await this.taskProvider.findTask(taskId);
 
     if (!task) {
