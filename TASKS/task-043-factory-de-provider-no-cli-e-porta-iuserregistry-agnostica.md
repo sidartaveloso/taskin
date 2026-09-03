@@ -1,6 +1,6 @@
 # Task 043 — Factory de provider no CLI e porta IUserRegistry agnostica
 
-Status: pending
+Status: in-progress
 Type: refactor
 Assignee: sidarta-veloso
 
