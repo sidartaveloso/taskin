@@ -1,11 +1,11 @@
-import type { Task, TaskId } from '@opentask/taskin-types';
+import { parseTaskId, type Task } from '@opentask/taskin-types';
 import { vi } from 'vitest';
 import type { ITaskProvider } from './task-manager.types';
 
 export const createMockTask = (overrides?: Partial<Task>): Task => ({
   createdAt: new Date().toISOString(),
   description: 'A test feature',
-  id: 'task-001' satisfies string as TaskId,
+  id: parseTaskId('001'),
   status: 'pending',
   title: 'Implement feature',
   type: 'feat',

@@ -1,5 +1,5 @@
 import type { CreateTaskOptions, CreateTaskResult, ITaskManager, LintResult } from '@opentask/taskin-task-manager';
-import type { Task, TaskId } from '@opentask/taskin-types';
+import { parseTaskId, type Task, type TaskId } from '@opentask/taskin-types';
 import type { MCPServerConfig } from './task-server-mcp.types.js';
 
 /**
@@ -9,12 +9,12 @@ import type { MCPServerConfig } from './task-server-mcp.types.js';
  * plain `Task` — there is nothing file-shaped for it to model.
  */
 export class MockMCPTaskManager implements ITaskManager {
-  private tasks: Map<string, Task> = new Map();
+  private tasks: Map<TaskId, Task> = new Map();
 
   constructor() {
     // Add some mock tasks
-    this.tasks.set('550e8400-e29b-41d4-a716-446655440001', {
-      id: '550e8400-e29b-41d4-a716-446655440001' satisfies string as TaskId,
+    this.tasks.set(parseTaskId('001'), {
+      id: parseTaskId('001'),
       title: 'Implement user authentication',
       description: 'Add JWT-based authentication',
       status: 'pending',
@@ -22,8 +22,8 @@ export class MockMCPTaskManager implements ITaskManager {
       createdAt: new Date().toISOString(),
     });
 
-    this.tasks.set('550e8400-e29b-41d4-a716-446655440002', {
-      id: '550e8400-e29b-41d4-a716-446655440002' satisfies string as TaskId,
+    this.tasks.set(parseTaskId('002'), {
+      id: parseTaskId('002'),
       title: 'Fix login bug',
       description: 'Users cannot login with special characters',
       status: 'in-progress',
@@ -32,7 +32,7 @@ export class MockMCPTaskManager implements ITaskManager {
     });
   }
 
-  async startTask(taskId: string): Promise<Task> {
+  async startTask(taskId: TaskId): Promise<Task> {
     const task = this.tasks.get(taskId);
     if (!task) {
       throw new Error(`Task ${taskId} not found`);
@@ -51,7 +51,7 @@ export class MockMCPTaskManager implements ITaskManager {
     return task;
   }
 
-  async pauseTask(taskId: string): Promise<Task> {
+  async pauseTask(taskId: TaskId): Promise<Task> {
     const task = this.tasks.get(taskId);
     if (!task) {
       throw new Error(`Task ${taskId} not found`);
@@ -66,7 +66,7 @@ export class MockMCPTaskManager implements ITaskManager {
     return task;
   }
 
-  async finishTask(taskId: string): Promise<Task> {
+  async finishTask(taskId: TaskId): Promise<Task> {
     const task = this.tasks.get(taskId);
     if (!task) {
       throw new Error(`Task ${taskId} not found`);
@@ -77,7 +77,7 @@ export class MockMCPTaskManager implements ITaskManager {
     return task;
   }
 
-  async reviewTask(taskId: string): Promise<Task> {
+  async reviewTask(taskId: TaskId): Promise<Task> {
     const task = this.tasks.get(taskId);
     if (!task) {
       throw new Error(`Task ${taskId} not found`);
@@ -93,16 +93,16 @@ export class MockMCPTaskManager implements ITaskManager {
   }
 
   async createTask(options: CreateTaskOptions): Promise<CreateTaskResult> {
-    const taskId = String(this.tasks.size + 1).padStart(3, '0');
+    const taskId = parseTaskId(String(this.tasks.size + 1).padStart(3, '0'));
     const task: Task = {
-      id: taskId satisfies string as TaskId,
+      id: taskId,
       title: options.title,
       status: 'pending',
       type: options.type,
       createdAt: new Date().toISOString(),
     };
     this.tasks.set(taskId, task);
-    return { task, taskId };
+    return { task };
   }
 
   async lint(): Promise<LintResult> {
@@ -125,7 +125,7 @@ export class MockMCPTaskManager implements ITaskManager {
   /**
    * Get task by ID (for testing)
    */
-  getTask(taskId: string): Task | undefined {
+  getTask(taskId: TaskId): Task | undefined {
     return this.tasks.get(taskId);
   }
 }

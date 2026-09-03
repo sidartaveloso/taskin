@@ -152,7 +152,7 @@ Test description`;
 
       const result = await provider.createTask({ title, type: 'feat' });
 
-      expect(result.taskId).toBe('001');
+      expect(result.task.id).toBe('001');
       expect(result.filePath).toBe(filePath);
       expect(fs.writeFile).toHaveBeenCalledWith(expect.stringContaining(fileName), expect.any(String), 'utf-8');
       // Ensure the generated content uses English inline metadata
@@ -190,7 +190,7 @@ Test description`;
 
       const result = await providerPT.createTask({ title, type: 'feat' });
 
-      expect(result.taskId).toBe('001');
+      expect(result.task.id).toBe('001');
       expect(result.filePath).toBe(filePath);
       expect(fs.writeFile).toHaveBeenCalledWith(expect.stringContaining(fileName), expect.any(String), 'utf-8');
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
@@ -226,7 +226,7 @@ Test description`;
 
       const result = await provider.createTask({ title, type: 'feat' });
 
-      expect(result.taskId).toBe('001');
+      expect(result.task.id).toBe('001');
       expect(result.filePath).toBe(filePath);
       expect(result.filePath).toContain(expectedSlug);
       expect(result.filePath).not.toContain('ã');
@@ -631,7 +631,7 @@ Task with registered user`;
         description: 'Test lifecycle',
       });
 
-      const taskId = result.taskId;
+      const taskId = result.task.id;
       expect(taskId).toBe('001');
       expect(result.task.title).toBe(title);
       expect(result.task.status).toBe('pending');
@@ -721,7 +721,7 @@ Task with registered user`;
         description: 'Quick fix',
       });
 
-      const taskId = result.taskId;
+      const taskId = result.task.id;
       expect(result.task.status).toBe('pending');
       expect(result.task.title).toBe(title);
       expect(result.task.type).toBe('fix');

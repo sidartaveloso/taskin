@@ -1,8 +1,8 @@
-import type { INotificationProvider, NotificationMessage } from '@opentask/taskin-types';
+import type { INotificationProvider, NotificationMessage, NotificationProviderName } from '@opentask/taskin-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationManager } from './notification-manager.js';
 
-function createMockProvider(name: string): INotificationProvider {
+function createMockProvider(name: NotificationProviderName): INotificationProvider {
   return {
     name,
     send: vi.fn().mockResolvedValue({
@@ -66,10 +66,10 @@ describe('NotificationManager', () => {
 
   it('should handle partial failure', async () => {
     const failingProvider: INotificationProvider = {
-      name: 'failing',
+      name: 'telegram',
       send: vi.fn().mockResolvedValue({
         success: false,
-        provider: 'failing',
+        provider: 'telegram',
         error: 'Failed',
         duration: 100,
       }),
@@ -103,13 +103,13 @@ describe('NotificationManager', () => {
     let maxConcurrent = 0;
 
     const slowProvider: INotificationProvider = {
-      name: 'slow',
+      name: 'console',
       send: vi.fn().mockImplementation(async () => {
         concurrentCalls++;
         maxConcurrent = Math.max(maxConcurrent, concurrentCalls);
         await new Promise((r) => setTimeout(r, 50));
         concurrentCalls--;
-        return { success: true, provider: 'slow', duration: 50 };
+        return { success: true, provider: 'console', duration: 50 };
       }),
     };
 
@@ -125,7 +125,7 @@ describe('NotificationManager', () => {
 
   it('should handle provider that throws exception', async () => {
     const throwingProvider: INotificationProvider = {
-      name: 'throws',
+      name: 'telegram',
       send: vi.fn().mockRejectedValue(new Error('Unexpected error')),
     };
 

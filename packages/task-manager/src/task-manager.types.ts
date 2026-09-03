@@ -1,4 +1,4 @@
-import type { Task, TaskType } from '@opentask/taskin-types';
+import type { Task, TaskId, TaskType } from '@opentask/taskin-types';
 
 /**
  * Options for creating a new task
@@ -28,8 +28,6 @@ export interface CreateTaskOptions {
 export interface CreateTaskResult<TTask extends Task = Task> {
   /** The created task */
   task: TTask;
-  /** The generated task ID */
-  taskId: string;
 }
 
 /**
@@ -86,38 +84,44 @@ export interface LintResult {
  * @typeParam TTask - The task shape this provider reads and writes
  * @public
  */
+/*
+ * Os membros sao propriedades de funcao, nao metodos, de proposito: TypeScript
+ * trata metodos como bivariantes mesmo com `strictFunctionTypes`, e isso
+ * deixava `ITaskProvider<TaskFile>` ser atribuido a `ITaskProvider<Task>` — o
+ * que compila e depois quebra em `updateTask`, que le `task.filePath`.
+ */
 export interface ITaskProvider<TTask extends Task = Task> {
   /**
    * Initialize the provider, performing any necessary setup or loading.
    * This may involve reading existing tasks, setting up connections, etc.
    */
-  initialize(): Promise<void>;
+  initialize: () => Promise<void>;
 
   /**
    * Find a specific task by its ID.
    * @param taskId - The unique identifier of the task
    * @returns The task if found, undefined otherwise
    */
-  findTask(taskId: string): Promise<TTask | undefined>;
+  findTask: (taskId: TaskId) => Promise<TTask | undefined>;
 
   /**
    * Retrieve all tasks from the provider.
    * @returns Array of all tasks
    */
-  getAllTasks(): Promise<TTask[]>;
+  getAllTasks: () => Promise<TTask[]>;
 
   /**
    * Update an existing task.
    * @param task - The task with updated information
    */
-  updateTask(task: TTask): Promise<void>;
+  updateTask: (task: TTask) => Promise<void>;
 
   /**
    * Create a new task.
    * @param options - Options for creating the task
    * @returns The created task information
    */
-  createTask(options: CreateTaskOptions): Promise<CreateTaskResult<TTask>>;
+  createTask: (options: CreateTaskOptions) => Promise<CreateTaskResult<TTask>>;
 
   /**
    * Validate all tasks managed by this provider.
@@ -125,7 +129,7 @@ export interface ITaskProvider<TTask extends Task = Task> {
    * @param fix - If true, attempt to automatically fix validation issues
    * @returns The lint result with any validation issues found
    */
-  lint(fix?: boolean): Promise<LintResult>;
+  lint: (fix?: boolean) => Promise<LintResult>;
 }
 
 /**
@@ -148,7 +152,7 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @returns The updated task
    * @throws Error if task is not found
    */
-  finishTask(taskId: string): Promise<TTask>;
+  finishTask: (taskId: TaskId) => Promise<TTask>;
 
   /**
    * Mark a task as ready for review.
@@ -157,7 +161,7 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @returns The updated task
    * @throws Error if task is not found or not in 'in-progress' status
    */
-  reviewTask(taskId: string): Promise<TTask>;
+  reviewTask: (taskId: TaskId) => Promise<TTask>;
 
   /**
    * Start working on a task.
@@ -167,7 +171,7 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @returns The updated task
    * @throws Error if task is not found, already in progress, or already done
    */
-  startTask(taskId: string): Promise<TTask>;
+  startTask: (taskId: TaskId) => Promise<TTask>;
 
   /**
    * Pause work on a task.
@@ -177,14 +181,14 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @returns The updated task
    * @throws Error if task is not found or not in 'in-progress' status
    */
-  pauseTask(taskId: string): Promise<TTask>;
+  pauseTask: (taskId: TaskId) => Promise<TTask>;
 
   /**
    * Create a new task.
    * @param options - Options for creating the task
    * @returns The created task information
    */
-  createTask(options: CreateTaskOptions): Promise<CreateTaskResult<TTask>>;
+  createTask: (options: CreateTaskOptions) => Promise<CreateTaskResult<TTask>>;
 
   /**
    * Validate all tasks in the system.
@@ -192,5 +196,5 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @param fix - If true, attempt to automatically fix validation issues
    * @returns The lint result with any validation issues found
    */
-  lint(fix?: boolean): Promise<LintResult>;
+  lint: (fix?: boolean) => Promise<LintResult>;
 }
