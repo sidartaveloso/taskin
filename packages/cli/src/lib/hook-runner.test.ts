@@ -27,10 +27,10 @@ describe('HookRunner (IHookRunner implementation)', () => {
       );
 
       expect(results).toHaveLength(2);
-      expect(results[0].success).toBe(true);
-      expect(results[0].hook).toBe('echo test1');
-      expect(results[1].success).toBe(true);
-      expect(results[1].hook).toBe('echo test2');
+      expect(results[0]?.success).toBe(true);
+      expect(results[0]?.hook).toBe('echo test1');
+      expect(results[1]?.success).toBe(true);
+      expect(results[1]?.hook).toBe('echo test2');
       expect(mockedExecSync).toHaveBeenCalledTimes(2);
     });
 
@@ -90,8 +90,8 @@ describe('HookRunner (IHookRunner implementation)', () => {
       );
 
       expect(results).toHaveLength(1);
-      expect(results[0].success).toBe(false);
-      expect(results[0].error).toContain('Command failed');
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toContain('Command failed');
       expect(mockedExecSync).toHaveBeenCalledTimes(1);
     });
 
@@ -109,9 +109,9 @@ describe('HookRunner (IHookRunner implementation)', () => {
       );
 
       expect(results).toHaveLength(2);
-      expect(results[0].success).toBe(false);
-      expect(results[0].error).toContain('Command failed');
-      expect(results[1].success).toBe(true);
+      expect(results[0]?.success).toBe(false);
+      expect(results[0]?.error).toContain('Command failed');
+      expect(results[1]?.success).toBe(true);
       expect(mockedExecSync).toHaveBeenCalledTimes(2);
     });
 
@@ -124,8 +124,8 @@ describe('HookRunner (IHookRunner implementation)', () => {
         { timeout: 5000, continueOnError: false, cwd: '.' },
       );
 
-      expect(results[0].duration).toBeGreaterThanOrEqual(0);
-      expect(typeof results[0].duration).toBe('number');
+      expect(results[0]?.duration).toBeGreaterThanOrEqual(0);
+      expect(typeof results[0]?.duration).toBe('number');
     });
 
     it('should capture stdout output', async () => {
@@ -137,7 +137,7 @@ describe('HookRunner (IHookRunner implementation)', () => {
         { timeout: 5000, continueOnError: false, cwd: '.' },
       );
 
-      expect(results[0].output).toBe('test output');
+      expect(results[0]?.output).toBe('test output');
     });
 
     it('should handle empty hooks array', async () => {
@@ -207,7 +207,7 @@ describe('HookRunner (IHookRunner implementation)', () => {
         { timeout: 5000, continueOnError: false, cwd: '.' },
       );
 
-      expect(results[0].error).toBe('Test error');
+      expect(results[0]?.error).toBe('Test error');
     });
 
     it('should handle non-Error throws', async () => {
@@ -221,8 +221,8 @@ describe('HookRunner (IHookRunner implementation)', () => {
         { timeout: 5000, continueOnError: false, cwd: '.' },
       );
 
-      expect(results[0].error).toBe('string error');
-      expect(results[0].success).toBe(false);
+      expect(results[0]?.error).toBe('string error');
+      expect(results[0]?.success).toBe(false);
     });
   });
 });

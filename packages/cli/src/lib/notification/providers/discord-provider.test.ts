@@ -106,10 +106,10 @@ describe('DiscordProvider', () => {
     };
 
     await provider.send(message);
-    expect(sentBody.embeds[0].title).toBe('Task #020 — Notifications');
-    expect(sentBody.embeds[0].color).toBe(5763719);
-    expect(sentBody.embeds[0].fields).toHaveLength(1);
-    expect(sentBody.embeds[0].footer.text).toBe('Taskin • task-020');
+    expect(sentBody.embeds[0]?.title).toBe('Task #020 — Notifications');
+    expect(sentBody.embeds[0]?.color).toBe(5763719);
+    expect(sentBody.embeds[0]?.fields).toHaveLength(1);
+    expect(sentBody.embeds[0]?.footer.text).toBe('Taskin • task-020');
   });
 
   it('should include content when message has mentions', async () => {

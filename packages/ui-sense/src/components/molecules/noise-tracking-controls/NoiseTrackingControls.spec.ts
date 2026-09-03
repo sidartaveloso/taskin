@@ -27,7 +27,7 @@ describe('NoiseTrackingControls', () => {
 
   it('emits update:enableNoiseReactions on checkbox change', async () => {
     const wrapper = mount(NoiseTrackingControls);
-    await wrapper.findAll('input[type="checkbox"]')[0].setValue(true);
+    await wrapper.findAll('input[type="checkbox"]')[0]?.setValue(true);
     expect(wrapper.emitted('update:enableNoiseReactions')).toEqual([[true]]);
   });
 
@@ -45,7 +45,7 @@ describe('NoiseTrackingControls', () => {
 
   it('emits update:noiseSound on sound checkbox change', async () => {
     const wrapper = mount(NoiseTrackingControls);
-    await wrapper.findAll('input[type="checkbox"]')[1].setValue(true);
+    await wrapper.findAll('input[type="checkbox"]')[1]?.setValue(true);
     expect(wrapper.emitted('update:noiseSound')).toEqual([[true]]);
   });
 

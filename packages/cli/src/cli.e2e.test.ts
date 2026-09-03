@@ -143,14 +143,16 @@ describe.sequential('Taskin CLI E2E Tests', () => {
       const invalidTaskPath = join(TEST_DIR, 'TASKS', 'task-002-invalid.md');
       writeFileSync(invalidTaskPath, '# Invalid Task\n\nNo metadata here');
 
-      try {
-        await execAsync(`node ${CLI_PATH} lint`, {
-          cwd: TEST_DIR,
-        });
-      } catch (error: unknown) {
-        const err = error as { stderr?: string; stdout?: string };
-        expect(err.stdout || err.stderr).toMatch(/Found \d+ issue/);
-      }
+      // O lint sai com codigo != 0 quando encontra erro. Antes a assercao vivia
+      // dentro de um `catch`, entao o teste passava sem verificar nada se o
+      // lint saisse com 0 — o oposto do que o nome dele promete.
+      type LintOutcome = { stdout?: string; stderr?: string; code?: number };
+      const result: LintOutcome = await execAsync(`node ${CLI_PATH} lint`, { cwd: TEST_DIR }).catch(
+        (error: unknown) => error as LintOutcome,
+      );
+
+      expect(result.code ?? 0).not.toBe(0);
+      expect(result.stdout || result.stderr).toMatch(/Found \d+ error/);
     }, 60000);
   });
 

@@ -12,6 +12,16 @@ import {
   type UserStats,
   UserStatsSchema,
 } from '@opentask/taskin-types';
+
+/**
+ * As sete chaves de `byDayOfWeek`, na forma que `Date.getDay()` produz.
+ *
+ * Fechar o registro nelas em vez de `Record<string, number>` e o que permite
+ * `byDayOfWeek[k]++`: com indice `string` o lookup e `number | undefined` e o
+ * incremento nao compila. O registro largo escondia que a chave e conhecida.
+ */
+type DayOfWeekKey = '0' | '1' | '2' | '3' | '4' | '5' | '6';
+
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { UserRegistry } from './user-registry';
@@ -224,7 +234,7 @@ async function calculateTemporalMetrics(
   since: Date,
   until: Date,
 ): Promise<{
-  byDayOfWeek: Record<string, number>;
+  byDayOfWeek: Record<DayOfWeekKey, number>;
   byTimeOfDay: {
     morning: number;
     afternoon: number;
@@ -246,7 +256,7 @@ async function calculateTemporalMetrics(
     });
 
     // Calculate byDayOfWeek
-    const byDayOfWeek: Record<string, number> = {
+    const byDayOfWeek: Record<DayOfWeekKey, number> = {
       '0': 0,
       '1': 0,
       '2': 0,
@@ -263,14 +273,14 @@ async function calculateTemporalMetrics(
       const day = date.getDay();
       const hour = date.getHours();
 
-      byDayOfWeek[day.toString()]++;
+      byDayOfWeek[day.toString() as DayOfWeekKey]++;
 
       if (hour >= 6 && hour < 12) byTimeOfDay.morning++;
       else if (hour >= 12 && hour < 18) byTimeOfDay.afternoon++;
       else if (hour >= 18 && hour < 24) byTimeOfDay.evening++;
       else byTimeOfDay.night++;
 
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = date.toISOString().slice(0, 10);
       commitsByDate.set(dateKey, (commitsByDate.get(dateKey) || 0) + 1);
     }
 
@@ -279,12 +289,13 @@ async function calculateTemporalMetrics(
     let currentStreak = 0;
     let maxStreak = 0;
 
-    for (let i = 0; i < sortedDates.length; i++) {
-      if (i === 0) {
+    for (const [i, current] of sortedDates.entries()) {
+      const previous = sortedDates[i - 1];
+      if (previous === undefined) {
         currentStreak = 1;
       } else {
-        const prevDate = new Date(sortedDates[i - 1]);
-        const currDate = new Date(sortedDates[i]);
+        const prevDate = new Date(previous);
+        const currDate = new Date(current);
         const daysDiff = (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
 
         if (daysDiff === 1) {
@@ -376,18 +387,16 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         continue;
       }
 
-      const idMatch = file.match(TASK_FILENAME_PATTERN);
-      const id = idMatch ? idMatch[1] : file;
-      const titleMatch = content.match(TASK_TITLE_PATTERNS.withDash) || content.match(TASK_TITLE_PATTERNS.withNumber);
-      const title = titleMatch ? titleMatch[1] : file.replace(/\.md$/, '');
+      const id = file.match(TASK_FILENAME_PATTERN)?.[1] ?? file;
+      const titleMatch = content.match(TASK_TITLE_PATTERNS.withDash) ?? content.match(TASK_TITLE_PATTERNS.withNumber);
+      const title = titleMatch?.[1] ?? file.replace(/\.md$/, '');
 
       // Remove code blocks before extracting metadata to avoid parsing examples
       const contentWithoutCodeBlocks = removeCodeBlocks(content);
 
       const extract = (name: string) => {
         const rx = new RegExp(`^${name}:\\s*(.+)$`, 'im');
-        const m = contentWithoutCodeBlocks.match(rx);
-        return m ? m[1].trim() : undefined;
+        return contentWithoutCodeBlocks.match(rx)?.[1]?.trim();
       };
 
       const statusValue = extract('Status');

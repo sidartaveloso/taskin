@@ -320,9 +320,10 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
   private async handleListRequest(client: ClientConnection, message: WSMessage): Promise<void> {
     const tasks = await this.taskProvider.getAllTasks();
 
-    if (tasks.length > 0) {
+    const [first] = tasks;
+    if (first) {
       this.log('[WS Server] Sending', tasks.length, 'tasks');
-      this.log('[WS Server] First task assignee:', tasks[0].assignee);
+      this.log('[WS Server] First task assignee:', first.assignee);
     }
 
     this.sendToClient(client.id, {

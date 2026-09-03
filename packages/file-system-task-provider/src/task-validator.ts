@@ -99,15 +99,15 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
       // Build inline metadata to insert after title
       const inlineMetadata: string[] = [];
 
-      if (statusMatch) {
+      if (statusMatch?.[1]) {
         inlineMetadata.push(`Status: ${statusMatch[1].trim()}  `);
       }
 
-      if (typeMatch) {
+      if (typeMatch?.[1]) {
         inlineMetadata.push(`Type: ${typeMatch[1].trim()}  `);
       }
 
-      if (assigneeMatch) {
+      if (assigneeMatch?.[1]) {
         inlineMetadata.push(`Assignee: ${assigneeMatch[1].trim()}  `);
       }
 
@@ -249,7 +249,7 @@ export async function validateTaskFile(filePath: string): Promise<ValidationIssu
 
     // Check for empty sections
     const titleLine = lines.findIndex((line) => line.trim().startsWith('# '));
-    if (titleLine >= 0 && lines[titleLine].trim() === '#') {
+    if (lines[titleLine]?.trim() === '#') {
       issues.push({
         file: filePath,
         line: titleLine + 1,

@@ -79,7 +79,7 @@ export class GitService implements IGitService {
           stdio: 'pipe',
         }).trim();
         if (files) {
-          taskFilePath = files.split('\n')[0];
+          taskFilePath = files.split('\n')[0] ?? null;
           const { readFileSync } = await import('fs');
           taskFileContent = readFileSync(`${this.cwd}/${taskFilePath}`, 'utf-8');
         }

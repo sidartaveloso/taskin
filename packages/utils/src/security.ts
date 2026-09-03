@@ -162,6 +162,15 @@ export function isValidPath(filePath: string): boolean {
 }
 
 /**
+ * Os caracteres que {@link escapeHtml} escapa.
+ *
+ * Fecha o tipo do registro na mesma classe do regex: com o indice tipado como
+ * `string`, o lookup e `string | undefined` e o retorno da funcao deixa de
+ * compilar — o tipo estaria certo, o registro e que era largo demais.
+ */
+type HtmlEscapable = '&' | '<' | '>' | '"' | "'" | '/';
+
+/**
  * Sanitizes HTML content to prevent XSS attacks
  * Escapes special HTML characters
  */
@@ -170,7 +179,7 @@ export function escapeHtml(text: string): string {
     return '';
   }
 
-  const htmlEscapeMap: Record<string, string> = {
+  const htmlEscapeMap: Record<HtmlEscapable, string> = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -179,7 +188,7 @@ export function escapeHtml(text: string): string {
     '/': '&#x2F;',
   };
 
-  return text.replace(/[&<>"'/]/g, (char) => htmlEscapeMap[char]);
+  return text.replace(/[&<>"'/]/g, (char) => htmlEscapeMap[char as HtmlEscapable]);
 }
 
 /**
@@ -217,10 +226,10 @@ export function validateDashboardOptions(options: {
   const result = DashboardOptionsSchema.safeParse(options);
 
   if (!result.success) {
-    const firstError = result.error.errors[0];
+    const [firstError] = result.error.errors;
     return {
       valid: false,
-      error: firstError.message,
+      error: firstError?.message ?? 'Invalid dashboard options',
     };
   }
 

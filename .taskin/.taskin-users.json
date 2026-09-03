@@ -1,9 +1,15 @@
 {
   "users": {
     "sidarta-veloso": {
+      "email": "sidartaveloso@gmail.com",
       "id": "sidarta-veloso",
       "name": "Sidarta Veloso",
-      "email": "sidartaveloso@gmail.com"
+      "website": "https://sidartaveloso.com"
+    },
+    "jorisveloso": {
+      "email": "jorisveloso@gmail.com",
+      "id": "jorisveloso",
+      "name": "Joris Veloso"
     }
   }
 }

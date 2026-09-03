@@ -119,6 +119,9 @@ export class GitAnalyzer implements IGitAnalyzer {
     while (i < lines.length) {
       const line = lines[i];
 
+      // `i < lines.length` garante a linha, mas o indice nao prova isso ao tipo
+      if (line === undefined) break;
+
       // Skip empty lines
       if (!line.trim()) {
         i++;
@@ -128,19 +131,24 @@ export class GitAnalyzer implements IGitAnalyzer {
       // Parse commit header - must have pipe-separated parts (hash|author|date|message)
       // allow abbreviated hashes (6-40 hex chars) and be case-insensitive
       if (line.includes('|')) {
-        const parts = line.split('|');
+        const [hash, author, date, messageWithBody] = line.split('|');
 
-        // Validate we have all required parts and first part looks like a hash
-        if (parts.length < 4 || !/^[0-9a-f]{6,40}$/i.test(parts[0])) {
+        // Quatro campos presentes e o mesmo que `parts.length >= 4`, mas dito
+        // de um jeito que estreita os tipos
+        if (hash === undefined || author === undefined || date === undefined || messageWithBody === undefined) {
           i++;
           continue;
         }
 
-        const [hash, author, date, messageWithBody] = parts;
+        // Validate the first part looks like a hash
+        if (!/^[0-9a-f]{6,40}$/i.test(hash)) {
+          i++;
+          continue;
+        }
 
         // Split by null byte (character code 0)
-        const nullByteIndex = messageWithBody?.indexOf('\0') ?? -1;
-        const subject = nullByteIndex !== -1 ? messageWithBody.substring(0, nullByteIndex) : messageWithBody || '';
+        const nullByteIndex = messageWithBody.indexOf('\0');
+        const subject = nullByteIndex !== -1 ? messageWithBody.substring(0, nullByteIndex) : messageWithBody;
 
         // Body might span multiple lines until we hit numstat
         const bodyLines: string[] = [];
@@ -151,9 +159,12 @@ export class GitAnalyzer implements IGitAnalyzer {
 
         // Collect body lines until we hit numstat (lines with \t) or next commit (lines with |)
         i++;
-        while (i < lines.length && !lines[i].includes('|') && !lines[i].includes('\t')) {
-          if (lines[i].trim()) {
-            bodyLines.push(lines[i]);
+        while (i < lines.length) {
+          const bodyLine = lines[i];
+          if (bodyLine === undefined || bodyLine.includes('|') || bodyLine.includes('\t')) break;
+
+          if (bodyLine.trim()) {
+            bodyLines.push(bodyLine);
           }
           i++;
         }
@@ -166,8 +177,11 @@ export class GitAnalyzer implements IGitAnalyzer {
         let linesRemoved = 0;
 
         // Parse numstat lines (file stats) until next commit or end
-        while (i < lines.length && !lines[i].includes('|')) {
-          const statLine = lines[i].trim();
+        while (i < lines.length) {
+          const rawStatLine = lines[i];
+          if (rawStatLine === undefined || rawStatLine.includes('|')) break;
+
+          const statLine = rawStatLine.trim();
 
           if (!statLine) {
             i++;
@@ -208,11 +222,10 @@ export class GitAnalyzer implements IGitAnalyzer {
     const coAuthorRegex = /Co-authored-by:\s*(.+?)\s*<(.+?)>/gi;
     const matches = Array.from(message.matchAll(coAuthorRegex));
 
-    if (matches.length === 0) {
-      return undefined;
-    }
+    // `flatMap` com `?? []` descarta a captura ausente sem inventar um nome
+    const names = matches.flatMap((match) => match[1]?.trim() ?? []);
 
-    return matches.map((match) => match[1].trim());
+    return names.length > 0 ? names : undefined;
   }
 
   async getDiff(from: string = 'HEAD', to: string = ''): Promise<Diff> {
@@ -247,11 +260,10 @@ export class GitAnalyzer implements IGitAnalyzer {
 
     for (const line of lines) {
       // numstat format: added\tremoved\tfilename
-      const parts = line.split('\t');
+      const [added, removed, path] = line.split('\t');
 
-      if (parts.length < 3) continue;
-
-      const [added, removed, path] = parts;
+      // Tres campos presentes e o mesmo que `parts.length >= 3`
+      if (added === undefined || removed === undefined || path === undefined) continue;
 
       // Binary files show as '-'
       if (added === '-' || removed === '-') {
@@ -299,6 +311,12 @@ export class GitAnalyzer implements IGitAnalyzer {
 
     const [added, removed, path] = output.split('\t');
 
+    // Menos de tres campos nao e uma linha de numstat. Antes isto caia adiante
+    // e devolvia um objeto com `path` undefined em vez de nada.
+    if (added === undefined || removed === undefined || path === undefined) {
+      return null;
+    }
+
     if (added === '-' || removed === '-') {
       return null; // Binary file
     }
@@ -333,14 +351,13 @@ export class GitAnalyzer implements IGitAnalyzer {
     let currentDate = '';
     let lineNumber = 0;
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
+    for (const line of lines) {
       if (line.match(/^[0-9a-f]{6,40}/i)) {
         // Start of new blame block
-        const parts = line.split(' ');
-        currentHash = parts[0];
-        lineNumber = parseInt(parts[2], 10);
+        // Porcelain: `<hash> <origline> <finalline> [<numlines>]`
+        const [hash, , finalLine] = line.split(' ');
+        currentHash = hash ?? '';
+        lineNumber = parseInt(finalLine ?? '', 10);
       } else if (line.startsWith('author ')) {
         currentAuthor = line.substring(7);
       } else if (line.startsWith('author-time ')) {
@@ -402,6 +419,7 @@ export class GitAnalyzer implements IGitAnalyzer {
 
       if (match) {
         const [, commits, name, email] = match;
+        if (commits === undefined || name === undefined || email === undefined) continue;
 
         authors.push({
           name,
