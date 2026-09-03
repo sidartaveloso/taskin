@@ -206,7 +206,7 @@ export function useGestureShortcuts(
       case 'SELECTING': {
         if (isGestureHeld('Closed_Fist', WIZARD_SELECT_HOLD_MS)) {
           const action = AVAILABLE_ACTIONS[selectedActionIndex.value];
-          if (recordingCandidate.value) {
+          if (recordingCandidate.value && action) {
             lastMapping.value = { gesture: recordingCandidate.value, action };
           }
           step.value = 3;

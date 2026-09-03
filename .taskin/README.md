@@ -5,8 +5,9 @@ Este diretório contém configurações locais do projeto Taskin.
 ## Estrutura
 
 ```
-.taskin-users.json   # Registro de usuários do projeto
-.taskin/             # Configurações futuras
+.taskin/
+  .taskin-users.json   # Registro de usuários do projeto (lido pelo UserRegistry)
+  README.md            # Este arquivo
 ```
 
 ## .taskin-users.json
@@ -59,7 +60,7 @@ Assignee: sidarta-veloso
 ...
 ```
 
-O FileSystemTaskProvider resolverá automaticamente as informações completas do usuário a partir do `users.json`.
+O FileSystemTaskProvider resolverá automaticamente as informações completas do usuário a partir do `.taskin/.taskin-users.json`.
 
 > **Nota**: Use dois espaços ao final de cada linha de metadados para garantir quebras de linha corretas no preview Markdown.
 

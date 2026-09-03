@@ -83,8 +83,8 @@ describe('NotificationManager', () => {
 
     const results = await manager.notify(message);
     expect(results).toHaveLength(2);
-    expect(results[0].success).toBe(true);
-    expect(results[1].success).toBe(false);
+    expect(results[0]?.success).toBe(true);
+    expect(results[1]?.success).toBe(false);
   });
 
   it('should handle empty provider list', async () => {

@@ -4,3 +4,4 @@ export * from './file-system-task-provider';
 export * from './i18n';
 export * from './task-file.types';
 export * from './user-registry';
+export * from './users-file-location';

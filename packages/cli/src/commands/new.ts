@@ -186,8 +186,8 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   // Generate next task number
   const taskNumbers = allTasks
     .map((task) => {
-      const match = task.id.match(/^(\d+)$/);
-      return match ? parseInt(match[1], 10) : 0;
+      const digits = task.id.match(/^(\d+)$/)?.[1];
+      return digits ? parseInt(digits, 10) : 0;
     })
     .filter((num) => !Number.isNaN(num));
 

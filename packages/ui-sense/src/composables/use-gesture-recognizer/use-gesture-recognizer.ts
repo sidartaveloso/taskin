@@ -135,16 +135,15 @@ export function useGestureRecognizer(
 
       const recognized: RecognizedGesture[] = [];
 
-      if (result.gestures && result.gestures.length > 0) {
-        for (let i = 0; i < result.gestures.length; i++) {
-          const top = result.gestures[i][0];
-          if (top?.categoryName && CANNED_GESTURES.includes(top.categoryName as CannedGesture)) {
-            recognized.push({
-              gesture: top.categoryName as CannedGesture,
-              score: top.score,
-              handedness: (result.handedness?.[i]?.[0]?.categoryName as Handedness) || 'Right',
-            });
-          }
+      // `entries()` mantem o indice, que a mao correspondente precisa
+      for (const [i, candidates] of (result.gestures ?? []).entries()) {
+        const [top] = candidates;
+        if (top?.categoryName && CANNED_GESTURES.includes(top.categoryName as CannedGesture)) {
+          recognized.push({
+            gesture: top.categoryName as CannedGesture,
+            score: top.score,
+            handedness: (result.handedness?.[i]?.[0]?.categoryName as Handedness) || 'Right',
+          });
         }
       }
 

@@ -1,4 +1,4 @@
-import type { CreateTaskOptions, ITaskProvider, LintResult } from '@opentask/taskin-task-manager';
+import type { CreateTaskOptions, ITaskProvider, LintResult, ValidationIssue } from '@opentask/taskin-task-manager';
 import type { GroupId, TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
 import { parseGroupId, parseTaskId } from '@opentask/taskin-types';
 import { slugify } from '@opentask/taskin-utils';
@@ -9,6 +9,13 @@ import type { CreateTaskFileResult, TaskFile } from './task-file.types.js';
 import { createLintResult, fixTaskFile, validateTaskFile } from './task-validator.js';
 import type { ILogger, UserRegistry } from './user-registry.js';
 import { NullLogger } from './user-registry.js';
+import {
+  fixUsersFileLocation,
+  resolveUsersFilePaths,
+  TASKIN_DIR_NAME,
+  USERS_FILE_NAME,
+  validateUsersFileLocation,
+} from './users-file-location.js';
 
 /**
  * Matches the H1 heading `# [🧩] Task NNN — Title`. The separator is anchored
@@ -86,21 +93,32 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     this.logger = logger ?? NullLogger;
   }
 
-  async initialize(): Promise<void> {
-    const fs = await import('fs');
-    const path = await import('path');
-    const projectRoot = process.cwd();
-    const tasksDir = path.join(projectRoot, 'TASKS');
-    const usersFile = path.join(projectRoot, '.taskin-users.json');
+  /**
+   * A raiz do projeto: o diretório que contém `TASKS/` e `.taskin/`.
+   *
+   * Derivada do diretório de tasks injetado, e não de `process.cwd()`: o
+   * provider é construído com um caminho explícito e usar o cwd fazia o
+   * `initialize()` semear arquivos em outro lugar quando os dois divergiam.
+   */
+  private get projectRoot(): string {
+    return path.dirname(path.resolve(this.tasksDirectory));
+  }
 
-    // Cria TASKS/ se não existir
-    if (!fs.existsSync(tasksDir)) {
-      fs.mkdirSync(tasksDir, { recursive: true });
-      this.logger.info(`✓ Created TASKS/ directory`);
+  async initialize(): Promise<void> {
+    // Projeto vindo de uma versão que escrevia o registro na raiz: promove o
+    // arquivo antes de decidir se falta semear um.
+    const migration = await fixUsersFileLocation(this.projectRoot);
+    if (migration.action === 'moved') {
+      this.logger.info(`✓ Moved ${USERS_FILE_NAME} into ${TASKIN_DIR_NAME}/${migration.viaGit ? ' (git mv)' : ''}`);
     }
 
-    // Cria .taskin-users.json se não existir
-    if (!fs.existsSync(usersFile)) {
+    if (!(await this.pathExists(this.tasksDirectory))) {
+      await fs.mkdir(this.tasksDirectory, { recursive: true });
+      this.logger.info(`✓ Created ${path.basename(this.tasksDirectory)}/ directory`);
+    }
+
+    const { canonical: usersFile } = resolveUsersFilePaths(this.projectRoot);
+    if (!(await this.pathExists(usersFile))) {
       const username = process.env.USER || 'developer';
       const usersData = {
         users: {
@@ -111,8 +129,18 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
           },
         },
       };
-      fs.writeFileSync(usersFile, JSON.stringify(usersData, null, 2), 'utf-8');
-      this.logger.info(`✓ Created .taskin-users.json with default user`);
+      await fs.mkdir(path.dirname(usersFile), { recursive: true });
+      await fs.writeFile(usersFile, JSON.stringify(usersData, null, 2), 'utf-8');
+      this.logger.info(`✓ Created ${TASKIN_DIR_NAME}/${USERS_FILE_NAME} with default user`);
+    }
+  }
+
+  private async pathExists(target: string): Promise<boolean> {
+    try {
+      await fs.access(target);
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -128,8 +156,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const content = await fs.readFile(filePath, 'utf-8');
 
     // Extract title from first heading
-    const titleMatch = content.match(TITLE_PATTERN);
-    const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
+    const title = content.match(TITLE_PATTERN)?.[1]?.trim() ?? 'Untitled';
 
     // Auto-detect locale from content if possible, fallback to provider's locale
     const contentLocale = detectLocale(content);
@@ -145,8 +172,8 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
         // Escape special regex characters in field name
         const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
-        const m = content.match(rx);
-        if (m) return m[1].trim();
+        const captured = content.match(rx)?.[1];
+        if (captured !== undefined) return captured.trim();
       }
       return null;
     };
@@ -246,8 +273,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       const content = await fs.readFile(filePath, 'utf-8');
 
       // Extract title from first heading
-      const titleMatch = content.match(TITLE_PATTERN);
-      const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
+      const title = content.match(TITLE_PATTERN)?.[1]?.trim() ?? 'Untitled';
 
       // Auto-detect locale from content if possible, fallback to provider's locale
       const contentLocale = detectLocale(content);
@@ -263,8 +289,8 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
           // Escape special regex characters in field name
           const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
-          const m = content.match(rx);
-          if (m) return m[1].trim();
+          const captured = content.match(rx)?.[1];
+          if (captured !== undefined) return captured.trim();
         }
         return null;
       };
@@ -313,9 +339,9 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     // Detect locale from existing tasks, fallback to provider's locale
     let detectedLocale = this.locale;
-    if (allTasks.length > 0) {
-      // Get the most recent task (last one in the list)
-      const lastTask = allTasks[allTasks.length - 1];
+    // Get the most recent task (last one in the list)
+    const lastTask = allTasks.at(-1);
+    if (lastTask) {
       detectedLocale = detectLocale(lastTask.content);
     }
 
@@ -323,8 +349,8 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     const taskNumbers = allTasks
       .map((task) => {
-        const match = task.id.match(/^(\d+)$/);
-        return match ? parseInt(match[1], 10) : 0;
+        const digits = task.id.match(/^(\d+)$/)?.[1];
+        return digits ? parseInt(digits, 10) : 0;
       })
       .filter((num) => !Number.isNaN(num));
 
@@ -416,8 +442,22 @@ ${i18n.notesPlaceholder}
       .filter((file) => file.startsWith('task-') && file.endsWith('.md'))
       .map((file) => path.join(this.tasksDirectory, file));
 
+    const allIssues: ValidationIssue[] = [];
+
     // If fix is enabled, try to fix files first
     if (fix) {
+      const migration = await fixUsersFileLocation(this.projectRoot);
+      if (migration.action !== 'none') {
+        const verb = migration.action === 'moved' ? 'Moved' : 'Parked stale';
+        const via = migration.viaGit ? ' (git mv, rename kept in history)' : '';
+        allIssues.push({
+          file: migration.from ?? this.projectRoot,
+          message: `${verb} ${USERS_FILE_NAME} → ${path.relative(this.projectRoot, migration.to ?? '')}${via}`,
+          severity: 'info',
+        });
+        this.logger.info(`✨ ${verb} ${USERS_FILE_NAME} into ${TASKIN_DIR_NAME}/`);
+      }
+
       let fixedCount = 0;
       for (const filePath of taskFiles) {
         const wasFixed = await fixTaskFile(filePath);
@@ -430,8 +470,12 @@ ${i18n.notesPlaceholder}
       }
     }
 
+    // O registro de usuários fora de lugar não quebra nenhum arquivo de task,
+    // mas deixa todo assignee sem resolver — é problema do provider, e é aqui
+    // que o usuário tem chance de ver e corrigir.
+    allIssues.push(...(await validateUsersFileLocation(this.projectRoot)));
+
     // Then validate all files
-    const allIssues = [];
     for (const filePath of taskFiles) {
       const issues = await validateTaskFile(filePath);
       allIssues.push(...issues);

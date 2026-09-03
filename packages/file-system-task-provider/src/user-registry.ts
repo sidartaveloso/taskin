@@ -5,7 +5,11 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export interface UserRegistryConfig {
-  /** Path to o diretório raiz do projeto (usado para .taskin-users.json) */
+  /**
+   * Caminho do diretório `.taskin/` do projeto — não da raiz do projeto.
+   * O registro é lido de `<taskinDir>/.taskin-users.json`; ver
+   * `resolveUsersFilePaths` em `users-file-location.ts`.
+   */
   taskinDir: string;
 }
 

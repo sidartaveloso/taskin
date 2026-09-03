@@ -237,16 +237,16 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   const canRedo = computed(() => future.value.length > 0);
 
   function undo(): void {
-    if (history.value.length === 0) return;
-    const previous = history.value[history.value.length - 1];
+    const previous = history.value.at(-1);
+    if (!previous) return;
     future.value = [...future.value, cloneTree(treeInternal.value)].slice(-MAX_HISTORY_SIZE);
     history.value = history.value.slice(0, -1);
     treeInternal.value = previous;
   }
 
   function redo(): void {
-    if (future.value.length === 0) return;
-    const next = future.value[future.value.length - 1];
+    const next = future.value.at(-1);
+    if (!next) return;
     history.value = [...history.value, cloneTree(treeInternal.value)].slice(-MAX_HISTORY_SIZE);
     future.value = future.value.slice(0, -1);
     treeInternal.value = next;
@@ -262,8 +262,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     index: number;
     parentGroup: PriorityGroupNode | null;
   } | null {
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
+    for (const [i, node] of nodes.entries()) {
       if (node.kind === 'task' && node.task.id === taskId) {
         return { container: nodes, index: i, parentGroup };
       }
@@ -277,8 +276,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
   /** Recursively finds any node (task or group) by its ID, returning container array and index. */
   function findNodeLocation(nodes: PriorityNode[], id: string): { container: PriorityNode[]; index: number } | null {
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
+    for (const [i, node] of nodes.entries()) {
       if ((node.kind === 'task' && node.task.id === id) || (node.kind === 'group' && node.groupId === id)) {
         return { container: nodes, index: i };
       }
@@ -292,12 +290,14 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
   /** Recursively dissolves groups with ≤1 member. */
   function cleanupGroups(nodes: PriorityNode[]): void {
+    // De tras para frente por causa do splice, entao o indice fica explicito
     for (let i = nodes.length - 1; i >= 0; i--) {
       const node = nodes[i];
-      if (node.kind === 'group') {
+      if (node?.kind === 'group') {
         cleanupGroups(node.items);
-        if (node.items.length === 1 && node.items[0].kind === 'task') {
-          nodes.splice(i, 1, { kind: 'task', task: node.items[0].task });
+        const [only] = node.items;
+        if (node.items.length === 1 && only?.kind === 'task') {
+          nodes.splice(i, 1, { kind: 'task', task: only.task });
         } else if (node.items.length === 0) {
           nodes.splice(i, 1);
         }
@@ -310,7 +310,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const loc = findTaskLocation(nodes, taskId);
     if (!loc) return null;
     const [removed] = loc.container.splice(loc.index, 1);
-    if (removed.kind !== 'task') return null;
+    if (removed?.kind !== 'task') return null;
     cleanupGroups(nodes);
     return removed.task;
   }
@@ -347,7 +347,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
       [groupId]: !collapsedGroups.value[groupId],
     };
     const node = findGroupById(treeInternal.value, groupId);
-    if (node) node.collapsed = collapsedGroups.value[groupId];
+    if (node) node.collapsed = collapsedGroups.value[groupId] ?? false;
     persistPrefs();
   }
 
@@ -356,7 +356,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     if (!loc) return;
     pushHistory(cloneTree(treeInternal.value));
     const node = loc.container[loc.index];
-    if (node.kind !== 'task') return;
+    if (node?.kind !== 'task') return;
     node.task = { ...node.task, difficulty };
   }
 
@@ -410,8 +410,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
   /** Finds the array (top-level or group.items) that contains a group node — used to locate sibling groups. */
   function findGroupContainer(nodes: PriorityNode[], groupId: string): PriorityNode[] | null {
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
+    for (const node of nodes) {
       if (node.kind === 'group') {
         if (node.groupId === groupId) return nodes;
         const found = findGroupContainer(node.items, groupId);
@@ -453,7 +452,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     if (!draggedLoc || !targetLoc) return;
 
     const targetNode = targetLoc.container[targetLoc.index];
-    if (targetNode.kind !== 'task') return;
+    if (targetNode?.kind !== 'task') return;
 
     const draggedParentGroup = draggedLoc.parentGroup;
     const targetParentGroup = targetLoc.parentGroup;
@@ -496,7 +495,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
       // Collect the tasks we're grouping (they're inside the same items array)
       const draggedTask = draggedLoc.container[draggedLoc.index];
       const targetTask = targetLoc.container[targetLoc.index];
-      if (draggedTask.kind !== 'task' || targetTask.kind !== 'task') return;
+      if (draggedTask?.kind !== 'task' || targetTask?.kind !== 'task') return;
 
       const subgroup: PriorityGroupNode = {
         kind: 'group',
@@ -539,7 +538,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     }
 
     const targetNodeAfter = loc.container[loc.index];
-    if (targetNodeAfter.kind !== 'task') {
+    if (targetNodeAfter?.kind !== 'task') {
       nodes.push({ kind: 'task', task });
       pushHistory(preSnapshot);
       treeInternal.value = nodes;
@@ -622,6 +621,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const groupIdx = container.findIndex((n) => n.kind === 'group' && n.groupId === movedGroupId);
     if (groupIdx === -1) return;
     const [movedGroup] = container.splice(groupIdx, 1);
+    if (!movedGroup) return;
 
     const targetLoc = findNodeLocation(nodes, targetId);
     if (!targetLoc) {
@@ -649,6 +649,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const groupIdx = container.findIndex((n) => n.kind === 'group' && n.groupId === movedGroupId);
     if (groupIdx === -1) return;
     const [movedGroup] = container.splice(groupIdx, 1);
+    if (!movedGroup) return;
 
     const targetLoc = findNodeLocation(nodes, targetId);
     if (!targetLoc) {
@@ -682,6 +683,8 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const parentGroupId = `g-${Math.random().toString(36).slice(2, 10)}`;
     const groupA = container[draggedIdx];
     const groupB = container[targetIdx];
+    if (!groupA || !groupB) return;
+
     const newParent: PriorityGroupNode = {
       kind: 'group',
       groupId: parentGroupId as GroupId,
@@ -712,7 +715,10 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     if (!loc2 || loc2.index === 0) return;
 
     const prev = loc2.container[loc2.index - 1];
-    loc2.container[loc2.index - 1] = loc2.container[loc2.index];
+    const current = loc2.container[loc2.index];
+    if (!prev || !current) return;
+
+    loc2.container[loc2.index - 1] = current;
     loc2.container[loc2.index] = prev;
 
     pushHistory(preSnapshot);
@@ -732,7 +738,10 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     if (!loc2 || loc2.index >= loc2.container.length - 1) return;
 
     const next = loc2.container[loc2.index + 1];
-    loc2.container[loc2.index + 1] = loc2.container[loc2.index];
+    const current = loc2.container[loc2.index];
+    if (!next || !current) return;
+
+    loc2.container[loc2.index + 1] = current;
     loc2.container[loc2.index] = next;
 
     pushHistory(preSnapshot);
@@ -751,7 +760,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const container = findGroupContainer(nodes, groupId);
     if (!container) return;
     const idx = container.findIndex((n) => n.kind === 'group' && n.groupId === groupId);
-    if (idx === -1 || container[idx].kind !== 'group') return;
+    if (container[idx]?.kind !== 'group') return;
     const groupNode = container[idx] as PriorityGroupNode;
 
     container.splice(idx, 1, ...groupNode.items);
@@ -781,7 +790,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const loc = findTaskLocation(treeInternal.value, taskId);
     if (!loc) return '';
     const node = loc.container[loc.index];
-    if (node.kind !== 'task') return '';
+    if (node?.kind !== 'task') return '';
     const task = node.task;
     return `[${task.id}] (${task.type ?? '-'}) ${task.title} — dif: ${task.difficulty ?? '-'}`;
   }

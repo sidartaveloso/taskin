@@ -40,9 +40,9 @@ describe('FileSystemTaskLinter', () => {
       const errors = linter.validateMetadata(metadata, 'task-001.md');
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].message).toContain('Invalid status');
-      expect(errors[0].severity).toBe('error');
-      expect(errors[0].file).toBe('task-001.md');
+      expect(errors[0]?.message).toContain('Invalid status');
+      expect(errors[0]?.severity).toBe('error');
+      expect(errors[0]?.file).toBe('task-001.md');
     });
 
     it('should return error for invalid type', () => {
@@ -55,8 +55,8 @@ describe('FileSystemTaskLinter', () => {
       const errors = linter.validateMetadata(metadata, 'task-001.md');
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].message).toContain('Invalid type');
-      expect(errors[0].severity).toBe('error');
+      expect(errors[0]?.message).toContain('Invalid type');
+      expect(errors[0]?.severity).toBe('error');
     });
 
     it('should return multiple errors for multiple invalid fields', () => {
@@ -83,8 +83,8 @@ describe('FileSystemTaskLinter', () => {
       const errors = linter.validateMetadata(metadata, 'task-001.md');
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].message).toContain('Assignee');
-      expect(errors[0].severity).toBe('warning');
+      expect(errors[0]?.message).toContain('Assignee');
+      expect(errors[0]?.severity).toBe('warning');
     });
   });
 

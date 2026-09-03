@@ -41,8 +41,7 @@ export async function createNoiseWatcher(): Promise<NoiseWatcher> {
     analyser.getFloatTimeDomainData(buffer);
     // RMS
     let sum = 0;
-    for (let i = 0; i < buffer.length; i++) {
-      const v = buffer[i];
+    for (const v of buffer) {
       sum += v * v;
     }
     const rms = Math.sqrt(sum / buffer.length);

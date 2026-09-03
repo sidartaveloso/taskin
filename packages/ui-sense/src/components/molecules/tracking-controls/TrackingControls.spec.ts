@@ -28,13 +28,13 @@ describe('TrackingControls', () => {
   it('emits update:showWebcam when the webcam checkbox changes', async () => {
     const wrapper = mount(TrackingControls);
     const checkboxes = wrapper.findAll('input[type="checkbox"]');
-    await checkboxes[0].setValue(false);
+    await checkboxes[0]?.setValue(false);
     expect(wrapper.emitted('update:showWebcam')).toEqual([[false]]);
   });
 
   it('emits update:syncEyes when the eyes checkbox changes', async () => {
     const wrapper = mount(TrackingControls, { props: { syncEyes: true } });
-    await wrapper.findAll('input[type="checkbox"]')[1].setValue(false);
+    await wrapper.findAll('input[type="checkbox"]')[1]?.setValue(false);
     expect(wrapper.emitted('update:syncEyes')).toEqual([[false]]);
   });
 

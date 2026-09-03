@@ -18,6 +18,6 @@ describe('TaskinPhone', () => {
   it('applies the screen color', () => {
     const wrapper = mount(TaskinPhone, { props: { screenColor: '#00FF00' } });
     const rects = wrapper.findAll('rect');
-    expect(rects[1].attributes('fill')).toBe('#00FF00');
+    expect(rects[1]?.attributes('fill')).toBe('#00FF00');
   });
 });

@@ -41,7 +41,9 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
   }
 
   private extractMetadata(content: string): TaskMetadata {
-    const headerSection = content.split(/^##/m)[0];
+    // `split` sempre devolve ao menos um elemento; o default no destructuring
+    // diz isso ao tipo sem assercao
+    const [headerSection = ''] = content.split(/^##/m);
     const statusMatch = headerSection.match(/^Status:\s*(.+)$/im);
     const typeMatch = headerSection.match(/^Type:\s*(.+)$/im);
     const assigneeMatch = headerSection.match(/^Assignee:\s*(.+)$/im);

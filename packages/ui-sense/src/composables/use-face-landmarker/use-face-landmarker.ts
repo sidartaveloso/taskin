@@ -104,11 +104,14 @@ export function useFaceLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
       const timestamp = performance.now();
       const results = faceLandmarker.detectForVideo(video, timestamp);
 
-      if (results.faceLandmarks && results.faceLandmarks.length > 0) {
-        state.value.landmarks = results.faceLandmarks[0];
+      const [face] = results.faceLandmarks ?? [];
+
+      if (face) {
+        state.value.landmarks = face;
 
         // Processa blendshapes se disponíveis
-        if (results.faceBlendshapes && results.faceBlendshapes.length > 0) {
+        const [blendshapes] = results.faceBlendshapes ?? [];
+        if (blendshapes) {
           const blendShapes: FaceLandmarkerBlendShapes = {
             eyeBlinkLeft: 0,
             eyeBlinkRight: 0,
@@ -133,7 +136,7 @@ export function useFaceLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
             mouthPucker: 0,
           };
 
-          results.faceBlendshapes[0].categories.forEach((category: { categoryName: string; score: number }) => {
+          blendshapes.categories.forEach((category: { categoryName: string; score: number }) => {
             blendShapes[category.categoryName] = category.score;
           });
 
