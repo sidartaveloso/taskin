@@ -1,3 +1,4 @@
+import { stripHardBreak } from '@opentask/taskin-file-system-provider';
 import { TASK_STATUSES, TASK_TYPES } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import { readdir, readFile } from 'fs/promises';
@@ -48,10 +49,11 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
     const typeMatch = headerSection.match(/^Type:\s*(.+)$/im);
     const assigneeMatch = headerSection.match(/^Assignee:\s*(.+)$/im);
 
+    // A quebra forte (`\\`) e formatacao da linha, nao parte do valor
     return {
-      status: statusMatch?.[1]?.trim().toLowerCase(),
-      type: typeMatch?.[1]?.trim().toLowerCase(),
-      assignee: assigneeMatch?.[1]?.trim(),
+      status: statusMatch?.[1] === undefined ? undefined : stripHardBreak(statusMatch[1]).toLowerCase(),
+      type: typeMatch?.[1] === undefined ? undefined : stripHardBreak(typeMatch[1]).toLowerCase(),
+      assignee: assigneeMatch?.[1] === undefined ? undefined : stripHardBreak(assigneeMatch[1]),
     };
   }
 

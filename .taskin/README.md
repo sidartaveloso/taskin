@@ -62,7 +62,13 @@ Assignee: sidarta-veloso
 
 O FileSystemTaskProvider resolverá automaticamente as informações completas do usuário a partir do `.taskin/.taskin-users.json`.
 
-> **Nota**: Use dois espaços ao final de cada linha de metadados para garantir quebras de linha corretas no preview Markdown.
+> **Nota**: Termine cada linha de metadados com uma barra invertida (`Status: done\`). É a
+> quebra forte do CommonMark — sem ela as três linhas colapsam num parágrafo só no preview.
+>
+> A convenção anterior eram dois espaços no fim da linha. Foi trocada porque era invisível,
+> o `git diff --check` a acusa como erro e o `trim_trailing_whitespace` a remove — o
+> `.editorconfig` teve que desligar essa regra para `*.md` só por causa dela, e ainda assim
+> apenas 3 das 45 linhas `Assignee:` deste repo a seguiam. `taskin lint --fix` normaliza.
 
 ## Git
 

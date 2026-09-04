@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import type { LintResult, ValidationIssue } from '@opentask/taskin-task-manager';
 import { TASK_STATUSES } from '@opentask/taskin-types';
 import { detectLocale, getI18n } from './i18n.js';
+import { HARD_BREAK, stripHardBreak } from './inline-metadata.js';
 
 /**
  * Status values accepted in a task file.
@@ -50,12 +51,19 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     const hasInlineType = !!inlineTypeLine;
     const hasInlineAssignee = !!inlineAssigneeLine;
 
-    const endsWithTwoSpaces = (line?: string) => !!line && /\s{2}$/.test(line);
+    /*
+     * As linhas de metadado sao consecutivas, e o CommonMark colapsaria as tres
+     * num paragrafo so. A quebra forte e marcada com barra invertida no fim:
+     * mesmo efeito dos dois espacos que a convencao antiga usava, mas visivel,
+     * sem ser acusada pelo `git diff --check` e imune a `trim_trailing_whitespace`
+     * — que o .editorconfig precisou desligar para *.md so por causa disso.
+     */
+    const endsWithHardBreak = (line?: string) => !!line && line.endsWith(HARD_BREAK);
 
     const needsSpaceFix =
-      (hasInlineStatus && !endsWithTwoSpaces(inlineStatusLine)) ||
-      (hasInlineType && !endsWithTwoSpaces(inlineTypeLine)) ||
-      (hasInlineAssignee && !endsWithTwoSpaces(inlineAssigneeLine));
+      (hasInlineStatus && !endsWithHardBreak(inlineStatusLine)) ||
+      (hasInlineType && !endsWithHardBreak(inlineTypeLine)) ||
+      (hasInlineAssignee && !endsWithHardBreak(inlineAssigneeLine));
 
     // temporary debugging removed
 
@@ -100,35 +108,29 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
       const inlineMetadata: string[] = [];
 
       if (statusMatch?.[1]) {
-        inlineMetadata.push(`Status: ${statusMatch[1].trim()}  `);
+        inlineMetadata.push(`Status: ${statusMatch[1].trim()}${HARD_BREAK}`);
       }
 
       if (typeMatch?.[1]) {
-        inlineMetadata.push(`Type: ${typeMatch[1].trim()}  `);
+        inlineMetadata.push(`Type: ${typeMatch[1].trim()}${HARD_BREAK}`);
       }
 
       if (assigneeMatch?.[1]) {
-        inlineMetadata.push(`Assignee: ${assigneeMatch[1].trim()}  `);
+        inlineMetadata.push(`Assignee: ${assigneeMatch[1].trim()}${HARD_BREAK}`);
       }
 
       // Reconstruct file
       newContent = [...beforeTitle, '', ...inlineMetadata, '', ...afterTitle].join('\n');
     }
 
-    // Fix inline metadata missing trailing spaces
+    // Fix inline metadata missing the hard break
     if (needsSpaceFix) {
-      newContent = newContent.replace(
-        /^(Status|Tipo):\s*(.+?)([ \t]*)$/im,
-        (_, key, value) => `${key}: ${value.trim()}  `,
-      );
-      newContent = newContent.replace(
-        /^(Type|Tipo):\s*(.+?)([ \t]*)$/im,
-        (_, key, value) => `${key}: ${value.trim()}  `,
-      );
-      newContent = newContent.replace(
-        /^(Assignee|Responsável):\s*(.+?)([ \t]*)$/im,
-        (_, key, value) => `${key}: ${value.trim()}  `,
-      );
+      for (const key of ['Status|Tipo', 'Type|Tipo', 'Assignee|Responsável']) {
+        newContent = newContent.replace(
+          new RegExp(`^(${key}):[ \\t]*(.+?)(?:\\\\)?[ \\t]*$`, 'im'),
+          (_match, label: string, value: string) => `${label}: ${value.trim()}${HARD_BREAK}`,
+        );
+      }
     }
 
     // Clean up extra blank lines again
@@ -213,7 +215,7 @@ export async function validateTaskFile(filePath: string): Promise<ValidationIssu
     } else {
       const statusMatch = content.match(inlineStatusPattern);
       // Extract value after colon
-      const statusValue = statusMatch ? statusMatch[0].split(':')[1]?.trim().toLowerCase() || '' : '';
+      const statusValue = statusMatch ? stripHardBreak(statusMatch[0].split(':')[1] ?? '').toLowerCase() : '';
       if (!ACCEPTED_STATUSES.includes(statusValue)) {
         const statusLineIdx = lines.findIndex((line) => inlineStatusPattern.test(line.trim()));
         issues.push({
