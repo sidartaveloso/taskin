@@ -1,8 +1,8 @@
 # Task 038 — Marcacao inline de imagem na descricao da task
 
-Status: pending
-Type: feat
-Assignee: sidarta-veloso
+Status: pending\
+Type: feat\
+Assignee: sidarta-veloso\
 
 ## Description
 
