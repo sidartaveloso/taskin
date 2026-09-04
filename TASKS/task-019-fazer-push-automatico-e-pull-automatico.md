@@ -1,8 +1,8 @@
 # Task 019 — fazer push automatico e pull automatico
 
-Status: in-progress
-Type: feat
-Assignee: A definir
+Status: in-progress\
+Type: feat\
+Assignee: A definir\
 
 ## Description
 

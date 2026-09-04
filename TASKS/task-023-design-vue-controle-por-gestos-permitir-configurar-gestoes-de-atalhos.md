@@ -1,8 +1,8 @@
 # Task 023 — design-vue - Sistema de Configuração de Gestos de Atalho por Webcam
 
-Status: done
-Type: `feat`
-Assignee: sidartaveloso
+Status: done\
+Type: `feat`\
+Assignee: sidarta-veloso\
 Epic: (Vincule à Epic de Controle por Gestos, se houver)
 
 > **Nota (registro histórico):** Spec original do sistema de gestos de atalho

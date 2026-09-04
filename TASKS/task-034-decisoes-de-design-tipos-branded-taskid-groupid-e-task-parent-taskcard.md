@@ -1,8 +1,8 @@
 # Task 034 — Decisões de design: tipos branded (TaskId/GroupId), Task.parent/TaskCard e migração em curso
 
-Status: pending
-Type: docs
-Assignee: sidarta-veloso
+Status: pending\
+Type: docs\
+Assignee: sidarta-veloso\
 
 ## Description
 

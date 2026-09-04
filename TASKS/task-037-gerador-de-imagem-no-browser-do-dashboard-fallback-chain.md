@@ -1,8 +1,8 @@
 # Task 037 — Gerador de imagem no browser do dashboard (fallback chain)
 
-Status: pending
-Type: feat
-Assignee: sidarta-veloso
+Status: pending\
+Type: feat\
+Assignee: sidarta-veloso\
 
 ## Description
 

@@ -1,8 +1,8 @@
 # Task 039 — WebMCP no dashboard: expor estado visivel como browser tools
 
-Status: pending
-Type: feat
-Assignee: sidarta-veloso
+Status: pending\
+Type: feat\
+Assignee: sidarta-veloso\
 
 ## Description
 

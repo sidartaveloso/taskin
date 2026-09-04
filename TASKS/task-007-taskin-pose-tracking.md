@@ -1,8 +1,8 @@
 # Task 007 — Taskin Pose Tracking with MediaPipe
 
-Status: done  
-Type: feat  
-Assignee: developer
+Status: done\
+Type: feat\
+Assignee: To be defined\
 
 ## Description
 

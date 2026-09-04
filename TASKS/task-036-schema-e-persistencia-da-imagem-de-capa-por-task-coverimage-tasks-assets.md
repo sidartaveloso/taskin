@@ -1,8 +1,8 @@
 # Task 036 — Schema e persistencia da imagem de capa por task (coverImage + TASKS/assets)
 
-Status: pending
-Type: feat
-Assignee: sidarta-veloso
+Status: pending\
+Type: feat\
+Assignee: sidarta-veloso\
 
 ## Description
 

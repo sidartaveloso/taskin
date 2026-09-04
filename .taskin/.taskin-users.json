@@ -10,6 +10,13 @@
       "email": "jorisveloso@gmail.com",
       "id": "jorisveloso",
       "name": "Joris Veloso"
+    },
+    "fernando-gatti": {
+      "email": "contato@fernandogatti.com",
+      "id": "fernando-gatti",
+      "name": "Fernando Gatti",
+      "github": "https://github.com/gattifernando",
+      "linkedin": "https://www.linkedin.com/in/gattifernando/"
     }
   }
 }
