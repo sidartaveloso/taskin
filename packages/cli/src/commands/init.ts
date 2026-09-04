@@ -179,6 +179,12 @@ async function setupProviderConfig(provider: ProviderInfo, cwd: string): Promise
   return answers;
 }
 
+/*
+ * O unico lugar que nomeia um provider concreto fora da factory, de proposito:
+ * `init` roda ANTES de existir `.taskin.json`, e e ele quem escreve o
+ * `provider.type`. A factory le essa configuracao, entao nao pode ser usada
+ * aqui — seria circular.
+ */
 async function setupFileSystemProvider(cwd: string): Promise<Record<string, string>> {
   const tasksDir = join(cwd, 'TASKS');
   // Chama inicialização do provider

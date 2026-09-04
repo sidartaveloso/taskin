@@ -1,3 +1,4 @@
+import type { IUserRegistry } from '@opentask/taskin-task-manager';
 import type { User } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import { createHash } from 'crypto';
@@ -26,16 +27,6 @@ export const NullLogger: ILogger = {
   info: () => {},
   warn: () => {},
 };
-
-export interface IUserRegistry {
-  load(): Promise<void>;
-  getUser(userId: string): User | undefined;
-  resolveUser(nameOrId: string): User | undefined;
-  ensureCurrentUser(gitConfig?: { name: string; email: string }): Promise<User>;
-  createTemporaryUser(nameOrId: string): User;
-  getAllUsers(): User[];
-  saveUser(user: User): Promise<void>;
-}
 
 /**
  * Registry for managing user information

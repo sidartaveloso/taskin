@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import type { IUserRegistry } from './user-registry.js';
+import type { IUserRegistry } from './user-registry.types.js';
 
+/**
+ * Contract suite every {@link IUserRegistry} implementation must pass.
+ *
+ * Lives in the agnostic package on purpose: a provider-specific registry (file
+ * backed, GitHub, Redmine) proves itself against the same behaviour, and none of
+ * them has to depend on another provider's package to do it. Exported through
+ * the `./testing` subpath so `vitest` never enters the runtime import graph.
+ *
+ * @param createSubject - Builds a fresh, empty registry for each test
+ * @public
+ */
 export function runUserRegistryContractTests(createSubject: () => Promise<IUserRegistry>): void {
   describe('IUserRegistry contract', () => {
     describe('saveUser / getUser', () => {

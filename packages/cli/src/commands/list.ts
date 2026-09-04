@@ -2,11 +2,11 @@
  * list command - List all tasks in the project
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import type { ListTasksOptions, TaskStatus, TaskType } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, printHeader } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
 export const listCommand = defineCommand({
@@ -47,16 +47,7 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
   printHeader('Task List', '📊');
 
   // Find TASKS directory
-  const tasksDir = path.join(process.cwd(), 'TASKS');
-
-  // Initialize UserRegistry
-  const monorepoRoot = path.dirname(tasksDir);
-
-  const userRegistry = new UserRegistry({ taskinDir: monorepoRoot });
-  await userRegistry.load();
-
-  // Initialize task provider
-  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
+  const { provider: taskProvider } = await resolveTaskProvider();
 
   // Get all tasks
   const tasks = await taskProvider.getAllTasks();

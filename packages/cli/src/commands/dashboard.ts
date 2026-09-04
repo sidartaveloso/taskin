@@ -2,7 +2,6 @@
  * Dashboard command - Start WebSocket server and HTTP server for dashboard
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { TaskWebSocketServer } from '@opentask/taskin-task-server-ws';
 import { escapeHtml, isValidHost, isValidPort } from '@opentask/taskin-utils';
@@ -13,6 +12,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { error, info, printHeader, success, warning } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -165,14 +165,9 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
 
     info(`Using tasks directory: ${tasksDir}`);
 
-    // Initialize UserRegistry and load users
+    // A descoberta acima achou a raiz do projeto; o provider vem de la
     const monorepoRoot = path.dirname(tasksDir);
-    const taskinDir = path.join(monorepoRoot, '.taskin');
-    const userRegistry = new UserRegistry({ taskinDir });
-    await userRegistry.load();
-
-    // Create provider with injected UserRegistry
-    const provider = new FileSystemTaskProvider(tasksDir, userRegistry);
+    const { provider } = await resolveTaskProvider({ cwd: monorepoRoot });
     const manager = new TaskManager(provider);
 
     // Start WebSocket server

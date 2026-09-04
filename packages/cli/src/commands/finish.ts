@@ -2,7 +2,7 @@
  * finish command - Finish a task
  */
 
-import { FileSystemTaskProvider, squashTaskFileOnDone, UserRegistry } from '@opentask/taskin-file-system-provider';
+import { squashTaskFileOnDone } from '@opentask/taskin-file-system-provider';
 import { GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { execSync } from 'child_process';
@@ -11,6 +11,7 @@ import { colors, error, info, printHeader, success, warning } from '../lib/color
 import { ConfigManager } from '../lib/config-manager.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
 import { normalizeTaskId } from '../lib/task-id.js';
 import { defineCommand } from './define-command/index.js';
@@ -57,17 +58,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     process.exit(1);
   }
 
-  // Find TASKS directory
-  const tasksDir = path.join(process.cwd(), 'TASKS');
-
-  // Initialize UserRegistry
-  const monorepoRoot = path.dirname(tasksDir);
-  const taskinDir = path.join(monorepoRoot, '.taskin');
-  const userRegistry = new UserRegistry({ taskinDir });
-  await userRegistry.load();
-
-  // Initialize task manager
-  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
+  const { provider: taskProvider, projectRoot: monorepoRoot } = await resolveTaskProvider();
   const taskManager = new TaskManager(taskProvider);
 
   // Find task

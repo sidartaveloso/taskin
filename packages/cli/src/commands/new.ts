@@ -2,20 +2,15 @@
  * New command - Create a new task
  */
 
-import {
-  FileSystemTaskProvider,
-  pushAfterCreate,
-  syncBeforeCreate,
-  UserRegistry,
-} from '@opentask/taskin-file-system-provider';
+import { pushAfterCreate, syncBeforeCreate } from '@opentask/taskin-file-system-provider';
 import { GitService, type IGitService } from '@opentask/taskin-git-utils';
-import { slugify } from '@opentask/taskin-utils';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { TASK_TYPES } from '@opentask/taskin-types';
 import inquirer from 'inquirer';
 import path from 'path';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
 interface CreateTaskOptions {
@@ -58,8 +53,8 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
 
   printHeader('Create New Task', '➕');
 
-  // Validate task type values
-  const validTypes = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'];
+  // Derivado do dominio para nao divergir de TaskType
+  const validTypes: readonly string[] = TASK_TYPES;
 
   // If no options provided, enter interactive mode
   if (!options.type && !options.title) {
@@ -130,25 +125,15 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
     return;
   }
 
-  // Validate task type
-  if (!validTypes.includes(options.type)) {
+  // Validate task type. O find estreita para TaskType sem asserção.
+  const taskType = TASK_TYPES.find((candidate) => candidate === options.type);
+  if (!taskType) {
     error(`Invalid task type: ${options.type}. Must be one of: ${validTypes.join(', ')}`);
     return;
   }
 
-  // Find TASKS directory
-  const tasksDir = path.join(process.cwd(), 'TASKS');
-
-  // Create TASKS directory if it doesn't exist
-  if (!existsSync(tasksDir)) {
-    mkdirSync(tasksDir, { recursive: true });
-  }
-
-  // Initialize UserRegistry
-  const monorepoRoot = path.dirname(tasksDir);
-  const taskinDir = path.join(monorepoRoot, '.taskin');
-  const userRegistry = new UserRegistry({ taskinDir });
-  await userRegistry.load();
+  const { provider: taskProvider, userRegistry, projectRoot: monorepoRoot } = await resolveTaskProvider();
+  await taskProvider.initialize();
 
   // Ensure the current user exists in the registry
   await userRegistry.ensureCurrentUser();
@@ -179,44 +164,26 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
     }
   }
 
-  // Initialize task provider to get existing tasks
-  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
-  const allTasks = await taskProvider.getAllTasks();
-
-  // Generate next task number
-  const taskNumbers = allTasks
-    .map((task) => {
-      const digits = task.id.match(/^(\d+)$/)?.[1];
-      return digits ? parseInt(digits, 10) : 0;
-    })
-    .filter((num) => !Number.isNaN(num));
-
-  const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
-  const taskId = String(nextNumber).padStart(3, '0');
-
-  // Create task file name
-  const titleSlug = slugify(options.title);
-
-  const fileName = `task-${taskId}-${titleSlug}.md`;
-  const filePath = path.join(tasksDir, fileName);
-
-  // Check if file already exists
-  if (existsSync(filePath)) {
-    error(`Task file already exists: ${fileName}`);
+  /*
+   * Quem decide o id e o provider, nao o comando: `max(ids)+1` sobre os
+   * arquivos e semantica de sistema de arquivos, e num provider remoto o id vem
+   * do proprio store (o numero da issue). O comando so consome o que voltou.
+   */
+  let created: Awaited<ReturnType<typeof taskProvider.createTask>>;
+  try {
+    created = await taskProvider.createTask({
+      title: options.title,
+      type: taskType,
+      ...(options.description && { description: options.description }),
+      ...(options.user && { assignee: options.user }),
+    });
+  } catch (createError) {
+    error(createError instanceof Error ? createError.message : 'Failed to create task');
     return;
   }
 
-  // Create task content
-  const taskContent = generateTaskMarkdown({
-    id: taskId,
-    type: options.type,
-    title: options.title,
-    description: options.description || '',
-    user: options.user || 'A definir',
-  });
-
-  // Write task file
-  writeFileSync(filePath, taskContent, 'utf-8');
+  const taskId = created.task.id;
+  const createdPath = 'filePath' in created && typeof created.filePath === 'string' ? created.filePath : undefined;
 
   // Commit and push the new task when autoSync is active
   if (autoSyncActive && behavior.defaultBranch) {
@@ -239,8 +206,10 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   // Show success message
   console.log();
   success(`Task ${taskId} created successfully!`);
-  console.log(colors.secondary(`📄 File: ${fileName}`));
-  console.log(colors.secondary(`📁 Path: ${filePath}`));
+  console.log(colors.secondary(`📝 Title: ${created.task.title}`));
+  if (createdPath) {
+    console.log(colors.secondary(`📁 Path: ${createdPath}`));
+  }
   if (autoSyncActive) {
     success('✓ Task committed and pushed to remote');
   }
@@ -249,35 +218,4 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   console.log(colors.normal(`  1. Edit the task file to add more details`));
   console.log(colors.normal(`  2. Run ${colors.highlight(`taskin start ${taskId}`)} to begin working on it`));
   console.log();
-}
-
-interface TaskData {
-  description: string;
-  id: string;
-  title: string;
-  type: string;
-  user: string;
-}
-
-function generateTaskMarkdown(data: TaskData): string {
-  return `# Task ${data.id} — ${data.title}
-
-Status: pending
-Type: ${data.type}
-Assignee: ${data.user}
-
-## Description
-
-${data.description || 'Add task description here...'}
-
-## Tasks
-
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
-
-## Notes
-
-Add any relevant notes or links here.
-`;
 }
