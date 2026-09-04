@@ -1,8 +1,8 @@
+import type { IUserRegistry } from '@opentask/taskin-task-manager';
+import { runUserRegistryContractTests } from '@opentask/taskin-task-manager/testing';
 import { mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { runUserRegistryContractTests } from './user-registry.contract.js';
-import type { IUserRegistry } from './user-registry.js';
 import { UserRegistry } from './user-registry.js';
 
 const testDir = join(process.cwd(), '.test-user-registry');

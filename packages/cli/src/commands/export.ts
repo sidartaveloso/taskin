@@ -1,9 +1,10 @@
-import { FileSystemMetricsAdapter, UserRegistry } from '@opentask/taskin-file-system-provider';
+import { FileSystemMetricsAdapter } from '@opentask/taskin-file-system-provider';
 import { GitAnalyzer } from '@opentask/taskin-git-utils';
 import type { UserStats } from '@opentask/taskin-types';
 import type { Command } from 'commander';
 import fs from 'fs/promises';
 import path from 'path';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 
 /**
  * Converts UserStats to CSV format
@@ -72,10 +73,7 @@ export function registerExportCommand(program: Command) {
 
         // Initialize services
         const gitAnalyzer = new GitAnalyzer(cwd);
-        const userRegistry = new UserRegistry({
-          taskinDir: path.join(cwd, '.taskin'),
-        });
-        await userRegistry.load();
+        const { userRegistry } = await resolveTaskProvider({ cwd });
 
         const metricsAdapter = new FileSystemMetricsAdapter(tasksDir, userRegistry, gitAnalyzer);
 

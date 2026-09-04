@@ -2,10 +2,9 @@
  * Lint command - Validate task markdown files
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import type { LintTasksOptions } from '@opentask/taskin-types';
 import chalk from 'chalk';
-import { join } from 'path';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
 export const lintCommand = defineCommand({
@@ -28,21 +27,14 @@ export const lintCommand = defineCommand({
 });
 
 async function executeLint(options: LintTasksOptions): Promise<void> {
-  const tasksDir = options.path || join(process.cwd(), 'TASKS');
+  const { provider, providerType } = await resolveTaskProvider(options.path ? { tasksDir: options.path } : {});
 
   if (options.fix) {
-    console.log(`🔧 Fixing task files in: ${tasksDir}\n`);
+    console.log(`🔧 Fixing tasks (provider: ${providerType})\n`);
   } else {
-    console.log(`📋 Linting task files in: ${tasksDir}\n`);
+    console.log(`📋 Linting tasks (provider: ${providerType})\n`);
   }
 
-  // Initialize UserRegistry and FileSystemTaskProvider
-  const userRegistry = new UserRegistry({
-    taskinDir: join(process.cwd(), '.taskin'),
-  });
-  await userRegistry.load();
-
-  const provider = new FileSystemTaskProvider(tasksDir, userRegistry);
   const result = await provider.lint(options.fix);
 
   // Print results. Warnings and infos are printed even when the run is valid:

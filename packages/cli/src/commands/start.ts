@@ -2,7 +2,6 @@
  * start command - Start a task
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import path from 'path';
@@ -10,6 +9,7 @@ import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
 import { normalizeTaskId } from '../lib/task-id.js';
 import { defineCommand } from './define-command/index.js';
@@ -61,20 +61,11 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
     process.exit(1);
   }
 
-  // Find TASKS directory
-  const tasksDir = path.join(process.cwd(), 'TASKS');
-
-  // Initialize UserRegistry
-  const monorepoRoot = path.dirname(tasksDir);
-  const taskinDir = path.join(monorepoRoot, '.taskin');
-  const userRegistry = new UserRegistry({ taskinDir });
-  await userRegistry.load();
+  const { provider: taskProvider, userRegistry, projectRoot: monorepoRoot } = await resolveTaskProvider();
 
   // Ensure the current user exists in the registry
   await userRegistry.ensureCurrentUser();
 
-  // Initialize task manager
-  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
   const taskManager = new TaskManager(taskProvider);
 
   // Find task

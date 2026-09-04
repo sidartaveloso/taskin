@@ -3,7 +3,6 @@
  * Executes quality checks and transitions task to 'in-review' status
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { HookContext, HookOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
@@ -13,6 +12,7 @@ import { ConfigManager } from '../lib/config-manager.js';
 import { HookRunner } from '../lib/hook-runner.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
 import { normalizeTaskId } from '../lib/task-id.js';
 import { defineCommand } from './define-command/index.js';
@@ -64,17 +64,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
     process.exit(1);
   }
 
-  // Find TASKS directory
-  const tasksDir = path.join(process.cwd(), 'TASKS');
-
-  // Initialize UserRegistry
-  const monorepoRoot = path.dirname(tasksDir);
-  const taskinDir = path.join(monorepoRoot, '.taskin');
-  const userRegistry = new UserRegistry({ taskinDir });
-  await userRegistry.load();
-
-  // Initialize task manager
-  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
+  const { provider: taskProvider, projectRoot: monorepoRoot } = await resolveTaskProvider();
   const taskManager = new TaskManager(taskProvider);
 
   // Find task
