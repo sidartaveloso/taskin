@@ -205,3 +205,24 @@ describe('fixUsersFileLocation', () => {
     expect(second).toEqual({ action: 'none', viaGit: false });
   });
 });
+
+describe('validateUsersFileLocation — arquivo estacionado', () => {
+  it('reminds about a parked legacy registry, so it does not sit there forever', async () => {
+    writeCanonical('ana');
+    mkdirSync(join(projectRoot, TASKIN_DIR_NAME), { recursive: true });
+    writeFileSync(join(projectRoot, TASKIN_DIR_NAME, PARKED_USERS_FILE_NAME), usersJson('developer'), 'utf-8');
+
+    const [issue, ...rest] = await validateUsersFileLocation(projectRoot);
+
+    expect(rest).toEqual([]);
+    expect(issue?.severity).toBe('info');
+    expect(issue?.file).toContain(PARKED_USERS_FILE_NAME);
+    expect(issue?.suggestion).toBeDefined();
+  });
+
+  it('stays quiet when there is nothing parked', async () => {
+    writeCanonical('ana');
+
+    expect(await validateUsersFileLocation(projectRoot)).toEqual([]);
+  });
+});

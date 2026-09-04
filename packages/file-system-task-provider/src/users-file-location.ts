@@ -175,6 +175,17 @@ export async function validateUsersFileLocation(projectRoot: string): Promise<Va
     ];
   }
 
+  if (location === 'canonical' && (await exists(paths.parked))) {
+    return [
+      {
+        file: paths.parked,
+        message: `A parked legacy user registry is still sitting in ${TASKIN_DIR_NAME}/. It is read by nothing — it was moved out of the project root so it could be compared by hand.`,
+        severity: 'info',
+        suggestion: `Copy over any user missing from ${USERS_FILE_NAME} and delete it.`,
+      },
+    ];
+  }
+
   if (location === 'both') {
     return [
       {

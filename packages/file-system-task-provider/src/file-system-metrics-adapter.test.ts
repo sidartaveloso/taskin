@@ -1,14 +1,17 @@
+import type { IUserRegistry } from '@opentask/taskin-task-manager';
 import { promises as fs } from 'fs';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileSystemMetricsAdapter } from './file-system-metrics-adapter';
-import type { IUserRegistry } from './user-registry';
 
 vi.mock('fs', () => ({ promises: { readdir: vi.fn(), readFile: vi.fn() } }));
 
 const mockUserRegistry = {
   getUser: vi.fn(),
-  getAllUsers: vi.fn(),
+  getAllUsers: vi.fn().mockReturnValue([]),
+  // Exigido pelo contrato: o adapter resolve a identidade do assignee antes de
+  // agrupar contribuidor, para nao contar a mesma pessoa duas vezes por grafia
+  resolveUser: vi.fn(),
 };
 
 describe('FileSystemMetricsAdapter', () => {
@@ -131,8 +134,12 @@ More content here.`;
     const contributorNames = team.contributors.map((c) => c.username);
     expect(contributorNames).toContain('alice');
     expect(contributorNames).not.toContain('John Doe');
-    // Should have alice + unknown (task-002 without assignee)
-    expect(team.totalContributors).toBe(2);
+    /*
+     * So alice. A task-002 nao tem assignee, e "sem assignee" deixou de virar um
+     * contribuidor chamado `unknown`: era pessoa fantasma no relatorio de time.
+     */
+    expect(team.totalContributors).toBe(1);
+    expect(contributorNames).not.toContain('unknown');
   });
 
   it('should ignore Status and Type fields inside code blocks', async () => {

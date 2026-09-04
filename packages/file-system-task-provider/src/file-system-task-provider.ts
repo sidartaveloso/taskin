@@ -1,13 +1,21 @@
-import type { CreateTaskOptions, ITaskProvider, LintResult, ValidationIssue } from '@opentask/taskin-task-manager';
+import type {
+  CreateTaskOptions,
+  ITaskProvider,
+  IUserRegistry,
+  LintResult,
+  ValidationIssue,
+} from '@opentask/taskin-task-manager';
 import type { GroupId, TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
 import { parseGroupId, parseTaskId } from '@opentask/taskin-types';
 import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
+import { stripHardBreak } from './inline-metadata.js';
 import type { CreateTaskFileResult, TaskFile } from './task-file.types.js';
 import { createLintResult, fixTaskFile, validateTaskFile } from './task-validator.js';
-import type { ILogger, UserRegistry } from './user-registry.js';
+import type { ILogger } from './user-registry.js';
 import { NullLogger } from './user-registry.js';
 import {
   fixUsersFileLocation,
@@ -85,7 +93,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
   constructor(
     private tasksDirectory: string,
-    private userRegistry: UserRegistry,
+    private userRegistry: IUserRegistry,
     locale: Locale = 'en-US',
     logger?: ILogger,
   ) {
@@ -135,6 +143,19 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     }
   }
 
+  /**
+   * Reads the `Assignee:` line as written, before the registry gets a say.
+   *
+   * `getAllTasks` already replaces an unresolvable assignee with a fabricated
+   * temporary user, which is exactly what the lint has to see through.
+   */
+  private readAssigneeLine(content: string): string | undefined {
+    const i18n = getI18n(detectLocale(content));
+    const match =
+      content.match(/^Assignee:\s*(.*)$/im) ?? content.match(new RegExp(`^${i18n.assignee}:\\s*(.*)$`, 'im'));
+    return match?.[1] === undefined ? undefined : stripHardBreak(match[1]);
+  }
+
   private async pathExists(target: string): Promise<boolean> {
     try {
       await fs.access(target);
@@ -173,7 +194,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
         const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
         const captured = content.match(rx)?.[1];
-        if (captured !== undefined) return captured.trim();
+        if (captured !== undefined) return stripHardBreak(captured);
       }
       return null;
     };
@@ -290,7 +311,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
           const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
           const captured = content.match(rx)?.[1];
-          if (captured !== undefined) return captured.trim();
+          if (captured !== undefined) return stripHardBreak(captured);
         }
         return null;
       };
@@ -458,6 +479,19 @@ ${i18n.notesPlaceholder}
         this.logger.info(`✨ ${verb} ${USERS_FILE_NAME} into ${TASKIN_DIR_NAME}/`);
       }
 
+      const tasksBeforeFix = await this.getAllTasks();
+      const corrected = await fixAssignees(
+        tasksBeforeFix.map((task) => ({ file: task.filePath, assignee: this.readAssigneeLine(task.content) })),
+        this.userRegistry,
+        {
+          readFile: (target) => fs.readFile(target, 'utf-8'),
+          writeFile: (target, content) => fs.writeFile(target, content, 'utf-8'),
+        },
+      );
+      if (corrected.length > 0) {
+        this.logger.info(`✨ Corrected the assignee of ${corrected.length} task file(s)`);
+      }
+
       let fixedCount = 0;
       for (const filePath of taskFiles) {
         const wasFixed = await fixTaskFile(filePath);
@@ -469,6 +503,18 @@ ${i18n.notesPlaceholder}
         this.logger.info(`✨ Fixed ${fixedCount} task file(s)`);
       }
     }
+
+    // Assignee que nao resolve nao quebra o arquivo, mas vira usuario temporario
+    // fabricado — invisivel na tela e contado como pessoa nas metricas.
+    const tasks = await this.getAllTasks();
+    const assignees = tasks.map((task) => ({ file: task.filePath, assignee: this.readAssigneeLine(task.content) }));
+    allIssues.push(...validateAssignees(assignees, this.userRegistry));
+    allIssues.push(
+      ...validateSeededUsers(
+        assignees.map((entry) => entry.assignee),
+        this.userRegistry,
+      ),
+    );
 
     // O registro de usuários fora de lugar não quebra nenhum arquivo de task,
     // mas deixa todo assignee sem resolver — é problema do provider, e é aqui

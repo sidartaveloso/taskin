@@ -152,11 +152,11 @@ Test description`;
       expect(writtenContent).not.toMatch(/## Assignee\n/);
     });
 
-    it('should return false if no section metadata found and inline has trailing spaces', async () => {
+    it('should return false if no section metadata found and inline already has the hard break', async () => {
       const content = `# Task 001 — Already Fixed
-Status: done  
-Type: feat  
-Assignee: John Doe  
+Status: done\\
+Type: feat\\
+Assignee: John Doe\\
 
 ## Description
 Already in inline format.`;
@@ -169,7 +169,7 @@ Already in inline format.`;
       expect(fsp.writeFile).not.toHaveBeenCalled();
     });
 
-    it('should add trailing spaces to inline metadata if missing', async () => {
+    it('should add the hard break to inline metadata if missing', async () => {
       const content = `# Task 001 — Needs Spaces
 Status: done
 Type: feat
@@ -185,17 +185,17 @@ Missing trailing spaces.`;
       expect(result).toBe(true);
       expect(fsp.writeFile).toHaveBeenCalledWith(
         '/tasks/task-001.md',
-        expect.stringContaining('Status: done  '),
+        expect.stringContaining('Status: done\\'),
         'utf-8',
       );
       expect(fsp.writeFile).toHaveBeenCalledWith(
         '/tasks/task-001.md',
-        expect.stringContaining('Type: feat  '),
+        expect.stringContaining('Type: feat\\'),
         'utf-8',
       );
       expect(fsp.writeFile).toHaveBeenCalledWith(
         '/tasks/task-001.md',
-        expect.stringContaining('Assignee: John Doe  '),
+        expect.stringContaining('Assignee: John Doe\\'),
         'utf-8',
       );
     });
@@ -375,6 +375,47 @@ Tarefa sem metadados`;
 
       // Should suggest Portuguese field name since content is in Portuguese
       expect(statusIssue?.suggestion).toContain('Status:');
+    });
+  });
+
+  describe('quebra de linha dos metadados', () => {
+    /*
+     * Dois espacos no fim eram invisiveis, o git os acusa como
+     * `trailing whitespace` e o .editorconfig precisou de uma excecao para
+     * *.md por causa deles. A barra invertida e o mesmo hard break do
+     * CommonMark, visivel e imune a trimming.
+     */
+    it('marks the hard break with a backslash, not with two invisible spaces', async () => {
+      const content = `# Task 001 — Alvo
+
+Status: pending
+Type: feat
+Assignee: ana
+
+## Description
+
+x
+`;
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      await fixTaskFile('/tasks/task-001-alvo.md');
+
+      const written = (fsp.writeFile as Mock).mock.calls[0]?.[1] as string;
+      expect(written).toContain('Status: pending\\');
+      expect(written).toContain('Type: feat\\');
+      expect(written).toContain('Assignee: ana\\');
+      expect(written).not.toMatch(/[ \t]+$/m);
+    });
+
+    it('replaces the legacy two-space break instead of stacking onto it', async () => {
+      const content = '# Task 002 — Alvo\n\nStatus: pending  \nType: feat  \nAssignee: ana  \n\n## Description\n\nx\n';
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      await fixTaskFile('/tasks/task-002-alvo.md');
+
+      const written = (fsp.writeFile as Mock).mock.calls[0]?.[1] as string;
+      expect(written).toContain('Status: pending\\');
+      expect(written).not.toMatch(/[ \t]+$/m);
     });
   });
 });
