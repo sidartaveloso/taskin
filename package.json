@@ -53,21 +53,21 @@
     "test:dev-scripts": "vitest run --config dev/vitest.config.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.4",
-    "@changesets/cli": "^2.29.8",
-    "@types/node": "^25.3.0",
-    "@vitest/browser-playwright": "^4.0.18",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@biomejs/biome": "^2.5.11",
+    "@changesets/cli": "^3.0.1",
+    "@types/node": "^26.4.1",
+    "@vitest/browser-playwright": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.11",
     "storytype": "^0.2.6",
-    "tsx": "^4.21.0",
-    "turbo": "2.10.7",
-    "typescript": "^6.0.0",
-    "vitest": "^4.0.18"
+    "tsx": "^4.23.13",
+    "turbo": "2.10.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
-    "pinia": "^3.0.4",
-    "vite": "7.3.1",
+    "pinia": "^4.0.3",
+    "vite": "8.2.2",
     "vitepress": "1.6.4",
-    "zod": "^4.3.6"
+    "zod": "^4.5.4"
   }
 }
