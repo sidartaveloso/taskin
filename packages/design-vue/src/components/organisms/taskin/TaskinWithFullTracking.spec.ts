@@ -1,3 +1,5 @@
+import type { ArmAngles } from '@opentask/ui-sense';
+import { screenAngle } from '@opentask/ui-sense';
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
@@ -36,9 +38,13 @@ const baseBlendShapes = {
   mouthPucker: 0,
 };
 
-const armAngles = {
-  left: { shoulder: 35, elbow: 30, wrist: -45 },
-  right: { shoulder: 35, elbow: 30, wrist: -45 },
+/*
+ * Espaco de tela, que e o que a pose mede: 145deg e 35deg descrevem a mesma
+ * pose simetrica, um lado de cada vez.
+ */
+const armAngles: ArmAngles = {
+  left: { shoulder: screenAngle(145), elbow: 30, wrist: screenAngle(145) },
+  right: { shoulder: screenAngle(35), elbow: 30, wrist: screenAngle(35) },
 };
 
 describe('TaskinWithFullTracking', () => {
@@ -90,5 +96,39 @@ describe('TaskinWithFullTracking', () => {
     await wrapper.find('[data-testid="mock-toggle-tracking"]').trigger('click');
     expect(face.stopDetection).toHaveBeenCalled();
     expect(pose.stopDetection).toHaveBeenCalled();
+  });
+
+  /*
+   * O teste que faltava, e que teria pegado o bug da task-044: pose entra, path
+   * sai. Nenhum dos testes anteriores olhava a geometria desenhada, entao o
+   * braco esquerdo cruzou o corpo por meses sem ninguem notar.
+   */
+  it('draws each elbow outside the body for a symmetric arms-down pose', async () => {
+    const wrapper = mount(TaskinWithFullTracking);
+
+    // Espaco de tela: 145deg do lado esquerdo e 35deg do direito, a mesma pose
+    vi.mocked(pose.getArmAngles).mockReturnValue({
+      left: { shoulder: screenAngle(145), elbow: 160, wrist: screenAngle(145) },
+      right: { shoulder: screenAngle(35), elbow: 160, wrist: screenAngle(35) },
+    });
+    /*
+     * Varios frames de proposito: a suavizacao fecha 35% da distancia por
+     * frame, e um unico frame partindo do neutro chega perto o bastante do
+     * lugar certo para a assercao passar mesmo com a conversao quebrada — foi o
+     * que aconteceu com a primeira versao deste teste.
+     */
+    for (let frame = 0; frame < 20; frame += 1) {
+      pose.state.value.landmarks = [{ x: frame, y: 0, z: 0, visibility: 1 }];
+      await nextTick();
+    }
+
+    const elbowXOf = (id: string): number => {
+      const path = wrapper.find(id).attributes('d') ?? '';
+      return Number(path.match(/Q(-?\d+(?:\.\d+)?)/)?.[1]);
+    };
+
+    // Ombros do mascote ficam em x=95 (esquerdo) e x=225 (direito)
+    expect(elbowXOf('#left-arm')).toBeLessThan(95);
+    expect(elbowXOf('#right-arm')).toBeGreaterThan(225);
   });
 });

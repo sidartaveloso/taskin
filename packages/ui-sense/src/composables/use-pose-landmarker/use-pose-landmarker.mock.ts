@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 import { type Ref, ref } from 'vue';
-import type { ArmAngles, PoseLandmarkerState, UsePoseLandmarkerOptions } from './use-pose-landmarker.types';
+import type { ArmAngles } from './arm-angles';
+import type { PoseLandmarkerState, UsePoseLandmarkerOptions } from './use-pose-landmarker.types';
 
 export interface UsePoseLandmarkerReturn {
   state: Ref<PoseLandmarkerState>;

@@ -1,7 +1,8 @@
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
+import type { ArmAngles } from './arm-angles';
+import { armAnglesFromLandmarks } from './arm-angles';
 import type {
-  ArmAngles,
   PoseLandmark,
   PoseLandmarkerResult,
   PoseLandmarkerState,
@@ -312,66 +313,16 @@ export function usePoseLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
   };
 
   // Calculate angle between three points
-  const calculateAngle = (a: PoseLandmark, b: PoseLandmark, c: PoseLandmark): number => {
-    const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
-    let angle = Math.abs((radians * 180.0) / Math.PI);
-
-    if (angle > 180.0) {
-      angle = 360 - angle;
-    }
-
-    return angle;
-  };
-
-  // Get arm angles (shoulder-elbow-wrist)
+  /**
+   * Both arms, measured from the current pose.
+   *
+   * The geometry lives in `armAnglesFromLandmarks`, which is pure and tested
+   * on its own; this only supplies the landmarks.
+   */
   const getArmAngles = (): ArmAngles | null => {
     if (!state.value.landmarks) return null;
 
-    const landmarks = state.value.landmarks;
-
-    try {
-      const leftShoulder = landmarks[POSE_LANDMARKS.LEFT_SHOULDER];
-      const leftElbow = landmarks[POSE_LANDMARKS.LEFT_ELBOW];
-      const leftWrist = landmarks[POSE_LANDMARKS.LEFT_WRIST];
-      const rightShoulder = landmarks[POSE_LANDMARKS.RIGHT_SHOULDER];
-      const rightElbow = landmarks[POSE_LANDMARKS.RIGHT_ELBOW];
-      const rightWrist = landmarks[POSE_LANDMARKS.RIGHT_WRIST];
-
-      // Mesma guarda que getHeadTilt/getTorsoTilt ja faziam: sem os seis
-      // pontos nao ha angulo para calcular
-      if (!leftShoulder || !leftElbow || !leftWrist || !rightShoulder || !rightElbow || !rightWrist) {
-        return null;
-      }
-
-      // Calculate shoulder angle (relative to horizontal)
-      const leftShoulderAngle = Math.atan2(leftElbow.y - leftShoulder.y, leftElbow.x - leftShoulder.x);
-      const rightShoulderAngle = Math.atan2(rightElbow.y - rightShoulder.y, rightElbow.x - rightShoulder.x);
-
-      // Calculate elbow angle
-      const leftElbowAngle = calculateAngle(leftShoulder, leftElbow, leftWrist);
-      const rightElbowAngle = calculateAngle(rightShoulder, rightElbow, rightWrist);
-
-      // Calculate wrist position relative to elbow
-      const leftWristAngle = Math.atan2(leftWrist.y - leftElbow.y, leftWrist.x - leftElbow.x);
-      const rightWristAngle = Math.atan2(rightWrist.y - rightElbow.y, rightWrist.x - rightElbow.x);
-
-      // Retorna os ângulos (mirrorPose já foi aplicado aos landmarks)
-      return {
-        left: {
-          shoulder: leftShoulderAngle * (180 / Math.PI),
-          elbow: leftElbowAngle,
-          wrist: leftWristAngle * (180 / Math.PI),
-        },
-        right: {
-          shoulder: rightShoulderAngle * (180 / Math.PI),
-          elbow: rightElbowAngle,
-          wrist: rightWristAngle * (180 / Math.PI),
-        },
-      };
-    } catch (error) {
-      console.error('Error calculating arm angles:', error);
-      return null;
-    }
+    return armAnglesFromLandmarks(state.value.landmarks);
   };
 
   // Get head tilt (based on ears and nose)

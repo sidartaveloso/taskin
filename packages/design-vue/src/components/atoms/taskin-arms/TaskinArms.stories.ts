@@ -46,44 +46,44 @@ export const AllVariations: Story = {
         {
           name: 'Raised',
           color: '#FF6B9D',
-          left: { shoulderAngle: -60, elbowAngle: 45, wristAngle: -45 },
-          right: { shoulderAngle: -60, elbowAngle: 45, wristAngle: -45 },
+          left: armPosition(-60, -105),
+          right: armPosition(-60, -105),
         },
         {
           name: 'Relaxed (Default)',
           color: '#1f7acb',
-          left: { shoulderAngle: 35, elbowAngle: 30, wristAngle: -45 },
-          right: { shoulderAngle: 35, elbowAngle: 30, wristAngle: -45 },
+          left: armPosition(35, 5),
+          right: armPosition(35, 5),
         },
         {
           name: 'Down',
           color: '#9D6BFF',
-          left: { shoulderAngle: 60, elbowAngle: 150, wristAngle: -45 },
-          right: { shoulderAngle: 60, elbowAngle: 150, wristAngle: -45 },
+          left: armPosition(60, -90),
+          right: armPosition(60, -90),
         },
         {
           name: 'Straight Out',
           color: '#6BFF9D',
-          left: { shoulderAngle: 0, elbowAngle: 0, wristAngle: 0 },
-          right: { shoulderAngle: 0, elbowAngle: 0, wristAngle: 0 },
+          left: armPosition(0, 0),
+          right: armPosition(0, 0),
         },
         {
           name: 'Wide Open',
           color: '#FFD700',
-          left: { shoulderAngle: -15, elbowAngle: 0, wristAngle: 0 },
-          right: { shoulderAngle: -15, elbowAngle: 0, wristAngle: 0 },
+          left: armPosition(-15, -15),
+          right: armPosition(-15, -15),
         },
         {
           name: 'Waving',
           color: '#FFB66B',
-          left: { shoulderAngle: -80, elbowAngle: 30, wristAngle: -20 },
-          right: { shoulderAngle: -80, elbowAngle: 30, wristAngle: -20 },
+          left: armPosition(-80, -110),
+          right: armPosition(-80, -110),
         },
         {
           name: 'Asymmetric',
           color: '#2C3E50',
-          left: { shoulderAngle: -70, elbowAngle: 60, wristAngle: -30 },
-          right: { shoulderAngle: 45, elbowAngle: 120, wristAngle: -60 },
+          left: armPosition(-70, -130),
+          right: armPosition(45, -75),
         },
       ];
 
@@ -171,8 +171,8 @@ export const AnimationsDisabled: Story = {
 export const ArmsRaised: Story = {
   args: {
     color: '#FF6B9D',
-    leftArmPosition: { shoulderAngle: -60, elbowAngle: 45, wristAngle: -45 },
-    rightArmPosition: { shoulderAngle: -60, elbowAngle: 45, wristAngle: -45 },
+    leftArmPosition: armPosition(-60, -105),
+    rightArmPosition: armPosition(-60, -105),
   },
   parameters: {
     docs: {
@@ -186,8 +186,8 @@ export const ArmsRaised: Story = {
 export const ArmsDown: Story = {
   args: {
     color: '#FF6B9D',
-    leftArmPosition: { shoulderAngle: 60, elbowAngle: 150, wristAngle: -45 },
-    rightArmPosition: { shoulderAngle: 60, elbowAngle: 150, wristAngle: -45 },
+    leftArmPosition: armPosition(60, -90),
+    rightArmPosition: armPosition(60, -90),
   },
   parameters: {
     docs: {
@@ -201,8 +201,8 @@ export const ArmsDown: Story = {
 export const ArmsStraightOut: Story = {
   args: {
     color: '#FF6B9D',
-    leftArmPosition: { shoulderAngle: 0, elbowAngle: 0, wristAngle: 0 },
-    rightArmPosition: { shoulderAngle: 0, elbowAngle: 0, wristAngle: 0 },
+    leftArmPosition: armPosition(0, 0),
+    rightArmPosition: armPosition(0, 0),
   },
   parameters: {
     docs: {
@@ -216,8 +216,8 @@ export const ArmsStraightOut: Story = {
 export const ArmsWideOpen: Story = {
   args: {
     color: '#FF6B9D',
-    leftArmPosition: { shoulderAngle: -15, elbowAngle: 0, wristAngle: 0 },
-    rightArmPosition: { shoulderAngle: -15, elbowAngle: 0, wristAngle: 0 },
+    leftArmPosition: armPosition(-15, -15),
+    rightArmPosition: armPosition(-15, -15),
   },
   parameters: {
     docs: {
@@ -231,8 +231,8 @@ export const ArmsWideOpen: Story = {
 export const ArmsAsymmetric: Story = {
   args: {
     color: '#FF6B9D',
-    leftArmPosition: { shoulderAngle: -70, elbowAngle: 60, wristAngle: -30 },
-    rightArmPosition: { shoulderAngle: 45, elbowAngle: 120, wristAngle: -60 },
+    leftArmPosition: armPosition(-70, -130),
+    rightArmPosition: armPosition(45, -75),
   },
   parameters: {
     docs: {
@@ -246,8 +246,8 @@ export const ArmsAsymmetric: Story = {
 export const ArmsWaving: Story = {
   args: {
     color: '#FF6B9D',
-    leftArmPosition: { shoulderAngle: -80, elbowAngle: 30, wristAngle: -20 },
-    rightArmPosition: { shoulderAngle: -80, elbowAngle: 30, wristAngle: -20 },
+    leftArmPosition: armPosition(-80, -110),
+    rightArmPosition: armPosition(-80, -110),
   },
   parameters: {
     docs: {
@@ -261,8 +261,8 @@ export const ArmsWaving: Story = {
 export const ArmsCrossed: Story = {
   args: {
     color: '#FF6B9D',
-    leftArmPosition: { shoulderAngle: -10, elbowAngle: 90, wristAngle: -45 },
-    rightArmPosition: { shoulderAngle: 10, elbowAngle: 90, wristAngle: 45 },
+    leftArmPosition: armPosition(-10, -100),
+    rightArmPosition: armPosition(10, -80),
   },
   parameters: {
     docs: {
@@ -276,8 +276,8 @@ export const ArmsCrossed: Story = {
 export const ArmsRelaxed: Story = {
   args: {
     color: '#FF6B9D',
-    leftArmPosition: { shoulderAngle: 35, elbowAngle: 30, wristAngle: -45 },
-    rightArmPosition: { shoulderAngle: 35, elbowAngle: 30, wristAngle: -45 },
+    leftArmPosition: armPosition(35, 5),
+    rightArmPosition: armPosition(35, 5),
   },
   parameters: {
     docs: {
@@ -294,38 +294,38 @@ export const ArmPositionsGrid: Story = {
       const positions = [
         {
           name: 'Raised',
-          left: { shoulderAngle: -60, elbowAngle: 45, wristAngle: -45 },
-          right: { shoulderAngle: -60, elbowAngle: 45, wristAngle: -45 },
+          left: armPosition(-60, -105),
+          right: armPosition(-60, -105),
         },
         {
           name: 'Relaxed',
-          left: { shoulderAngle: 35, elbowAngle: 30, wristAngle: -45 },
-          right: { shoulderAngle: 35, elbowAngle: 30, wristAngle: -45 },
+          left: armPosition(35, 5),
+          right: armPosition(35, 5),
         },
         {
           name: 'Down',
-          left: { shoulderAngle: 60, elbowAngle: 150, wristAngle: -45 },
-          right: { shoulderAngle: 60, elbowAngle: 150, wristAngle: -45 },
+          left: armPosition(60, -90),
+          right: armPosition(60, -90),
         },
         {
           name: 'Straight Out',
-          left: { shoulderAngle: 0, elbowAngle: 0, wristAngle: 0 },
-          right: { shoulderAngle: 0, elbowAngle: 0, wristAngle: 0 },
+          left: armPosition(0, 0),
+          right: armPosition(0, 0),
         },
         {
           name: 'Wide Open',
-          left: { shoulderAngle: -15, elbowAngle: 0, wristAngle: 0 },
-          right: { shoulderAngle: -15, elbowAngle: 0, wristAngle: 0 },
+          left: armPosition(-15, -15),
+          right: armPosition(-15, -15),
         },
         {
           name: 'Waving',
-          left: { shoulderAngle: -80, elbowAngle: 30, wristAngle: -20 },
-          right: { shoulderAngle: -80, elbowAngle: 30, wristAngle: -20 },
+          left: armPosition(-80, -110),
+          right: armPosition(-80, -110),
         },
         {
           name: 'Asymmetric',
-          left: { shoulderAngle: -70, elbowAngle: 60, wristAngle: -30 },
-          right: { shoulderAngle: 45, elbowAngle: 120, wristAngle: -60 },
+          left: armPosition(-70, -130),
+          right: armPosition(45, -75),
         },
       ];
 
@@ -396,16 +396,8 @@ export const PoseTracking: Story = {
       const videoElement = ref<HTMLVideoElement | null>(null);
       const showWebcam = ref(false);
       const syncArms = ref(true);
-      const leftArmPosition = ref<ArmPosition>({
-        shoulderAngle: 35,
-        elbowAngle: 30,
-        wristAngle: -45,
-      });
-      const rightArmPosition = ref<ArmPosition>({
-        shoulderAngle: 35,
-        elbowAngle: 30,
-        wristAngle: -45,
-      });
+      const leftArmPosition = ref<ArmPosition>(armPosition(35, 5));
+      const rightArmPosition = ref<ArmPosition>(armPosition(35, 5));
 
       onMounted(() => {
         if (webcamVideoRef.value) {
@@ -446,19 +438,8 @@ export const PoseTracking: Story = {
             const armAngles = poseLandmarker.getArmAngles();
             if (!armAngles) return;
 
-            // Update left arm
-            leftArmPosition.value = {
-              shoulderAngle: armAngles.left.shoulder,
-              elbowAngle: armAngles.left.elbow,
-              wristAngle: armAngles.left.wrist,
-            };
-
-            // Update right arm
-            rightArmPosition.value = {
-              shoulderAngle: armAngles.right.shoulder,
-              elbowAngle: armAngles.right.elbow,
-              wristAngle: armAngles.right.wrist,
-            };
+            leftArmPosition.value = armPositionFromPose(armAngles.left, 'left');
+            rightArmPosition.value = armPositionFromPose(armAngles.right, 'right');
           },
         );
       });

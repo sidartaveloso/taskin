@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { armPosition } from './TaskinArms.types';
 import TaskinArms from './TaskinArms.vue';
 
 describe('TaskinArms', () => {
@@ -20,8 +21,8 @@ describe('TaskinArms', () => {
     const neutral = mount(TaskinArms);
     const raised = mount(TaskinArms, {
       props: {
-        leftArmPosition: { shoulderAngle: 10, elbowAngle: 5, wristAngle: 0 },
-        rightArmPosition: { shoulderAngle: 15, elbowAngle: 8, wristAngle: -5 },
+        leftArmPosition: armPosition(10, 5),
+        rightArmPosition: armPosition(15, 8),
       },
     });
     expect(neutral.find('#left-arm').attributes('d')).not.toBe(raised.find('#left-arm').attributes('d'));

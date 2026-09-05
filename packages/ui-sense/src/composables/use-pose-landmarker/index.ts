@@ -1,6 +1,6 @@
+export * from './arm-angles';
 export { usePoseLandmarker } from './use-pose-landmarker';
 export type {
-  ArmAngles,
   PoseLandmark,
   PoseLandmarkerResult,
   PoseLandmarkerState,

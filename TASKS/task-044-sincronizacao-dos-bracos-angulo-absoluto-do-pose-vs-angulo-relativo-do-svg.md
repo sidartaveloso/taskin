@@ -36,38 +36,38 @@ Arquivos: `packages/ui-sense/src/composables/use-pose-landmarker/use-pose-landma
 
 ## Tasks
 
-- [ ] Marcar os dois espacos de angulo no tipo, para o desencontro deixar de ser escrevivel:
+- [x] Marcar os dois espacos de angulo no tipo, para o desencontro deixar de ser escrevivel:
       `ScreenAngle` (absoluto, o que a pose produz) e `SideRelativeAngle` (relativo ao lado, o que
       o mascote desenha), ambos `number` com marca. Hoje os dois sao `number` e
       `ArmPosition.shoulderAngle` diz apenas "Angle in degrees" — foi essa ambiguidade que deixou
       produtor e consumidor discordarem sem ninguem notar.
-- [ ] `mirrorAngleForSide(deg, side)` no `ui-sense/utils`, com **overload nos dois sentidos** (a
+- [x] `mirrorAngleForSide(deg, side)` no `ui-sense/utils`, com **overload nos dois sentidos** (a
       funcao e sua propria inversa: `180 - (180 - d) === d`), e usado dentro do `TaskinArms`, que
       deixa de aplicar o fator `-1` por conta propria. `getArmAngles()` passa a devolver
       `ScreenAngle` e a prop do `TaskinArms` permanece `SideRelativeAngle`.
-- [ ] Verificar que os dois erros de hoje passam a **falhar em compilacao**, com teste de tipo:
+- [x] Verificar que os dois erros de hoje passam a **falhar em compilacao**, com teste de tipo:
       passar a saida de `getArmAngles()` direto para `TaskinArms` (o bug atual) e espelhar duas
       vezes (o risco da correcao). Se os dois compilarem, a marca nao esta valendo nada.
-- [ ] Corrigir o braco esquerdo (duplo espelhamento) **e** revisar o direito: ele acerta por
+- [x] Corrigir o braco esquerdo (duplo espelhamento) **e** revisar o direito: ele acerta por
       coincidencia de quadrante, nao por construcao. Cobrir com teste os quatro quadrantes de cada
       lado, nao so a pose neutra.
-- [ ] `wristAngle` e calculado, propagado e **nunca usado**: `generateArmPath` deriva o punho de
+- [x] `wristAngle` e calculado, propagado e **nunca usado**: `generateArmPath` deriva o punho de
       `shoulderRad - elbowRad` e ignora `position.wristAngle`. Nenhum movimento de antebraco/mao
       aparece, nos dois bracos. Ou usar o valor, ou remover o campo (e o `wristAngle: -45` do
       `NEUTRAL_ARM_POSITION`) para o contrato parar de prometer o que nao entrega.
-- [ ] Escala do `elbowAngle` esta invertida: `calculateAngle` devolve o angulo **interno** do
+- [x] Escala do `elbowAngle` esta invertida: `calculateAngle` devolve o angulo **interno** do
       cotovelo (180 = braco esticado, 30 = muito dobrado), mas o neutro do design usa
       `elbowAngle: 30` comentado como "very strong bend" e `generateArmPath` faz
       `shoulderRad - elbowRad`. Com o braco esticado (180) o antebraco dobra para tras.
-- [ ] Clamp e suavizacao: `atan2` salta de +180 para -180 quando o braco passa da vertical, o que
+- [x] Clamp e suavizacao: `atan2` salta de +180 para -180 quando o braco passa da vertical, o que
       produz flip; e o jitter do MediaPipe vai direto para o SVG, sem filtro temporal. Definir
       faixa valida por junta e um smoothing (media movel ou lerp) na fronteira.
-- [ ] Confirmar o espelhamento em uma unica camada: o `WebcamVideo` renderiza com
+- [x] Confirmar o espelhamento em uma unica camada: o `WebcamVideo` renderiza com
       `:mirrored="true"` (CSS) e o `usePoseLandmarker` espelha os landmarks de novo
       (`x -> 1-x` + `swapMirroredPairs`). Provavelmente correto — o CSS nao mexe nos dados — mas
       precisa de teste que fixe a convencao: apos `mirrorPose`, `LEFT_*` passa a significar "lado
       **da tela**", nao lado do corpo.
-- [ ] Testes: `getArmAngles` nao tem **nenhum** teste hoje (so aparece no mock), e o
+- [x] Testes: `getArmAngles` nao tem **nenhum** teste hoje (so aparece no mock), e o
       `TaskinArms.spec.ts` tem tres casos que nao verificam geometria — apenas que os paths
       existem, que a cor aplica e que mudam quando a posicao muda. Adicionar casos com landmarks
       sinteticos de pose conhecida (bracos para baixo, em T, maos acima da cabeca, um braco
@@ -131,6 +131,28 @@ entrada e faz a trigonometria com `number` normal — atrito nas bordas, nao no 
 `TaskId` e o `OpaqueTask` ja fazem neste repo.
 
 ## Notes
+
+- **Como ficou.** `ScreenAngle`/`SideRelativeAngle` no `ui-sense/utils/arm-angle.ts`, com
+  `mirrorAngleForSide` (auto-inversa, overload nos dois sentidos) e `smoothAngle` (arco curto). O
+  calculo saiu do composable para `armAnglesFromLandmarks`, puro. No `design-vue`,
+  `armPositionFromPose` e a unica fronteira entre os dois espacos, e `ArmPosition` virou duas
+  direcoes (`shoulderAngle` + `forearmAngle`), o que resolveu de uma vez o `wristAngle` morto e a
+  escala invertida do `elbowAngle`.
+- **A afirmacao de que "espelhar duas vezes deixa de compilar" estava imprecisa** e o teste
+  mostrou: a segunda chamada compila e e correta, porque a funcao e sua propria inversa. O que a
+  marca pega e o resultado chegando no lugar errado, no **ponto de consumo**. O teste de tipo foi
+  escrito nessa forma.
+- **A primeira versao do teste de integracao passava com o bug presente.** A suavizacao fecha 35%
+  da distancia por frame, e um frame partindo do neutro chega perto o bastante do lugar certo para
+  a assercao passar. Corrigido rodando 20 frames ate convergir; verificado por sabotagem (sem a
+  conversao, o cotovelo esquerdo vai para x=115 com o ombro em 95, e o teste falha).
+- **Ainda aberto, fora do escopo desta correcao:** o `TaskinArms` declara `animationsEnabled` e
+  nunca usa (as stories passam a prop, entao remover e decisao de contrato); e o
+  `TaskinWithFaceTracking` continua sem bracos, com o `TaskinWithFullTracking` remontando o SVG a
+  mao em vez de usar o organism `Taskin` — a duplicacao que faz so um dos dois ter braco.
+- **A suite `storybook` do `design-vue` esta vermelha por motivo alheio:** `aria-query@5.3.0` nao
+  expoe `elementRoles` para o setup do `@storybook/addon-vitest`. Reproduz em componente que esta
+  task nao tocou (`TaskinEyes`), e e provavel consequencia do bump de vite 8.
 
 - `TaskinWithFaceTracking.vue` **nao tem bracos**: nao instancia `usePoseLandmarker` e nao tem
   `syncArms`. Ele usa o organism `Taskin`, enquanto o `TaskinWithFullTracking` remonta o SVG a mao

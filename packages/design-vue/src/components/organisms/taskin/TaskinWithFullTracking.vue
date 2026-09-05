@@ -73,7 +73,7 @@ import {
 } from '@opentask/ui-sense';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { ArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
-import { NEUTRAL_ARM_POSITION } from '../../atoms/taskin-arms/TaskinArms.types';
+import { armPositionFromPose, NEUTRAL_ARM_POSITION, smoothArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
 import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
 import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
 import TaskinEyes from '../../atoms/taskin-eyes/TaskinEyes.vue';
@@ -235,17 +235,13 @@ watch(
     const armAngles = poseLandmarker.getArmAngles();
     if (!armAngles) return;
 
-    leftArmPosition.value = {
-      shoulderAngle: armAngles.left.shoulder,
-      elbowAngle: armAngles.left.elbow,
-      wristAngle: armAngles.left.wrist,
-    };
-
-    rightArmPosition.value = {
-      shoulderAngle: armAngles.right.shoulder,
-      elbowAngle: armAngles.right.elbow,
-      wristAngle: armAngles.right.wrist,
-    };
+    /*
+     * A pose mede em espaco de tela; o mascote desenha em espaco relativo ao
+     * lado. `armPositionFromPose` e a unica fronteira entre os dois, e a
+     * suavizacao entra aqui para o jitter dos landmarks nao virar tremor.
+     */
+    leftArmPosition.value = smoothArmPosition(leftArmPosition.value, armPositionFromPose(armAngles.left, 'left'));
+    rightArmPosition.value = smoothArmPosition(rightArmPosition.value, armPositionFromPose(armAngles.right, 'right'));
   },
 );
 
