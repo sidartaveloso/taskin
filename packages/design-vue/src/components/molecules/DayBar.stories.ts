@@ -5,6 +5,17 @@ const meta = {
   title: 'Molecules/DayBar',
   component: DayBar,
   tags: ['autodocs'],
+  /*
+   * `day` e obrigatoria, entao o meta a fornece: as stories que so definem um
+   * `render` proprio herdam daqui em vez de repetir a fixture.
+   */
+  args: {
+    day: {
+      date: new Date('2026-09-03'),
+      hours: 6,
+      description: 'Implementação do dashboard e criação de componentes',
+    },
+  },
   argTypes: {
     maxHours: {
       control: { type: 'number', min: 1, max: 24 },
@@ -75,7 +86,6 @@ export const Compact: Story = {
 };
 
 export const MonthProgress: Story = {
-  args: {},
   render: () => ({
     components: { DayBar },
     template: `
@@ -112,7 +122,6 @@ export const MonthProgress: Story = {
 };
 
 export const CompactWeek: Story = {
-  args: {},
   render: () => ({
     components: { DayBar },
     template: `

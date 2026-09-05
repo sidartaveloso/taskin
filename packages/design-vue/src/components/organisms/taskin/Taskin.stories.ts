@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { h, onMounted, onUnmounted, ref } from 'vue';
+import { defineComponent, h, onMounted, onUnmounted, ref } from 'vue';
 import Taskin from './Taskin';
-import type { TaskinMood, TaskinProps } from './Taskin.types';
+import type { TaskinMood } from './Taskin.types';
 
 const meta = {
   title: 'Organisms/Taskin/Taskin',
@@ -305,8 +305,8 @@ export const EyeTrackingElement: Story = {
 
     const handleDragStart = (e: MouseEvent | TouchEvent) => {
       isDragging.value = true;
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX;
+      const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? 0) : e.clientY;
       dragOffset.value = {
         x: clientX - buttonPos.value.x,
         y: clientY - buttonPos.value.y,
@@ -316,8 +316,8 @@ export const EyeTrackingElement: Story = {
     const handleDragMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging.value) return;
       e.preventDefault();
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX;
+      const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? 0) : e.clientY;
       buttonPos.value = {
         x: clientX - dragOffset.value.x,
         y: clientY - dragOffset.value.y,
@@ -412,9 +412,11 @@ export const EyeTrackingElement: Story = {
 };
 
 export const EyeTrackingCustomPosition: Story = {
-  render: () => ({
-    components: { Taskin },
-    template: `
+  render: () =>
+    // Options API com `this`: defineComponent e o que o tipa, sem cast manual
+    defineComponent({
+      components: { Taskin },
+      template: `
       <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
         <div style="text-align: center; margin-bottom: 20px;">
           <p style="margin-bottom: 10px;">Click anywhere in the box below to set eye target position</p>
@@ -438,37 +440,28 @@ export const EyeTrackingCustomPosition: Story = {
         </div>
       </div>
     `,
-    data(): {
-      customPosition: { x: number; y: number } | null;
-      visualIndicator: { x: number; y: number } | null;
-    } {
-      return {
-        customPosition: null,
-        visualIndicator: null,
-      };
-    },
-    methods: {
-      setTargetPosition(event: MouseEvent): void {
-        const rect = (this.$refs.container as HTMLElement).getBoundingClientRect();
-        // A posição customizada deve ser absoluta na viewport
-        this.customPosition = {
-          x: event.clientX,
-          y: event.clientY,
-        };
-        // O indicador visual é relativo ao container
-        this.visualIndicator = {
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
+      data() {
+        return {
+          customPosition: null as { x: number; y: number } | null,
+          visualIndicator: null as { x: number; y: number } | null,
         };
       },
-    } as {
-      setTargetPosition(event: MouseEvent): void;
-    } & ThisType<{
-      customPosition: { x: number; y: number } | null;
-      visualIndicator: { x: number; y: number } | null;
-      $refs: { container: HTMLElement };
-    }>,
-  }),
+      methods: {
+        setTargetPosition(event: MouseEvent): void {
+          const rect = (this.$refs.container as HTMLElement).getBoundingClientRect();
+          // A posição customizada deve ser absoluta na viewport
+          this.customPosition = {
+            x: event.clientX,
+            y: event.clientY,
+          };
+          // O indicador visual é relativo ao container
+          this.visualIndicator = {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+          };
+        },
+      },
+    }),
   parameters: {
     docs: {
       description: {

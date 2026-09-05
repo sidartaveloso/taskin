@@ -1,6 +1,6 @@
-import { h } from 'vue';
+import { defineComponent, h } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'TaskinEffectVomit',
   props: {
     animationsEnabled: {
@@ -8,7 +8,7 @@ export default {
       default: true,
     },
   },
-  setup(props: { animationsEnabled: boolean }) {
+  setup(props) {
     const drops = [-2, -1, 0, 1, 2].map((i) => ({
       cx: 160 + i * 8,
       cy: 135,
@@ -39,4 +39,4 @@ export default {
         ),
       ]);
   },
-};
+});

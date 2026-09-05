@@ -5,6 +5,17 @@ const meta = {
   title: 'Molecules/TimeEstimate',
   component: TimeEstimate,
   tags: ['autodocs'],
+  /*
+   * Prop obrigatoria fornecida no meta: as stories que so definem um `render`
+   * proprio herdam daqui em vez de repetir a fixture.
+   */
+  args: {
+    estimate: {
+      estimated: 40,
+      spent: 20,
+      remaining: 20,
+    },
+  },
   argTypes: {
     variant: {
       control: 'select',
@@ -61,7 +72,6 @@ export const Compact: Story = {
 };
 
 export const Interactive: Story = {
-  args: {},
   render: () => ({
     components: { TimeEstimate },
     template: `

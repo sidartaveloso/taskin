@@ -1,9 +1,9 @@
-import { h, onMounted, onUnmounted, type PropType, ref, watch } from 'vue';
+import { defineComponent, h, onMounted, onUnmounted, type PropType, ref, watch } from 'vue';
 import { createTaskinController } from './Taskin.controller';
-import type { TaskinController, TaskinExpose, TaskinMood, TaskinProps, TaskinReadyPayload } from './Taskin.types';
+import type { TaskinController, TaskinExpose, TaskinProps, TaskinReadyPayload } from './Taskin.types';
 import svgRaw from './taskin.svg?raw';
 
-export default {
+export default defineComponent({
   name: 'TaskinV1',
   props: {
     size: {
@@ -45,17 +45,7 @@ export default {
   },
   emits: ['ready'],
   setup(
-    props: {
-      size: number;
-      mood: TaskinMood;
-      idleAnimation: boolean;
-      animationsEnabled: boolean;
-      eyeTrackingMode?: TaskinProps['eyeTrackingMode'];
-      eyeTrackingBounds?: TaskinProps['eyeTrackingBounds'];
-      eyeLookDirection?: TaskinProps['eyeLookDirection'];
-      eyeTargetElement?: TaskinProps['eyeTargetElement'];
-      eyeCustomPosition?: TaskinProps['eyeCustomPosition'];
-    },
+    props,
     {
       emit,
       expose,
@@ -165,4 +155,4 @@ export default {
         style: { display: 'inline-block' },
       });
   },
-};
+});

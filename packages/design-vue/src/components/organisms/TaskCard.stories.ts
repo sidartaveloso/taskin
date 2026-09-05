@@ -1,3 +1,4 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import type { Task } from '../../types';
 import TaskCard from './TaskCard.vue';
@@ -51,12 +52,12 @@ type Story = StoryObj<typeof TaskCard>;
 
 // Mock data
 const mockTask: Task = {
-  id: '1',
+  id: parseTaskId('1'),
   number: 42,
   title: 'Implement task visualization panel on TV',
   status: 'in-progress',
   assignee: {
-    id: '1',
+    id: parseTaskId('1'),
     name: 'Sidarta Veloso',
     email: 'sidarta@example.com',
     avatar: 'https://i.pravatar.cc/150?img=12',
@@ -116,7 +117,7 @@ export const Blocked: Story = {
   args: {
     task: {
       ...mockTask,
-      id: '2',
+      id: parseTaskId('2'),
       number: 43,
       title: 'Integração com API do Redmine - Bloqueada',
       status: 'blocked',
@@ -140,7 +141,7 @@ export const Done: Story = {
   args: {
     task: {
       ...mockTask,
-      id: '3',
+      id: parseTaskId('3'),
       number: 41,
       title: 'Configure monorepo project structure',
       status: 'done',
@@ -167,7 +168,7 @@ export const Paused: Story = {
   args: {
     task: {
       ...mockTask,
-      id: '4',
+      id: parseTaskId('4'),
       number: 44,
       title: 'Implementar sistema de notificações',
       status: 'paused',
@@ -190,12 +191,12 @@ export const Paused: Story = {
 export const WithoutEstimates: Story = {
   args: {
     task: {
-      id: '5',
+      id: parseTaskId('5'),
       number: 45,
       title: 'Task without time estimates',
       status: 'pending',
       assignee: {
-        id: '2',
+        id: parseTaskId('2'),
         name: 'João Silva',
       },
       project: {
@@ -239,7 +240,7 @@ export const AllStatuses: Story = {
       const tasks: Task[] = [
         {
           ...mockTask,
-          id: '1',
+          id: parseTaskId('1'),
           number: 41,
           title: 'Pending Task',
           status: 'pending',
@@ -247,7 +248,7 @@ export const AllStatuses: Story = {
         },
         {
           ...mockTask,
-          id: '2',
+          id: parseTaskId('2'),
           number: 42,
           title: 'In Progress Task',
           status: 'in-progress',
@@ -255,7 +256,7 @@ export const AllStatuses: Story = {
         },
         {
           ...mockTask,
-          id: '3',
+          id: parseTaskId('3'),
           number: 43,
           title: 'Paused Task',
           status: 'paused',
@@ -263,7 +264,7 @@ export const AllStatuses: Story = {
         },
         {
           ...mockTask,
-          id: '4',
+          id: parseTaskId('4'),
           number: 44,
           title: 'Blocked Task',
           status: 'blocked',
@@ -272,7 +273,7 @@ export const AllStatuses: Story = {
         },
         {
           ...mockTask,
-          id: '5',
+          id: parseTaskId('5'),
           number: 45,
           title: 'Completed Task',
           status: 'done',
@@ -305,12 +306,12 @@ export const AllStatuses: Story = {
 // Hybrid approach: Using individual props (great for Storybook controls!)
 export const WithIndividualProps: Story = {
   args: {
-    id: '999',
+    id: parseTaskId('999'),
     number: 999,
     title: 'Task created with individual props',
     status: 'in-progress',
     assignee: {
-      id: '10',
+      id: parseTaskId('10'),
       name: 'Maria Santos',
       email: 'maria@example.com',
     },

@@ -13,19 +13,19 @@ const meta = {
       control: { type: 'color' },
       description: 'Color of the arms',
     },
-    phoneColor: {
+    defaultPhoneColor: {
       control: { type: 'color' },
       description: 'Phone body color',
     },
-    screenColor: {
+    defaultScreenColor: {
       control: { type: 'color' },
       description: 'Phone screen color',
     },
-    phoneOnLeft: {
+    itemOnLeft: {
       control: { type: 'boolean' },
       description: 'Show phone on left hand',
     },
-    phoneOnRight: {
+    itemOnRight: {
       control: { type: 'boolean' },
       description: 'Show phone on right hand',
     },
@@ -36,14 +36,6 @@ const meta = {
     rightArmRotation: {
       control: { type: 'number', min: -45, max: 45, step: 5 },
       description: 'Right arm rotation in degrees',
-    },
-    phoneOffsetX: {
-      control: { type: 'number', min: -20, max: 20 },
-      description: 'Phone X offset',
-    },
-    phoneOffsetY: {
-      control: { type: 'number', min: -20, max: 20 },
-      description: 'Phone Y offset',
     },
     animationsEnabled: {
       control: { type: 'boolean' },
@@ -75,39 +67,39 @@ export const AllVariations: Story = {
   render: () => ({
     setup() {
       const variations = [
-        { name: 'Phone Right', phoneOnRight: true, phoneOnLeft: false },
-        { name: 'Phone Left', phoneOnRight: false, phoneOnLeft: true },
-        { name: 'Both Hands', phoneOnRight: true, phoneOnLeft: true },
+        { name: 'Phone Right', itemOnRight: true, itemOnLeft: false },
+        { name: 'Phone Left', itemOnRight: false, itemOnLeft: true },
+        { name: 'Both Hands', itemOnRight: true, itemOnLeft: true },
         {
           name: 'Right Raised',
-          phoneOnRight: true,
+          itemOnRight: true,
           rightArmRotation: -20,
         },
         {
           name: 'Left Raised',
-          phoneOnLeft: true,
+          itemOnLeft: true,
           leftArmRotation: 20,
         },
         {
           name: 'Both Raised',
-          phoneOnRight: true,
-          phoneOnLeft: true,
+          itemOnRight: true,
+          itemOnLeft: true,
           rightArmRotation: -15,
           leftArmRotation: 15,
         },
         {
           name: 'Pink Arms',
-          phoneOnRight: true,
+          itemOnRight: true,
           armColor: '#FF6B9D',
-          phoneColor: '#9D6BFF',
-          screenColor: '#C9B6FF',
+          defaultPhoneColor: '#9D6BFF',
+          defaultScreenColor: '#C9B6FF',
         },
         {
           name: 'Blue Arms',
-          phoneOnLeft: true,
+          itemOnLeft: true,
           armColor: '#1f7acb',
-          phoneColor: '#FF6B9D',
-          screenColor: '#FFB6D9',
+          defaultPhoneColor: '#FF6B9D',
+          defaultScreenColor: '#FFB6D9',
         },
       ];
 
@@ -166,31 +158,31 @@ export const AllVariations: Story = {
 
 export const Default: Story = {
   args: {
-    phoneOnRight: true,
-    phoneOnLeft: false,
+    itemOnRight: true,
+    itemOnLeft: false,
     animationsEnabled: true,
   },
 };
 
 export const PhoneOnLeft: Story = {
   args: {
-    phoneOnRight: false,
-    phoneOnLeft: true,
+    itemOnRight: false,
+    itemOnLeft: true,
     animationsEnabled: true,
   },
 };
 
 export const BothHands: Story = {
   args: {
-    phoneOnRight: true,
-    phoneOnLeft: true,
+    itemOnRight: true,
+    itemOnLeft: true,
     animationsEnabled: true,
   },
 };
 
 export const RightArmRaised: Story = {
   args: {
-    phoneOnRight: true,
+    itemOnRight: true,
     rightArmRotation: -20,
     animationsEnabled: true,
   },
@@ -198,7 +190,7 @@ export const RightArmRaised: Story = {
 
 export const LeftArmRaised: Story = {
   args: {
-    phoneOnLeft: true,
+    itemOnLeft: true,
     leftArmRotation: 20,
     animationsEnabled: true,
   },
@@ -206,8 +198,8 @@ export const LeftArmRaised: Story = {
 
 export const BothArmsRaised: Story = {
   args: {
-    phoneOnRight: true,
-    phoneOnLeft: true,
+    itemOnRight: true,
+    itemOnLeft: true,
     rightArmRotation: -15,
     leftArmRotation: 15,
     animationsEnabled: true,
@@ -216,10 +208,10 @@ export const BothArmsRaised: Story = {
 
 export const CustomColors: Story = {
   args: {
-    phoneOnRight: true,
+    itemOnRight: true,
     armColor: '#9D6BFF',
-    phoneColor: '#FF6B9D',
-    screenColor: '#FFB6D9',
+    defaultPhoneColor: '#FF6B9D',
+    defaultScreenColor: '#FFB6D9',
     animationsEnabled: true,
   },
 };
@@ -356,8 +348,8 @@ export const FaceTracking: Story = {
               },
               [
                 h(TaskinArmWithPhone, {
-                  phoneOnRight: true,
-                  phoneOnLeft: true,
+                  itemOnRight: true,
+                  itemOnLeft: true,
                   leftArmRotation: leftArmRotation.value,
                   rightArmRotation: rightArmRotation.value,
                   animationsEnabled: true,

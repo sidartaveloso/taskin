@@ -1,7 +1,7 @@
-import { h } from 'vue';
+import { defineComponent, h } from 'vue';
 import TaskinPhone from '../../atoms/taskin-phone/TaskinPhone.vue';
 
-export default {
+export default defineComponent({
   name: 'TaskinEffectPhone',
   props: {
     animationsEnabled: {
@@ -9,7 +9,7 @@ export default {
       default: true,
     },
   },
-  setup(props: { animationsEnabled: boolean }) {
+  setup(props) {
     return () =>
       h(
         'g',
@@ -32,4 +32,4 @@ export default {
         ],
       );
   },
-};
+});

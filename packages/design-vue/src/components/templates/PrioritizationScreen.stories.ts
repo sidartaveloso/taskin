@@ -1,3 +1,4 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import { defaultFunctions, WebcamVideo } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
@@ -26,7 +27,7 @@ export default meta;
 type Story = StoryObj<typeof PrioritizationScreen>;
 
 const createTask = (id: string, overrides: Partial<Task> = {}): Task => ({
-  id,
+  id: parseTaskId(id),
   number: Number(id),
   title: `Task ${id}: exemplo de título de tarefa`,
   status: 'pending',
