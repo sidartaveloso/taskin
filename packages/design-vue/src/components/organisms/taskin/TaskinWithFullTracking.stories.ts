@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect } from 'storybook/test';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { ArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
-import { NEUTRAL_ARM_POSITION } from '../../atoms/taskin-arms/TaskinArms.types';
+import { armPositionFromPose, NEUTRAL_ARM_POSITION } from '../../atoms/taskin-arms/TaskinArms.types';
 import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
 import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
 import TaskinEyes from '../../atoms/taskin-eyes/TaskinEyes.vue';

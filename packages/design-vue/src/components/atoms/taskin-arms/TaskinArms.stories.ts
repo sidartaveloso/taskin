@@ -2,6 +2,7 @@ import { FaceTrackingDebug, TrackingControls, usePoseLandmarker, WebcamVideo } f
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { ArmPosition, TaskinArmsProps } from './TaskinArms.types';
+import { armPosition, armPositionFromPose } from './TaskinArms.types';
 import TaskinArms from './TaskinArms.vue';
 
 const meta = {
