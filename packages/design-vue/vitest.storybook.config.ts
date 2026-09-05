@@ -16,6 +16,15 @@ export default mergeConfig(
         configDir: path.join(dirname, '.storybook'),
       }),
     ],
+    /*
+     * `aria-query` e CJS sem `exports`, e o pre-bundle do Vite no modo browser
+     * nao detectava seus named exports — o setup do addon-vitest quebrava com
+     * "does not provide an export named 'elementRoles'". Incluir explicitamente
+     * faz o Vite converter CJS para ESM com os nomes preservados.
+     */
+    optimizeDeps: {
+      include: ['aria-query'],
+    },
     test: {
       name: 'storybook',
       setupFiles: ['./.storybook/vitest.setup.ts'],

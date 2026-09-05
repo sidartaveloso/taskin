@@ -25,3 +25,9 @@ Removido o `exclude`, apareceram 131 erros. A maioria nao era ruido de tipagem:
   sob `noUncheckedIndexedAccess`, e props obrigatorias ausentes no `meta.args`.
 
 Sem mudanca de comportamento: as 209 suites do pacote seguem passando.
+
+Junto disso, a suite `storybook` do pacote voltou a rodar: `aria-query` e CJS sem
+campo `exports`, o pre-bundle do Vite no modo browser nao detectava seus named
+exports e o setup do `@storybook/addon-vitest` quebrava com "does not provide an
+export named 'elementRoles'". `optimizeDeps.include: ['aria-query']` resolve —
+37 arquivos e 232 testes que nao executavam voltaram.

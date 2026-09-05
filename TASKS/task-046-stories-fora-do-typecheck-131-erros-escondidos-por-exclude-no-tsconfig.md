@@ -37,12 +37,19 @@ O tsconfig do design-vue exclui src/**/*.stories.ts, entao nenhum erro de tipo e
   `exclude` escondia — stories passando props que nao existem, fixtures com `TaskId` cru, props
   fantasma declaradas a mao no `setup`.
 - Descoberta pelo caminho, e o motivo da task existir: a lacuna deixou passar uma regressao de
-  verdade. A task-044 trocou blocos de story por `armPositionFromPose(...)` **sem o import**, e
-  nem o typecheck (stories excluidas) nem a suite storybook (quebrada pelo `aria-query`) viram. O
-  erro so apareceu quando um humano abriu a story.
+  verdade. A task-044 trocou blocos de story por `armPositionFromPose(...)` **sem o import**, e o
+  typecheck nao via porque as stories estavam excluidas. O erro so apareceu quando um humano abriu
+  a story.
+- Correcao de uma afirmacao anterior: eu disse que "duas redes cairam", contando tambem a suite
+  storybook. Medi depois, removendo o import de novo com a suite ja consertada, e **ela passa** —
+  o `ReferenceError` mora dentro do watcher da pose, que sem webcam nunca dispara. So o typecheck
+  pegaria esse caso.
 - Nao mexer em `.vue` com `<script setup>`: o bloco `<script>` extra que so define `name` deve
   ficar como objeto literal. Envolve-lo em `defineComponent` faz o TS resolver o componente **sem
   props**, porque o tipo passa a vir dali em vez do `<script setup>`.
-- Segue vermelha, por motivo alheio: a suite `storybook` do design-vue, por `aria-query@5.3.0` nao
-  expor `elementRoles` ao setup do `@storybook/addon-vitest`. Provavel fallout do bump de vite 8;
-  ver task-045, que reporta familia parecida no build do docs.
+- A suite `storybook` do design-vue estava **inteiramente morta** e voltou: `aria-query` e CJS sem
+  campo `exports`, e o pre-bundle do Vite no modo browser nao detectava seus named exports, o que
+  derrubava o setup do `@storybook/addon-vitest` com "does not provide an export named
+  'elementRoles'". Resolvido com `optimizeDeps.include: ['aria-query']` no
+  `vitest.storybook.config.ts` — 37 arquivos e 232 testes que nao rodavam voltaram a rodar. Nao
+  era a versao: 5.3.0 e 5.3.2 exportam igual.
