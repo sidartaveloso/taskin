@@ -1,6 +1,6 @@
-import { h } from 'vue';
+import { defineComponent, h } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'TaskinEffectZzz',
   props: {
     animationsEnabled: {
@@ -8,7 +8,7 @@ export default {
       default: true,
     },
   },
-  setup(props: { animationsEnabled: boolean }) {
+  setup(props) {
     return () =>
       h('g', { id: 'effect-zzz' }, [
         h('text', {
@@ -49,4 +49,4 @@ export default {
         ),
       ]);
   },
-};
+});

@@ -1,3 +1,4 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import type { Task } from '../../types';
 import Dashboard from './Dashboard.vue';
@@ -31,12 +32,12 @@ export default meta;
 type Story = StoryObj<typeof Dashboard>;
 
 const createMockTask = (id: number, overrides: Partial<Task> = {}): Task => ({
-  id: String(id),
+  id: parseTaskId(String(id)),
   number: 100 + id,
   title: `Tarefa ${id}: Exemplo`,
   status: 'in-progress',
   assignee: {
-    id: String(id),
+    id: parseTaskId(String(id)),
     name: `Dev ${id}`,
     email: `dev${id}@example.com`,
   },

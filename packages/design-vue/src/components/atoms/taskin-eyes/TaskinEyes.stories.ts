@@ -183,8 +183,8 @@ export const ElementTracking: Story = {
 
       const handleDragStart = (e: MouseEvent | TouchEvent) => {
         isDragging.value = true;
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX;
+        const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? 0) : e.clientY;
         dragOffset.value = {
           x: clientX - buttonPos.value.x,
           y: clientY - buttonPos.value.y,
@@ -194,8 +194,8 @@ export const ElementTracking: Story = {
       const handleDragMove = (e: MouseEvent | TouchEvent) => {
         if (!isDragging.value) return;
         e.preventDefault();
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX;
+        const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? 0) : e.clientY;
         buttonPos.value = {
           x: clientX - dragOffset.value.x,
           y: clientY - dragOffset.value.y,

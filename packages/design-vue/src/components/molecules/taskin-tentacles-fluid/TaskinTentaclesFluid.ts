@@ -1,4 +1,4 @@
-import { h, type PropType } from 'vue';
+import { defineComponent, h, type PropType } from 'vue';
 import type { TentacleAnimationKeyframes } from '../../atoms/taskin-tentacle/TaskinTentacle';
 import TaskinTentacle from '../../atoms/taskin-tentacle/TaskinTentacle';
 
@@ -44,7 +44,7 @@ export interface TaskinTentaclesFluidProps {
  * @example
  * <TaskinTentaclesFluid color="#FF6B9D" :count="4" :speed="1" />
  */
-export const TaskinTentaclesFluid = {
+export const TaskinTentaclesFluid = defineComponent({
   name: 'TaskinTentaclesFluid',
   props: {
     color: {
@@ -72,15 +72,7 @@ export const TaskinTentaclesFluid = {
       default: undefined,
     },
   },
-  setup(props: {
-    color?: string;
-    animationsEnabled?: boolean;
-    speed: number;
-    count: number;
-    spacing: number;
-    animationKeyframes?: Record<string, string>;
-    wiggle?: boolean;
-  }) {
+  setup(props) {
     return () => {
       const tentacles = [];
       const totalWidth = (props.count - 1) * props.spacing;
@@ -113,6 +105,6 @@ export const TaskinTentaclesFluid = {
       return h('g', tentacles);
     };
   },
-};
+});
 
 export default TaskinTentaclesFluid;

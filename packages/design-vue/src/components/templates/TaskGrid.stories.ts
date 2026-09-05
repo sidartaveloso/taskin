@@ -1,3 +1,4 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import type { Task } from '../../types';
 import TaskGrid from './TaskGrid.vue';
@@ -55,12 +56,12 @@ type Story = StoryObj<typeof TaskGrid>;
 
 // Mock tasks data
 const createMockTask = (id: number, overrides: Partial<Task> = {}): Task => ({
-  id: String(id),
+  id: parseTaskId(String(id)),
   number: 40 + id,
   title: `Task ${id}: Implement feature`,
   status: 'in-progress',
   assignee: {
-    id: String(id),
+    id: parseTaskId(String(id)),
     name: `Developer ${id}`,
     email: `dev${id}@example.com`,
     avatar: `https://i.pravatar.cc/150?img=${id}`,

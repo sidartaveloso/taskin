@@ -1,3 +1,4 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { h } from 'vue';
@@ -24,7 +25,7 @@ export default meta;
 type Story = StoryObj<typeof PrioritizationPage>;
 
 const createTask = (id: string, overrides: Partial<Task> = {}): Task => ({
-  id,
+  id: parseTaskId(id),
   number: Number(id),
   title: `Task ${id}: exemplo de título de tarefa`,
   status: 'pending',
@@ -192,10 +193,11 @@ export const DragAndDropInteractions: Story = {
       // Subgroup is nested inside the parent
       const subGroups = parentGroup!.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       expect(subGroups.length).toBe(1);
-      const subGroup = subGroups[0];
-      expect(subGroup.textContent).toContain('2 items');
-      expect(within(subGroup).getByTestId('priority-card-001')).toBeTruthy();
-      expect(within(subGroup).getByTestId('priority-card-002')).toBeTruthy();
+      const [subGroup] = subGroups;
+      expect(subGroup).toBeTruthy();
+      expect(subGroup?.textContent).toContain('2 items');
+      expect(within(subGroup as HTMLElement).getByTestId('priority-card-001')).toBeTruthy();
+      expect(within(subGroup as HTMLElement).getByTestId('priority-card-002')).toBeTruthy();
       // Card 004 stays directly in the parent
       expect(within(parentGroup!).getByTestId('priority-card-004')).toBeTruthy();
     });
@@ -281,8 +283,8 @@ export const GroupDragInteractions: Story = {
       const groups = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       expect(groups.length).toBe(2);
       // Beta should now be first
-      expect(groups[0].textContent).toContain('Beta');
-      expect(groups[1].textContent).toContain('Alpha');
+      expect(groups[0]?.textContent).toContain('Beta');
+      expect(groups[1]?.textContent).toContain('Alpha');
     });
 
     // 2. Drop Alpha onto Beta (middle) → nest both under a parent
@@ -291,7 +293,6 @@ export const GroupDragInteractions: Story = {
     await dragGroupOnto(alphaHead, betaGroupAfterReorder, 'middle');
     await waitFor(() => {
       // Only the parent group should show at top level
-      const groups = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       // Parent group + 2 standalone tasks = 1 + 2 direct children
       const nodeList = canvasElement.querySelector('.node-list')!;
       const directChildren = nodeList.children;
@@ -310,7 +311,7 @@ export const GroupDragInteractions: Story = {
 
 const gestureMockTasks: Task[] = [
   {
-    id: '001',
+    id: parseTaskId('001'),
     number: 1,
     title: 'Implementar login',
     status: 'pending',
@@ -320,7 +321,7 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '002',
+    id: parseTaskId('002'),
     number: 2,
     title: 'Corrigir bug no cadastro',
     status: 'pending',
@@ -330,7 +331,7 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '003',
+    id: parseTaskId('003'),
     number: 3,
     title: 'Refatorar módulo de pagamento',
     status: 'pending',
@@ -340,7 +341,7 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '004',
+    id: parseTaskId('004'),
     number: 4,
     title: 'Adicionar testes',
     status: 'pending',
@@ -350,7 +351,7 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '005',
+    id: parseTaskId('005'),
     number: 5,
     title: 'Documentar API',
     status: 'pending',
@@ -360,7 +361,7 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '006',
+    id: parseTaskId('006'),
     number: 6,
     title: 'Configurar CI/CD',
     status: 'pending',

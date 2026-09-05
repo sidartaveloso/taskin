@@ -1,4 +1,4 @@
-import { h, type PropType, type SetupContext } from 'vue';
+import { defineComponent, h, type PropType, type SetupContext } from 'vue';
 
 export type TentaclePathGenerator = (progress: number) => string;
 export type TentacleAnimationKeyframes = Record<string, string>;
@@ -19,7 +19,7 @@ const defaultKeyframes: TentacleAnimationKeyframes = {
   '75%': 'M 0,0 Q -3,10 0,20 Q 3,30 0,40 Q -3,50 0,60',
 };
 
-export default {
+export default defineComponent({
   name: 'TaskinTentacle',
   props: {
     color: {
@@ -127,29 +127,7 @@ export default {
       default: false,
     },
   },
-  setup(
-    props: {
-      color?: string;
-      x: number;
-      y: number;
-      side: 'left' | 'right';
-      index: number;
-      animationsEnabled?: boolean;
-      d?: string;
-      strokeWidth: number;
-      animationDelay: number;
-      speed: number;
-      pathGenerator?: (progress: number) => string;
-      animationKeyframes?: Record<string, string>;
-      length: number;
-      fluid?: boolean;
-      wiggle?: boolean;
-      dance?: boolean;
-      curl?: boolean;
-      uncurl?: boolean;
-    },
-    { slots }: SetupContext,
-  ) {
+  setup(props, { slots }: SetupContext) {
     return () => {
       const animationDuration = props.animationsEnabled && props.speed > 0 ? `${2 / props.speed}s` : '0s';
 
@@ -412,4 +390,4 @@ export default {
       );
     };
   },
-};
+});

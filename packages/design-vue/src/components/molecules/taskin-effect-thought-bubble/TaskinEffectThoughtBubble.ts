@@ -1,6 +1,6 @@
-import { h, type PropType } from 'vue';
+import { defineComponent, h, type PropType } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'TaskinEffectThoughtBubble',
   props: {
     text: {
@@ -12,7 +12,7 @@ export default {
       default: true,
     },
   },
-  setup(props: { text: string; animationsEnabled: boolean }) {
+  setup(props) {
     return () =>
       h(
         'g',
@@ -66,4 +66,4 @@ export default {
         ],
       );
   },
-};
+});

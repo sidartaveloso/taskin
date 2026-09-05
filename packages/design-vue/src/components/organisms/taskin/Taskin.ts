@@ -1,4 +1,4 @@
-import { computed, h, onMounted, onUnmounted, type PropType, ref } from 'vue';
+import { computed, defineComponent, h, onMounted, onUnmounted, type PropType, ref } from 'vue';
 import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
 import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
 import type { EyeState } from '../../atoms/taskin-eyes/TaskinEyes.types';
@@ -293,7 +293,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
   },
 };
 
-export default {
+export default defineComponent({
   name: 'Taskin',
   props: {
     size: {
@@ -341,19 +341,7 @@ export default {
       default: undefined,
     },
   },
-  setup(props: {
-    mood: TaskinMood;
-    size: number;
-    idleAnimation: boolean;
-    animationsEnabled: boolean;
-    eyeTrackingMode?: 'none' | 'mouse' | 'element' | 'custom';
-    eyeTrackingBounds?: number;
-    eyeLookDirection?: 'center' | 'left' | 'right' | 'up' | 'down';
-    eyeTargetElement?: HTMLElement | string;
-    eyeCustomPosition?: { x: number; y: number };
-    eyeState?: 'normal' | 'closed' | 'squint' | 'wide';
-    mouthExpression?: MouthExpression;
-  }) {
+  setup(props) {
     const config = computed(() => MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral);
     const idleTimer = ref<number | null>(null);
     const blinkEyes = ref(false);
@@ -529,4 +517,4 @@ export default {
       );
     };
   },
-};
+});

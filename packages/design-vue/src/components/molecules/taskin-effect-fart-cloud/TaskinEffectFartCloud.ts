@@ -1,6 +1,6 @@
-import { h } from 'vue';
+import { defineComponent, h } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'TaskinEffectFartCloud',
   props: {
     animationsEnabled: {
@@ -8,7 +8,7 @@ export default {
       default: true,
     },
   },
-  setup(props: { animationsEnabled: boolean }) {
+  setup(props) {
     const puffs = [
       { cx: 140, cy: 190, r: 12 },
       { cx: 130, cy: 200, r: 10 },
@@ -41,4 +41,4 @@ export default {
         ),
       ]);
   },
-};
+});
