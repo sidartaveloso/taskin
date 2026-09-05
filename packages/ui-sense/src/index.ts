@@ -19,3 +19,6 @@ export { default as GestureSystem } from './components/organisms/gesture-system'
 
 // Composables
 export * from './composables';
+
+// Utils
+export * from './utils/arm-angle';

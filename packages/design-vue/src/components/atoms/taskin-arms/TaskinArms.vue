@@ -20,8 +20,9 @@
 </template>
 
 <script setup lang="ts">
+import { mirrorAngleForSide } from '@opentask/ui-sense';
 import { computed } from 'vue';
-import { type ArmPosition, NEUTRAL_ARM_POSITION } from './TaskinArms.types';
+import { type ArmPosition, type ArmSide, NEUTRAL_ARM_POSITION, type SideRelativeAngle } from './TaskinArms.types';
 
 export interface Props {
   color?: string;
@@ -36,42 +37,48 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 // Taskin's arm base positions
-const LEFT_SHOULDER = { x: 95, y: 120 };
-const RIGHT_SHOULDER = { x: 225, y: 120 };
+const SHOULDER = {
+  left: { x: 95, y: 120 },
+  right: { x: 225, y: 120 },
+} as const satisfies Record<ArmSide, { x: number; y: number }>;
 
-// Generate arm path based on angles
-const generateArmPath = (shoulder: { x: number; y: number }, position: ArmPosition, side: 'left' | 'right'): string => {
-  // Convert angles to radians
-  const shoulderRad = (position.shoulderAngle * Math.PI) / 180;
-  const elbowRad = (position.elbowAngle * Math.PI) / 180;
+const UPPER_ARM_LENGTH = 25;
+const FOREARM_LENGTH = 25;
 
-  // Upper arm length (shoulder to elbow)
-  const upperArmLength = 25;
+/**
+ * Walks one segment from `origin`, in a side-relative direction.
+ *
+ * The mirroring lives in `mirrorAngleForSide`, not in a `-1` sprinkled on the
+ * cosine: the old factor mirrored the angle a second time whenever the value
+ * arriving was already in screen space, which drew the left arm into the body.
+ * With the two spaces tagged, that mistake no longer compiles.
+ */
+const step = (
+  origin: { x: number; y: number },
+  direction: SideRelativeAngle,
+  side: ArmSide,
+  length: number,
+): { x: number; y: number } => {
+  const radians = (mirrorAngleForSide(direction, side) * Math.PI) / 180;
 
-  // Calculate elbow position
-  const elbowX = shoulder.x + Math.cos(shoulderRad) * upperArmLength * (side === 'left' ? -1 : 1);
-  const elbowY = shoulder.y + Math.sin(shoulderRad) * upperArmLength;
-
-  // Forearm length (elbow to wrist)
-  const forearmLength = 25;
-
-  // Calculate wrist position
-  const wristX = elbowX + Math.cos(shoulderRad - elbowRad) * forearmLength * (side === 'left' ? -1 : 1);
-  const wristY = elbowY + Math.sin(shoulderRad - elbowRad) * forearmLength;
-
-  // Create smooth curve using quadratic bezier
-  return `M${shoulder.x} ${shoulder.y} Q${elbowX} ${elbowY} ${wristX} ${wristY}`;
+  return {
+    x: origin.x + Math.cos(radians) * length,
+    y: origin.y + Math.sin(radians) * length,
+  };
 };
 
-const leftArmPath = computed(() => {
-  const position = props.leftArmPosition || NEUTRAL_ARM_POSITION;
-  return generateArmPath(LEFT_SHOULDER, position, 'left');
-});
+/** Shoulder -> elbow -> wrist, as a quadratic curve through the elbow. */
+const generateArmPath = (side: ArmSide, position: ArmPosition): string => {
+  const shoulder = SHOULDER[side];
+  const elbow = step(shoulder, position.shoulderAngle, side, UPPER_ARM_LENGTH);
+  const wrist = step(elbow, position.forearmAngle, side, FOREARM_LENGTH);
 
-const rightArmPath = computed(() => {
-  const position = props.rightArmPosition || NEUTRAL_ARM_POSITION;
-  return generateArmPath(RIGHT_SHOULDER, position, 'right');
-});
+  return `M${shoulder.x} ${shoulder.y} Q${elbow.x} ${elbow.y} ${wrist.x} ${wrist.y}`;
+};
+
+const leftArmPath = computed(() => generateArmPath('left', props.leftArmPosition || NEUTRAL_ARM_POSITION));
+
+const rightArmPath = computed(() => generateArmPath('right', props.rightArmPosition || NEUTRAL_ARM_POSITION));
 </script>
 
 <script lang="ts">

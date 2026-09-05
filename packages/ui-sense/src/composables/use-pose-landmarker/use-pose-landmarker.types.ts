@@ -10,18 +10,9 @@ export interface PoseLandmarkerResult {
   worldLandmarks?: PoseLandmark[][];
 }
 
-export interface ArmAngles {
-  left: {
-    shoulder: number;
-    elbow: number;
-    wrist: number;
-  };
-  right: {
-    shoulder: number;
-    elbow: number;
-    wrist: number;
-  };
-}
+// `ArmAngles` mora em `arm-angles.ts`, junto do calculo: os angulos carregam a
+// marca do espaco em que foram medidos, e o tipo antigo, de `number` cru, era o
+// que permitia o desencontro da task-044.
 
 export interface PoseLandmarkerState {
   isReady: boolean;

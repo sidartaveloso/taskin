@@ -7,6 +7,10 @@ import type { NoiseWatcher } from '../utils/noise-watcher';
 
 export { defaultFunctions } from '../components/organisms/gesture-system/GestureSystem.types';
 
+// Utils puros nao tem o que stubar — reexportados como sao, para o modulo
+// mockado continuar sendo substituto completo do real
+export * from '../utils/arm-angle';
+
 // ---------------------------------------------------------------------------
 // Component stubs
 // ---------------------------------------------------------------------------

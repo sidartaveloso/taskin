@@ -143,17 +143,8 @@ export const FullTracking: Story = {
             const armAngles = poseLandmarker.getArmAngles();
             if (!armAngles) return;
 
-            leftArmPosition.value = {
-              shoulderAngle: armAngles.left.shoulder,
-              elbowAngle: armAngles.left.elbow,
-              wristAngle: armAngles.left.wrist,
-            };
-
-            rightArmPosition.value = {
-              shoulderAngle: armAngles.right.shoulder,
-              elbowAngle: armAngles.right.elbow,
-              wristAngle: armAngles.right.wrist,
-            };
+            leftArmPosition.value = armPositionFromPose(armAngles.left, 'left');
+            rightArmPosition.value = armPositionFromPose(armAngles.right, 'right');
           },
         );
       });
