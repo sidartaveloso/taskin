@@ -169,12 +169,13 @@ Duas saídas estruturais, se isso incomodar ao ligar `'error'` nele:
 ### O painel de a11y do Storybook não inicializa
 
 Na instância local (`localhost:6011`) o painel **Accessibility** ficava preso em
-"Preparing accessibility scan". **Vale reconferir antes de investigar**: no dia
-06/09 foi corrigido um problema de interop CJS do `aria-query` que deixava a
-suíte `storybook` inteira morta (`optimizeDeps.include: ['aria-query']` no
-`vitest.storybook.config.ts`). O `addon-a11y` depende da mesma biblioteca, então
-o painel pode ter sido consertado de carona — são runtimes diferentes (navegador
-do Storybook vs. runner do vitest), então é hipótese, não conclusão. Como o modo `'todo'` só reporta para a UI, isso
+"Preparing accessibility scan". **Reconferir antes de investigar**: em 06/09 a
+suíte `storybook` estava inteiramente morta por interop CJS do `aria-query`, e o
+`@storybook/*` subiu para 10.6.0 no mesmo dia — a atualização resolveu a interop
+por conta própria (o workaround `optimizeDeps.include: ['aria-query']` foi
+removido e os 232 testes passam com cache frio). O `addon-a11y` depende da mesma
+biblioteca, então o painel pode ter sido consertado junto. É hipótese: são
+runtimes diferentes, e a instância local precisa subir na 10.6 para confirmar. Como o modo `'todo'` só reporta para a UI, isso
 significa que hoje o resultado não chega a nenhum lugar: nem falha no CI, nem
 aparece no painel. Vale investigar junto — pode ser a mesma causa que faz o
 `getIsVitestStandaloneRun()` ser o único caminho com asserção.
