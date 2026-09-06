@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { reactive } from 'vue';
+import { TRACKING_CONTROLS } from './TrackingControls.types';
 import TrackingControls from './TrackingControls.vue';
 
 const meta = {
@@ -43,6 +44,11 @@ const meta = {
     disabled: {
       control: 'boolean',
       description: 'Disable start/stop button',
+    },
+    controls: {
+      control: 'check',
+      options: [...TRACKING_CONTROLS],
+      description: 'Quais controles ficam disponiveis; o default sao todos',
     },
   },
 } satisfies Meta<typeof TrackingControls>;
@@ -196,32 +202,45 @@ export const DisabledButtonKeepsCheckboxes: Story = {
   },
 };
 
-/** Como o `TaskinWithFaceTracking` monta: rosto sim, pose e gestos nao. */
+/**
+ * Como o `TaskinWithFaceTracking` monta: a tela nao tem pose nem gestos, entao
+ * esses controles nem aparecem — antes apareciam como interruptores que nao
+ * ligavam nada.
+ */
 export const FaceTrackingOnly: Story = {
   args: {
+    controls: ['webcam', 'eyes', 'mouth', 'expressions'],
     isDetecting: true,
     error: null,
     showWebcam: true,
     syncEyes: true,
     syncMouth: true,
     syncExpressions: true,
-    syncArms: false,
-    syncGestures: false,
     disabled: false,
   },
 };
 
-/** Como o `TaskinWithFullTracking` monta: rosto e braços, sem expressões. */
+/** Como o `TaskinWithFullTracking` monta: rosto e braços, sem expressões nem gestos. */
 export const FullTracking: Story = {
   args: {
+    controls: ['webcam', 'eyes', 'mouth', 'arms'],
     isDetecting: true,
     error: null,
     showWebcam: false,
     syncEyes: true,
     syncMouth: true,
-    syncExpressions: false,
     syncArms: true,
-    syncGestures: false,
+    disabled: false,
+  },
+};
+
+/** So o essencial: uma tela que apenas liga e desliga o rastreamento de olhos. */
+export const SingleControl: Story = {
+  args: {
+    controls: ['eyes'],
+    isDetecting: false,
+    error: null,
+    syncEyes: true,
     disabled: false,
   },
 };
