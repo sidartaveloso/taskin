@@ -27,16 +27,19 @@
     "README.md"
   ],
   "scripts": {
-    "dev": "vite",
     "build": "vite build && vue-tsc --emitDeclarationOnly",
-    "preview": "vite preview",
+    "build:storybook": "storybook build",
+    "dev": "vite",
     "format": "biome format --write src/",
     "format:check": "biome format src/",
-    "test": "vitest run",
-    "typecheck": "vue-tsc --noEmit",
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
-    "test:coverage": "vitest run --coverage"
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6008",
+    "test": "vitest run && vitest run --config vitest.storybook.config.ts",
+    "test:coverage": "vitest run --coverage",
+    "test:storybook": "vitest run --config vitest.storybook.config.ts",
+    "typecheck": "vue-tsc --noEmit"
   },
   "keywords": [
     "ui-sense",
@@ -58,9 +61,17 @@
     "vue": "^3.5.0"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-vitest": "^10.6.0",
+    "@storybook/vue3-vite": "^10.6.0",
     "@vitejs/plugin-vue": "^5.2.4",
+    "@vitest/browser": "^4.0.16",
+    "@vitest/browser-playwright": "^4.0.16",
     "@vue/test-utils": "^2.4.6",
     "jsdom": "^25.0.1",
+    "playwright": "^1.57.0",
+    "storybook": "^10.6.0",
     "typescript": "^6.0.0",
     "vite": "^6.4.1",
     "vite-svg-loader": "^5.1.0",
