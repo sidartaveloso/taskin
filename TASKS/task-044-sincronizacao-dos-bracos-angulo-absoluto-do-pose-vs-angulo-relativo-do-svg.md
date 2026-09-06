@@ -1,8 +1,8 @@
 # Task 044 — Sincronizacao dos bracos: angulo absoluto do pose vs angulo relativo do SVG
 
-Status: in-progress
+Status: done\
 Type: fix\
-Assignee: To be defined\
+Assignee: sidarta-veloso\
 
 ## Description
 

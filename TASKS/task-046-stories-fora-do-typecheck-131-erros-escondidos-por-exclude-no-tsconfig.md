@@ -1,8 +1,8 @@
 # 🧩 Task 046 — Stories fora do typecheck: 131 erros escondidos por exclude no tsconfig
 
-Status: pending
-Type: chore
-Assignee: Sidarta Veloso
+Status: done\
+Type: chore\
+Assignee: Sidarta Veloso\
 
 ## Description
 O tsconfig do design-vue exclui src/**/*.stories.ts, entao nenhum erro de tipo em story e visto. Removendo o exclude aparecem 131 erros em 20+ arquivos. A causa raiz da maioria e componente exportado como objeto literal em vez de defineComponent, o que impede o Vue de inferir props e faz o Storybook resolver ArgTypes contra o objeto de definicao.
