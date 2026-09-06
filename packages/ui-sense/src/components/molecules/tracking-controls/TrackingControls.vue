@@ -26,7 +26,7 @@
             emit('update:showWebcam', ($event.target as HTMLInputElement).checked)
           "
         />
-        Mostrar Webcam
+        Webcam
       </label>
     </fieldset>
 
@@ -41,7 +41,7 @@
             emit('update:syncEyes', ($event.target as HTMLInputElement).checked)
           "
         />
-        Sincronizar Olhos
+        Olhos
       </label>
 
       <label class="control-checkbox">
@@ -52,7 +52,7 @@
             emit('update:syncMouth', ($event.target as HTMLInputElement).checked)
           "
         />
-        Sincronizar Boca
+        Boca
       </label>
 
       <label class="control-checkbox">
@@ -66,7 +66,7 @@
             )
           "
         />
-        Sincronizar Expressões
+        Expressões
       </label>
 
       <label class="control-checkbox">
@@ -77,7 +77,7 @@
             emit('update:syncArms', ($event.target as HTMLInputElement).checked)
           "
         />
-        Sincronizar Braços
+        Braços
       </label>
 
       <label class="control-checkbox">
@@ -91,7 +91,7 @@
             )
           "
         />
-        Sincronizar Gestos
+        Gestos
       </label>
     </fieldset>
 

@@ -160,10 +160,14 @@ export const Interactive: Story = {
       await expect(canvas.getByText('Detectando...')).toBeTruthy();
     });
 
-    // Um checkbox marcado por padrao desmarca, e um desmarcado marca: cobre os
-    // dois sentidos do `update:`, que sao caminhos distintos no template
-    const eyes = canvas.getByLabelText('Sincronizar Olhos') as HTMLInputElement;
-    const arms = canvas.getByLabelText('Sincronizar Braços') as HTMLInputElement;
+    /*
+     * O nome acessivel e so "Olhos": o verbo vive na legenda do grupo, e um
+     * leitor de tela anuncia "Sincronizar, grupo" antes do item. Um checkbox
+     * marcado por padrao desmarca e um desmarcado marca, cobrindo os dois
+     * sentidos do `update:`, que sao caminhos distintos no template.
+     */
+    const eyes = canvas.getByLabelText('Olhos') as HTMLInputElement;
+    const arms = canvas.getByLabelText('Braços') as HTMLInputElement;
     await expect(eyes.checked).toBe(true);
     await expect(arms.checked).toBe(false);
 
@@ -188,7 +192,7 @@ export const DisabledButtonKeepsCheckboxes: Story = {
 
     await expect(canvas.getByRole('button')).toBeDisabled();
     // Os checkboxes nao seguem o `disabled` — e proposital, e vale ficar visivel
-    await expect(canvas.getByLabelText('Mostrar Webcam')).toBeEnabled();
+    await expect(canvas.getByLabelText('Webcam')).toBeEnabled();
   },
 };
 
