@@ -15,83 +15,37 @@
       </div>
     </div>
 
-    <fieldset class="control-group">
+    <fieldset class="control-group" v-if="displayControls.length">
       <legend class="control-group__legend">Exibição</legend>
 
-      <label class="control-checkbox">
+      <label
+        class="control-checkbox"
+        v-for="control in displayControls"
+        :key="control"
+      >
         <input
           type="checkbox"
-          :checked="showWebcam"
-          @change="
-            emit('update:showWebcam', ($event.target as HTMLInputElement).checked)
-          "
+          :checked="DESCRIPTORS[control].checked()"
+          @change="onToggle(control, $event)"
         />
-        Webcam
+        {{ DESCRIPTORS[control].label }}
       </label>
     </fieldset>
 
-    <fieldset class="control-group">
+    <fieldset class="control-group" v-if="syncControls.length">
       <legend class="control-group__legend">Sincronizar</legend>
 
-      <label class="control-checkbox">
+      <label
+        class="control-checkbox"
+        v-for="control in syncControls"
+        :key="control"
+      >
         <input
           type="checkbox"
-          :checked="syncEyes"
-          @change="
-            emit('update:syncEyes', ($event.target as HTMLInputElement).checked)
-          "
+          :checked="DESCRIPTORS[control].checked()"
+          @change="onToggle(control, $event)"
         />
-        Olhos
-      </label>
-
-      <label class="control-checkbox">
-        <input
-          type="checkbox"
-          :checked="syncMouth"
-          @change="
-            emit('update:syncMouth', ($event.target as HTMLInputElement).checked)
-          "
-        />
-        Boca
-      </label>
-
-      <label class="control-checkbox">
-        <input
-          type="checkbox"
-          :checked="syncExpressions"
-          @change="
-            emit(
-              'update:syncExpressions',
-              ($event.target as HTMLInputElement).checked,
-            )
-          "
-        />
-        Expressões
-      </label>
-
-      <label class="control-checkbox">
-        <input
-          type="checkbox"
-          :checked="syncArms"
-          @change="
-            emit('update:syncArms', ($event.target as HTMLInputElement).checked)
-          "
-        />
-        Braços
-      </label>
-
-      <label class="control-checkbox">
-        <input
-          type="checkbox"
-          :checked="syncGestures"
-          @change="
-            emit(
-              'update:syncGestures',
-              ($event.target as HTMLInputElement).checked,
-            )
-          "
-        />
-        Gestos
+        {{ DESCRIPTORS[control].label }}
       </label>
     </fieldset>
 
@@ -102,14 +56,81 @@
 </template>
 
 <script setup lang="ts">
-import type { TrackingControlsEmits, TrackingControlsProps } from './TrackingControls.types';
+import { computed } from 'vue';
+import type { TrackingControl, TrackingControlsEmits, TrackingControlsProps } from './TrackingControls.types';
+import { TRACKING_CONTROLS } from './TrackingControls.types';
 
-withDefaults(defineProps<TrackingControlsProps>(), {
+const props = withDefaults(defineProps<TrackingControlsProps>(), {
   showWebcam: true,
   syncGestures: true,
+  controls: () => TRACKING_CONTROLS,
 });
 
 const emit = defineEmits<TrackingControlsEmits>();
+
+type ControlGroup = 'display' | 'sync';
+
+interface ControlDescriptor {
+  group: ControlGroup;
+  label: string;
+  checked: () => boolean;
+  emit: (value: boolean) => void;
+}
+
+/*
+ * Um descritor por controle, em vez de seis blocos quase iguais no template.
+ * O `emit` e uma funcao por controle de proposito: chamar `emit(nomeVariavel)`
+ * nao passa pelas assinaturas de `TrackingControlsEmits`, e a alternativa seria
+ * um cast — que e justamente onde um evento errado passaria despercebido.
+ */
+const DESCRIPTORS: Record<TrackingControl, ControlDescriptor> = {
+  webcam: {
+    group: 'display',
+    label: 'Webcam',
+    checked: () => props.showWebcam,
+    emit: (value) => emit('update:showWebcam', value),
+  },
+  eyes: {
+    group: 'sync',
+    label: 'Olhos',
+    checked: () => props.syncEyes,
+    emit: (value) => emit('update:syncEyes', value),
+  },
+  mouth: {
+    group: 'sync',
+    label: 'Boca',
+    checked: () => props.syncMouth,
+    emit: (value) => emit('update:syncMouth', value),
+  },
+  expressions: {
+    group: 'sync',
+    label: 'Expressões',
+    checked: () => props.syncExpressions,
+    emit: (value) => emit('update:syncExpressions', value),
+  },
+  arms: {
+    group: 'sync',
+    label: 'Braços',
+    checked: () => props.syncArms,
+    emit: (value) => emit('update:syncArms', value),
+  },
+  gestures: {
+    group: 'sync',
+    label: 'Gestos',
+    checked: () => props.syncGestures,
+    emit: (value) => emit('update:syncGestures', value),
+  },
+};
+
+/** Os pedidos, na ordem canonica — nao na ordem em que vieram. */
+const available = computed(() => TRACKING_CONTROLS.filter((control) => props.controls.includes(control)));
+
+const displayControls = computed(() => available.value.filter((c) => DESCRIPTORS[c].group === 'display'));
+const syncControls = computed(() => available.value.filter((c) => DESCRIPTORS[c].group === 'sync'));
+
+const onToggle = (control: TrackingControl, event: Event): void => {
+  DESCRIPTORS[control].emit((event.target as HTMLInputElement).checked);
+};
 </script>
 
 <script lang="ts">

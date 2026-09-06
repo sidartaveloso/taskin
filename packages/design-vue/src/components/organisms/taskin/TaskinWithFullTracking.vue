@@ -11,12 +11,12 @@
 
     <!-- Controles -->
     <TrackingControls
+      :controls="['webcam', 'eyes', 'mouth', 'arms']"
       :is-detecting="isDetecting"
       :error="trackingError"
       :show-webcam="showWebcam"
       :sync-eyes="syncEyes"
       :sync-mouth="syncMouth"
-      :sync-expressions="false"
       :sync-arms="syncArms"
       :disabled="trackingError !== null"
       @toggle-tracking="toggleTracking"
