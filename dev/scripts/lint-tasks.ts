@@ -20,9 +20,13 @@ async function createProvider(tasksDir: string): Promise<ITaskProvider> {
     '../../packages/file-system-task-provider/dist/index.js'
   );
 
-  // Create a simple user registry (empty for linting purposes)
+  // `taskinDir` e o diretorio `.taskin/`, nao a raiz do projeto: e de dentro
+  // dele que o `UserRegistry` le o `.taskin-users.json`. Passar a raiz fazia o
+  // registro carregar vazio, e ai o health check de assignee da task-030
+  // reportava "resolves to nobody" para os 35 arquivos de task deste repo —
+  // enquanto o `taskin lint`, que monta o caminho certo, nao reportava nenhum.
   const userRegistry = new UserRegistry({
-    taskinDir: path.dirname(tasksDir),
+    taskinDir: join(path.dirname(tasksDir), '.taskin'),
   });
   await userRegistry.load();
 
