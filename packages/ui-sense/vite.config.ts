@@ -14,9 +14,15 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      // Os mocks saem como entrada propria para o pacote poder exporta-los em
+      // `./mocks`. Sem isso o design-vue precisava de um `.d.ts` escrito a mao
+      // declarando o modulo — e o .gitignore engole todo .d.ts sob src, entao
+      // resolvia na maquina de quem escreveu e quebrava no CI.
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        mocks: resolve(__dirname, 'src/mocks/index.ts'),
+      },
       name: 'UiSense',
-      fileName: 'index',
       formats: ['es'],
     },
     rollupOptions: {
