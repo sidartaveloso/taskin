@@ -127,6 +127,13 @@ Duas saídas possíveis, e a escolha é de design:
       a quebra fica invisivel ate alguem abrir o site.
 - [ ] Depois de verde, confirmar que `/taskin/` (production, da `main`) reflete o commit atual: o
       workflow injeta um badge com `git rev-parse --short HEAD` no `index.html`.
+- [ ] O deploy agora tem **tres** Storybooks para publicar, nao um: o `design-vue`, o `ui-sense`
+      (criado em 06/09, com as 5 stories que existiam la e nunca eram exibidas) e o da raiz, que
+      **compoe** os dois por `refs` em vez de varrer os pacotes. A raiz espera cada pacote numa
+      subpasta (`/design-vue`, `/ui-sense`) quando `configType` e producao, entao o workflow
+      precisa buildar os tres e montar essa estrutura.
+- [ ] Decidir quem vai para a raiz do Pages. Hoje o `index.html` publicado redireciona para
+      `/taskin/beta/`; com a composicao, o candidato natural e o Storybook da raiz.
 
 ### 5. Ligar a catraca
 

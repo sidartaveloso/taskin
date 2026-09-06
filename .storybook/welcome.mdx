@@ -1,0 +1,23 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Taskin" />
+
+# Taskin — componentes
+
+Esta instancia nao tem componentes proprios: ela **compoe** os Storybooks de cada
+pacote, que aparecem na barra lateral como secoes separadas.
+
+| Pacote | O que tem | Storybook proprio |
+| --- | --- | --- |
+| **Design Vue** | O mascote, os atomos e as telas do produto | `pnpm --filter @opentask/taskin-design-vue storybook` (porta 6007) |
+| **UI Sense** | Sensores: webcam, rastreamento de face, pose e gestos | `pnpm --filter @opentask/ui-sense storybook` (porta 6008) |
+
+Cada pacote e dono da propria configuracao — addons, ordenacao e o modo do
+plugin de acessibilidade. Esta raiz e so a porta de entrada, para nao existir uma
+terceira copia dessas regras para manter em sincronia.
+
+Para ver tudo junto em desenvolvimento, os dois precisam estar no ar:
+
+```bash
+pnpm storybook:all
+```
