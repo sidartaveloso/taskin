@@ -94,6 +94,33 @@ describe('Taskin Schemas', () => {
   });
 
   describe('UserSchema', () => {
+    /*
+     * O `.taskin/README.md` documenta campos de perfil ha tempos, e o registro
+     * real deste repo ja guarda `website`, `github` e `linkedin` — mas o schema
+     * nao os tinha, entao eram dados mortos: sobreviviam no arquivo e nenhum
+     * codigo podia le-los com tipo.
+     */
+    it('should keep the profile links a user registry carries', () => {
+      const user = UserSchema.parse({
+        id: 'fernando-gatti',
+        name: 'Fernando Gatti',
+        email: 'contato@fernandogatti.com',
+        website: 'https://fernandogatti.com',
+        github: 'https://github.com/gattifernando',
+        linkedin: 'https://www.linkedin.com/in/gattifernando/',
+      });
+
+      expect(user.github).toBe('https://github.com/gattifernando');
+      expect(user.linkedin).toBe('https://www.linkedin.com/in/gattifernando/');
+      expect(user.website).toBe('https://fernandogatti.com');
+    });
+
+    it('should reject a profile link that is not a url', () => {
+      const notAUrl = { id: 'x', name: 'X', email: 'x@example.com', github: 'gattifernando' };
+
+      expect(() => UserSchema.parse(notAUrl)).toThrow();
+    });
+
     it('should accept valid user', () => {
       const user = {
         id: 'user-123',

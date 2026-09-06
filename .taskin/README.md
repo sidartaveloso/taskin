@@ -17,12 +17,14 @@ Arquivo com informações dos usuários do projeto. Cada usuário tem:
 - `id`: Identificador único (slug)
 - `name`: Nome completo
 - `email`: E-mail principal
-- `discord`: (Opcional) Username do Discord
-- `linkedin`: (Opcional) URL do LinkedIn
-- `phone`: (Opcional) Telefone
-- `avatar`: (Opcional) URL da foto
-- `role`: (Opcional) Papel no projeto
-- `active`: Status ativo/inativo
+- `avatar`: (Opcional) URL da foto — se ausente, é derivada do Gravatar do e-mail
+- `website`: (Opcional) URL do site pessoal
+- `github`: (Opcional) URL do perfil no GitHub
+- `linkedin`: (Opcional) URL do perfil no LinkedIn
+
+Estes são os campos que o `UserSchema` valida. Qualquer outra chave escrita no
+arquivo sobrevive à gravação, mas nenhum código a lê — a lista anterior deste
+README documentava `discord`, `phone`, `role` e `active`, que nunca existiram.
 
 ### Exemplo
 
@@ -30,15 +32,10 @@ Arquivo com informações dos usuários do projeto. Cada usuário tem:
 {
   "users": {
     "sidarta-veloso": {
-      "active": true,
-      "avatar": "https://github.com/sidartaveloso.png",
-      "discord": "sidarta#1234",
-      "email": "sidarta@example.com",
+      "email": "sidartaveloso@gmail.com",
       "id": "sidarta-veloso",
-      "linkedin": "https://linkedin.com/in/sidartaveloso",
       "name": "Sidarta Veloso",
-      "phone": "+55 11 99999-9999",
-      "role": "developer"
+      "website": "https://sidartaveloso.com"
     }
   }
 }

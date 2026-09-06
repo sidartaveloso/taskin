@@ -14,10 +14,6 @@ const meta = {
       control: { type: 'color' },
       description: 'Color of the arms',
     },
-    animationsEnabled: {
-      control: { type: 'boolean' },
-      description: 'Enable/disable animations',
-    },
   },
   render: (args: TaskinArmsProps) => ({
     setup() {
@@ -150,21 +146,18 @@ export const AllVariations: Story = {
 export const Default: Story = {
   args: {
     color: '#FF6B9D',
-    animationsEnabled: true,
   },
 };
 
 export const CustomColor: Story = {
   args: {
     color: '#1f7acb',
-    animationsEnabled: true,
   },
 };
 
 export const AnimationsDisabled: Story = {
   args: {
     color: '#FF6B9D',
-    animationsEnabled: false,
   },
 };
 

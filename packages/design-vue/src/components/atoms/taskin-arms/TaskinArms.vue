@@ -26,14 +26,12 @@ import { type ArmPosition, type ArmSide, NEUTRAL_ARM_POSITION, type SideRelative
 
 export interface Props {
   color?: string;
-  animationsEnabled?: boolean;
   leftArmPosition?: ArmPosition;
   rightArmPosition?: ArmPosition;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   color: '#FF6B9D',
-  animationsEnabled: true,
 });
 
 // Taskin's arm base positions
