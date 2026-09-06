@@ -48,6 +48,11 @@
     "ui"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sidartaveloso/taskin.git",
+    "directory": "packages/design-vue"
+  },
   "peerDependencies": {
     "vue": "^3.5.0"
   },
