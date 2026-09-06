@@ -9,8 +9,8 @@ pacote, que aparecem na barra lateral como secoes separadas.
 
 | Pacote | O que tem | Storybook proprio |
 | --- | --- | --- |
-| **Design Vue** | O mascote, os atomos e as telas do produto | `pnpm --filter @opentask/taskin-design-vue storybook` (porta 6007) |
-| **UI Sense** | Sensores: webcam, rastreamento de face, pose e gestos | `pnpm --filter @opentask/ui-sense storybook` (porta 6008) |
+| **Design Vue** | O mascote, os atomos e as telas do produto | `pnpm --filter @opentask/taskin-design-vue storybook` (porta 6107) |
+| **UI Sense** | Sensores: webcam, rastreamento de face, pose e gestos | `pnpm --filter @opentask/ui-sense storybook` (porta 6108) |
 
 Cada pacote e dono da propria configuracao — addons, ordenacao e o modo do
 plugin de acessibilidade. Esta raiz e so a porta de entrada, para nao existir uma
@@ -20,4 +20,12 @@ Para ver tudo junto em desenvolvimento, os dois precisam estar no ar:
 
 ```bash
 pnpm storybook:all
+```
+
+As portas sao 6106 (esta raiz), 6107 e 6108 — fora da faixa 6006-6008, que
+costuma estar tomada por Storybooks de outros projetos. Se ainda assim um
+servidor subir em outra porta, aponte o ref sem editar configuracao:
+
+```bash
+TASKIN_SB_DESIGN_VUE_URL=http://localhost:6109 pnpm storybook
 ```
