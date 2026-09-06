@@ -106,6 +106,17 @@ export const UserSchema = z.object({
   id: z.string(),
   name: z.string(),
   avatar: z.string().optional(),
+  /**
+   * Links de perfil que o registro de usuarios ja carregava sem tipo.
+   *
+   * O `.taskin/README.md` documentava campos assim ha tempos e o registro deste
+   * repo os guardava, mas o schema nao os tinha: sobreviviam no arquivo e
+   * nenhum codigo conseguia le-los. `github` interessa em especial ao provider
+   * da task-041, que precisa casar assignee de issue com usuario.
+   */
+  website: z.string().url().optional(),
+  github: z.string().url().optional(),
+  linkedin: z.string().url().optional(),
 });
 
 /**

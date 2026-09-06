@@ -101,7 +101,6 @@ export const NEUTRAL_ARMS_POSITIONS: ArmsPositions = {
 
 export interface TaskinArmsProps {
   color?: string;
-  animationsEnabled?: boolean;
   leftArmPosition?: ArmPosition;
   rightArmPosition?: ArmPosition;
 }
