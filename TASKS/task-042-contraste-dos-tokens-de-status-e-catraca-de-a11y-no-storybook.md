@@ -109,7 +109,26 @@ Duas saídas possíveis, e a escolha é de design:
 - [ ] Os 7 `select-name` são outra regra: `<select>` sem nome acessível. Não
       tem relação com paleta, é `aria-label` ou `<label>`
 
-### 4. Ligar a catraca
+### 4. Consertar o deploy do Storybook, que nunca publica
+
+- [ ] O workflow `storybook-deploy.yml` esta vermelho desde **7 de julho** (ultimo verde na
+      `develop`; na `main`, 27 de marco). O que esta no ar hoje e um redirect da raiz para
+      `/taskin/beta/`, publicado da `develop` em julho — a pasta `production`, que vem da `main`,
+      esta parada em marco. Nada do trabalho recente aparece no Storybook publico.
+- [ ] Causa: o workflow instala e builda **so** o `design-vue`, sem as dependencias do workspace.
+      Sem `packages/types-ts/dist/` no runner o Vite falha com
+      `[commonjs--resolver] Failed to resolve entry for package "@opentask/taskin-types"`.
+      Precisa de um `pnpm build` das deps antes do `build:storybook`.
+- [ ] O `--filter @opentask/taskin-design-vue` do `pnpm install` tambem nao traz a cadeia do
+      workspace: precisa do sufixo `...` para incluir as dependencias.
+- [ ] Mesma familia das quatro barreiras que travaram o release de hoje: passa na maquina de quem
+      tem os `dist/` construidos e quebra no runner, que parte do zero. Vale conferir se o build
+      do Storybook entra em algum CI de PR — hoje ele so roda no push para `main`/`develop`, entao
+      a quebra fica invisivel ate alguem abrir o site.
+- [ ] Depois de verde, confirmar que `/taskin/` (production, da `main`) reflete o commit atual: o
+      workflow injeta um badge com `git rev-parse --short HEAD` no `index.html`.
+
+### 5. Ligar a catraca
 
 - [ ] Global vai para `a11y.test: 'off'` — recupera os 8.3s e para de pagar por
       um resultado descartado
@@ -119,6 +138,13 @@ Duas saídas possíveis, e a escolha é de design:
       locais
 
 ## Notes
+
+### O deploy entrou aqui por decisão, não por afinidade
+
+O conserto do `storybook-deploy.yml` é de eixo diferente do resto desta task —
+aqui é paleta e catraca de a11y, lá é CI e publicação. Ficou junto porque as duas
+coisas só importam quando o Storybook está publicado: ligar a catraca sem o
+deploy funcionando protege um site que ninguém vê.
 
 ### Por que não ligar `'error'` global agora
 
@@ -142,8 +168,13 @@ Duas saídas estruturais, se isso incomodar ao ligar `'error'` nele:
 
 ### O painel de a11y do Storybook não inicializa
 
-Na instância local (`localhost:6011`) o painel **Accessibility** fica preso em
-"Preparing accessibility scan". Como o modo `'todo'` só reporta para a UI, isso
+Na instância local (`localhost:6011`) o painel **Accessibility** ficava preso em
+"Preparing accessibility scan". **Vale reconferir antes de investigar**: no dia
+06/09 foi corrigido um problema de interop CJS do `aria-query` que deixava a
+suíte `storybook` inteira morta (`optimizeDeps.include: ['aria-query']` no
+`vitest.storybook.config.ts`). O `addon-a11y` depende da mesma biblioteca, então
+o painel pode ter sido consertado de carona — são runtimes diferentes (navegador
+do Storybook vs. runner do vitest), então é hipótese, não conclusão. Como o modo `'todo'` só reporta para a UI, isso
 significa que hoje o resultado não chega a nenhum lugar: nem falha no CI, nem
 aparece no painel. Vale investigar junto — pode ser a mesma causa que faz o
 `getIsVitestStandaloneRun()` ser o único caminho com asserção.
