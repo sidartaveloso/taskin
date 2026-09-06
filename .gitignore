@@ -89,7 +89,13 @@ test-temp-e2e/
 # VitePress
 .vitepress/cache/
 .vitepress/dist/
-packages/docs/content/
+# O conteudo do site e gerado, mas a config precisa ser versionada: sem ela o
+# vitepress usa o target antigo do Vite e o build quebra no esbuild 0.28,
+# derrubando o job de release inteiro. Ver task-045.
+packages/docs/content/*
+!packages/docs/content/.vitepress
+packages/docs/content/.vitepress/*
+!packages/docs/content/.vitepress/config.mts
 
 # OS
 Thumbs.db
