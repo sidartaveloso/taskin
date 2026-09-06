@@ -34,14 +34,28 @@ const config: StorybookConfig = {
   refs: (_config, { configType }) => {
     const local = configType === 'DEVELOPMENT';
 
+    /*
+     * `storybook dev -p N` nao falha quando a porta esta ocupada: sobe na
+     * proxima livre e segue calado. Se um ref apontar para a porta pedida e o
+     * servidor tiver subido em outra, a secao aparece vazia e o console mostra
+     * 404 num modulo virtual — sem nada dizendo que o problema e a porta.
+     * Ja aconteceu: a faixa 6006-6008 estava tomada por Storybooks de outros
+     * repositorios da maquina. Dai a faixa 610x e o override por ambiente.
+     */
+    const refUrl = (envVar: string, port: number, staticPath: string): string => {
+      if (!local) return staticPath;
+
+      return process.env[envVar] ?? `http://localhost:${port}`;
+    };
+
     return {
       'design-vue': {
         title: 'Design Vue',
-        url: local ? 'http://localhost:6007' : '/design-vue',
+        url: refUrl('TASKIN_SB_DESIGN_VUE_URL', 6107, '/design-vue'),
       },
       'ui-sense': {
         title: 'UI Sense',
-        url: local ? 'http://localhost:6008' : '/ui-sense',
+        url: refUrl('TASKIN_SB_UI_SENSE_URL', 6108, '/ui-sense'),
       },
     };
   },

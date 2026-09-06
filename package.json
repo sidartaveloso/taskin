@@ -46,7 +46,7 @@
     "publish:packages": "node scripts/publish-packages.js",
     "publish:pypi": "turbo run publish:pypi",
     "publish:pypi:check": "turbo run publish:pypi:check",
-    "storybook": "storybook dev -p 6006",
+    "storybook": "storybook dev -p 6106",
     "storybook:all": "pnpm --parallel --filter @opentask/taskin-design-vue --filter @opentask/ui-sense storybook",
     "sync:versions": "node scripts/sync-versions.js",
     "taskin": "tsx packages/cli/src/index.ts",

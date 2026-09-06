@@ -23,12 +23,12 @@
     "README.md"
   ],
   "scripts": {
-    "dev": "storybook dev -p 6007",
+    "dev": "storybook dev -p 6107",
     "dev:vite": "vite",
     "build": "vite build && vue-tsc --emitDeclarationOnly",
     "build:storybook": "storybook build",
     "preview": "vite preview",
-    "storybook": "storybook dev -p 6007",
+    "storybook": "storybook dev -p 6107",
     "format": "biome format --write src/",
     "format:check": "biome format src/",
     "test": "vitest run && vitest run --config vitest.storybook.config.ts",
