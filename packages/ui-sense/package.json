@@ -1,6 +1,6 @@
 {
   "name": "@opentask/ui-sense",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Vue 3 sensor and gesture components for adaptive UIs \u2014 face tracking, pose tracking, gesture recognition, and user sensitivity detection",
   "motivation": "To provide sensor and gesture-based Vue 3 components for adaptive, context-aware UIs.",
   "solve": "Wraps MediaPipe and other sensor APIs into declarative Vue components for face tracking, pose tracking, and gesture recognition.",
