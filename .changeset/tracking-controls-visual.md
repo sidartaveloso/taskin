@@ -27,5 +27,12 @@ desligando a pulsacao e as transicoes. O `.storybook/preview.css` do pacote pass
 a importar `variables.css` — sem isso as stories renderizariam com `var(--...)`
 sem valor, que e a razao de o componente nunca ter usado token.
 
+Os rotulos dos itens perderam o verbo repetido: cinco chips dizendo
+"Sincronizar X" sob uma legenda que ja diz SINCRONIZAR viraram "Olhos", "Boca",
+"Expressoes", "Bracos" e "Gestos", e "Mostrar Webcam" virou "Webcam" sob
+EXIBICAO. O nome acessivel encurta junto, o que e correto: o leitor de tela
+anuncia "Sincronizar, grupo" antes de cada item, entao o verbo estava sendo dito
+duas vezes.
+
 Sem mudanca de API, de classes ou da ordem dos checkboxes: as 9 asercoes do spec
 e as 8 stories seguem passando.
