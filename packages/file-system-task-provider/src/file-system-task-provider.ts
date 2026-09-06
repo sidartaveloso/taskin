@@ -12,7 +12,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
-import { stripHardBreak } from './inline-metadata.js';
+import { HARD_BREAK, stripHardBreak } from './inline-metadata.js';
 import type { CreateTaskFileResult, TaskFile } from './task-file.types.js';
 import { createLintResult, fixTaskFile, validateTaskFile } from './task-validator.js';
 import type { ILogger } from './user-registry.js';
@@ -81,10 +81,10 @@ function setInlineField(content: string, fieldName: string, value: string | unde
   }
 
   if (new RegExp(`^${fieldName}:\\s*.+$`, 'im').test(content)) {
-    return content.replace(new RegExp(`^${fieldName}:\\s*.+$`, 'im'), `${fieldName}: ${value}`);
+    return content.replace(new RegExp(`^${fieldName}:\\s*.+$`, 'im'), `${fieldName}: ${value}${HARD_BREAK}`);
   }
 
-  return content.replace(/(^#.*\n)/, `$1${fieldName}: ${value}\n`);
+  return content.replace(/(^#.*\n)/, `$1${fieldName}: ${value}${HARD_BREAK}\n`);
 }
 
 export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
@@ -254,10 +254,10 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     if (/^Status:\s*.+$/im.test(content)) {
       // Replace existing Status line
-      updatedContent = content.replace(/^Status:\s*.+$/im, `Status: ${task.status}`);
+      updatedContent = content.replace(/^Status:\s*.+$/im, `Status: ${task.status}${HARD_BREAK}`);
     } else {
       // If no Status field exists, insert it after the H1 title
-      updatedContent = content.replace(/(^#.*\n)/, `$1Status: ${task.status}\n`);
+      updatedContent = content.replace(/(^#.*\n)/, `$1Status: ${task.status}${HARD_BREAK}\n`);
     }
 
     // Update prioritization fields (manual order, ad hoc group, difficulty)
@@ -440,9 +440,9 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     return `# 🧩 Task ${id} — ${title}
 
-${i18n.status}: pending
-${i18n.type}: ${type}
-${i18n.assignee}: ${assignee}
+${i18n.status}: pending${HARD_BREAK}
+${i18n.type}: ${type}${HARD_BREAK}
+${i18n.assignee}: ${assignee}${HARD_BREAK}
 
 ## ${i18n.description}
 ${description || i18n.descriptionPlaceholder}

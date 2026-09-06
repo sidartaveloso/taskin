@@ -1,3 +1,4 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -162,5 +163,31 @@ describe('FileSystemTaskProvider.lint — assignees', () => {
     expect(task?.type).toBe('fix');
     expect(task?.assignee?.id).toBe('ana-souza');
     expect((await provider.lint()).issues).toEqual([]);
+  });
+
+  /*
+   * A quebra forte e escrita pelo `lint --fix`, mas quem *cria* e quem *atualiza*
+   * a task tambem precisa aplica-la — senao `taskin new` e `taskin start`
+   * produzem arquivo que o proprio lint considera fora do padrao.
+   */
+  it('writes the hard break when creating a task', async () => {
+    const provider = await makeProvider();
+
+    const { task } = await provider.createTask({ title: 'Nova', type: 'feat', assignee: 'ana-souza' });
+    const created = readFileSync(join(tasksDir, `task-${task.id}-nova.md`), 'utf-8');
+
+    expect(created).toMatch(/^Status: pending\\$/m);
+    expect(created).toMatch(/^Type: feat\\$/m);
+    expect(created).toMatch(/^Assignee: .*\\$/m);
+  });
+
+  it('keeps the hard break when updating a status', async () => {
+    const filePath = writeTask('011', 'ana-souza');
+    const provider = await makeProvider();
+
+    const task = await provider.findTask(parseTaskId('011'));
+    await provider.updateTask({ ...(task as NonNullable<typeof task>), status: 'in-progress' });
+
+    expect(readFileSync(filePath, 'utf-8')).toMatch(/^Status: in-progress\\$/m);
   });
 });

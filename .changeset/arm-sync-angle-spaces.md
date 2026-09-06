@@ -75,3 +75,8 @@ escondia o erro.
 
 - `ArmPosition` perdeu `elbowAngle` e `wristAngle` e ganhou `forearmAngle`;
   ambos os campos sao `SideRelativeAngle`. `NEUTRAL_ARM_POSITION` acompanha.
+
+Os escritores de metadado acompanham a convencao: `createTask` e a atualizacao de
+status escreviam a linha sem a quebra forte, entao `taskin new` e `taskin start`
+produziam arquivo que o proprio `lint --fix` considerava fora do padrao.
+
