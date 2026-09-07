@@ -18,8 +18,8 @@ describe('GestureLegend', () => {
 
   it('filters out None gestures and none actions', () => {
     const wrapper = mount(GestureLegend, { props: { mappings } });
-    expect(wrapper.text()).toContain('Mover para cima');
-    expect(wrapper.text()).toContain('Agrupar');
+    expect(wrapper.text()).toContain('Move up');
+    expect(wrapper.text()).toContain('Group');
     expect(wrapper.findAll('.gesture-legend__label')).toHaveLength(2);
   });
 

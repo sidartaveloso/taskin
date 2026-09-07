@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest';
 import TrackingControls from './TrackingControls.vue';
 
 describe('TrackingControls', () => {
-  it('renders "Iniciar Detecção" when not detecting', () => {
+  it('renders "Start Detection" when not detecting', () => {
     const wrapper = mount(TrackingControls);
-    expect(wrapper.find('button.control-button').text()).toBe('Iniciar Detecção');
+    expect(wrapper.find('button.control-button').text()).toBe('Start Detection');
   });
 
-  it('renders "Parar Detecção" when detecting', () => {
+  it('renders "Stop Detection" when detecting', () => {
     const wrapper = mount(TrackingControls, { props: { isDetecting: true } });
-    expect(wrapper.find('button.control-button').text()).toBe('Parar Detecção');
+    expect(wrapper.find('button.control-button').text()).toBe('Stop Detection');
   });
 
   it('emits toggle-tracking when the button is clicked', async () => {
@@ -45,7 +45,7 @@ describe('TrackingControls', () => {
 
   it('shows the detecting status when isDetecting is true', () => {
     const wrapper = mount(TrackingControls, { props: { isDetecting: true } });
-    expect(wrapper.find('.status').text()).toContain('Detectando');
+    expect(wrapper.find('.status').text()).toContain('Detecting');
   });
 });
 
@@ -54,29 +54,29 @@ describe('TrackingControls — quais controles ficam disponiveis', () => {
     wrapper.findAll('.control-checkbox').map((label) => label.text());
 
   it('mostra os seis controles quando nada e informado', () => {
-    expect(labelsOf(mount(TrackingControls))).toEqual(['Webcam', 'Olhos', 'Boca', 'Expressões', 'Braços', 'Gestos']);
+    expect(labelsOf(mount(TrackingControls))).toEqual(['Webcam', 'Eyes', 'Mouth', 'Expressions', 'Arms', 'Gestures']);
   });
 
   it('mostra apenas os controles pedidos', () => {
     const wrapper = mount(TrackingControls, { props: { controls: ['eyes', 'mouth'] } });
 
-    expect(labelsOf(wrapper)).toEqual(['Olhos', 'Boca']);
+    expect(labelsOf(wrapper)).toEqual(['Eyes', 'Mouth']);
   });
 
   it('mantem a ordem canonica, nao a ordem do array', () => {
     const wrapper = mount(TrackingControls, { props: { controls: ['gestures', 'webcam', 'eyes'] } });
 
-    expect(labelsOf(wrapper)).toEqual(['Webcam', 'Olhos', 'Gestos']);
+    expect(labelsOf(wrapper)).toEqual(['Webcam', 'Eyes', 'Gestures']);
   });
 
   it('esconde o grupo inteiro quando nenhum item dele esta disponivel', () => {
     const semExibicao = mount(TrackingControls, { props: { controls: ['eyes'] } });
-    expect(semExibicao.text()).not.toContain('Exibição');
-    expect(semExibicao.text()).toContain('Sincronizar');
+    expect(semExibicao.text()).not.toContain('Display');
+    expect(semExibicao.text()).toContain('Sync');
 
     const semSincronismo = mount(TrackingControls, { props: { controls: ['webcam'] } });
-    expect(semSincronismo.text()).toContain('Exibição');
-    expect(semSincronismo.text()).not.toContain('Sincronizar');
+    expect(semSincronismo.text()).toContain('Display');
+    expect(semSincronismo.text()).not.toContain('Sync');
   });
 
   it('nao emite por um controle que foi escondido', async () => {

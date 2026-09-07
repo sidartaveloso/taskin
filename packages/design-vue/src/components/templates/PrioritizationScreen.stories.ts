@@ -210,7 +210,7 @@ export const WithGesture: Story = {
     expect(fixed).not.toBeNull();
 
     // Tracking controls are always visible (start/stop detection)
-    const trackingBtn = within(fixed!).getByText('Iniciar Detecção');
+    const trackingBtn = within(fixed!).getByText('Start Detection');
     expect(trackingBtn).not.toBeNull();
 
     // GestureSystem is always mounted (needs to be to detect detecting changes)
@@ -237,7 +237,7 @@ export const WithGesture: Story = {
 
     // Button still shows "Iniciar Detecção" because cameraActive is still false
     // (no real camera stream in test environment)
-    expect(() => within(fixed!).getByText('Iniciar Detecção')).not.toThrow();
+    expect(() => within(fixed!).getByText('Start Detection')).not.toThrow();
 
     // GestureLegend still not rendered (camera never actually streams in test)
     const legendAfter = gestureSystem!.querySelector<HTMLElement>('.gesture-system__legend');

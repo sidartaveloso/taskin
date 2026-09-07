@@ -156,14 +156,14 @@ export const Interactive: Story = {
 
     // O rotulo do botao e o unico sinal de que o toggle chegou ao pai
     const button = canvas.getByRole('button');
-    await expect(button).toHaveTextContent('Iniciar Detecção');
-    await expect(canvas.queryByText('Detectando...')).toBeNull();
+    await expect(button).toHaveTextContent('Start Detection');
+    await expect(canvas.queryByText('Detecting...')).toBeNull();
 
     await fireEvent.click(button);
 
     await waitFor(async () => {
-      await expect(button).toHaveTextContent('Parar Detecção');
-      await expect(canvas.getByText('Detectando...')).toBeTruthy();
+      await expect(button).toHaveTextContent('Stop Detection');
+      await expect(canvas.getByText('Detecting...')).toBeTruthy();
     });
 
     /*
@@ -172,8 +172,8 @@ export const Interactive: Story = {
      * marcado por padrao desmarca e um desmarcado marca, cobrindo os dois
      * sentidos do `update:`, que sao caminhos distintos no template.
      */
-    const eyes = canvas.getByLabelText('Olhos') as HTMLInputElement;
-    const arms = canvas.getByLabelText('Braços') as HTMLInputElement;
+    const eyes = canvas.getByLabelText('Eyes') as HTMLInputElement;
+    const arms = canvas.getByLabelText('Arms') as HTMLInputElement;
     await expect(eyes.checked).toBe(true);
     await expect(arms.checked).toBe(false);
 

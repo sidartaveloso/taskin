@@ -122,7 +122,7 @@ export const DebugMode: Story = {
   play: async ({ canvasElement }) => {
     expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
     const button = canvasElement.querySelector('button.control-button');
-    expect(button?.textContent).toContain('Iniciar');
+    expect(button?.textContent).toContain('Start');
   },
 };
 

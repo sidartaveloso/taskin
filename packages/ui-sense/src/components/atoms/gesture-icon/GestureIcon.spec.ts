@@ -26,7 +26,7 @@ describe('GestureIcon', () => {
 
   it('renders the label when showLabel is true', () => {
     const wrapper = mount(GestureIcon, { props: { gesture: 'Open_Palm', showLabel: true } });
-    expect(wrapper.find('.gesture-icon__label').text()).toBe('Mão aberta');
+    expect(wrapper.find('.gesture-icon__label').text()).toBe('Open palm');
   });
 
   it('applies the size class', () => {

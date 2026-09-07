@@ -282,6 +282,6 @@ export const FullTracking: Story = {
     expect(canvasElement.querySelector('svg')).not.toBeNull();
     expect(canvasElement.querySelector('g#body')).not.toBeNull();
     expect(canvasElement.querySelector('video.webcam-video')?.classList.contains('visible')).toBe(false);
-    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Iniciar');
+    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Start');
   },
 };

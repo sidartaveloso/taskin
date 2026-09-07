@@ -84,7 +84,7 @@ export const TrackingControls = defineComponent({
             disabled: props.disabled,
             onClick: onToggle,
           },
-          props.isDetecting ? 'Parar Detecção' : 'Iniciar Detecção',
+          props.isDetecting ? 'Stop Detection' : 'Start Detection',
         ),
         h('label', { class: 'mock-control-label' }, [
           h('input', {

@@ -24,12 +24,12 @@ describe('GestureWizardCard', () => {
 
   it('renders the idle hint by default', () => {
     const wrapper = mountCard();
-    expect(wrapper.text()).toContain('Mantenha a mão aberta');
+    expect(wrapper.text()).toContain('Hold your hand open');
   });
 
   it('renders the ready state with configuration mode', () => {
     const wrapper = mountCard({ wizardState: 'READY', readyProgress: 2500 });
-    expect(wrapper.text()).toContain('Modo de configuração');
+    expect(wrapper.text()).toContain('Setup mode');
   });
 
   it('renders the saved confirmation', () => {
@@ -37,7 +37,7 @@ describe('GestureWizardCard', () => {
       wizardState: 'SAVED',
       lastMapping: { gesture: 'Victory', action: 'groupWith' },
     });
-    expect(wrapper.text()).toContain('Atalho salvo!');
+    expect(wrapper.text()).toContain('Shortcut saved!');
   });
 
   it('renders the recording step with the candidate gesture', () => {

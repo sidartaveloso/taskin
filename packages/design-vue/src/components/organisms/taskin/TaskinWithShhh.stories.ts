@@ -67,7 +67,7 @@ export const WithWebcam: Story = {
   },
   play: async ({ canvasElement }) => {
     expect(canvasElement.querySelector('video.webcam-video')?.classList.contains('visible')).toBe(true);
-    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Iniciar');
+    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Start');
   },
 };
 
@@ -92,6 +92,6 @@ export const NoiseOnly: Story = {
   },
   play: async ({ canvasElement }) => {
     expect(canvasElement.querySelector('.mascot-container')).not.toBeNull();
-    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Iniciar');
+    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Start');
   },
 };
