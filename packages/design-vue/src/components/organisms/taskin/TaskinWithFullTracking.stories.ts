@@ -274,7 +274,7 @@ export const FullTracking: Story = {
     docs: {
       description: {
         story:
-          '🎥 Complete Taskin tracking! Face controls eyes & mouth, pose controls arms. Click "Iniciar Detecção" to start.',
+          '🎥 Complete Taskin tracking! Face controls eyes & mouth, pose controls arms. Click "Start Detection" to start.',
       },
     },
   },

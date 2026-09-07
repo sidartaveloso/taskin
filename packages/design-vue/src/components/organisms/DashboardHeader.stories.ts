@@ -80,7 +80,7 @@ export const WithError: Story = {
   args: {
     status: 'error',
     statusText: 'Connection error',
-    errorMessage: 'Não foi possível conectar ao servidor WebSocket',
+    errorMessage: 'Could not connect to the WebSocket server',
     showRetry: true,
   },
 };

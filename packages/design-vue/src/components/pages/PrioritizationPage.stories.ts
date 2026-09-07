@@ -27,7 +27,7 @@ type Story = StoryObj<typeof PrioritizationPage>;
 const createTask = (id: string, overrides: Partial<Task> = {}): Task => ({
   id: parseTaskId(id),
   number: Number(id),
-  title: `Task ${id}: exemplo de título de tarefa`,
+  title: `Task ${id}: example task title`,
   status: 'pending',
   type: 'feat',
   dates: { created: new Date('2026-07-01') },
@@ -333,7 +333,7 @@ const gestureMockTasks: Task[] = [
   {
     id: parseTaskId('003'),
     number: 3,
-    title: 'Refatorar módulo de pagamento',
+    title: 'Refactor the payment module',
     status: 'pending',
     type: 'refactor',
     order: 30,
@@ -402,7 +402,7 @@ export const GestureControl: Story = {
     docs: {
       description: {
         story:
-          '📹 Controle total da priorização por gestos manuais via webcam. O `GestureSystem` integrado gerencia câmera, reconhecimento e wizard. Clique em "Iniciar Detecção" e selecione um card para começar.',
+          '📹 Full control of prioritization through hand gestures over the webcam. The embedded `GestureSystem` owns the camera, the recognition and the wizard. Click "Start Detection" and pick a card to begin.',
       },
     },
   },

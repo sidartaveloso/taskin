@@ -30,7 +30,7 @@
     },
     "build": {
       "dependsOn": ["install", "^build"],
-      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
+      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "content/**", "package.json", "tsconfig.json"],
       "outputs": ["dist/**", "build/**", "generated/**", "content/.vitepress/dist/**"]
     },
     "clean": {

@@ -463,7 +463,14 @@ Another task`;
     }, 60000);
 
     it('should show helpful error when TASKS directory is missing', async () => {
-      writeFileSync(join(TEST_DIR, '.taskin.json'), '{"provider": "fs"}');
+      // Config valida de proposito: o que este teste exercita e a ausencia do
+      // diretorio TASKS. Com a forma antiga (`{"provider": "fs"}`) a CLI
+      // parava antes, na validacao do config, e a mensagem nem mencionava
+      // TASKS — o teste passava por outro motivo.
+      writeFileSync(
+        join(TEST_DIR, '.taskin.json'),
+        JSON.stringify({ version: '1.0.0', provider: { type: 'fs', config: { tasksDir: 'TASKS' } } }),
+      );
 
       try {
         await execAsync(`node ${CLI_PATH} list`, { cwd: TEST_DIR });

@@ -87,7 +87,7 @@ export const Detecting: Story = {
 export const WithError: Story = {
   args: {
     isDetecting: false,
-    error: 'Falha ao acessar a webcam. Verifique as permissões.',
+    error: 'Could not access the webcam. Check your permissions.',
     showWebcam: false,
     syncEyes: true,
     syncMouth: true,
@@ -220,7 +220,7 @@ export const FaceTrackingOnly: Story = {
   },
 };
 
-/** Como o `TaskinWithFullTracking` monta: rosto e braços, sem expressões nem gestos. */
+/** How `TaskinWithFullTracking` wires it: face and arms, no expressions or gestures. */
 export const FullTracking: Story = {
   args: {
     controls: ['webcam', 'eyes', 'mouth', 'arms'],

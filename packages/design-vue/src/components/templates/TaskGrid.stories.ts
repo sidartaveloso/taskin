@@ -85,12 +85,12 @@ const createMockTask = (id: number, overrides: Partial<Task> = {}): Task => ({
       {
         date: new Date('2025-11-10'),
         hours: 6,
-        description: 'Implementação inicial',
+        description: 'Initial implementation',
       },
       {
         date: new Date('2025-11-11'),
         hours: 7,
-        description: 'Desenvolvimento contínuo',
+        description: 'Ongoing development',
       },
       { date: new Date('2025-11-12'), hours: 5, description: 'Refinamentos' },
     ],
@@ -245,7 +245,7 @@ export const WithFooter: Story = {
       <TaskGrid v-bind="args" :tasks="tasks">
         <template #footer>
           <div style="text-align: center; color: #666;">
-            <p>Atualizado em tempo real • Última atualização: {{ new Date().toLocaleTimeString('pt-BR') }}</p>
+            <p>Updated in real time • Last update: {{ new Date().toLocaleTimeString('en-US') }}</p>
           </div>
         </template>
       </TaskGrid>

@@ -87,7 +87,7 @@ export const Sizes: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Três tamanhos disponíveis: sm (16px), md (24px), lg (36px).',
+        story: 'Three sizes available: sm (16px), md (24px), lg (36px).',
       },
     },
   },
@@ -102,7 +102,7 @@ export const WithLabel: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Com label ao lado. Útil para legendas e listas de mapeamento.',
+        story: 'With the label beside it. Useful for legends and mapping lists.',
       },
     },
   },

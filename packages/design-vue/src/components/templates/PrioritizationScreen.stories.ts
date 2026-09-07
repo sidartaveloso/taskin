@@ -29,7 +29,7 @@ type Story = StoryObj<typeof PrioritizationScreen>;
 const createTask = (id: string, overrides: Partial<Task> = {}): Task => ({
   id: parseTaskId(id),
   number: Number(id),
-  title: `Task ${id}: exemplo de título de tarefa`,
+  title: `Task ${id}: example task title`,
   status: 'pending',
   type: 'feat',
   dates: { created: new Date('2026-07-01') },
@@ -225,7 +225,7 @@ export const WithGesture: Story = {
     const statusBefore = canvasElement.querySelector<HTMLElement>('.prioritization-screen__camera-status');
     expect(statusBefore).toBeNull();
 
-    // ── User clicks "Iniciar Detecção" ──
+    // ── User clicks "Start Detection" ──
     await fireEvent.click(trackingBtn);
 
     // Camera-status indicator appears while camera initializes (detecting=true, cameraActive=false)
@@ -235,7 +235,7 @@ export const WithGesture: Story = {
       expect(status!.textContent).toContain('Starting camera');
     });
 
-    // Button still shows "Iniciar Detecção" because cameraActive is still false
+    // Button still shows "Start Detection" because cameraActive is still false
     // (no real camera stream in test environment)
     expect(() => within(fixed!).getByText('Start Detection')).not.toThrow();
 

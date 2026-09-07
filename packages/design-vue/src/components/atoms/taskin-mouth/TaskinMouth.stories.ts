@@ -338,7 +338,7 @@ export const FaceTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story: '📹 Mouth tracks your face expressions using webcam! Click "Iniciar Detecção" to start.',
+        story: '📹 Mouth tracks your face expressions using webcam! Click "Start Detection" to start.',
       },
     },
   },

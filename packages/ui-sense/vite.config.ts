@@ -24,6 +24,10 @@ export default defineConfig({
       },
       name: 'UiSense',
       formats: ['es'],
+      // Com multiplas entradas o Vite nomeia a CSS pelo `name` (ui-sense.css),
+      // mas os `exports` do pacote declaram `./dist/index.css` — o caminho
+      // publicado (`@opentask/ui-sense/style.css`) nao resolvia para nada.
+      cssFileName: 'index',
     },
     rollupOptions: {
       external: ['vue'],
