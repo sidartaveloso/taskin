@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "taskin-docs",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@taskin/docs", "run", "dev", "--port", "6100"],
+      "port": 6100
+    }
+  ]
+}

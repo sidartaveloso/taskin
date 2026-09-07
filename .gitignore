@@ -89,13 +89,13 @@ test-temp-e2e/
 # VitePress
 .vitepress/cache/
 .vitepress/dist/
-# O conteudo do site e gerado, mas a config precisa ser versionada: sem ela o
-# vitepress usa o target antigo do Vite e o build quebra no esbuild 0.28,
-# derrubando o job de release inteiro. Ver task-045.
-packages/docs/content/*
-!packages/docs/content/.vitepress
-packages/docs/content/.vitepress/*
-!packages/docs/content/.vitepress/config.mts
+# O conteudo do site e fonte versionada; so o que o vitepress gera fica de fora.
+# A regra antiga ignorava `packages/docs/content/` inteiro — foi por isso que o
+# site nasceu vazio e ficou nove meses assim: qualquer markdown escrito ali era
+# ignorado sem aviso. A config tambem precisa ser versionada, senao o vitepress
+# usa o target antigo do Vite e o build quebra no esbuild 0.28. Ver task-045.
+packages/docs/content/.vitepress/cache/
+packages/docs/content/.vitepress/dist/
 
 # OS
 Thumbs.db

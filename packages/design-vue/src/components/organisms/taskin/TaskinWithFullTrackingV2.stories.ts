@@ -14,41 +14,41 @@ const meta = {
     docs: {
       description: {
         component: `
-# Taskin com Detecção Facial e Corporal (MediaPipe)
+# Taskin with Face and Body Detection (MediaPipe)
 
 Este componente integra **MediaPipe Face Landmarker** e **MediaPipe Pose Landmarker** para detectar
-expressões faciais e postura corporal em tempo real via webcam e reproduzir no mascote Taskin.
+facial expressions and body posture in real time over the webcam, and mirror them on the Taskin mascot.
 
 ## Funcionalidades
 
-- **Sincronização de Olhos**: Os olhos do Taskin seguem a direção do seu olhar e piscam quando você pisca
-- **Sincronização de Boca**: A boca do Taskin abre e sorri conforme você abre e sorri
-- **Sincronização de Braços**: Os braços do Taskin se movem seguindo os seus braços
+- **Eye sync**: Taskin's eyes follow where you look and blink when you blink
+- **Mouth sync**: Taskin's mouth opens and smiles as yours does
+- **Arm sync**: Taskin's arms follow yours
 
 ## Tecnologias
 
 - **MediaPipe Face Landmarker**: Detecta 478 pontos faciais e 52 blendshapes
 - **MediaPipe Pose Landmarker**: Detecta 33 pontos corporais
-- **WebRTC**: Acesso à webcam do usuário
+- **WebRTC**: Access to the webcam
 - **Vue 3 Composition API**: Gerenciamento reativo do estado
 
 ## Requisitos
 
 - Navegador moderno com suporte a WebRTC
-- Permissão de acesso à webcam
-- Conexão com internet (para carregar os modelos do MediaPipe)
+- Permission to use the webcam
+- An internet connection, to download the MediaPipe models
 
 ## Como Usar
 
-1. Clique em "Iniciar Detecção"
-2. Permita o acesso à webcam quando solicitado
-3. Mova os olhos, sorria, abra a boca, levante os braços - veja o Taskin copiar tudo!
-4. Use os checkboxes para ativar/desativar cada tipo de sincronização
+1. Click "Start Detection"
+2. Allow webcam access when asked
+3. Move your eyes, smile, open your mouth, raise your arms — watch Taskin copy all of it
+4. Use the checkboxes to turn each kind of sync on and off
 
 ## Performance
 
-O MediaPipe roda localmente no navegador usando WebAssembly e GPU quando disponível,
-garantindo baixa latência e privacidade (nenhum dado é enviado para servidores).
+MediaPipe runs locally in the browser on WebAssembly, using the GPU when available,
+which keeps latency low and the data private — nothing is sent to a server.
         `,
       },
     },
@@ -65,7 +65,7 @@ garantindo baixa latência e privacidade (nenhum dado é enviado para servidores
     },
     showDebug: {
       control: 'boolean',
-      description: 'Mostrar informações de debug',
+      description: 'Show debug information',
     },
   },
   args: {
@@ -79,8 +79,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Exemplo completo do Taskin com detecção facial e corporal.
- * Clique em "Iniciar Detecção" e permita o acesso à webcam.
+ * Full example of Taskin with face and body detection.
+ * Click "Start Detection" and allow webcam access.
  */
 export const Default: Story = {
   args: {
@@ -96,7 +96,7 @@ export const Default: Story = {
 };
 
 /**
- * Visualize a webcam junto com o Taskin para ver a correspondência em tempo real.
+ * Shows the webcam next to Taskin so you can compare them in real time.
  */
 export const WithWebcamVisible: Story = {
   args: {
@@ -111,7 +111,7 @@ export const WithWebcamVisible: Story = {
 
 /**
  * Modo debug que mostra os valores detectados.
- * Útil para entender como a detecção está funcionando.
+ * Useful for understanding how the detection behaves.
  */
 export const DebugMode: Story = {
   args: {
@@ -127,7 +127,7 @@ export const DebugMode: Story = {
 };
 
 /**
- * Taskin em tamanho grande para melhor visualização das expressões e movimentos.
+ * Taskin at a large size, so the expressions and movements are easier to read.
  */
 export const LargeMascot: Story = {
   args: {

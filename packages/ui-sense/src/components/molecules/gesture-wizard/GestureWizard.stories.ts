@@ -21,25 +21,25 @@ const meta = {
     docs: {
       description: {
         component: [
-          '## O "Preferências de atalhos" dos gestos',
+          '## The "Shortcut preferences" for gestures',
           '',
-          'O `GestureWizard` é a interface visual que permite ao usuário **definir como quer interagir** — sem precisar de desenvolvedor, sem editar config, sem saber que "gesto" significa.',
+          '`GestureWizard` is the visual interface that lets a person **decide how they want to interact** — no developer needed, no config file to edit, no need to know what "gesture" means.',
           '',
-          '### Experiência completa',
+          '### The full experience',
           '',
-          '1. Usuário abre a mão 🖐️ por 2s → barra de progresso aparece',
-          '2. Mantém por 5s → wizard abre',
-          '3. Faz um gesto e segura 2s → gesto é capturado',
-          '4. Navega com 👍/👎, seleciona com ✊ → ação escolhida',
+          '1. Person opens their hand 🖐️ for 2s → a progress bar appears',
+          '2. Holds it for 5s → the wizard opens',
+          '3. Makes a gesture and holds it for 2s → the gesture is captured',
+          '4. Navigates with 👍/👎 and selects with ✊ → the action is chosen',
           '5. Confirma com ✊ → mapping salvo no `localStorage`',
           '6. ✨ Feedback visual → wizard fecha',
           '',
           '### Design principles',
           '',
-          '- **Temporal**: cada transição exige segurar o gesto (evita disparo acidental)',
-          '- **Cancelável**: soltar a mão ou fazer `Open_Palm` cancela a qualquer momento',
-          '- **Persistente**: mapeamento salvo por `userId` — cada usuário tem seus gestos',
-          '- **Não intrusivo**: o overlay só renderiza quando `wizardState !== "IDLE"`',
+          '- **Time based**: every transition requires holding the gesture, which keeps it from firing by accident',
+          '- **Cancellable**: lowering your hand or making `Open_Palm` cancels at any point',
+          '- **Persistent**: mappings are saved per `userId`, so each person keeps their own gestures',
+          '- **Unobtrusive**: the overlay only renders while `wizardState !== "IDLE"`',
           '',
           'Veja a story de cada estado abaixo para entender o fluxo visual.',
         ].join('\n'),
@@ -70,7 +70,7 @@ export const Idle: Story = {
     docs: {
       description: {
         story:
-          'Estado padrão. O overlay indica que o usuário deve manter a mão aberta 🖐️ por 2s para iniciar a configuração. Neste momento nenhum risco de disparo acidental — o wizard só avança se o gesto for mantido.',
+          'Default state. The overlay tells the person to hold an open hand 🖐️ for 2s to start setup. Nothing can fire by accident here — the wizard only advances while the gesture is held.',
       },
     },
   },
@@ -96,7 +96,7 @@ export const Ready: Story = {
     docs: {
       description: {
         story:
-          'Mão aberta mantida por mais de 2s. Uma barra de progresso mostra a contagem até 5s. Se o usuário soltar a mão antes, volta ao IDLE. Se completar os 5s, avança para RECORDING. Se fizer outro gesto — em vez de esperar — avança direto para RECORDING com esse gesto como candidato.',
+          'Open hand held for more than 2s. A progress bar counts up to 5s. Lowering the hand early returns to IDLE; completing the 5s advances to RECORDING. Making a different gesture instead of waiting jumps straight to RECORDING with that gesture as the candidate.',
       },
     },
   },
@@ -122,7 +122,7 @@ export const Recording: Story = {
     docs: {
       description: {
         story:
-          'Passo 1: o usuário deve fazer um gesto e mantê-lo por 2s. Enquanto segura, o preview mostra qual gesto está sendo detectado. Se soltar antes, o timer reinicia — o gesto só é aceito com hold completo.',
+          'Step 1: make a gesture and hold it for 2s. While it is held, the preview shows which gesture is being detected. Releasing early restarts the timer — a gesture is only accepted after a full hold.',
       },
     },
   },
@@ -148,7 +148,7 @@ export const Selecting: Story = {
     docs: {
       description: {
         story:
-          'Passo 2: o usuário navega pela lista de ações disponíveis com 👍 (próximo) e 👎 (anterior), e confirma a escolha com ✊. A legenda na parte inferior mostra os comandos disponíveis. `Open_Palm` 🖐️ cancela e volta ao IDLE.',
+          'Step 2: browse the available actions with 👍 (next) and 👎 (previous), and confirm with ✊. The legend at the bottom lists the commands. `Open_Palm` 🖐️ cancels and returns to IDLE.',
       },
     },
   },
@@ -174,7 +174,7 @@ export const Confirming: Story = {
     docs: {
       description: {
         story:
-          'Passo 3 — tela de revisão. O par gesto→ação é exibido para confirmação. O usuário confirma com ✊ (salva no `localStorage`) ou cancela com 🖐️ / 👎 (volta ao IDLE). É a última barreira contra configuração acidental.',
+          'Step 3 — the review screen. The gesture-to-action pair is shown for confirmation: ✊ confirms and saves to `localStorage`, 🖐️ or 👎 cancels back to IDLE. This is the last barrier against setting something up by accident.',
       },
     },
   },
@@ -200,7 +200,7 @@ export const Saved: Story = {
     docs: {
       description: {
         story:
-          'Feedback de sucesso com animação ✨. O mapeamento já foi persistido no `localStorage`. Após 1.5s o wizard volta automaticamente ao estado IDLE e o overlay desaparece. O novo atalho por gesto já está ativo.',
+          'Success feedback with an ✨ animation. The mapping is already persisted in `localStorage`. After 1.5s the wizard returns to IDLE on its own and the overlay disappears. The new gesture shortcut is live.',
       },
     },
   },

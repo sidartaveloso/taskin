@@ -11,7 +11,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Exibe os mapeamentos gesto→ação atuais em pills compactas. Usado pelo GestureSystem para o usuário lembrar quais gestos estão configurados.',
+          'Shows the current gesture-to-action mappings as compact pills. Used by GestureSystem so the person can remember which gestures are set up.',
       },
     },
   },
@@ -37,7 +37,7 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Display padrão com 5 mapeamentos. Cada pill mostra emoji do gesto + nome da ação.',
+        story: 'Default display with 5 mappings. Each pill shows the gesture emoji plus the action name.',
       },
     },
   },
@@ -52,7 +52,7 @@ export const Compact: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Versão compacta com padding e fonte reduzidos. Usada pelo GestureSystem no canto da tela.',
+        story: 'Compact variant with reduced padding and font size. Used by GestureSystem in the corner of the screen.',
       },
     },
   },
@@ -67,7 +67,7 @@ export const SingleMapping: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Apenas um mapeamento configurado. Os demais podem estar sem gesto atribuído.',
+        story: 'Only one mapping set up. The rest may have no gesture assigned.',
       },
     },
   },
@@ -78,7 +78,7 @@ export const Empty: Story = {
     setup() {
       return () =>
         h('div', { style: { padding: '16px', fontFamily: 'system-ui, sans-serif', color: '#999' } }, [
-          'Nenhum mapping visível quando todos têm gesture=None ou action=none.',
+          'No mapping is visible when every entry has gesture=None or action=none.',
         ]);
     },
   }),
@@ -86,7 +86,7 @@ export const Empty: Story = {
     docs: {
       description: {
         story:
-          'Nenhum mapping é renderizado quando todos têm gesture `None` ou action `none`. O componente simplesmente não aparece — vazio intencional.',
+          'Nothing is rendered when every entry has gesture `None` or action `none`. The component simply does not appear — empty on purpose.',
       },
     },
   },

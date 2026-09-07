@@ -550,7 +550,7 @@ export const PoseTracking: Story = {
     docs: {
       description: {
         story:
-          '📹 Arms track your body pose using webcam! Click "Iniciar Detecção" to start. Move your arms to see Taskin\'s arms move.',
+          '📹 Arms track your body pose using webcam! Click "Start Detection" to start. Move your arms to see Taskin\'s arms move.',
       },
     },
   },

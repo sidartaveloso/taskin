@@ -674,7 +674,7 @@ export const FaceTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story: '📹 Eyes track your face using webcam! Click "Iniciar Detecção" to start.',
+        story: '📹 Eyes track your face using webcam! Click "Start Detection" to start.',
       },
     },
   },
