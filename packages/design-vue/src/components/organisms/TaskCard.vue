@@ -101,13 +101,13 @@ const progressVariant = computed(() => {
 // Status label
 const statusLabel = computed(() => {
   const labels: Record<TaskStatus, string> = {
-    pending: 'Pendente',
-    'in-progress': 'Em Progresso',
-    paused: 'Pausada',
-    'in-review': 'Em Revisão',
-    done: 'Concluída',
-    blocked: 'Bloqueada',
-    canceled: 'Cancelada',
+    pending: 'Pending',
+    'in-progress': 'In Progress',
+    paused: 'Paused',
+    'in-review': 'In Review',
+    done: 'Done',
+    blocked: 'Blocked',
+    canceled: 'Canceled',
   };
   return labels[computedTask.value.status];
 });
@@ -188,7 +188,7 @@ const formatDate = (date: Date | string): string => {
       "
     >
       <h4 class="task-card__days-title">
-        Progresso Diário
+        Daily Progress
       </h4>
       <div class="task-card__days-list">
         <DayBar
@@ -204,13 +204,13 @@ const formatDate = (date: Date | string): string => {
     <!-- Dates -->
     <div class="task-card__dates" v-if="computedTask.dates">
       <div class="task-card__date" v-if="computedTask.dates.dueDate">
-        <span class="task-card__date-label">Prazo:</span>
+        <span class="task-card__date-label">Due:</span>
         <span class="task-card__date-value">{{
           formatDate(computedTask.dates.dueDate)
         }}</span>
       </div>
       <div class="task-card__date" v-if="computedTask.dates.started">
-        <span class="task-card__date-label">Início:</span>
+        <span class="task-card__date-label">Start:</span>
         <span class="task-card__date-value">{{
           formatDate(computedTask.dates.started)
         }}</span>

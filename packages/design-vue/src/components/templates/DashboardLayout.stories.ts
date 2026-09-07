@@ -35,7 +35,7 @@ const meta: Meta<typeof DashboardLayout> = {
   args: {
     title: 'Taskin Dashboard',
     connectionStatus: 'connected',
-    statusText: 'Conectado',
+    statusText: 'Connected',
   },
 };
 
@@ -62,7 +62,7 @@ export const Default: Story = {
 export const WithError: Story = {
   args: {
     connectionStatus: 'error',
-    statusText: 'Erro de conexão',
+    statusText: 'Connection error',
     errorMessage: 'Não foi possível conectar ao servidor WebSocket',
     showRetry: true,
   },
@@ -84,7 +84,7 @@ export const WithError: Story = {
 export const Connecting: Story = {
   args: {
     connectionStatus: 'connecting',
-    statusText: 'Conectando...',
+    statusText: 'Connecting...',
   },
   render: (args) => ({
     components: { DashboardLayout },

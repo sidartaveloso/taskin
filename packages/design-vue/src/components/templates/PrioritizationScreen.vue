@@ -11,7 +11,7 @@
         "
       />
 
-      <div class="segmented" role="group" aria-label="Modo de visualização">
+      <div class="segmented" role="group" aria-label="View mode">
         <button
           v-for="v in ['cards', 'icons', 'grid'] as PrioritizationViewMode[]"
           :key="v"
@@ -21,7 +21,7 @@
           @click="emit('update:viewMode', v)"
         >
           {{
-            v === 'cards' ? '▤ Cards' : v === 'icons' ? '◫ Ícones' : '▦ Grid'
+            v === 'cards' ? '▤ Cards' : v === 'icons' ? '◫ Icons' : '▦ Grid'
           }}
         </button>
       </div>
@@ -38,9 +38,9 @@
           )
         "
       >
-        <option value="manual">Manual (prioridade)</option>
-        <option value="diff-desc">Dificuldade ↓ (maior→menor)</option>
-        <option value="diff-asc">Dificuldade ↑ (menor→maior)</option>
+        <option value="manual">Manual (priority)</option>
+        <option value="diff-desc">Difficulty ↓ (high→low)</option>
+        <option value="diff-asc">Difficulty ↑ (low→high)</option>
       </select>
 
       <button
@@ -98,7 +98,7 @@
       <PriorityGroupRenderer :nodes="tree" />
 
       <div class="empty-state" v-if="tree.length === 0">
-        <p>Nenhuma tarefa encontrada.</p>
+        <p>No tasks found.</p>
       </div>
     </div>
 
@@ -133,7 +133,7 @@
         class="prioritization-screen__camera-status"
         v-if="detecting && !cameraActive"
       >
-        ⏳ Ativando câmera...
+        ⏳ Starting camera...
       </div>
     </div>
   </div>
