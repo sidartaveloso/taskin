@@ -99,7 +99,7 @@ function onRenameGroup(node: PriorityGroupNode) {
           class="move-btn"
           v-if="ctx.dragEnabled"
           type="button"
-          title="Mover para cima"
+          title="Move up"
           @click="ctx.onMoveUp(node.groupId)"
         >
           ▲
@@ -108,7 +108,7 @@ function onRenameGroup(node: PriorityGroupNode) {
           class="move-btn"
           v-if="ctx.dragEnabled"
           type="button"
-          title="Mover para baixo"
+          title="Move down"
           @click="ctx.onMoveDown(node.groupId)"
         >
           ▼
@@ -117,7 +117,7 @@ function onRenameGroup(node: PriorityGroupNode) {
           class="move-btn"
           v-if="ctx.dragEnabled"
           type="button"
-          title="Desagrupar"
+          title="Ungroup"
           @click="ctx.onUngroup(node.groupId)"
         >
           ✕
@@ -155,7 +155,7 @@ function onRenameGroup(node: PriorityGroupNode) {
         <button
           class="move-btn"
           type="button"
-          title="Mover para cima"
+          title="Move up"
           @click="ctx.onMoveUp(node.task.id)"
         >
           ▲
@@ -163,7 +163,7 @@ function onRenameGroup(node: PriorityGroupNode) {
         <button
           class="move-btn"
           type="button"
-          title="Mover para baixo"
+          title="Move down"
           @click="ctx.onMoveDown(node.task.id)"
         >
           ▼

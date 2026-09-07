@@ -9,8 +9,8 @@ describe('DashboardHeader', () => {
   });
 
   it('renders the status text', () => {
-    const wrapper = mount(DashboardHeader, { props: { status: 'connected', statusText: 'Conectado' } });
-    expect(wrapper.find('.status-text').text()).toBe('Conectado');
+    const wrapper = mount(DashboardHeader, { props: { status: 'connected', statusText: 'Connected' } });
+    expect(wrapper.find('.status-text').text()).toBe('Connected');
   });
 
   it('applies the status class to the indicator', () => {

@@ -23,7 +23,7 @@ const meta: Meta<typeof Dashboard> = {
   args: {
     title: 'Taskin Dashboard',
     connectionStatus: 'connected',
-    statusText: 'Conectado',
+    statusText: 'Connected',
     isLoading: false,
   },
 };
@@ -89,7 +89,7 @@ export const WithError: Story = {
 export const Connecting: Story = {
   args: {
     connectionStatus: 'connecting',
-    statusText: 'Conectando... ',
+    statusText: 'Connecting... ',
     isLoading: true,
     tasks: [],
   },

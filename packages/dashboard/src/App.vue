@@ -12,7 +12,7 @@
       :class="{ active: mode === 'prioritization' }"
       @click="mode = 'prioritization'"
     >
-      Priorização
+      Prioritization
     </button>
   </div>
 
@@ -166,9 +166,9 @@ const connectionStatusType = computed<'connected' | 'disconnected' | 'connecting
 
 // Connection status text
 const statusText = computed(() => {
-  if (isConnected.value) return 'Conectado';
-  if (connectionError.value) return 'Erro de conexão';
-  return 'Conectando...';
+  if (isConnected.value) return 'Connected';
+  if (connectionError.value) return 'Connection error';
+  return 'Connecting...';
 });
 </script>
 

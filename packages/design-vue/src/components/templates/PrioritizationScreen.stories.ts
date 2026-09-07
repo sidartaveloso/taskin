@@ -186,8 +186,8 @@ export const WithGesture: Story = {
               },
             }),
             cameraActive.value
-              ? h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#4caf50' } }, '📷 Câmera ativa')
-              : h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#999' } }, '⏳ Aguardando câmera...'),
+              ? h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#4caf50' } }, '📷 Camera on')
+              : h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#999' } }, '⏳ Waiting for camera...'),
           ],
         );
     },
@@ -232,7 +232,7 @@ export const WithGesture: Story = {
     await waitFor(() => {
       const status = canvasElement.querySelector<HTMLElement>('.prioritization-screen__camera-status');
       expect(status).not.toBeNull();
-      expect(status!.textContent).toContain('Ativando câmera');
+      expect(status!.textContent).toContain('Starting camera');
     });
 
     // Button still shows "Iniciar Detecção" because cameraActive is still false
