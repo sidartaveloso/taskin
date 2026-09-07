@@ -6,17 +6,17 @@
         :disabled="disabled"
         @click="emit('toggle-tracking')"
       >
-        {{ isDetecting ? 'Parar' : 'Iniciar' }} Detecção
+        {{ isDetecting ? 'Stop' : 'Start' }} Detection
       </button>
 
       <div class="status" v-if="isDetecting">
         <span class="status-indicator" />
-        Detectando...
+        Detecting...
       </div>
     </div>
 
     <fieldset class="control-group" v-if="displayControls.length">
-      <legend class="control-group__legend">Exibição</legend>
+      <legend class="control-group__legend">Display</legend>
 
       <label
         class="control-checkbox"
@@ -33,7 +33,7 @@
     </fieldset>
 
     <fieldset class="control-group" v-if="syncControls.length">
-      <legend class="control-group__legend">Sincronizar</legend>
+      <legend class="control-group__legend">Sync</legend>
 
       <label
         class="control-checkbox"
@@ -92,31 +92,31 @@ const DESCRIPTORS: Record<TrackingControl, ControlDescriptor> = {
   },
   eyes: {
     group: 'sync',
-    label: 'Olhos',
+    label: 'Eyes',
     checked: () => props.syncEyes,
     emit: (value) => emit('update:syncEyes', value),
   },
   mouth: {
     group: 'sync',
-    label: 'Boca',
+    label: 'Mouth',
     checked: () => props.syncMouth,
     emit: (value) => emit('update:syncMouth', value),
   },
   expressions: {
     group: 'sync',
-    label: 'Expressões',
+    label: 'Expressions',
     checked: () => props.syncExpressions,
     emit: (value) => emit('update:syncExpressions', value),
   },
   arms: {
     group: 'sync',
-    label: 'Braços',
+    label: 'Arms',
     checked: () => props.syncArms,
     emit: (value) => emit('update:syncArms', value),
   },
   gestures: {
     group: 'sync',
-    label: 'Gestos',
+    label: 'Gestures',
     checked: () => props.syncGestures,
     emit: (value) => emit('update:syncGestures', value),
   },

@@ -126,7 +126,7 @@ export const DebugMode: Story = {
     expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
     const buttons = canvasElement.querySelectorAll('button.control-button');
     expect(buttons.length).toBeGreaterThan(0);
-    expect(buttons[0]?.textContent).toContain('Iniciar');
+    expect(buttons[0]?.textContent).toContain('Start');
   },
 };
 
