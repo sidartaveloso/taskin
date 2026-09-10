@@ -1,6 +1,25 @@
 // Import global CSS variables (unscoped)
 import './styles/variables.css';
 
+/**
+ * A folha do ui-sense entra no bundle de CSS deste pacote.
+ *
+ * Os componentes de sensor (TrackingControls, NoiseTrackingControls,
+ * WebcamVideo) vem do `@opentask/ui-sense`, cujo JS ja e embutido aqui — mas o
+ * CSS dele e um artefato separado. Sem este import, quem consome o design-vue
+ * de fora do monorepo recebe esses componentes sem estilo: botao pelado,
+ * checkbox nativo, fieldset sem moldura.
+ *
+ * Com `cssCodeSplit: false`, o Vite resolve e inlina isto em `dist/index.css`,
+ * entao o consumidor precisa de um import so:
+ *
+ *   import '@opentask/taskin-design-vue/style.css';
+ *
+ * Custa a duplicacao das regras para quem tambem importa a folha do ui-sense
+ * direto — regras iguais, sem efeito visual.
+ */
+import '@opentask/ui-sense/style.css';
+
 // Export all components by atomic design level
 export * from './components/atoms';
 // Export molecules manually to handle TimeEstimate conflict
