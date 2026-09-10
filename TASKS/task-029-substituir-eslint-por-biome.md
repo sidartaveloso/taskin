@@ -1,8 +1,8 @@
 # Task 029 — substituir eslint por biome
 
-Status: done\
-Type: refactor\
-Assignee: sidarta-veloso\
+- Status: done
+- Type: refactor
+- Assignee: sidarta-veloso
 
 ## Description
 

@@ -188,7 +188,9 @@ async function setupProviderConfig(provider: ProviderInfo, cwd: string): Promise
 async function setupFileSystemProvider(cwd: string): Promise<Record<string, string>> {
   const tasksDir = join(cwd, 'TASKS');
   // Chama inicialização do provider
-  const { FileSystemTaskProvider, UserRegistry } = await import('@opentask/taskin-file-system-provider');
+  const { DEFAULT_METADATA_STYLE_ID, FileSystemTaskProvider, getMetadataStyle, UserRegistry } = await import(
+    '@opentask/taskin-file-system-provider'
+  );
 
   const userRegistry = new UserRegistry({ taskinDir: join(cwd, '.taskin') });
   const fileSystemProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
@@ -206,11 +208,17 @@ async function setupFileSystemProvider(cwd: string): Promise<Record<string, stri
     // Create a sample task
     const sampleTaskFile = join(tasksDir, 'task-001-setup-project.md');
     info('Creating sample task...');
+    // A amostra sai no mesmo estilo que o provider vai escrever daqui em
+    // diante: um arquivo de exemplo fora do padrao ensina o padrao errado.
+    const sampleMetadata = getMetadataStyle(DEFAULT_METADATA_STYLE_ID).format([
+      { label: 'Status', value: 'pending' },
+      { label: 'Type', value: 'chore' },
+      { label: 'Assignee', value: 'developer' },
+    ]);
+
     const sampleTask = `# Task 001 — Setup Project
 
-Status: pending
-Type: chore
-Assignee: developer
+${sampleMetadata}
 
 ## Description
 
@@ -230,8 +238,14 @@ You can edit or delete this file. Use \`taskin list\` to see all tasks.
     success(`✓ Created sample task ${colors.highlight('task-001-setup-project.md')}`);
   }
 
+  /*
+   * O estilo vai escrito no `.taskin.json`, e nao deixado implicito: o valor
+   * default muda entre versoes, e um projeto que nunca escolheu nao deveria
+   * ver seus arquivos mudarem de marcacao num upgrade.
+   */
   return {
     tasksDir: 'TASKS',
+    metadataStyle: DEFAULT_METADATA_STYLE_ID,
   };
 }
 

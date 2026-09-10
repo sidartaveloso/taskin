@@ -58,6 +58,15 @@ export interface ResolveProviderOptions {
    * flag). Only meaningful for providers backed by a directory.
    */
   tasksDir?: string;
+  /**
+   * Merged over `provider.config` from `.taskin.json`, for this run only.
+   *
+   * How a flag reaches a provider without widening the provider-agnostic
+   * contract: `--metadata-style` means something to the file provider and
+   * nothing to a Jira one, so it travels as configuration rather than as a
+   * parameter of `ITaskProvider.lint`.
+   */
+  configOverrides?: Record<string, unknown>;
 }
 
 /**

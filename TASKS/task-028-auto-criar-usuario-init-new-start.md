@@ -1,8 +1,8 @@
 # Task 028 — Auto-criar primeiro usuário no init/new/start
 
-Status: done\
-Type: feat\
-Assignee: To be defined\
+- Status: done
+- Type: feat
+- Assignee: To be defined
 
 ## Description
 

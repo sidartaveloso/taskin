@@ -1,8 +1,8 @@
 # Task 035 — Spike e decisao do mecanismo de geracao de imagem no browser (WebGPU/transformers.js + fallback)
 
-Status: pending\
-Type: feat\
-Assignee: sidarta-veloso\
+- Status: pending
+- Type: feat
+- Assignee: sidarta-veloso
 
 ## Description
 

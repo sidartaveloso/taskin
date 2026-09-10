@@ -7,6 +7,15 @@ import chalk from 'chalk';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
+/**
+ * Marking styles the file provider understands.
+ *
+ * Duplicated as a literal instead of imported so the CLI's help text does not
+ * pull the file provider into the startup path — it is loaded lazily, by the
+ * factory, only when `provider.type` is `fs`.
+ */
+const METADATA_STYLES = ['list', 'hard-break', 'plain'] as const;
+
 export const lintCommand = defineCommand({
   name: 'lint',
   description: '🔍 Validate task markdown files',
@@ -20,6 +29,10 @@ export const lintCommand = defineCommand({
       flags: '-f, --fix',
       description: 'Automatically fix task file format issues',
     },
+    {
+      flags: '-m, --metadata-style <style>',
+      description: `Rewrite the metadata block in this style with --fix (${METADATA_STYLES.join(' | ')})`,
+    },
   ],
   handler: async (options: LintTasksOptions) => {
     await executeLint(options);
@@ -27,7 +40,24 @@ export const lintCommand = defineCommand({
 });
 
 async function executeLint(options: LintTasksOptions): Promise<void> {
-  const { provider, providerType } = await resolveTaskProvider(options.path ? { tasksDir: options.path } : {});
+  const style = options.metadataStyle;
+
+  if (style !== undefined && !(METADATA_STYLES as readonly string[]).includes(style)) {
+    console.error(chalk.red(`Unknown metadata style "${style}". Use one of: ${METADATA_STYLES.join(', ')}.`));
+    process.exit(1);
+  }
+
+  // Converter e escrever: pedir o estilo sem `--fix` nao faria nada, e um
+  // comando que aceita a flag e a ignora e pior do que um que recusa.
+  if (style !== undefined && !options.fix) {
+    console.error(chalk.red('--metadata-style rewrites files, so it requires --fix.'));
+    process.exit(1);
+  }
+
+  const { provider, providerType } = await resolveTaskProvider({
+    ...(options.path ? { tasksDir: options.path } : {}),
+    ...(style !== undefined && { configOverrides: { metadataStyle: style, convertMetadataStyleTo: style } }),
+  });
 
   if (options.fix) {
     console.log(`🔧 Fixing tasks (provider: ${providerType})\n`);

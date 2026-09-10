@@ -36,7 +36,9 @@ function expandProviderConfig(config: Record<string, unknown>): Record<string, u
  * `.taskin/`, so every assignee silently fell back to a temporary user.
  */
 const buildFileSystemProvider: ProviderBuilder = async ({ projectRoot, providerConfig, tasksDirOverride }) => {
-  const { FileSystemTaskProvider, UserRegistry } = await import('@opentask/taskin-file-system-provider');
+  const { FileSystemTaskProvider, isMetadataStyleId, UserRegistry } = await import(
+    '@opentask/taskin-file-system-provider'
+  );
 
   const configuredTasksDir = typeof providerConfig.tasksDir === 'string' ? providerConfig.tasksDir : 'TASKS';
   const tasksDir = path.resolve(projectRoot, tasksDirOverride ?? configuredTasksDir);
@@ -44,12 +46,26 @@ const buildFileSystemProvider: ProviderBuilder = async ({ projectRoot, providerC
   const userRegistry: IUserRegistry = new UserRegistry({ taskinDir: path.join(projectRoot, '.taskin') });
 
   /*
+   * O estilo de marcacao dos metadados. `metadataStyle` vale para arquivo
+   * novo; `convertMetadataStyleTo` e o `--metadata-style` do lint, que
+   * reescreve os que ja existem. Valor invalido no `.taskin.json` e ignorado
+   * em vez de derrubar o comando: o default cobre.
+   */
+  const metadataStyle = isMetadataStyleId(providerConfig.metadataStyle) ? providerConfig.metadataStyle : undefined;
+  const convertMetadataStyleTo = isMetadataStyleId(providerConfig.convertMetadataStyleTo)
+    ? providerConfig.convertMetadataStyleTo
+    : undefined;
+
+  /*
    * O unico ponto que sabe a forma concreta da task. A assercao e o que fecha o
    * tipo existencial de `OpaqueTask`: daqui para fora ninguem consegue fabricar
    * uma task, so devolver as que o proprio provider entregou — que e
    * exatamente o que `updateTask` precisa.
    */
-  const provider = new FileSystemTaskProvider(tasksDir, userRegistry) as unknown as ITaskProvider<OpaqueTask>;
+  const provider = new FileSystemTaskProvider(tasksDir, userRegistry, undefined, undefined, {
+    ...(metadataStyle !== undefined && { metadataStyle }),
+    ...(convertMetadataStyleTo !== undefined && { convertMetadataStyleTo }),
+  }) as unknown as ITaskProvider<OpaqueTask>;
 
   return { provider, userRegistry };
 };
@@ -119,7 +135,7 @@ export async function resolveTaskProvider(
 
   const context: ProviderBuildContext = {
     projectRoot,
-    providerConfig: expandProviderConfig(config.provider.config),
+    providerConfig: { ...expandProviderConfig(config.provider.config), ...options.configOverrides },
     ...(options.tasksDir !== undefined && { tasksDirOverride: options.tasksDir }),
   };
 

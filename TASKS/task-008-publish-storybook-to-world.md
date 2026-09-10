@@ -1,8 +1,8 @@
 # Task 008 — publish storybook to world
 
-Status: done\
-Type: feat\
-Assignee: Sidarta Veloso\
+- Status: done
+- Type: feat
+- Assignee: Sidarta Veloso
 
 ## Description
 

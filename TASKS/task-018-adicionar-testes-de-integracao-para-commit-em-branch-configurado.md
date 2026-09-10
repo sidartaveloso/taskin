@@ -1,8 +1,8 @@
 # Task 018 — adicionar testes de integração para commit em branch configurado
 
-Status: done\
-Type: test\
-Assignee: Sidarta Veloso\
+- Status: done
+- Type: test
+- Assignee: Sidarta Veloso
 
 ## Description
 

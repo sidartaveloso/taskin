@@ -1,8 +1,8 @@
 # Task 033 — Completar análise do aproveitamento do LocalStudio e transformar em tasks priorizadas (browser AI + imagens por task)
 
-Status: done\
-Type: feat\
-Assignee: sidarta-veloso\
+- Status: done
+- Type: feat
+- Assignee: sidarta-veloso
 
 ## Description
 

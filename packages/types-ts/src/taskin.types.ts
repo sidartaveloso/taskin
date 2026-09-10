@@ -84,6 +84,11 @@ export interface FinishTaskOptions {
 export interface LintTasksOptions {
   path?: string;
   fix?: boolean;
+  /**
+   * Marking style to rewrite the metadata block into, for providers that keep
+   * tasks as text. Requires `fix`.
+   */
+  metadataStyle?: string;
 }
 
 /**

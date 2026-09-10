@@ -13,7 +13,7 @@ import {
   UserStatsSchema,
 } from '@opentask/taskin-types';
 import { classifyAssignee, foldAssignee } from './assignee-identity.js';
-import { stripHardBreak } from './inline-metadata.js';
+import { readMetadataField } from './metadata-style/index.js';
 
 /**
  * As sete chaves de `byDayOfWeek`, na forma que `Date.getDay()` produz.
@@ -413,11 +413,8 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
       // Remove code blocks before extracting metadata to avoid parsing examples
       const contentWithoutCodeBlocks = removeCodeBlocks(content);
 
-      const extract = (name: string) => {
-        const rx = new RegExp(`^${name}:\\s*(.+)$`, 'im');
-        const captured = contentWithoutCodeBlocks.match(rx)?.[1];
-        return captured === undefined ? undefined : stripHardBreak(captured);
-      };
+      // Le em qualquer um dos tres estilos de marcacao (ver ./metadata-style).
+      const extract = (name: string) => readMetadataField(contentWithoutCodeBlocks, name);
 
       const statusValue = extract('Status');
       const assigneeValue = extract('Assignee');
