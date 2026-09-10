@@ -1,8 +1,8 @@
 # Task 002 — Test CLI Implementation
 
-Status: done\
-Type: chore\
-Assignee: Sidarta Veloso\
+- Status: done
+- Type: chore
+- Assignee: Sidarta Veloso
 
 ## Description
 

@@ -1,8 +1,8 @@
 # Task 045 — Build do @taskin/docs quebra o release: target do vitepress incompativel com esbuild 0.28
 
-Status: done\
-Type: fix\
-Assignee: sidarta-veloso\
+- Status: done
+- Type: fix
+- Assignee: sidarta-veloso
 
 ## Description
 

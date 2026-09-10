@@ -1,8 +1,8 @@
 # Task 042 — Contraste dos tokens de status e catraca de a11y no Storybook
 
-Status: pending\
-Type: chore\
-Assignee: sidarta-veloso\
+- Status: pending
+- Type: chore
+- Assignee: sidarta-veloso
 
 ## Description
 

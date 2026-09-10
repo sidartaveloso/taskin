@@ -103,7 +103,7 @@ Assignee: Test User
 Test description`;
 
       const expectedContent = `# Task 001 — Test Task
-Status: in-progress\\
+Status: in-progress
 Type: feat
 Assignee: Test User
 
@@ -340,10 +340,10 @@ Test description`;
       await provider.updateTask(mockTask);
 
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
-      expect(written).toMatch(/^Priority: 30\\$/m);
-      expect(written).toMatch(/^Group: g-xyz789\\$/m);
-      expect(written).toMatch(/^GroupName: Frontend\\$/m);
-      expect(written).toMatch(/^Difficulty: 4\\$/m);
+      expect(written).toMatch(/^Priority: 30$/m);
+      expect(written).toMatch(/^Group: g-xyz789$/m);
+      expect(written).toMatch(/^GroupName: Frontend$/m);
+      expect(written).toMatch(/^Difficulty: 4$/m);
 
       // Round-trip: reading the written content back should yield the same fields
       (fs.readdir as Mock).mockResolvedValue(['task-001-test.md']);
@@ -385,8 +385,8 @@ Test description`;
       await provider.updateTask(mockTask);
 
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
-      expect(written).toMatch(/^Priority: 10\\$/m);
-      expect(written).toMatch(/^Difficulty: 2\\$/m);
+      expect(written).toMatch(/^Priority: 10$/m);
+      expect(written).toMatch(/^Difficulty: 2$/m);
       expect(written).not.toMatch(/^Group:/m);
       expect(written).not.toMatch(/^GroupName:/m);
     });
@@ -805,7 +805,7 @@ Descrição da tarefa em português
 Notas em português`;
 
       const expectedContent = `# 🧩 Task 001 — Tarefa em Português
-Status: in-progress\\
+Status: in-progress
 Tipo: feat
 Responsável: João Silva
 
@@ -853,7 +853,7 @@ Task description in English
 Notes in English`;
 
       const expectedContent = `# 🧩 Task 002 — English Task
-Status: done\\
+Status: done
 Type: fix
 Assignee: John Doe
 
@@ -942,9 +942,9 @@ Tarefa em português`;
       expect(capturedContent).toContain('## Tarefas');
       expect(capturedContent).toContain('## Notas');
       // Inline metadata keys should also be in Portuguese
-      expect(capturedContent).toMatch(/^Status: pending/m);
-      expect(capturedContent).toMatch(/^Tipo: feat/m);
-      expect(capturedContent).toMatch(/^Responsável: Maria/m);
+      expect(capturedContent).toMatch(/^- Status: pending/m);
+      expect(capturedContent).toMatch(/^- Tipo: feat/m);
+      expect(capturedContent).toMatch(/^- Responsável: Maria/m);
     });
 
     it('should inherit locale from existing tasks even with English provider', async () => {
@@ -1002,9 +1002,9 @@ Primeira tarefa em português`;
       expect(capturedContent).toContain('## Descrição');
       expect(capturedContent).toContain('## Tarefas');
       expect(capturedContent).toContain('## Notas');
-      expect(capturedContent).toMatch(/^Status: pending/m);
-      expect(capturedContent).toMatch(/^Tipo: fix/m);
-      expect(capturedContent).toMatch(/^Responsável: Maria/m);
+      expect(capturedContent).toMatch(/^- Status: pending/m);
+      expect(capturedContent).toMatch(/^- Tipo: fix/m);
+      expect(capturedContent).toMatch(/^- Responsável: Maria/m);
 
       // Should NOT contain English headers
       expect(capturedContent).not.toContain('## Description');
@@ -1053,9 +1053,9 @@ Primeira tarefa em português`;
       expect(capturedContent).toContain('## Tasks');
       expect(capturedContent).toContain('## Notes');
       // Inline metadata keys always in English
-      expect(capturedContent).toMatch(/^Status: pending/m);
-      expect(capturedContent).toMatch(/^Type: feat/m);
-      expect(capturedContent).toMatch(/^Assignee: John/m);
+      expect(capturedContent).toMatch(/^- Status: pending/m);
+      expect(capturedContent).toMatch(/^- Type: feat/m);
+      expect(capturedContent).toMatch(/^- Assignee: John/m);
     });
 
     it('should not corrupt Portuguese content during multiple status changes', async () => {

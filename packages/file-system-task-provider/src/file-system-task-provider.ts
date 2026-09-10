@@ -12,7 +12,13 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
-import { HARD_BREAK, stripHardBreak } from './inline-metadata.js';
+import {
+  DEFAULT_METADATA_STYLE_ID,
+  getMetadataStyle,
+  type MetadataStyleId,
+  readMetadataField,
+  resolveMetadataStyle,
+} from './metadata-style/index.js';
 import type { CreateTaskFileResult, TaskFile } from './task-file.types.js';
 import { createLintResult, fixTaskFile, validateTaskFile } from './task-validator.js';
 import type { ILogger } from './user-registry.js';
@@ -47,10 +53,10 @@ function extractTaskIdFromFileName(fileName: string): string | undefined {
  * GroupName/Difficulty) into the typed shape expected on TaskFile.
  */
 function parsePrioritizationFields(
-  priorityMatch: string | null,
-  groupMatch: string | null,
-  groupNameMatch: string | null,
-  difficultyMatch: string | null,
+  priorityMatch: string | undefined,
+  groupMatch: string | undefined,
+  groupNameMatch: string | undefined,
+  difficultyMatch: string | undefined,
 ): {
   order?: number;
   groupId?: GroupId;
@@ -69,36 +75,100 @@ function parsePrioritizationFields(
 }
 
 /**
- * Upserts or removes a single `Field: value` inline metadata line in the
- * task markdown content, following the same convention used for `Status`.
+ * Upserts or removes a single `Field: value` line in the metadata block,
+ * keeping whatever marking style the file is already written in.
+ *
  * Passing `value === undefined` removes the line if present.
  */
-function setInlineField(content: string, fieldName: string, value: string | undefined): string {
-  const linePattern = new RegExp(`^${fieldName}:\\s*.+$\\n?`, 'im');
+function setInlineField(
+  content: string,
+  fieldName: string,
+  value: string | undefined,
+  fallbackStyle: MetadataStyleId,
+): string {
+  return resolveMetadataStyle(content, fallbackStyle).write(content, fieldName, value);
+}
 
-  if (value === undefined) {
-    return linePattern.test(content) ? content.replace(linePattern, '') : content;
-  }
+/**
+ * Options that are not part of the provider contract but change how this
+ * provider writes.
+ *
+ * @public
+ */
+export interface FileSystemTaskProviderOptions {
+  /**
+   * Marking style for files this provider creates.
+   *
+   * Only for creation: an edit follows the style of the file being edited, so
+   * a project that switches the setting does not end up with files half in one
+   * style and half in another.
+   */
+  readonly metadataStyle?: MetadataStyleId;
 
-  if (new RegExp(`^${fieldName}:\\s*.+$`, 'im').test(content)) {
-    return content.replace(new RegExp(`^${fieldName}:\\s*.+$`, 'im'), `${fieldName}: ${value}${HARD_BREAK}`);
-  }
-
-  return content.replace(/(^#.*\n)/, `$1${fieldName}: ${value}${HARD_BREAK}\n`);
+  /**
+   * When set, `lint(fix)` rewrites every file's metadata block into this
+   * style. Left unset — the default — `lint(fix)` normalizes each file within
+   * the style it already uses.
+   */
+  readonly convertMetadataStyleTo?: MetadataStyleId;
 }
 
 export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   private locale: Locale;
   private logger: ILogger;
+  private metadataStyle: MetadataStyleId;
+  private convertMetadataStyleTo: MetadataStyleId | undefined;
 
   constructor(
     private tasksDirectory: string,
     private userRegistry: IUserRegistry,
     locale: Locale = 'en-US',
     logger?: ILogger,
+    options: FileSystemTaskProviderOptions = {},
   ) {
     this.locale = locale;
     this.logger = logger ?? NullLogger;
+    this.metadataStyle = options.metadataStyle ?? DEFAULT_METADATA_STYLE_ID;
+    this.convertMetadataStyleTo = options.convertMetadataStyleTo;
+  }
+
+  /**
+   * Reads the metadata a task file carries, whatever style it is written in
+   * and whichever of the two locales named the fields.
+   */
+  private readInlineMetadata(content: string): {
+    status?: string;
+    type?: string;
+    assignee?: string;
+    priority?: string;
+    group?: string;
+    groupName?: string;
+    difficulty?: string;
+  } {
+    const i18n = getI18n(detectLocale(content));
+    const read = (english: string, localized: string) => readMetadataField(content, localized, english);
+
+    return {
+      status: read('Status', i18n.status),
+      type: read('Type', i18n.type),
+      assignee: read('Assignee', i18n.assignee),
+      priority: read('Priority', i18n.priority),
+      group: read('Group', i18n.group),
+      groupName: read('GroupName', i18n.groupName),
+      difficulty: read('Difficulty', i18n.difficulty),
+    };
+  }
+
+  /**
+   * The label to write a field under: the one the file already uses, or the
+   * English name.
+   *
+   * Without this, writing `Prioridade` into a file that already says
+   * `Priority` appends a second line instead of updating the first.
+   */
+  private labelFor(content: string, english: string, localized: string): string {
+    if (readMetadataField(content, localized) !== undefined) return localized;
+    return english;
   }
 
   /**
@@ -151,9 +221,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
    */
   private readAssigneeLine(content: string): string | undefined {
     const i18n = getI18n(detectLocale(content));
-    const match =
-      content.match(/^Assignee:\s*(.*)$/im) ?? content.match(new RegExp(`^${i18n.assignee}:\\s*(.*)$`, 'im'));
-    return match?.[1] === undefined ? undefined : stripHardBreak(match[1]);
+    return readMetadataField(content, 'Assignee', i18n.assignee);
   }
 
   private async pathExists(target: string): Promise<boolean> {
@@ -179,33 +247,15 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     // Extract title from first heading
     const title = content.match(TITLE_PATTERN)?.[1]?.trim() ?? 'Untitled';
 
-    // Auto-detect locale from content if possible, fallback to provider's locale
-    const contentLocale = detectLocale(content);
-    const i18n = getI18n(contentLocale);
-
-    // Extract metadata from inline format (Status: value)
-    // Support both English and localized field names
-    const extractInline = (name: string, localizedName?: string): string | null => {
-      // Try localized name first, then English name
-      const names = localizedName && localizedName !== name ? [localizedName, name] : [name];
-
-      for (const n of names) {
-        // Escape special regex characters in field name
-        const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
-        const captured = content.match(rx)?.[1];
-        if (captured !== undefined) return stripHardBreak(captured);
-      }
-      return null;
-    };
-
-    const statusMatch = extractInline('Status', i18n.status);
-    const typeMatch = extractInline('Type', i18n.type);
-    const assigneeMatch = extractInline('Assignee', i18n.assignee);
-    const priorityMatch = extractInline('Priority', i18n.priority);
-    const groupMatch = extractInline('Group', i18n.group);
-    const groupNameMatch = extractInline('GroupName', i18n.groupName);
-    const difficultyMatch = extractInline('Difficulty', i18n.difficulty);
+    const {
+      status: statusMatch,
+      type: typeMatch,
+      assignee: assigneeMatch,
+      priority: priorityMatch,
+      group: groupMatch,
+      groupName: groupNameMatch,
+      difficulty: difficultyMatch,
+    } = this.readInlineMetadata(content);
 
     // Resolve assignee from registry
     let assignee: User | undefined;
@@ -243,35 +293,47 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     if (hasSectionMetadata) {
       const { fixTaskFile } = await import('./task-validator.js');
-      await fixTaskFile(task.filePath);
+      await fixTaskFile(task.filePath, { metadataStyle: this.metadataStyle });
     }
 
     // Re-read after potential migration
     const content = await fs.readFile(task.filePath, 'utf-8');
 
-    // Update the Status inline metadata
-    let updatedContent: string;
+    /*
+     * Todas as escritas passam pelo estilo do arquivo, resolvido uma vez. O
+     * `Status` usa o rotulo localizado que o arquivo ja tem: reescrever
+     * `Responsável` como `Assignee` era o jeito rapido de transformar um
+     * arquivo pt-BR num arquivo com dois campos de responsavel.
+     */
+    const i18n = getI18n(detectLocale(content));
+    const style = resolveMetadataStyle(content, this.metadataStyle);
 
-    if (/^Status:\s*.+$/im.test(content)) {
-      // Replace existing Status line
-      updatedContent = content.replace(/^Status:\s*.+$/im, `Status: ${task.status}${HARD_BREAK}`);
-    } else {
-      // If no Status field exists, insert it after the H1 title
-      updatedContent = content.replace(/(^#.*\n)/, `$1Status: ${task.status}${HARD_BREAK}\n`);
-    }
+    let updatedContent = style.write(content, this.labelFor(content, 'Status', i18n.status), task.status);
 
     // Update prioritization fields (manual order, ad hoc group, difficulty)
     updatedContent = setInlineField(
       updatedContent,
-      'Priority',
+      this.labelFor(updatedContent, 'Priority', i18n.priority),
       task.order !== undefined ? String(task.order) : undefined,
+      this.metadataStyle,
     );
-    updatedContent = setInlineField(updatedContent, 'Group', task.groupId || undefined);
-    updatedContent = setInlineField(updatedContent, 'GroupName', task.groupName || undefined);
     updatedContent = setInlineField(
       updatedContent,
-      'Difficulty',
+      this.labelFor(updatedContent, 'Group', i18n.group),
+      task.groupId || undefined,
+      this.metadataStyle,
+    );
+    updatedContent = setInlineField(
+      updatedContent,
+      this.labelFor(updatedContent, 'GroupName', i18n.groupName),
+      task.groupName || undefined,
+      this.metadataStyle,
+    );
+    updatedContent = setInlineField(
+      updatedContent,
+      this.labelFor(updatedContent, 'Difficulty', i18n.difficulty),
       task.difficulty !== undefined ? String(task.difficulty) : undefined,
+      this.metadataStyle,
     );
 
     // Write the updated content back to the file
@@ -296,33 +358,15 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       // Extract title from first heading
       const title = content.match(TITLE_PATTERN)?.[1]?.trim() ?? 'Untitled';
 
-      // Auto-detect locale from content if possible, fallback to provider's locale
-      const contentLocale = detectLocale(content);
-      const i18n = getI18n(contentLocale);
-
-      // Extract metadata from inline format (Status: value)
-      // Support both English and localized field names
-      const extractInline = (name: string, localizedName?: string): string | null => {
-        // Try localized name first, then English name
-        const names = localizedName && localizedName !== name ? [localizedName, name] : [name];
-
-        for (const n of names) {
-          // Escape special regex characters in field name
-          const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
-          const captured = content.match(rx)?.[1];
-          if (captured !== undefined) return stripHardBreak(captured);
-        }
-        return null;
-      };
-
-      const statusMatch = extractInline('Status', i18n.status);
-      const typeMatch = extractInline('Type', i18n.type);
-      const assigneeMatch = extractInline('Assignee', i18n.assignee);
-      const priorityMatch = extractInline('Priority', i18n.priority);
-      const groupMatch = extractInline('Group', i18n.group);
-      const groupNameMatch = extractInline('GroupName', i18n.groupName);
-      const difficultyMatch = extractInline('Difficulty', i18n.difficulty);
+      const {
+        status: statusMatch,
+        type: typeMatch,
+        assignee: assigneeMatch,
+        priority: priorityMatch,
+        group: groupMatch,
+        groupName: groupNameMatch,
+        difficulty: difficultyMatch,
+      } = this.readInlineMetadata(content);
 
       // Resolve assignee from registry
       let assignee: User | undefined;
@@ -438,11 +482,15 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   }): string {
     const { id, title, type, description, assignee, i18n } = data;
 
+    const metadata = getMetadataStyle(this.metadataStyle).format([
+      { label: i18n.status, value: 'pending' },
+      { label: i18n.type, value: type },
+      { label: i18n.assignee, value: assignee },
+    ]);
+
     return `# 🧩 Task ${id} — ${title}
 
-${i18n.status}: pending${HARD_BREAK}
-${i18n.type}: ${type}${HARD_BREAK}
-${i18n.assignee}: ${assignee}${HARD_BREAK}
+${metadata}
 
 ## ${i18n.description}
 ${description || i18n.descriptionPlaceholder}
@@ -494,7 +542,10 @@ ${i18n.notesPlaceholder}
 
       let fixedCount = 0;
       for (const filePath of taskFiles) {
-        const wasFixed = await fixTaskFile(filePath);
+        const wasFixed = await fixTaskFile(filePath, {
+          metadataStyle: this.metadataStyle,
+          ...(this.convertMetadataStyleTo !== undefined && { convertTo: this.convertMetadataStyleTo }),
+        });
         if (wasFixed) {
           fixedCount++;
         }

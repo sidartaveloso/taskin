@@ -1,8 +1,8 @@
 # Task 040 — S3-compatible mirror com historico para TASKS
 
-Status: pending\
-Type: feat\
-Assignee: sidarta-veloso\
+- Status: pending
+- Type: feat
+- Assignee: sidarta-veloso
 
 ## Description
 

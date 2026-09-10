@@ -1,8 +1,8 @@
 # Task 041 — GitHub task provider: issues como registro e projects v2 como projecao
 
-Status: pending\
-Type: feat\
-Assignee: jorisveloso\
+- Status: pending
+- Type: feat
+- Assignee: jorisveloso
 
 ## Description
 

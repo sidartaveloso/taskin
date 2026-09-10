@@ -1,8 +1,8 @@
 # 🔔 Task 020 — Sistema de Notificações (Discord, Telegram, Webhook)
 
-Status: done\
-Type: feat\
-Assignee: Sidarta Veloso\
+- Status: done
+- Type: feat
+- Assignee: Sidarta Veloso
 
 ## Description
 
