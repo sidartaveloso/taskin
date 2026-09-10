@@ -16,6 +16,7 @@
       "outputs": []
     },
     "@taskin/docs#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": ["content/.vitepress/dist/**"]
     },
     "@taskin/n8n-plugin#build": {
