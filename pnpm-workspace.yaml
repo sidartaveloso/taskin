@@ -3,6 +3,8 @@ packages:
   - dev
 
 allowBuilds:
+  # postinstall do core-js so imprime mensagem de financiamento; nada a construir
+  core-js: false
   esbuild: true
   vue-demi: true
 
