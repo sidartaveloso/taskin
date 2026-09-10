@@ -1,12 +1,13 @@
 import type { Theme } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
-// A CSS do design system nao vem junto do JS: sem estes dois imports os
-// estilos com `scoped` nao aplicam. Foi o que fez o `WebcamVideo` aparecer como
-// um retangulo branco de 320x240 no lugar de ficar oculto — o `display: none`
-// dele mora aqui.
+// A CSS do design system nao vem junto do JS, entao precisa de import
+// explicito. Uma folha basta: o `design-vue` inlina a do `ui-sense` no proprio
+// bundle, entao os componentes de sensor (TrackingControls, WebcamVideo) vem
+// estilizados por esta linha. Sem ela, o `WebcamVideo` aparecia como um
+// retangulo branco de 320x240 em vez de ficar oculto.
 import '@opentask/taskin-design-vue/style.css';
-import '@opentask/ui-sense/style.css';
 import './custom.css';
+import { initAnalytics } from './analytics';
 import Layout from './Layout.vue';
 import MascotTrackingDemo from './MascotTrackingDemo.vue';
 
@@ -23,5 +24,10 @@ export default {
   enhanceApp({ app }) {
     // Usado no corpo do index.md, onde ha largura para os controles de tracking
     app.component('MascotTrackingDemo', MascotTrackingDemo);
+
+    // `enhanceApp` roda no servidor tambem; o guard de `window` fica dentro do
+    // `initAnalytics`. Pageview a cada rota vem do proprio SDK, via
+    // `capture_pageview: 'history_change'`.
+    initAnalytics('docs');
   },
 } satisfies Theme;

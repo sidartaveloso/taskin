@@ -1,4 +1,23 @@
-name: Deploy Storybook to GitHub Pages
+name: Deploy site and components to GitHub Pages
+
+# O site fica na raiz do Pages e a galeria de componentes em /components/.
+#
+# O endereco e `components` e nao `storybook` de proposito: quem consome o
+# taskin nao precisa saber qual ferramenta gera aquela pagina, e `components`
+# diz o que a pessoa vai encontrar. O Storybook continua sendo a ferramenta,
+# so nao aparece na URL.
+#
+# Um workflow só, de propósito: o `upload-pages-artifact` publica um artefato
+# que **substitui o site inteiro**. Dois workflows independentes — um para o
+# site, outro para o Storybook — se sobrescreveriam a cada deploy. Quem publica
+# tem que montar a árvore completa.
+#
+# Deploy só a partir da `main`, pela mesma razão. A versão anterior publicava a
+# `develop` em /beta/, e como o artefato é substituição total, um push na
+# `develop` apagava o que a `main` tinha publicado: foi assim que a pasta de
+# produção ficou parada em março enquanto a `develop` seguia publicando. Em
+# outros branches este workflow builda e guarda o resultado como artefato de CI,
+# para a quebra aparecer no PR sem tocar no site.
 
 on:
   push:
@@ -6,8 +25,17 @@ on:
       - main
       - develop
     paths:
+      - "packages/docs/**"
       - "packages/design-vue/**"
-      - ".github/workflows/storybook-deploy.yml"
+      - "packages/ui-sense/**"
+      - "packages/types-ts/**"
+      - ".github/workflows/pages-deploy.yml"
+  pull_request:
+    paths:
+      - "packages/docs/**"
+      - "packages/design-vue/**"
+      - "packages/ui-sense/**"
+      - ".github/workflows/pages-deploy.yml"
   workflow_dispatch:
 
 permissions:
@@ -20,7 +48,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -47,8 +75,7 @@ jobs:
 
       - name: Get pnpm store directory
         shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
         uses: actions/cache@v4
@@ -58,49 +85,86 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies for design-vue
-        run: pnpm install --frozen-lockfile --filter @opentask/taskin-design-vue
+      # Workspace inteiro, sem `--filter`. A versão anterior usava
+      # `--filter @opentask/taskin-design-vue` sem o sufixo `...`, então a cadeia
+      # de dependências não vinha e o build do Storybook morria com
+      # `Failed to resolve entry for package "@opentask/taskin-types"`.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Build Storybook
-        run: |
-          cd packages/design-vue
-          pnpm run build:storybook
+      # Builda os pacotes na ordem do turbo. Inclui o `@taskin/docs`, cujo
+      # `build` é o `vitepress build content` — o dist do site sai daqui.
+      - name: Build packages and site
+        run: pnpm build
         env:
           NODE_ENV: production
+          # Sem `VITE_POSTHOG_KEY` o analytics nao inicializa e o build segue —
+          # e o que permite rodar em fork e em PR sem a credencial.
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+          VITE_POSTHOG_PERSON_PROFILES: ${{ vars.VITE_POSTHOG_PERSON_PROFILES }}
 
-      - name: Prepare deployment directory
+      - name: Build the component gallery
+        run: pnpm --filter @opentask/taskin-design-vue run build:storybook
+        env:
+          NODE_ENV: production
+          # Sem `VITE_POSTHOG_KEY` o analytics nao inicializa e o build segue —
+          # e o que permite rodar em fork e em PR sem a credencial.
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+          VITE_POSTHOG_PERSON_PROFILES: ${{ vars.VITE_POSTHOG_PERSON_PROFILES }}
+
+      - name: Assemble the Pages tree
         run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          VERSION_LABEL=$(if [ "$BRANCH_NAME" = "main" ]; then echo "production"; else echo "beta"; fi)
+          set -euo pipefail
 
-          # Add version badge to index.html
-          echo "<div style='position:fixed;bottom:10px;right:10px;background:#333;color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;z-index:9999;'>$VERSION_LABEL - $(git rev-parse --short HEAD)</div>" >> packages/design-vue/storybook-static/index.html
+          SITE=packages/docs/content/.vitepress/dist
+          STORYBOOK=packages/design-vue/storybook-static
 
-          # Create deployment structure
-          mkdir -p deploy-temp
+          test -f "$SITE/index.html" || { echo "site nao buildou: $SITE/index.html ausente"; exit 1; }
+          test -f "$STORYBOOK/index.html" || { echo "storybook nao buildou: $STORYBOOK/index.html ausente"; exit 1; }
 
-          if [ "$BRANCH_NAME" = "main" ]; then
-            # Production: deploy to root
-            cp -r packages/design-vue/storybook-static/* deploy-temp/
-          else
-            # Beta: deploy to /beta/
-            mkdir -p deploy-temp/beta
-            cp -r packages/design-vue/storybook-static/* deploy-temp/beta/
+          # Badge com o commit, para dar para saber o que esta no ar
+          echo "<div style='position:fixed;bottom:10px;right:10px;background:#333;color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;z-index:9999;'>$(git rev-parse --short HEAD)</div>" >> "$STORYBOOK/index.html"
 
-            # Create index.html in root redirecting to /beta/ if root doesn't exist yet
-            if [ ! -f deploy-temp/index.html ]; then
-              echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/taskin/beta/"></head><body><p>Redirecting to <a href="/taskin/beta/">beta version</a>...</p></body></html>' > deploy-temp/index.html
-            fi
-          fi
+          mkdir -p deploy/components
+          cp -r "$SITE/." deploy/
+          cp -r "$STORYBOOK/." deploy/components/
+
+          echo "Arvore montada:"
+          ls deploy
+          test -f deploy/index.html
+          test -f deploy/components/index.html
+
+      # Fora da `main`, o resultado fica como artefato de CI: a quebra aparece
+      # no PR e o site publicado nao e tocado.
+      - name: Upload preview artifact
+        if: github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-preview-${{ github.sha }}
+          path: deploy
+          retention-days: 7
 
       - name: Setup Pages
+        if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v4
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "deploy-temp"
+          path: "deploy"
 
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

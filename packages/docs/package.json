@@ -17,6 +17,6 @@
     "vitepress": "^1.6.4",
     "vue": "^3.5.25",
     "@opentask/taskin-design-vue": "workspace:*",
-    "@opentask/ui-sense": "workspace:*"
+    "posthog-js": "^1.418.17"
   }
 }

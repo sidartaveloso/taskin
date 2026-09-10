@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { TaskinWithFaceTracking } from '@opentask/taskin-design-vue';
-import { ref } from 'vue';
+import { useData } from 'vitepress';
+import { computed, ref } from 'vue';
 
 /**
  * Demo do tracking, montada sob demanda.
@@ -13,12 +14,42 @@ import { ref } from 'vue';
  * a pessoa aperta o Start dos controles. Este botao apenas revela o demo.
  */
 const enabled = ref(false);
+
+/**
+ * O texto acompanha o locale do site.
+ *
+ * Dicionario local em vez de um pacote de i18n: sao quatro strings num
+ * componente do tema, e o `useData().lang` do vitepress ja diz em qual locale a
+ * pagina esta.
+ */
+const { lang } = useData();
+
+const COPY = {
+  en: {
+    load: '● load the tracking demo',
+    stop: '■ end the demo',
+    hintBefore: 'Press',
+    hintStart: 'Start Detection',
+    hintAfter:
+      'to allow the camera. Detection runs in the browser itself; nothing leaves your machine. Turn on Webcam under Display if you want to see the video alongside.',
+  },
+  'pt-BR': {
+    load: '● carregar o demo de tracking',
+    stop: '■ encerrar o demo',
+    hintBefore: 'Aperte',
+    hintStart: 'Start Detection',
+    hintAfter:
+      'para liberar a câmera. A detecção roda no próprio navegador; nada sai da sua máquina. Ligue Webcam em Display se quiser ver o vídeo ao lado.',
+  },
+} as const;
+
+const copy = computed(() => (lang.value.startsWith('pt') ? COPY['pt-BR'] : COPY.en));
 </script>
 
 <template>
   <div class="tracking-demo">
     <button v-if="!enabled" class="tracking-demo__start" type="button" @click="enabled = true">
-      ● carregar o demo de tracking
+      {{ copy.load }}
     </button>
 
     <template v-else>
@@ -27,13 +58,11 @@ const enabled = ref(false);
       </ClientOnly>
 
       <p class="tracking-demo__hint">
-        Aperte <strong>Start Detection</strong> para liberar a câmera. A detecção roda
-        no próprio navegador; nada sai da sua máquina. Ligue <strong>Webcam</strong> em
-        <em>Display</em> se quiser ver o vídeo ao lado.
+        {{ copy.hintBefore }} <strong>{{ copy.hintStart }}</strong> {{ copy.hintAfter }}
       </p>
 
       <button class="tracking-demo__stop" type="button" @click="enabled = false">
-        ■ encerrar o demo
+        {{ copy.stop }}
       </button>
     </template>
   </div>
