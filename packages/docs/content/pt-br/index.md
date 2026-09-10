@@ -104,9 +104,9 @@ Os nomes aí são de exemplo — inclusive o agente, que aparece como responsáv
 propósito: pelo servidor MCP, ele pega tarefa na mesma fila que o resto do time.
 
 ::: tip Como esta imagem é gerada
-Ela sai da story `LandingShowcase` do Storybook do design-vue, via
-`dev/scripts/gerar-imagem-do-dashboard.ts` — não é um print à mão. Quando o
-dashboard mudar, é só rodar o script de novo.
+Ela sai da [galeria de componentes](/components/), do estado `LandingShowcase`
+do dashboard, gerada por `dev/scripts/gerar-imagem-do-dashboard.ts` — não é um
+print à mão. Quando o dashboard mudar, é só rodar o script de novo.
 :::
 
 ## O contrato que faz isso funcionar
@@ -205,5 +205,5 @@ pose e gestos no próprio navegador, e o mascote é só um consumidor disso:
 
 <MascotTrackingDemo />
 
-Os outros 16 humores dele estão no
-[Storybook](https://opentask.github.io/taskin/beta/).
+Os outros 16 humores dele estão na
+[galeria de componentes](/components/).
