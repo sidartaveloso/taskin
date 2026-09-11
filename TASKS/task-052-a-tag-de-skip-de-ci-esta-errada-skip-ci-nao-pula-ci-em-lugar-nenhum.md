@@ -1,6 +1,6 @@
 # 🧩 Task 052 — A tag de skip de CI esta errada: [skip-ci] nao pula CI em lugar nenhum
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
 
@@ -96,21 +96,41 @@ originou esta task.
 
 ## Tasks
 
-- [ ] `commit-message.ts` no `git-utils`: `CI_SKIP_TAGS`, `DEFAULT_CI_SKIP_TAG`,
+- [x] `commit-message.ts` no `git-utils`: `CI_SKIP_TAGS`, `DEFAULT_CI_SKIP_TAG`,
       `isRecognizedCiSkipTag`, `appendCiSkipTag`, `buildTaskStatusCommitMessage`
-- [ ] `GitService` aceita `{ ciSkipTag }` no construtor e monta a mensagem pelo
+- [x] `GitService` aceita `{ ciSkipTag }` no construtor e monta a mensagem pelo
       modulo novo, nas tres ocorrencias
-- [ ] `auto-sync`: `ciSkipTag` em `SyncConfig`, `PushAfterCreateOptions` e
+- [x] `auto-sync`: `ciSkipTag` em `SyncConfig`, `PushAfterCreateOptions` e
       `SquashTaskFileOnDoneOptions`
-- [ ] `automation.ciSkipTag` no `TaskinConfigSchema`, com default `[skip ci]`
-- [ ] `ConfigManager.getCiSkipTag()` / `setCiSkipTag()`
-- [ ] `taskin config --ci-skip-tag <tag>`, secao interativa, e a tag no
+- [x] `automation.ciSkipTag` no `TaskinConfigSchema`, com default `[skip ci]`
+- [x] `ConfigManager.getCiSkipTag()` / `setCiSkipTag()`
+- [x] `taskin config --ci-skip-tag <tag>`, secao interativa, e a tag no
       `--show`
-- [ ] `taskin init` pergunta a tag e grava o bloco `automation`
-- [ ] `start`, `pause`, `finish` e `review` passam a tag ao `GitService` e usam
-      ela nos textos de sugestao
-- [ ] README: trocar a promessa `[skip-ci]` pela tag configuravel
-- [ ] changeset
+- [x] `taskin init` pergunta a tag e grava o bloco `automation`
+- [x] `start`, `finish` e `review` passam a tag ao `GitService` e usam ela nos
+      textos de sugestao
+- [x] README: trocar a promessa `[skip-ci]` pela tag configuravel
+- [x] changeset
+
+## O que mudou no caminho
+
+**`pause` ficou de fora, e de proposito.** O commit que o `pause` faz e de
+trabalho (`WIP: task-NNN`), nao de mudanca de status — ele nunca teve a tag, e
+nao deve ter. A CI tem que rodar em cima de trabalho.
+
+**Dois defeitos apareceram enquanto a correcao era feita:**
+
+O `saveConfig` do `ConfigManager` tipava o parametro como `TaskinConfig`, que e
+o tipo de **saida** do zod. Com um campo que tem default, o tipo de saida exige
+o campo e o de entrada nao — quem quisesse salvar um config precisaria soletrar
+o `ciSkipTag`. Entrou um `TaskinConfigInput` (`z.input`) e o `saveConfig` passou
+a receber ele.
+
+O `handleConfigCommand` lia `options['discord-webhook']` e
+`options['notification-events']`. O commander entrega as opcoes em camelCase,
+entao esses dois flags nunca chegavam ao proprio ramo: caiam no modo
+interativo. Corrigido junto, com teste de regressao, porque e a mesma interface
+de seis linhas que esta task reescreveu.
 
 ## Notes
 
