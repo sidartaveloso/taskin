@@ -1,6 +1,6 @@
 # Task 009 — Corrigir posicionamento dos braços com pose estimation
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
 
