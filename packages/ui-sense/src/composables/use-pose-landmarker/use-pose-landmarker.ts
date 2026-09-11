@@ -1,6 +1,6 @@
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
-import { requestMediaStream } from '../../utils/camera';
+import { attachCamera } from '../../utils/camera';
 import type { ArmAngles } from './arm-angles';
 import { armAnglesFromLandmarks } from './arm-angles';
 import type {
@@ -108,24 +108,13 @@ export function usePoseLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
   });
 
   let animationFrameId: number | null = null;
-  let stream: MediaStream | null = null;
+  let releaseCamera: (() => void) | null = null;
 
   // Start webcam
   const startWebcam = async () => {
     try {
-      stream = await requestMediaStream();
-
       if (videoElement.value) {
-        videoElement.value.srcObject = stream;
-        // Aguarda o vídeo estar pronto antes de dar play
-        await new Promise<void>((resolve) => {
-          if (videoElement.value) {
-            videoElement.value.onloadedmetadata = () => {
-              resolve();
-            };
-          }
-        });
-        await videoElement.value.play();
+        releaseCamera = await attachCamera(videoElement.value);
       }
     } catch (error) {
       state.value.error = `Failed to access webcam: ${error}`;
@@ -292,18 +281,8 @@ export function usePoseLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
       animationFrameId = null;
     }
 
-    // Stop webcam stream
-    if (stream) {
-      for (const track of stream.getTracks()) {
-        track.stop();
-      }
-      stream = null;
-    }
-
-    // Clear video element
-    if (videoElement.value) {
-      videoElement.value.srcObject = null;
-    }
+    releaseCamera?.();
+    releaseCamera = null;
   };
 
   // Calculate angle between three points

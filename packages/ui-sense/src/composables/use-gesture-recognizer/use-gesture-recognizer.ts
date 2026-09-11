@@ -1,6 +1,6 @@
 import { FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
-import { requestMediaStream } from '../../utils/camera';
+import { attachCamera } from '../../utils/camera';
 import type {
   CannedGesture,
   GestureRecognizerState,
@@ -45,20 +45,12 @@ export function useGestureRecognizer(
   const lastGesture = ref<CannedGesture>('None');
 
   let animationFrameId: number | null = null;
-  let stream: MediaStream | null = null;
+  let releaseCamera: (() => void) | null = null;
 
   const startWebcam = async () => {
     try {
-      stream = await requestMediaStream();
-
       if (videoElement.value) {
-        videoElement.value.srcObject = stream;
-        await new Promise<void>((resolve) => {
-          if (videoElement.value) {
-            videoElement.value.onloadedmetadata = () => resolve();
-          }
-        });
-        await videoElement.value.play();
+        releaseCamera = await attachCamera(videoElement.value);
       }
     } catch (error) {
       state.value.error = `Failed to access webcam: ${error}`;
@@ -197,16 +189,8 @@ export function useGestureRecognizer(
       animationFrameId = null;
     }
 
-    if (stream) {
-      for (const track of stream.getTracks()) {
-        track.stop();
-      }
-      stream = null;
-    }
-
-    if (videoElement.value) {
-      videoElement.value.srcObject = null;
-    }
+    releaseCamera?.();
+    releaseCamera = null;
   };
 
   const getStableGesture = (): RecognizedGesture | null => {
