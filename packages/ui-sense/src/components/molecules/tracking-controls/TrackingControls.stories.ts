@@ -5,9 +5,9 @@ import { TRACKING_CONTROLS } from './TrackingControls.types';
 import TrackingControls from './TrackingControls.vue';
 
 const meta = {
-  title: 'Molecules/TrackingControls',
+  title: 'Molecules/Sense/TrackingControls',
   component: TrackingControls,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'ui-sense'],
   argTypes: {
     isDetecting: {
       control: 'boolean',

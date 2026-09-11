@@ -4,9 +4,9 @@ import { reactive } from 'vue';
 import NoiseTrackingControls from './NoiseTrackingControls.vue';
 
 const meta = {
-  title: 'Molecules/NoiseTrackingControls',
+  title: 'Molecules/Sense/NoiseTrackingControls',
   component: NoiseTrackingControls,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'ui-sense'],
   argTypes: {
     isActive: { control: { type: 'boolean' }, description: 'Se o watcher esta ouvindo' },
     error: { control: 'text', description: 'Falha do microfone' },

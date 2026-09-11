@@ -52,7 +52,7 @@ which keeps latency low and the data private — nothing is sent to a server.
       },
     },
   },
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue', 'webcam'],
   argTypes: {
     mascotSize: {
       control: { type: 'number', min: 100, max: 500, step: 10 },

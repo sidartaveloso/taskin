@@ -4,7 +4,7 @@ import DashboardLayout from './DashboardLayout.vue';
 const meta: Meta<typeof DashboardLayout> = {
   title: 'Templates/DashboardLayout',
   component: DashboardLayout,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     title: {
       control: 'text',

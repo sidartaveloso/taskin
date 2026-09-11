@@ -7,7 +7,7 @@ import Dashboard from './Dashboard.vue';
 const meta: Meta<typeof Dashboard> = {
   title: 'Templates/Dashboard',
   component: Dashboard,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     title: { control: 'text', description: 'Dashboard title' },
     connectionStatus: {

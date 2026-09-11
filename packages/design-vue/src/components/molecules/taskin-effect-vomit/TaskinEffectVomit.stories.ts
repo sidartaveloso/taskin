@@ -3,8 +3,9 @@ import TaskinEffectVomit from './TaskinEffectVomit';
 import type { TaskinEffectVomitProps } from './TaskinEffectVomit.types';
 
 const meta = {
-  title: 'Molecules/Effects/Vomit',
+  title: 'Molecules/Taskin/Effects/Vomit',
   component: TaskinEffectVomit,
+  tags: ['design-vue'],
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },

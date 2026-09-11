@@ -5,9 +5,9 @@ import type { TaskinArmWithPhoneProps } from './TaskinArmWithPhone.types';
 import TaskinArmWithPhone from './TaskinArmWithPhone.vue';
 
 const meta = {
-  title: 'Molecules/TaskinArmWithPhone',
+  title: 'Molecules/Taskin/ArmWithPhone',
   component: TaskinArmWithPhone,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     armColor: {
       control: { type: 'color' },
@@ -218,6 +218,7 @@ export const CustomColors: Story = {
 
 // Face Tracking Story
 export const FaceTracking: Story = {
+  tags: ['webcam'],
   render: () => ({
     setup() {
       const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);

@@ -3,8 +3,9 @@ import TaskinEffectPhone from './TaskinEffectPhone';
 import type { TaskinEffectPhoneProps } from './TaskinEffectPhone.types';
 
 const meta = {
-  title: 'Molecules/Effects/Phone',
+  title: 'Molecules/Taskin/Effects/Phone',
   component: TaskinEffectPhone,
+  tags: ['design-vue'],
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },

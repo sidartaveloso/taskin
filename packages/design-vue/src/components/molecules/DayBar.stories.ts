@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import DayBar from './DayBar.vue';
 
 const meta = {
-  title: 'Molecules/DayBar',
+  title: 'Molecules/Task/DayBar',
   component: DayBar,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   /*
    * `day` e obrigatoria, entao o meta a fornece: as stories que so definem um
    * `render` proprio herdam daqui em vez de repetir a fixture.

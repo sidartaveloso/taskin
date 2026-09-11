@@ -4,9 +4,9 @@ import { ref } from 'vue';
 import ProgressBar from './ProgressBar.vue';
 
 const meta: Meta<typeof ProgressBar> = {
-  title: 'Atoms/ProgressBar',
+  title: 'Atoms/Base/ProgressBar',
   component: ProgressBar,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   parameters: {
     // O `layout: 'centered'` global (preview.ts) poe o body em flex centrado,
     // e o `#storybook-root` passa a ter largura de conteudo. Como a barra e

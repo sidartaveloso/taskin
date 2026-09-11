@@ -3,9 +3,9 @@ import { h } from 'vue';
 import GestureIcon from './GestureIcon.vue';
 
 const meta = {
-  title: 'Atoms/GestureIcon',
+  title: 'Atoms/Sense/GestureIcon',
   component: GestureIcon,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'ui-sense'],
   parameters: {
     docs: {
       description: {

@@ -11,7 +11,7 @@ import PrioritizationScreen from './PrioritizationScreen.vue';
 const meta: Meta<typeof PrioritizationScreen> = {
   title: 'Templates/PrioritizationScreen',
   component: PrioritizationScreen,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   parameters: {
     docs: {
       description: {
@@ -150,6 +150,7 @@ export const Empty: Story = {
 };
 
 export const WithGesture: Story = {
+  tags: ['webcam'],
   render: () => ({
     components: { PrioritizationScreen, WebcamVideo },
     setup() {

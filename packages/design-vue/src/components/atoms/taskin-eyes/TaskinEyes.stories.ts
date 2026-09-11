@@ -5,9 +5,9 @@ import type { EyeState, TaskinEyesProps } from './TaskinEyes.types';
 import TaskinEyes from './TaskinEyes.vue';
 
 const meta = {
-  title: 'Atoms/TaskinEyes',
+  title: 'Atoms/Taskin/Eyes',
   component: TaskinEyes,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     state: {
       control: { type: 'select' },
@@ -482,6 +482,7 @@ export const Wide: Story = {
 
 // Face Tracking Story
 export const FaceTracking: Story = {
+  tags: ['webcam'],
   render: () => ({
     setup() {
       const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);

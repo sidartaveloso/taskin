@@ -6,6 +6,7 @@ import TaskinV1 from './TaskinV1';
 const meta = {
   title: 'Organisms/Taskin/V1',
   component: TaskinV1,
+  tags: ['design-vue', 'legacy'],
   argTypes: {
     mood: {
       control: { type: 'select' },

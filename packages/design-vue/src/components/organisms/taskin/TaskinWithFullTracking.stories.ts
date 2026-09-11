@@ -18,7 +18,7 @@ import TaskinMouth from '../../atoms/taskin-mouth/TaskinMouth.vue';
 
 const meta = {
   title: 'Organisms/Taskin/Full Tracking Rig',
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue', 'webcam', 'legacy'],
 } satisfies Meta<Record<string, never>>;
 
 export default meta;

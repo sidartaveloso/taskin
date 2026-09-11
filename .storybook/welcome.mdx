@@ -4,28 +4,65 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 # Taskin — componentes
 
-Esta instancia nao tem componentes proprios: ela **compoe** os Storybooks de cada
-pacote, que aparecem na barra lateral como secoes separadas.
+Uma galeria so, com os componentes dos dois pacotes na mesma arvore.
 
-| Pacote | O que tem | Storybook proprio |
+| Pacote | O que tem | Onde aparece |
 | --- | --- | --- |
-| **Design Vue** | O mascote, os atomos e as telas do produto | `pnpm --filter @opentask/taskin-design-vue storybook` (porta 6107) |
-| **UI Sense** | Sensores: webcam, rastreamento de face, pose e gestos | `pnpm --filter @opentask/ui-sense storybook` (porta 6108) |
+| `@opentask/taskin-design-vue` | O mascote, os atomos e as telas do produto | `Base/`, `Task/` e `Taskin/` dentro de cada nivel |
+| `@opentask/ui-sense` | Sensores: webcam, rastreamento de face, pose e gestos | `Sense/` dentro de cada nivel |
 
-Cada pacote e dono da propria configuracao — addons, ordenacao e o modo do
-plugin de acessibilidade. Esta raiz e so a porta de entrada, para nao existir uma
-terceira copia dessas regras para manter em sincronia.
+## Como a arvore e organizada
 
-Para ver tudo junto em desenvolvimento, os dois precisam estar no ar:
+O nivel atomico continua sendo a espinha — `Atoms`, `Molecules`, `Organisms`,
+`Templates`, `Pages` — e dentro de cada um vem a **familia**:
+
+- **Base** — UI generica, sem dominio: `Avatar`, `Badge`, `ProgressBar`
+- **Task** — o produto: cartao, cabecalho, estimativa, telas
+- **Taskin** — o mascote: anatomia, efeitos e as montagens com rastreamento
+- **Sense** — os sensores do `ui-sense`
+
+O nivel sozinho nao dava conta: `Atoms` reunia onze itens de tres familias sem
+relacao entre si — `Badge` ao lado de `TaskinMouth` e de `WebcamVideo`. A familia
+resolve isso sem inventar uma segunda taxonomia, porque o titulo continua
+espelhando o caminho do arquivo.
+
+## As tags, e para que servem
+
+Um componente mora em **uma** pasta, mas algumas perguntas cortam a arvore de
+lado. Essas viraram tags, no filtro da barra lateral:
+
+| tag | o que diz |
+| --- | --- |
+| `design-vue` · `ui-sense` | de qual pacote o componente vem |
+| `webcam` | a story pede permissao de camera |
+| `microphone` | a story pede permissao de microfone |
+| `legacy` | superado, mantido para referencia — **fora da sidebar por padrao** |
+
+`webcam` e a mais util no dia a dia: sem ela, descobrir quais stories abrem a
+camera exigia clicar e tomar erro. E se a pagina estiver fora de contexto seguro
+(`https://`, ou `http://` em `localhost`/`127.0.0.1`), o navegador nem define
+`navigator.mediaDevices` — entao filtre por `webcam` e confira o endereco antes
+de procurar defeito no componente.
+
+`legacy` entra excluida por `defaultFilterSelection`. As stories continuam
+acessiveis por URL e por um clique no filtro; so param de disputar atencao com o
+que esta em uso.
+
+## Rodando
 
 ```bash
-pnpm storybook:all
+pnpm storybook
 ```
 
-As portas sao 6106 (esta raiz), 6107 e 6108 — fora da faixa 6006-6008, que
-costuma estar tomada por Storybooks de outros projetos. Se ainda assim um
-servidor subir em outra porta, aponte o ref sem editar configuracao:
+Sobe esta galeria na porta 6106, e ela ja cobre os dois pacotes — nao precisa de
+mais nada no ar. Os Storybooks por pacote continuam existindo para quem esta
+iterando em um so, e sao eles que rodam as play functions em navegador de
+verdade:
 
 ```bash
-TASKIN_SB_DESIGN_VUE_URL=http://localhost:6109 pnpm storybook
+pnpm --filter @opentask/taskin-design-vue storybook   # 6107
+pnpm --filter @opentask/ui-sense storybook            # 6108
 ```
+
+A faixa e 610x de proposito: 6006-6008 costuma estar tomada por Storybooks de
+outros projetos na mesma maquina.

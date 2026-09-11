@@ -9,8 +9,8 @@ import TaskinEffectVomit from './taskin-effect-vomit/TaskinEffectVomit';
 import TaskinEffectZzz from './taskin-effect-zzz/TaskinEffectZzz';
 
 const meta = {
-  title: 'Molecules/Effects',
-  tags: ['autodocs'],
+  title: 'Molecules/Taskin/Effects/Overview',
+  tags: ['autodocs', 'design-vue'],
 } satisfies Meta;
 
 export default meta;

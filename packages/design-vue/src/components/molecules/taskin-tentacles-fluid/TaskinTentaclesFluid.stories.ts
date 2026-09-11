@@ -10,9 +10,9 @@ const swayKeyframes: TentacleAnimationKeyframes = {
 };
 
 const meta = {
-  title: 'Molecules/TaskinTentaclesFluid',
+  title: 'Molecules/Taskin/TentaclesFluid',
   component: TaskinTentaclesFluid,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     color: {
       control: 'color',
