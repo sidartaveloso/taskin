@@ -83,6 +83,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Os mesmos checks do `ci.yml`, antes de construir e antes de publicar.
+      #
+      # Nao e redundante com a verificacao em push: um merge chega aqui com a
+      # arvore resultante, que pode nao ser identica a nenhum commit ja
+      # verificado, e o `workflow_dispatch` pode ser disparado de uma branch
+      # que o `ci.yml` nao observa. O build sozinho nao cobre: o turbo nao
+      # declara `build.dependsOn: test`, entao `pnpm build` verde convive com
+      # suite vermelha — e `changeset publish` mandaria assim mesmo para o npm.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Chromium antes do `pnpm test`: o `test` do design-vue roda as play
+      # functions em navegador de verdade. Ver o comentario em `ci.yml`.
+      - name: Install Chromium for the browser tests
+        run: pnpm --filter @opentask/taskin-design-vue exec playwright install --with-deps chromium
+
+      - name: Test
+        run: pnpm test
+
       - name: Build packages
         run: pnpm build
 
