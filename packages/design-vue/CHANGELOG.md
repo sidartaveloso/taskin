@@ -1,5 +1,137 @@
 # @opentask/taskin-design-vue
 
+## 0.3.0
+
+### Minor Changes
+
+- db78e50: Padroniza em ingles o texto que o usuario le nos componentes.
+  
+  Continuando a padronizacao do `ui-sense`, agora nos componentes do produto:
+  
+  - `TaskCard`: o mapa de status ("Pendente", "Em Progresso", "Pausada",
+    "Em Revisão", "Concluída", "Bloqueada", "Cancelada"), o titulo
+    "Progresso Diário" e os rotulos de data "Prazo:" e "Início:"
+  - `TaskGrid`: os rotulos das estatisticas
+  - `PriorityGroupRenderer`: os `title` dos botoes de mover, agrupar e desagrupar,
+    que sao tooltip e portanto texto visivel
+  - `PrioritizationScreen`: o `aria-label` do seletor de modo, as opcoes de
+    ordenacao, o rotulo "Ícones" e o aviso de lista vazia
+  - `dashboard`: a aba "Priorização" e os textos de status da conexao
+  
+  Ficam de proposito em portugues: comentarios de codigo, a documentacao das
+  stories e os arquivos de `TASKS/`. Comentario em portugues e a convencao do
+  repositorio, e traduzi-los seria um diff enorme sem ganho para quem usa o
+  produto.
+
+### Patch Changes
+
+- 0dec82a: A folha de estilos do pacote passa a incluir a do `@opentask/ui-sense`, então um
+  import basta.
+  
+  O JS do `ui-sense` já era embutido aqui (ele não está em `external`), mas o CSS
+  dele é um artefato separado — e ninguém o importava. Quem consumia o design-vue
+  de fora do monorepo recebia os componentes de sensor **sem estilo**:
+  `TrackingControls` com botão pelado e checkbox nativo, `NoiseTrackingControls`
+  sem moldura, e `WebcamVideo` visível como um retângulo de 320x240 em vez de
+  oculto — o `display: none` dele mora justamente nessa folha.
+  
+  O sintoma enganava: controle sem estilo parece controle improvisado, então dava a
+  impressão de que os componentes `TaskinWithFaceTracking`,
+  `TaskinWithFullTracking` e `TaskinWithShhh` tinham implementação própria de
+  controles em vez de usar a do `ui-sense`. Sempre usaram a do `ui-sense`.
+  
+  ## O que muda para quem consome
+  
+  Um import, não dois:
+  
+  ```ts
+  import '@opentask/taskin-design-vue/style.css';
+  ```
+  
+  Com `cssCodeSplit: false`, o Vite resolve e inlina as regras do `ui-sense` em
+  `dist/index.css` (43 KB → 56 KB). Quem também importa
+  `@opentask/ui-sense/style.css` direto continua funcionando — as regras
+  duplicadas são idênticas e não têm efeito visual.
+  
+  ## Nota
+  
+  Dentro do monorepo o Storybook do design-vue precisa do import explícito da
+  folha do `ui-sense` no `preview.ts`: lá as stories importam os componentes
+  direto do fonte, não pelo barrel `src/index.ts`, então esta cadeia de `@import`
+  não se aplica. Nos testes unitários o `vitest.config.ts` faz alias do `ui-sense`
+  para o fonte e os `<style scoped>` compilam inline, o que é o motivo de o
+  problema nunca ter aparecido em teste.
+- ca24c91: Traduz para ingles a documentacao das stories.
+  
+  Os 22 arquivos de story com texto em portugues passaram a ingles: as descricoes
+  de componente e de story, os blocos JSDoc (que o Storybook renderiza como
+  descricao da story, e portanto sao documentacao, nao comentario), as fixtures com
+  frase em portugues e o texto dos exemplos interativos.
+  
+  Inclui as paginas mais longas — `GestureWizard` e `GestureSystem`, com a
+  explicacao de atalho por gesto e as areas de aplicacao, e as duas de tracking
+  completo, com requisitos e passo a passo.
+  
+  Corrigidas de carona quatro referencias a `"Iniciar Detecção"` dentro de textos
+  que ja estavam em ingles: o botao foi renomeado para `Start Detection` e a
+  documentacao apontava para um rotulo que nao existe mais.
+  
+  Continuam em portugues, de proposito: os comentarios `//` de codigo, que o
+  Storybook nao renderiza e que seguem a convencao do repositorio, e os nomes de
+  pessoa nas fixtures — nome nao se traduz.
+- 27e758a: `TrackingControls` passa a aceitar quais controles ficam disponiveis.
+  
+  A barra mostrava os seis controles sempre, em qualquer tela. O
+  `TaskinWithFaceTracking` nao tem pose nem reconhecimento de gestos, e mesmo
+  assim exibia "Braços" e "Gestos" — interruptores que nao ligavam coisa alguma. O
+  `TaskinWithFullTracking` contornava passando `:sync-expressions="false"`, que
+  desliga o valor mas continua mostrando o controle.
+  
+  A prop nova e `controls?: readonly TrackingControl[]`, com todos como default.
+  Os dois organismos passaram a declarar o que suportam, e o contorno do
+  `sync-expressions` saiu.
+  
+  A ordem e a canonica do componente, nao a do array recebido: a barra aparece em
+  telas diferentes e deve ter sempre o mesmo layout, entao pedir
+  `['gestures', 'eyes']` esconde o resto sem embaralhar o que sobrou. Um grupo sem
+  nenhum item disponivel desaparece inteiro, em vez de virar uma moldura vazia.
+  
+  Por dentro, os seis blocos quase iguais do template viraram um descritor por
+  controle com `v-for`. O `emit` de cada descritor e uma funcao propria de
+  proposito: chamar `emit(nomeVariavel)` nao passa pelas assinaturas de
+  `TrackingControlsEmits`, e a alternativa seria um cast — justamente onde um
+  evento errado passaria despercebido.
+- 3db9df0: Padroniza a interface do `ui-sense` em ingles.
+  
+  O pacote falava duas linguas: o `TrackingControls` estava em portugues e o
+  `NoiseTrackingControls`, que costuma aparecer na mesma tela, em ingles. O
+  `GestureWizardCard` e os rotulos de gesto e acao tambem estavam em portugues.
+  
+  Traduzido:
+  
+  - `TrackingControls`: "Iniciar/Parar Detecção" -> "Start/Stop Detection",
+    "Detectando..." -> "Detecting...", grupos "Exibição"/"Sincronizar" ->
+    "Display"/"Sync", e os itens "Olhos", "Boca", "Expressões", "Braços" e
+    "Gestos" -> "Eyes", "Mouth", "Expressions", "Arms" e "Gestures"
+  - `GestureWizardCard`: os textos dos tres passos, as legendas de confirmar e
+    cancelar, e "Atalho salvo!"
+  - `gestureLabel` e `actionLabel`, que alimentam o `GestureIcon`, a
+    `GestureLegend` e o wizard
+  
+  Isso muda texto visivel e o nome acessivel dos controles. Nenhuma API mudou, e
+  os testes que fixavam as strings acompanharam — incluindo o stub de
+  `TrackingControls` em `src/mocks`, que renderizava portugues e teria continuado
+  divergindo do componente real sem ninguem notar.
+- Updated dependencies [ca24c91]
+- Updated dependencies [346f1d4]
+- Updated dependencies [0ecd3ad]
+- Updated dependencies [27e758a]
+- Updated dependencies [51aaaaa]
+- Updated dependencies [ca24c91]
+- Updated dependencies [3db9df0]
+  - @opentask/ui-sense@0.3.0
+  - @opentask/taskin-types@2.1.0
+
 ## 0.2.0
 
 ### Minor Changes
