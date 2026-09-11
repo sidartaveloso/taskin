@@ -126,7 +126,17 @@ export function convertMetadataStyle(content: string, target: MetadataStyleId): 
   if (!block || block.fields.length === 0) return content;
 
   const lines = getMetadataStyle(target).format(block.fields).split('\n');
-  if (lines.join('\n') === block.lines.join('\n')) return content;
+
+  /*
+   * Comparar so as linhas de metadado nao basta: o bloco pode estar com a
+   * marcacao certa e ainda assim partido por uma linha em branco no meio, e ai
+   * `block.lines` (que nao inclui as brancas) bate com o formatado e o arquivo
+   * ficava como estava. `end - start` conta o intervalo inteiro, brancas
+   * incluidas, entao um bloco partido sempre e reemitido.
+   */
+  const intacto = lines.join('\n') === block.lines.join('\n');
+  const contiguo = block.end - block.start === block.lines.length;
+  if (intacto && contiguo) return content;
 
   return replaceMetadataBlock(content, lines);
 }
