@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-design-vue",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Vue 3 design system components for Taskin - including the official mascot and UI elements",
   "motivation": "Provide a reusable, well-documented Vue 3 component library featuring the Taskin mascot with animations, expressions, and interactive features for task management UIs",
   "solve": "Standardizes Taskin mascot implementation across projects, provides ready-to-use Vue components with Storybook documentation, and enables facial tracking features",
