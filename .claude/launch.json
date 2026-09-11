@@ -6,6 +6,24 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@taskin/docs", "run", "dev", "--port", "6100"],
       "port": 6100
+    },
+    {
+      "name": "storybook-design-vue",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@opentask/taskin-design-vue", "run", "storybook"],
+      "port": 6107
+    },
+    {
+      "name": "storybook-ui-sense",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@opentask/ui-sense", "run", "storybook"],
+      "port": 6108
+    },
+    {
+      "name": "storybook",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "storybook"],
+      "port": 6106
     }
   ]
 }
