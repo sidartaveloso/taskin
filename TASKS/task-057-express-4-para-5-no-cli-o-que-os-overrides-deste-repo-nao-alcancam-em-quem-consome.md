@@ -1,6 +1,6 @@
 # 🧩 Task 057 — Express 4 para 5 no CLI: o que os overrides deste repo nao alcancam em quem consome
 
-- Status: pending
+- Status: in-progress
 - Type: chore
 - Assignee: Sidarta Veloso
 
