@@ -31,7 +31,11 @@ const PLACEHOLDER_ASSIGNEES = [
   'não atribuído',
   'unassigned',
   'tbd',
+  // As tres barras: hifen, meia-risca e travessao. Quem escreve a mao usa o
+  // travessao (`—`) com a mesma intencao do hifen, e so o hifen era aceito.
   '-',
+  '–',
+  '—',
 ] as const satisfies readonly Lowercase<string>[];
 
 /**

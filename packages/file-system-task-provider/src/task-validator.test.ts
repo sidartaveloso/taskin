@@ -14,6 +14,53 @@ describe('task-validator', () => {
   });
 
   describe('validateTaskFile', () => {
+    /*
+     * O discriminador e o texto exato do cabecalho, nao o nivel: `### Status`
+     * tambem e acusado, porque e o que o `fixTaskFile` migra — o padrao de
+     * migracao casa `##` dentro de `###`. O que sai da regra e cabecalho com
+     * palavra a mais, que e secao de corpo.
+     */
+    it.each(['## Status atual', '## Status do deploy', '### Status do ambiente'])(
+      'nao confunde %j no corpo com metadado em secao',
+      async (cabecalho) => {
+        const content = `# Task 001 — Alvo
+
+- Status: done
+- Type: feat
+- Assignee: ana
+
+## Description
+x
+
+${cabecalho}
+
+O site esta em producao.
+`;
+        (fsp.readFile as Mock).mockResolvedValue(content);
+
+        const issues = await validateTaskFile('/tasks/task-001-alvo.md');
+
+        expect(issues.filter((i) => i.message.includes('Section-based metadata'))).toEqual([]);
+      },
+    );
+
+    it.each(['## Status', '### Status'])('continua acusando %j, que e metadado em secao', async (cabecalho) => {
+      const content = `# Task 001 — Alvo
+
+${cabecalho}
+
+done
+
+## Description
+x
+`;
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      const issues = await validateTaskFile('/tasks/task-001-alvo.md');
+
+      expect(issues.some((i) => i.message.includes('Section-based metadata'))).toBe(true);
+    });
+
     it('should accept valid inline format with valid status', async () => {
       const content = `# Task 001 — Valid Task
 Status: todo
