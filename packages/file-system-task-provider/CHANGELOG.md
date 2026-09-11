@@ -1,5 +1,98 @@
 # @opentask/taskin-file-system-provider
 
+## 3.2.1
+
+### Patch Changes
+
+- 46f8ca4: `lint --fix` volta a corrigir a grafia do assignee em arquivos no estilo `list`.
+  
+  O `fixAssignees` reescrevia a linha por `/^(Assignee:[ \t]*)(.*)$/im`, ancorado
+  no início da linha. Num arquivo no estilo `list` a linha é `- Assignee: ...` e o
+  padrão nunca casava — então o lint reportava o aviso, sugeria literalmente
+  "Rewrite it as `<id>` — lint --fix does this", e não tocava em arquivo nenhum.
+  
+  Um escritor que ficou para trás quando a leitura passou a aceitar os três
+  estilos de marcação. Agora ele escreve pelo mesmo módulo dos demais, e tira o
+  rótulo do próprio arquivo: um arquivo em pt-BR diz `Responsável:`, e escrever
+  `Assignee:` nele criaria um segundo campo em vez de corrigir o primeiro.
+  
+  ## Por que passou despercebido
+  
+  A fixture do teste de integração era `plain` — o único dos três estilos em que
+  a regex antiga ainda funcionava. O teste passa a rodar nos três, e afirma
+  também que o conserto não troca o estilo do arquivo pelo caminho. Verificado
+  que ele falha no caso `list` sem esta correção.
+- 2c1e9d9: O bloco de metadados volta a ser lido inteiro quando uma linha em branco o
+  parte no meio.
+  
+  O `setInlineField` até a 4.0.0 inseria um campo novo logo **depois do H1**, antes
+  da linha em branco que separava do bloco real. Um arquivo que tenha sido
+  priorizado por aquela versão fica assim:
+  
+  ```markdown
+  # 🧩 Task 001 — Alvo
+  Priority: 10\
+  
+  Status: pending\
+  Type: feat\
+  Assignee: sidarta-veloso\
+  ```
+  
+  A 3.2.0 encerrava o bloco na primeira linha em branco, então enxergava só o
+  `Priority`. As consequências eram silenciosas e sérias:
+  
+  - `Status`, `Type` e `Assignee` liam `undefined` — a task caía para `pending` e
+    `feat` por default, e o assignee virava usuário temporário fabricado;
+  - reescrever o status **criava um segundo campo** em vez de atualizar o
+    primeiro, deixando dois `Status:` no arquivo.
+  
+  Agora a varredura atravessa linhas em branco e para na primeira linha que não é
+  metadado. As linhas em branco internas caem no intervalo do bloco e somem
+  quando ele é reemitido — ou seja, a primeira escrita **repara** o arquivo,
+  juntando tudo num bloco só, no estilo que ele já usava.
+  
+  ## Rótulo precisa começar com letra ou dígito
+  
+  Para atravessar linha em branco sem engolir o que vem depois, o padrão ficou
+  mais estrito: `**Date**: 2026-01-08` e `> **Nota (registro histórico):` não são
+  mais reconhecidos como campo. As duas formas existem em arquivos reais, e antes
+  seriam reescritas como `- **Date**: ...`.
+  
+  Campos de rótulo comum continuam valendo, inclusive os ad hoc com espaço
+  (`Epic`, `Depends on`) e os localizados (`Responsável`, `Dificuldade`).
+- 2c402e9: A tag de skip de CI passa a ser `[skip ci]`, e vira configuravel
+  
+  Os commits que o Taskin escreve sozinho — mudanca de status, arquivo de task —
+  vinham marcados com `[skip-ci]`, com hifen. Nenhuma plataforma reconhece essa
+  forma: o GitHub Actions documenta cinco strings e essa nao esta entre elas, o
+  Bitbucket diz explicitamente que a variante com hifen dispara o pipeline, e o
+  GitLab so pula com `[skip ci]` ou `[ci skip]`. Na pratica cada `taskin start`,
+  `pause`, `finish` e `review` rodava a CI inteira do projeto de quem usa,
+  exatamente o contrario do que a tag prometia.
+  
+  O padrao agora e `[skip ci]`, a unica forma que as tres plataformas aceitam.
+  
+  A tag tambem deixou de ser literal espalhada pelo codigo e virou configuracao:
+  
+  - `taskin init` pergunta qual usar, ou aceita `--ci-skip-tag <tag>`
+  - `taskin config --ci-skip-tag <tag>` muda depois, e a secao interativa lista
+    as formas documentadas
+  - `none` em qualquer um dos dois grava tag vazia, para quem quer que a CI rode
+  - uma tag fora da lista e aceita com aviso, nao recusada: Azure DevOps usa
+    `***NO_CI***` e um pipeline proprio pode casar o que quiser
+  
+  O campo e `automation.ciSkipTag` no `.taskin.json`. Quem nao tem o campo recebe
+  `[skip ci]` pelo default do schema — nao ha migracao a fazer.
+  
+  De quebra, `taskin config --discord-webhook` e `--notification-events` voltaram
+  a funcionar. O commander entrega as opcoes em camelCase e o comando lia as
+  chaves com hifen, entao esses dois flags caiam no modo interativo em vez de no
+  proprio ramo.
+- Updated dependencies [2c402e9]
+  - @opentask/taskin-git-utils@3.0.2
+  - @opentask/taskin-types@2.1.1
+  - @opentask/taskin-task-manager@3.0.2
+
 ## 3.2.0
 
 ### Minor Changes

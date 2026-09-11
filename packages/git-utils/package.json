@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-git-utils",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Git utilities for Taskin task management",
   "type": "module",
   "motivation": "To provide a set of utilities for interacting with Git repositories.",

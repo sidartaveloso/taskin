@@ -1,5 +1,156 @@
 # @opentask/taskin-design-vue
 
+## 0.3.1
+
+### Patch Changes
+
+- 03044a0: Os bracos do mascote paravam de cruzar o corpo
+  
+  A task-044 consertou o espelhamento do angulo e deixou passar o que vinha antes
+  dele: **de qual metade da tela cada braco era lido.**
+  
+  Os indices do MediaPipe Pose sao nomeados pelo corpo do **sujeito**, e uma
+  pessoa de frente para a camera tem o ombro esquerdo dela na **direita** da
+  imagem — `LEFT_SHOULDER` (11) sai com `x` grande. O `ARM_LANDMARKS` tratava
+  `11` como lado esquerdo da tela, entao cada braco era medido de um lado e
+  pintado no ombro oposto: quem abria os bracos virava um mascote se abracando.
+  
+  O `mirrorPose` nao muda isso e foi o que despistou. Ele inverte `x` e depois
+  troca os pares, e as duas operacoes se cancelam do ponto de vista da tela: o
+  indice `11` cai na direita da imagem nos dois modos. O que a troca muda e de
+  quem e o ponto, nao onde ele esta — por isso o mapeamento agora e
+  incondicional, em vez de depender do flag.
+  
+  Medido com a pessoa de bracos erguidos e abertos: antes, o cotovelo esquerdo era
+  desenhado em `x=112.7` com o ombro em `x=95` — para dentro. Agora cai em `x=77`,
+  para fora.
+  
+  ### Por que a suite nao pegou
+  
+  Cada peca tinha teste e cada peca estava certa. `armAnglesFromLandmarks` media
+  os quatro quadrantes, `armPositionFromPose` convertia os dois espacos,
+  `TaskinArms` renderizava. Nenhum atravessava da landmark crua ate o pixel, e o
+  fixture dos testes montava `11` na esquerda da tela — fixando a convencao errada
+  que o codigo de producao seguia.
+  
+  Entra um teste que faz o caminho inteiro, nos dois modos de espelhamento, e
+  falha se os indices voltarem a trocar.
+- 2d056d5: A barra de tracking so oferece o que a tela implementa
+  
+  O `TrackingControls` tinha `controls` opcional com "todos" por default, e o
+  default era o defeito: quem esquecia a prop anunciava os seis interruptores, e
+  os que a tela nao ligava em nada ficavam la, clicaveis e inertes. A tela do
+  "shhh", que so le rosto e ruido, mostrava **Arms**; a de priorizacao mostrava
+  Eyes, Mouth, Expressions, Arms e Gestures com nenhum deles conectado. Nas
+  stories o disfarce era passar `syncEyes: false` — o que desenha a caixa
+  desmarcada, sem handler, e ela nao reage ao clique.
+  
+  Duas mudancas de contrato:
+  
+  - **`controls` passou a ser obrigatorio.** Sem default, declarar o que a tela faz
+    deixa de ser lembrete e vira erro de compilacao, inclusive dentro de template
+    `.vue`. Uma tela nova nasce tendo que responder a pergunta.
+  - **`gestures` saiu de `TRACKING_CONTROLS`**, junto com a prop `syncGestures` e o
+    evento `update:syncGestures`. Nenhuma tela ligava esse controle a coisa
+    alguma — os gestos da tela de priorizacao vivem no `GestureSystem`, que tem o
+    proprio ciclo de vida. Ele volta quando houver quem o implemente.
+  
+  Quem usa o componente precisa passar `controls` com a lista do que de fato
+  sincroniza. As telas do `@opentask/taskin-design-vue` ja foram ajustadas: o
+  "shhh" declara `['webcam', 'eyes', 'mouth', 'expressions']`, a de priorizacao
+  `['webcam']`, e cada story de atomo declara so o seu (`['webcam', 'arms']` no
+  `TaskinArms`, `['webcam', 'mouth']` no `TaskinMouth`, e assim por diante).
+- b15cb26: A galeria ganha familia dentro do nivel atomico, e tags de filtro
+  
+  Com os dois pacotes na mesma arvore, `Atoms` passou a reunir onze itens de tres
+  familias sem relacao — `Badge` ao lado de `TaskinMouth` e de `WebcamVideo`. O
+  nivel atomico diz quao composto algo e, e ninguem navega por isso.
+  
+  O nivel continua sendo a espinha e a familia entra dentro dele: `Base` (UI
+  generica), `Task` (o produto), `Taskin` (o mascote) e `Sense` (os sensores).
+  Assim o titulo continua espelhando o caminho do arquivo — que e o que alguem usa
+  para achar o codigo — em vez de criar uma segunda taxonomia por dominio.
+  
+  Junto vem cinco tags, no filtro da barra lateral, para os eixos que uma arvore
+  nao expressa (um componente mora em uma pasta so):
+  
+  | tag | o que diz |
+  | --- | --- |
+  | `design-vue` · `ui-sense` | de qual pacote o componente vem |
+  | `webcam` · `microphone` | a story pede permissao de dispositivo |
+  | `legacy` | superado, mantido para referencia — fora da sidebar por padrao |
+  
+  `webcam` e a que mais rende: descobrir quais das 303 stories abrem a camera
+  exigia clicar e tomar erro. Onde so uma story de um arquivo estatico depende do
+  dispositivo, a tag fica na story e nao no meta, senao o filtro mentiria sobre as
+  outras.
+  
+  **As URLs mudam.** E alteracao so de titulo — nenhum componente, nenhum import,
+  nenhuma suite afetada — mas quem tiver
+  `/components/?path=/story/atoms-avatar--default` salvo passa a precisar de
+  `atoms-base-avatar--default`.
+- 3109949: A galeria publicada passa a incluir o `ui-sense`
+  
+  O deploy buildava so o Storybook do `design-vue`, entao o `ui-sense` nunca chegou
+  ao site: `WebcamVideo`, `TrackingControls`, `GestureIcon`, `GestureLegend`,
+  `GestureWizard`, `NoiseTrackingControls`, `FaceTrackingDebug` e `GestureSystem`
+  existiam apenas na maquina de quem rodasse `storybook` naquele pacote. Agora o
+  passo builda o Storybook da raiz, que cobre os dois — 46 titulos e 303 stories no
+  `/components/`, contra 38 titulos antes.
+  
+  Junto vao tres titulos que estavam errados e so ficaram visiveis com a arvore
+  unica:
+  
+  - `TaskinWithFullTracking.stories.ts` e `TaskinWithFullTrackingV2.stories.ts`
+    declaravam **o mesmo** `Organisms/Taskin/Full Tracking`, e o Storybook fundia
+    os dois no mesmo no. O que sobrevive e o `V2` — o unico que documenta o
+    componente, e que assume o nome do arquivo. O outro foi apagado: eram 287
+    linhas remontando a fiacao do componente a mao (`h(TrackingControls, ...)`,
+    os watchers dos landmarkers, o SVG) em vez de usar o componente, entao ele
+    duplicava um interior que ninguem lembraria de atualizar. A task-044 ja tinha
+    registrado essa duplicacao.
+  - `TaskinWithShhh` estava em `Organisms/TaskinWithShhh`, fora do grupo, embora o
+    arquivo more em `organisms/taskin/` como os irmaos. Virou
+    `Organisms/Taskin/Shhh`.
+- 042ef23: O Storybook da raiz vira um so, em vez de compor dois
+  
+  A raiz compunha os Storybooks dos pacotes por `refs`, apontando para os
+  servidores de cada um. Funcionava, mas exigia tres servidores no ar para ver uma
+  galeria, e a navegacao nascia partida em duas secoes — abrir a raiz abria, na
+  pratica, dois Storybooks. Agora ela varre os dois pacotes e monta uma arvore so:
+  `Atoms/Avatar` (design-vue) fica ao lado de `Atoms/GestureIcon` (ui-sense), que e
+  como um design system se le.
+  
+  Os Storybooks por pacote continuam existindo e nao viraram copia morta: sao eles
+  que rodam o `addon-vitest` — as play functions em navegador de verdade — e e o do
+  `design-vue` que o deploy publica em `/components`.
+  
+  O `preview.ts` da raiz nao repete as regras: reaproveita o do `design-vue`, que e
+  superconjunto do do `ui-sense`. So o `storySort` fica literal la, porque o
+  Storybook le esse campo por analise estatica e um valor herdado por spread vira
+  `Identifier` para o parser — a sidebar cai em ordem alfabetica sem nenhum erro
+  visivel.
+- f5816b7: As tabelas da documentacao passam a renderizar
+  
+  O MDX do Storybook e CommonMark puro, e tabela em pipe nao e markdown padrao —
+  e GitHub Flavored Markdown. Sem o `remark-gfm` a tabela do `welcome.mdx` saia na
+  tela como um paragrafo de pipes e tracos, **sem erro nenhum** no console nem no
+  terminal. E o pior tipo de falha: parece texto mal escrito, nao configuracao
+  faltando.
+  
+  O `@storybook/addon-docs` da raiz passa a declarar o plugin em
+  `mdxPluginOptions.mdxCompileOptions.remarkPlugins`. Vale para qualquer `.mdx`
+  que a galeria venha a ter.
+- Updated dependencies [03044a0]
+- Updated dependencies [2d056d5]
+- Updated dependencies [3a5d33a]
+- Updated dependencies [b15cb26]
+- Updated dependencies [3109949]
+- Updated dependencies [2c402e9]
+- Updated dependencies [2b3bebb]
+  - @opentask/ui-sense@0.4.0
+  - @opentask/taskin-types@2.1.1
+
 ## 0.3.0
 
 ### Minor Changes

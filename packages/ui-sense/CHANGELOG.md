@@ -1,5 +1,167 @@
 # @opentask/ui-sense
 
+## 0.4.0
+
+### Minor Changes
+
+- 2d056d5: A barra de tracking so oferece o que a tela implementa
+  
+  O `TrackingControls` tinha `controls` opcional com "todos" por default, e o
+  default era o defeito: quem esquecia a prop anunciava os seis interruptores, e
+  os que a tela nao ligava em nada ficavam la, clicaveis e inertes. A tela do
+  "shhh", que so le rosto e ruido, mostrava **Arms**; a de priorizacao mostrava
+  Eyes, Mouth, Expressions, Arms e Gestures com nenhum deles conectado. Nas
+  stories o disfarce era passar `syncEyes: false` — o que desenha a caixa
+  desmarcada, sem handler, e ela nao reage ao clique.
+  
+  Duas mudancas de contrato:
+  
+  - **`controls` passou a ser obrigatorio.** Sem default, declarar o que a tela faz
+    deixa de ser lembrete e vira erro de compilacao, inclusive dentro de template
+    `.vue`. Uma tela nova nasce tendo que responder a pergunta.
+  - **`gestures` saiu de `TRACKING_CONTROLS`**, junto com a prop `syncGestures` e o
+    evento `update:syncGestures`. Nenhuma tela ligava esse controle a coisa
+    alguma — os gestos da tela de priorizacao vivem no `GestureSystem`, que tem o
+    proprio ciclo de vida. Ele volta quando houver quem o implemente.
+  
+  Quem usa o componente precisa passar `controls` com a lista do que de fato
+  sincroniza. As telas do `@opentask/taskin-design-vue` ja foram ajustadas: o
+  "shhh" declara `['webcam', 'eyes', 'mouth', 'expressions']`, a de priorizacao
+  `['webcam']`, e cada story de atomo declara so o seu (`['webcam', 'arms']` no
+  `TaskinArms`, `['webcam', 'mouth']` no `TaskinMouth`, e assim por diante).
+- 3a5d33a: A camera fora de contexto seguro passa a dizer o que houve
+  
+  Abrir qualquer uma das telas de tracking por um endereco que nao seja `https://`
+  nem `localhost` — o IP da rede local, tipicamente, quando se quer testar do
+  celular — quebrava com `TypeError: Cannot read properties of undefined (reading
+  'getUserMedia')`. A mensagem nao menciona camera, permissao nem origem, e manda
+  quem le procurar defeito no lugar errado: o navegador simplesmente nao define
+  `navigator.mediaDevices` fora de contexto seguro.
+  
+  `requestMediaStream` e `describeMediaUnavailability` entram em
+  `@opentask/ui-sense` e a checagem passa a ser feita antes da chamada, com a
+  causa por extenso e a origem atual no texto. `useFaceLandmarker`,
+  `useGestureRecognizer`, `usePoseLandmarker` e `createNoiseWatcher` passam a usar
+  as duas, entao a mensagem e a mesma nos quatro.
+  
+  `describeMediaUnavailability` e exportada separada para que a UI possa avisar
+  antes de o usuario clicar em "ligar a camera", em vez de so depois da falha.
+  
+  O `lib.dom` declara `navigator.mediaDevices` como sempre presente, o que tornava
+  a checagem invisivel para o compilador; o cast para `MediaDevices | undefined`
+  agora mora em um lugar so.
+- 2b3bebb: Telas com dois landmarkers paravam de travar
+  
+  O `TaskinWithFullTracking` roda face e pose ao mesmo tempo sobre o mesmo
+  `<video>`, e cada composable abria a **propria** camera. Duas consequencias, uma
+  visivel e uma nao:
+  
+  - o segundo `srcObject` desligava o primeiro stream sem para-lo — camera acesa,
+    ninguem lendo;
+  - e os dois esperavam o video com `videoElement.onloadedmetadata = () => ...`,
+    que e **propriedade**, nao lista. A segunda atribuicao apagava a primeira, e
+    quem chegou antes ficava preso no `await` para sempre: nunca comecava a
+    detectar, sem erro, sem log, so um mascote parado e o painel de debug vazio.
+    Qual dos dois travava dependia de quem terminava de carregar o modelo antes,
+    o que fazia o defeito ir e vir sem ninguem mudar nada.
+  
+  Entra `attachCamera(videoElement)` no `@opentask/ui-sense`: abre a camera uma
+  vez por elemento, conta referencias e devolve uma funcao que solta a sua. A
+  camera so desliga quando a ultima sai. A espera pelos metadados passou a usar
+  `addEventListener(..., { once: true })` e volta na hora se eles ja chegaram, e um
+  `AbortError` de `play()` interrompido — que e o que dois consumidores quase
+  simultaneos causam — deixa de ser tratado como falha.
+  
+  `useFaceLandmarker`, `usePoseLandmarker` e `useGestureRecognizer` passam a usar
+  a funcao. Nenhum deles limpa mais o `srcObject` ao parar: fazer isso derrubava o
+  video do outro consumidor.
+
+### Patch Changes
+
+- 03044a0: Os bracos do mascote paravam de cruzar o corpo
+  
+  A task-044 consertou o espelhamento do angulo e deixou passar o que vinha antes
+  dele: **de qual metade da tela cada braco era lido.**
+  
+  Os indices do MediaPipe Pose sao nomeados pelo corpo do **sujeito**, e uma
+  pessoa de frente para a camera tem o ombro esquerdo dela na **direita** da
+  imagem — `LEFT_SHOULDER` (11) sai com `x` grande. O `ARM_LANDMARKS` tratava
+  `11` como lado esquerdo da tela, entao cada braco era medido de um lado e
+  pintado no ombro oposto: quem abria os bracos virava um mascote se abracando.
+  
+  O `mirrorPose` nao muda isso e foi o que despistou. Ele inverte `x` e depois
+  troca os pares, e as duas operacoes se cancelam do ponto de vista da tela: o
+  indice `11` cai na direita da imagem nos dois modos. O que a troca muda e de
+  quem e o ponto, nao onde ele esta — por isso o mapeamento agora e
+  incondicional, em vez de depender do flag.
+  
+  Medido com a pessoa de bracos erguidos e abertos: antes, o cotovelo esquerdo era
+  desenhado em `x=112.7` com o ombro em `x=95` — para dentro. Agora cai em `x=77`,
+  para fora.
+  
+  ### Por que a suite nao pegou
+  
+  Cada peca tinha teste e cada peca estava certa. `armAnglesFromLandmarks` media
+  os quatro quadrantes, `armPositionFromPose` convertia os dois espacos,
+  `TaskinArms` renderizava. Nenhum atravessava da landmark crua ate o pixel, e o
+  fixture dos testes montava `11` na esquerda da tela — fixando a convencao errada
+  que o codigo de producao seguia.
+  
+  Entra um teste que faz o caminho inteiro, nos dois modos de espelhamento, e
+  falha se os indices voltarem a trocar.
+- b15cb26: A galeria ganha familia dentro do nivel atomico, e tags de filtro
+  
+  Com os dois pacotes na mesma arvore, `Atoms` passou a reunir onze itens de tres
+  familias sem relacao — `Badge` ao lado de `TaskinMouth` e de `WebcamVideo`. O
+  nivel atomico diz quao composto algo e, e ninguem navega por isso.
+  
+  O nivel continua sendo a espinha e a familia entra dentro dele: `Base` (UI
+  generica), `Task` (o produto), `Taskin` (o mascote) e `Sense` (os sensores).
+  Assim o titulo continua espelhando o caminho do arquivo — que e o que alguem usa
+  para achar o codigo — em vez de criar uma segunda taxonomia por dominio.
+  
+  Junto vem cinco tags, no filtro da barra lateral, para os eixos que uma arvore
+  nao expressa (um componente mora em uma pasta so):
+  
+  | tag | o que diz |
+  | --- | --- |
+  | `design-vue` · `ui-sense` | de qual pacote o componente vem |
+  | `webcam` · `microphone` | a story pede permissao de dispositivo |
+  | `legacy` | superado, mantido para referencia — fora da sidebar por padrao |
+  
+  `webcam` e a que mais rende: descobrir quais das 303 stories abrem a camera
+  exigia clicar e tomar erro. Onde so uma story de um arquivo estatico depende do
+  dispositivo, a tag fica na story e nao no meta, senao o filtro mentiria sobre as
+  outras.
+  
+  **As URLs mudam.** E alteracao so de titulo — nenhum componente, nenhum import,
+  nenhuma suite afetada — mas quem tiver
+  `/components/?path=/story/atoms-avatar--default` salvo passa a precisar de
+  `atoms-base-avatar--default`.
+- 3109949: A galeria publicada passa a incluir o `ui-sense`
+  
+  O deploy buildava so o Storybook do `design-vue`, entao o `ui-sense` nunca chegou
+  ao site: `WebcamVideo`, `TrackingControls`, `GestureIcon`, `GestureLegend`,
+  `GestureWizard`, `NoiseTrackingControls`, `FaceTrackingDebug` e `GestureSystem`
+  existiam apenas na maquina de quem rodasse `storybook` naquele pacote. Agora o
+  passo builda o Storybook da raiz, que cobre os dois — 46 titulos e 303 stories no
+  `/components/`, contra 38 titulos antes.
+  
+  Junto vao tres titulos que estavam errados e so ficaram visiveis com a arvore
+  unica:
+  
+  - `TaskinWithFullTracking.stories.ts` e `TaskinWithFullTrackingV2.stories.ts`
+    declaravam **o mesmo** `Organisms/Taskin/Full Tracking`, e o Storybook fundia
+    os dois no mesmo no. O que sobrevive e o `V2` — o unico que documenta o
+    componente, e que assume o nome do arquivo. O outro foi apagado: eram 287
+    linhas remontando a fiacao do componente a mao (`h(TrackingControls, ...)`,
+    os watchers dos landmarkers, o SVG) em vez de usar o componente, entao ele
+    duplicava um interior que ninguem lembraria de atualizar. A task-044 ja tinha
+    registrado essa duplicacao.
+  - `TaskinWithShhh` estava em `Organisms/TaskinWithShhh`, fora do grupo, embora o
+    arquivo more em `organisms/taskin/` como os irmaos. Virou
+    `Organisms/Taskin/Shhh`.
+
 ## 0.3.0
 
 ### Minor Changes

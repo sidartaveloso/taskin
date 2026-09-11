@@ -1,5 +1,13 @@
 # @opentask/taskin-task-server-ws
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [2c402e9]
+  - @opentask/taskin-types@2.1.1
+  - @opentask/taskin-task-manager@3.0.2
+
 ## 0.3.1
 
 ### Patch Changes
