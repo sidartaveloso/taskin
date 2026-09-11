@@ -9,6 +9,7 @@
     />
 
     <TrackingControls
+      :controls="['webcam', 'eyes', 'mouth', 'expressions']"
       :is-detecting="faceLandmarker.state.value.isDetecting"
       :error="faceLandmarker.state.value.error"
       :show-webcam="showWebcam"

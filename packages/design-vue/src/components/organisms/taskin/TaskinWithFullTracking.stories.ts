@@ -209,12 +209,12 @@ export const FullTracking: Story = {
               mirrored: true,
             }),
             h(TrackingControls, {
+              controls: ['webcam', 'eyes', 'mouth', 'arms'],
               isDetecting: isDetecting.value,
               error: trackingError.value,
               showWebcam: showWebcam.value,
               syncEyes: syncEyes.value,
               syncMouth: syncMouth.value,
-              syncExpressions: false,
               syncArms: syncArms.value,
               disabled: trackingError.value !== null,
               'onToggle-tracking': toggleTracking,
