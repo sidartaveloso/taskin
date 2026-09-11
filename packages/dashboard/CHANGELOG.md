@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies [03044a0]
+- Updated dependencies [2d056d5]
+- Updated dependencies [b15cb26]
+- Updated dependencies [3109949]
+- Updated dependencies [042ef23]
+- Updated dependencies [f5816b7]
+  - @opentask/taskin-design-vue@0.3.1
+  - @opentask/taskin-task-provider-pinia@3.0.2
+
 ## 0.1.9
 
 ### Patch Changes
