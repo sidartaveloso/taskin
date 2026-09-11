@@ -4,15 +4,15 @@
   "globalEnv": ["NODE_ENV", "PORT"],
   "tasks": {
     "@opentask/taskin#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
-    "@opentask/taskin-file-system-provider#build": {
-      "dependsOn": ["@opentask/taskin-git-utils#build", "@opentask/taskin-task-manager#build"]
-    },
     "@taskin/chatbot#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
     "@taskin/directus-extension#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
     "@taskin/docs#build": {
@@ -20,9 +20,11 @@
       "outputs": ["content/.vitepress/dist/**"]
     },
     "@taskin/n8n-plugin#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
     "@taskin/py-sdk#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
     "@taskin/types-py#publish:pypi": {
