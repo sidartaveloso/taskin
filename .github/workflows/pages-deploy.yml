@@ -19,23 +19,51 @@ name: Deploy site and components to GitHub Pages
 # outros branches este workflow builda e guarda o resultado como artefato de CI,
 # para a quebra aparecer no PR sem tocar no site.
 
+# O filtro e por exclusao, e nao por inclusao, de proposito.
+#
+# A versao anterior listava os pacotes que o site usa — docs, design-vue,
+# ui-sense, types-ts. Essa lista e uma copia a mao do grafo de dependencias, e
+# divergiu: o `turbo.json` nao estava nela, entao a mudanca que quebrou a
+# ordenacao do build do site nao acionou o workflow do site. `pnpm-lock.yaml`,
+# `pnpm-workspace.yaml`, `.tool-versions` e qualquer pacote que vire dependencia
+# transitiva amanha tinham o mesmo buraco.
+#
+# Invertido, a divergencia falha para o lado seguro: o default e rodar, e o que
+# esta abaixo e so o que comprovadamente nao entra no site. O run custa ~1m25 e
+# fora da `main` nem publica, entao rodar de sobra e barato; deixar passar uma
+# quebra nao e.
+#
+# `paths-ignore` so pula quando TODOS os arquivos do push casam — um commit que
+# mexe em TASKS/ e no turbo.json roda.
 on:
   push:
     branches:
       - main
       - develop
-    paths:
-      - "packages/docs/**"
-      - "packages/design-vue/**"
-      - "packages/ui-sense/**"
-      - "packages/types-ts/**"
-      - ".github/workflows/pages-deploy.yml"
+    paths-ignore:
+      # Arquivos de task: mudam a cada `taskin start`/`finish`, e o autopilot
+      # commita sozinho. E de longe a fonte mais comum de push aqui.
+      - "TASKS/**"
+      # Registros internos e documentacao que vive no GitHub, nao no site.
+      # `packages/docs/**` e o site e NAO esta aqui.
+      - "decisoes/**"
+      - "padroes/**"
+      - "docs/**"
+      - ".changeset/**"
+      - "*.md"
   pull_request:
-    paths:
-      - "packages/docs/**"
-      - "packages/design-vue/**"
-      - "packages/ui-sense/**"
-      - ".github/workflows/pages-deploy.yml"
+    # Repetida a mao: o parser de workflow do GitHub nao resolve anchors YAML.
+    paths-ignore:
+      # Arquivos de task: mudam a cada `taskin start`/`finish`, e o autopilot
+      # commita sozinho. E de longe a fonte mais comum de push aqui.
+      - "TASKS/**"
+      # Registros internos e documentacao que vive no GitHub, nao no site.
+      # `packages/docs/**` e o site e NAO esta aqui.
+      - "decisoes/**"
+      - "padroes/**"
+      - "docs/**"
+      - ".changeset/**"
+      - "*.md"
   workflow_dispatch:
 
 permissions:
