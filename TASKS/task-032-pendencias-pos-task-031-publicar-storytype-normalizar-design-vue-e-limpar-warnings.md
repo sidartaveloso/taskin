@@ -21,7 +21,7 @@ bloco 1 — e ele era mais complicado do que o descrito. Ver `## Notes`.
 | Bloco | Estado | Evidencia |
 | --- | --- | --- |
 | 1. Publicar storytype | automatizado no CI, falta merge para `main` | commits `16e7438` e `aa87d8e` no repo storytype |
-| 2. Normalizar design-vue | ja aplicado | `7eb07bb`, `cb35884`; normalize --dry-run reporta 0 renomeacoes |
+| 2. Normalizar design-vue | renomeacao de 0.2.x aplicada; a de 0.4.0 vai para a task-026 | `7eb07bb`, `cb35884`; ver `## Notes` |
 | 3. Bumps do changeset | feito | `design-vue` e `task-server-ws` para `minor` |
 | 4. Warnings de lint | feito no codigo de producao | `c5927c4`, `63f4b4c`; 97 → 46 warnings, so 1 fora de teste/story |
 | 5. Regex de titulo | ja feito | `9225bfa`; teste em `file-system-task-provider.test.ts:69` |
@@ -60,16 +60,22 @@ Não era uma publicação, eram duas — ver `## Notes`.
 - [x] Tag `v0.2.6` criada em `fd19501` para reconciliar o historico do
       semantic-release com o que ja estava publicado a mao. Sem ela o proximo
       release calcularia 0.2.5, que ja existe, e morreria em conflito
-- [ ] Publicar: merge de `develop` em `main` no storytype. Sai **0.2.7** nos dois
-      pacotes, com a dependencia do alias sincronizada automaticamente
-- [ ] Atualizar a devDependency no taskin de `^0.2.6` para `^0.2.7` — so depois de
-      publicar, senao `pnpm install` quebra no repo inteiro
+- [x] Publicar: feito. O release passou de `0.2.7` e hoje o `latest` dos dois
+      pacotes e **0.4.0**, com a dependencia do alias sincronizada (`storytype@0.4.0`
+      declara `@storytype/cli@^0.4.0`)
+- [x] Atualizar a devDependency no taskin: foi direto de `^0.2.6` para `^0.4.0`.
+      O `^0.2.6` nao servia mais — em `0.x` o caret nao atravessa o minor, entao
+      ele continuava resolvendo para o alias `0.2.6`, que fixa `@storytype/cli@0.2.4`,
+      justamente a versao sem o fix de deteccao
 
 ### 2. Normalizar `packages/design-vue`
 
-A previsao era 27 arquivos a renomear e 90 imports a atualizar. Com o cli corrigido,
-o dry-run reporta **0 diretorios e 0 arquivos a renomear**: a migracao ja tinha sido
-aplicada em `7eb07bb` e `cb35884`.
+A previsao era 27 arquivos a renomear e 90 imports a atualizar. O dry-run reportou
+**0 diretorios e 0 arquivos a renomear**, e a conclusao foi que a migracao ja tinha
+sido aplicada em `7eb07bb` e `cb35884`.
+
+Esse zero foi medido com o cli errado — ver `## Notes`. A convencao da 0.4.0 e
+outra, e o trabalho que ela pede vai para a task-026.
 
 - [x] Rodar `storytype normalize src/components --dry-run` — no-op nas renomeacoes
 - [x] Conferir que os `index.ts` dos diretórios afetados tiveram os imports reescritos
@@ -125,6 +131,20 @@ Ja resolvido em `9225bfa`, anterior a abertura desta task.
       `file-system-task-provider.test.ts:69`
 
 ## Notes
+
+- **O zero do bloco 2 foi medido com o cli quebrado.** O dry-run que fechou aquele
+  bloco rodou pelo `storytype@0.2.6` instalado, que fixa `@storytype/cli@0.2.4` — a
+  versao sem o fix de deteccao que este mesmo bloco 1 existia para publicar. Ele
+  enxergava 13 componentes no `design-vue`. Com `0.4.0` instalado sao **36**, e o
+  dry-run pede 20 componentes movidos para pasta propria, 61 arquivos renomeados,
+  42 criados e 102 imports reescritos.
+
+  Nao e regressao: e a convencao de pasta-por-componente da 0.4.0, que a 0.2.x nem
+  chegava a avaliar. O trabalho e real e grande demais para entrar aqui de carona —
+  vai para a **task-026**, que existe exatamente para "aplicar o storytype normalize
+  ao projeto". A licao que fica: **conferir a versao da ferramenta antes de tratar um
+  dry-run vazio como prova**, porque ferramenta desatualizada produz o mesmo zero que
+  trabalho concluido.
 
 - **O bloco 1 escondia um bug de release.** O enunciado dizia "publicar
   storytype@0.2.6", mas esse alias ja estava publicado no npm como `latest` — fixando
