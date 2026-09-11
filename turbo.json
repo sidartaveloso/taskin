@@ -95,7 +95,7 @@
       "outputs": ["coverage/**"]
     },
     "typecheck": {
-      "dependsOn": ["install"],
+      "dependsOn": ["install", "^build"],
       "inputs": ["src/**/*.{ts,tsx}", "package.json", "tsconfig.json"],
       "outputs": []
     }
