@@ -18,8 +18,14 @@ describe('GitService.commitTaskStatusChangeOnBranch - Integration', () => {
     testDir = mkdtempSync(join(tmpdir(), 'taskin-git-test-'));
     gitService = new GitService(testDir);
 
-    // Initialize git repository
-    execSync('git init', { cwd: testDir, stdio: 'ignore' });
+    /*
+     * `-b main` explicito: sem ele o nome do branch inicial vem do
+     * `init.defaultBranch` da maquina, e os helpers abaixo fazem
+     * `git checkout main`. Na maquina de quem escreveu o teste esse config e
+     * `main` e tudo passava; no runner do GitHub e `master`, e os oito testes
+     * caiam com `Command failed: git checkout main`.
+     */
+    execSync('git init -b main', { cwd: testDir, stdio: 'ignore' });
     execSync('git config user.email "test@taskin.dev"', {
       cwd: testDir,
       stdio: 'ignore',
