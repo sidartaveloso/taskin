@@ -17,7 +17,7 @@ import type { MouthExpression } from '../../atoms/taskin-mouth/TaskinMouth.types
 import TaskinMouth from '../../atoms/taskin-mouth/TaskinMouth.vue';
 
 const meta = {
-  title: 'Organisms/Taskin/Full Tracking',
+  title: 'Organisms/Taskin/Full Tracking Rig',
   tags: ['autodocs'],
 } satisfies Meta<Record<string, never>>;
 

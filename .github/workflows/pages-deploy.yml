@@ -145,8 +145,13 @@ jobs:
           VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
           VITE_POSTHOG_PERSON_PROFILES: ${{ vars.VITE_POSTHOG_PERSON_PROFILES }}
 
+      # O Storybook da raiz, nao o do `design-vue`: ele varre os dois pacotes e
+      # publica uma galeria so. Ate aqui o `ui-sense` nunca chegou ao site —
+      # nenhum passo o buildava, entao `WebcamVideo`, `TrackingControls` e a
+      # familia de gestos existiam apenas na maquina de quem rodava `storybook`
+      # naquele pacote.
       - name: Build the component gallery
-        run: pnpm --filter @opentask/taskin-design-vue run build:storybook
+        run: pnpm run build:storybook
         env:
           NODE_ENV: production
           # Sem `VITE_POSTHOG_KEY` o analytics nao inicializa e o build segue —
@@ -160,7 +165,7 @@ jobs:
           set -euo pipefail
 
           SITE=packages/docs/content/.vitepress/dist
-          STORYBOOK=packages/design-vue/storybook-static
+          STORYBOOK=storybook-static
 
           test -f "$SITE/index.html" || { echo "site nao buildou: $SITE/index.html ausente"; exit 1; }
           test -f "$STORYBOOK/index.html" || { echo "storybook nao buildou: $STORYBOOK/index.html ausente"; exit 1; }
