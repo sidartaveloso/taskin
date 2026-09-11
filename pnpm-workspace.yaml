@@ -8,5 +8,9 @@ allowBuilds:
   esbuild: true
   vue-demi: true
 
+minimumReleaseAgeExclude:
+  - '@storytype/cli@0.4.0'
+  - storytype@0.4.0
+
 overrides:
   esbuild@<=0.24.2: '>=0.25.0'
