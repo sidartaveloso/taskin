@@ -62,8 +62,6 @@ import { TRACKING_CONTROLS } from './TrackingControls.types';
 
 const props = withDefaults(defineProps<TrackingControlsProps>(), {
   showWebcam: true,
-  syncGestures: true,
-  controls: () => TRACKING_CONTROLS,
 });
 
 const emit = defineEmits<TrackingControlsEmits>();
@@ -113,12 +111,6 @@ const DESCRIPTORS: Record<TrackingControl, ControlDescriptor> = {
     label: 'Arms',
     checked: () => props.syncArms,
     emit: (value) => emit('update:syncArms', value),
-  },
-  gestures: {
-    group: 'sync',
-    label: 'Gestures',
-    checked: () => props.syncGestures,
-    emit: (value) => emit('update:syncGestures', value),
   },
 };
 

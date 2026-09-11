@@ -114,7 +114,12 @@
         muted
         playsinline
       />
+      <!--
+        So `webcam`: os gestos desta tela vivem no `GestureSystem` ao lado, que
+        tem o proprio ciclo de vida, e rosto e bracos ela nao sincroniza.
+      -->
       <TrackingControls
+        :controls="['webcam']"
         :is-detecting="cameraActive"
         :error="trackedError ?? null"
         :show-webcam="showWebcam"

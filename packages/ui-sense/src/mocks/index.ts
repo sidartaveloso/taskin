@@ -47,7 +47,6 @@ export const TrackingControls = defineComponent({
     syncMouth: { type: Boolean, default: false },
     syncExpressions: { type: Boolean, default: false },
     syncArms: { type: Boolean, default: false },
-    syncGestures: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
   },
   emits: [
@@ -57,20 +56,12 @@ export const TrackingControls = defineComponent({
     'update:syncMouth',
     'update:syncExpressions',
     'update:syncArms',
-    'update:syncGestures',
   ],
   setup(props, { emit }) {
     const onToggle = () => emit('toggle-tracking');
     const onShowWebcam = (event: Event) => emit('update:showWebcam', (event.target as HTMLInputElement).checked);
     const onSync =
-      (
-        event:
-          | 'update:syncEyes'
-          | 'update:syncMouth'
-          | 'update:syncExpressions'
-          | 'update:syncArms'
-          | 'update:syncGestures',
-      ) =>
+      (event: 'update:syncEyes' | 'update:syncMouth' | 'update:syncExpressions' | 'update:syncArms') =>
       (input: Event) =>
         emit(event, (input.target as HTMLInputElement).checked);
 

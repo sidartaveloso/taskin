@@ -615,12 +615,11 @@ export const FaceTracking: Story = {
               mirrored: true,
             }),
             h(TrackingControls, {
+              controls: ['webcam', 'eyes'],
               isDetecting: faceLandmarker.state.value.isDetecting,
               error: faceLandmarker.state.value.error,
               showWebcam: showWebcam.value,
               syncEyes: syncEyes.value,
-              syncMouth: false,
-              syncExpressions: false,
               disabled: faceLandmarker.state.value.error !== null,
               'onToggle-tracking': toggleTracking,
               'onUpdate:showWebcam': (value: boolean) => {

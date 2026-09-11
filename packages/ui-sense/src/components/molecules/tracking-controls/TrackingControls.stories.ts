@@ -37,10 +37,6 @@ const meta = {
       control: 'boolean',
       description: 'Sync arms with pose tracking',
     },
-    syncGestures: {
-      control: 'boolean',
-      description: 'Sync gesture recognition',
-    },
     disabled: {
       control: 'boolean',
       description: 'Disable start/stop button',
@@ -48,7 +44,7 @@ const meta = {
     controls: {
       control: 'check',
       options: [...TRACKING_CONTROLS],
-      description: 'Quais controles ficam disponiveis; o default sao todos',
+      description: 'Quais controles a tela implementa — obrigatorio, sem default',
     },
   },
 } satisfies Meta<typeof TrackingControls>;
@@ -65,7 +61,7 @@ export const Default: Story = {
     syncMouth: true,
     syncExpressions: true,
     syncArms: false,
-    syncGestures: false,
+    controls: [...TRACKING_CONTROLS],
     disabled: false,
   },
 };
@@ -79,7 +75,7 @@ export const Detecting: Story = {
     syncMouth: true,
     syncExpressions: true,
     syncArms: true,
-    syncGestures: true,
+    controls: [...TRACKING_CONTROLS],
     disabled: false,
   },
 };
@@ -93,7 +89,7 @@ export const WithError: Story = {
     syncMouth: true,
     syncExpressions: true,
     syncArms: false,
-    syncGestures: false,
+    controls: [...TRACKING_CONTROLS],
     disabled: true,
   },
 };
@@ -107,7 +103,7 @@ export const AllDisabled: Story = {
     syncMouth: false,
     syncExpressions: false,
     syncArms: false,
-    syncGestures: false,
+    controls: [...TRACKING_CONTROLS],
     disabled: false,
   },
 };
@@ -128,7 +124,7 @@ export const Interactive: Story = {
     syncMouth: true,
     syncExpressions: true,
     syncArms: false,
-    syncGestures: false,
+    controls: [...TRACKING_CONTROLS],
     disabled: false,
   },
   render: (args) => ({
@@ -147,7 +143,6 @@ export const Interactive: Story = {
         @update:syncMouth="state.syncMouth = $event"
         @update:syncExpressions="state.syncExpressions = $event"
         @update:syncArms="state.syncArms = $event"
-        @update:syncGestures="state.syncGestures = $event"
       />
     `,
   }),

@@ -491,12 +491,10 @@ export const PoseTracking: Story = {
               mirrored: true,
             }),
             h(TrackingControls, {
+              controls: ['webcam', 'arms'],
               isDetecting: poseLandmarker.state.value.isDetecting,
               error: poseLandmarker.state.value.error,
               showWebcam: showWebcam.value,
-              syncEyes: false,
-              syncMouth: false,
-              syncExpressions: false,
               syncArms: syncArms.value,
               disabled: poseLandmarker.state.value.error !== null,
               'onToggle-tracking': toggleTracking,

@@ -3,11 +3,11 @@
  *
  * A ordem vive aqui e nao no array que o consumidor passa: a barra de controles
  * aparece em telas diferentes e sempre com o mesmo layout, entao pedir
- * `['gestures', 'eyes']` esconde o resto sem embaralhar o que sobrou.
+ * `['arms', 'eyes']` esconde o resto sem embaralhar o que sobrou.
  *
  * @public
  */
-export const TRACKING_CONTROLS = ['webcam', 'eyes', 'mouth', 'expressions', 'arms', 'gestures'] as const;
+export const TRACKING_CONTROLS = ['webcam', 'eyes', 'mouth', 'expressions', 'arms'] as const;
 
 /** Um controle da barra. @public */
 export type TrackingControl = (typeof TRACKING_CONTROLS)[number];
@@ -20,17 +20,21 @@ export interface TrackingControlsProps {
   syncMouth?: boolean;
   syncExpressions?: boolean;
   syncArms?: boolean;
-  syncGestures?: boolean;
   disabled?: boolean;
   /**
-   * Quais controles ficam disponiveis. O default sao todos.
+   * Quais controles a tela realmente implementa. **Obrigatorio**, e de
+   * proposito.
    *
-   * Serve para a tela nao oferecer o que ela nao suporta: uma que so faz
-   * rastreamento de rosto passa `['webcam', 'eyes', 'mouth', 'expressions']` e
-   * nao mostra bracos nem gestos, em vez de mostrar um interruptor que nao liga
-   * coisa nenhuma. Um grupo sem nenhum item disponivel desaparece inteiro.
+   * Ja existia como opcional com "todos" por default, e o default era o
+   * problema: quem esquecia a prop anunciava os seis interruptores, e os que a
+   * tela nao ligava em nada ficavam la, clicaveis e inertes. Uma tela so de
+   * rosto mostrava "Arms"; nenhuma tela ligava "Gestures".
+   *
+   * Sem default, declarar o que a tela faz deixa de ser lembrete e vira erro de
+   * compilacao — e uma tela nova nasce tendo que responder a pergunta. Um grupo
+   * sem nenhum item disponivel desaparece inteiro.
    */
-  controls?: readonly TrackingControl[];
+  controls: readonly TrackingControl[];
 }
 
 export interface TrackingControlsEmits {
@@ -40,5 +44,4 @@ export interface TrackingControlsEmits {
   (event: 'update:syncMouth', value: boolean): void;
   (event: 'update:syncExpressions', value: boolean): void;
   (event: 'update:syncArms', value: boolean): void;
-  (event: 'update:syncGestures', value: boolean): void;
 }
