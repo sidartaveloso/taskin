@@ -1,5 +1,6 @@
 import { FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
+import { requestMediaStream } from '../../utils/camera';
 import type {
   CannedGesture,
   GestureRecognizerState,
@@ -48,14 +49,7 @@ export function useGestureRecognizer(
 
   const startWebcam = async () => {
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user',
-        },
-        audio: false,
-      });
+      stream = await requestMediaStream();
 
       if (videoElement.value) {
         videoElement.value.srcObject = stream;
