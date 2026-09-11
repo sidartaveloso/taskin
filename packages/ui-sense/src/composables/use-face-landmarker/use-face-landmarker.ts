@@ -1,6 +1,6 @@
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
-import { requestMediaStream } from '../../utils/camera';
+import { attachCamera } from '../../utils/camera';
 import type {
   FaceLandmarkerBlendShapes,
   FaceLandmarkerState,
@@ -22,7 +22,7 @@ export function useFaceLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
 
   let faceLandmarker: FaceLandmarker | null = null;
   let animationFrameId: number | null = null;
-  let stream: MediaStream | null = null;
+  let releaseCamera: (() => void) | null = null;
 
   /**
    * Inicializa o MediaPipe Face Landmarker
@@ -60,22 +60,11 @@ export function useFaceLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
    */
   const startWebcam = async () => {
     try {
-      stream = await requestMediaStream();
-
       if (videoElement.value) {
-        videoElement.value.srcObject = stream;
-        // Aguarda o vídeo estar pronto antes de dar play
-        await new Promise<void>((resolve) => {
-          if (videoElement.value) {
-            videoElement.value.onloadedmetadata = () => {
-              resolve();
-            };
-          }
-        });
-        await videoElement.value.play();
+        releaseCamera = await attachCamera(videoElement.value);
       }
     } catch (error) {
-      state.value.error = `Erro ao acessar webcam: ${error}`;
+      state.value.error = `Failed to access webcam: ${error}`;
       console.error('Webcam access error:', error);
     }
   };
@@ -192,16 +181,8 @@ export function useFaceLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
       animationFrameId = null;
     }
 
-    if (stream) {
-      for (const track of stream.getTracks()) {
-        track.stop();
-      }
-      stream = null;
-    }
-
-    if (videoElement.value) {
-      videoElement.value.srcObject = null;
-    }
+    releaseCamera?.();
+    releaseCamera = null;
   };
 
   /**

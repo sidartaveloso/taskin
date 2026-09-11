@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { describeMediaUnavailability, requestMediaStream } from './camera';
+import { attachCamera, describeMediaUnavailability, requestMediaStream } from './camera';
 
 /*
  * jsdom nao implementa `navigator.mediaDevices`, entao o ambiente do teste ja
@@ -72,5 +72,112 @@ describe('requestMediaStream', () => {
     expect(getUserMedia).toHaveBeenCalledWith(
       expect.objectContaining({ video: expect.objectContaining({ facingMode: 'user' }) }),
     );
+  });
+});
+
+describe('attachCamera', () => {
+  /*
+   * Um `<video>` de jsdom nao carrega nada, entao `readyState` fica em 0 e
+   * `play` nao existe. Os dois sao encenados aqui: o teste e sobre quem espera
+   * quem, nao sobre decodificacao de video.
+   */
+  function videoElement(readyState = 0): HTMLVideoElement {
+    const el = document.createElement('video');
+    Object.defineProperty(el, 'readyState', { value: readyState, configurable: true });
+    el.play = vi.fn().mockResolvedValue(undefined);
+    return el;
+  }
+
+  function fakeStream(): MediaStream {
+    const track = { stop: vi.fn() };
+    return { getTracks: () => [track] } as unknown as MediaStream;
+  }
+
+  it('opens the camera once for two consumers of the same element', async () => {
+    const stream = fakeStream();
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    withMediaDevices(getUserMedia);
+    const el = videoElement(HTMLMediaElement.HAVE_METADATA);
+
+    await attachCamera(el);
+    await attachCamera(el);
+
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
+    expect(el.srcObject).toBe(stream);
+  });
+
+  it('keeps the camera alive until the last consumer releases it', async () => {
+    const stream = fakeStream();
+    withMediaDevices(vi.fn().mockResolvedValue(stream));
+    const el = videoElement(HTMLMediaElement.HAVE_METADATA);
+    const [track] = stream.getTracks();
+
+    const releaseFirst = await attachCamera(el);
+    const releaseSecond = await attachCamera(el);
+
+    releaseFirst();
+    expect(track?.stop).not.toHaveBeenCalled();
+    expect(el.srcObject).toBe(stream);
+
+    releaseSecond();
+    expect(track?.stop).toHaveBeenCalledTimes(1);
+    expect(el.srcObject).toBeNull();
+  });
+
+  it('ignores a repeated release, so one consumer cannot close it twice', async () => {
+    const stream = fakeStream();
+    withMediaDevices(vi.fn().mockResolvedValue(stream));
+    const el = videoElement(HTMLMediaElement.HAVE_METADATA);
+    const [track] = stream.getTracks();
+
+    const release = await attachCamera(el);
+    const other = await attachCamera(el);
+
+    release();
+    release();
+
+    expect(track?.stop).not.toHaveBeenCalled();
+    other();
+    expect(track?.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets both consumers through when the metadata event fires once', async () => {
+    /*
+     * O defeito que isto trava. Os dois esperavam com
+     * `videoElement.onloadedmetadata = ...`, que e propriedade e nao lista: a
+     * segunda atribuicao apagava a primeira, e quem chegou antes ficava preso
+     * no `await` para sempre — sem erro, sem log, so um mascote parado.
+     */
+    withMediaDevices(vi.fn().mockResolvedValue(fakeStream()));
+    const el = videoElement(0);
+
+    let resolvedCount = 0;
+    const first = attachCamera(el).then(() => resolvedCount++);
+    const second = attachCamera(el).then(() => resolvedCount++);
+
+    // Os dois registram o listener depois de esperar o `getUserMedia`; sem
+    // este respiro o evento dispara antes de existir quem o escute.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    el.dispatchEvent(new Event('loadedmetadata'));
+
+    await Promise.all([first, second]);
+
+    expect(resolvedCount).toBe(2);
+  });
+
+  it('survives play() being interrupted, which is what two consumers cause', async () => {
+    withMediaDevices(vi.fn().mockResolvedValue(fakeStream()));
+    const el = videoElement(HTMLMediaElement.HAVE_METADATA);
+    el.play = vi.fn().mockRejectedValue(new DOMException('interrupted', 'AbortError'));
+
+    await expect(attachCamera(el)).resolves.toBeTypeOf('function');
+  });
+
+  it('still reports a real play failure', async () => {
+    withMediaDevices(vi.fn().mockResolvedValue(fakeStream()));
+    const el = videoElement(HTMLMediaElement.HAVE_METADATA);
+    el.play = vi.fn().mockRejectedValue(new DOMException('denied', 'NotAllowedError'));
+
+    await expect(attachCamera(el)).rejects.toThrow('denied');
   });
 });

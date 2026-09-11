@@ -72,3 +72,106 @@ export async function requestMediaStream(
   // `describeMediaUnavailability` acabou de garantir que existe.
   return (getMediaDevices() as MediaDevices).getUserMedia(constraints);
 }
+
+/**
+ * Uma camera, compartilhada por quem estiver olhando o mesmo `<video>`.
+ *
+ * Existe porque telas com mais de um landmarker — o `TaskinWithFullTracking`
+ * roda face e pose ao mesmo tempo — travavam. Cada composable abria o proprio
+ * `getUserMedia` e escrevia no mesmo elemento, e o segundo `srcObject`
+ * desligava o primeiro stream sem para-lo: camera acesa, ninguem lendo.
+ *
+ * O travamento vinha de uma linha menor e mais cruel. Os dois esperavam o video
+ * assim:
+ *
+ * ```ts
+ * videoElement.onloadedmetadata = () => resolve();
+ * ```
+ *
+ * `onloadedmetadata` e **propriedade**, nao lista: a segunda atribuicao apaga a
+ * primeira. Quem chegou antes nunca recebia o callback, ficava preso no `await`
+ * para sempre e jamais comecava a detectar — sem erro, sem log, so um mascote
+ * parado. Qual dos dois travava dependia da ordem em que terminavam de carregar
+ * o modelo, o que explica funcionar num dia e nao no outro.
+ */
+interface Attachment {
+  stream: MediaStream;
+  refs: number;
+}
+
+const attachments = new WeakMap<HTMLVideoElement, Attachment>();
+
+/**
+ * Liga a camera a um elemento de video, reaproveitando o stream se ele ja
+ * estiver ligado.
+ *
+ * @param videoElement - O elemento que vai exibir e alimentar a deteccao
+ * @param constraints - Usadas apenas quando a camera ainda nao foi aberta
+ * @returns Uma funcao que solta esta referencia; a camera so e desligada quando
+ *   a ultima soltar
+ * @public
+ */
+export async function attachCamera(
+  videoElement: HTMLVideoElement,
+  constraints: MediaStreamConstraints = DEFAULT_VIDEO_CONSTRAINTS,
+): Promise<() => void> {
+  const existing = attachments.get(videoElement);
+
+  if (existing) {
+    existing.refs += 1;
+  } else {
+    const stream = await requestMediaStream(constraints);
+    videoElement.srcObject = stream;
+    attachments.set(videoElement, { stream, refs: 1 });
+  }
+
+  await waitForMetadata(videoElement);
+
+  /*
+   * `play()` rejeita com AbortError quando outra chamada o interrompe — o que
+   * acontece justamente quando dois consumidores ligam quase juntos. Nao e
+   * falha: o video esta tocando, so nao foi esta chamada que o iniciou.
+   */
+  try {
+    await videoElement.play();
+  } catch (error) {
+    if (!(error instanceof DOMException) || error.name !== 'AbortError') {
+      throw error;
+    }
+  }
+
+  let released = false;
+
+  return () => {
+    if (released) return;
+    released = true;
+
+    const attachment = attachments.get(videoElement);
+    if (!attachment) return;
+
+    attachment.refs -= 1;
+    if (attachment.refs > 0) return;
+
+    for (const track of attachment.stream.getTracks()) {
+      track.stop();
+    }
+    attachments.delete(videoElement);
+    videoElement.srcObject = null;
+  };
+}
+
+/**
+ * Espera os metadados do video, ou volta na hora se eles ja chegaram.
+ *
+ * `addEventListener` e nao `onloadedmetadata`: o segundo se sobrescreve, e era
+ * assim que o segundo consumidor prendia o primeiro para sempre.
+ */
+function waitForMetadata(videoElement: HTMLVideoElement): Promise<void> {
+  if (videoElement.readyState >= HTMLMediaElement.HAVE_METADATA) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    videoElement.addEventListener('loadedmetadata', () => resolve(), { once: true });
+  });
+}
