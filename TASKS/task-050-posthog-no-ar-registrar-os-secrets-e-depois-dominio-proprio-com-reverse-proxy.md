@@ -82,12 +82,9 @@ esperar um commit, `workflow_dispatch`.
 
 ## Parte 2 — Dominio proprio e reverse proxy (melhora a entrega)
 
-Hoje **nao da para fazer**, e a razao e a hospedagem:
-
-| | |
-| --- | --- |
-| `sidartaveloso` | Cloudflare Pages, com `d.sidartaveloso.com` na frente da PostHog |
-| `taskin` | `sidartaveloso.github.io/taskin/` — GitHub Pages serve estatico, nao faz proxy |
+Hoje **nao da para fazer**, e a razao e a hospedagem: o site esta em
+`sidartaveloso.github.io/taskin/`, e o GitHub Pages serve arquivo estatico —
+nao faz proxy de nada.
 
 O reverse proxy gerenciado da PostHog precisa de um CNAME de um subdominio que
 voce controle, e nao existe subdominio sob `github.io`. Entao a ordem e
@@ -131,9 +128,14 @@ e **devDependency**. Extrair para um pacote compartilhado faria o design system
 publicar o posthog para todo consumidor dele. Qualquer mudanca da Parte 2
 precisa ser aplicada nos dois.
 
-### Referencia
+### O que falta no `analytics.ts` alem do `ui_host`
 
-`../sidartaveloso` ja passou por tudo isto — o `useAnalytics.ts` dele tem o
-`ui_host`, a fila de callbacks e os feature flags, com comentarios explicando o
-incidente que motivou cada um. O taskin esta a frente num ponto so: o `import()`
-dinamico, que la e estatico.
+Duas coisas que a Parte 2 nao exige, mas que a task-051 (testes A/B) vai
+precisar, e que e mais barato acrescentar junto:
+
+- uma fila de callbacks para quem precisa do SDK assim que ele existir — o
+  `initAnalytics` e disparado sem `await`, entao checar o cliente uma vez no
+  mount nao basta;
+- leitura de feature flag e assinatura da atualizacao deles.
+
+Os dois arquivos precisam receber as duas.

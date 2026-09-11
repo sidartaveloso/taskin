@@ -7,8 +7,6 @@
  * pacote. Extrair isto para um pacote compartilhado faria o design-vue publicar
  * o posthog para todo consumidor do design system, o que ninguem pediu.
  *
- * Mesmo desenho usado em `sidartaveloso`.
- *
  * Sem `VITE_POSTHOG_KEY`, `initAnalytics` nao faz nada: em desenvolvimento nao
  * ha o que medir, e o build nao deve falhar por falta de uma credencial que so
  * existe depois do site publicado. `track` sem inicializacao previa tambem nao
@@ -43,13 +41,22 @@ type PostHog = typeof import('posthog-js').default;
 let client: PostHog | null = null;
 
 /**
- * O `import()` e dinamico de proposito, divergindo do original em
- * `sidartaveloso`, que importa estatico.
+ * O `import()` e dinamico de proposito.
  *
  * Medido: com import estatico o chunk do tema do site saiu de 139 KB para
  * 493 KB — o SDK entrava em toda visita, inclusive nos builds sem chave (dev,
  * PR, fork), onde ele nem inicializa. Sendo dinamico, so baixa quando ha
  * `VITE_POSTHOG_KEY`.
+ *
+ * Sem a chave no build o efeito e mais forte que carregamento tardio: o Vite
+ * substitui `import.meta.env.VITE_POSTHOG_KEY` por `undefined`, o retorno
+ * antecipado abaixo vira codigo morto e o `import()` some no tree-shaking. O
+ * bundle publicado sem chave nao contem PostHog nenhum — nem esta funcao.
+ *
+ * Nao torna o SDK mais bloqueavel: o chunk sai com nome opaco
+ * (`module.<hash>.js`, ~92 KB gzip) e e servido do proprio dominio, igual a um
+ * import estatico. O que bloqueadores pegam sao as requisicoes para
+ * `*.i.posthog.com`, e isso independe de como o script foi carregado.
  */
 export async function initAnalytics(surface: Surface): Promise<void> {
   if (client || typeof window === 'undefined') return;
