@@ -117,6 +117,27 @@ describe('convertMetadataStyle', () => {
     }
   });
 
+  it('junta o bloco partido mesmo quando a marcacao ja esta correta', () => {
+    /*
+     * O caso que escapou: `Priority` logo apos o H1, linha em branco, e o resto
+     * — com a ultima linha ja sem a barra. Comparando so as linhas de metadado,
+     * o bloco parecia formatado e o arquivo ficava partido.
+     */
+    const partido = `${TITLE}
+Priority: 240\\
+
+Status: done\\
+Assignee: ana
+Completed: 2026-04-17
+
+## Description
+x
+`;
+    const convertido = convertMetadataStyle(partido, 'hard-break');
+    expect(convertido).toContain('Priority: 240\\\nStatus: done\\\nAssignee: ana\\\nCompleted: 2026-04-17\n');
+    expect(readMetadataField(convertido, 'Status')).toBe('done');
+  });
+
   it('leaves a file with no block alone', () => {
     const content = `${TITLE}\n\n## Description\n`;
     expect(convertMetadataStyle(content, 'list')).toBe(content);
