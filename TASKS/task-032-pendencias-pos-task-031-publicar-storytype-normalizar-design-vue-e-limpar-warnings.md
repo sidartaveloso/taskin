@@ -1,6 +1,6 @@
 # Task 032 — Pendencias pos task-031: publicar storytype, normalizar design-vue e limpar warnings
 
-- Status: in-progress
+- Status: done
 - Type: chore
 - Assignee: sidarta-veloso
 
