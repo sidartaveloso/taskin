@@ -123,6 +123,80 @@ describe('convertMetadataStyle', () => {
   });
 });
 
+describe('bloco partido por linha em branco (arquivo gravado ate a 4.0.0)', () => {
+  /*
+   * O `setInlineField` daquela versao inseria um campo novo logo apos o H1,
+   * antes da linha em branco que separava do bloco real. Um arquivo priorizado
+   * por ela fica assim.
+   */
+  const legado = `${TITLE}
+Priority: 10\\
+
+Status: pending\\
+Type: feat\\
+Assignee: sidarta-veloso\\
+
+## Description
+x
+`;
+
+  it('le todos os campos, e nao so os do primeiro pedaco', () => {
+    expect(readMetadataField(legado, 'Priority')).toBe('10');
+    expect(readMetadataField(legado, 'Status')).toBe('pending');
+    expect(readMetadataField(legado, 'Type')).toBe('feat');
+    expect(readMetadataField(legado, 'Assignee')).toBe('sidarta-veloso');
+  });
+
+  it('junta tudo num bloco so ao escrever, sem duplicar o campo', () => {
+    const atualizado = writeMetadataField(legado, 'Status', 'done');
+    expect(atualizado.match(/^Status:/gm)).toHaveLength(1);
+    expect(readMetadataField(atualizado, 'Status')).toBe('done');
+    expect(readMetadataField(atualizado, 'Priority')).toBe('10');
+    expect(atualizado).not.toMatch(/Priority: 10\\?\n\n/);
+  });
+
+  it('preserva o estilo do arquivo na reparacao', () => {
+    expect(detectMetadataStyle(legado)?.id).toBe('hard-break');
+    const atualizado = writeMetadataField(legado, 'Status', 'done');
+    expect(atualizado).toMatch(/^Assignee: sidarta-veloso$/m);
+  });
+});
+
+describe('linhas do cabecalho que nao sao metadado', () => {
+  it('nao trata rotulo em negrito como campo', () => {
+    const content = `${TITLE}
+
+- Status: pending
+
+**Date**: 2026-01-08
+
+## Description
+x
+`;
+    expect(readMetadataField(content, '**Date**')).toBeUndefined();
+    expect(readMetadataField(content, 'Date')).toBeUndefined();
+    const atualizado = writeMetadataField(content, 'Status', 'done');
+    expect(atualizado).toContain('**Date**: 2026-01-08');
+    expect(atualizado).not.toContain('- **Date**');
+  });
+
+  it('nao absorve uma citacao que vem depois do bloco', () => {
+    const content = `${TITLE}
+
+- Status: pending
+- Type: feat
+
+> **Nota (registro historico):** algo
+
+## Description
+x
+`;
+    const atualizado = writeMetadataField(content, 'Status', 'done');
+    expect(atualizado).toContain('> **Nota (registro historico):** algo');
+    expect(atualizado).not.toMatch(/^- > /m);
+  });
+});
+
 describe('isMetadataStyleId', () => {
   it.each(['list', 'hard-break', 'plain'])('accepts %s', (id) => {
     expect(isMetadataStyleId(id)).toBe(true);

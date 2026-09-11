@@ -53,8 +53,7 @@ exigia clicar e tomar erro — e fora de contexto seguro o navegador nem define
 `navigator.mediaDevices`, entao a falha nem menciona camera.
 
 `legacy` usa `defaultFilterSelection: 'exclude'`: sai da sidebar por padrao, mas
-continua acessivel por URL e por um clique. Cobre `Organisms/Taskin/V1` e o
-`Full Tracking Rig`.
+continua acessivel por URL e por um clique. Cobre `Organisms/Taskin/V1`.
 
 Onde o arquivo e majoritariamente estatico e so uma story abre a camera
 (`TaskinEyes`, `TaskinMouth`, `TaskinArms`, `TaskinArmWithPhone`,
@@ -69,7 +68,7 @@ meta — senao o filtro mentiria sobre as outras treze.
 - [x] Tag de procedencia (`design-vue` / `ui-sense`) no meta dos 45 arquivos
 - [x] Tag `webcam` / `microphone` no meta quando o arquivo inteiro depende do
       dispositivo, e na story quando so uma depende
-- [x] Tag `legacy` no `TaskinV1` e no `Full Tracking Rig`
+- [x] Tag `legacy` no `TaskinV1`
 - [x] Declarar as cinco tags em `.storybook/main.ts`, com `legacy` excluida por
       padrao
 - [x] Reescrever o `welcome.mdx`, que ainda descrevia a composicao por `refs`
@@ -88,9 +87,12 @@ O que muda de verdade e o endereco: quem tiver
 `/components/?path=/story/atoms-avatar--default` salvo passa a precisar de
 `atoms-base-avatar--default`.
 
-### Ainda em aberto
+### O `Full Tracking Rig` foi apagado
 
-O `Organisms/Taskin/Full Tracking Rig` sao 287 linhas que remontam a fiacao do
-componente a mao, em vez de usar o componente — a task-044 ja registrou essa
-duplicacao. Ficou marcado como `legacy` em vez de apagado, porque a decisao de
-apagar nao foi tomada.
+Eram 287 linhas remontando a fiacao do componente a mao — `h(TrackingControls,
+...)`, os watchers dos dois landmarkers, o SVG montado peca por peca — em vez de
+usar o `TaskinWithFullTracking.vue`. Duplicava um interior que ninguem lembraria
+de atualizar junto; a task-044 ja tinha registrado essa duplicacao.
+
+Com ele fora, o `TaskinWithFullTrackingV2.stories.ts` — o unico que documentava o
+componente — assumiu o nome do arquivo, via `git mv` para o historico seguir.

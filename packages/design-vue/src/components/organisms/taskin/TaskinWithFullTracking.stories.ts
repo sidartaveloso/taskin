@@ -1,287 +1,143 @@
-import {
-  FaceTrackingDebug,
-  TrackingControls,
-  useFaceLandmarker,
-  usePoseLandmarker,
-  WebcamVideo,
-} from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect } from 'storybook/test';
-import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
-import type { ArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
-import { armPositionFromPose, NEUTRAL_ARM_POSITION } from '../../atoms/taskin-arms/TaskinArms.types';
-import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
-import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
-import TaskinEyes from '../../atoms/taskin-eyes/TaskinEyes.vue';
-import type { MouthExpression } from '../../atoms/taskin-mouth/TaskinMouth.types';
-import TaskinMouth from '../../atoms/taskin-mouth/TaskinMouth.vue';
+import TaskinWithFullTracking from './TaskinWithFullTracking.vue';
+
+function getWebcam(canvasElement: HTMLElement): HTMLVideoElement | null {
+  return canvasElement.querySelector('video.webcam-video');
+}
 
 const meta = {
-  title: 'Organisms/Taskin/Full Tracking Rig',
-  tags: ['autodocs', 'design-vue', 'webcam', 'legacy'],
-} satisfies Meta<Record<string, never>>;
+  title: 'Organisms/Taskin/Full Tracking',
+  component: TaskinWithFullTracking,
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+# Taskin with Face and Body Detection (MediaPipe)
+
+Este componente integra **MediaPipe Face Landmarker** e **MediaPipe Pose Landmarker** para detectar
+facial expressions and body posture in real time over the webcam, and mirror them on the Taskin mascot.
+
+## Funcionalidades
+
+- **Eye sync**: Taskin's eyes follow where you look and blink when you blink
+- **Mouth sync**: Taskin's mouth opens and smiles as yours does
+- **Arm sync**: Taskin's arms follow yours
+
+## Tecnologias
+
+- **MediaPipe Face Landmarker**: Detecta 478 pontos faciais e 52 blendshapes
+- **MediaPipe Pose Landmarker**: Detecta 33 pontos corporais
+- **WebRTC**: Access to the webcam
+- **Vue 3 Composition API**: Gerenciamento reativo do estado
+
+## Requisitos
+
+- Navegador moderno com suporte a WebRTC
+- Permission to use the webcam
+- An internet connection, to download the MediaPipe models
+
+## Como Usar
+
+1. Click "Start Detection"
+2. Allow webcam access when asked
+3. Move your eyes, smile, open your mouth, raise your arms — watch Taskin copy all of it
+4. Use the checkboxes to turn each kind of sync on and off
+
+## Performance
+
+MediaPipe runs locally in the browser on WebAssembly, using the GPU when available,
+which keeps latency low and the data private — nothing is sent to a server.
+        `,
+      },
+    },
+  },
+  tags: ['autodocs', 'design-vue', 'webcam'],
+  argTypes: {
+    mascotSize: {
+      control: { type: 'number', min: 100, max: 500, step: 10 },
+      description: 'Tamanho do mascote Taskin',
+    },
+    showWebcam: {
+      control: 'boolean',
+      description: 'Mostrar feed da webcam',
+    },
+    showDebug: {
+      control: 'boolean',
+      description: 'Show debug information',
+    },
+  },
+  args: {
+    mascotSize: 320,
+    showWebcam: false,
+    showDebug: false,
+  },
+} satisfies Meta<typeof TaskinWithFullTracking>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const FullTracking: Story = {
-  render: () => ({
-    setup() {
-      const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
-      const videoElement = ref<HTMLVideoElement | null>(null);
-      const showWebcam = ref(false);
-
-      // Sync controls
-      const syncEyes = ref(true);
-      const syncMouth = ref(true);
-      const syncArms = ref(true);
-
-      // Face tracking state
-      const eyeState = ref<'normal' | 'closed' | 'squint' | 'wide'>('normal');
-      const eyeLookPosition = ref({ x: 0, y: 0 });
-      const mouthExpression = ref<MouthExpression>('neutral');
-
-      // Pose tracking state
-      const leftArmPosition = ref<ArmPosition>(NEUTRAL_ARM_POSITION);
-      const rightArmPosition = ref<ArmPosition>(NEUTRAL_ARM_POSITION);
-
-      onMounted(() => {
-        if (webcamVideoRef.value) {
-          videoElement.value = webcamVideoRef.value.videoElement;
-        }
-      });
-
-      // Initialize face tracking
-      const faceLandmarker = useFaceLandmarker(videoElement, {
-        enableBlendshapes: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-        mirrorEyeTracking: true,
-      });
-
-      // Initialize pose tracking
-      const poseLandmarker = usePoseLandmarker(videoElement, {
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-        mirrorPose: true,
-      });
-
-      const toggleTracking = () => {
-        if (faceLandmarker.state.value.isDetecting) {
-          faceLandmarker.stopDetection();
-          poseLandmarker.stopDetection();
-        } else {
-          faceLandmarker.startDetection();
-          poseLandmarker.startDetection();
-        }
-      };
-
-      // Watch for face tracking updates
-      const unwatchFace = ref<(() => void) | null>(null);
-
-      onMounted(() => {
-        unwatchFace.value = watch(
-          () => faceLandmarker.state.value.blendShapes,
-          (blendShapes) => {
-            if (!blendShapes) return;
-
-            // Update eyes
-            if (syncEyes.value) {
-              const eyeOpenness = faceLandmarker.getEyeOpenness();
-              const avgOpenness = (eyeOpenness.left + eyeOpenness.right) / 2;
-
-              // Map openness to eye state
-              if (avgOpenness < 0.2) {
-                eyeState.value = 'closed';
-              } else if (avgOpenness < 0.5) {
-                eyeState.value = 'squint';
-              } else if (avgOpenness > 0.9) {
-                eyeState.value = 'wide';
-              } else {
-                eyeState.value = 'normal';
-              }
-
-              // Update eye look direction
-              eyeLookPosition.value = faceLandmarker.getEyeLookDirection();
-            } // Update mouth
-            if (syncMouth.value) {
-              const mouthOpenness = faceLandmarker.getMouthOpenness();
-              const smileIntensity = faceLandmarker.getSmileIntensity();
-              const frownIntensity = faceLandmarker.getFrownIntensity();
-
-              if (mouthOpenness > 0.7) {
-                mouthExpression.value = 'wide-open';
-              } else if (mouthOpenness > 0.4) {
-                mouthExpression.value = 'open';
-              } else if (mouthOpenness > 0.2) {
-                mouthExpression.value = 'o-shape';
-              } else if (smileIntensity > 0.5) {
-                mouthExpression.value = 'smile';
-              } else if (smileIntensity > 0.3) {
-                mouthExpression.value = 'smirk';
-              } else if (frownIntensity > 0.3) {
-                mouthExpression.value = 'frown';
-              } else if (mouthOpenness > 0.15) {
-                mouthExpression.value = 'surprised';
-              } else {
-                mouthExpression.value = 'neutral';
-              }
-            }
-          },
-        );
-      });
-
-      // Watch for pose tracking updates
-      const unwatchPose = ref<(() => void) | null>(null);
-
-      onMounted(() => {
-        unwatchPose.value = watch(
-          () => poseLandmarker.state.value.landmarks,
-          (landmarks) => {
-            if (!landmarks || !syncArms.value) return;
-
-            const armAngles = poseLandmarker.getArmAngles();
-            if (!armAngles) return;
-
-            leftArmPosition.value = armPositionFromPose(armAngles.left, 'left');
-            rightArmPosition.value = armPositionFromPose(armAngles.right, 'right');
-          },
-        );
-      });
-
-      onUnmounted(() => {
-        if (unwatchFace.value) unwatchFace.value();
-        if (unwatchPose.value) unwatchPose.value();
-        faceLandmarker.stopDetection();
-        poseLandmarker.stopDetection();
-      });
-
-      const debugInfo = computed(() => {
-        const faceData = faceLandmarker.state.value.blendShapes
-          ? {
-              eyeState: eyeState.value,
-              eyeLook: `${eyeLookPosition.value.x.toFixed(0)},${eyeLookPosition.value.y.toFixed(0)}`,
-              mouth: mouthExpression.value,
-            }
-          : null;
-
-        const armAngles = poseLandmarker.getArmAngles();
-        const poseData = armAngles
-          ? {
-              leftShoulder: `${armAngles.left.shoulder.toFixed(1)}°`,
-              rightShoulder: `${armAngles.right.shoulder.toFixed(1)}°`,
-            }
-          : null;
-
-        return faceData && poseData
-          ? {
-              ...faceData,
-              ...poseData,
-            }
-          : null;
-      });
-
-      const isDetecting = computed(
-        () => faceLandmarker.state.value.isDetecting || poseLandmarker.state.value.isDetecting,
-      );
-
-      const trackingError = computed(() => faceLandmarker.state.value.error || poseLandmarker.state.value.error);
-
-      return () =>
-        h(
-          'div',
-          {
-            style: {
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '20px',
-              padding: '20px',
-              position: 'relative',
-            },
-          },
-          [
-            h(WebcamVideo, {
-              ref: webcamVideoRef,
-              visible: showWebcam.value,
-              width: 320,
-              height: 240,
-              mirrored: true,
-            }),
-            h(TrackingControls, {
-              controls: ['webcam', 'eyes', 'mouth', 'arms'],
-              isDetecting: isDetecting.value,
-              error: trackingError.value,
-              showWebcam: showWebcam.value,
-              syncEyes: syncEyes.value,
-              syncMouth: syncMouth.value,
-              syncArms: syncArms.value,
-              disabled: trackingError.value !== null,
-              'onToggle-tracking': toggleTracking,
-              'onUpdate:showWebcam': (value: boolean) => {
-                showWebcam.value = value;
-              },
-              'onUpdate:syncEyes': (value: boolean) => {
-                syncEyes.value = value;
-              },
-              'onUpdate:syncMouth': (value: boolean) => {
-                syncMouth.value = value;
-              },
-              'onUpdate:syncArms': (value: boolean) => {
-                syncArms.value = value;
-              },
-            }),
-            // Taskin completo com tracking
-            h(
-              'svg',
-              {
-                xmlns: 'http://www.w3.org/2000/svg',
-                viewBox: '0 0 320 200',
-                width: '640',
-                height: '400',
-                style: {
-                  border: '2px solid #e0e0e0',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '12px',
-                },
-              },
-              [
-                h(TaskinBody),
-                h(TaskinArms, {
-                  leftArmPosition: leftArmPosition.value,
-                  rightArmPosition: rightArmPosition.value,
-                }),
-                h(TaskinEyes, {
-                  state: eyeState.value,
-                  trackingMode: syncEyes.value ? 'custom' : 'none',
-                  customPosition: eyeLookPosition.value,
-                }),
-                h(TaskinMouth, {
-                  expression: mouthExpression.value,
-                }),
-              ],
-            ),
-            h(FaceTrackingDebug, {
-              data: debugInfo.value,
-              title: 'Full Tracking (Face + Pose)',
-              position: 'top-right',
-            }),
-          ],
-        );
-    },
-  }),
-  parameters: {
-    docs: {
-      description: {
-        story:
-          '🎥 Complete Taskin tracking! Face controls eyes & mouth, pose controls arms. Click "Start Detection" to start.',
-      },
-    },
+/**
+ * Full example of Taskin with face and body detection.
+ * Click "Start Detection" and allow webcam access.
+ */
+export const Default: Story = {
+  args: {
+    mascotSize: 320,
+    showWebcam: false,
+    showDebug: false,
   },
   play: async ({ canvasElement }) => {
-    expect(canvasElement.querySelector('svg')).not.toBeNull();
+    expect(canvasElement.querySelector('.taskin-full-tracking')).not.toBeNull();
     expect(canvasElement.querySelector('g#body')).not.toBeNull();
-    expect(canvasElement.querySelector('video.webcam-video')?.classList.contains('visible')).toBe(false);
-    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Start');
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(false);
+  },
+};
+
+/**
+ * Shows the webcam next to Taskin so you can compare them in real time.
+ */
+export const WithWebcamVisible: Story = {
+  args: {
+    mascotSize: 320,
+    showWebcam: true,
+    showDebug: false,
+  },
+  play: async ({ canvasElement }) => {
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
+  },
+};
+
+/**
+ * Modo debug que mostra os valores detectados.
+ * Useful for understanding how the detection behaves.
+ */
+export const DebugMode: Story = {
+  args: {
+    mascotSize: 280,
+    showWebcam: true,
+    showDebug: true,
+  },
+  play: async ({ canvasElement }) => {
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
+    const button = canvasElement.querySelector('button.control-button');
+    expect(button?.textContent).toContain('Start');
+  },
+};
+
+/**
+ * Taskin at a large size, so the expressions and movements are easier to read.
+ */
+export const LargeMascot: Story = {
+  args: {
+    mascotSize: 400,
+    showWebcam: true,
+    showDebug: false,
+  },
+  play: async ({ canvasElement }) => {
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
+    const svg = canvasElement.querySelector('.mascot-container svg');
+    expect(svg?.getAttribute('width')).toBe('800');
   },
 };
