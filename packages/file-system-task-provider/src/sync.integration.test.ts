@@ -15,20 +15,29 @@ function createBareRepo(dir: string): void {
   execSync('git init --bare', { cwd: dir, stdio: 'ignore' });
 }
 
+/**
+ * Identidade de autor no proprio repositorio.
+ *
+ * Precisa valer tambem para o clone: `git clone` nao herda a config **local**
+ * da origem, so o conteudo. Sem isto, commitar num clone depende de haver
+ * identidade global na maquina — na de quem desenvolve ha, no runner do
+ * GitHub nao, e la os commits morriam com status 128 e stderr vazio.
+ */
+function configureIdentity(dir: string): void {
+  execSync('git config user.email "test@taskin.dev"', { cwd: dir, stdio: 'ignore' });
+  execSync('git config user.name "Taskin Test"', { cwd: dir, stdio: 'ignore' });
+}
+
 function cloneRepo(bareDir: string, targetDir: string): void {
   execSync(`git clone ${bareDir} ${targetDir}`, { stdio: 'ignore' });
+  configureIdentity(targetDir);
 }
 
 function initRepo(dir: string): void {
+  // `-b tasks` nao: este repo cria a branch depois. O nome do branch inicial
+  // nao importa aqui, mas a identidade sim.
   execSync('git init', { cwd: dir, stdio: 'ignore' });
-  execSync('git config user.email "test@taskin.dev"', {
-    cwd: dir,
-    stdio: 'ignore',
-  });
-  execSync('git config user.name "Taskin Test"', {
-    cwd: dir,
-    stdio: 'ignore',
-  });
+  configureIdentity(dir);
 }
 
 function initialCommit(dir: string): void {
