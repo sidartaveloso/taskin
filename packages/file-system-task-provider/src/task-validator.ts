@@ -149,7 +149,15 @@ export async function validateTaskFile(filePath: string): Promise<ValidationIssu
     // Check for required sections
     const hasTitleSection = lines.some((line) => line.trim().startsWith('# '));
 
-    const sectionStatusPattern = new RegExp(`##\\s*(?:Status|${i18n.status})`, 'i');
+    /*
+     * Ancorado no fim da linha, e sem `i` no que importa: a regra e sobre um
+     * cabecalho que **e** o metadado, e nao sobre qualquer secao cujo titulo
+     * comece com a palavra. `## Status atual`, `## Status do deploy` e
+     * `## Status atual do projeto` sao secoes legitimas de corpo, e o padrao
+     * anterior (`##\s*Status`, sem ancora, contra o arquivo inteiro) marcava as
+     * tres como metadado em secao.
+     */
+    const sectionStatusPattern = new RegExp(`^#{2,}\\s*(?:Status|${i18n.status})\\s*$`, 'im');
 
     /*
      * Lido pelo modulo de estilos, e nao por regex: `- Status: pending` e
