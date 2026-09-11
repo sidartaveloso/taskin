@@ -1,5 +1,158 @@
 # @opentask/ui-sense
 
+## 0.3.0
+
+### Minor Changes
+
+- 27e758a: `TrackingControls` passa a aceitar quais controles ficam disponiveis.
+  
+  A barra mostrava os seis controles sempre, em qualquer tela. O
+  `TaskinWithFaceTracking` nao tem pose nem reconhecimento de gestos, e mesmo
+  assim exibia "Braços" e "Gestos" — interruptores que nao ligavam coisa alguma. O
+  `TaskinWithFullTracking` contornava passando `:sync-expressions="false"`, que
+  desliga o valor mas continua mostrando o controle.
+  
+  A prop nova e `controls?: readonly TrackingControl[]`, com todos como default.
+  Os dois organismos passaram a declarar o que suportam, e o contorno do
+  `sync-expressions` saiu.
+  
+  A ordem e a canonica do componente, nao a do array recebido: a barra aparece em
+  telas diferentes e deve ter sempre o mesmo layout, entao pedir
+  `['gestures', 'eyes']` esconde o resto sem embaralhar o que sobrou. Um grupo sem
+  nenhum item disponivel desaparece inteiro, em vez de virar uma moldura vazia.
+  
+  Por dentro, os seis blocos quase iguais do template viraram um descritor por
+  controle com `v-for`. O `emit` de cada descritor e uma funcao propria de
+  proposito: chamar `emit(nomeVariavel)` nao passa pelas assinaturas de
+  `TrackingControlsEmits`, e a alternativa seria um cast — justamente onde um
+  evento errado passaria despercebido.
+- 3db9df0: Padroniza a interface do `ui-sense` em ingles.
+  
+  O pacote falava duas linguas: o `TrackingControls` estava em portugues e o
+  `NoiseTrackingControls`, que costuma aparecer na mesma tela, em ingles. O
+  `GestureWizardCard` e os rotulos de gesto e acao tambem estavam em portugues.
+  
+  Traduzido:
+  
+  - `TrackingControls`: "Iniciar/Parar Detecção" -> "Start/Stop Detection",
+    "Detectando..." -> "Detecting...", grupos "Exibição"/"Sincronizar" ->
+    "Display"/"Sync", e os itens "Olhos", "Boca", "Expressões", "Braços" e
+    "Gestos" -> "Eyes", "Mouth", "Expressions", "Arms" e "Gestures"
+  - `GestureWizardCard`: os textos dos tres passos, as legendas de confirmar e
+    cancelar, e "Atalho salvo!"
+  - `gestureLabel` e `actionLabel`, que alimentam o `GestureIcon`, a
+    `GestureLegend` e o wizard
+  
+  Isso muda texto visivel e o nome acessivel dos controles. Nenhuma API mudou, e
+  os testes que fixavam as strings acompanharam — incluindo o stub de
+  `TrackingControls` em `src/mocks`, que renderizava portugues e teria continuado
+  divergindo do componente real sem ninguem notar.
+
+### Patch Changes
+
+- ca24c91: Traduz para ingles a documentacao das stories.
+  
+  Os 22 arquivos de story com texto em portugues passaram a ingles: as descricoes
+  de componente e de story, os blocos JSDoc (que o Storybook renderiza como
+  descricao da story, e portanto sao documentacao, nao comentario), as fixtures com
+  frase em portugues e o texto dos exemplos interativos.
+  
+  Inclui as paginas mais longas — `GestureWizard` e `GestureSystem`, com a
+  explicacao de atalho por gesto e as areas de aplicacao, e as duas de tracking
+  completo, com requisitos e passo a passo.
+  
+  Corrigidas de carona quatro referencias a `"Iniciar Detecção"` dentro de textos
+  que ja estavam em ingles: o botao foi renomeado para `Start Detection` e a
+  documentacao apontava para um rotulo que nao existe mais.
+  
+  Continuam em portugues, de proposito: os comentarios `//` de codigo, que o
+  Storybook nao renderiza e que seguem a convencao do repositorio, e os nomes de
+  pessoa nas fixtures — nome nao se traduz.
+- 0ecd3ad: `NoiseTrackingControls` ganha a mesma linguagem visual do `TrackingControls`.
+  
+  O componente usava seis hex fixos (`#1f7acb`, `#fafafa`, `#d32f2f`, `#4caf50`…)
+  e nenhum dos tokens do proprio pacote. Agora cor, espacamento, raio e tipografia
+  saem de token, e ele fica visualmente irmao do controle que costuma aparecer ao
+  lado.
+  
+  O que estava quebrado de fato:
+  
+  - o campo `number` do debounce nao tinha largura e esticava sozinho, dominando a
+    barra
+  - o "Threshold" empilhava rotulo, slider e valor em tres linhas dentro de uma
+    fila horizontal, desalinhando tudo o que vinha depois
+  - o valor do slider era impresso cru, entao mudava de largura a cada arrasto e
+    empurrava o resto da linha; agora tem tres casas fixas e `tabular-nums`
+  - o status "Listening for noise..." ficava solto no fim da barra, longe do botao
+    que o controla
+  
+  Os controles passaram a dois grupos (`fieldset`/`legend`) — "Reactions" e
+  "Sensitivity" —, com as caixas em chips que mudam fundo, borda e peso quando
+  marcadas, e o status ao lado do botao. O erro segue a mesma decisao de contraste
+  do irmao: a cor vive na borda, e o texto usa `--text-secondary`, porque todo
+  token vermelho reprova o AA sobre `--text-error-bg`.
+  
+  As stories saltaram de uma para quatro, com `Listening`, `WithError` e uma
+  `Interactive` com pai de verdade e play function cobrindo o botao, o slider e as
+  caixas.
+- 51aaaaa: Poe o `TrackingControls` na paleta do proprio pacote e agrupa os controles.
+  
+  O componente usava hex fixos (`#1f7acb`, `#f5f5f5`, `#d32f2f`, `#4caf50`) e
+  ignorava os 99 tokens de `src/styles/variables.css` — `#1f7acb` esta perto, mas
+  nao e, o `--status-progress-bg`. Agora cor, espacamento, raio e tipografia saem
+  todos de token.
+  
+  Visualmente: os seis checkboxes eram uma fila unica de caixas nativas de 13px,
+  com a acao primaria e o status soltos na mesma linha. Passaram a ser dois grupos
+  (`fieldset`/`legend`) — "Exibicao" e "Sincronizar" —, com os itens em chips que
+  mudam fundo, borda e peso quando marcados, e o botao com o status ao lado, ja
+  que o status descreve o botao. O agrupamento tambem da contexto de grupo a quem
+  usa leitor de tela.
+  
+  Contraste, medido: o vermelho de erro anterior (`#d32f2f` sobre `#ffebee`) dava
+  4.36 e reprovava o AA, e todos os tokens vermelhos reprovam nesse fundo. O texto
+  passou a usar `--text-secondary` (11.96) e a cor vive na borda e no ponto — a
+  leitura deixa de depender dela. Mesma decisao no status: `--text-success` da
+  3.62 sobre o fundo claro, entao o verde ficou so no indicador.
+  
+  Junto: anel de `:focus-visible` no botao e nos chips, e `prefers-reduced-motion`
+  desligando a pulsacao e as transicoes. O `.storybook/preview.css` do pacote passa
+  a importar `variables.css` — sem isso as stories renderizariam com `var(--...)`
+  sem valor, que e a razao de o componente nunca ter usado token.
+  
+  Os rotulos dos itens perderam o verbo repetido: cinco chips dizendo
+  "Sincronizar X" sob uma legenda que ja diz SINCRONIZAR viraram "Olhos", "Boca",
+  "Expressoes", "Bracos" e "Gestos", e "Mostrar Webcam" virou "Webcam" sob
+  EXIBICAO. O nome acessivel encurta junto, o que e correto: o leitor de tela
+  anuncia "Sincronizar, grupo" antes de cada item, entao o verbo estava sendo dito
+  duas vezes.
+  
+  Sem mudanca de API, de classes ou da ordem dos checkboxes: as 9 asercoes do spec
+  e as 8 stories seguem passando.
+- ca24c91: Corrige o caminho da folha de estilos: `@opentask/ui-sense/style.css` não
+  resolvia para arquivo nenhum.
+  
+  Os `exports` do pacote declaram `./style.css` e `./dist/index.css` apontando
+  para `./dist/index.css`, mas o build emitia **`dist/ui-sense.css`**. Com
+  múltiplas entradas (`index` e `mocks`), o Vite nomeia o CSS pelo `lib.name`
+  (`UiSense`) em vez do `fileName`, e ninguém percebeu porque dentro do monorepo o
+  Storybook compila a partir do fonte, com os `<style scoped>` inline.
+  
+  Fora do monorepo o efeito é silencioso e confuso: o import falha ou é omitido, os
+  componentes montam sem estilo, e o `WebcamVideo` — cujo `display: none` mora
+  justamente nessa folha — aparece como um retângulo branco de 320x240 em vez de
+  ficar oculto. Foi assim que o problema apareceu, ao montar o
+  `TaskinWithFaceTracking` no site de documentação.
+  
+  `build.lib.cssFileName: 'index'` alinha a saída ao caminho já publicado, então
+  `@opentask/ui-sense/style.css` passa a resolver sem mudar a API.
+  
+  Quem consome precisa importar a folha explicitamente — ela não vem junto do JS:
+  
+  ```ts
+  import '@opentask/ui-sense/style.css';
+  ```
+
 ## 0.2.0
 
 ### Minor Changes
