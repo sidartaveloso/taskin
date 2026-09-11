@@ -17,9 +17,12 @@ unica:
 
 - `TaskinWithFullTracking.stories.ts` e `TaskinWithFullTrackingV2.stories.ts`
   declaravam **o mesmo** `Organisms/Taskin/Full Tracking`, e o Storybook fundia
-  os dois no mesmo no. O `V2`, que e o que documenta o componente de verdade,
-  fica com o titulo; o outro, que monta a fiacao a mao em vez de usar o
-  componente, vira `Organisms/Taskin/Full Tracking Rig`.
+  os dois no mesmo no. O que sobrevive e o `V2` — o unico que documenta o
+  componente, e que assume o nome do arquivo. O outro foi apagado: eram 287
+  linhas remontando a fiacao do componente a mao (`h(TrackingControls, ...)`,
+  os watchers dos landmarkers, o SVG) em vez de usar o componente, entao ele
+  duplicava um interior que ninguem lembraria de atualizar. A task-044 ja tinha
+  registrado essa duplicacao.
 - `TaskinWithShhh` estava em `Organisms/TaskinWithShhh`, fora do grupo, embora o
   arquivo more em `organisms/taskin/` como os irmaos. Virou
   `Organisms/Taskin/Shhh`.

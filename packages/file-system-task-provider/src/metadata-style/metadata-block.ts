@@ -6,8 +6,12 @@ import type { MetadataField } from './metadata-style.types.js';
  * The leading `- ` and the trailing `\` are marking and are captured out; what
  * is left is the value. The label is bounded to keep a prose line that happens
  * to contain a colon from being read as metadata.
+ *
+ * The label must **start with a letter or a digit**. Without that, a header
+ * line like `**Date**: 2026-01-08` or `> **Nota (registro historico):` parses
+ * as a field and gets rewritten as one — both shapes exist in this repository.
  */
-const METADATA_LINE = /^(?:-[ \t]+)?([^:\n]{1,40}?)[ \t]*:[ \t]*(.*?)[ \t]*\\?[ \t]*$/;
+const METADATA_LINE = /^(?:-[ \t]+)?([\p{L}\p{N}][^:\n]{0,39}?)[ \t]*:[ \t]*(.*?)[ \t]*\\?[ \t]*$/u;
 
 /** `## Description` and deeper — where the header ends. */
 const SECTION_HEADING = /^#{2,}\s/;
@@ -21,7 +25,11 @@ const isHeading = (line: string): boolean => line.startsWith('#');
 export interface MetadataBlock {
   /** The fields, in file order, with the marking removed. */
   readonly fields: readonly MetadataField[];
-  /** The raw lines, as written — what a style's `matches` inspects. */
+  /**
+   * The raw metadata lines, as written — what a style's `matches` inspects.
+   * Blank lines found inside the run are not here, but are inside
+   * `start`..`end` and therefore disappear when the block is rewritten.
+   */
   readonly lines: readonly string[];
   /** Index of the first block line in the split content. */
   readonly start: number;
@@ -67,19 +75,40 @@ export function readMetadataBlock(content: string): MetadataBlock | undefined {
 
   if (start === -1) return undefined;
 
+  /*
+   * Uma linha em branco no meio nao encerra o bloco.
+   *
+   * O `taskin` ate a 4.0.0 inseria um campo novo logo apos o H1, antes da
+   * linha em branco que separava do bloco real — um arquivo priorizado por
+   * aquela versao fica com `Priority` sozinho la em cima e o resto embaixo.
+   * Encerrando na primeira linha em branco, o bloco seria so o `Priority`: o
+   * `Status` passava a ler `undefined` e reescreve-lo criava um segundo campo.
+   *
+   * `end` so avanca ate a ultima linha que e mesmo metadado, entao a linha em
+   * branco final nao entra — mas as do meio entram no intervalo e somem quando
+   * o bloco e reemitido, que e a reparacao desses arquivos.
+   */
   let end = start;
-  while (end < headerEnd) {
-    const line = lines[end] ?? '';
-    if (isHeading(line) || !METADATA_LINE.test(line)) break;
-    end++;
+  let cursor = start;
+  while (cursor < headerEnd) {
+    const line = lines[cursor] ?? '';
+    if (isHeading(line)) break;
+    if (line.trim() === '') {
+      cursor++;
+      continue;
+    }
+    if (!METADATA_LINE.test(line)) break;
+    cursor++;
+    end = cursor;
   }
 
-  const blockLines = lines.slice(start, end);
   const fields: MetadataField[] = [];
+  const blockLines: string[] = [];
 
-  for (const line of blockLines) {
+  for (const line of lines.slice(start, end)) {
     const match = line.match(METADATA_LINE);
     if (!match?.[1]) continue;
+    blockLines.push(line);
     fields.push({ label: match[1], value: match[2] ?? '' });
   }
 
