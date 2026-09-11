@@ -27,6 +27,9 @@ const PLACEHOLDER_ASSIGNEES = [
   'to be defined',
   'nome do responsavel',
   'nome do responsável',
+  'nao atribuido',
+  'não atribuído',
+  'unassigned',
   'tbd',
   '-',
 ] as const satisfies readonly Lowercase<string>[];
