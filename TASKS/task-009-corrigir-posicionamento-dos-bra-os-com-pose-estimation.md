@@ -64,3 +64,35 @@ Entrou um teste que faz o caminho inteiro — landmarks, espelhamento, conversao
 de espaco, `mount` do `TaskinArms` e leitura do ponto de controle `Q` do path —
 nos dois modos de espelhamento. Verificado por sabotagem: com os indices
 trocados de volta, ele falha com `expected 112.67 to be less than 95`.
+
+### Um segundo defeito, achado ao validar
+
+Com os indices corrigidos, o mascote parou de mexer os bracos **e** o painel de
+debug sumiu. Nao era regressao do conserto acima — o painel depende dos
+blendshapes do rosto, que esta correcao nao toca. Dois detectores mortos ao
+mesmo tempo apontavam para a camera, nao para a geometria.
+
+O `TaskinWithFullTracking` roda face e pose sobre o mesmo `<video>`, e cada
+composable abria a propria camera. O stream orfao era o problema menor; o que
+travava era uma linha:
+
+```ts
+videoElement.onloadedmetadata = () => resolve();
+```
+
+`onloadedmetadata` e **propriedade, nao lista**. A segunda atribuicao apagava a
+primeira, entao quem chegou antes nunca recebia o callback, ficava preso no
+`await` para sempre e jamais comecava a detectar — sem erro, sem log. Qual dos
+dois travava dependia de quem carregava o modelo primeiro, o que fez o defeito
+ir e vir sem ninguem mudar nada.
+
+Consertado com `attachCamera` no `@opentask/ui-sense`: uma camera por elemento,
+com contagem de referencias, espera por `addEventListener(..., { once: true })` e
+tolerancia ao `AbortError` de `play()` interrompido. Changeset proprio, porque e
+defeito de outra natureza.
+
+### Confirmado
+
+Validado na story `Organisms/Taskin/Full Tracking` -> `Debug Mode`, com camera
+de verdade.
+
