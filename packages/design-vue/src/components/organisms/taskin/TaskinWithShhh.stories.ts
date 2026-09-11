@@ -4,7 +4,7 @@ import { defaultTaskinProps } from './Taskin.mock';
 import TaskinWithShhh from './TaskinWithShhh.vue';
 
 const meta = {
-  title: 'Organisms/TaskinWithShhh',
+  title: 'Organisms/Taskin/Shhh',
   component: TaskinWithShhh,
   argTypes: {
     mascotSize: { control: { type: 'number' } },
