@@ -1,5 +1,12 @@
 # @opentask/taskin-task-server-mcp
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [14c9482]
+  - @opentask/taskin-file-system-provider@3.2.3
+
 ## 0.2.3
 
 ### Patch Changes
