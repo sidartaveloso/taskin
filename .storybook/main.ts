@@ -2,6 +2,7 @@ import type { StorybookConfig } from '@storybook/vue3-vite';
 import vue from '@vitejs/plugin-vue';
 import { existsSync, readFileSync, realpathSync } from 'fs';
 import { dirname, join, resolve } from 'path';
+import remarkGfm from 'remark-gfm';
 import { fileURLToPath } from 'url';
 import type { PluginOption } from 'vite';
 import svgLoader from 'vite-svg-loader';
@@ -38,7 +39,26 @@ const config: StorybookConfig = {
     '../packages/ui-sense/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
 
-  addons: [getAbsolutePath('@storybook/addon-docs'), getAbsolutePath('@storybook/addon-a11y')],
+  addons: [
+    {
+      /*
+       * O MDX do Storybook e CommonMark puro: tabela em pipe **nao** e
+       * markdown padrao, e GitHub Flavored Markdown. Sem o `remark-gfm` a
+       * tabela do `welcome.mdx` saia como um paragrafo de pipes na tela, sem
+       * erro nenhum no console — o pior tipo de falha, porque parece texto mal
+       * escrito e nao configuracao faltando.
+       */
+      name: getAbsolutePath('@storybook/addon-docs'),
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
+    getAbsolutePath('@storybook/addon-a11y'),
+  ],
 
   framework: {
     name: getAbsolutePath('@storybook/vue3-vite'),
