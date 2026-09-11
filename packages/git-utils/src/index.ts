@@ -1,3 +1,4 @@
+export * from './commit-message';
 export * from './git';
 export * from './git.types';
 export * from './git-analyzer';

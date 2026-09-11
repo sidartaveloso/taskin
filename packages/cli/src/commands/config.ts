@@ -2,6 +2,7 @@
  * config command - Configure Taskin settings
  */
 
+import { CI_SKIP_TAGS, DEFAULT_CI_SKIP_TAG, isRecognizedCiSkipTag } from '@opentask/taskin-git-utils';
 import type { AutomationLevel, NotificationEvent } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -10,11 +11,45 @@ import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
 
+/**
+ * Parsed flags for `taskin config`.
+ *
+ * Commander camel-cases dashed flags, so `--discord-webhook` arrives as
+ * `discordWebhook`. This interface used to spell them with the dash, which
+ * meant those two flags silently fell through to the interactive prompt.
+ */
 interface ConfigOptions {
   level?: string;
   show?: boolean;
-  'discord-webhook'?: string;
-  'notification-events'?: string;
+  discordWebhook?: string;
+  notificationEvents?: string;
+  ciSkipTag?: string;
+}
+
+/**
+ * The word a user types to mean "append no tag at all".
+ *
+ * An empty string on the command line is awkward to pass and easy to type by
+ * accident, so the intent gets a name.
+ */
+const NO_CI_SKIP_TAG_KEYWORD = 'none';
+
+/**
+ * Normalizes what the user typed into what gets stored.
+ *
+ * `none` (in any capitalization) and an empty input both mean "no tag".
+ */
+export function normalizeCiSkipTagInput(input: string): string {
+  const trimmed = input.trim();
+
+  return trimmed.toLowerCase() === NO_CI_SKIP_TAG_KEYWORD ? '' : trimmed;
+}
+
+/**
+ * How an effective tag reads in `--show`.
+ */
+export function describeCiSkipTag(tag: string): string {
+  return tag.length === 0 ? 'no tag — CI runs on status commits' : tag;
 }
 
 export const configCommand = defineCommand({
@@ -36,6 +71,10 @@ export const configCommand = defineCommand({
     {
       flags: '--notification-events <events>',
       description: 'Comma-separated events (task:start,task:done,task:review)',
+    },
+    {
+      flags: '--ci-skip-tag <tag>',
+      description: `Tag appended to Taskin's own commits so they skip CI (default "${DEFAULT_CI_SKIP_TAG}"; "none" to run CI)`,
     },
   ],
   handler: async (options: ConfigOptions) => {
@@ -60,9 +99,15 @@ async function handleConfigCommand(options: ConfigOptions): Promise<void> {
     return;
   }
 
+  // Set CI skip tag
+  if (options.ciSkipTag !== undefined) {
+    setCiSkipTag(configManager, options.ciSkipTag);
+    return;
+  }
+
   // Set Discord notification
-  if (options['discord-webhook']) {
-    await setDiscordNotification(configManager, options['discord-webhook'], options['notification-events']);
+  if (options.discordWebhook) {
+    await setDiscordNotification(configManager, options.discordWebhook, options.notificationEvents);
     return;
   }
 
@@ -88,7 +133,8 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
       `  Auto-commit status changes: ${behavior.autoCommitStatusChange ? chalk.green('✓ Yes') : chalk.red('✗ No')}`,
     );
     console.log(`  Auto-commit on pause: ${behavior.autoCommitPause ? chalk.green('✓ Yes') : chalk.red('✗ No')}`);
-    console.log(`  Auto-commit on finish: ${behavior.autoCommitFinish ? chalk.green('✓ Yes') : chalk.red('✗ No')}\n`);
+    console.log(`  Auto-commit on finish: ${behavior.autoCommitFinish ? chalk.green('✓ Yes') : chalk.red('✗ No')}`);
+    console.log(`  CI skip tag: ${chalk.cyan(describeCiSkipTag(configManager.getCiSkipTag()))}\n`);
 
     console.log(chalk.bold('🔔 Notifications'));
     const notifications = configManager.getNotifications();
@@ -123,6 +169,39 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
     }
     process.exit(1);
   }
+}
+
+/**
+ * Prints why a tag looks wrong, without refusing it.
+ *
+ * A pipeline outside the three big platforms can match anything, so the CLI
+ * advises and stores. `[skip-ci]` gets named explicitly: it is the spelling
+ * Taskin itself shipped, and the one Bitbucket documents as not working.
+ */
+function warnAboutUnrecognizedCiSkipTag(tag: string): void {
+  if (tag.length === 0 || isRecognizedCiSkipTag(tag)) return;
+
+  console.log();
+  console.log(chalk.yellow('⚠️  This tag is not one GitHub, GitLab or Bitbucket documents.'));
+
+  if (tag.replace(/\s+/g, '').toLowerCase() === '[skip-ci]') {
+    console.log(chalk.dim('   "[skip-ci]" with a hyphen is not recognized anywhere — it triggers CI.'));
+    console.log(chalk.dim('   Did you mean "[skip ci]", with a space?'));
+  }
+
+  console.log(chalk.dim(`   Documented tags: ${CI_SKIP_TAGS.join(', ')}`));
+  console.log(chalk.dim('   Keeping it anyway — a self-hosted pipeline can match whatever it likes.'));
+}
+
+function setCiSkipTag(configManager: ConfigManager, rawTag: string): void {
+  printHeader('Configure CI Skip Tag', '⚙️');
+
+  const tag = normalizeCiSkipTagInput(rawTag);
+
+  configManager.setCiSkipTag(tag);
+  success(`CI skip tag set to ${colors.highlight(describeCiSkipTag(tag))}`);
+
+  warnAboutUnrecognizedCiSkipTag(tag);
 }
 
 async function setDiscordNotification(
@@ -200,6 +279,7 @@ async function interactiveConfig(configManager: ConfigManager): Promise<void> {
         message: 'What would you like to configure?',
         choices: [
           { name: '🤖 Automation level', value: 'automation' },
+          { name: '⏭️  CI skip tag', value: 'ciSkipTag' },
           { name: '🔔 Discord notification', value: 'discord' },
           { name: '🔔 Telegram notification', value: 'telegram' },
         ],
@@ -208,6 +288,8 @@ async function interactiveConfig(configManager: ConfigManager): Promise<void> {
 
     if (section === 'automation') {
       await configureAutomation(configManager);
+    } else if (section === 'ciSkipTag') {
+      await configureCiSkipTag(configManager);
     } else if (section === 'discord') {
       await configureDiscordNotification(configManager);
     } else if (section === 'telegram') {
@@ -262,6 +344,49 @@ async function configureAutomation(configManager: ConfigManager): Promise<void> 
   console.log(chalk.dim(`  Auto-commit status changes: ${behavior.autoCommitStatusChange ? '✓' : '✗'}`));
   console.log(chalk.dim(`  Auto-commit on pause: ${behavior.autoCommitPause ? '✓' : '✗'}`));
   console.log(chalk.dim(`  Auto-commit on finish: ${behavior.autoCommitFinish ? '✓' : '✗'}`));
+}
+
+async function configureCiSkipTag(configManager: ConfigManager): Promise<void> {
+  printHeader('Configure CI Skip Tag', '⏭️');
+
+  const current = configManager.getCiSkipTag();
+  console.log(`Current tag: ${chalk.cyan(describeCiSkipTag(current))}\n`);
+  console.log(chalk.dim('Taskin appends this to the commits it writes itself — status changes and'));
+  console.log(chalk.dim('task files — so they do not trigger your pipeline.\n'));
+
+  const { choice } = await inquirer.prompt<{ choice: string }>([
+    {
+      type: 'list',
+      name: 'choice',
+      message: 'Tag for Taskin commits:',
+      default: current.length === 0 ? NO_CI_SKIP_TAG_KEYWORD : current,
+      choices: [
+        { name: `${CI_SKIP_TAGS[0]} — GitHub, GitLab and Bitbucket (recommended)`, value: CI_SKIP_TAGS[0] },
+        { name: `${CI_SKIP_TAGS[1]} — GitHub, GitLab and Bitbucket`, value: CI_SKIP_TAGS[1] },
+        { name: `${CI_SKIP_TAGS[2]} — GitHub Actions only`, value: CI_SKIP_TAGS[2] },
+        { name: `${CI_SKIP_TAGS[3]} — GitHub Actions only`, value: CI_SKIP_TAGS[3] },
+        { name: `${CI_SKIP_TAGS[4]} — GitHub Actions only`, value: CI_SKIP_TAGS[4] },
+        { name: 'none — do not mark the commits, let CI run', value: NO_CI_SKIP_TAG_KEYWORD },
+        { name: 'custom… — another CI (Azure DevOps uses ***NO_CI***)', value: 'custom' },
+      ],
+    },
+  ]);
+
+  const tag =
+    choice === 'custom'
+      ? (
+          await inquirer.prompt<{ customTag: string }>([
+            {
+              type: 'input',
+              name: 'customTag',
+              message: 'Tag to append:',
+              default: current,
+            },
+          ])
+        ).customTag
+      : choice;
+
+  setCiSkipTag(configManager, tag);
 }
 
 async function configureDiscordNotification(configManager: ConfigManager): Promise<void> {

@@ -3,6 +3,7 @@
  * Executes quality checks and transitions task to 'in-review' status
  */
 
+import { appendCiSkipTag } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { HookContext, HookOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
@@ -214,10 +215,14 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
     try {
-      execSync(
-        `git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - mark as ready for review [skip-ci]"`,
-        { cwd: monorepoRoot, stdio: 'ignore' },
+      const message = appendCiSkipTag(
+        `docs(TASKS): task-${normalizedId} - mark as ready for review`,
+        behavior.ciSkipTag,
       );
+      execSync(`git add TASKS/task-${normalizedId}-*.md && git commit -m "${message}"`, {
+        cwd: monorepoRoot,
+        stdio: 'ignore',
+      });
       success('✓ Auto-committed status change');
     } catch {
       // Ignore if nothing to commit

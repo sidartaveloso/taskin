@@ -3,6 +3,7 @@
  * Handles loading, saving, and validating .taskin.json configuration
  */
 
+import { DEFAULT_CI_SKIP_TAG } from '@opentask/taskin-git-utils';
 import type {
   AutomationConfig,
   AutomationLevel,
@@ -11,10 +12,20 @@ import type {
   HookSettings,
   NotificationConfig,
   TaskinConfig,
+  TaskinConfigInput,
 } from '@opentask/taskin-types';
 import { TaskinConfigSchema } from '@opentask/taskin-types';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+
+/**
+ * The automation block a project gets when `.taskin.json` declares none.
+ */
+const DEFAULT_AUTOMATION_CONFIG: AutomationConfig = {
+  level: 'assisted',
+  autoSync: true,
+  ciSkipTag: DEFAULT_CI_SKIP_TAG,
+};
 
 /**
  * Automation behavior resolved from config
@@ -32,6 +43,8 @@ export interface AutomationBehavior {
   autoSync?: boolean;
   /** Target branch for squash commits when a task is marked as done */
   originBranch?: string;
+  /** Tag appended to the commits Taskin writes on its own. Empty means none. */
+  ciSkipTag?: string;
 }
 
 /**
@@ -105,8 +118,11 @@ export class ConfigManager {
 
   /**
    * Save configuration to .taskin.json
+   *
+   * Takes the *input* shape: the schema fills in what it has defaults for, so
+   * a caller need not spell out `automation.ciSkipTag` to save a config.
    */
-  saveConfig(config: TaskinConfig): void {
+  saveConfig(config: TaskinConfigInput): void {
     // Validate before saving
     const validated = TaskinConfigSchema.parse(config);
 
@@ -134,7 +150,7 @@ export class ConfigManager {
     const config = this.loadConfig();
 
     config.automation = {
-      autoSync: true,
+      ...DEFAULT_AUTOMATION_CONFIG,
       ...config.automation,
       level,
     };
@@ -148,11 +164,37 @@ export class ConfigManager {
   getAutomationConfig(): AutomationConfig {
     try {
       const config = this.loadConfig();
-      return config.automation ?? { level: 'assisted', autoSync: true };
+      return config.automation ?? DEFAULT_AUTOMATION_CONFIG;
     } catch {
       // If config doesn't exist or is invalid, return default
-      return { level: 'assisted', autoSync: true };
+      return DEFAULT_AUTOMATION_CONFIG;
     }
+  }
+
+  /**
+   * Tag appended to the commits Taskin writes on its own, so a status change
+   * does not trigger the project's pipeline.
+   *
+   * Returns `[skip ci]` when unconfigured. An empty string is a real answer —
+   * it means the project wants CI to run — so it is returned as-is.
+   */
+  getCiSkipTag(): string {
+    return this.getAutomationConfig().ciSkipTag ?? DEFAULT_CI_SKIP_TAG;
+  }
+
+  /**
+   * Set the CI-skip tag, preserving the rest of the automation block.
+   */
+  setCiSkipTag(ciSkipTag: string): void {
+    const config = this.loadConfig();
+
+    config.automation = {
+      ...DEFAULT_AUTOMATION_CONFIG,
+      ...config.automation,
+      ciSkipTag,
+    };
+
+    this.saveConfig(config);
   }
 
   /**
@@ -174,6 +216,7 @@ export class ConfigManager {
       defaultBranch: automation.defaultBranch,
       autoSync: automation.autoSync,
       originBranch: automation.originBranch,
+      ciSkipTag: automation.ciSkipTag ?? DEFAULT_CI_SKIP_TAG,
     };
   }
 

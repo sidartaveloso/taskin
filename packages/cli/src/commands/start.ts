@@ -2,7 +2,7 @@
  * start command - Start a task
  */
 
-import { GitService, type IGitService } from '@opentask/taskin-git-utils';
+import { buildTaskStatusCommitMessage, GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
@@ -79,6 +79,16 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
   info(`Found task: ${task.title}`);
   info(`Current status: ${task.status}`);
 
+  // Load automation config. Read before the dry run so the preview shows the
+  // commit this project would actually make, tag included.
+  const configManager = new ConfigManager(monorepoRoot);
+  const behavior = configManager.getAutomationBehavior();
+  const statusCommitMessage = buildTaskStatusCommitMessage({
+    taskId: normalizedId,
+    status: 'in-progress',
+    ciSkipTag: behavior.ciSkipTag,
+  });
+
   // Dry run mode - show what would be executed
   if (_options.dryRun) {
     console.log();
@@ -93,7 +103,7 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
     console.log(colors.secondary(`  - Create branch: git checkout -b feat/task-${normalizedId}`));
     console.log(
       colors.secondary(
-        `  - Commit status: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip-ci]"`,
+        `  - Commit status: git add TASKS/task-${normalizedId}-*.md && git commit -m "${statusCommitMessage}"`,
       ),
     );
     console.log();
@@ -121,12 +131,8 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
   success(`Task ${updatedTask.id} started successfully!`);
   success(`Status changed to: ${updatedTask.status}`);
 
-  // Load automation config
-  const configManager = new ConfigManager(monorepoRoot);
-  const behavior = configManager.getAutomationBehavior();
-
   // Initialize Git service
-  const git = gitService ?? new GitService(process.cwd());
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag: behavior.ciSkipTag });
 
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
@@ -144,7 +150,7 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
     info('Next steps (suggestions):');
     console.log(
       colors.secondary(
-        `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip ci]"`,
+        `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "${statusCommitMessage}"`,
       ),
     );
     console.log(colors.secondary(`  2. Create a branch: git checkout -b feat/task-${normalizedId}`));

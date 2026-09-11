@@ -361,6 +361,18 @@ export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
  */
 export type TaskinConfig = z.infer<typeof TaskinConfigSchema>;
 
+/**
+ * Taskin configuration as it may be *written*.
+ *
+ * The difference from {@link TaskinConfig} is the schema's defaults: fields
+ * like `automation.ciSkipTag` are required on the way out and optional on the
+ * way in. Anything that hands a config to the schema for parsing should take
+ * this type, so a caller is not forced to spell out values the schema fills in.
+ *
+ * @public
+ */
+export type TaskinConfigInput = z.input<typeof TaskinConfigSchema>;
+
 // ============================================================================
 // Hook System Types
 // ============================================================================

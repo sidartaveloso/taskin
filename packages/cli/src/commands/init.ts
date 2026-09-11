@@ -2,6 +2,7 @@
  * Init command - Initialize Taskin in the current project
  */
 
+import { CI_SKIP_TAGS, DEFAULT_CI_SKIP_TAG } from '@opentask/taskin-git-utils';
 import type { User } from '@opentask/taskin-types';
 import { existsSync, readdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
@@ -14,7 +15,11 @@ import { defineCommand } from './define-command/index.js';
 interface InitOptions {
   force?: boolean;
   provider?: string;
+  ciSkipTag?: string;
 }
+
+/** The word a user types to mean "append no tag at all". */
+const NO_CI_SKIP_TAG_KEYWORD = 'none';
 
 export const initCommand = defineCommand({
   name: 'init',
@@ -28,6 +33,10 @@ export const initCommand = defineCommand({
     {
       flags: '-p, --provider <provider>',
       description: 'Provider to use (fs, redmine, jira, github) - skips interactive prompt',
+    },
+    {
+      flags: '--ci-skip-tag <tag>',
+      description: `Tag appended to Taskin's own commits so they skip CI (default "${DEFAULT_CI_SKIP_TAG}"; "none" to run CI) - skips interactive prompt`,
     },
   ],
   handler: async (options: InitOptions) => {
@@ -108,9 +117,20 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
   // Setup provider configuration
   const providerConfig = await setupProviderConfig(selectedProvider, cwd);
 
+  const ciSkipTag = await resolveCiSkipTag(options.ciSkipTag);
+
   // Create .taskin.json configuration
+  //
+  // The automation block is written out in full rather than left to the
+  // schema's defaults: a tag that decides whether every status commit runs the
+  // project's pipeline should be visible in the file, not implied by it.
   const config = {
     version: '1.0.3',
+    automation: {
+      level: 'assisted',
+      autoSync: true,
+      ciSkipTag,
+    },
     provider: {
       type: selectedProvider.id,
       config: providerConfig,
@@ -144,6 +164,66 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
   console.log();
   info('For more information, run: taskin --help');
   console.log();
+}
+
+/**
+ * Decides the tag Taskin appends to the commits it writes on its own.
+ *
+ * A tag on the command line wins; in CI there is nobody to ask, so the default
+ * stands; otherwise the user picks one.
+ */
+async function resolveCiSkipTag(fromFlag: string | undefined): Promise<string> {
+  if (fromFlag !== undefined) {
+    return normalizeCiSkipTag(fromFlag);
+  }
+
+  if (process.env.CI === 'true') {
+    return DEFAULT_CI_SKIP_TAG;
+  }
+
+  console.log();
+  info('Taskin appends a tag to the commits it writes itself — status changes and');
+  info('task files — so they do not trigger your pipeline.');
+  console.log();
+
+  const { choice } = await inquirer.prompt<{ choice: string }>([
+    {
+      type: 'list',
+      name: 'choice',
+      message: 'Tag for Taskin commits:',
+      default: DEFAULT_CI_SKIP_TAG,
+      choices: [
+        { name: `${CI_SKIP_TAGS[0]} — GitHub, GitLab and Bitbucket (recommended)`, value: CI_SKIP_TAGS[0] },
+        { name: `${CI_SKIP_TAGS[1]} — GitHub, GitLab and Bitbucket`, value: CI_SKIP_TAGS[1] },
+        { name: `${CI_SKIP_TAGS[2]} — GitHub Actions only`, value: CI_SKIP_TAGS[2] },
+        { name: `${CI_SKIP_TAGS[3]} — GitHub Actions only`, value: CI_SKIP_TAGS[3] },
+        { name: `${CI_SKIP_TAGS[4]} — GitHub Actions only`, value: CI_SKIP_TAGS[4] },
+        { name: 'none — do not mark the commits, let CI run', value: NO_CI_SKIP_TAG_KEYWORD },
+        { name: 'custom… — another CI (Azure DevOps uses ***NO_CI***)', value: 'custom' },
+      ],
+    },
+  ]);
+
+  if (choice !== 'custom') {
+    return normalizeCiSkipTag(choice);
+  }
+
+  const { customTag } = await inquirer.prompt<{ customTag: string }>([
+    {
+      type: 'input',
+      name: 'customTag',
+      message: 'Tag to append:',
+      default: DEFAULT_CI_SKIP_TAG,
+    },
+  ]);
+
+  return normalizeCiSkipTag(customTag);
+}
+
+function normalizeCiSkipTag(input: string): string {
+  const trimmed = input.trim();
+
+  return trimmed.toLowerCase() === NO_CI_SKIP_TAG_KEYWORD ? '' : trimmed;
 }
 
 /**

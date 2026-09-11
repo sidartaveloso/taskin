@@ -1,6 +1,25 @@
 import { execSync } from 'child_process';
+import { buildTaskStatusCommitMessage, DEFAULT_CI_SKIP_TAG } from './commit-message';
 import { createBranch as createBranchUtil, isGitRepository as isGitRepositoryUtil } from './git';
 import type { IGitService } from './git-service.types';
+
+/**
+ * Construction options for {@link GitService}.
+ *
+ * @public
+ */
+export interface GitServiceOptions {
+  /**
+   * Tag appended to the commits Taskin writes on its own, so those commits do
+   * not trigger the project's pipeline. Defaults to `[skip ci]`; an empty
+   * string appends nothing, which is how a project asks for CI to run.
+   *
+   * The service takes it as a parameter rather than reading `.taskin.json`:
+   * the config file belongs to the CLI, and this package stays testable
+   * without touching disk.
+   */
+  ciSkipTag?: string;
+}
 
 /**
  * Concrete implementation of IGitService.
@@ -9,7 +28,14 @@ import type { IGitService } from './git-service.types';
  * @public
  */
 export class GitService implements IGitService {
-  constructor(private readonly cwd: string = process.cwd()) {}
+  private readonly ciSkipTag: string;
+
+  constructor(
+    private readonly cwd: string = process.cwd(),
+    options: GitServiceOptions = {},
+  ) {
+    this.ciSkipTag = options.ciSkipTag ?? DEFAULT_CI_SKIP_TAG;
+  }
 
   async addFiles(pattern: string): Promise<boolean> {
     try {
@@ -44,7 +70,7 @@ export class GitService implements IGitService {
 
   async commitTaskStatusChange(taskId: string, status: string): Promise<boolean> {
     const pattern = `TASKS/task-${taskId}-*.md`;
-    const message = `docs(TASKS): task-${taskId} - atualiza status para ${status} [skip-ci]`;
+    const message = buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag });
 
     return this.addAndCommit(pattern, message);
   }
@@ -112,11 +138,11 @@ export class GitService implements IGitService {
         if (taskFileContent && taskFilePath) {
           const { writeFileSync } = await import('fs');
           writeFileSync(`${this.cwd}/${taskFilePath}`, taskFileContent, 'utf-8');
-          const message = `docs(TASKS): task-${taskId} - atualiza status para ${status} [skip-ci]`;
+          const message = buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag });
           committed = await this.addAndCommit(taskPattern, message);
         } else {
           // Fallback: try to commit directly (task might already be staged)
-          const message = `docs(TASKS): task-${taskId} - atualiza status para ${status} [skip-ci]`;
+          const message = buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag });
           committed = await this.addAndCommit(taskPattern, message);
         }
 

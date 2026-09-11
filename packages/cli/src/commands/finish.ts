@@ -3,7 +3,7 @@
  */
 
 import { squashTaskFileOnDone } from '@opentask/taskin-file-system-provider';
-import { GitService, type IGitService } from '@opentask/taskin-git-utils';
+import { buildTaskStatusCommitMessage, GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -72,6 +72,17 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
   info(`Found task: ${task.title}`);
   info(`Current status: ${task.status}`);
 
+  // Load automation config. Read before the dry run so the preview shows the
+  // commit this project would actually make, tag included.
+  const configManager = new ConfigManager(monorepoRoot);
+  const behavior = configManager.getAutomationBehavior();
+  const autoSyncActive = behavior.autoSync && !!behavior.defaultBranch;
+  const statusCommitMessage = buildTaskStatusCommitMessage({
+    taskId: normalizedId,
+    status: 'done',
+    ciSkipTag: behavior.ciSkipTag,
+  });
+
   // Dry run mode - show what would be executed
   if (options.dryRun) {
     console.log();
@@ -86,7 +97,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     info('Git operations:');
     console.log(
       colors.secondary(
-        `  - Commit status: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para done [skip-ci]"`,
+        `  - Commit status: git add TASKS/task-${normalizedId}-*.md && git commit -m "${statusCommitMessage}"`,
       ),
     );
     console.log(
@@ -107,17 +118,12 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     process.exit(1);
   }
 
-  // Load automation config
-  const configManager = new ConfigManager(monorepoRoot);
-  const behavior = configManager.getAutomationBehavior();
-  const autoSyncActive = behavior.autoSync && !!behavior.defaultBranch;
-
   if (behavior.autoSync && !behavior.defaultBranch) {
     warning('autoSync is enabled but no defaultBranch is configured. Nothing will be synced.');
   }
 
   // Initialize Git service
-  const git = gitService ?? new GitService(process.cwd());
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag: behavior.ciSkipTag });
 
   if (!options.skipUpdate) {
     info('Marking task as done...');
@@ -140,6 +146,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
           taskId: normalizedId,
           defaultBranch: behavior.defaultBranch,
           originBranch: behavior.originBranch,
+          ciSkipTag: behavior.ciSkipTag,
         });
         if (squashed) {
           success(`✓ Squash commit pushed to ${behavior.originBranch}`);
@@ -182,7 +189,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     if (!options.skipUpdate) {
       if (!behavior.autoCommitStatusChange) {
         steps.push(
-          `Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para done [skip-ci]"`,
+          `Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "${statusCommitMessage}"`,
         );
       }
       steps.push('Review your changes');
