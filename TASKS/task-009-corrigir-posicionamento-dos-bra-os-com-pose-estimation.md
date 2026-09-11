@@ -1,6 +1,6 @@
 # Task 009 — Corrigir posicionamento dos braços com pose estimation
 
-- Status: done
+- Status: in-progress
 - Type: fix
 - Assignee: Sidarta Veloso
 
@@ -31,3 +31,36 @@ invertida do `elbowAngle`.
 
 Testes: `arm-angle.spec.ts`, `arm-angles.spec.ts` e `arm-position-from-pose.spec.ts`,
 cobrindo os quatro quadrantes de cada lado em vez de só a pose neutra.
+
+## Reabertura — o lado da tela
+
+O conserto da task-044 foi real, mas parcial: ele arrumou o **angulo** e deixou
+passar o que vinha antes dele, **de qual metade da tela cada braco era lido**.
+
+Os indices do MediaPipe Pose sao nomeados pelo corpo do sujeito. Uma pessoa de
+frente para a camera tem o ombro esquerdo dela na direita da imagem, entao
+ (11) sai com `x` grande. O `ARM_LANDMARKS` tratava `11` como
+lado esquerdo da tela: cada braco era medido de um lado e pintado no ombro
+oposto. Com os bracos abertos, o mascote se abracava.
+
+O `mirrorPose` foi o que despistou. Ele inverte `x` e depois troca os pares, e
+as duas operacoes se cancelam do ponto de vista da tela — o indice `11` cai na
+direita da imagem nos dois modos. O que a troca muda e de quem e o ponto, nao
+onde ele esta. Por isso o mapeamento ficou incondicional em vez de depender do
+flag.
+
+Medido com a pessoa de bracos erguidos e abertos: o cotovelo esquerdo era
+desenhado em `x=112.7` com o ombro em `x=95` — para dentro. Depois do conserto
+cai em `x=77`, para fora.
+
+### Por que a suite nao pegou, de novo
+
+Cada peca tinha teste e cada peca estava certa. Nenhum teste atravessava da
+landmark crua ate o pixel, e os fixtures montavam `11` na esquerda da tela —
+fixando no teste a mesma convencao errada que a producao seguia. Testes verdes
+sobre a metade errada da cena.
+
+Entrou um teste que faz o caminho inteiro — landmarks, espelhamento, conversao
+de espaco, `mount` do `TaskinArms` e leitura do ponto de controle `Q` do path —
+nos dois modos de espelhamento. Verificado por sabotagem: com os indices
+trocados de volta, ele falha com `expected 112.67 to be less than 95`.
