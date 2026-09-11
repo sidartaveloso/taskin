@@ -1,5 +1,6 @@
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { onUnmounted, type Ref, ref } from 'vue';
+import { requestMediaStream } from '../../utils/camera';
 import type {
   FaceLandmarkerBlendShapes,
   FaceLandmarkerState,
@@ -59,14 +60,7 @@ export function useFaceLandmarker(videoElement: Ref<HTMLVideoElement | null>, op
    */
   const startWebcam = async () => {
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user',
-        },
-        audio: false,
-      });
+      stream = await requestMediaStream();
 
       if (videoElement.value) {
         videoElement.value.srcObject = stream;

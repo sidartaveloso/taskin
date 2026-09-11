@@ -1,3 +1,5 @@
+import { DEFAULT_AUDIO_CONSTRAINTS, requestMediaStream } from './camera';
+
 type NoiseCallback = () => void;
 type NoiseLevelCallback = (rms: number) => void;
 
@@ -9,11 +11,7 @@ export interface NoiseWatcher {
 }
 
 export async function createNoiseWatcher(): Promise<NoiseWatcher> {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error('Web Audio API not supported or no microphone access');
-  }
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const stream = await requestMediaStream(DEFAULT_AUDIO_CONSTRAINTS);
   type AudioWindow = Window & { webkitAudioContext?: typeof AudioContext };
   const AudioContextClass = window.AudioContext ?? (window as AudioWindow).webkitAudioContext;
   const audioCtx = new AudioContextClass();
