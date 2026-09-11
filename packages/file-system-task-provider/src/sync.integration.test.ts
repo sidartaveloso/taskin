@@ -167,7 +167,7 @@ describe('AutoSync Integration', () => {
     // Verify task file exists in bare repo
     const bareClone = mkdtempSync(join(tmpdir(), 'taskin-sync-verify-'));
     cleanupDirs.push(bareClone);
-    execSync(`git clone ${bareDir} ${bareClone}`, { stdio: 'ignore' });
+    cloneRepo(bareDir, bareClone);
     execSync('git checkout tasks', { cwd: bareClone, stdio: 'ignore' });
 
     const taskFile = join(bareClone, 'TASKS', 'task-001-my-feature.md');
@@ -209,7 +209,7 @@ describe('AutoSync Integration', () => {
     // Verify both tasks exist in remote
     const bareClone = mkdtempSync(join(tmpdir(), 'taskin-sync-verify-'));
     cleanupDirs.push(bareClone);
-    execSync(`git clone ${bareDir} ${bareClone}`, { stdio: 'ignore' });
+    cloneRepo(bareDir, bareClone);
     execSync('git checkout tasks', { cwd: bareClone, stdio: 'ignore' });
 
     expect(existsSync(join(bareClone, 'TASKS', 'task-001-feat-a.md'))).toBe(true);
@@ -307,7 +307,7 @@ describe('AutoSync Integration', () => {
     // Verify: remote has both blocker and A's task
     const bareClone = mkdtempSync(join(tmpdir(), 'taskin-sync-verify-'));
     cleanupDirs.push(bareClone);
-    execSync(`git clone ${bareDir} ${bareClone}`, { stdio: 'ignore' });
+    cloneRepo(bareDir, bareClone);
     execSync('git checkout tasks', { cwd: bareClone, stdio: 'ignore' });
 
     expect(existsSync(join(bareClone, 'TASKS', 'blocker.md'))).toBe(true);
@@ -342,7 +342,7 @@ describe('AutoSync Integration', () => {
     // Create develop branch in bare (simulate originBranch)
     const tempDir = mkdtempSync(join(tmpdir(), 'taskin-sync-dev-'));
     cleanupDirs.push(tempDir);
-    execSync(`git clone ${bareDir} ${tempDir}`, { stdio: 'ignore' });
+    cloneRepo(bareDir, tempDir);
     execSync('git checkout --orphan develop', { cwd: tempDir, stdio: 'ignore' });
     writeFileSync(join(tempDir, 'README.md'), '# Develop');
     execSync('git add .', { cwd: tempDir, stdio: 'ignore' });
