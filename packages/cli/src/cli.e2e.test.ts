@@ -74,7 +74,22 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
 
     it('should create and persist first user when prompted interactively', async () => {
-      const answers = "(printf 'y\\n'; sleep 1; printf 'Test User\\n'; sleep 1; printf 'test@test.com\\n') | node";
+      /*
+       * O `sleep 20` no fim nao e espera: e para o `stdin` NAO fechar cedo.
+       *
+       * Sem ele o subshell termina ~2s depois de comecar, o `stdin` do CLI vai
+       * a EOF, e o inquirer aborta com `User force closed the prompt`. Na
+       * maquina local o CLI alcanca os prompts antes disso; no runner do
+       * GitHub, frio, nao alcanca — falhava toda vez, e so la.
+       *
+       * E uma muleta de tempo, e ela custa os 20s ao teste (timeout de 60s). O
+       * conserto de verdade e dirigir o `stdin` a partir do Node, com `spawn`,
+       * escrevendo cada resposta quando o prompt correspondente aparece e
+       * fechando so no fim — o que este teste nao faz porque usa `exec`, que
+       * nao expoe o `stdin`.
+       */
+      const answers =
+        "(printf 'y\\n'; sleep 1; printf 'Test User\\n'; sleep 1; printf 'test@test.com\\n'; sleep 20) | node";
 
       const { stdout } = await execAsync(`${answers} ${CLI_PATH} init -p fs`, {
         cwd: TEST_DIR,
