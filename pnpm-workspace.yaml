@@ -14,3 +14,24 @@ minimumReleaseAgeExclude:
 
 overrides:
   esbuild@<=0.24.2: '>=0.25.0'
+  # O `hono` chega por `@modelcontextprotocol/sdk` > `@hono/node-server`, e como
+  # peer dele — entao subir o SDK nao o move. Sozinho ele responde por 37 dos 79
+  # avisos do `pnpm audit`. Vale so para a arvore deste repositorio: quem
+  # consome os pacotes publicados resolve o proprio, e so o SDK pode corrigir la.
+  hono@<4.12.34: '>=4.12.34'
+  # Os demais chegam por `express` e pelo `@modelcontextprotocol/sdk`, e todos
+  # tem correcao em patch. Valem so para a arvore deste repositorio: quem
+  # consome os pacotes publicados resolve os proprios transitivos, e so um
+  # upgrade das dependencias diretas (ver a task do express 4 -> 5) alcanca la.
+  '@hono/node-server@<1.19.13': '>=1.19.13'
+  fast-uri@<3.1.5: '>=3.1.5'
+  # A linha 0.1.x NAO tem correcao: o aviso pede `>=0.1.13` e a serie para em
+  # 0.1.12, que e o que o express 4 fixa (`~0.1.12`). Um override `>=0.1.13`
+  # resolve para 8.x e quebra o roteamento do express 4 — so o express 5 sai
+  # dessa. Fica sem override, e registrado na task.
+  'path-to-regexp@>=8.0.0 <8.4.0': '>=8.4.0'
+  # Preso a linha 1.20: `>=1.20.6` sozinho resolve para 2.x, e o express 4 pede
+  # `~1.20.3` — a major quebra o servidor do dashboard em tempo de execucao.
+  body-parser@<1.20.6: '~1.20.8'
+  'body-parser@>=2.0.0 <2.3.0': '>=2.3.0'
+  qs@<6.16.0: '>=6.16.0'

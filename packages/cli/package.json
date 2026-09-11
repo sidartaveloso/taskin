@@ -83,7 +83,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.6.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@opentask/taskin-file-system-provider": "workspace:*",
     "@opentask/taskin-git-utils": "workspace:*",
     "@opentask/taskin-task-manager": "workspace:*",
