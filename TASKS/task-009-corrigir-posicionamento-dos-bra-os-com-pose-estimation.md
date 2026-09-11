@@ -39,7 +39,7 @@ passar o que vinha antes dele, **de qual metade da tela cada braco era lido**.
 
 Os indices do MediaPipe Pose sao nomeados pelo corpo do sujeito. Uma pessoa de
 frente para a camera tem o ombro esquerdo dela na direita da imagem, entao
- (11) sai com `x` grande. O `ARM_LANDMARKS` tratava `11` como
+`LEFT_SHOULDER` (11) sai com `x` grande. O `ARM_LANDMARKS` tratava `11` como
 lado esquerdo da tela: cada braco era medido de um lado e pintado no ombro
 oposto. Com os bracos abertos, o mascote se abracava.
 
