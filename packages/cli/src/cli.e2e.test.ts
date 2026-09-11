@@ -3,7 +3,7 @@
  * Tests the complete workflow including file persistence
  */
 
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
@@ -13,6 +13,65 @@ const execAsync = promisify(exec);
 
 const TEST_DIR = join(process.cwd(), 'test-temp-e2e');
 const CLI_PATH = join(process.cwd(), 'dist/index.js');
+
+/**
+ * Roda o CLI respondendo a cada prompt quando ele aparece.
+ *
+ * O jeito anterior era um pipe com `sleep` entre as respostas, e ele dependia
+ * de o CLI alcancar cada prompt dentro da janela do `sleep`. Quando o `stdin`
+ * nao e um TTY e os dados ja estao no buffer, o readline entrega o pedaco
+ * inteiro de uma vez: o prompt de confirmacao engolia as tres linhas, e o
+ * seguinte (`Full name:`) abria vazio e morria com
+ * `User force closed the prompt`.
+ *
+ * Na maquina local o CLI chegava ao primeiro prompt antes da segunda linha ser
+ * escrita e passava; no runner do GitHub, frio, nao chegava — falhava toda
+ * vez, e so la. Aumentar os `sleep` nao resolve, so move a aposta.
+ *
+ * Aqui cada resposta so e escrita quando o texto do prompt correspondente
+ * aparece no stdout, e o `stdin` fica aberto ate o processo sair. Sem
+ * temporizacao nenhuma.
+ */
+function runCliWithAnswers(
+  args: readonly string[],
+  answers: ReadonlyArray<{ prompt: RegExp; answer: string }>,
+  options: { cwd: string; env?: NodeJS.ProcessEnv },
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('node', [CLI_PATH, ...args], {
+      cwd: options.cwd,
+      env: options.env ?? process.env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let next = 0;
+
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString();
+      // Um `while`, e nao um `if`: dois prompts podem chegar no mesmo chunk.
+      while (next < answers.length && answers[next]?.prompt.test(stdout)) {
+        child.stdin.write(answers[next]?.answer ?? '');
+        next++;
+      }
+    });
+
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
+
+    child.on('error', reject);
+    child.on('close', (code) => {
+      child.stdin.end();
+      if (code === 0) {
+        resolve({ stdout, stderr });
+        return;
+      }
+      reject(new Error(`CLI exited with ${code}\n--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`));
+    });
+  });
+}
 
 describe.sequential('Taskin CLI E2E Tests', () => {
   beforeEach(async () => {
@@ -74,27 +133,15 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
 
     it('should create and persist first user when prompted interactively', async () => {
-      /*
-       * O `sleep 20` no fim nao e espera: e para o `stdin` NAO fechar cedo.
-       *
-       * Sem ele o subshell termina ~2s depois de comecar, o `stdin` do CLI vai
-       * a EOF, e o inquirer aborta com `User force closed the prompt`. Na
-       * maquina local o CLI alcanca os prompts antes disso; no runner do
-       * GitHub, frio, nao alcanca — falhava toda vez, e so la.
-       *
-       * E uma muleta de tempo, e ela custa os 20s ao teste (timeout de 60s). O
-       * conserto de verdade e dirigir o `stdin` a partir do Node, com `spawn`,
-       * escrevendo cada resposta quando o prompt correspondente aparece e
-       * fechando so no fim — o que este teste nao faz porque usa `exec`, que
-       * nao expoe o `stdin`.
-       */
-      const answers =
-        "(printf 'y\\n'; sleep 1; printf 'Test User\\n'; sleep 1; printf 'test@test.com\\n'; sleep 20) | node";
-
-      const { stdout } = await execAsync(`${answers} ${CLI_PATH} init -p fs`, {
-        cwd: TEST_DIR,
-        env: { ...process.env, CI: 'false' },
-      });
+      const { stdout } = await runCliWithAnswers(
+        ['init', '-p', 'fs'],
+        [
+          { prompt: /Create the first user now\?/, answer: 'y\n' },
+          { prompt: /Full name:/, answer: 'Test User\n' },
+          { prompt: /Email:/, answer: 'test@test.com\n' },
+        ],
+        { cwd: TEST_DIR, env: { ...process.env, CI: 'false' } },
+      );
 
       expect(stdout).toContain('User "Test User" (test@test.com) created successfully');
 
