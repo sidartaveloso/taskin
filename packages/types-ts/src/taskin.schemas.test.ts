@@ -1104,3 +1104,30 @@ describe('TaskinConfigSchema - with notifications', () => {
     expect(result.notifications).toBeUndefined();
   });
 });
+
+describe('AutomationConfigSchema - ciSkipTag', () => {
+  it('defaults to [skip ci], the only form GitHub, GitLab and Bitbucket all accept', () => {
+    const result = AutomationConfigSchema.parse({ level: 'assisted' });
+    expect(result.ciSkipTag).toBe('[skip ci]');
+  });
+
+  it('accepts another documented tag', () => {
+    const result = AutomationConfigSchema.parse({ level: 'assisted', ciSkipTag: '[ci skip]' });
+    expect(result.ciSkipTag).toBe('[ci skip]');
+  });
+
+  it('accepts an empty string, which means "do not mark the commit at all"', () => {
+    const result = AutomationConfigSchema.parse({ level: 'assisted', ciSkipTag: '' });
+    expect(result.ciSkipTag).toBe('');
+  });
+
+  it('accepts a tag no platform documents, for a self-hosted or Azure pipeline', () => {
+    const result = AutomationConfigSchema.parse({ level: 'assisted', ciSkipTag: '***NO_CI***' });
+    expect(result.ciSkipTag).toBe('***NO_CI***');
+  });
+
+  it('rejects a non-string tag', () => {
+    const result = AutomationConfigSchema.safeParse({ level: 'assisted', ciSkipTag: 42 });
+    expect(result.success).toBe(false);
+  });
+});

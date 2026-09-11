@@ -116,7 +116,7 @@ describe('GitService', () => {
       expect(result).toBe(true);
       expect(execSync).toHaveBeenCalledWith('git add TASKS/task-014-*.md', expect.any(Object));
       expect(execSync).toHaveBeenCalledWith(
-        'git commit -m "docs(TASKS): task-014 - atualiza status para in-progress [skip-ci]"',
+        'git commit -m "docs(TASKS): task-014 - atualiza status para in-progress [skip ci]"',
         expect.any(Object),
       );
     });
@@ -128,7 +128,41 @@ describe('GitService', () => {
       await service.commitTaskStatusChange('042', 'done');
 
       expect(execSync).toHaveBeenCalledWith(
-        'git commit -m "docs(TASKS): task-042 - atualiza status para done [skip-ci]"',
+        'git commit -m "docs(TASKS): task-042 - atualiza status para done [skip ci]"',
+        expect.any(Object),
+      );
+    });
+
+    it('should never emit the hyphenated tag, which no platform recognizes', async () => {
+      const service = new GitService('/test/dir');
+      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+
+      await service.commitTaskStatusChange('014', 'done');
+
+      const commits = vi.mocked(execSync).mock.calls.map(([command]) => String(command));
+      expect(commits.some((command) => command.includes('[skip-ci]'))).toBe(false);
+    });
+
+    it('should use the tag configured on the service', async () => {
+      const service = new GitService('/test/dir', { ciSkipTag: '[ci skip]' });
+      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+
+      await service.commitTaskStatusChange('014', 'done');
+
+      expect(execSync).toHaveBeenCalledWith(
+        'git commit -m "docs(TASKS): task-014 - atualiza status para done [ci skip]"',
+        expect.any(Object),
+      );
+    });
+
+    it('should append no tag when the service is configured with an empty one', async () => {
+      const service = new GitService('/test/dir', { ciSkipTag: '' });
+      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+
+      await service.commitTaskStatusChange('014', 'done');
+
+      expect(execSync).toHaveBeenCalledWith(
+        'git commit -m "docs(TASKS): task-014 - atualiza status para done"',
         expect.any(Object),
       );
     });

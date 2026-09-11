@@ -24,7 +24,7 @@
 - 📊 **Smart Filtering**: Semantic task filtering (open/closed) across CLI and dashboard
 - 📈 **Team Metrics**: Comprehensive stats with configurable time periods (day/week/month/year)
 - ⚙️ **Configurable Automation**: Three automation levels (manual/assisted/autopilot) for git commits
-- 💬 **Smart Suggestions**: Contextual commit message suggestions with [skip-ci] support
+- 💬 **Smart Suggestions**: Contextual commit message suggestions, with a configurable CI-skip tag (`[skip ci]` by default)
 
 ## 🔒 Security Features
 

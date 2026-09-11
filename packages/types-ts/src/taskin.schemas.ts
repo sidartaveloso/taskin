@@ -448,6 +448,19 @@ export const AutomationConfigSchema = z.object({
   autoSync: z.boolean().default(true),
   /** Target branch for squash commits when a task is marked as done (e.g., 'main', 'develop'). Optional. */
   originBranch: z.string().optional(),
+  /**
+   * Tag appended to the commits Taskin writes on its own, so a status change
+   * does not trigger the project's pipeline.
+   *
+   * Defaults to `[skip ci]` — the only spelling GitHub Actions, GitLab and
+   * Bitbucket Pipelines all recognize. An empty string appends nothing, which
+   * is how a project asks for CI to run on those commits.
+   *
+   * Deliberately an open `string` and not an enum of the documented tags:
+   * Azure DevOps uses `***NO_CI***` and a self-hosted pipeline can match
+   * anything. The CLI warns about an unrecognized value instead of refusing it.
+   */
+  ciSkipTag: z.string().default('[skip ci]'),
 });
 
 /**

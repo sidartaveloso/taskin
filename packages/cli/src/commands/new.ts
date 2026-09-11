@@ -148,7 +148,7 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   }
 
   // Initialize Git service
-  const git = gitService ?? new GitService(process.cwd());
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag: behavior.ciSkipTag });
 
   // Sync with remote before numbering (fetch + rebase) when autoSync is active
   if (autoSyncActive) {
@@ -192,6 +192,7 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
         taskId,
         title: options.title,
         defaultBranch: behavior.defaultBranch,
+        ciSkipTag: behavior.ciSkipTag,
       });
     } catch (pushError) {
       error(
