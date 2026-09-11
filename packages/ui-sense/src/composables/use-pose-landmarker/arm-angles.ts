@@ -5,14 +5,26 @@ import type { PoseLandmark } from './use-pose-landmarker.types';
 /**
  * Indices of the six points an arm is made of, in MediaPipe's Pose model.
  *
- * `LEFT`/`RIGHT` here follow whatever the landmark array already means. After
- * `mirrorPose` has run, that is the side **of the screen**, not the side of the
- * subject's body — mirroring swaps the pairs on purpose so the mascot faces the
- * viewer the same way the person does.
+ * `left`/`right` here are the side **of the screen**, because that is the side
+ * the mascot draws on — and the screen side is the opposite of MediaPipe's
+ * label. The model names joints after the subject's own body, and a person
+ * facing the camera has their left shoulder on the right of the image: index
+ * 11 is `LEFT_SHOULDER` and lands at a large `x`.
+ *
+ * `mirrorPose` does not change that. It flips `x` and then swaps the pairs, and
+ * the two operations cancel where the screen is concerned: index 11 sits on the
+ * right of the image in both modes. What the swap changes is whose body the
+ * point belongs to, not where it is — which is why this mapping is
+ * unconditional instead of depending on the flag.
+ *
+ * Getting this backwards drew both elbows *into* the body: each arm was
+ * measured from the shoulder across the screen and then painted on the opposite
+ * shoulder, so a person holding their arms out produced a mascot hugging
+ * itself.
  */
 const ARM_LANDMARKS = {
-  left: { shoulder: 11, elbow: 13, wrist: 15 },
-  right: { shoulder: 12, elbow: 14, wrist: 16 },
+  left: { shoulder: 12, elbow: 14, wrist: 16 },
+  right: { shoulder: 11, elbow: 13, wrist: 15 },
 } as const satisfies Record<ArmSide, { shoulder: number; elbow: number; wrist: number }>;
 
 /**
