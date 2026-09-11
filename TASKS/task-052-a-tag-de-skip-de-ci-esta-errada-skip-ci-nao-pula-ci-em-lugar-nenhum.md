@@ -132,6 +132,150 @@ entao esses dois flags nunca chegavam ao proprio ramo: caiam no modo
 interativo. Corrigido junto, com teste de regressao, porque e a mesma interface
 de seis linhas que esta task reescreveu.
 
+## Evidencia: como o pedido aparece na tela
+
+Capturado do CLI compilado (`packages/cli/dist/index.js`) rodando num terminal
+de verdade — pty alocada com `script` e com `expect`, nao stdout redirecionado.
+Os codigos ANSI foram removidos; o texto e o resto e o que a pessoa ve.
+
+### `taskin init`
+
+O pedido entra depois da configuracao do provider e antes de escrever o
+`.taskin.json`. As duas linhas de contexto existem porque "tag de skip de CI"
+nao diz, sozinho, o que a escolha afeta.
+
+```text
+════════════════════════════════════════════════════════════
+🎯  Initializing Taskin
+════════════════════════════════════════════════════════════
+
+ℹ Using provider from command line: fs
+
+ℹ Setting up task provider: 📁 File System
+
+ℹ Creating sample task...
+✓ ✓ Created sample task task-001-setup-project.md
+
+ℹ Taskin appends a tag to the commits it writes itself — status changes and
+ℹ task files — so they do not trigger your pipeline.
+
+? Tag for Taskin commits:
+❯ [skip ci] — GitHub, GitLab and Bitbucket (recommended)
+  [ci skip] — GitHub, GitLab and Bitbucket
+  [no ci] — GitHub Actions only
+  [skip actions] — GitHub Actions only
+  [actions skip] — GitHub Actions only
+  none — do not mark the commits, let CI run
+  custom… — another CI (Azure DevOps uses ***NO_CI***)
+
+↑↓ navigate • ⏎ select
+```
+
+Cada item diz **onde funciona**, e nao so como se escreve. Era a informacao que
+faltava: as cinco formas do GitHub parecem intercambiaveis ate alguem rodar
+GitLab ou Bitbucket. Em CI (`CI=true`) o prompt nao aparece e vale o padrao;
+`--ci-skip-tag <tag>` tambem pula a pergunta.
+
+### `taskin config`
+
+A secao nova e a segunda do menu, logo abaixo de Automation level:
+
+```text
+════════════════════════════════════════════════════════════
+⚙️  Configure Taskin
+════════════════════════════════════════════════════════════
+
+? What would you like to configure?
+❯ 🤖 Automation level
+  ⏭️  CI skip tag
+  🔔 Discord notification
+  🔔 Telegram notification
+
+↑↓ navigate • ⏎ select
+```
+
+Escolhida a secao, a tela mostra o que ja esta valendo antes de oferecer a
+lista — a mesma lista do `init`, para nao haver dois vocabularios para a mesma
+escolha:
+
+```text
+════════════════════════════════════════════════════════════
+⏭️  Configure CI Skip Tag
+════════════════════════════════════════════════════════════
+
+Current tag: [skip ci]
+
+Taskin appends this to the commits it writes itself — status changes and
+task files — so they do not trigger your pipeline.
+
+? Tag for Taskin commits:
+❯ [skip ci] — GitHub, GitLab and Bitbucket (recommended)
+  [ci skip] — GitHub, GitLab and Bitbucket
+  [no ci] — GitHub Actions only
+  [skip actions] — GitHub Actions only
+  [actions skip] — GitHub Actions only
+  none — do not mark the commits, let CI run
+  custom… — another CI (Azure DevOps uses ***NO_CI***)
+
+↑↓ navigate • ⏎ select
+```
+
+O `custom…` abre um campo livre e cai no mesmo aviso do modo nao-interativo:
+
+```text
+✔ Tag for Taskin commits: custom… — another CI (Azure DevOps uses ***NO_CI***)
+? Tag to append: ***NO_CI***
+
+════════════════════════════════════════════════════════════
+⚙️  Configure CI Skip Tag
+════════════════════════════════════════════════════════════
+
+✓ CI skip tag set to ***NO_CI***
+
+⚠️  This tag is not one GitHub, GitLab or Bitbucket documents.
+   Documented tags: [skip ci], [ci skip], [no ci], [skip actions], [actions skip]
+   Keeping it anyway — a self-hosted pipeline can match whatever it likes.
+```
+
+### O aviso sobre `[skip-ci]`
+
+Quem digitar a forma que originou esta task recebe uma linha a mais, com o
+motivo e a correcao:
+
+```text
+$ taskin config --ci-skip-tag "[skip-ci]"
+
+✓ CI skip tag set to [skip-ci]
+
+⚠️  This tag is not one GitHub, GitLab or Bitbucket documents.
+   "[skip-ci]" with a hyphen is not recognized anywhere — it triggers CI.
+   Did you mean "[skip ci]", with a space?
+   Documented tags: [skip ci], [ci skip], [no ci], [skip actions], [actions skip]
+   Keeping it anyway — a self-hosted pipeline can match whatever it likes.
+```
+
+O `✓` vem **antes** do `⚠️` de proposito: a tag foi gravada. O aviso e conselho,
+nao veto — um pipeline proprio pode casar o que quiser, e recusar aqui
+quebraria Azure DevOps.
+
+### A tag vazia tem nome na tela
+
+`none` grava string vazia, e nem o `config` nem o `--show` imprimem um campo em
+branco:
+
+```text
+$ taskin config --ci-skip-tag none
+✓ CI skip tag set to no tag — CI runs on status commits
+
+$ taskin config --show
+🤖 Automation
+  Level: assisted
+  Auto-commit status changes: ✓ Yes
+  Auto-commit on pause: ✓ Yes
+  Auto-commit on finish: ✗ No
+  CI skip tag: no tag — CI runs on status commits
+```
+
 ## Notes
 
 Nao ha migracao a fazer em `.taskin.json` existente: o campo e opcional e o
