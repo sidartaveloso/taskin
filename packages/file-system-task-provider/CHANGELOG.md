@@ -1,5 +1,46 @@
 # @opentask/taskin-file-system-provider
 
+## 3.2.2
+
+### Patch Changes
+
+- 17c6fbe: `lint --fix` passa a juntar o bloco de metadados partido também quando a
+  marcação já está correta.
+  
+  O reparo do bloco partido por linha em branco só acontecia se a reemissão
+  mudasse alguma linha — na prática, se a última linha tivesse a barra invertida
+  sobrando. Num arquivo cujo bloco terminava num campo sem barra:
+  
+  ```markdown
+  # Task 024 — algo
+  Priority: 240\
+  
+  Status: done\
+  Type: chore\
+  Assignee: Sidarta Veloso\
+  Completed: 2026-04-17
+  ```
+  
+  as linhas de metadado já batiam com o formato alvo, a comparação dizia "nada a
+  fazer", e a linha em branco no meio sobrevivia. Achado rodando o `--fix` num
+  projeto real: 66 de 70 arquivos foram reparados e 4 ficaram para trás,
+  exatamente os que terminavam num campo sem marcação.
+  
+  A comparação passa a levar em conta o intervalo inteiro do bloco — linhas em
+  branco incluídas — e não só as linhas de metadado.
+- d2b06d2: `não atribuído`, `nao atribuido` e `unassigned` passam a contar como "ninguém
+  ainda", e não como uma pessoa.
+  
+  A lista de placeholders reconhecia `a definir`, `to be defined`, `nome do
+  responsável`, `tbd` e `-`. Um assignee fora dela vira **usuário temporário
+  fabricado**: aparece com o nome certo na tela, sem e-mail e sem avatar, e conta
+  como pessoa separada nas métricas — que é o mesmo defeito que a validação de
+  identidade existe para evitar.
+  
+  Achado num projeto real, onde quatro tasks usavam `não atribuído` e contavam
+  como um contribuidor. A forma sem acento entra junto porque as duas convivem em
+  arquivo escrito à mão.
+
 ## 3.2.1
 
 ### Patch Changes
