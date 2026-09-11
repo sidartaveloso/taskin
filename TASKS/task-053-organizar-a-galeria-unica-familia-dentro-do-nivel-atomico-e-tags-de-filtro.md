@@ -1,6 +1,6 @@
 # Task 053 — Organizar a galeria unica: familia dentro do nivel atomico e tags de filtro
 
-- Status: pending
+- Status: done
 - Type: refactor
 - Assignee: sidarta-veloso
 
