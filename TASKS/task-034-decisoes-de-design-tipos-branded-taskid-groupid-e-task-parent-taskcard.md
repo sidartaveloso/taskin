@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: docs
-- Assignee: sidarta-veloso
+- Assignee: sidartaveloso
 
 ## Description
 

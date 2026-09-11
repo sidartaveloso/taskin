@@ -1,5 +1,7 @@
 import type { IUserRegistry, ValidationIssue } from '@opentask/taskin-task-manager';
 import type { User } from '@opentask/taskin-types';
+import { detectLocale, getI18n } from './i18n.js';
+import { readMetadataField, writeMetadataField } from './metadata-style/index.js';
 
 /**
  * What the `Assignee:` line of a task actually points at.
@@ -151,7 +153,21 @@ export async function fixAssignees(
     if (identity.kind !== 'correctable') continue;
 
     const content = await io.readFile(task.file);
-    const next = content.replace(/^(Assignee:[ \t]*)(.*)$/im, (_line, label: string) => `${label}${identity.user.id}`);
+
+    /*
+     * Escrito pelo modulo de estilos, e nao por regex.
+     *
+     * Aqui havia `/^(Assignee:[ \t]*)(.*)$/im`, ancorado no inicio da linha:
+     * num arquivo no estilo `list` a linha e `- Assignee: ...` e o padrao nunca
+     * casava. O `--fix` reportava o aviso, dizia "lint --fix does this" e nao
+     * reescrevia arquivo nenhum.
+     *
+     * O rotulo sai do proprio arquivo para nao criar um segundo campo num
+     * arquivo em pt-BR, que diz `Responsavel:`.
+     */
+    const i18n = getI18n(detectLocale(content));
+    const label = readMetadataField(content, i18n.assignee) === undefined ? 'Assignee' : i18n.assignee;
+    const next = writeMetadataField(content, label, identity.user.id);
 
     if (next !== content) {
       await io.writeFile(task.file, next);

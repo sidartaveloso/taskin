@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: `feat`
-- Assignee: sidarta-veloso
+- Assignee: sidartaveloso
 - Epic: (Vincule à Epic de Controle por Gestos, se houver)
 
 > **Nota (registro histórico):** Spec original do sistema de gestos de atalho
