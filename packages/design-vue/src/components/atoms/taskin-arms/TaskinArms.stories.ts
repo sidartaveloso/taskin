@@ -6,9 +6,9 @@ import { armPosition, armPositionFromPose } from './TaskinArms.types';
 import TaskinArms from './TaskinArms.vue';
 
 const meta = {
-  title: 'Atoms/TaskinArms',
+  title: 'Atoms/Taskin/Arms',
   component: TaskinArms,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     color: {
       control: { type: 'color' },
@@ -383,6 +383,7 @@ export const ArmPositionsGrid: Story = {
 
 // Pose Tracking Story
 export const PoseTracking: Story = {
+  tags: ['webcam'],
   render: () => ({
     setup() {
       const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);

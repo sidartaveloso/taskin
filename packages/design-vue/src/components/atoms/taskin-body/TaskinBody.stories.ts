@@ -4,9 +4,9 @@ import type { TaskinBodyProps } from './TaskinBody.types';
 import TaskinBody from './TaskinBody.vue';
 
 const meta = {
-  title: 'Atoms/TaskinBody',
+  title: 'Atoms/Taskin/Body',
   component: TaskinBody,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     bodyColor: {
       control: { type: 'color' },

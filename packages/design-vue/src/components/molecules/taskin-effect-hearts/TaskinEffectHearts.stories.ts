@@ -3,8 +3,9 @@ import TaskinEffectHearts from './TaskinEffectHearts';
 import type { TaskinEffectHeartsProps } from './TaskinEffectHearts.types';
 
 const meta = {
-  title: 'Molecules/Effects/Hearts',
+  title: 'Molecules/Taskin/Effects/Hearts',
   component: TaskinEffectHearts,
+  tags: ['design-vue'],
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },

@@ -4,9 +4,9 @@ import type { Task } from '../../types';
 import TaskCard from './TaskCard.vue';
 
 const meta: Meta<typeof TaskCard> = {
-  title: 'Organisms/TaskCard',
+  title: 'Organisms/Task/TaskCard',
   component: TaskCard,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     // Individual props for Storybook controls
     id: {

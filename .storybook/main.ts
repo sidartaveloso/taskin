@@ -49,6 +49,30 @@ const config: StorybookConfig = {
     defaultName: 'Documentation',
   },
 
+  /*
+   * As tags sao o eixo que a arvore nao consegue expressar: um componente mora
+   * em uma pasta so, mas "precisa de camera" e "vem do ui-sense" cortam a
+   * arvore de through. Aparecem no filtro da sidebar, onde dao para incluir ou
+   * excluir (o Storybook 10.6 casa por OU entre as incluidas).
+   *
+   * - `design-vue` / `ui-sense`: de onde o componente vem. E a procedencia que
+   *   a composicao por `refs` dava de graca e que a arvore unica perdeu — so
+   *   que agora como filtro, nao como divisao.
+   * - `webcam` / `microphone`: a story pede permissao de dispositivo. Hoje isso
+   *   se descobre clicando e tomando erro, ainda mais fora de contexto seguro,
+   *   onde a falha nao menciona camera.
+   * - `legacy`: superado, mantido para referencia. Sai da sidebar por padrao
+   *   com `defaultFilterSelection: 'exclude'` — continua acessivel por URL e
+   *   pelo filtro, mas para de disputar atencao com o que esta em uso.
+   */
+  tags: {
+    webcam: {},
+    microphone: {},
+    'design-vue': {},
+    'ui-sense': {},
+    legacy: { defaultFilterSelection: 'exclude' },
+  },
+
   typescript: {
     check: false,
   },

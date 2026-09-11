@@ -6,7 +6,7 @@ import TaskGrid from './TaskGrid.vue';
 const meta: Meta<typeof TaskGrid> = {
   title: 'Templates/TaskGrid',
   component: TaskGrid,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     columns: {
       control: 'select',

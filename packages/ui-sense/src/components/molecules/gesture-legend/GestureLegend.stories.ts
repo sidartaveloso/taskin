@@ -4,9 +4,9 @@ import type { GestureMapping } from '../../../composables/use-gesture-shortcuts'
 import GestureLegend from './GestureLegend.vue';
 
 const meta = {
-  title: 'Molecules/GestureLegend',
+  title: 'Molecules/Sense/GestureLegend',
   component: GestureLegend,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'ui-sense'],
   parameters: {
     docs: {
       description: {

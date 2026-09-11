@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import TimeEstimate from './TimeEstimate.vue';
 
 const meta = {
-  title: 'Molecules/TimeEstimate',
+  title: 'Molecules/Task/TimeEstimate',
   component: TimeEstimate,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   /*
    * Prop obrigatoria fornecida no meta: as stories que so definem um `render`
    * proprio herdam daqui em vez de repetir a fixture.

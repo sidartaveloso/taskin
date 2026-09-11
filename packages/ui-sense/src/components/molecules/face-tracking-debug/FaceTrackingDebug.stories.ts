@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import FaceTrackingDebug from './FaceTrackingDebug.vue';
 
 const meta = {
-  title: 'Molecules/FaceTrackingDebug',
+  title: 'Molecules/Sense/FaceTrackingDebug',
   component: FaceTrackingDebug,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'ui-sense'],
   argTypes: {
     data: {
       control: 'object',

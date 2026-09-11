@@ -9,7 +9,7 @@ import PrioritizationPage from './PrioritizationPage.vue';
 const meta: Meta<typeof PrioritizationPage> = {
   title: 'Pages/PrioritizationPage',
   component: PrioritizationPage,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   parameters: {
     docs: {
       description: {
@@ -373,6 +373,7 @@ const gestureMockTasks: Task[] = [
 ];
 
 export const GestureControl: Story = {
+  tags: ['webcam'],
   render: () => ({
     setup() {
       return () =>

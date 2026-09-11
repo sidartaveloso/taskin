@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import DashboardHeader from './DashboardHeader.vue';
 
 const meta: Meta<typeof DashboardHeader> = {
-  title: 'Organisms/DashboardHeader',
+  title: 'Organisms/Task/DashboardHeader',
   component: DashboardHeader,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     title: {
       control: 'text',

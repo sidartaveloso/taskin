@@ -3,8 +3,9 @@ import TaskinEffectFartCloud from './TaskinEffectFartCloud';
 import type { TaskinEffectFartCloudProps } from './TaskinEffectFartCloud.types';
 
 const meta = {
-  title: 'Molecules/Effects/FartCloud',
+  title: 'Molecules/Taskin/Effects/FartCloud',
   component: TaskinEffectFartCloud,
+  tags: ['design-vue'],
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },

@@ -14,9 +14,9 @@ const AVAILABLE_ACTIONS: PrioritizationAction[] = [
 ];
 
 const meta = {
-  title: 'Molecules/GestureWizard',
+  title: 'Molecules/Sense/GestureWizard',
   component: GestureWizard,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'ui-sense'],
   parameters: {
     docs: {
       description: {

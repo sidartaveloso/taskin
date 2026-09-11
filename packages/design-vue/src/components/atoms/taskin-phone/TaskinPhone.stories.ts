@@ -4,9 +4,9 @@ import type { TaskinPhoneProps } from './TaskinPhone.types';
 import TaskinPhone from './TaskinPhone.vue';
 
 const meta = {
-  title: 'Atoms/TaskinPhone',
+  title: 'Atoms/Taskin/Phone',
   component: TaskinPhone,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     width: {
       control: { type: 'number', min: 10, max: 50 },

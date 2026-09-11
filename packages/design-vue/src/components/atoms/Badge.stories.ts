@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import Badge from './Badge.vue';
 
 const meta: Meta<typeof Badge> = {
-  title: 'Atoms/Badge',
+  title: 'Atoms/Base/Badge',
   component: Badge,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     variant: {
       control: 'select',

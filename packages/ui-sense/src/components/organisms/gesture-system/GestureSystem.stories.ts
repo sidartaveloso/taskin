@@ -4,9 +4,9 @@ import { defaultFunctions } from './GestureSystem.types';
 import GestureSystem from './GestureSystem.vue';
 
 const meta = {
-  title: 'Organisms/GestureSystem',
+  title: 'Organisms/Sense/GestureSystem',
   component: GestureSystem,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'ui-sense', 'webcam'],
   parameters: {
     docs: {
       description: {

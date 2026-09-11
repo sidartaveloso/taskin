@@ -3,8 +3,9 @@ import TaskinEffectTears from './TaskinEffectTears';
 import type { TaskinEffectTearsProps } from './TaskinEffectTears.types';
 
 const meta = {
-  title: 'Molecules/Effects/Tears',
+  title: 'Molecules/Taskin/Effects/Tears',
   component: TaskinEffectTears,
+  tags: ['design-vue'],
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },

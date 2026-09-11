@@ -3,8 +3,9 @@ import TaskinEffectThoughtBubble from './TaskinEffectThoughtBubble';
 import type { TaskinEffectThoughtBubbleProps } from './TaskinEffectThoughtBubble.types';
 
 const meta = {
-  title: 'Molecules/Effects/ThoughtBubble',
+  title: 'Molecules/Taskin/Effects/ThoughtBubble',
   component: TaskinEffectThoughtBubble,
+  tags: ['design-vue'],
   argTypes: {
     text: {
       control: { type: 'text' },

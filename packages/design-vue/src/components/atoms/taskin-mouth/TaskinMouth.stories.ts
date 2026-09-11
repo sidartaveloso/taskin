@@ -5,9 +5,9 @@ import type { MouthExpression, TaskinMouthProps } from './TaskinMouth.types';
 import TaskinMouth from './TaskinMouth.vue';
 
 const meta = {
-  title: 'Atoms/TaskinMouth',
+  title: 'Atoms/Taskin/Mouth',
   component: TaskinMouth,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     expression: {
       control: { type: 'select' },
@@ -165,6 +165,7 @@ export const Surprised: Story = {
 
 // Face Tracking Story
 export const FaceTracking: Story = {
+  tags: ['webcam'],
   render: () => ({
     setup() {
       const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);

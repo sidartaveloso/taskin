@@ -6,6 +6,7 @@ import TaskinWithShhh from './TaskinWithShhh.vue';
 const meta = {
   title: 'Organisms/Taskin/Shhh',
   component: TaskinWithShhh,
+  tags: ['design-vue', 'webcam', 'microphone'],
   argTypes: {
     mascotSize: { control: { type: 'number' } },
     showWebcam: { control: { type: 'boolean' } },

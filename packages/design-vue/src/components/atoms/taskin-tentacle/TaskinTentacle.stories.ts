@@ -10,8 +10,9 @@ const swayKeyframes: TentacleAnimationKeyframes = {
 };
 
 const meta = {
-  title: 'Atoms/TaskinTentacle',
+  title: 'Atoms/Taskin/Tentacle',
   component: TaskinTentacle,
+  tags: ['design-vue'],
   argTypes: {
     color: {
       control: { type: 'color' },

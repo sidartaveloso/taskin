@@ -3,8 +3,9 @@ import TaskinEffectZzz from './TaskinEffectZzz';
 import type { TaskinEffectZzzProps } from './TaskinEffectZzz.types';
 
 const meta = {
-  title: 'Molecules/Effects/Zzz',
+  title: 'Molecules/Taskin/Effects/Zzz',
   component: TaskinEffectZzz,
+  tags: ['design-vue'],
   argTypes: {
     animationsEnabled: {
       control: { type: 'boolean' },
