@@ -1,6 +1,6 @@
 # Task 019 — fazer push automatico e pull automatico
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: A definir
 
