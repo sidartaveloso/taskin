@@ -82,24 +82,36 @@ describe('FileSystemTaskProvider.lint — assignees', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('rewrites the unambiguous spelling with --fix, preserving the rest of the task', async () => {
-    const filePath = writeTask('005', 'anasouza');
+  /*
+   * Nos tres estilos, e nao so no `plain`.
+   *
+   * O `fixAssignees` reescrevia por `/^(Assignee:[ \t]*)(.*)$/im`, ancorado no
+   * inicio da linha. Num arquivo `list` a linha e `- Assignee: ...` e o padrao
+   * nao casava: o lint avisava, dizia "lint --fix does this" e nao mexia no
+   * arquivo. Passou despercebido porque esta fixture era `plain`, o unico
+   * estilo em que aquela regex ainda funcionava.
+   */
+  it.each(['plain', 'list', 'hard-break'] as const)(
+    'rewrites the unambiguous spelling with --fix num arquivo %s, preservando o resto',
+    async (style) => {
+      const filePath = writeTask('005', 'anasouza', style);
 
-    await (await makeProvider()).lint(true);
+      await (await makeProvider()).lint(true);
 
-    /*
-     * Nao da para comparar o arquivo byte a byte: o `fixTaskFile` tambem
-     * normaliza o bloco de metadados — dentro do estilo que o arquivo ja usa.
-     */
-    const after = readFileSync(filePath, 'utf-8');
-    expect(after).toMatch(/^Assignee: ana-souza$/m);
-    expect(after).not.toContain('anasouza');
-    expect(after).toContain('# Task 005 — Alvo');
-    expect(after).toMatch(/^Status: pending$/m);
-    expect(after).toMatch(/^Type: feat$/m);
-    expect(after).toContain('## Description');
-    expect(after).toContain('x');
-  });
+      const after = readFileSync(filePath, 'utf-8');
+      expect(after).toMatch(/^(?:- )?Assignee: ana-souza\\?$/m);
+      expect(after).not.toContain('anasouza');
+      expect(after).toContain('# Task 005 — Alvo');
+      expect(after).toMatch(/^(?:- )?Status: pending\\?$/m);
+      expect(after).toMatch(/^(?:- )?Type: feat\\?$/m);
+      expect(after).toContain('## Description');
+      expect(after).toContain('x');
+
+      // O conserto nao pode trocar o estilo do arquivo pelo caminho.
+      const bloco = after.split('\n').filter((l) => /(?:Status|Type|Assignee):/.test(l));
+      expect(new Set(bloco.map((l) => l.startsWith('- ')))).toEqual(new Set([style === 'list']));
+    },
+  );
 
   it('leaves an unknown assignee untouched by --fix, and still reports it', async () => {
     const filePath = writeTask('006', 'fernandogatti');

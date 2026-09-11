@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: feat
-- Assignee: sidarta-veloso
+- Assignee: sidartaveloso
 
 ## Description
 

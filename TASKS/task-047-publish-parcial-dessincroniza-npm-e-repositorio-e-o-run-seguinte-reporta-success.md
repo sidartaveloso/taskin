@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: fix
-- Assignee: sidarta-veloso
+- Assignee: sidartaveloso
 
 ## Description
 

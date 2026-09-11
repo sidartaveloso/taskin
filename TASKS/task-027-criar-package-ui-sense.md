@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: refactor
-- Assignee: sidarta-veloso
+- Assignee: sidartaveloso
 
 ## Description
 

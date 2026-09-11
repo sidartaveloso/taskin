@@ -47,8 +47,9 @@ describe('classifyAssignee', () => {
     expect(classifyAssignee('   ', registryWith(ANA))).toEqual({ kind: 'unassigned', raw: '   ' });
   });
 
-  // `sidartaveloso` neste repo: o id e `sidarta-veloso` e o nome `Sidarta Veloso`,
-  // entao `resolveUser` falha e o assignee virava usuario temporario fabricado.
+  // `sidarta-veloso` neste repo: o id e `sidartaveloso` e o nome `Sidarta Veloso`,
+  // entao `resolveUser` falha — nem id, nem slug do nome — e o assignee viraria
+  // usuario temporario fabricado se o fold nao o trouxesse de volta.
   it('reports a spelling that matches exactly one user as correctable', () => {
     const identity = classifyAssignee('anasouza', registryWith(ANA));
 

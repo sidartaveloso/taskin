@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: refactor
-- Assignee: sidarta-veloso
+- Assignee: sidartaveloso
 
 ## Description
 

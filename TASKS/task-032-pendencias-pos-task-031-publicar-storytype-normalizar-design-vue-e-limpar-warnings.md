@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: chore
-- Assignee: sidarta-veloso
+- Assignee: sidartaveloso
 
 ## Description
 
