@@ -11,13 +11,25 @@
 
 import path, { join } from 'path';
 import { exit } from 'process';
-import type { ITaskProvider, ValidationIssue } from '../../packages/task-manager/dist/index.js';
-import { TaskManager } from '../../packages/task-manager/dist/index.js';
+/*
+ * Importa o **fonte**, e nao o `dist`.
+ *
+ * Este script roda sob `tsx`, que le TypeScript direto — apontar para o `dist`
+ * era exigir que alguem tivesse buildado antes. Em arvore limpa o `pnpm lint`
+ * morria com `Cannot find module '../../packages/task-manager/dist/index.js'`,
+ * e so aparecia na CI: na maquina de quem desenvolve o `dist/` ja esta la de
+ * uma build anterior.
+ *
+ * Nao da para corrigir declarando `lint.dependsOn: build` no turbo: o
+ * `lint:tasks` e chamado pelo script `lint` da raiz, fora do grafo do turbo.
+ */
+import type { ITaskProvider, ValidationIssue } from '../../packages/task-manager/src/index.js';
+import { TaskManager } from '../../packages/task-manager/src/index.js';
 
 // Dynamic import to avoid TypeScript rootDir issues
 async function createProvider(tasksDir: string): Promise<ITaskProvider> {
   const { FileSystemTaskProvider, UserRegistry } = await import(
-    '../../packages/file-system-task-provider/dist/index.js'
+    '../../packages/file-system-task-provider/src/index.js'
   );
 
   // `taskinDir` e o diretorio `.taskin/`, nao a raiz do projeto: e de dentro
