@@ -321,7 +321,17 @@ describe.sequential('Taskin CLI E2E Tests', () => {
         cwd: TEST_DIR,
       });
 
-      expect(stdout).toContain('valid');
+      /*
+       * Afirma a ausencia de erro, e nao a palavra "valid".
+       *
+       * A assercao antiga era `toContain('valid')`, que passava por acidente:
+       * casava tanto com `All task files are valid!` quanto com a palavra
+       * dentro de qualquer outra frase. O que importa aqui e o comando nao ter
+       * encontrado erro — e `execAsync` ja garante isso, porque o lint sai com
+       * codigo != 0 quando encontra.
+       */
+      expect(stdout).not.toContain('error(s)');
+      expect(stdout).toMatch(/All task files are valid!|No errors/);
     }, 60000);
 
     it('should detect invalid task files', async () => {
