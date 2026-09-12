@@ -105,6 +105,14 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # Preflight do release: recusa antes de construir se algum pacote
+      # publicavel nao declarar `repository.url`. Foi esse campo vazio que fez o
+      # `changeset publish` do 06/09 abortar no meio (E422 do npm) e partir o
+      # release em duas passadas, com um pacote ja no registry. Barrar aqui
+      # recusa o release inteiro de uma vez, antes de qualquer publicacao.
+      - name: Assert publishable packages declare repository.url
+        run: pnpm verificar:repository-url
+
       - name: Build packages
         run: pnpm build
 
@@ -118,3 +126,14 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Guarda-corpo pos-publish: quando este run publicou algo
+      # (`published == 'true'`), falha alto se a versao de qualquer pacote
+      # publicavel nao tiver tag no remoto. No 06/09 o `changeset publish`
+      # disse "Created git tags." mas nenhuma chegou ao remoto, e o job ficou
+      # verde — o pior estado, porque npm e repositorio ficaram dessincronizados
+      # sem pedir atencao de ninguem. Como a marca deriva do que esta publicado,
+      # um retry que empurre as tags que faltam zera a divergencia.
+      - name: Assert published versions are tagged on the remote
+        if: steps.changesets.outputs.published == 'true'
+        run: pnpm verificar:tags-de-publicacao
