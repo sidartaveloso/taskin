@@ -2,7 +2,8 @@
  * list command - List all tasks in the project
  */
 
-import type { ListTasksOptions, TaskStatus, TaskType } from '@opentask/taskin-types';
+import { filterTasks, summarizeTask, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
+import type { ListTasksOptions, Task, TaskStatus, TaskType } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, printHeader } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
@@ -34,6 +35,10 @@ export const listCommand = defineCommand({
       flags: '--closed',
       description: 'Show only closed tasks (done, canceled)',
     },
+    {
+      flags: '--json',
+      description: 'Print the tasks as JSON, for other tools to consume',
+    },
   ],
   handler: async (filter: string | undefined, options: ListTasksOptions) => {
     await listTasks(filter, options);
@@ -44,7 +49,16 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
   // Check if project is initialized
   requireTaskinProject();
 
-  printHeader('Task List', '📊');
+  /*
+   * Com `--json` nada de decoracao vai para o stdout — nem cabecalho, nem
+   * aviso de lista vazia. Quem consome faz `JSON.parse` na saida inteira, e
+   * uma linha a mais quebra isso.
+   */
+  const comoJson = options.json === true;
+
+  if (!comoJson) {
+    printHeader('Task List', '📊');
+  }
 
   // Find TASKS directory
   const { provider: taskProvider } = await resolveTaskProvider();
@@ -52,48 +66,33 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
   // Get all tasks
   const tasks = await taskProvider.getAllTasks();
 
-  if (tasks.length === 0) {
+  if (tasks.length === 0 && !comoJson) {
     console.log(colors.warning('No tasks found in TASKS/ directory'));
     return;
   }
 
-  // Define status categories
-  const openStatuses: TaskStatus[] = ['pending', 'in-progress', 'paused', 'in-review', 'blocked'];
-  const closedStatuses: TaskStatus[] = ['done', 'canceled'];
+  /*
+   * A selecao vive em `filterTasks`, no pacote agnostico, e nao aqui.
+   *
+   * Havia duas implementacoes divergentes da mesma pergunta: esta, que casava
+   * o responsavel por substring em nome ou id, e a da classe `Taskin`, que
+   * casava `userId` exato. A saida em JSON e o servidor MCP fazem a mesma
+   * pergunta — seriam a terceira e a quarta.
+   */
+  const criteria: TaskFilterCriteria = {
+    ...(options.status && { status: options.status }),
+    ...(options.type && { type: options.type }),
+    ...(options.assignee && { assignee: options.assignee }),
+    ...(options.open && { open: true }),
+    ...(options.closed && { closed: true }),
+    ...(filter && { text: filter }),
+  };
 
-  // Apply filters
-  let filteredTasks = tasks;
+  const filteredTasks = filterTasks(tasks, criteria);
 
-  if (options.status) {
-    filteredTasks = filteredTasks.filter((t) => t.status === options.status);
-  } else if (options.open) {
-    filteredTasks = filteredTasks.filter((t) => t.status && openStatuses.includes(t.status));
-  } else if (options.closed) {
-    filteredTasks = filteredTasks.filter((t) => t.status && closedStatuses.includes(t.status));
-  }
-
-  if (options.type) {
-    filteredTasks = filteredTasks.filter((t) => t.type === options.type);
-  }
-
-  if (options.assignee) {
-    filteredTasks = filteredTasks.filter(
-      (t) =>
-        t.assignee?.name.toLowerCase().includes(options.assignee!.toLowerCase()) ||
-        t.assignee?.id.toLowerCase().includes(options.assignee!.toLowerCase()),
-    );
-  }
-
-  if (filter) {
-    const lowerFilter = filter.toLowerCase();
-    filteredTasks = filteredTasks.filter(
-      (t) =>
-        t.id.includes(lowerFilter) ||
-        t.title.toLowerCase().includes(lowerFilter) ||
-        t.status.toLowerCase().includes(lowerFilter) ||
-        t.assignee?.name.toLowerCase().includes(lowerFilter) ||
-        t.assignee?.id.toLowerCase().includes(lowerFilter),
-    );
+  if (comoJson) {
+    console.log(JSON.stringify(filteredTasks.map(summarizeTask), null, 2));
+    return;
   }
 
   if (filteredTasks.length === 0) {

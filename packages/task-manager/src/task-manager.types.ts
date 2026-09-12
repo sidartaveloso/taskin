@@ -155,6 +155,18 @@ export interface ITaskManager<TTask extends Task = Task> {
   finishTask: (taskId: TaskId) => Promise<TTask>;
 
   /**
+   * Every task the configured provider knows about.
+   *
+   * Delegates to the provider, like {@link ITaskManager.lint} does. Listing is
+   * a domain question — "what work exists?" — and a consumer that only holds a
+   * manager should not need the provider to answer it. The MCP server did, and
+   * shipped a `taskin://tasks` resource that answered with a placeholder.
+   *
+   * @returns The tasks, in whatever order the provider returns them
+   */
+  getAllTasks: () => Promise<TTask[]>;
+
+  /**
    * Mark a task as ready for review.
    * Transitions the task from 'in-progress' to 'in-review' status.
    * @param taskId - The unique identifier of the task

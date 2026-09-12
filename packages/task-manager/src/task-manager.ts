@@ -65,6 +65,17 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return updatedTask;
   }
 
+  /**
+   * Every task the configured provider knows about.
+   *
+   * Pass-through on purpose: the manager owns the state transitions, not the
+   * storage. Having it here is what lets a consumer holding only the manager —
+   * the MCP server — answer "what work exists?".
+   */
+  async getAllTasks(): Promise<TTask[]> {
+    return await this.taskProvider.getAllTasks();
+  }
+
   async finishTask(taskId: TaskId): Promise<TTask> {
     const task = await this.taskProvider.findTask(taskId);
 

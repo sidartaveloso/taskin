@@ -9,6 +9,7 @@ import {
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import type { ITaskManager } from '@opentask/taskin-task-manager';
+import { filterTasks, summarizeTask, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
 import { type TaskId, TaskIdSchema } from '@opentask/taskin-types';
 import type {
   ITaskMCPServer,
@@ -100,14 +101,17 @@ export class TaskMCPServer implements ITaskMCPServer {
         arguments: request.params.arguments,
       });
 
-      // MCP SDK expects a content array
+      /*
+       * `callTool` ja devolve blocos de conteudo, que e o que o SDK espera.
+       *
+       * Aqui havia `text: result.content` — embrulhar o arranjo dentro de um
+       * bloco de texto, cujo `text` tem que ser string. O SDK recusava a
+       * resposta inteira com `invalid_union`, entao `start_task` e
+       * `finish_task` nunca funcionaram pelo transporte real. Nenhum teste
+       * pegou porque todos chamam `callTool` direto e pulam este involucro.
+       */
       return {
-        content: [
-          {
-            type: 'text' as const,
-            text: result.content,
-          },
-        ],
+        content: result.content,
         isError: result.isError,
       };
     });
@@ -188,6 +192,23 @@ export class TaskMCPServer implements ITaskMCPServer {
   listTools(): { tools: MCPTool[] } {
     const tools: MCPTool[] = [
       {
+        name: 'list_tasks',
+        description:
+          'List the tasks in the project. Returns a JSON array with what identifies each task — id, title, status, type, assignee — without the markdown body. Fetch a task body by id after choosing one.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', description: 'Exact status (pending, in-progress, done, ...)' },
+            type: { type: 'string', description: 'Exact type (feat, fix, chore, ...)' },
+            assignee: { type: 'string', description: 'Assignee id or name, whole or in part' },
+            open: { type: 'boolean', description: 'Only tasks still open' },
+            closed: { type: 'boolean', description: 'Only tasks already closed' },
+            text: { type: 'string', description: 'Free text over id, title, status and assignee' },
+          },
+          required: [],
+        },
+      },
+      {
         name: 'start_task',
         description: 'Start working on a task by changing its status to in-progress',
         inputSchema: {
@@ -228,6 +249,9 @@ export class TaskMCPServer implements ITaskMCPServer {
       this.log(`Calling tool: ${params.name}`, params.arguments);
 
       switch (params.name) {
+        case 'list_tasks':
+          return await this.handleListTasks(params.arguments ?? {});
+
         case 'start_task': {
           const taskId = readTaskId(params.arguments?.taskId);
           return taskId ? await this.handleStartTask(taskId) : invalidTaskId(params.arguments?.taskId);
@@ -454,11 +478,42 @@ Let me start by marking the task as done using the finish_task tool.`,
   }
 
   /**
+   * Le e seleciona as tarefas, pela mesma seam que o CLI usa.
+   *
+   * `filterTasks` e `summarizeTask` vivem no pacote agnostico justamente para
+   * que a resposta aqui e a de `taskin list --json` nao possam divergir — ja
+   * houve duas filtragens discordando no repositorio.
+   */
+  private async selecionarTarefas(criteria: TaskFilterCriteria) {
+    const tasks = await this.taskManager.getAllTasks();
+    return filterTasks(tasks, criteria).map(summarizeTask);
+  }
+
+  /** Converte os argumentos crus da chamada MCP no criterio tipado. */
+  private static criterioDe(args: Record<string, unknown>): TaskFilterCriteria {
+    return {
+      ...(typeof args.status === 'string' && { status: args.status as TaskFilterCriteria['status'] }),
+      ...(typeof args.type === 'string' && { type: args.type as TaskFilterCriteria['type'] }),
+      ...(typeof args.assignee === 'string' && { assignee: args.assignee }),
+      ...(args.open === true && { open: true }),
+      ...(args.closed === true && { closed: true }),
+      ...(typeof args.text === 'string' && { text: args.text }),
+    };
+  }
+
+  private async handleListTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    const tarefas = await this.selecionarTarefas(TaskMCPServer.criterioDe(args));
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify(tarefas, null, 2) }],
+      isError: false,
+    };
+  }
+
+  /**
    * List available resources
    */
   async listResources(): Promise<MCPResourceListResult> {
-    // In a real implementation, we would list all tasks as resources
-    // For now, returning an example structure
     return {
       resources: [
         {
@@ -481,16 +536,13 @@ Let me start by marking the task as done using the finish_task tool.`,
     const uri = params.uri;
 
     if (uri === 'taskin://tasks') {
-      // In a real implementation, we would fetch all tasks
+      const tarefas = await this.selecionarTarefas({});
       return {
         contents: [
           {
             uri,
             mimeType: 'application/json',
-            text: JSON.stringify({
-              message: 'Task list would be here',
-              note: 'Requires ITaskProvider integration',
-            }),
+            text: JSON.stringify(tarefas, null, 2),
           },
         ],
       };
