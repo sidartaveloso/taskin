@@ -118,6 +118,9 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `--filter-open` - Show only open tasks
   - `--filter-closed` - Show only closed tasks
 - `taskin mcp-server` - Start MCP server for Claude Desktop integration (alias: `mcp`)
+- `taskin mcp-install` - Register the MCP server in this project's `.mcp.json`
+  - `-f, --force` - Replace an existing `taskin` entry that differs
+  - `--no-probe` - Skip starting the server to verify the entry works
 - `taskin help` - Show help information
 
 ### Automation Levels
@@ -138,36 +141,29 @@ Taskin includes an MCP server that allows AI assistants like Claude Desktop to i
 taskin mcp-server
 ```
 
+### Registering it in a project
+
+```bash
+taskin mcp-install
+```
+
+Writes `.mcp.json` at the **project root** — not wherever you ran it from, which
+matters in a monorepo, where a subdirectory has no lockfile to detect the
+package manager from. It merges with servers already configured there, leaves a
+differing `taskin` entry alone until you pass `--force`, and refuses a malformed
+file instead of destroying it.
+
+Then it starts the server over stdio and compares the tools it advertises
+against the ones this version offers. Asking only "did it answer?" is not
+enough: the command can resolve to a *different* taskin — an older global
+install answers happily, with the wrong set of tools. Skip the check with
+`--no-probe`.
+
 ### Integration with Claude Desktop
-
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
-
-```json
-{
-  "mcpServers": {
-    "taskin": {
-      "args": ["taskin@beta", "mcp-server"],
-      "command": "npx"
-    }
-  }
-}
-```
-
-Or if installed globally:
-
-```json
-{
-  "mcpServers": {
-    "taskin": {
-      "args": ["mcp-server"],
-      "command": "taskin"
-    }
-  }
-}
-```
 
 **Available MCP Tools:**
 
+- `list_tasks` - List tasks, with optional filters
 - `start_task` - Start working on a task
 - `finish_task` - Mark a task as finished
 

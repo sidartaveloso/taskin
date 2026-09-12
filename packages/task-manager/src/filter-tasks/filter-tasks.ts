@@ -13,7 +13,7 @@ const EM_ABERTO: readonly TaskStatus[] = ['pending', 'in-progress', 'paused', 'i
 const ENCERRADOS: readonly TaskStatus[] = ['done', 'canceled'];
 
 const contem = (valor: string | undefined, procurado: string): boolean =>
-  valor !== undefined && valor.toLowerCase().includes(procurado);
+  valor?.toLowerCase().includes(procurado) ?? false;
 
 /**
  * Casa o responsavel por id ou nome, inteiro ou em parte.

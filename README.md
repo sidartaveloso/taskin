@@ -150,22 +150,23 @@ The server exposes three tools — `list_tasks`, `start_task` and `finish_task` 
 and the `taskin://tasks` resource. See
 [docs/MCP_CLAUDE_SETUP.md](./docs/MCP_CLAUDE_SETUP.md).
 
-A coding agent opening **this** repository picks the server up on its own,
-through the `.mcp.json` at the root. In your own project, point at it yourself:
+To register it in your own project:
 
-```json
-{
-  "mcpServers": {
-    "taskin": {
-      "command": "taskin",
-      "args": ["mcp-server"]
-    }
-  }
-}
+```bash
+taskin mcp-install
 ```
 
-`taskin init` does not write that file — the agent's configuration is yours to
-decide.
+It writes the `.mcp.json` at the **project root** (not wherever you ran it
+from), detects your package manager, merges with any servers already
+configured, and then starts the server to check the entry actually works —
+because a command can resolve to a *different* taskin, and an older one will
+answer happily with the wrong set of tools.
+
+Use `--force` to replace an existing `taskin` entry that differs, and
+`--no-probe` to skip the check.
+
+`taskin init` does not write that file: registering an MCP server is a
+deliberate step, not a side effect of setting up a project.
 
 ## 🔀 Git Flow: Automatic Sync
 

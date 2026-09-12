@@ -2,6 +2,10 @@
 
 VS Code has native support for MCP servers through GitHub Copilot Chat. This allows you to manage tasks directly via chat with Copilot.
 
+> Copilot Chat reads its own `settings.json`, which is what this document
+> describes. For agents that read the repository's `.mcp.json` instead — Claude
+> Code among them — run `taskin mcp-install` and skip the handwriting.
+
 ## VS Code Configuration
 
 ### 1. Configuration via settings.json
