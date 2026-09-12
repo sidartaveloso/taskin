@@ -1,6 +1,6 @@
 # 🧩 Task 056 — A tela de --help esconde quatro comandos: gerar a ajuda a partir do proprio program
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
 
@@ -53,15 +53,15 @@ mesmo jeito, so sem a secao de exemplos.
 
 ## Tasks
 
-- [ ] `showCustomHelp` passa a receber o `program` e a percorrer
+- [x] `showCustomHelp` passa a receber o `program` e a percorrer
       `program.commands` em vez do array literal
-- [ ] Exemplos num mapa por nome de comando; ausencia de exemplo nao esconde o
+- [x] Exemplos num mapa por nome de comando; ausencia de exemplo nao esconde o
       comando
-- [ ] Teste que compara o conjunto de comandos registrados com o conjunto que a
+- [x] Teste que compara o conjunto de comandos registrados com o conjunto que a
       ajuda renderiza — e falha se algum ficar de fora
-- [ ] Conferir que os aliases (`ls`, `begin`, `stop`, `done`, `setup`, `mcp`)
+- [x] Conferir que os aliases (`ls`, `begin`, `stop`, `done`, `setup`, `mcp`)
       continuam aparecendo
-- [ ] Changeset do `taskin`
+- [x] Changeset do `taskin`
 
 ## Notes
 
@@ -78,7 +78,23 @@ Nos tres casos a correcao e a mesma: derivar da fonte em vez de manter em
 paralelo. O teste da ultima tarefa acima e o que impede a divergencia de
 voltar.
 
+### O icone tambem era copia a mao
+
+Achado ao rodar a tela pela primeira vez: a descricao de cada comando **ja
+comeca com um icone** (`🔍 Validate task markdown files`), e o mapa que eu
+mantinha em paralelo imprimia os dois — `🎯 taskin init` seguido de
+`🎯 Initialize Taskin`. O icone passou a sair da propria descricao, e o mapa
+ficou so com os exemplos.
+
+### A guarda ficou menor do que a task previa
+
+A task pedia um teste comparando o conjunto de comandos registrados com o que a
+ajuda renderiza. Derivando de `program.commands`, "o comando sumir da ajuda"
+deixou de ser possivel por construcao — o teste passou a guardar o que
+**continua** a mao (um comando sem exemplo aparece do mesmo jeito) e as duas
+transformacoes que a tela faz: separar o icone da descricao, e anunciar aliases
+e opcoes.
+
 ### Relacionado
 
-task-055 — comando de usuarios. Se ele nascer depois desta, entra na ajuda
-sozinho.
+task-055 — comando de usuarios. Nasce ja aparecendo na ajuda.
