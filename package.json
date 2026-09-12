@@ -46,6 +46,7 @@
     "publish:latest": "node scripts/publish-packages.js --tag latest",
     "publish:packages": "node scripts/publish-packages.js",
     "publish:pypi": "turbo run publish:pypi",
+    "reconcile:tags": "tsx dev/scripts/reconciliar-tags.ts",
     "publish:pypi:check": "turbo run publish:pypi:check",
     "storybook": "storybook dev -p 6106",
     "storybook:all": "pnpm --parallel --filter @opentask/taskin-design-vue --filter @opentask/ui-sense storybook",

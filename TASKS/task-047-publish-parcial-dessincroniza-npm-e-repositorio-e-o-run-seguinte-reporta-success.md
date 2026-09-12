@@ -34,10 +34,12 @@ sem arqueologia no historico.
       o run seguinte fica verde sem empurrar tag. Sem reproducao nao ha como saber se a causa e a
       action decidindo pelo resultado do primeiro publish, o `--follow-tags` faltando, ou
       `createGithubReleases` desligado por algum caminho. **Hoje isso e hipotese, nao diagnostico.**
-- [ ] Fazer o job **falhar alto** quando publicou algo e nao conseguiu marcar: comparar as versoes
+- [x] Fazer o job **falhar alto** quando publicou algo e nao conseguiu marcar: comparar as versoes
       dos `package.json` publicaveis com as tags do remoto ao fim do job e sair diferente de zero
       se divergirem. Verde com repositorio dessincronizado e o pior estado possivel, porque nao
-      pede atencao de ninguem.
+      pede atencao de ninguem. Feito em `dev/scripts/reconciliador-de-tags/`, exposto como
+      `pnpm reconcile:tags` e ligado ao `release.yml` num passo condicionado a
+      `steps.changesets.outputs.published == 'true'`, depois do `changeset publish`.
 - [x] Validar `repository.url` **antes** de publicar, nao no meio: um passo que percorre os
       pacotes nao privados e recusa o release se algum nao declarar o campo. Foi exatamente o que
       partiu o publish em duas passadas. Feito em `dev/scripts/validador-de-repository-url/`,
