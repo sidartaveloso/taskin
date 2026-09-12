@@ -1,5 +1,107 @@
 # taskin
 
+## 4.2.0
+
+### Minor Changes
+
+- 6bebe35: O taskin passa a entregar a lista de tarefas de forma que outra ferramenta
+  consuma — `taskin list --json` e `list_tasks` no servidor MCP.
+  
+  ## O que havia
+  
+  O `list` só imprimia tabela colorida. O servidor MCP não tinha ferramenta de
+  listagem, e o recurso `taskin://tasks` **anunciava** a capacidade e respondia
+  com um espaço reservado:
+  
+  ```json
+  {"message": "Task list would be here", "note": "Requires ITaskProvider integration"}
+  ```
+  
+  Pior que não oferecer: quem consome recebe algo com cara de dado.
+  
+  ## Uma seleção, não três
+  
+  Havia duas implementações da mesma pergunta, já discordando — o comando `list`
+  casava o responsável por substring em nome ou id, e a classe `Taskin` casava
+  `userId` exato, além de projetar a task derrubando o `assignee`. A saída em
+  JSON e o MCP seriam a terceira e a quarta.
+  
+  `filterTasks` e `summarizeTask` vivem no pacote agnóstico, e os três caminhos
+  perguntam ao mesmo lugar.
+  
+  ## Detalhes que importam para quem consome
+  
+  `list --json` sai **sem cabeçalho, moldura ou aviso** — a saída inteira é JSON
+  válido, e lista vazia é `[]`. Não carrega `content` nem `description`: o
+  provider de arquivos guarda o markdown inteiro neles, e a listagem deste
+  repositório passaria de vinte mil linhas. O corpo se busca pelo id.
+  
+  `getAllTasks` entrou no `ITaskManager`, delegando ao provider como `lint` já
+  fazia — era o que faltava para um consumidor que só tem o manager responder
+  "que trabalho existe?".
+  
+  `ListTasksOptions.status` e `.type` passam a usar os tipos do domínio em vez de
+  `string`. Um valor fora do conjunto nunca casaria, e falhava em silêncio.
+  
+  ## Um defeito de transporte, corrigido junto
+  
+  Exercitando o servidor por stdio, o SDK recusava a resposta com
+  `invalid_union: expected string, received array`. O invólucro fazia
+  `text: result.content`, embrulhando o arranjo de blocos dentro de um bloco cujo
+  `text` precisa ser string — então **`start_task` e `finish_task` nunca
+  funcionaram pelo transporte real**. Nenhum teste pegava porque todos chamavam
+  `callTool` direto, pulando o invólucro.
+
+### Patch Changes
+
+- 8c06be6: A tela de `taskin --help` deixa de esconder quatro comandos.
+  
+  Ela era uma lista escrita à mão, paralela à que o `index.ts` registra no
+  commander, e as duas divergiram: mostrava **10 dos 14** comandos. `review`,
+  `stats`, `export` e `notify` existiam, eram testados, e não apareciam para quem
+  lia a ajuda — funcionalidade pronta que ninguém descobria.
+  
+  A lista passa a sair de `program.commands`. Nome, argumentos, aliases, opções e
+  descrição vêm de onde o comando já os declarou, então a divergência deixa de
+  ser possível.
+  
+  ## O que continua à mão, e por quê
+  
+  Os **exemplos** — eles dizem o que vale a pena fazer, não o que é possível, e
+  ninguém os deriva. Ficam num mapa indexado pelo nome do comando, e a ausência
+  não esconde ninguém: um comando sem exemplo aparece do mesmo jeito, só sem a
+  seção.
+  
+  O ícone deixou de ser mantido à parte: a descrição de cada comando já começa com
+  um, e o mapa paralelo imprimia os dois (`🎯 taskin init` seguido de
+  `🎯 Initialize Taskin`).
+- 79ef2f5: O símbolo da mensagem deixa de aparecer duas vezes.
+  
+  ```
+  ✓ ✓ Created .taskin.json
+  ✓ ✓ User "sidartaveloso" (sidartaveloso@gmail.com) created successfully!
+  ```
+  
+  `success`, `error`, `info` e `warning` já prefixam `✓`, `✗`, `ℹ` e `⚠`. Eram 24
+  chamadas que passavam a mensagem começando pelo mesmo símbolo, em 8 arquivos —
+  `init`, `start`, `pause`, `finish`, `review`, `new`, `dashboard` e
+  `mcp-server`.
+  
+  Nenhum teste percebia, porque nenhum olhava a saída. Entra uma guarda que lê o
+  próprio fonte e falha nomeando arquivo e linha: é mais barato que afirmar a
+  saída de cada comando, e pega a regressão onde ela nasce.
+  
+  Os dois `console.error('❌ ...')` do `export` ficam como estão — não passam pelo
+  helper, então não duplicam.
+- Updated dependencies [aafeae4]
+- Updated dependencies [6bebe35]
+  - @opentask/taskin-task-server-mcp@0.3.0
+  - @opentask/taskin-task-manager@3.1.0
+  - @opentask/taskin-types@2.2.0
+  - @opentask/taskin-file-system-provider@3.2.4
+  - @opentask/taskin-task-server-ws@0.3.3
+  - @opentask/taskin-git-utils@3.0.3
+
 ## 4.1.4
 
 ### Patch Changes

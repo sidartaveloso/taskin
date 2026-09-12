@@ -1,5 +1,12 @@
 # @opentask/taskin-git-utils
 
+## 3.0.3
+
+### Patch Changes
+
+- Updated dependencies [6bebe35]
+  - @opentask/taskin-types@2.2.0
+
 ## 3.0.2
 
 ### Patch Changes

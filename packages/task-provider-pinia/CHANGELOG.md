@@ -1,5 +1,13 @@
 # @opentask/taskin-task-provider-pinia
 
+## 3.0.3
+
+### Patch Changes
+
+- Updated dependencies [6bebe35]
+  - @opentask/taskin-task-manager@3.1.0
+  - @opentask/taskin-types@2.2.0
+
 ## 3.0.2
 
 ### Patch Changes
