@@ -1,5 +1,8 @@
 # Dependencies
 node_modules/
+# O sandcastle monta o worktree dentro do container, e o pnpm de la
+# materializa o seu store aqui quando nao encontra o do host.
+.pnpm-store/
 .pnp
 .pnp.js
 
