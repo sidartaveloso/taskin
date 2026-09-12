@@ -3,6 +3,7 @@
 - Status: pending
 - Type: test
 - Assignee: Sidarta Veloso
+- Priority: 240
 
 ## Description
 

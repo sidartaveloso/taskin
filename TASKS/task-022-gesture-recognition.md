@@ -3,6 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: To be defined
+- Priority: 40
 
 ## Description
 
