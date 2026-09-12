@@ -1,6 +1,6 @@
 # Task 006 — User management system
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: To be defined
 - Priority: 10
