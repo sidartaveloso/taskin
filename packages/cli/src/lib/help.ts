@@ -42,6 +42,7 @@ const EXEMPLOS: Readonly<Record<string, readonly string[]>> = {
   'mcp-install': ['taskin mcp-install', 'taskin mcp-install --force', 'taskin mcp-install --no-probe'],
   'mcp-server': ['taskin mcp-server', 'taskin mcp'],
   notify: ['taskin notify --event task:done --task 001'],
+  user: ['taskin user', 'taskin user list', 'taskin user add --name "Ana Souza" --email ana@example.com'],
 };
 
 const ICONE_PADRAO = '•';

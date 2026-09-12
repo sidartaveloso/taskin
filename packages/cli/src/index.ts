@@ -21,6 +21,7 @@ import { pauseCommand } from './commands/pause.js';
 import { reviewCommand } from './commands/review.js';
 import { startCommand } from './commands/start.js';
 import { statsCommand } from './commands/stats.js';
+import { registerUserCommand } from './commands/user.js';
 import { showCustomHelp } from './lib/help.js';
 import { loadDotEnv } from './lib/notification/env-resolver.js';
 import { getVersion } from './version.js';
@@ -59,6 +60,7 @@ dashboardCommand(program);
 mcpInstallCommand(program);
 mcpServerCommand(program);
 notifyCommand(program);
+registerUserCommand(program);
 
 // Intercept --help at root level
 program.on('option:help', () => {
