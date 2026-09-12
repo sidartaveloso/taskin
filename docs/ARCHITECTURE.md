@@ -220,7 +220,9 @@ LLM continues conversation
   - `taskin mcp-install`: Registra o MCP server no `.mcp.json` do projeto
     - `-f, --force`: Substitui uma entrada `taskin` divergente
     - `--no-probe`: Pula a subida do servidor para verificar a entrada
-  - `taskin start/finish/pause <task-id>`: Comandos de task management
+  - `taskin start/finish/pause/review <task-id>`: Comandos de task management
+    - `--no-skip-ci`: Escreve o commit de status sem a marca de pular CI, para o
+      push que carrega trabalho junto (o GitHub lê só o commit de topo)
 - **Features**:
   - Colored terminal output (chalk)
   - Graceful shutdown (SIGINT/SIGTERM)

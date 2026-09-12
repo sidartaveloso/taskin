@@ -7,6 +7,7 @@ import { buildTaskStatusCommitMessage, GitService, type IGitService } from '@ope
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { execSync } from 'child_process';
 import path from 'path';
+import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
@@ -20,6 +21,8 @@ interface FinishTaskOptions {
   skipUpdate?: boolean;
   sound?: boolean;
   dryRun?: boolean;
+  /** `false` com --no-skip-ci: nao marca o commit de status. */
+  skipCi?: boolean;
 }
 
 export const finishCommand = defineCommand({
@@ -38,6 +41,10 @@ export const finishCommand = defineCommand({
     {
       flags: '--dry-run',
       description: 'Show what would be executed without running',
+    },
+    {
+      flags: '--no-skip-ci',
+      description: 'Write the status commit without the CI-skip tag',
     },
   ],
   handler: async (taskId: string, options: FinishTaskOptions) => {
@@ -76,11 +83,12 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
   // commit this project would actually make, tag included.
   const configManager = new ConfigManager(monorepoRoot);
   const behavior = configManager.getAutomationBehavior();
+  const ciSkipTag = resolveCiSkipTag(behavior.ciSkipTag, options.skipCi);
   const autoSyncActive = behavior.autoSync && !!behavior.defaultBranch;
   const statusCommitMessage = buildTaskStatusCommitMessage({
     taskId: normalizedId,
     status: 'done',
-    ciSkipTag: behavior.ciSkipTag,
+    ciSkipTag,
   });
 
   // Dry run mode - show what would be executed
@@ -123,7 +131,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
   }
 
   // Initialize Git service
-  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag: behavior.ciSkipTag });
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
 
   if (!options.skipUpdate) {
     info('Marking task as done...');
@@ -146,7 +154,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
           taskId: normalizedId,
           defaultBranch: behavior.defaultBranch,
           originBranch: behavior.originBranch,
-          ciSkipTag: behavior.ciSkipTag,
+          ciSkipTag,
         });
         if (squashed) {
           success(`Squash commit pushed to ${behavior.originBranch}`);
