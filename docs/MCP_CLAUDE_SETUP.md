@@ -2,7 +2,29 @@
 
 O servidor MCP do Taskin permite que o Claude Desktop interaja diretamente com suas tasks.
 
-## Configuração
+## No seu projeto: um comando
+
+Para agentes que leem o `.mcp.json` do repositório — Claude Code, por exemplo —
+não é preciso escrever nada à mão:
+
+```bash
+taskin mcp-install
+```
+
+Ele escreve o arquivo na **raiz do projeto**, detecta o gerenciador de pacotes,
+funde com os servidores já configurados e depois sobe o servidor para conferir
+que a entrada funciona de verdade. Essa última parte importa: um comando pode
+alcançar **outro** taskin — uma instalação global mais antiga responde
+normalmente, com o conjunto errado de ferramentas — e só comparar as ferramentas
+anunciadas distingue os dois casos.
+
+Use `--force` para substituir uma entrada `taskin` divergente e `--no-probe`
+para pular a verificação.
+
+O Claude **Desktop** não lê o `.mcp.json` do repositório: ele tem configuração
+própria, que é o que o resto deste documento descreve.
+
+## Configuração do Claude Desktop
 
 ### 1. Localize o arquivo de configuração do Claude Desktop
 

@@ -17,7 +17,12 @@ import { TaskMCPServer } from './task-server-mcp.js';
  */
 const RAIZ = join(import.meta.dirname, '..', '..', '..');
 
-const DOCUMENTOS = ['docs/MCP_CLAUDE_SETUP.md', 'docs/MCP_VSCODE_SETUP.md', 'packages/task-server-mcp/README.md'];
+const DOCUMENTOS = [
+  'docs/MCP_CLAUDE_SETUP.md',
+  'docs/MCP_VSCODE_SETUP.md',
+  'packages/task-server-mcp/README.md',
+  'packages/cli/README.md',
+];
 
 /**
  * Nomes citados como ferramenta, e nao em qualquer lugar do texto.

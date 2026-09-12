@@ -177,11 +177,22 @@ agente:  → finish_task(taskId: "042")
 O agente não sabe — nem precisa saber — se aquilo virou um arquivo alterado ou
 uma chamada REST. Quem resolve isso é o provider.
 
+Registrar o servidor é um comando:
+
+```bash
+taskin mcp-install
+```
+
+Ele escreve o `.mcp.json` na raiz do projeto, funde com o que já estiver
+configurado ali e depois sobe o servidor para conferir que a entrada funciona —
+um comando que alcança **outro** taskin responde normalmente, com o conjunto
+errado de ferramentas, e responder não é o mesmo que responder certo.
+
 ## O monorepo
 
 | pacote | o que faz |
 | --- | --- |
-| `taskin` | A CLI: `init`, `new`, `start`, `finish`, `lint`, `dashboard`, `mcp-server` |
+| `taskin` | A CLI: `init`, `new`, `start`, `finish`, `lint`, `dashboard`, `mcp-install`, `mcp-server` |
 | `@opentask/taskin-types` | Schemas Zod e tipos do domínio |
 | `@opentask/taskin-task-manager` | As transições de estado e o contrato `ITaskProvider` |
 | `@opentask/taskin-file-system-provider` | O provider padrão, em markdown |
