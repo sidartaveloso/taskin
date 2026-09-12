@@ -226,7 +226,7 @@ export function validateDashboardOptions(options: {
   const result = DashboardOptionsSchema.safeParse(options);
 
   if (!result.success) {
-    const [firstError] = result.error.errors;
+    const [firstError] = result.error.issues;
     return {
       valid: false,
       error: firstError?.message ?? 'Invalid dashboard options',
