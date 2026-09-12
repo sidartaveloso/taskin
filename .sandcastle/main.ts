@@ -28,23 +28,25 @@ await run({
 
   // Branch strategy — merge-to-head creates a temporary branch for the agent
   // to work on, then merges the result back to HEAD when the run completes.
-  // This is required when using copyToWorktree, since head mode bind-mounts
-  // the host directory directly (no worktree to copy into).
+  // Preferido a `head` aqui por isolar o trabalho do agente do que estiver
+  // aberto na arvore de trabalho.
   branchStrategy: { type: 'merge-to-head' },
 
-  // Copy node_modules from the host into the worktree before the sandbox
-  // starts. This avoids a full npm install from scratch on every iteration.
-  // The onSandboxReady hook still runs npm install as a safety net to handle
-  // platform-specific binaries and any packages added since the last copy.
-  copyToWorktree: ['node_modules'],
+  // Sem copyToWorktree aqui, apesar de o template sugerir: o node_modules do
+  // pnpm e quase todo symlink para o store do host, e copiar isso para dentro
+  // do container produz links pendurados. A instalacao roda inteira la dentro.
 
   // Lifecycle hooks — commands grouped by where they run (host or sandbox).
   hooks: {
     sandbox: {
       // onSandboxReady runs once after the sandbox is initialised and the repo is
-      // synced in, before the agent starts. Use it to install dependencies or run
-      // any other setup steps your project needs.
-      onSandboxReady: [{ command: 'npm install' }],
+      // synced in, before the agent starts.
+      //
+      // O build faz parte do setup, e nao e zelo: a CLI resolve as dependencias
+      // do workspace pelo `dist`, entao `pnpm taskin` so enxerga o codigo atual
+      // depois de compilar. Sem isso o agente comanda uma versao antiga de si
+      // mesmo.
+      onSandboxReady: [{ command: 'pnpm install' }, { command: 'pnpm build' }],
     },
   },
 });

@@ -7,7 +7,16 @@ RUN apt-get update && apt-get install -y \
   jq \
   && rm -rf /var/lib/apt/lists/*
 
-# TODO: install your issue tracker's CLI here. See .sandcastle/SETUP_ISSUE_TRACKER.md
+# O rastreador de tarefas e o proprio taskin, que ja vive neste repositorio —
+# nao ha CLI externa para instalar. O que falta sao as duas ferramentas que
+# `pnpm install` exige aqui:
+#
+#   * pnpm, que a imagem base traz via corepack, na versao fixada pelo campo
+#     `packageManager` do package.json;
+#   * uv, porque o pacote `types-py` roda `uv sync` no seu script de install —
+#     sem ele o `pnpm install` falha antes de instalar qualquer coisa.
+RUN corepack enable
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Build-args for UID/GID alignment: sandcastle docker build-image
 # defaults these to the host user's UID/GID so image-built files

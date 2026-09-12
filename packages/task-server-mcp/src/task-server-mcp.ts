@@ -159,15 +159,14 @@ export class TaskMCPServer implements ITaskMCPServer {
 
   /**
    * Connect to MCP transport
+   *
+   * `MCPTransportType` tem um valor so, entao nao ha o que despachar. O ramo
+   * que existia aqui aceitava `'sse'` pelo tipo e recusava em tempo de
+   * execucao, ja com o provider inicializado.
    */
-  async connect(options: MCPConnectionOptions): Promise<void> {
-    if (options.transport === 'stdio') {
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
-      this.log('MCP Server connected via stdio');
-    } else {
-      throw new Error(`Transport ${options.transport} not yet implemented`);
-    }
+  async connect(_options: MCPConnectionOptions): Promise<void> {
+    await this.server.connect(new StdioServerTransport());
+    this.log('MCP Server connected via stdio');
   }
 
   /**

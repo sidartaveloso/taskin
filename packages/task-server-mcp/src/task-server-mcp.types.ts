@@ -272,8 +272,16 @@ export interface ITaskMCPServer {
 
 /**
  * MCP Transport type
+ *
+ * Um so, e de proposito. O tipo dizia `'stdio' | 'sse'`, a CLI anunciava as
+ * duas, e `connect` respondia `Transport sse not yet implemented` — depois de
+ * ja ter inicializado o provider. Opcao exposta sem implementacao e defeito,
+ * nao detalhe: o tipo volta a modelar o que existe.
+ *
+ * Quando houver um segundo transporte, ele entra aqui **junto** com a sua
+ * implementacao, e nao antes.
  */
-export type MCPTransportType = 'stdio' | 'sse';
+export type MCPTransportType = 'stdio';
 
 /**
  * MCP Connection options
