@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-file-system-provider",
-  "version": "3.2.3",
+  "version": "3.2.4",
   "description": "File system task provider for Taskin",
   "type": "module",
   "motivation": "To provide a file-system-based implementation for task storage.",
