@@ -118,3 +118,13 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Catraca de "verde honesto": se algo foi publicado, cada versao no npm
+      # precisa ter tag correspondente no remoto. O release de 06/09 publicou 12
+      # pacotes e concluiu verde sem empurrar tag nenhuma; este passo faz esse
+      # estado misto sair vermelho, que e o unico jeito de pedir atencao.
+      # So roda quando houve publish — o run que apenas abre o PR de versao nao
+      # tem o que reconciliar.
+      - name: Assert published versions are tagged on the remote
+        if: steps.changesets.outputs.published == 'true'
+        run: pnpm run reconcile:tags
