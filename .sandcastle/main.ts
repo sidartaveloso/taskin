@@ -46,7 +46,15 @@ await run({
       // do workspace pelo `dist`, entao `pnpm taskin` so enxerga o codigo atual
       // depois de compilar. Sem isso o agente comanda uma versao antiga de si
       // mesmo.
-      onSandboxReady: [{ command: 'pnpm install' }, { command: 'pnpm build' }],
+      //
+      // Os tempos sao medidos, e nao chutados: neste monorepo, dentro desta
+      // imagem, o install leva ~1m50 (inclui o `uv sync` do types-py) e o build
+      // frio ~9min nos 22 pacotes. O padrao do sandcastle e 60s, que estoura no
+      // install antes de chegar ao build.
+      onSandboxReady: [
+        { command: 'pnpm install', timeoutMs: 10 * 60_000 },
+        { command: 'pnpm build', timeoutMs: 25 * 60_000 },
+      ],
     },
   },
 });
