@@ -55,10 +55,18 @@ await run({
       // caro para muitos arquivos pequenos — que e exatamente o formato de um
       // node_modules de monorepo.
       //
-      // O `package-import-method=copy` nao e preferencia: o metodo padrao do pnpm
-      // cria hardlinks, e sobre virtiofs isso falha com ENOENT no meio do
-      // `importPackage`. Copiar custa alguns segundos e funciona em qualquer
-      // sistema de arquivos.
+      // O `store-dir` fora da montagem e o que faz o resto funcionar, e custou
+      // duas tentativas erradas antes de aparecer.
+      //
+      // Deixado a si, o pnpm move o store para **dentro** da worktree montada e
+      // linka por hardlink — que sobre virtiofs falha com ENOENT no meio do
+      // `importPackage`. Forcar `package-import-method=copy` resolvia o install
+      // e criava outro problema: os binarios copiados chegavam sem bit de
+      // execucao, e a iteracao seguinte morria com `turbo: Permission denied`.
+      //
+      // Com o store no sistema de arquivos do proprio container, o pnpm percebe
+      // que origem e destino estao em dispositivos diferentes, escolhe copiar
+      // por conta propria, e as permissoes chegam certas.
       //
       // Quanto custa depende do runtime, entao os numeros aqui sao teto e nao
       // previsao. Nesta maquina o Colima roda uma VM **x86_64 emulada** em
@@ -80,7 +88,7 @@ await run({
       onSandboxReady: [
         {
           command:
-            'pnpm install --config.package-import-method=copy && ' +
+            'pnpm install --config.store-dir=/home/agent/.pnpm-store && ' +
             'TURBO_CACHE_DIR=/home/agent/.turbo-cache TURBO_TELEMETRY_DISABLED=1 pnpm build',
           timeoutMs: 30 * 60_000,
         },
