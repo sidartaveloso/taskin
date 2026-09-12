@@ -8,6 +8,7 @@ import { TaskManager } from '@opentask/taskin-task-manager';
 import type { HookContext, HookOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import path from 'path';
+import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { HookRunner } from '../lib/hook-runner.js';
@@ -23,6 +24,8 @@ interface ReviewTaskOptions {
   skipMerge?: boolean;
   dryRun?: boolean;
   sound?: boolean;
+  /** `false` com --no-skip-ci: nao marca o commit de status. */
+  skipCi?: boolean;
 }
 
 export const reviewCommand = defineCommand({
@@ -45,6 +48,10 @@ export const reviewCommand = defineCommand({
     {
       flags: '--no-sound',
       description: 'Disable review sound',
+    },
+    {
+      flags: '--no-skip-ci',
+      description: 'Write the status commit without the CI-skip tag',
     },
   ],
   handler: async (taskId: string, options: ReviewTaskOptions) => {
@@ -90,6 +97,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
   const hookSettings = configManager.getHookSettings();
   const reviewHooks = configManager.getCommandHooks('review');
   const behavior = configManager.getAutomationBehavior();
+  const ciSkipTag = resolveCiSkipTag(behavior.ciSkipTag, options.skipCi);
 
   // Initialize hook runner
   const hookRunner = new HookRunner();
@@ -215,10 +223,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
     try {
-      const message = appendCiSkipTag(
-        `docs(TASKS): task-${normalizedId} - mark as ready for review`,
-        behavior.ciSkipTag,
-      );
+      const message = appendCiSkipTag(`docs(TASKS): task-${normalizedId} - mark as ready for review`, ciSkipTag);
       execSync(`git add TASKS/task-${normalizedId}-*.md && git commit -m "${message}"`, {
         cwd: monorepoRoot,
         stdio: 'ignore',

@@ -106,7 +106,11 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin new` - Create a new task (alias: `create`)
 - `taskin start <id>` - Start working on a task (suggests commits)
 - `taskin pause <id>` - Pause work on a task (auto-commits work in progress)
+- `taskin review <id>` - Mark a task as ready for review
 - `taskin finish <id>` - Complete a task (suggests commits)
+
+`new`, `start`, `review` and `finish` each accept `--no-skip-ci`. See
+[The CI-skip tag](#the-ci-skip-tag).
 - `taskin stats [options]` - Show statistics
   - `--user` - User statistics
   - `--team` - Team statistics
@@ -122,6 +126,28 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `-f, --force` - Replace an existing `taskin` entry that differs
   - `--no-probe` - Skip starting the server to verify the entry works
 - `taskin help` - Show help information
+
+### The CI-skip tag
+
+The commits Taskin writes on its own carry a tag so a status change does not
+burn a pipeline run — `[skip ci]` by default, configurable per project as
+`automation.ciSkipTag` in `.taskin.json`. An empty string appends nothing, which
+is how a project asks for CI to run on those commits too.
+
+There is one case the project-wide setting cannot get right. GitHub reads
+**only the head commit of a push**. When you commit your work and then run
+`taskin finish`, the status commit lands on top — and its tag skips the whole
+push, including the release of the work you just finished.
+
+For that push, turn the tag off for the one call:
+
+```bash
+taskin finish 042 --no-skip-ci
+```
+
+The flag only turns the tag off. There is no way to force it on in a project
+that configured an empty string: a project that asked for "CI always" has no use
+for skipping case by case.
 
 ### Automation Levels
 

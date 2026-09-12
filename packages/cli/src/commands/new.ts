@@ -7,6 +7,7 @@ import { GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TASK_TYPES } from '@opentask/taskin-types';
 import inquirer from 'inquirer';
 import path from 'path';
+import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
@@ -18,6 +19,8 @@ interface CreateTaskOptions {
   title?: string;
   description?: string;
   user?: string;
+  /** `false` com --no-skip-ci: nao marca o commit de status. */
+  skipCi?: boolean;
 }
 
 export const createCommand = defineCommand({
@@ -40,6 +43,10 @@ export const createCommand = defineCommand({
     {
       flags: '-u, --user <user>',
       description: 'Assignee user',
+    },
+    {
+      flags: '--no-skip-ci',
+      description: 'Write the status commit without the CI-skip tag',
     },
   ],
   handler: async (options: CreateTaskOptions) => {
@@ -141,6 +148,7 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   // Load automation config
   const configManager = new ConfigManager(monorepoRoot);
   const behavior = configManager.getAutomationBehavior();
+  const ciSkipTag = resolveCiSkipTag(behavior.ciSkipTag, options.skipCi);
   const autoSyncActive = behavior.autoSync && !!behavior.defaultBranch;
 
   if (behavior.autoSync && !behavior.defaultBranch) {
@@ -148,7 +156,7 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   }
 
   // Initialize Git service
-  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag: behavior.ciSkipTag });
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
 
   // Sync with remote before numbering (fetch + rebase) when autoSync is active
   if (autoSyncActive) {
@@ -192,7 +200,7 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
         taskId,
         title: options.title,
         defaultBranch: behavior.defaultBranch,
-        ciSkipTag: behavior.ciSkipTag,
+        ciSkipTag,
       });
     } catch (pushError) {
       error(

@@ -5,6 +5,7 @@
 import { buildTaskStatusCommitMessage, GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import path from 'path';
+import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
@@ -19,6 +20,8 @@ interface StartTaskOptions {
   base?: string;
   sound?: boolean;
   dryRun?: boolean;
+  /** `false` com --no-skip-ci: nao marca o commit de status. */
+  skipCi?: boolean;
 }
 
 export const startCommand = defineCommand({
@@ -42,13 +45,17 @@ export const startCommand = defineCommand({
       flags: '--dry-run',
       description: 'Show what would be executed without running',
     },
+    {
+      flags: '--no-skip-ci',
+      description: 'Write the status commit without the CI-skip tag',
+    },
   ],
   handler: async (taskId: string, options: StartTaskOptions) => {
     await startTask(taskId, options);
   },
 });
 
-async function startTask(taskId: string, _options: StartTaskOptions, gitService?: IGitService): Promise<void> {
+async function startTask(taskId: string, options: StartTaskOptions, gitService?: IGitService): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -83,14 +90,15 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
   // commit this project would actually make, tag included.
   const configManager = new ConfigManager(monorepoRoot);
   const behavior = configManager.getAutomationBehavior();
+  const ciSkipTag = resolveCiSkipTag(behavior.ciSkipTag, options.skipCi);
   const statusCommitMessage = buildTaskStatusCommitMessage({
     taskId: normalizedId,
     status: 'in-progress',
-    ciSkipTag: behavior.ciSkipTag,
+    ciSkipTag,
   });
 
   // Dry run mode - show what would be executed
-  if (_options.dryRun) {
+  if (options.dryRun) {
     console.log();
     info('🔍 Dry run mode - showing what would be executed:');
     console.log();
@@ -132,7 +140,7 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
   success(`Status changed to: ${updatedTask.status}`);
 
   // Initialize Git service
-  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag: behavior.ciSkipTag });
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
 
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
@@ -168,7 +176,7 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
   await sendTaskNotification(configManager, 'task:start', normalizedId, task.title);
 
   // Play start sound if not disabled
-  if (_options.sound !== false) {
+  if (options.sound !== false) {
     playSound('start');
   }
 }

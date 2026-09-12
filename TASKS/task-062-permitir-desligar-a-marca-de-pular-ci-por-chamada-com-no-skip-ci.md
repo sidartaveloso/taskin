@@ -8,11 +8,11 @@
 A marca vem da configuracao do projeto e vale para todo commit de status. Quando o push carrega trabalho junto, o commit de status fica no topo e o GitHub pula tudo. Falta um jeito de dizer 'nesta chamada, nao'.
 
 ## Tasks
-- [ ] Teste vermelho: com `--no-skip-ci`, a mensagem do commit de status sai sem a marca
-- [ ] Teste vermelho: sem a flag, a marca continua vindo da configuracao do projeto
-- [ ] Flag `--no-skip-ci` no `finish`
-- [ ] Mesma flag no `start`, no `new` e no `review`
-- [ ] Documentar no README da CLI e no ARCHITECTURE
+- [x] Teste vermelho: com `--no-skip-ci`, a mensagem do commit de status sai sem a marca
+- [x] Teste vermelho: sem a flag, a marca continua vindo da configuracao do projeto
+- [x] Flag `--no-skip-ci` no `finish`
+- [x] Mesma flag no `start`, no `new` e no `review`
+- [x] Documentar no README da CLI e no ARCHITECTURE
 
 ## Notes
 **O problema.** A marca de pular CI vem de `automation.ciSkipTag` no
@@ -48,6 +48,19 @@ const git = gitService ?? new GitService(process.cwd(), { ciSkipTag: behavior.ci
 
 O comando passa a poder dizer "nesta chamada, sem marca", e o resto do caminho
 segue igual.
+
+**Como ficou.** O ponto de decisao virou uma funcao com nome,
+`resolveCiSkipTag(configurada, skipCi)`, em `lib/ci-skip-tag/` — um lugar so
+para o raciocinio, e os quatro comandos passaram a chama-la logo depois de ler
+o `behavior`. Cinco casos cobertos, incluindo a diferenca entre `undefined`
+(ninguem disse nada, o `GitService` aplica o seu padrao) e `''` (alguem disse
+"sem marca").
+
+O segundo teste observa o comportamento pela saida do `--dry-run`, que imprime
+a mensagem de commit que o projeto realmente faria, sem tocar em git.
+
+De passagem: em `start.ts` o parametro se chamava `_options` — o sublinhado
+dizia "nao usado", e ele ja era usado em tres lugares. Renomeado.
 
 **O seam para o teste.** O `GitService` ja e injetavel nesses comandos
 (`gitService ?? new GitService(...)`), entao da para afirmar a mensagem do commit
