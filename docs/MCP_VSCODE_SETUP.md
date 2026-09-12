@@ -110,14 +110,14 @@ After configuration, you can use GitHub Copilot Chat to manage tasks:
 
 Taskin's MCP server exposes the following tools to Copilot:
 
-| Tool          | Description                                   |
-| ------------- | --------------------------------------------- |
-| `start_task`  | Starts a task (changes status to in-progress) |
-| `finish_task` | Finishes a task (changes status to done)      |
-| `pause_task`  | Pauses a task in progress                     |
-| `list_tasks`  | Lists all tasks with optional filters         |
-| `get_task`    | Gets complete details of a task               |
-| `lint_tasks`  | Validates task formatting and content         |
+| Tool          | Description                                                    |
+| ------------- | -------------------------------------------------------------- |
+| `list_tasks`  | Lists tasks as JSON, without the markdown body. Filters: `status`, `type`, `assignee`, `open`, `closed`, `text` |
+| `start_task`  | Starts a task (changes status to in-progress)                  |
+| `finish_task` | Finishes a task (changes status to done)                       |
+
+`get_task`, `pause_task` and `lint_tasks` were listed here before they existed,
+and still do not. Use `taskin pause` and `taskin lint` in the terminal.
 
 ## Verifying it's working
 
