@@ -1,6 +1,6 @@
 # 🧩 Task 061 — O mcp-server escreve o banner no stdout, que e o canal do protocolo, e anuncia um transporte sse que nao existe
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
 
