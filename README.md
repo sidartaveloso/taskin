@@ -108,6 +108,10 @@ taskin list --open              # Only open tasks
 taskin list --closed            # Only closed tasks
 taskin list --status pending    # Specific status
 
+# Machine-readable output, for another tool to consume
+taskin list --json              # JSON array, no header and no framing
+taskin list --json --open       # The same filters apply
+
 # View statistics
 taskin stats --user             # User stats
 taskin stats --team --period year  # Team yearly stats
@@ -140,8 +144,16 @@ taskin dashboard --filter-closed  # Show only closed tasks
 ```bash
 # Start MCP server
 taskin mcp-server
+```
 
-# Configure in Claude Desktop (claude_desktop_config.json):
+The server exposes three tools — `list_tasks`, `start_task` and `finish_task` —
+and the `taskin://tasks` resource. See
+[docs/MCP_CLAUDE_SETUP.md](./docs/MCP_CLAUDE_SETUP.md).
+
+A coding agent opening **this** repository picks the server up on its own,
+through the `.mcp.json` at the root. In your own project, point at it yourself:
+
+```json
 {
   "mcpServers": {
     "taskin": {
@@ -151,6 +163,9 @@ taskin mcp-server
   }
 }
 ```
+
+`taskin init` does not write that file — the agent's configuration is yours to
+decide.
 
 ## 🔀 Git Flow: Automatic Sync
 

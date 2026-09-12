@@ -97,12 +97,13 @@ console.log('MCP server running');
 
 ## MCP Tools
 
-- `list_tasks` - List all tasks with filters
-- `get_task` - Get task details
+- `list_tasks` - List tasks as JSON, without the markdown body. Filters:
+  `status`, `type`, `assignee`, `open`, `closed`, `text`
 - `start_task` - Start working on a task
 - `finish_task` - Mark task as complete
-- `pause_task` - Pause task work
-- `lint_tasks` - Validate tasks
+
+`get_task`, `pause_task` and `lint_tasks` appeared in this list before they
+existed, and still do not.
 
 ## MCP Resources
 

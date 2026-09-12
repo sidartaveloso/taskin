@@ -87,6 +87,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 2. **List all tasks:**
    \`\`\`bash
    taskin list
+   taskin list --json   # JSON array, for another tool to consume
    \`\`\`
 
 3. **Start working on a task:**
