@@ -50,9 +50,11 @@ await run({
       // Os tempos sao medidos, e nao chutados: neste monorepo, dentro desta
       // imagem, o install leva ~1m50 (inclui o `uv sync` do types-py) e o build
       // frio ~9min nos 22 pacotes. O padrao do sandcastle e 60s, que estoura no
-      // install antes de chegar ao build.
+      // install antes de chegar ao build. A folga aqui e maior que a medicao
+      // porque no sandcastle a worktree vem montada do macOS, e bind mount do
+      // Docker Desktop e lento para muitos arquivos pequenos.
       onSandboxReady: [
-        { command: 'pnpm install', timeoutMs: 10 * 60_000 },
+        { command: 'pnpm install', timeoutMs: 20 * 60_000 },
         { command: 'pnpm build', timeoutMs: 25 * 60_000 },
       ],
     },
