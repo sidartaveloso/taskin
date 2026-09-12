@@ -95,3 +95,17 @@ export function tagsFaltantes(pacotes: PacotePublicavel[], tagsExistentes: reado
     .map((p) => `${p.nome}@${p.versao}`)
     .filter((tag) => !existentes.has(tag));
 }
+
+/**
+ * Das tags que faltam no remoto, aquelas cuja versao esta de fato publicada no
+ * npm. A marca deriva do registry, nao do que a passada atual conseguiu
+ * publicar: uma versao que chegou ao npm mas ficou sem tag entra aqui para ser
+ * empurrada; uma que nunca foi publicada fica de fora e continua acusada pelo
+ * `verificar:tags-de-publicacao`. Rodar isto no retry completa um release
+ * parcial sem intervencao manual, e sem nunca marcar um commit que o npm nao
+ * tem.
+ */
+export function tagsParaSincronizar(faltantes: readonly string[], publicadasNoNpm: readonly string[]): string[] {
+  const noNpm = new Set(publicadasNoNpm);
+  return faltantes.filter((tag) => noNpm.has(tag));
+}

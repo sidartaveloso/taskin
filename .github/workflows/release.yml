@@ -127,13 +127,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Guarda-corpo pos-publish: quando este run publicou algo
-      # (`published == 'true'`), falha alto se a versao de qualquer pacote
-      # publicavel nao tiver tag no remoto. No 06/09 o `changeset publish`
-      # disse "Created git tags." mas nenhuma chegou ao remoto, e o job ficou
-      # verde — o pior estado, porque npm e repositorio ficaram dessincronizados
-      # sem pedir atencao de ninguem. Como a marca deriva do que esta publicado,
-      # um retry que empurre as tags que faltam zera a divergencia.
+      # Reconciliacao pos-publish: empurra as tags que faltam no remoto,
+      # derivadas do que esta de fato no npm. O `changeset publish` so cria tag
+      # do que ELE publica na passada atual, entao um pacote publicado numa
+      # passada anterior nunca ganha a marca num retry — foi assim que o 06/09
+      # ficou com 12 versoes no npm e nenhuma tag no remoto. Este passo confirma
+      # cada versao no registry e cria+empurra a tag que falta, completando um
+      # release parcial sem intervencao manual.
+      #
+      # Roda SEM o gate `published == 'true'` de proposito: o pior caso do 06/09
+      # foi um retry que ja tinha tudo publicado (`published == 'false'`) e
+      # mesmo assim ficou sem tag. Gatear aqui deixaria justo esse buraco aberto.
+      - name: Reconcile publish tags from npm
+        run: pnpm sincronizar:tags-de-publicacao
+
+      # Catraca pos-publish: falha alto se a versao de qualquer pacote
+      # publicavel ainda nao tiver tag no remoto depois da reconciliacao. Sobra
+      # so a divergencia real — versao que nunca chegou ao npm —, e verde com
+      # npm e repositorio dessincronizados vira vermelho, o oposto do 06/09.
+      # Tambem sem gate: um retry sem publicacao nova precisa ser conferido.
       - name: Assert published versions are tagged on the remote
-        if: steps.changesets.outputs.published == 'true'
         run: pnpm verificar:tags-de-publicacao
