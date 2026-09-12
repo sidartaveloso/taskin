@@ -85,7 +85,7 @@ async function pauseTask(taskId: string, options: PauseTaskOptions): Promise<voi
     console.log(colors.secondary(`  - Commit: git commit -m "${commitMessage}"`));
     console.log();
 
-    info('✓ Dry run complete');
+    info('Dry run complete');
     return;
   }
 
@@ -132,7 +132,7 @@ async function pauseTask(taskId: string, options: PauseTaskOptions): Promise<voi
     await taskManager.pauseTask(normalizedId);
 
     success('Task paused successfully!');
-    success('✓ Auto-committed work in progress');
+    success('Auto-committed work in progress');
     info('Status updated to paused');
     console.log();
     info('Next steps:');

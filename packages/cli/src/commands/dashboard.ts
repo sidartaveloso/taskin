@@ -182,7 +182,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     });
 
     await wsServer.start();
-    success(`✓ WebSocket server running on ws://${host}:${wsPort}`);
+    success(`WebSocket server running on ws://${host}:${wsPort}`);
 
     // Start HTTP server for dashboard
     info(`Starting dashboard server on http://${host}:${port}...`);
@@ -262,7 +262,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       warning(`Port ${port} was in use. Dashboard started on port ${actualPort}.`);
     }
 
-    success(`✓ Dashboard available at http://${host}:${actualPort}`);
+    success(`Dashboard available at http://${host}:${actualPort}`);
 
     // Build filter query params
     const filterParams = new URLSearchParams();
@@ -301,7 +301,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
         httpServer.close(() => resolve());
       });
       await wsServer.stop();
-      success('✓ Servers stopped');
+      success('Servers stopped');
       process.exit(0);
     };
 

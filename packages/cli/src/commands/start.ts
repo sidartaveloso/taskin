@@ -108,7 +108,7 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
     );
     console.log();
 
-    info('✓ Dry run complete');
+    info('Dry run complete');
     return;
   }
 
@@ -138,7 +138,7 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
   if (behavior.autoCommitStatusChange) {
     const committed = await git.commitTaskStatusChangeOnBranch(normalizedId, 'in-progress', behavior.defaultBranch);
     if (committed) {
-      success('✓ Auto-committed status change');
+      success('Auto-committed status change');
       // Ignore if nothing to commit
     }
   }

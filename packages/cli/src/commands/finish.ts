@@ -108,7 +108,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     console.log(colors.secondary(`  - Push: git push`));
     console.log();
 
-    info('✓ Dry run complete');
+    info('Dry run complete');
     return;
   }
 
@@ -135,7 +135,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     if (behavior.autoCommitStatusChange) {
       const committed = await git.commitTaskStatusChangeOnBranch(normalizedId, 'done', behavior.defaultBranch);
       if (committed) {
-        success('✓ Auto-committed status change');
+        success('Auto-committed status change');
       }
     }
 
@@ -149,7 +149,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
           ciSkipTag: behavior.ciSkipTag,
         });
         if (squashed) {
-          success(`✓ Squash commit pushed to ${behavior.originBranch}`);
+          success(`Squash commit pushed to ${behavior.originBranch}`);
         }
       } catch (squashError) {
         error(
@@ -169,7 +169,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
           cwd: process.cwd(),
           stdio: 'ignore',
         });
-        success('✓ Auto-committed completed work');
+        success('Auto-committed completed work');
       } catch {
         // Ignore if nothing to commit
       }
