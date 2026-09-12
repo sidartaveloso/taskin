@@ -1,6 +1,6 @@
 # 🧩 Task 060 — Instalar o servidor MCP no projeto: detectar o gerenciador, fundir o .mcp.json e validar subindo o servidor
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
 
