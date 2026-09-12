@@ -143,7 +143,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
       console.log();
     }
 
-    info('✓ Dry run complete');
+    info('Dry run complete');
     return;
   }
 
@@ -168,7 +168,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
     const failedPre = preResults.find((r) => !r.success);
     if (failedPre && !hookSettings.continueOnError) {
       console.log();
-      error('✗ Pre-review hooks failed!');
+      error('Pre-review hooks failed!');
       error('Fix the errors above and try again.');
       process.exit(1);
     }
@@ -197,7 +197,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
     const failedCheck = duringResults.find((r) => !r.success);
     if (failedCheck && !hookSettings.continueOnError) {
       console.log();
-      error('✗ Review checks failed!');
+      error('Review checks failed!');
       error('Fix the errors above and try again.');
       console.log();
       info('Tip: Run individual checks to see full error details');
@@ -210,7 +210,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
   // Update task status
   info('Marking task as ready for review...');
   const updatedTask = await taskManager.reviewTask(task.id);
-  success(`✓ Task ${updatedTask.id} status changed to: ${updatedTask.status}`);
+  success(`Task ${updatedTask.id} status changed to: ${updatedTask.status}`);
 
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
@@ -223,7 +223,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
         cwd: monorepoRoot,
         stdio: 'ignore',
       });
-      success('✓ Auto-committed status change');
+      success('Auto-committed status change');
     } catch {
       // Ignore if nothing to commit
     }
@@ -257,7 +257,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
       ? 'with hooks'
       : '';
 
-  success(`✓ Task ready for review! ${totalDuration}`);
+  success(`Task ready for review! ${totalDuration}`);
 
   // Send notification
   await sendTaskNotification(configManager, 'task:review', normalizedId, task.title);

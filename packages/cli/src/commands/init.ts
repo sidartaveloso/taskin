@@ -139,7 +139,7 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
 
   info('Creating configuration file...');
   writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf-8');
-  success(`✓ Created ${colors.highlight('.taskin.json')}`);
+  success(`Created ${colors.highlight('.taskin.json')}`);
 
   // Propose creating first user
   if (process.env.CI !== 'true' && selectedProvider.id === 'fs') {
@@ -254,7 +254,7 @@ async function setupProviderConfig(provider: ProviderInfo, cwd: string): Promise
   const answers = await inquirer.prompt(questions);
 
   console.log();
-  success(`✓ ${provider.name} configuration saved`);
+  success(`${provider.name} configuration saved`);
 
   return answers;
 }
@@ -315,7 +315,7 @@ This is a sample task created during Taskin initialization.
 You can edit or delete this file. Use \`taskin list\` to see all tasks.
 `;
     writeFileSync(sampleTaskFile, sampleTask, 'utf-8');
-    success(`✓ Created sample task ${colors.highlight('task-001-setup-project.md')}`);
+    success(`Created sample task ${colors.highlight('task-001-setup-project.md')}`);
   }
 
   /*
@@ -374,5 +374,5 @@ async function promptCreateFirstUser(cwd: string): Promise<void> {
   };
 
   await userRegistry.saveUser(user);
-  success(`✓ User "${user.name}" (${user.email}) created successfully!`);
+  success(`User "${user.name}" (${user.email}) created successfully!`);
 }

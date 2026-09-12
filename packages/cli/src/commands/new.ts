@@ -212,7 +212,7 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
     console.log(colors.secondary(`📁 Path: ${createdPath}`));
   }
   if (autoSyncActive) {
-    success('✓ Task committed and pushed to remote');
+    success('Task committed and pushed to remote');
   }
   console.log();
   console.log(colors.info('Next steps:'));

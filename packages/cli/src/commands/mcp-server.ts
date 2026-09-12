@@ -65,7 +65,7 @@ async function startMCPServer(options: MCPServerOptions): Promise<void> {
     info('Starting MCP server...');
     await mcpServer.connect({ transport });
 
-    success('✓ MCP server started successfully');
+    success('MCP server started successfully');
     info('');
     info(chalk.bold('Server Information:'));
     info(`  • Transport: ${chalk.cyan(transport)}`);
@@ -90,7 +90,7 @@ async function startMCPServer(options: MCPServerOptions): Promise<void> {
     const cleanup = async () => {
       info('\nShutting down MCP server...');
       // MCP server will close automatically when process exits
-      success('✓ Server stopped');
+      success('Server stopped');
       process.exit(0);
     };
 
