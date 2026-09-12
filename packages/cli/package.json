@@ -1,6 +1,6 @@
 {
   "name": "taskin",
-  "version": "4.1.3",
+  "version": "4.1.4",
   "description": "Task management system integrated with Git workflows",
   "motivation": "Provide a CLI tool for task management integrated with Git workflows",
   "solve": "Simplifies task tracking and management directly from the command line",
