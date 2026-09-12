@@ -39,6 +39,7 @@ const EXEMPLOS: Readonly<Record<string, readonly string[]>> = {
   export: ['taskin export', 'taskin export --format json'],
   lint: ['taskin lint', 'taskin lint --fix', 'taskin lint --fix --metadata-style=list'],
   dashboard: ['taskin dashboard', 'taskin dashboard --port 3000', 'taskin dashboard --filter-open'],
+  'mcp-install': ['taskin mcp-install', 'taskin mcp-install --force', 'taskin mcp-install --no-probe'],
   'mcp-server': ['taskin mcp-server', 'taskin mcp'],
   notify: ['taskin notify --event task:done --task 001'],
 };

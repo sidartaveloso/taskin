@@ -13,6 +13,7 @@ import { finishCommand } from './commands/finish.js';
 import { initCommand } from './commands/init.js';
 import { lintCommand } from './commands/lint.js';
 import { listCommand } from './commands/list.js';
+import { mcpInstallCommand } from './commands/mcp-install.js';
 import { mcpServerCommand } from './commands/mcp-server.js';
 import { createCommand } from './commands/new.js';
 import { notifyCommand } from './commands/notify.js';
@@ -55,6 +56,7 @@ configCommand(program);
 registerExportCommand(program);
 lintCommand(program);
 dashboardCommand(program);
+mcpInstallCommand(program);
 mcpServerCommand(program);
 notifyCommand(program);
 
