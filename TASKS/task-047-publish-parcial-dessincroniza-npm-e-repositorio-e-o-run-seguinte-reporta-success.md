@@ -45,9 +45,15 @@ sem arqueologia no historico.
       partiu o publish em duas passadas. Feito em `dev/scripts/validador-de-repository-url/`,
       exposto como `pnpm lint:repository-url` e ligado ao `pnpm lint` — entao roda no PR (`ci.yml`)
       e no passo de Lint do `release.yml`, antes do build e do `changeset publish`.
-- [ ] Tornar o publish idempotente do ponto de vista de marcos: tag e Release derivados do que
+- [x] Tornar o publish idempotente do ponto de vista de marcos: tag e Release derivados do que
       esta no npm, nao do que a passada atual conseguiu publicar. Assim um retry completa o
-      trabalho em vez de deixar buraco.
+      trabalho em vez de deixar buraco. Feito em `dev/scripts/sincronizador-de-marcos/` (planner
+      puro) + `dev/scripts/sincronizar-marcos.ts` (entrypoint), exposto como `pnpm sync:markers` e
+      ligado ao `release.yml` num passo condicionado a `published == 'true'`, entre o
+      `changeset publish` e a catraca `reconcile:tags`. O plano consulta o npm por `nome@versao`
+      (nao a `latest`), so marca o que ja esta publicado e sem tag, ignora o que nao esta no npm e
+      recusa continuar se a consulta ao registry ficar indeterminada. Tag e Release toleram "ja
+      existe", entao a operacao e idempotente e um retry preenche exatamente os buracos que sobraram.
 - [ ] Cobrir tambem o `build` que precede o publish: as quatro barreiras deste release
       (vitepress/esbuild, caixa de arquivo, subpath dos mocks, `repository.url`) todas passavam em
       macOS e quebravam no runner. Um job de PR rodando `pnpm build` em Linux teria pego as
