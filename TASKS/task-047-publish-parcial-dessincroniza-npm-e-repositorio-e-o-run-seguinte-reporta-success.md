@@ -3,6 +3,7 @@
 - Status: pending
 - Type: fix
 - Assignee: sidartaveloso
+- Priority: 180
 
 ## Description
 

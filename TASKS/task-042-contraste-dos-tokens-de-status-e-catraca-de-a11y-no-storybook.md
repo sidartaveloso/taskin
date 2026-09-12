@@ -3,6 +3,7 @@
 - Status: pending
 - Type: chore
 - Assignee: sidartaveloso
+- Priority: 170
 
 ## Description
 
