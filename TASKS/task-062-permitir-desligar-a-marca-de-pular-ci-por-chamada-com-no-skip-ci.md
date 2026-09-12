@@ -1,6 +1,6 @@
 # 🧩 Task 062 — Permitir desligar a marca de pular CI por chamada, com --no-skip-ci
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
 
