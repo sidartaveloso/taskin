@@ -8,6 +8,7 @@ import {
   listarPacotesPublicaveis,
   pacotesSemRepositoryUrl,
   tagsFaltantes,
+  tagsParaSincronizar,
 } from './verificar-publicacao';
 import type { PacotePublicavel } from './verificar-publicacao.types';
 
@@ -155,5 +156,24 @@ describe('tagsFaltantes', () => {
 
   it('ignora pacote sem versao legivel', () => {
     expect(tagsFaltantes([{ nome: 'x', versao: '', repositoryUrl: 'x' }], [])).toEqual([]);
+  });
+});
+
+describe('tagsParaSincronizar', () => {
+  it('empurra so a tag faltante cuja versao esta de fato no npm', () => {
+    // Retry do 06/09: as duas versoes estao no npm mas nenhuma virou tag.
+    const faltantes = ['taskin@4.0.0', '@opentask/ui-sense@0.2.0'];
+    const noNpm = ['taskin@4.0.0', '@opentask/ui-sense@0.2.0', 'taskin@3.0.3'];
+    expect(tagsParaSincronizar(faltantes, noNpm)).toEqual(['taskin@4.0.0', '@opentask/ui-sense@0.2.0']);
+  });
+
+  it('nao marca versao que o npm nao tem — divergencia real fica para o verificar acusar', () => {
+    const faltantes = ['taskin@4.0.0', '@opentask/ui-sense@0.2.0'];
+    // O publish quebrou antes de mandar o ui-sense: so o taskin chegou ao npm.
+    expect(tagsParaSincronizar(faltantes, ['taskin@4.0.0'])).toEqual(['taskin@4.0.0']);
+  });
+
+  it('devolve vazio quando nada falta', () => {
+    expect(tagsParaSincronizar([], ['taskin@4.0.0'])).toEqual([]);
   });
 });
