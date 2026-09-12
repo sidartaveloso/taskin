@@ -36,6 +36,11 @@ export class MockTaskManager implements ITaskManager {
     return buildTask(taskId, { status: 'done' });
   }
 
+  /** Este fake nao guarda tarefas; quem testa listagem usa o fake do MCP. */
+  async getAllTasks(): Promise<Task[]> {
+    return [];
+  }
+
   async reviewTask(taskId: TaskId): Promise<Task> {
     return buildTask(taskId, { status: 'in-review' });
   }

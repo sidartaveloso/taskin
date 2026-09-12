@@ -116,9 +116,12 @@ export class MockMCPTaskManager implements ITaskManager {
   }
 
   /**
-   * Get all tasks (for testing)
+   * Every task this fake knows about.
+   *
+   * Era sincrono e so para teste; virou parte do `ITaskManager` quando o
+   * servidor MCP passou a listar tarefas, entao acompanha a assinatura real.
    */
-  getAllTasks(): Task[] {
+  async getAllTasks(): Promise<Task[]> {
     return Array.from(this.tasks.values());
   }
 

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "taskin": {
+      "command": "pnpm",
+      "args": ["taskin", "mcp-server"],
+      "env": {}
+    }
+  }
+}

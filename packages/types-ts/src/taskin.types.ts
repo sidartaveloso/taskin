@@ -48,9 +48,16 @@ import type {
 } from './taskin.schemas';
 
 export interface ListTasksOptions {
+  /** Imprime as tarefas como JSON, para outra ferramenta consumir. */
+  json?: boolean;
   assignee?: string;
-  status?: string;
-  type?: string;
+  /**
+   * Tipados pelo dominio, e nao como `string` solta: quem filtra compara com
+   * `Task.status` e `Task.type`, e um valor fora do conjunto nunca casaria —
+   * falhava em silencio, devolvendo lista vazia como se nao houvesse tarefa.
+   */
+  status?: TaskStatus;
+  type?: TaskType;
   open?: boolean;
   closed?: boolean;
 }
