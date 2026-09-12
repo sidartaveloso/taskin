@@ -40,7 +40,7 @@ O Taskin é uma plataforma modular de gerenciamento de tarefas com suporte a mú
 │                   Communication Layer                       │
 ├─────────────────────────────────────────────────────────────┤
 │  TaskWebSocketServer        TaskMCPServer                   │
-│  ├─ Port: 3001              ├─ Transport: stdio/sse        │
+│  ├─ Port: 3001              ├─ Transport: stdio            │
 │  ├─ Multi-client            ├─ Tools: start_task/finish    │
 │  ├─ Broadcast updates       ├─ Prompts: workflows          │
 │  ├─ Heartbeat: 30s          └─ Resources: taskin://tasks   │
@@ -215,9 +215,11 @@ LLM continues conversation
     - `--ws-port <number>`: Porta do WebSocket (padrão: 3001)
     - `--host <string>`: Host do servidor (padrão: localhost)
     - `--open`: Abre navegador automaticamente
-  - `taskin mcp-server`: Inicia MCP server
-    - `--transport <stdio|sse>`: Tipo de transporte (padrão: stdio)
+  - `taskin mcp-server`: Inicia MCP server (transporte stdio; sem porta)
     - `--debug`: Ativa logs de debug
+  - `taskin mcp-install`: Registra o MCP server no `.mcp.json` do projeto
+    - `-f, --force`: Substitui uma entrada `taskin` divergente
+    - `--no-probe`: Pula a subida do servidor para verificar a entrada
   - `taskin start/finish/pause <task-id>`: Comandos de task management
 - **Features**:
   - Colored terminal output (chalk)

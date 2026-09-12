@@ -2,7 +2,7 @@
 
 ## Open issues
 
-!`echo 'No issue tracker configured — run .sandcastle/SETUP_ISSUE_TRACKER.md through your coding agent.' >&2; exit 1`
+!`pnpm --silent taskin list --json --open`
 
 The list above has already been filtered to issues ready for work and is the sole source of truth for what work exists. Do not run your own unfiltered query to find more issues — if the list is empty, there is nothing to do.
 
@@ -25,19 +25,23 @@ Work on issues in this order:
 
 Pick the highest-priority open issue that is not blocked by another open issue.
 
+Before touching code, claim the task with `pnpm taskin start <ID>` — the status
+matters to the rest of the team and to the dashboard, and `finish` expects the
+task to have been started.
+
 ## Workflow
 
-1. **Explore** — read the issue carefully. Pull in the parent PRD if referenced. Read the relevant source files and tests before writing any code.
+1. **Explore** — read the issue carefully. The listing above gives you id, title, status and type; the full body is the markdown file itself — read it with `cat TASKS/task-<ID>-*.md`. Pull in the parent PRD if referenced. Read the relevant source files and tests before writing any code.
 2. **Plan** — decide what to change and why. Keep the change as small as possible.
 3. **Execute** — use RGR (Red → Green → Repeat → Refactor): write a failing test first, then write the implementation to pass it.
-4. **Verify** — run `npm run typecheck` and `npm run test` before committing. Fix any failures before proceeding.
+4. **Verify** — run `pnpm lint`, `pnpm typecheck` and `pnpm test` before committing. Fix any failures before proceeding.
 5. **Commit** — make a single git commit. The message MUST:
    - Start with `RALPH:` prefix
    - Include the task completed and any PRD reference
    - List key decisions made
    - List files changed
    - Note any blockers for the next iteration
-6. **Close** — close the issue with `<close command — see .sandcastle/SETUP_ISSUE_TRACKER.md>` explaining what was done.
+6. **Close** — close the issue with `pnpm taskin finish <ID>` explaining what was done.
 
 ## Rules
 
