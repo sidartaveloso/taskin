@@ -51,8 +51,14 @@ await run({
       // imagem, o install leva ~1m50 (inclui o `uv sync` do types-py) e o build
       // frio ~9min nos 22 pacotes. O padrao do sandcastle e 60s, que estoura no
       // install antes de chegar ao build. A folga aqui e maior que a medicao
-      // porque no sandcastle a worktree vem montada do macOS, e bind mount do
-      // Docker Desktop e lento para muitos arquivos pequenos.
+      // porque no sandcastle a worktree vem montada do host, e a montagem custa
+      // caro para muitos arquivos pequenos — que e exatamente o formato de um
+      // node_modules de monorepo.
+      //
+      // Quanto custa depende do runtime, entao os numeros aqui sao teto e nao
+      // previsao. Nesta maquina o Colima roda uma VM **x86_64 emulada** em
+      // Apple Silicon, com `mountType: sshfs` — a combinacao mais lenta
+      // disponivel. Num runtime arm64 nativo com virtiofs sobra folga.
       onSandboxReady: [
         { command: 'pnpm install', timeoutMs: 20 * 60_000 },
         { command: 'pnpm build', timeoutMs: 25 * 60_000 },
