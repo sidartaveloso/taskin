@@ -1,6 +1,6 @@
 # Task 047 — Publish parcial dessincroniza npm e repositorio, e o run seguinte reporta success
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: sidartaveloso
 - Priority: 180
@@ -38,9 +38,11 @@ sem arqueologia no historico.
       dos `package.json` publicaveis com as tags do remoto ao fim do job e sair diferente de zero
       se divergirem. Verde com repositorio dessincronizado e o pior estado possivel, porque nao
       pede atencao de ninguem.
-- [ ] Validar `repository.url` **antes** de publicar, nao no meio: um passo que percorre os
+- [x] Validar `repository.url` **antes** de publicar, nao no meio: um passo que percorre os
       pacotes nao privados e recusa o release se algum nao declarar o campo. Foi exatamente o que
-      partiu o publish em duas passadas.
+      partiu o publish em duas passadas. Feito em `dev/scripts/validador-de-repository-url/`,
+      exposto como `pnpm lint:repository-url` e ligado ao `pnpm lint` — entao roda no PR (`ci.yml`)
+      e no passo de Lint do `release.yml`, antes do build e do `changeset publish`.
 - [ ] Tornar o publish idempotente do ponto de vista de marcos: tag e Release derivados do que
       esta no npm, nao do que a passada atual conseguiu publicar. Assim um retry completa o
       trabalho em vez de deixar buraco.
