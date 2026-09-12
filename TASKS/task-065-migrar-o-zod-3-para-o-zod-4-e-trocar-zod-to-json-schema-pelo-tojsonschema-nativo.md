@@ -78,8 +78,9 @@ rodar 110 testes contra o fonte de verdade.
 - [x] `pnpm typecheck` (27/27) e `pnpm test` (42/42) verdes
 - [ ] Limpeza separada: `.email()`/`.url()`/`z.string().datetime()` para as formas
       novas do zod 4
-- [ ] Verificar se outros pacotes têm artefato compilado versionado sombreando
-      fonte — o `utils` foi achado por acaso
+- [x] Verificado (12/09): **o `utils` era o único**. Nenhum outro `.js`/`.d.ts`
+      versionado sob `packages/*/src/` tem um `.ts` irmão. A mesma checagem
+      rodada no geohub também não achou sombreamento
 
 ## Notes
 
