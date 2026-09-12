@@ -15,6 +15,13 @@ RUN apt-get update && apt-get install -y \
 #     `packageManager` do package.json;
 #   * uv, porque o pacote `types-py` roda `uv sync` no seu script de install —
 #     sem ele o `pnpm install` falha antes de instalar qualquer coisa.
+#
+# O `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` nao e zelo: sem ele o corepack **pergunta**
+# antes de baixar o pnpm fixado em `packageManager`, e num container sem terminal
+# a pergunta fica esperando uma resposta que nunca vem. O sintoma e cruel — o
+# `pnpm install` nao imprime nada e o hook morre no timeout, sem nenhuma pista de
+# que o processo estava parado num prompt.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
