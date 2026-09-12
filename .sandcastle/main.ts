@@ -64,9 +64,26 @@ await run({
       // previsao. Nesta maquina o Colima roda uma VM **x86_64 emulada** em
       // Apple Silicon, com `mountType: sshfs` — a combinacao mais lenta
       // disponivel. Num runtime arm64 nativo com virtiofs sobra folga.
+      // Um comando so, encadeado com `&&`, e nao duas entradas no array: o
+      // install precisa **terminar** antes de o build comecar, e duas entradas
+      // nao garantem isso. O sintoma de deixar solto e traicoeiro — o build
+      // encontra o `node_modules` pela metade, dispara um install proprio (sem
+      // a flag de copia) e morre no hardlink do virtiofs, de modo que o erro
+      // aponta para o build quando o problema estava no install.
+      //
+      // O `TURBO_CACHE_DIR` tambem nao e gosto: a worktree e um **git
+      // worktree**, cujo `.git` e um arquivo apontando para o caminho absoluto
+      // do repositorio no host. O turbo lê isso para achar a raiz e tenta
+      // escrever o cache la dentro — onde o sandcastle montou o repositorio
+      // real como somente-leitura. O cache vai para o sistema de arquivos do
+      // proprio container.
       onSandboxReady: [
-        { command: 'pnpm install --config.package-import-method=copy', timeoutMs: 20 * 60_000 },
-        { command: 'pnpm build', timeoutMs: 25 * 60_000 },
+        {
+          command:
+            'pnpm install --config.package-import-method=copy && ' +
+            'TURBO_CACHE_DIR=/home/agent/.turbo-cache TURBO_TELEMETRY_DISABLED=1 pnpm build',
+          timeoutMs: 30 * 60_000,
+        },
       ],
     },
   },
