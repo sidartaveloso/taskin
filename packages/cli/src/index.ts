@@ -39,7 +39,7 @@ program
   .command('help')
   .description('Show help information')
   .action(() => {
-    showCustomHelp();
+    showCustomHelp(program);
   });
 
 // Register commands
@@ -60,19 +60,19 @@ notifyCommand(program);
 
 // Intercept --help at root level
 program.on('option:help', () => {
-  showCustomHelp();
+  showCustomHelp(program);
   process.exit(0);
 });
 
 // Show custom help if no command provided
 if (process.argv.length <= 2) {
-  showCustomHelp();
+  showCustomHelp(program);
   process.exit(0);
 }
 
 // Show custom help if only --help is provided
 if (process.argv.length === 3 && (process.argv[2] === '--help' || process.argv[2] === '-h')) {
-  showCustomHelp();
+  showCustomHelp(program);
   process.exit(0);
 }
 
