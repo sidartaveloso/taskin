@@ -55,12 +55,17 @@ await run({
       // caro para muitos arquivos pequenos — que e exatamente o formato de um
       // node_modules de monorepo.
       //
+      // O `package-import-method=copy` nao e preferencia: o metodo padrao do pnpm
+      // cria hardlinks, e sobre virtiofs isso falha com ENOENT no meio do
+      // `importPackage`. Copiar custa alguns segundos e funciona em qualquer
+      // sistema de arquivos.
+      //
       // Quanto custa depende do runtime, entao os numeros aqui sao teto e nao
       // previsao. Nesta maquina o Colima roda uma VM **x86_64 emulada** em
       // Apple Silicon, com `mountType: sshfs` — a combinacao mais lenta
       // disponivel. Num runtime arm64 nativo com virtiofs sobra folga.
       onSandboxReady: [
-        { command: 'pnpm install', timeoutMs: 20 * 60_000 },
+        { command: 'pnpm install --config.package-import-method=copy', timeoutMs: 20 * 60_000 },
         { command: 'pnpm build', timeoutMs: 25 * 60_000 },
       ],
     },
