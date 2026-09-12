@@ -95,8 +95,24 @@ async function executeLint(options: LintTasksOptions): Promise<void> {
     console.log();
   }
 
+  /*
+   * "Valid" aqui quer dizer **zero erros** — aviso nao invalida arquivo. Mas a
+   * frase sozinha contradizia o que estava impresso logo acima: cinco avisos e
+   * um info, e em seguida "All task files are valid!". Quem le nao tem como
+   * saber que as duas coisas convivem por definicao.
+   *
+   * Com pendencia, a linha passa a diz-la em vez de esconde-la atras do verde.
+   */
   if (result.valid) {
-    console.log(chalk.green(`✅ All task files are valid!\n`));
+    if (notices.length === 0) {
+      console.log(chalk.green(`✅ All task files are valid!\n`));
+    } else {
+      const partes = [
+        result.warningCount > 0 ? `${result.warningCount} warning(s)` : '',
+        result.infoCount > 0 ? `${result.infoCount} info` : '',
+      ].filter(Boolean);
+      console.log(chalk.green(`✅ No errors — ${partes.join(' and ')} above, listed for a human to decide.\n`));
+    }
   }
 
   if (!result.valid && !options.fix) {
