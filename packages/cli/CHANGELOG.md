@@ -1,5 +1,39 @@
 # taskin
 
+## 4.3.0
+
+### Minor Changes
+
+- 3aab76e: New command: `taskin mcp-install`, which registers the Taskin MCP server in the project's `.mcp.json`.
+  
+  Writing that file by hand assumes three things that are rarely all true: that the package manager is the same one you use, that the file does not exist yet, and that the command you type actually reaches this project's taskin. The command finds each one out instead of assuming it.
+  
+  - **Finds the project root**, walking up to `.taskin.json`, so running from `packages/something` still writes to the root — and detects the package manager there, where the lockfile is.
+  - **Detects the package manager** from `packageManager` in `package.json`, falling back to the lockfile: pnpm, yarn, bun or npm.
+  - **Merges `.mcp.json`** instead of overwriting it: other servers are preserved, an identical entry is a no-op, a different `taskin` entry is reported and left alone until you pass `--force`, and a malformed file is refused without being destroyed.
+  - **Starts the server to check the entry works.** This is the part that matters: the probe speaks stdio with the process the entry describes and compares the tools it advertises against the ones this version offers. A command can resolve to a *different* taskin — an older global install will answer happily, with the wrong set of tools — and only that comparison tells the two apart. Skip it with `--no-probe`.
+- 37191d4: `--no-skip-ci` on `new`, `start`, `review` and `finish`: write the status commit without the CI-skip tag, for this call only.
+  
+  The commits Taskin writes on its own carry a tag — `[skip ci]` by default, configurable as `automation.ciSkipTag` — so a status change does not burn a pipeline run. That is right for a push that only changes status.
+  
+  It is wrong for one case the project-wide setting cannot distinguish. GitHub reads **only the head commit of a push**. When you commit your work and then run `taskin finish`, the status commit lands on top, and its tag skips the whole push — including the release of the work you just finished.
+  
+  The two workarounds both cost something: pushing the work before running `finish` depends on remembering, and setting `ciSkipTag` to an empty string gives up the benefit on every status commit, forever. A per-call flag settles the one push without touching the default.
+  
+  It only turns the tag off. There is no way to force it on in a project that configured an empty string — a project that asked for "CI always" has no use for skipping case by case, and an option with no use is a defect.
+
+### Patch Changes
+
+- adf9cd0: `taskin mcp-server`: the banner no longer goes out over the protocol channel, and the transport option that never existed is gone.
+  
+  Under the stdio transport, **stdout is the protocol channel** — everything on it is a JSON-RPC message and nothing else. The command was writing its header, its progress lines and its tool list there. It appeared to work because clients discard lines that fail to parse, but tolerance is not correctness. Everything a person reads now goes to stderr, where no protocol travels.
+  
+  The tool list in that banner was also written by hand, and had already fallen behind: it advertised `start_task` and `finish_task` and forgot `list_tasks`. It is now asked of the server.
+  
+  `-t, --transport` is removed, and `MCPTransportType` narrows to `'stdio'`. The type accepted `'sse'`, the flag advertised it, and `connect()` answered `Transport sse not yet implemented` — after initialising the provider. An option with no implementation behind it is a defect, not a detail. When a second transport exists, it arrives together with its implementation.
+- Updated dependencies [adf9cd0]
+  - @opentask/taskin-task-server-mcp@0.4.0
+
 ## 4.2.0
 
 ### Minor Changes
