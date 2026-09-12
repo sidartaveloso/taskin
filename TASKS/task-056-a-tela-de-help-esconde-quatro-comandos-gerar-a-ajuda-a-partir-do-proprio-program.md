@@ -1,6 +1,6 @@
 # 🧩 Task 056 — A tela de --help esconde quatro comandos: gerar a ajuda a partir do proprio program
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: Sidarta Veloso
 
