@@ -60,6 +60,7 @@
 </template>
 
 <script setup lang="ts">
+import { type MascotConfig, resolveMascotNoiseSettings } from '@opentask/taskin-types';
 import {
   createNoiseWatcher,
   FaceTrackingDebug,
@@ -76,7 +77,14 @@ export interface Props {
   mascotSize?: number;
   showWebcam?: boolean;
   showDebug?: boolean;
-  // noise reaction props
+  /**
+   * The `mascot` block from `.taskin.json`. When provided, its
+   * `reactions.noise` settings seed the noise reaction and take precedence over
+   * the individual `noise*` props below, so a consumer can wire config straight
+   * through without unpacking it first.
+   */
+  mascot?: MascotConfig;
+  // noise reaction props (used when `mascot` is not provided)
   enableNoiseReactions?: boolean;
   noiseThreshold?: number; // RMS threshold (0..1)
   noiseDebounceMs?: number;
@@ -92,6 +100,19 @@ const props = withDefaults(defineProps<Props>(), {
   noiseDebounceMs: 1500,
   noiseSound: false,
 });
+
+// Resolve the effective noise settings: the `mascot` config block wins when
+// present, otherwise fall back to the individual props (already defaulted).
+const noiseSettings = computed(() =>
+  props.mascot
+    ? resolveMascotNoiseSettings(props.mascot)
+    : {
+        enabled: props.enableNoiseReactions,
+        threshold: props.noiseThreshold,
+        debounceMs: props.noiseDebounceMs,
+        sound: props.noiseSound,
+      },
+);
 
 const webcamVideoRef = ref<{ videoElement: HTMLVideoElement | null } | null>(null);
 const mascotContainer = ref<HTMLDivElement | null>(null);
@@ -125,11 +146,11 @@ const thoughtBubbleText = ref<string>('');
 
 const mascotSize = ref(props.mascotSize);
 
-// local noise config mirrors props and is editable by child control
-const enableNoiseReactionsRef = ref<boolean>(!!props.enableNoiseReactions);
-const noiseThresholdRef = ref<number>(props.noiseThreshold!);
-const noiseDebounceMsRef = ref<number>(props.noiseDebounceMs!);
-const noiseSoundRef = ref<boolean>(!!props.noiseSound);
+// local noise config mirrors the resolved settings and is editable by child control
+const enableNoiseReactionsRef = ref<boolean>(noiseSettings.value.enabled);
+const noiseThresholdRef = ref<number>(noiseSettings.value.threshold);
+const noiseDebounceMsRef = ref<number>(noiseSettings.value.debounceMs);
+const noiseSoundRef = ref<boolean>(noiseSettings.value.sound);
 
 const toggleTracking = () => {
   if (faceLandmarker.state.value.isDetecting) faceLandmarker.stopDetection();

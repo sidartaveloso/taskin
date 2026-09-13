@@ -125,10 +125,28 @@ critérios de aceitação que ainda faltavam e eram testáveis fora do browser:
   em `@opentask/taskin-types`, plugado como `mascot` opcional no
   `TaskinConfigSchema`, com defaults conservadores e testes de parsing.
 
+## Progress (RALPH, 2026-09-13 — segunda passada)
+
+Fechei a etapa de *derivação* do caminho config → props, que era a parte
+testável fora do browser:
+
+- `resolveMascotNoiseSettings(mascot?)` em `@opentask/taskin-types` — função pura
+  que lê o bloco `mascot` como escrito no `.taskin.json` (parcial, ausente ou
+  `null`) e devolve `{ enabled, threshold, debounceMs, sound }` já com os
+  defaults do schema aplicados. Coberta por 5 testes em `taskin.schemas.test.ts`
+  (defaults, `null`, bloco completo, bloco parcial, e rejeição de threshold fora
+  de faixa). Testes rodam em node (112 passam).
+- `TaskinWithShhh.vue` ganhou a prop opcional `mascot?: MascotConfig`; quando
+  presente, as configurações de ruído vêm de `resolveMascotNoiseSettings` e têm
+  precedência sobre as props `noise*` individuais. Um consumidor pode agora
+  repassar o bloco de config direto, sem desempacotar. `vue-tsc` passa.
+
 Restante para dar a task como concluída:
 
-- [ ] Fiar `.taskin.json` (`mascot.reactions.noise`) → props do `TaskinWithShhh`
-      no dashboard (o schema já existe; falta o consumidor ler e repassar).
+- [ ] Montar o `TaskinWithShhh` em alguma superfície do dashboard e ligar a
+      leitura do `.taskin.json` até a prop `mascot` (hoje o dashboard não
+      renderiza o mascote e recebe tasks por WS, não lê o arquivo de config).
+      A derivação já está pronta e testada; falta o ponto de montagem.
 - [ ] Asset de áudio real para `sound=true` (hoje o caminho é visual-only).
 - [ ] Documentação (README/ARCHITECTURE) e exemplos.
 - [ ] QA de acessibilidade: `prefers-reduced-motion` e leitura por leitor de tela.
