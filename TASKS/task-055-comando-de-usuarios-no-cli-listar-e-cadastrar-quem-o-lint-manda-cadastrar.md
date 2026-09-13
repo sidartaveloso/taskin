@@ -1,6 +1,6 @@
 # 🧩 Task 055 — Comando de usuarios no CLI: listar e cadastrar quem o lint manda cadastrar
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: Sidarta Veloso
 - Priority: 230
