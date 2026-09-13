@@ -115,6 +115,27 @@ function classificarFalha(saida: string, motivo: string): ResultadoDeConfianca {
   return conflito ? { tipo: 'ja-configurado' } : { tipo: 'falha', motivo };
 }
 
+/**
+ * Estado de uma VERSAO exata no registry (`nome@versao`), nao da `latest`: a
+ * pergunta que autoriza criar ou exigir o marco de uma versao e "esta versao
+ * ja esta no npm?", nunca "qual e a ultima?". `npm view` nao exige
+ * autenticacao. Um 404 ou "No match found" vira `ausente`; qualquer outra
+ * falha vira `indeterminado`, para nunca confundir "o registry disse que nao
+ * existe" com "nao deu para perguntar" — decidir por um chute e o que deixou o
+ * release de 06/09 verde com o repositorio dessincronizado.
+ */
+export async function estadoDaVersaoNoNpm(nome: string, versao: string, binario = 'npm'): Promise<EstadoNoRegistry> {
+  try {
+    const { stdout } = await capturar(binario, ['view', `${nome}@${versao}`, 'version']);
+    return stdout.trim() ? { tipo: 'publicado', versao: stdout.trim() } : { tipo: 'ausente' };
+  } catch (erro) {
+    const motivo = mensagemDe(erro);
+    return /E404|404 Not Found|No match(ing version)? found/.test(motivo)
+      ? { tipo: 'ausente' }
+      : { tipo: 'indeterminado', motivo };
+  }
+}
+
 function mensagemDe(erro: unknown): string {
   if (typeof erro === 'object' && erro !== null && 'stderr' in erro) {
     const { stderr } = erro as { stderr: unknown };
