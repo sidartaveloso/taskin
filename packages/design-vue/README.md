@@ -74,6 +74,15 @@ The official Taskin mascot component with animations and moods.
 - `sleep()` - Put mascot to sleep
 - `wakeUp()` - Wake up mascot
 
+### Interactive mascots
+
+- **`TaskinWithFaceTracking`** — mascot synced to your face via webcam. See
+  [`docs/FACE_TRACKING.md`](./docs/FACE_TRACKING.md).
+- **`TaskinWithShhh`** — mascot that reacts to ambient noise with a short
+  "xiiu/shhh". Configurable via the `mascot` block of `.taskin.json`, honours
+  `prefers-reduced-motion`, and never asks for the microphone unless enabled.
+  See [`docs/MASCOT_NOISE_REACTION.md`](./docs/MASCOT_NOISE_REACTION.md).
+
 ## 🎨 Development
 
 ### Storybook
