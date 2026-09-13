@@ -100,7 +100,7 @@
     "inquirer": "^12.11.0",
     "play-sound": "^1.1.6",
     "ws": "^8.18.3",
-    "zod": "^3.25.76"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^20.19.24",
