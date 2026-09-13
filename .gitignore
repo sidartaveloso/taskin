@@ -105,3 +105,6 @@ Thumbs.db
 
 *storybook.log
 storybook-static
+
+# Anexos que o vitest grava durante a execucao (capturas de tela de falha).
+.vitest-attachments/
