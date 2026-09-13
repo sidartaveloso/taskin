@@ -21,6 +21,8 @@ import type {
   HookOptionsSchema,
   HookResultSchema,
   HookSettingsSchema,
+  MascotConfigSchema,
+  MascotNoiseReactionConfigSchema,
   NotificationConfigSchema,
   NotificationDiscordConfigSchema,
   NotificationEventSchema,
@@ -379,6 +381,25 @@ export type TaskinConfig = z.infer<typeof TaskinConfigSchema>;
  * @public
  */
 export type TaskinConfigInput = z.input<typeof TaskinConfigSchema>;
+
+/**
+ * Mascot configuration block (.taskin.json `mascot`).
+ * @public
+ */
+export type MascotConfig = z.infer<typeof MascotConfigSchema>;
+
+/**
+ * Resolved ambient-noise reaction config for the mascot.
+ * @public
+ */
+export type MascotNoiseReactionConfig = z.infer<typeof MascotNoiseReactionConfigSchema>;
+
+/**
+ * Ambient-noise reaction config as it may be *written* in .taskin.json, before
+ * the schema fills in defaults.
+ * @public
+ */
+export type MascotNoiseReactionConfigInput = z.input<typeof MascotNoiseReactionConfigSchema>;
 
 // ============================================================================
 // Hook System Types
