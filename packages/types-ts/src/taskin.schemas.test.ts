@@ -20,6 +20,7 @@ import {
   parseGroupId,
   parseTaskId,
   RefactoringMetricsSchema,
+  resolveMascotNoiseSettings,
   StatsPeriodSchema,
   StatsQuerySchema,
   TASK_STATUSES,
@@ -1164,6 +1165,41 @@ describe('TaskinConfigSchema - with mascot', () => {
       provider: { type: 'fs', config: { tasksDir: 'TASKS' } },
     };
     expect(TaskinConfigSchema.parse(config).mascot).toBeUndefined();
+  });
+});
+
+describe('resolveMascotNoiseSettings', () => {
+  it('returns the conservative defaults when no mascot block is given', () => {
+    expect(resolveMascotNoiseSettings()).toEqual({
+      enabled: false,
+      threshold: 0.06,
+      debounceMs: 1500,
+      sound: false,
+    });
+  });
+
+  it('treats null the same as an absent block', () => {
+    expect(resolveMascotNoiseSettings(null)).toEqual(resolveMascotNoiseSettings());
+  });
+
+  it('flattens a full mascot block into ready-to-pass settings', () => {
+    const settings = resolveMascotNoiseSettings({
+      reactions: { noise: { enabled: true, threshold: 0.7, debounceMs: 5000, sound: true } },
+    });
+    expect(settings).toEqual({ enabled: true, threshold: 0.7, debounceMs: 5000, sound: true });
+  });
+
+  it('fills the defaults for fields omitted from a partial noise block', () => {
+    expect(resolveMascotNoiseSettings({ reactions: { noise: { enabled: true } } })).toEqual({
+      enabled: true,
+      threshold: 0.06,
+      debounceMs: 1500,
+      sound: false,
+    });
+  });
+
+  it('throws on an out-of-range threshold, refusing to pass an invalid setting downstream', () => {
+    expect(() => resolveMascotNoiseSettings({ reactions: { noise: { threshold: 2 } } })).toThrow();
   });
 });
 

@@ -759,6 +759,44 @@ export const MascotConfigSchema = z.object({
 });
 
 /**
+ * Flat, defaults-applied ambient-noise reaction settings, ready to hand to a
+ * consumer (e.g. the `TaskinWithShhh` mascot component). This is the shape the
+ * dashboard passes down after reading the `mascot` block from `.taskin.json`.
+ *
+ * @public
+ */
+export interface MascotNoiseSettings {
+  /** Whether the ambient-noise reaction is active. */
+  enabled: boolean;
+  /** RMS amplitude (0..1) the ambient level must reach to trigger the reaction. */
+  threshold: number;
+  /** Minimum gap between two reactions, in milliseconds. */
+  debounceMs: number;
+  /** Whether to play the optional short audio cue alongside the visual reaction. */
+  sound: boolean;
+}
+
+/**
+ * Reads a (possibly partial or absent) `mascot` config block as written in
+ * `.taskin.json` and resolves it into flat noise settings with every schema
+ * default applied. Passing `undefined`/`null` yields the conservative defaults,
+ * so a project with no `mascot` block behaves exactly like one that opted every
+ * field into its default — the mascot stays silent until explicitly enabled.
+ *
+ * @throws ZodError when the provided block violates {@link MascotConfigSchema}
+ * @public
+ * @example
+ * ```ts
+ * resolveMascotNoiseSettings({ reactions: { noise: { enabled: true } } });
+ * // → { enabled: true, threshold: 0.06, debounceMs: 1500, sound: false }
+ * ```
+ */
+export const resolveMascotNoiseSettings = (mascot?: z.input<typeof MascotConfigSchema> | null): MascotNoiseSettings => {
+  const { enabled, threshold, debounceMs, sound } = MascotConfigSchema.parse(mascot ?? {}).reactions.noise;
+  return { enabled, threshold, debounceMs, sound };
+};
+
+/**
  * Taskin configuration file schema (.taskin.json).
  * Root configuration for a Taskin project.
  *
