@@ -25,9 +25,31 @@ Work on issues in this order:
 
 Pick the highest-priority open issue that is not blocked by another open issue.
 
-Before touching code, claim the task with `pnpm taskin start <ID>` — the status
-matters to the rest of the team and to the dashboard, and `finish` expects the
-task to have been started.
+## How to talk to the task tracker
+
+The tracker is Taskin, and it is exposed to you as an **MCP server** — use its
+tools, not the shell:
+
+| you want to | call |
+| --- | --- |
+| see the queue again | `list_tasks` (takes `open`, `status`, `type`, `assignee`, `text`) |
+| claim a task | `start_task` |
+| close a task | `finish_task` |
+
+Do **not** shell out to `pnpm taskin start` / `finish` for these three. The MCP
+server is the interface being exercised here, and a shell call bypasses it.
+
+The tools return what identifies a task — id, title, status, type, assignee —
+without the markdown body. To read a body, open the file: the tasks live in
+`TASKS/task-<ID>-*.md`.
+
+If a tool is not available to you, say so plainly in your commit message and
+fall back to the CLI rather than stopping — but report it, because that is a
+defect worth knowing about.
+
+Before touching code, claim the task with `start_task` — the status matters to
+the rest of the team and to the dashboard, and `finish_task` expects the task to
+have been started.
 
 ## Workflow
 
@@ -41,7 +63,7 @@ task to have been started.
    - List key decisions made
    - List files changed
    - Note any blockers for the next iteration
-6. **Close** — close the issue with `pnpm taskin finish <ID>` explaining what was done.
+6. **Close** — close the issue with the `finish_task` tool, explaining what was done.
 
 ## Rules
 

@@ -16,6 +16,23 @@ export function extrairManifesto(valor: unknown): ManifestoDePacote | undefined 
   return { nome: name, privado: privado === true };
 }
 
+export function extrairVersao(valor: unknown): string | undefined {
+  if (!ehObjeto(valor)) return undefined;
+  const { version } = valor;
+  return typeof version === 'string' && version.length > 0 ? version : undefined;
+}
+
+export function extrairRepositoryUrl(valor: unknown): string | undefined {
+  if (!ehObjeto(valor)) return undefined;
+  const { repository } = valor;
+  // `repository` aceita a forma abreviada em string ("github:x/y") alem do objeto.
+  if (typeof repository === 'string') return repository.length > 0 ? repository : undefined;
+  if (ehObjeto(repository) && typeof repository.url === 'string' && repository.url.length > 0) {
+    return repository.url;
+  }
+  return undefined;
+}
+
 export function extrairIgnorados(valor: unknown): Set<string> {
   if (!ehObjeto(valor)) return new Set();
   const { ignore } = valor;
