@@ -28,6 +28,98 @@ interface DashboardOptions {
   closed?: boolean;
 }
 
+export interface DashboardAppOptions {
+  /** Directory holding the built dashboard (index.html + static assets). */
+  dashboardDist: string;
+  /** Host advertised to the browser inside the injected `VITE_WS_URL`. */
+  host: string;
+  /** WebSocket port advertised to the browser inside the injected `VITE_WS_URL`. */
+  wsPort: number;
+}
+
+/**
+ * Assemble the dashboard's Express app: security headers, `VITE_WS_URL`
+ * injection into `index.html`, the avatar proxy, static serving and the 404
+ * catch-all.
+ *
+ * Pure on purpose — no `listen`, no WebSocket, no browser, no signal handlers.
+ * The command wires those around it; tests mount it on port 0 and hit the
+ * routes. See task-058: mocking the layer under change (express, the static
+ * server) is ceremony, not a test.
+ */
+export function createDashboardApp({ dashboardDist, host, wsPort }: DashboardAppOptions): express.Express {
+  const app = express();
+
+  // Security: Disable X-Powered-By header
+  app.disable('x-powered-by');
+
+  // Security: Set security headers
+  app.use((_req, res, next) => {
+    // Prevent clickjacking
+    res.setHeader('X-Frame-Options', 'DENY');
+    // Prevent MIME sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // Enable XSS protection
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    // Content Security Policy - only allow same origin
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:;",
+    );
+    next();
+  });
+
+  // Inject WebSocket URL into HTML
+  app.use((req, res, next) => {
+    if (req.path === '/' || req.path === '/index.html') {
+      import('fs')
+        .then((fs) => fs.promises.readFile(path.join(dashboardDist, 'index.html'), 'utf-8'))
+        .then((html) => {
+          // Security: Escape values before injecting into HTML to prevent XSS
+          const safeHost = escapeHtml(host);
+          const safeWsPort = escapeHtml(String(wsPort));
+
+          // Inject WebSocket URL as environment variable
+          const injectedHtml = html.replace(
+            '</head>',
+            `<script>window.VITE_WS_URL = 'ws://${safeHost}:${safeWsPort}';</script></head>`,
+          );
+          res.send(injectedHtml);
+        })
+        .catch((err) => {
+          console.error('Failed to read index.html:', err);
+          res.status(500).send('Internal Server Error');
+        });
+    } else {
+      next();
+    }
+  });
+
+  // Avatar proxy: the browser asks this server for /avatar/<hash> instead of
+  // talking to a third party. Keeps IP/referrer in-house, works offline, and
+  // stays inside the `img-src 'self'` CSP above. See task-067.
+  const avatarHandler = createAvatarHandler();
+  app.get('/avatar/:hash', (req, res) => {
+    void avatarHandler(req, res);
+  });
+
+  // Security: Serve static files with options to prevent path traversal
+  app.use(
+    express.static(dashboardDist, {
+      dotfiles: 'deny', // Deny access to dotfiles
+      index: false, // Don't serve index.html here (handled above)
+      redirect: false, // Don't redirect to trailing slash
+    }),
+  );
+
+  // Security: Catch-all for undefined routes (prevent information disclosure)
+  app.use((_req, res) => {
+    res.status(404).send('Not Found');
+  });
+
+  return app;
+}
+
 async function startHttpServer(
   app: express.Express,
   startPort: number,
@@ -196,74 +288,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       ? path.join(__dirname, '..', '..', 'dashboard-dist')
       : path.join(__dirname, '..', 'dashboard-dist');
 
-    const app = express();
-
-    // Security: Disable X-Powered-By header
-    app.disable('x-powered-by');
-
-    // Security: Set security headers
-    app.use((_req, res, next) => {
-      // Prevent clickjacking
-      res.setHeader('X-Frame-Options', 'DENY');
-      // Prevent MIME sniffing
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      // Enable XSS protection
-      res.setHeader('X-XSS-Protection', '1; mode=block');
-      // Content Security Policy - only allow same origin
-      res.setHeader(
-        'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:;",
-      );
-      next();
-    });
-
-    // Inject WebSocket URL into HTML
-    app.use((req, res, next) => {
-      if (req.path === '/' || req.path === '/index.html') {
-        import('fs')
-          .then((fs) => fs.promises.readFile(path.join(dashboardDist, 'index.html'), 'utf-8'))
-          .then((html) => {
-            // Security: Escape values before injecting into HTML to prevent XSS
-            const safeHost = escapeHtml(host);
-            const safeWsPort = escapeHtml(String(wsPort));
-
-            // Inject WebSocket URL as environment variable
-            const injectedHtml = html.replace(
-              '</head>',
-              `<script>window.VITE_WS_URL = 'ws://${safeHost}:${safeWsPort}';</script></head>`,
-            );
-            res.send(injectedHtml);
-          })
-          .catch((err) => {
-            console.error('Failed to read index.html:', err);
-            res.status(500).send('Internal Server Error');
-          });
-      } else {
-        next();
-      }
-    });
-
-    // Avatar proxy: the browser asks this server for /avatar/<hash> instead of
-    // talking to a third party. Keeps IP/referrer in-house, works offline, and
-    // stays inside the `img-src 'self'` CSP above. See task-067.
-    const avatarHandler = createAvatarHandler();
-    app.get('/avatar/:hash', (req, res) => {
-      void avatarHandler(req, res);
-    });
-
-    // Security: Serve static files with options to prevent path traversal
-    app.use(
-      express.static(dashboardDist, {
-        dotfiles: 'deny', // Deny access to dotfiles
-        index: false, // Don't serve index.html here (handled above)
-        redirect: false, // Don't redirect to trailing slash
-      }),
-    );
-
-    // Security: Catch-all for undefined routes (prevent information disclosure)
-    app.use((_req, res) => {
-      res.status(404).send('Not Found');
-    });
+    const app = createDashboardApp({ dashboardDist, host, wsPort });
 
     const { server: httpServer, port: actualPort } = await startHttpServer(app, port, host);
 
