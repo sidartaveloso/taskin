@@ -471,7 +471,7 @@ export const AutomationConfigSchema = z.object({
  */
 export const ProviderConfigSchema = z.object({
   type: z.string(),
-  config: z.record(z.unknown()),
+  config: z.record(z.string(), z.unknown()),
 });
 
 /**

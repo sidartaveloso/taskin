@@ -56,7 +56,10 @@
     "test": "turbo run test && pnpm test:dev-scripts",
     "test:coverage": "turbo run test:coverage",
     "test:dev-scripts": "vitest run --config dev/vitest.config.ts",
-    "typecheck": "turbo run typecheck"
+    "sincronizar:tags-de-publicacao": "tsx dev/scripts/sincronizar-tags-de-publicacao.ts",
+    "typecheck": "turbo run typecheck",
+    "verificar:repository-url": "tsx dev/scripts/verificar-repository-url.ts",
+    "verificar:tags-de-publicacao": "tsx dev/scripts/verificar-tags-de-publicacao.ts"
   },
   "devDependencies": {
     "@ai-hero/sandcastle": "^0.12.0",
