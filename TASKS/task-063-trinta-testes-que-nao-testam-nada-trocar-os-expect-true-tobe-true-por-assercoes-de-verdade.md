@@ -1,6 +1,6 @@
 # 🧩 Task 063 — Trinta testes que nao testam nada: trocar os expect(true).toBe(true) por asserções de verdade
 
-- Status: in-progress
+- Status: done
 - Type: test
 - Assignee: Sidarta Veloso
 - Priority: 250
