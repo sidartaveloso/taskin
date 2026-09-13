@@ -1,6 +1,6 @@
 # 🧩 Task 066 — O caminho MCP ignora o automation.level: start_task e finish_task nao commitam o que o CLI commita
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Priority: 260
 - Assignee: Sidarta Veloso
