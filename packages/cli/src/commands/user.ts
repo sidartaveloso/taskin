@@ -13,12 +13,18 @@
  * task files as a side effect is a larger, separate change (see task-055).
  */
 
+import { classifyAssignee, foldAssignee } from '@opentask/taskin-file-system-provider';
+import { GitAnalyzer } from '@opentask/taskin-git-utils';
+import type { IUserRegistry } from '@opentask/taskin-task-manager';
 import { type User, UserSchema } from '@opentask/taskin-types';
 import type { Command } from 'commander';
 import inquirer from 'inquirer';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
+
+/** The registry seam the resolution report runs against — narrow enough to fake. */
+type ResolverRegistry = Pick<IUserRegistry, 'resolveUser' | 'getAllUsers'>;
 
 /** The slug used as the default id derived from a display name. */
 export function slugifyName(name: string): string {
@@ -61,6 +67,86 @@ export function buildUser(input: NewUserInput): User {
 export function findIdConflict(existing: User[], id: string): User | undefined {
   const folded = foldId(id);
   return existing.find((user) => user.id === id || foldId(user.id) === folded);
+}
+
+/** Quotes each value for a human-readable inline list. */
+function quoteList(values: readonly string[]): string {
+  return values.map((value) => `"${value}"`).join(', ');
+}
+
+/**
+ * How a fresh `add` changes the assignees already in use: the spellings it just
+ * made resolve to `newUser`, and the ones that still resolve to nobody.
+ *
+ * @public
+ */
+export interface AssigneeResolution {
+  /** Distinct in-use spellings that now resolve to the freshly added user. */
+  nowResolving: string[];
+  /** Distinct in-use spellings that still resolve to nobody. */
+  stillUnresolved: string[];
+}
+
+/**
+ * Closes the loop on half of `lint`'s warnings: after registering someone, the
+ * person sees how many `Assignee:` lines stop being fabricated temporary users,
+ * and which ones are still waiting on a cadastro.
+ *
+ * `registry` must already contain `newUser`. The same {@link classifyAssignee}
+ * the linter uses decides each verdict, so a placeholder like "to be defined"
+ * counts as neither: it is `unassigned`, not a person who failed to resolve.
+ *
+ * @public
+ */
+export function resolveAssignees(
+  rawAssignees: readonly string[],
+  registry: ResolverRegistry,
+  newUser: User,
+): AssigneeResolution {
+  const nowResolving = new Set<string>();
+  const stillUnresolved = new Set<string>();
+
+  for (const raw of rawAssignees) {
+    const trimmed = raw.trim();
+    if (trimmed === '') continue;
+
+    const identity = classifyAssignee(trimmed, registry);
+    if ((identity.kind === 'resolved' || identity.kind === 'correctable') && identity.user.id === newUser.id) {
+      nowResolving.add(trimmed);
+    } else if (identity.kind === 'unknown') {
+      stillUnresolved.add(trimmed);
+    }
+  }
+
+  return { nowResolving: [...nowResolving], stillUnresolved: [...stillUnresolved] };
+}
+
+/**
+ * Commit-author names that belong to `newUser` but that the chosen `name` leaves
+ * out.
+ *
+ * The registry resolves a commit author by name (`a.name || a.email`), not by
+ * e-mail, so a name that folds onto this person yet does not resolve to them
+ * means their commits keep counting as a separate contributor. Registering with
+ * `--name` set to one of these is what folds the history back together.
+ *
+ * @public
+ */
+export function authorNamesNotAttributed(
+  authorNames: readonly string[],
+  registry: Pick<IUserRegistry, 'resolveUser'>,
+  newUser: User,
+): string[] {
+  const belongsTo = new Set([foldAssignee(newUser.id), foldAssignee(newUser.name)]);
+  const missed = new Set<string>();
+
+  for (const name of authorNames) {
+    const trimmed = name.trim();
+    if (trimmed === '' || !belongsTo.has(foldAssignee(trimmed))) continue;
+    if (registry.resolveUser(trimmed)?.id !== newUser.id) missed.add(trimmed);
+  }
+
+  return [...missed];
 }
 
 /** One aligned row per user — id, name, email — with a header row on top. */
@@ -136,7 +222,7 @@ async function promptMissingFields(options: AddUserOptions): Promise<NewUserInpu
 
 async function addUser(options: AddUserOptions): Promise<void> {
   requireTaskinProject();
-  const { userRegistry } = await resolveTaskProvider();
+  const { provider, userRegistry, projectRoot } = await resolveTaskProvider();
 
   printHeader('Add User', '👥');
 
@@ -150,10 +236,39 @@ async function addUser(options: AddUserOptions): Promise<void> {
     process.exit(1);
   }
 
+  // Snapshot before the registry changes: the report is about what this add makes
+  // resolve, so it must be measured against the state the add is about to leave.
+  const inUseAssignees = await collectInUseAssignees(provider);
+  const authorNames = await collectCommitAuthorNames(projectRoot);
+
   await userRegistry.saveUser(user);
   success(`Registered ${colors.highlight(user.name)} (${user.id}) — ${user.email}`);
 
   reportNewlyResolving(user);
+  reportAssigneeResolution(inUseAssignees, userRegistry, user);
+  reportUnattributedAuthors(authorNames, userRegistry, user);
+}
+
+/** Every `Assignee:` value in use, as the provider read it from the tasks. */
+async function collectInUseAssignees(provider: {
+  getAllTasks(): Promise<readonly { assignee?: User }[]>;
+}): Promise<string[]> {
+  try {
+    const tasks = await provider.getAllTasks();
+    return tasks.map((task) => task.assignee?.name).filter((name): name is string => typeof name === 'string');
+  } catch {
+    return [];
+  }
+}
+
+/** Every commit-author name in history, or none when git is unavailable. */
+async function collectCommitAuthorNames(projectRoot: string): Promise<string[]> {
+  try {
+    const authors = await new GitAnalyzer(projectRoot).getAuthors();
+    return authors.map((author) => author.name);
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -163,7 +278,38 @@ async function addUser(options: AddUserOptions): Promise<void> {
  */
 function reportNewlyResolving(user: User): void {
   const spellings = Array.from(new Set([user.id, user.name, slugifyName(user.name)]));
-  info(`Assignees that now resolve: ${spellings.map((s) => `"${s}"`).join(', ')}`);
+  info(`Assignees that now resolve: ${quoteList(spellings)}`);
+}
+
+/** What the add changed for the assignees already written in the tasks. */
+function reportAssigneeResolution(inUseAssignees: readonly string[], registry: ResolverRegistry, user: User): void {
+  const { nowResolving, stillUnresolved } = resolveAssignees(inUseAssignees, registry, user);
+
+  if (nowResolving.length > 0) {
+    const noun = nowResolving.length === 1 ? 'assignee' : 'assignees';
+    info(`${nowResolving.length} in-use ${noun} now resolve to ${user.id}: ${quoteList(nowResolving)}`);
+  }
+
+  if (stillUnresolved.length > 0) {
+    console.log(
+      colors.warning(
+        `Still resolving to nobody (${stillUnresolved.length}): ${quoteList(stillUnresolved)} — register them too.`,
+      ),
+    );
+  }
+}
+
+/** Warns when the chosen name leaves a commit author's history off this user. */
+function reportUnattributedAuthors(authorNames: readonly string[], registry: ResolverRegistry, user: User): void {
+  const missed = authorNamesNotAttributed(authorNames, registry, user);
+  if (missed.length === 0) return;
+
+  console.log(
+    colors.warning(
+      `Commits authored as ${quoteList(missed)} won't fold onto ${user.id}: the registry matches commit authors ` +
+        `by name. Register with --name set to one of these to keep the history on one contributor.`,
+    ),
+  );
 }
 
 /**
