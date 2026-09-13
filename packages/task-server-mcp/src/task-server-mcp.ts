@@ -10,7 +10,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import type { ITaskManager } from '@opentask/taskin-task-manager';
 import { filterTasks, summarizeTask, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
-import { type TaskId, TaskIdSchema } from '@opentask/taskin-types';
+import { type TaskId, TaskIdSchema, type TaskStatus } from '@opentask/taskin-types';
 import type {
   ITaskMCPServer,
   MCPConnectionOptions,
@@ -23,6 +23,7 @@ import type {
   MCPTool,
   MCPToolCallParams,
   MCPToolCallResult,
+  TaskStatusChangeHook,
 } from './task-server-mcp.types.js';
 
 /**
@@ -54,10 +55,18 @@ function invalidTaskId(raw: unknown): MCPToolCallResult {
 export class TaskMCPServer implements ITaskMCPServer {
   private server: Server;
   private taskManager: ITaskManager;
-  private config: Required<MCPServerConfig>;
+  private config: Required<Omit<MCPServerConfig, 'onStatusChange'>>;
+  /**
+   * Injected side effect for status-changing tools. Undefined when the host
+   * wires no automation (e.g. a plain programmatic embed), in which case
+   * `start_task`/`finish_task` change status and nothing else — the pre-hook
+   * behavior.
+   */
+  private onStatusChange?: TaskStatusChangeHook;
 
   constructor(config: MCPServerConfig) {
     this.taskManager = config.taskManager;
+    this.onStatusChange = config.onStatusChange;
     this.config = {
       name: 'taskin-mcp-server',
       version: '1.0.0',
@@ -291,6 +300,7 @@ export class TaskMCPServer implements ITaskMCPServer {
    */
   private async handleStartTask(taskId: TaskId): Promise<MCPToolCallResult> {
     const task = await this.taskManager.startTask(taskId);
+    await this.notifyStatusChange(task.id, task.status);
 
     return {
       content: [
@@ -320,6 +330,7 @@ export class TaskMCPServer implements ITaskMCPServer {
    */
   private async handleFinishTask(taskId: TaskId): Promise<MCPToolCallResult> {
     const task = await this.taskManager.finishTask(taskId);
+    await this.notifyStatusChange(task.id, task.status);
 
     return {
       content: [
@@ -342,6 +353,25 @@ export class TaskMCPServer implements ITaskMCPServer {
         },
       ],
     };
+  }
+
+  /**
+   * Run the injected status-change hook, if any.
+   *
+   * Best-effort on purpose: the task's status was already persisted by the
+   * manager, so a hook that throws (a git problem, say) must not turn a
+   * successful `start_task`/`finish_task` into a failed tool call. The failure
+   * is logged and the tool still reports success — same posture the CLI takes,
+   * where a failed auto-commit only drops the "Auto-committed" line.
+   */
+  private async notifyStatusChange(taskId: TaskId, status: TaskStatus): Promise<void> {
+    if (!this.onStatusChange) return;
+
+    try {
+      await this.onStatusChange({ taskId, status });
+    } catch (error) {
+      this.log('onStatusChange hook failed:', error);
+    }
   }
 
   /**

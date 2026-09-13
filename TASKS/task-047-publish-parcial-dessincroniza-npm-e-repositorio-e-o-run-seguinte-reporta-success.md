@@ -1,6 +1,6 @@
 # Task 047 — Publish parcial dessincroniza npm e repositorio, e o run seguinte reporta success
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Priority: 180
