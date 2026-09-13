@@ -230,6 +230,37 @@ LLM continues conversation
 
 ## Configuração
 
+### Mascote — reação a ruído ("xiiu/shhh")
+
+O bloco opcional `mascot` do `.taskin.json` configura a reação do mascote ao
+ruído ambiente, validado por `MascotConfigSchema` em `@opentask/taskin-types`:
+
+```json
+{
+  "mascot": {
+    "reactions": {
+      "noise": {
+        "enabled": true,
+        "threshold": 0.7,
+        "debounceMs": 5000,
+        "sound": false
+      }
+    }
+  }
+}
+```
+
+Os campos têm defaults conservadores (`enabled: false`, `threshold: 0.06`,
+`debounceMs: 1500`, `sound: false`) — sem `enabled: true` explícito o microfone
+nunca é solicitado. As funções puras `resolveMascotNoiseSettings` e
+`resolveShhhReactionPlan` (mesmo pacote) derivam, respectivamente, as
+configurações com defaults aplicados e o plano da reação (honrando
+`prefers-reduced-motion`). O organismo `TaskinWithShhh`
+(`@opentask/taskin-design-vue`) consome esse bloco.
+
+Consulte `packages/design-vue/docs/MASCOT_NOISE_REACTION.md` para o guia
+completo (props, acessibilidade, privacidade e testes).
+
 ## Métricas e Analytics
 
 O Taskin separa agora as responsabilidades de armazenamento das responsabilidades

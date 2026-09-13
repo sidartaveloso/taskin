@@ -31,7 +31,7 @@ noise capabilities (e.g., classroom demos, workshops, or shared offices).
 - [ ] Implement visual reaction and optional sound playback via existing `playSound()` helper
 - [ ] Add unit tests for `NoiseWatcher` and config parsing
 - [ ] Add integration / E2E test that simulates noise events and asserts mascot reaction
-- [ ] Update documentation and examples (README, ARCHITECTURE.md)
+- [x] Update documentation and examples (README, ARCHITECTURE.md)
 - [ ] QA: visual verification across themes & accessibility review (screen reader / reduced motion)
 
 ## Acceptance Criteria
@@ -169,3 +169,26 @@ Restante para dar a task como concluída:
       visual do badge estático e a leitura por leitor de tela.
 - [ ] Rodar os specs de browser/storybook (`TaskinWithShhh.spec`) — não
       executados no ambiente RALPH (host sem `libnss3`, sem root para instalar).
+
+## Progress (RALPH, 2026-09-13 — quarta passada)
+
+Fechei o item de documentação do checklist (`README, ARCHITECTURE.md`), que era
+o próximo passo testável fora do browser:
+
+- Novo guia `packages/design-vue/docs/MASCOT_NOISE_REACTION.md`, no mesmo padrão
+  do `FACE_TRACKING.md`: como funciona (Web Audio → `NoiseWatcher` → plano da
+  reação), uso do `TaskinWithShhh` (via bloco `mascot` do `.taskin.json` e via
+  props `noise*`), tabela do schema `mascot.reactions.noise`, os helpers puros
+  `resolveMascotNoiseSettings`/`resolveShhhReactionPlan`, e seções de
+  acessibilidade, privacidade e testes.
+- `docs/ARCHITECTURE.md`: a seção `## Configuração` (antes vazia) ganhou a
+  subseção do bloco `mascot`, com o exemplo de `.taskin.json`, os defaults e um
+  link para o guia do design-vue.
+- `packages/design-vue/README.md`: subseção "Interactive mascots" listando
+  `TaskinWithFaceTracking` e `TaskinWithShhh` com links para os respectivos docs.
+
+Restam apenas os itens que dependem do browser/dashboard: montar o
+`TaskinWithShhh` numa superfície do dashboard e ligar a leitura do
+`.taskin.json`, o asset de áudio real para `sound=true`, e a QA de
+acessibilidade no browser (verificação visual do badge estático + leitor de
+tela).
