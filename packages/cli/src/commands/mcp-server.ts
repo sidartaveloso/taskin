@@ -7,6 +7,7 @@ import { TaskMCPServer } from '@opentask/taskin-task-server-mcp';
 import chalk from 'chalk';
 import path from 'path';
 import { colors } from '../lib/colors.js';
+import { createMcpStatusCommitHook } from '../lib/mcp-status-hook/index.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
@@ -64,14 +65,21 @@ async function startMCPServer(options: MCPServerOptions): Promise<void> {
 
   try {
     aviso('Initializing task manager...');
-    const { provider } = await resolveTaskProvider();
+    const { provider, projectRoot: monorepoRoot } = await resolveTaskProvider();
     const manager = new TaskManager(provider);
+
+    // Same status-change commit `taskin start`/`finish` make, so the two doors
+    // to the operation leave the same history when `automation.level` asks for
+    // it (task-066). Undefined when the project does not auto-commit — then the
+    // MCP path is a pure status change, exactly like the CLI in that project.
+    const onStatusChange = createMcpStatusCommitHook({ monorepoRoot });
 
     const mcpServer = new TaskMCPServer({
       taskManager: manager,
       name: 'taskin-mcp-server',
       version: '1.0.0',
       debug,
+      onStatusChange,
     });
 
     aviso('Starting MCP server over stdio...');
