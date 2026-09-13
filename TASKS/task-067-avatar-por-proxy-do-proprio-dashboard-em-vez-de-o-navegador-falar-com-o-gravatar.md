@@ -1,6 +1,6 @@
 # 🧩 Task 067 — Avatar por proxy do proprio dashboard, em vez de o navegador falar com o gravatar
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Priority: 255
 - Assignee: Sidarta Veloso
