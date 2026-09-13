@@ -29,14 +29,20 @@ export const NullLogger: ILogger = {
 };
 
 /**
+ * A identidade do avatar: o md5 (hex, minusculo) do email normalizado.
+ *
+ * O dominio guarda o hash, nao a URL de um provedor. Quem renderiza — o
+ * servidor do dashboard, por exemplo — decide o que fazer com ele. Ver
+ * task-067.
+ */
+function avatarHashForEmail(email: string): string {
+  return createHash('md5').update(email.trim().toLowerCase()).digest('hex');
+}
+
+/**
  * Registry for managing user information
  * Loads users from .taskin-users.json
  */
-function getGravatarUrl(email: string): string {
-  const hash = createHash('md5').update(email.trim().toLowerCase()).digest('hex');
-  return `https://www.gravatar.com/avatar/${hash}?d=mp`;
-}
-
 export class UserRegistry implements IUserRegistry {
   private users: Map<string, User> = new Map();
   private usersFilePath: string;
@@ -85,17 +91,17 @@ export class UserRegistry implements IUserRegistry {
   resolveUser(nameOrId: string): User | undefined {
     // Try exact ID match first
     const byId = this.users.get(nameOrId);
-    if (byId) return { ...byId, avatar: getGravatarUrl(byId.email) };
+    if (byId) return { ...byId, avatarHash: avatarHashForEmail(byId.email) };
 
     // Try slug version of name
     const slug = nameOrId.toLowerCase().replace(/\s+/g, '-');
     const bySlug = this.users.get(slug);
-    if (bySlug) return { ...bySlug, avatar: getGravatarUrl(bySlug.email) };
+    if (bySlug) return { ...bySlug, avatarHash: avatarHashForEmail(bySlug.email) };
 
     // Try to find by name (case-insensitive)
     for (const user of this.users.values()) {
       if (user.name.toLowerCase() === nameOrId.toLowerCase()) {
-        return { ...user, avatar: getGravatarUrl(user.email) };
+        return { ...user, avatarHash: avatarHashForEmail(user.email) };
       }
     }
 
@@ -139,7 +145,7 @@ export class UserRegistry implements IUserRegistry {
       id: slug,
       name: nameOrId,
       email,
-      avatar: getGravatarUrl(email),
+      avatarHash: avatarHashForEmail(email),
     };
   }
 

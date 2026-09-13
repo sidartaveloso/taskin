@@ -105,7 +105,17 @@ export const UserSchema = z.object({
   email: z.string().email(),
   id: z.string(),
   name: z.string(),
-  avatar: z.string().optional(),
+  /**
+   * Identidade do avatar — o md5 (hex, minusculo) do email normalizado — e nao
+   * a URL de um provedor.
+   *
+   * O dominio guarda quem a pessoa e, nao onde a imagem mora: gravar
+   * `https://www.gravatar.com/avatar/<hash>` aqui acoplava o nucleo a um
+   * provedor e fazia o navegador de quem abre o dashboard buscar a imagem em
+   * terceiro. Cada superficie decide como renderizar esta identidade — o
+   * dashboard pede `/avatar/<hash>` ao proprio servidor (ver task-067).
+   */
+  avatarHash: z.string().optional(),
   /**
    * Links de perfil que o registro de usuarios ja carregava sem tipo.
    *

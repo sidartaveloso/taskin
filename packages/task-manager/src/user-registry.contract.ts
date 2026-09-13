@@ -40,7 +40,7 @@ export function runUserRegistryContractTests(createSubject: () => Promise<IUserR
         const user = registry.resolveUser('joao.silva');
         expect(user).toBeDefined();
         expect(user!.id).toBe('joao.silva');
-        expect(user!.avatar).toMatch(/^https:\/\/www\.gravatar\.com\/avatar\/[a-f0-9]{32}\?d=mp$/);
+        expect(user!.avatarHash).toMatch(/^[a-f0-9]{32}$/);
       });
 
       it('should return user by name (case-insensitive)', async () => {
@@ -54,7 +54,7 @@ export function runUserRegistryContractTests(createSubject: () => Promise<IUserR
         const user = registry.resolveUser('Maria Souza');
         expect(user).toBeDefined();
         expect(user!.id).toBe('maria');
-        expect(user!.avatar).toMatch(/^https:\/\/www\.gravatar\.com\/avatar\/[a-f0-9]{32}\?d=mp$/);
+        expect(user!.avatarHash).toMatch(/^[a-f0-9]{32}$/);
       });
 
       it('should return undefined for unknown user', async () => {
@@ -65,21 +65,21 @@ export function runUserRegistryContractTests(createSubject: () => Promise<IUserR
     });
 
     describe('createTemporaryUser', () => {
-      it('should create user with Gravatar URL', async () => {
+      it('should create user with an avatar identity hash', async () => {
         const registry = await createSubject();
         const user = registry.createTemporaryUser('Carlos');
 
         expect(user.id).toBe('carlos');
         expect(user.name).toBe('Carlos');
         expect(user.email).toBe('carlos@example.com');
-        expect(user.avatar).toMatch(/^https:\/\/www\.gravatar\.com\/avatar\/[a-f0-9]{32}\?d=mp$/);
+        expect(user.avatarHash).toMatch(/^[a-f0-9]{32}$/);
       });
 
-      it('should create different Gravatar URLs for different inputs', async () => {
+      it('should create different avatar hashes for different inputs', async () => {
         const registry = await createSubject();
         const user1 = registry.createTemporaryUser('Alice');
         const user2 = registry.createTemporaryUser('Bob');
-        expect(user1.avatar).not.toBe(user2.avatar);
+        expect(user1.avatarHash).not.toBe(user2.avatarHash);
       });
     });
 
