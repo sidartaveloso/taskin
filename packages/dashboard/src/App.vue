@@ -97,7 +97,11 @@ const tasks = computed<Task[]>(() => {
             id: source.assignee.id,
             name: source.assignee.name,
             email: source.assignee.email,
-            avatar: source.assignee.avatar,
+            // O dominio guarda a identidade (o hash), nao a URL. O dashboard
+            // pede a imagem ao proprio servidor por caminho relativo, para nao
+            // vazar IP/referrer a terceiro e para funcionar sob CSP 'self'.
+            // Ver task-067.
+            avatar: source.assignee.avatarHash ? `/avatar/${source.assignee.avatarHash}` : undefined,
           }
         : undefined,
       dates: {

@@ -1,18 +1,29 @@
 <template>
   <div :class="['avatar', `avatar--${size}`]" :title="name">
-    <img class="avatar__image" v-if="src" :src="src" :alt="name" />
+    <img class="avatar__image" v-if="src && !failed" :src="src" :alt="name" @error="failed = true" />
     <span class="avatar__initials" v-else>{{ initials }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { AvatarProps } from './Avatar.types';
 
 const props = withDefaults(defineProps<AvatarProps>(), {
   size: 'md',
   src: undefined,
 });
+
+// A imagem pode existir e ainda assim falhar ao carregar — offline, provedor
+// fora do ar, 404. Sem isso, `<img>` mostraria o icone de imagem quebrada em
+// vez de cair para as iniciais. Ver task-067.
+const failed = ref(false);
+watch(
+  () => props.src,
+  () => {
+    failed.value = false;
+  },
+);
 
 const initials = computed(() => {
   const parts = props.name.trim().split(' ');

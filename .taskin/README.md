@@ -17,7 +17,6 @@ Arquivo com informações dos usuários do projeto. Cada usuário tem:
 - `id`: Identificador único (slug)
 - `name`: Nome completo
 - `email`: E-mail principal
-- `avatar`: (Opcional) URL da foto — se ausente, é derivada do Gravatar do e-mail
 - `website`: (Opcional) URL do site pessoal
 - `github`: (Opcional) URL do perfil no GitHub
 - `linkedin`: (Opcional) URL do perfil no LinkedIn
@@ -25,6 +24,20 @@ Arquivo com informações dos usuários do projeto. Cada usuário tem:
 Estes são os campos que o `UserSchema` valida. Qualquer outra chave escrita no
 arquivo sobrevive à gravação, mas nenhum código a lê — a lista anterior deste
 README documentava `discord`, `phone`, `role` e `active`, que nunca existiram.
+
+### Avatar
+
+Você não escreve uma URL de foto no registro. O `UserRegistry` deriva, a partir
+do e-mail, um `avatarHash` (o md5 do e-mail normalizado) — a **identidade** do
+avatar, não a URL de um provedor. Cada superfície decide como renderizá-la: o
+dashboard pede `/avatar/<hash>` ao próprio servidor, que busca a imagem no lugar
+do navegador (com cache e limite de tempo) e, quando o provedor não responde,
+devolve um erro para que o componente `Avatar` caia para as iniciais.
+
+Isso vale mesmo **sem internet**: o painel abre, e cada avatar aparece como as
+iniciais em vez de uma imagem quebrada. Nenhum navegador de quem abre o painel
+fala com um terceiro, então não há vazamento de IP/referrer e a CSP pode manter
+`img-src 'self'`.
 
 ### Exemplo
 

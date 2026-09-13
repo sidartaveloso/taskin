@@ -10,6 +10,7 @@ import express from 'express';
 import { createServer, type Server } from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createAvatarHandler } from '../lib/avatar-proxy.js';
 import { error, info, printHeader, success, warning } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
@@ -240,6 +241,14 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       } else {
         next();
       }
+    });
+
+    // Avatar proxy: the browser asks this server for /avatar/<hash> instead of
+    // talking to a third party. Keeps IP/referrer in-house, works offline, and
+    // stays inside the `img-src 'self'` CSP above. See task-067.
+    const avatarHandler = createAvatarHandler();
+    app.get('/avatar/:hash', (req, res) => {
+      void avatarHandler(req, res);
     });
 
     // Security: Serve static files with options to prevent path traversal
