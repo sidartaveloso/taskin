@@ -1,6 +1,6 @@
 # Task 016 — Add "Xiiu" / "Shhh" reaction to Taskin mascot
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: Sidarta Veloso
 - Priority: 30
