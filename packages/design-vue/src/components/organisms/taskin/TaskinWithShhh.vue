@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { type MascotConfig, resolveMascotNoiseSettings } from '@opentask/taskin-types';
+import { type MascotConfig, resolveMascotNoiseSettings, resolveShhhReactionPlan } from '@opentask/taskin-types';
 import {
   createNoiseWatcher,
   FaceTrackingDebug,
@@ -161,11 +161,27 @@ const toggleTracking = () => {
 let noiseWatcher: Awaited<ReturnType<typeof createNoiseWatcher>> | null = null;
 let noiseUnsub: (() => void) | null = null;
 
+// Read the OS/browser reduced-motion preference at reaction time so the mascot
+// falls back to a static badge instead of the animation when motion is reduced.
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const triggerShhhReaction = () => {
+  const plan = resolveShhhReactionPlan({
+    sound: noiseSoundRef.value,
+    prefersReducedMotion: prefersReducedMotion(),
+  });
+
+  // Both branches surface the "shh" bubble; only the animated branch moves the
+  // mouth/mood, so the reduced-motion fallback stays a static badge.
   showThoughtBubble.value = true;
   thoughtBubbleText.value = 'shh...';
-  mouthExpression.value = 'o-shape';
-  currentMood.value = 'thoughtful';
+  if (plan.animate) {
+    mouthExpression.value = 'o-shape';
+    currentMood.value = 'thoughtful';
+  }
 
   setTimeout(() => {
     showThoughtBubble.value = false;
