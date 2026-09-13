@@ -719,6 +719,46 @@ export const NotificationConfigSchema = z.object({
 });
 
 /**
+ * Ambient-noise reaction of the Taskin mascot.
+ *
+ * When enabled, the mascot performs a short "xiiu/shhh" reaction whenever the
+ * measured microphone level (RMS amplitude, 0..1) reaches `threshold`.
+ * `debounceMs` keeps a burst of noise from firing the reaction repeatedly, and
+ * `sound` toggles the optional short audio cue layered on the visual reaction.
+ *
+ * @public
+ */
+export const MascotNoiseReactionConfigSchema = z.object({
+  /** Turn the noise reaction on. Off by default so Taskin never asks for the microphone unprompted. */
+  enabled: z.boolean().default(false),
+  /** RMS amplitude (0..1) the ambient level must reach to trigger the reaction. Conservative by default to avoid false positives. */
+  threshold: z.number().min(0).max(1).default(0.06),
+  /** Minimum gap between two reactions, in milliseconds. */
+  debounceMs: z.number().int().nonnegative().default(1500),
+  /** Play the optional short audio cue alongside the visual reaction. */
+  sound: z.boolean().default(false),
+});
+
+/**
+ * Reactions block of the mascot configuration.
+ *
+ * @public
+ */
+export const MascotReactionsConfigSchema = z.object({
+  /** Reaction to ambient noise above a threshold. `prefault` so an omitted block still runs through the noise defaults. */
+  noise: MascotNoiseReactionConfigSchema.prefault({}),
+});
+
+/**
+ * Mascot configuration block in .taskin.json.
+ *
+ * @public
+ */
+export const MascotConfigSchema = z.object({
+  reactions: MascotReactionsConfigSchema.prefault({}),
+});
+
+/**
  * Taskin configuration file schema (.taskin.json).
  * Root configuration for a Taskin project.
  *
@@ -734,4 +774,6 @@ export const TaskinConfigSchema = z.object({
   hookConfig: HookSettingsSchema.optional(),
   /** Notification system configuration */
   notifications: NotificationConfigSchema.optional(),
+  /** Mascot behavior, including its reaction to ambient noise */
+  mascot: MascotConfigSchema.optional(),
 });

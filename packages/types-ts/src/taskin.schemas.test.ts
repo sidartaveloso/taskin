@@ -7,6 +7,8 @@ import {
   DayOfWeekSchema,
   EngagementMetricsSchema,
   GitCommitSchema,
+  MascotConfigSchema,
+  MascotNoiseReactionConfigSchema,
   NOTIFICATION_EVENTS,
   NotificationConfigSchema,
   NotificationDiscordConfigSchema,
@@ -1102,6 +1104,66 @@ describe('TaskinConfigSchema - with notifications', () => {
     };
     const result = TaskinConfigSchema.parse(config);
     expect(result.notifications).toBeUndefined();
+  });
+});
+
+describe('MascotNoiseReactionConfigSchema', () => {
+  it('fills conservative defaults for an empty block, off by default', () => {
+    expect(MascotNoiseReactionConfigSchema.parse({})).toEqual({
+      enabled: false,
+      threshold: 0.06,
+      debounceMs: 1500,
+      sound: false,
+    });
+  });
+
+  it('keeps values the user set', () => {
+    const config = { enabled: true, threshold: 0.7, debounceMs: 5000, sound: true };
+    expect(MascotNoiseReactionConfigSchema.parse(config)).toEqual(config);
+  });
+
+  it('rejects a threshold outside the 0..1 amplitude range', () => {
+    expect(MascotNoiseReactionConfigSchema.safeParse({ threshold: 1.5 }).success).toBe(false);
+    expect(MascotNoiseReactionConfigSchema.safeParse({ threshold: -0.1 }).success).toBe(false);
+  });
+
+  it('rejects a negative or fractional debounce', () => {
+    expect(MascotNoiseReactionConfigSchema.safeParse({ debounceMs: -1 }).success).toBe(false);
+    expect(MascotNoiseReactionConfigSchema.safeParse({ debounceMs: 12.5 }).success).toBe(false);
+  });
+});
+
+describe('MascotConfigSchema', () => {
+  it('defaults the reactions block so an empty mascot config is inert', () => {
+    expect(MascotConfigSchema.parse({})).toEqual({
+      reactions: { noise: { enabled: false, threshold: 0.06, debounceMs: 1500, sound: false } },
+    });
+  });
+
+  it('reads a partial noise block and fills the rest', () => {
+    const result = MascotConfigSchema.parse({ reactions: { noise: { enabled: true, threshold: 0.5 } } });
+    expect(result.reactions.noise).toEqual({ enabled: true, threshold: 0.5, debounceMs: 1500, sound: false });
+  });
+});
+
+describe('TaskinConfigSchema - with mascot', () => {
+  it('parses the mascot noise reaction from .taskin.json', () => {
+    const config = {
+      version: '1.0.0',
+      provider: { type: 'fs', config: { tasksDir: 'TASKS' } },
+      mascot: { reactions: { noise: { enabled: true, threshold: 0.7, debounceMs: 5000, sound: false } } },
+    };
+    const result = TaskinConfigSchema.parse(config);
+    expect(result.mascot?.reactions.noise.enabled).toBe(true);
+    expect(result.mascot?.reactions.noise.threshold).toBe(0.7);
+  });
+
+  it('leaves mascot undefined when the block is absent, so the feature is off', () => {
+    const config = {
+      version: '1.0.0',
+      provider: { type: 'fs', config: { tasksDir: 'TASKS' } },
+    };
+    expect(TaskinConfigSchema.parse(config).mascot).toBeUndefined();
   });
 });
 
