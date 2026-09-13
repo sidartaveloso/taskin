@@ -111,3 +111,26 @@ noise capabilities (e.g., classroom demos, workshops, or shared offices).
 ## Notes
 
 Add any relevant links to design files, audio resources, or prototype sketches here.
+
+## Progress (RALPH, 2026-09-13)
+
+O grosso da reação já estava construído em iterações anteriores: `NoiseWatcher`
+e `NoiseTrackingControls` em `@opentask/ui-sense` e o organismo
+`TaskinWithShhh` em `design-vue` (com spec). Esta iteração fechou os dois
+critérios de aceitação que ainda faltavam e eram testáveis fora do browser:
+
+- `createNoiseDispatcher` — núcleo puro (limiar + debounce + níveis) extraído do
+  `NoiseWatcher`, com relógio injetável; coberto por `noise-watcher.spec.ts`.
+- `MascotConfigSchema` (`reactions.noise.{enabled,threshold,debounceMs,sound}`)
+  em `@opentask/taskin-types`, plugado como `mascot` opcional no
+  `TaskinConfigSchema`, com defaults conservadores e testes de parsing.
+
+Restante para dar a task como concluída:
+
+- [ ] Fiar `.taskin.json` (`mascot.reactions.noise`) → props do `TaskinWithShhh`
+      no dashboard (o schema já existe; falta o consumidor ler e repassar).
+- [ ] Asset de áudio real para `sound=true` (hoje o caminho é visual-only).
+- [ ] Documentação (README/ARCHITECTURE) e exemplos.
+- [ ] QA de acessibilidade: `prefers-reduced-motion` e leitura por leitor de tela.
+- [ ] Rodar os specs de browser/storybook (`TaskinWithShhh.spec`) — não
+      executados no ambiente RALPH (host sem `libnss3`, sem root para instalar).
