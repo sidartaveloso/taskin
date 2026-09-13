@@ -1,6 +1,6 @@
 # 🧩 Task 058 — E2E do dashboard: o teste atual mocka justamente a camada que precisa ser provada
 
-- Status: pending
+- Status: in-progress
 - Type: test
 - Assignee: Sidarta Veloso
 - Priority: 240
