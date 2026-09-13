@@ -120,22 +120,32 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Marcos idempotentes: cria tag e Release para cada versao que ESTA no npm
-      # e ainda nao tem tag no remoto. Deriva do registry, nao do que esta
-      # passada de publish reportou — entao um retry apos falha no meio completa
-      # os marcos que faltaram, em vez de deixar buraco. Roda antes da catraca
+      # e ainda nao tem tag no remoto. Deriva do registry, nao do que a passada
+      # de publish reportou — entao um retry apos falha no meio completa os
+      # marcos que faltaram, em vez de deixar buraco. Roda antes da catraca
       # abaixo, que passa a encontrar tudo tagueado num run saudavel.
+      #
+      # Sem condicao de propósito: NAO gatilhamos por `steps.changesets.outputs
+      # .published` porque esse output e o proprio sinal sob suspeita — no
+      # release de 06/09 a action imprimiu "Created git tags" sem empurrar nada
+      # e ainda assim fechou verde. Se ela mentir que nao publicou, um passo
+      # condicionado a `published == 'true'` simplesmente nao roda, e o buraco
+      # volta. Como este passo so marca o que o npm confirma publicado, rodar em
+      # todo release e barato e nunca inventa marco para o que nao existe.
       - name: Sync markers (tags + Releases) from npm
-        if: steps.changesets.outputs.published == 'true'
         run: pnpm run sync:markers
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Catraca de "verde honesto": se algo foi publicado, cada versao no npm
-      # precisa ter tag correspondente no remoto. O release de 06/09 publicou 12
-      # pacotes e concluiu verde sem empurrar tag nenhuma; este passo faz esse
-      # estado misto sair vermelho, que e o unico jeito de pedir atencao.
-      # So roda quando houve publish — o run que apenas abre o PR de versao nao
-      # tem o que reconciliar.
+      # Catraca de "verde honesto": cada versao publicada no npm precisa ter tag
+      # correspondente no remoto. O release de 06/09 publicou 12 pacotes e
+      # concluiu verde sem empurrar tag nenhuma; este passo faz esse estado
+      # misto sair vermelho, que e o unico jeito de pedir atencao.
+      #
+      # Tambem sem condicao, pela mesma razao do passo acima: a catraca de verde
+      # honesto nao pode ser pulavel pela action que ja mentiu uma vez. Ela
+      # cruza npm x tags do remoto e so exige tag do que ESTA no registry, entao
+      # um pacote recem-criado (ainda fora do npm) nao vira falso positivo e o
+      # run que apenas abre o PR de versao passa limpo.
       - name: Assert published versions are tagged on the remote
-        if: steps.changesets.outputs.published == 'true'
         run: pnpm run reconcile:tags

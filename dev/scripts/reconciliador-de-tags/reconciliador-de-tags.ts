@@ -1,7 +1,8 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { EstadoNoRegistry } from '../cliente-npm/cliente-npm.types';
 import { extrairIgnorados, extrairManifesto, extrairVersao, lerJson } from '../listador-de-pacotes/manifesto';
-import type { PacotePublicavel, RelatorioDeReconciliacao } from './reconciliador-de-tags.types';
+import type { ItemDeReconciliacao, PacotePublicavel, RelatorioDeReconciliacao } from './reconciliador-de-tags.types';
 
 /**
  * A tag que o changesets cria para cada pacote publicado: `nome@versao`.
@@ -30,24 +31,56 @@ export function parsearTagsDoLsRemote(saida: string): Set<string> {
 }
 
 /**
- * Confronta as versoes dos pacotes publicaveis com as tags do remoto ao fim do
- * job de release. Um pacote cuja versao atual nao tem tag no remoto significa
- * que ele saiu para o npm mas o marco nao chegou ao repositorio — exatamente o
- * estado misto do release de 06/09, que ainda por cima concluiu verde.
+ * Confronta as versoes publicadas no npm com as tags do remoto ao fim do job de
+ * release. A verdade e cruzada de dois fatos externos — a versao esta no npm? a
+ * tag esta no remoto? — e nunca do que a passada de `changeset publish` reportou
+ * ter feito, nem do output `published` da changesets/action. Foi justamente
+ * gatilhar a catraca por esse output (que ja veio errado no release de 06/09,
+ * dizendo "Created git tags" sem empurrar nada) que a deixava pulavel: se a
+ * action mente que nao publicou, a catraca condicionada a `published == 'true'`
+ * nem roda, e o release volta a fechar verde com o repositorio dessincronizado.
+ *
+ * Por derivar do npm, a catraca so exige tag do que ESTA no registry: um pacote
+ * recem-criado, ainda fora do npm, nao vira falso positivo, e por isso ela pode
+ * rodar em todo release sem depender de flag nenhuma.
+ *
+ * @param estadosNoNpm estado de CADA pacote na SUA versao atual (consulta a
+ *   `nome@versao`). Um pacote sem entrada e tratado como indeterminado — nao da
+ *   para afirmar honestidade sem ter perguntado.
  */
-export function reconciliarTags(pacotes: PacotePublicavel[], tagsRemotas: Iterable<string>): RelatorioDeReconciliacao {
+export function reconciliarTags(
+  pacotes: PacotePublicavel[],
+  estadosNoNpm: Map<string, EstadoNoRegistry>,
+  tagsRemotas: Iterable<string>,
+): RelatorioDeReconciliacao {
   const tags = tagsRemotas instanceof Set ? tagsRemotas : new Set(tagsRemotas);
 
-  const itens = pacotes
-    .map((pacote) => {
+  const itens: ItemDeReconciliacao[] = pacotes
+    .map((pacote): ItemDeReconciliacao => {
       const tag = tagEsperada(pacote);
+      const estado = estadosNoNpm.get(pacote.nome) ?? {
+        tipo: 'indeterminado',
+        motivo: 'sem consulta ao registry para este pacote',
+      };
+
+      if (estado.tipo === 'indeterminado') {
+        return { tipo: 'indeterminado', pacote: pacote.nome, tag, motivo: estado.motivo };
+      }
+      if (estado.tipo === 'ausente') {
+        return { tipo: 'nao-publicado', pacote: pacote.nome, tag };
+      }
+      // Publicado no npm: o release so e honesto se a tag estiver no remoto.
       return tags.has(tag)
-        ? ({ tipo: 'marcado', pacote: pacote.nome, tag } as const)
-        : ({ tipo: 'sem-tag', pacote: pacote.nome, tag } as const);
+        ? { tipo: 'marcado', pacote: pacote.nome, tag }
+        : { tipo: 'sem-tag', pacote: pacote.nome, tag };
     })
     .sort((a, b) => a.pacote.localeCompare(b.pacote));
 
-  return { itens, dessincronizados: itens.filter((item) => item.tipo === 'sem-tag').length };
+  return {
+    itens,
+    dessincronizados: itens.filter((item) => item.tipo === 'sem-tag').length,
+    indeterminados: itens.filter((item) => item.tipo === 'indeterminado').length,
+  };
 }
 
 /**

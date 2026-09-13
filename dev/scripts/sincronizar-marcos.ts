@@ -1,27 +1,11 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { estadoDaVersaoNoNpm } from './cliente-npm';
 import type { EstadoNoRegistry } from './cliente-npm/cliente-npm.types';
 import { lerPacotesPublicaveis, parsearTagsDoLsRemote } from './reconciliador-de-tags/reconciliador-de-tags';
 import { planejarMarcos } from './sincronizador-de-marcos';
 
 const exec = promisify(execFile);
-
-/**
- * Consulta o registry pela versao EXATA do pacote (`nome@versao`), nao pela
- * `latest`: o que interessa e "esta versao ja esta no npm?", que e o unico fato
- * que autoriza criar o marco dela. `npm view` nao exige autenticacao.
- */
-async function estadoDaVersaoNoNpm(nome: string, versao: string): Promise<EstadoNoRegistry> {
-  try {
-    const { stdout } = await exec('npm', ['view', `${nome}@${versao}`, 'version']);
-    return stdout.trim() ? { tipo: 'publicado', versao: stdout.trim() } : { tipo: 'ausente' };
-  } catch (erro) {
-    const motivo = mensagemDe(erro);
-    return /E404|404 Not Found|No match(ing version)? found/.test(motivo)
-      ? { tipo: 'ausente' }
-      : { tipo: 'indeterminado', motivo };
-  }
-}
 
 function mensagemDe(erro: unknown): string {
   if (typeof erro === 'object' && erro !== null && 'stderr' in erro) {
