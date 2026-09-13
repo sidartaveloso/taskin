@@ -141,6 +141,21 @@ testável fora do browser:
   precedência sobre as props `noise*` individuais. Um consumidor pode agora
   repassar o bloco de config direto, sem desempacotar. `vue-tsc` passa.
 
+## Progress (RALPH, 2026-09-13 — terceira passada)
+
+Fechei o critério de acessibilidade que ainda era derivável fora do browser: a
+decisão de *como* a reação toca conforme as preferências do usuário.
+
+- `resolveShhhReactionPlan({ sound, prefersReducedMotion? })` em
+  `@opentask/taskin-types` — função pura que devolve `{ animate, playSound,
+  showBadge }`. `prefers-reduced-motion` troca a animação por um badge estático
+  (`animate:false, showBadge:true`) e `sound` fica ortogonal ao movimento (quem
+  optou por som e usa reduced-motion ainda ouve). Coberta por 4 testes em
+  `taskin.schemas.test.ts` (116 passam em node).
+- `TaskinWithShhh.vue` lê `prefers-reduced-motion` via `matchMedia` no momento da
+  reação e passa por `resolveShhhReactionPlan`; sob reduced-motion o mascote só
+  mostra o balão "shh..." estático, sem mexer boca/humor. `vue-tsc` passa.
+
 Restante para dar a task como concluída:
 
 - [ ] Montar o `TaskinWithShhh` em alguma superfície do dashboard e ligar a
@@ -149,6 +164,8 @@ Restante para dar a task como concluída:
       A derivação já está pronta e testada; falta o ponto de montagem.
 - [ ] Asset de áudio real para `sound=true` (hoje o caminho é visual-only).
 - [ ] Documentação (README/ARCHITECTURE) e exemplos.
-- [ ] QA de acessibilidade: `prefers-reduced-motion` e leitura por leitor de tela.
+- [ ] QA de acessibilidade no browser: a derivação de `prefers-reduced-motion`
+      já está feita e testada (`resolveShhhReactionPlan`); falta a verificação
+      visual do badge estático e a leitura por leitor de tela.
 - [ ] Rodar os specs de browser/storybook (`TaskinWithShhh.spec`) — não
       executados no ambiente RALPH (host sem `libnss3`, sem root para instalar).

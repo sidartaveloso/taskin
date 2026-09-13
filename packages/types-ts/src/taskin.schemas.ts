@@ -797,6 +797,52 @@ export const resolveMascotNoiseSettings = (mascot?: z.input<typeof MascotConfigS
 };
 
 /**
+ * The concrete steps of a single "xiiu/shhh" reaction, already reconciled with
+ * the user's accessibility and sound preferences. A consumer (e.g. the
+ * `TaskinWithShhh` mascot component) reads this instead of re-deriving the
+ * branches inline, so the acceptance criteria live in one tested place.
+ *
+ * @public
+ */
+export interface ShhhReactionPlan {
+  /** Play the full animated reaction (moving mouth/mood, timed thought bubble). */
+  animate: boolean;
+  /** Play the optional short audio cue layered on the reaction. */
+  playSound: boolean;
+  /** Show the static "shh" badge instead of the animation — the reduced-motion fallback. */
+  showBadge: boolean;
+}
+
+/**
+ * Resolves how a single shhh reaction should play, honouring two independent
+ * user preferences:
+ *
+ * - `prefersReducedMotion` swaps the animation for a static badge, so the mascot
+ *   still gives feedback without motion (matching `prefers-reduced-motion:
+ *   reduce`).
+ * - `sound` gates the optional audio cue; when it is `false` only the visual
+ *   reaction runs. Sound is orthogonal to motion — a reduced-motion user who
+ *   opted into sound still hears the cue.
+ *
+ * @public
+ * @example
+ * ```ts
+ * resolveShhhReactionPlan({ sound: false });
+ * // → { animate: true, playSound: false, showBadge: false }
+ * resolveShhhReactionPlan({ sound: true, prefersReducedMotion: true });
+ * // → { animate: false, playSound: true, showBadge: true }
+ * ```
+ */
+export const resolveShhhReactionPlan = (opts: { sound: boolean; prefersReducedMotion?: boolean }): ShhhReactionPlan => {
+  const prefersReducedMotion = opts.prefersReducedMotion ?? false;
+  return {
+    animate: !prefersReducedMotion,
+    playSound: opts.sound,
+    showBadge: prefersReducedMotion,
+  };
+};
+
+/**
  * Taskin configuration file schema (.taskin.json).
  * Root configuration for a Taskin project.
  *

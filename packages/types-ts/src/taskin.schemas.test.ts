@@ -21,6 +21,7 @@ import {
   parseTaskId,
   RefactoringMetricsSchema,
   resolveMascotNoiseSettings,
+  resolveShhhReactionPlan,
   StatsPeriodSchema,
   StatsQuerySchema,
   TASK_STATUSES,
@@ -1200,6 +1201,40 @@ describe('resolveMascotNoiseSettings', () => {
 
   it('throws on an out-of-range threshold, refusing to pass an invalid setting downstream', () => {
     expect(() => resolveMascotNoiseSettings({ reactions: { noise: { threshold: 2 } } })).toThrow();
+  });
+});
+
+describe('resolveShhhReactionPlan', () => {
+  it('animates and stays silent by default (motion allowed, sound off)', () => {
+    expect(resolveShhhReactionPlan({ sound: false })).toEqual({
+      animate: true,
+      playSound: false,
+      showBadge: false,
+    });
+  });
+
+  it('plays the audio cue only when sound is opted in', () => {
+    expect(resolveShhhReactionPlan({ sound: true })).toEqual({
+      animate: true,
+      playSound: true,
+      showBadge: false,
+    });
+  });
+
+  it('swaps the animation for a static badge under reduced motion', () => {
+    expect(resolveShhhReactionPlan({ sound: false, prefersReducedMotion: true })).toEqual({
+      animate: false,
+      playSound: false,
+      showBadge: true,
+    });
+  });
+
+  it('keeps sound orthogonal to motion: reduced-motion user who opted into sound still hears it', () => {
+    expect(resolveShhhReactionPlan({ sound: true, prefersReducedMotion: true })).toEqual({
+      animate: false,
+      playSound: true,
+      showBadge: true,
+    });
   });
 });
 
