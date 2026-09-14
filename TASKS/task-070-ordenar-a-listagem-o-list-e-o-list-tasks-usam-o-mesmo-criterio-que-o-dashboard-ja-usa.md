@@ -13,6 +13,7 @@ O taskin list devolve as tarefas na ordem em que o provider as encontra — por 
 - [ ] Extrair a ordenacao do pacote Vue para `task-manager`, sem mudar o comportamento do dashboard
 - [ ] O dashboard passa a consumir a funcao extraida — os testes dele continuam verdes
 - [ ] `taskin list --sort <modo>`
+- [ ] O `--json` emite os grupos, com a contagem do que o filtro deixou de fora
 - [ ] `sort` no schema do `list_tasks` do MCP
 - [ ] Documentar nos READMEs e no site (os dois idiomas)
 - [ ] `pnpm lint`, `pnpm typecheck`, `pnpm test` e `pnpm build` verdes
@@ -79,9 +80,22 @@ saida de terminal e num JSON de agente, agrupar pode ajudar ou so atrapalhar. Se
 nao acompanhar, a funcao extraida precisa separar "ordenar" de "agrupar" — o que
 provavelmente e uma melhoria por si so.
 
-Para o `--json`, a recomendacao e **nao montar arvore nenhuma**: emitir as
-tarefas planas, cada uma com o seu `groupId`, e deixar quem consome agrupar.
-Arvore e decisao de apresentacao, e um agente nao precisa dela.
+**O `--json` leva os grupos, decidido.** A primeira versao desta nota dizia o
+contrario — emitir tarefas planas e deixar quem consome agrupar — com o argumento
+de que "um agente nao precisa de arvore". O argumento estava errado, e o motivo
+importa: `--json` nao e a interface do agente, e a interface de maquina do
+produto, e a plateia dela e aberta — script de alguem, painel de terceiro, passo
+de CI.
+
+Emitir plano empurraria a regra de agrupamento para **cada** consumidor
+reimplementar, o que e a mesma duplicacao mantida a mao que a task-071 combate.
+Quem quiser plano achata em uma linha; quem recebe plano nao consegue reagrupar
+sem copiar a regra.
+
+Entao a saida carrega a **mesma estrutura semantica** que o dashboard monta, pela
+**mesma funcao** — grupo com id, nome, os membros que casam com o filtro, e a
+contagem do que ficou de fora. O que nao vai junto e decoracao de apresentacao:
+estado de recolhido, cor, largura. Essas sao do dashboard.
 
 **Grupo parcial: decidido.** Quando o filtro deixa so parte de um grupo, mostrar
 os membros que casam, agrupados por identidade, com a contagem do que ficou de
