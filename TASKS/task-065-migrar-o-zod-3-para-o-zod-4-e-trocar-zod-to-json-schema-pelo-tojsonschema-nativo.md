@@ -1,6 +1,6 @@
 # 🧩 Task 065 — Migrar o zod 3 para o zod 4 e trocar zod-to-json-schema pelo toJSONSchema nativo
 
-- Status: in-progress
+- Status: done
 - Type: chore
 - Assignee: To be defined
 
@@ -76,13 +76,31 @@ rodar 110 testes contra o fonte de verdade.
 - [x] Schemas comparados contra a baseline: zero perda, zero mudança de valor
 - [x] Artefatos compilados removidos de `packages/utils/src/`
 - [x] `pnpm typecheck` (27/27) e `pnpm test` (42/42) verdes
-- [ ] Limpeza separada: `.email()`/`.url()`/`z.string().datetime()` para as formas
+- [x] Limpeza separada: `.email()`/`.url()`/`z.string().datetime()` para as formas
       novas do zod 4
 - [x] Verificado (12/09): **o `utils` era o único**. Nenhum outro `.js`/`.d.ts`
       versionado sob `packages/*/src/` tem um `.ts` irmão. A mesma checagem
       rodada no geohub também não achou sombreamento
 
 ## Notes
+
+### A limpeza das formas depreciadas (13/09)
+
+O ultimo item ficou aberto de proposito na migracao, para nao misturar assunto
+no commit. Feito agora: quatorze ocorrencias, todas em
+`packages/types-ts/src/taskin.schemas.ts`.
+
+| forma antiga (zod 3) | forma do zod 4 |
+| --- | --- |
+| `z.string().email()` | `z.email()` |
+| `z.string().url()` | `z.url()` |
+| `z.string().datetime()` | `z.iso.datetime()` |
+
+Comprovado pela suite do proprio pacote — **116 testes**, que exercitam os
+schemas com entradas validas e invalidas, entao uma troca que afrouxasse a
+validacao apareceria ali. A geracao de JSON Schema tambem continua funcionando
+(`✅ Successfully generated 2 JSON schema(s)`), e `lint`, `typecheck`, `test` e
+`build` do monorepo passam.
 
 ### Estado, conferido na revisao
 
