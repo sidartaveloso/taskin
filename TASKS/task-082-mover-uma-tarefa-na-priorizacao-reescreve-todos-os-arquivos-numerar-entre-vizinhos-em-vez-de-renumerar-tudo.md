@@ -9,12 +9,52 @@
 O commit() da priorizacao reatribui order = posicao x 10 para toda a arvore, e cada tarefa cujo numero mudou e gravada no seu .md. Com 40 das 82 tarefas sem Priority, o primeiro movimento reescreve todas elas.
 
 ## Tasks
-- [ ] Teste vermelho: mover uma tarefa muda o `order` de **uma** tarefa, e nao de todas
-- [ ] Teste vermelho: mover da ultima posicao para a primeira tambem muda uma so
-- [ ] Teste vermelho: quando nao ha espaco entre os vizinhos, a renumeracao acontece e e local
-- [ ] Numerar entre vizinhos no lugar do `commit()` denso
-- [ ] Decidir o que fazer com as tarefas sem `order` — nao dar numero a todas de uma vez
-- [ ] `pnpm lint`, `typecheck`, `test` e `build` verdes
+- [x] Teste vermelho: mover uma tarefa muda o `order` de **uma** tarefa, e nao de todas
+- [x] Teste vermelho: mover da ultima posicao para a primeira tambem muda uma so
+- [x] Teste vermelho: quando nao ha espaco entre os vizinhos, a renumeracao acontece e e local
+- [x] Numerar entre vizinhos no lugar do `commit()` denso
+- [x] Decidir o que fazer com as tarefas sem `order` — nao dar numero a todas de uma vez
+- [x] `pnpm lint`, `typecheck`, `test` e `build` verdes
+
+### O que comprova cada item
+
+`use-prioritization.test.ts`, bloco **custo de um movimento** — 64 testes no
+arquivo, todos verdes.
+
+| o que se afirma | teste |
+| --- | --- |
+| subir grava uma so | `subir uma tarefa grava so a tarefa que subiu` |
+| distancia nao custa | `mover da ultima posicao para a primeira grava uma tarefa so` |
+| projeto sem prioridade | `nao numera quem ninguem mexeu` |
+
+Os testes contam **quantas** tarefas mudaram, e nao se a ordem final ficou certa
+— a implementacao antiga acertava a ordem e errava o custo, entao um teste de
+ordem passaria por cima do defeito.
+
+**Um teste que ja existia mudou, e vale registrar por que.** O
+`moveBefore reorders a task and reports it in changedTasks` afirmava que mover
+uma tarefa de tres reportava **as tres** — ele documentava o comportamento denso.
+Passou a afirmar uma. Nao foi o teste que cedeu ao codigo: a asserção antiga
+descrevia o defeito.
+
+### Como ficou
+
+`commit()` passou a receber, quando a operacao sabe, **qual** tarefa se moveu.
+Com isso ela recebe um valor entre os vizinhos e o resto da lista fica intacto.
+
+Tres caminhos, nessa ordem:
+
+1. **Entre os vizinhos** — o caso normal. Uma tarefa muda.
+2. **Numerar o prefixo** — quando quem vem antes nem numero tem (projeto onde
+   ninguem priorizou). Numera do inicio ate a movida; quem vem depois continua
+   sem numero, indo para o fim na ordem em que ja estava.
+3. **Passagem de reparo** — para as operacoes que remexem varios itens de uma vez
+   (arrastar para dentro de grupo, desagrupar). Mantem o numero de quem ja
+   expressa a propria posicao e so numera quem ficou fora de ordem.
+
+Quando falta espaco entre dois vizinhos, a renumeracao anda para a frente com o
+passo cheio e **para** no primeiro item que ja estiver alem — fica na vizinhanca,
+nunca na lista toda.
 
 ## Notes
 
