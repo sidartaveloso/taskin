@@ -29,10 +29,10 @@ export function applyTaskUpdate<TTask extends Task>(stored: TTask, payload: unkn
     return { ok: false, message: `Invalid task update: ${field} ${issue?.message ?? 'is invalid'}` };
   }
 
-  const { order, groupId, groupName, difficulty } = parsed.data;
+  const { order, groupId, difficulty } = parsed.data;
 
   return {
     ok: true,
-    task: { ...stored, order, groupId, groupName, difficulty },
+    task: { ...stored, order, groupId, difficulty },
   };
 }

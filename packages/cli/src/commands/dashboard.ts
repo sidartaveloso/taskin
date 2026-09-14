@@ -35,6 +35,8 @@ export interface DashboardAppOptions {
   host: string;
   /** WebSocket port advertised to the browser inside the injected `VITE_WS_URL`. */
   wsPort: number;
+  /** Como perguntar os grupos do projeto. Ausente quando o provider nao tem o conceito. */
+  readonly groups?: () => Promise<{ id: string; name: string }[]>;
 }
 
 /**
@@ -47,7 +49,7 @@ export interface DashboardAppOptions {
  * routes. See task-058: mocking the layer under change (express, the static
  * server) is ceremony, not a test.
  */
-export function createDashboardApp({ dashboardDist, host, wsPort }: DashboardAppOptions): express.Express {
+export function createDashboardApp({ dashboardDist, host, wsPort, groups }: DashboardAppOptions): express.Express {
   const app = express();
 
   // Security: Disable X-Powered-By header
@@ -101,6 +103,23 @@ export function createDashboardApp({ dashboardDist, host, wsPort }: DashboardApp
   const avatarHandler = createAvatarHandler();
   app.get('/avatar/:hash', (req, res) => {
     void avatarHandler(req, res);
+  });
+
+  /*
+   * Os grupos, para o dashboard resolver o nome pelo id.
+   *
+   * O nome nao viaja mais dentro de cada tarefa (task-079): a tarefa carrega
+   * `groupId`, e quem desenha a tela pergunta os nomes aqui. Um provider sem o
+   * conceito devolve lista vazia, e a tela simplesmente nao mostra nome.
+   */
+  app.get('/api/groups', (_req, res) => {
+    void (async () => {
+      try {
+        res.json({ groups: (await groups?.()) ?? [] });
+      } catch {
+        res.json({ groups: [] });
+      }
+    })();
   });
 
   // Security: Serve static files with options to prevent path traversal
@@ -288,7 +307,16 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       ? path.join(__dirname, '..', '..', 'dashboard-dist')
       : path.join(__dirname, '..', 'dashboard-dist');
 
-    const app = createDashboardApp({ dashboardDist, host, wsPort });
+    const registroDeGrupos = (
+      provider as { groupRegistry?: { listGroups: () => Promise<{ id: string; name: string }[]> } }
+    ).groupRegistry;
+
+    const app = createDashboardApp({
+      dashboardDist,
+      host,
+      wsPort,
+      groups: registroDeGrupos ? () => registroDeGrupos.listGroups() : undefined,
+    });
 
     const { server: httpServer, port: actualPort } = await startHttpServer(app, port, host);
 

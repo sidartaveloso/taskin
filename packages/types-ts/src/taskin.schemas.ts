@@ -51,6 +51,33 @@ export const parseTaskId = (value: string) => TaskIdSchema.parse(value);
 export const parseGroupId = (value: string) => GroupIdSchema.parse(value);
 
 /**
+ * Grupo de tarefas, como entidade.
+ *
+ * A identidade ja existia em {@link GroupIdSchema}; o que faltava era onde o
+ * **nome** mora. Ate a task-079 ele era um campo repetido em cada tarefa do
+ * grupo — quatro tarefas, quatro copias, e nada garantindo que concordassem.
+ *
+ * A duplicacao nao e hipotetica: o taskin ja tem uma igual no assignee, que
+ * grava o nome de exibicao dentro da tarefa em vez do id. Num repositorio
+ * consumidor isso produziu 52 avisos de lint, pessoas contadas duas vezes por
+ * diferencas de grafia, e um comando de CLI inteiro so para limpar.
+ *
+ * Redmine (`issue_categories`), GitHub (milestones) e Jira (components) modelam
+ * agrupamento assim — entidade com id, nome e operacoes proprias. Ver
+ * `decisoes/identidade-de-grupo-de-tasks.md`.
+ *
+ * @public
+ */
+export const GroupSchema = z.object({
+  id: GroupIdSchema,
+  /** Vazio nao serve: um grupo sem nome nao se distingue dos outros na tela. */
+  name: z.string().min(1),
+});
+
+/** @public */
+export type Group = z.infer<typeof GroupSchema>;
+
+/**
  * All possible task status values.
  * Use this for runtime operations like iteration, mapping, or validation.
  *
@@ -158,10 +185,16 @@ export const TaskSchema = z.object({
   userId: z.string().optional(),
   /** Manual priority rank (lower = higher priority); set via the prioritization board */
   order: z.number().optional(),
-  /** Opaque id of the ad hoc prioritization group this task belongs to, if any */
+  /**
+   * Id do grupo a que a tarefa pertence, se houver.
+   *
+   * So o id. O **nome** vive em {@link GroupSchema}, num registro proprio — ate
+   * a task-079 ele era um `groupName` repetido aqui, uma copia por membro, sem
+   * nada garantindo que as copias concordassem. Pior: o caminho de escrita
+   * removia a linha quando o valor chegava vazio, e foi assim que um projeto
+   * real ficou com quatro tarefas agrupadas e nenhum nome.
+   */
   groupId: GroupIdSchema.optional(),
-  /** Display label of the prioritization group, if the user named it */
-  groupName: z.string().optional(),
   /** Perceived difficulty from 1 (trivial) to 5 (very hard) */
   difficulty: z.number().int().min(1).max(5).optional(),
 });
@@ -183,7 +216,6 @@ export const TaskSchema = z.object({
 export const TaskPrioritizationUpdateSchema = TaskSchema.pick({
   order: true,
   groupId: true,
-  groupName: true,
   difficulty: true,
 });
 

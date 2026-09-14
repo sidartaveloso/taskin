@@ -207,6 +207,12 @@ export class TaskMCPServer implements ITaskMCPServer {
   listTools(): { tools: MCPTool[] } {
     const tools: MCPTool[] = [
       {
+        name: 'list_groups',
+        description:
+          'List the task groups in this project, each with its id and name. The name lives in one place — a task only carries the group id — so renaming a group touches no task file.',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
         name: 'prioritize_tasks',
         description:
           'Give every task in the project a priority number, once and on purpose. Tasks that already carry one keep it; the gaps around them are filled. Running it again changes nothing. Use it on a project where only some tasks are prioritised — there, moving a task rewrites every file before it, and this ends that state.',
@@ -269,6 +275,9 @@ export class TaskMCPServer implements ITaskMCPServer {
       this.log(`Calling tool: ${params.name}`, params.arguments);
 
       switch (params.name) {
+        case 'list_groups':
+          return await this.handleListGroups();
+
         case 'prioritize_tasks':
           return await this.handlePrioritizeTasks(params.arguments ?? {});
 
@@ -539,6 +548,29 @@ Let me start by marking the task as done using the finish_task tool.`,
    * Delega a mesma funcao que a CLI usa (`numerarPrioridade`), para as duas
    * superficies nao divergirem na regra.
    */
+  /**
+   * Os grupos, quando o provider tem o conceito.
+   *
+   * Um provider sem grupos nao expoe o registro, e a ferramenta diz isso em vez
+   * de falhar — a ausencia e informacao, e nao erro.
+   */
+  private async handleListGroups(): Promise<MCPToolCallResult> {
+    const registro = this.taskManager.groupRegistry;
+
+    if (!registro) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ supported: false, groups: [] }, null, 2) }],
+        isError: false,
+      };
+    }
+
+    const grupos = await registro.listGroups();
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ supported: true, groups: grupos }, null, 2) }],
+      isError: false,
+    };
+  }
+
   private async handlePrioritizeTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {
     const resultado = await this.taskManager.prioritizeAll({ dryRun: args.dryRun === true });
 

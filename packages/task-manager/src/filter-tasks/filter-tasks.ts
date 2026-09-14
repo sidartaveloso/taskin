@@ -85,7 +85,6 @@ export function summarizeTask(task: Task): TaskSummary {
     ...(task.assignee && { assignee: { id: task.assignee.id, name: task.assignee.name } }),
     ...(task.order !== undefined && { priority: task.order }),
     ...(task.groupId && { groupId: task.groupId }),
-    ...(task.groupName && { groupName: task.groupName }),
     ...(task.difficulty !== undefined && { difficulty: task.difficulty }),
   };
 }

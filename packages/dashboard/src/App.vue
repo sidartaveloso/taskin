@@ -73,6 +73,25 @@ const connectionError = computed(() => connectionStatus.value.error);
 
 // Map the store's provider-agnostic tasks onto the dashboard's Task view model.
 // The shape comes from the store, so there is no structural type to restate here.
+/*
+ * Os nomes dos grupos, buscados do proprio servidor.
+ *
+ * A tarefa carrega so o `groupId` desde a task-079 — o nome vive num registro.
+ * Uma busca, e o mapa serve todas as tarefas; antes o nome vinha repetido em
+ * cada uma, e sumia quando o caminho de escrita o apagava.
+ */
+const gruposPorId = ref<Record<string, string>>({});
+
+onMounted(async () => {
+  try {
+    const resposta = await fetch('/api/groups');
+    const { groups } = (await resposta.json()) as { groups: { id: string; name: string }[] };
+    gruposPorId.value = Object.fromEntries(groups.map((g) => [g.id, g.name]));
+  } catch {
+    // Sem grupos: a tela mostra as tarefas sem o rotulo, e nada quebra.
+  }
+});
+
 const tasks = computed<Task[]>(() => {
   const filter = new URLSearchParams(window.location.search).get('filter');
 
@@ -114,7 +133,7 @@ const tasks = computed<Task[]>(() => {
       type: source.type,
       order: source.order,
       parent: source.groupId ? { type: 'group', id: groupId(source.groupId) } : undefined,
-      groupName: source.groupName,
+      groupName: source.groupId ? gruposPorId.value[source.groupId] : undefined,
       difficulty: source.difficulty,
     };
 
@@ -156,7 +175,6 @@ const handleUpdateTask = (task: Task) => {
     ...original,
     order: task.order,
     groupId: task.parent?.type === 'group' ? task.parent.id : undefined,
-    groupName: task.groupName,
     difficulty: task.difficulty,
   });
 };

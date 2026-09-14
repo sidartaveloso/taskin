@@ -9,13 +9,33 @@
 Hoje groupId e groupName sao dois campos soltos repetidos em cada task. Criar a entidade em taskin-types, tirar groupName do Task, e definir no ITaskProvider as operacoes de grupo — incluindo o que um provider sem o conceito devolve.
 
 ## Tasks
-- [ ] Teste vermelho: o nome de um grupo tem **um** lugar, e renomear nao toca em task nenhuma
-- [ ] `Group { id, name }` e `GroupSchema` em `@opentask/taskin-types`
-- [ ] `groupName` sai do `Task` — a task guarda so o `groupId`
-- [ ] `ITaskProvider` ganha as operacoes de grupo
-- [ ] Definir e documentar o que um provider **sem** o conceito devolve
-- [ ] Definir o que acontece com os membros quando o grupo e apagado
-- [ ] `pnpm lint`, `typecheck`, `test` e `build` verdes
+- [x] Teste vermelho: o nome de um grupo tem **um** lugar, e renomear nao toca em task nenhuma
+- [x] `Group { id, name }` e `GroupSchema` em `@opentask/taskin-types`
+- [x] `groupName` sai do `Task` — a task guarda so o `groupId`
+- [x] `ITaskProvider` ganha as operacoes de grupo
+- [x] Definir e documentar o que um provider **sem** o conceito devolve
+- [x] Definir o que acontece com os membros quando o grupo e apagado
+- [x] `pnpm lint`, `typecheck`, `test` e `build` verdes
+
+### O que comprova cada item
+
+| item | prova |
+| --- | --- |
+| `GroupSchema` | 4 testes em `taskin.schemas.test.ts` — id e nome, e a recusa de vazio nos dois |
+| `groupName` fora do `Task` | o campo saiu do `TaskSchema` e do `TaskPrioritizationUpdateSchema`; 14 arquivos acompanharam |
+| operacoes de grupo | `IGroupRegistry` + `runGroupRegistryContractTests` — **8 testes de contrato**, provados pela implementacao de arquivos na task-080 |
+| renomear nao toca em tarefa | `renomeia sem tocar em tarefa nenhuma`, no contrato, e medido de verdade na 080 |
+
+**As operacoes ficaram em `IGroupRegistry`, e nao dentro de `ITaskProvider`.**
+Nem toda fonte tem o conceito: um provider que tenha expoe o registro, um que
+nao tenha simplesmente nao expoe. Quem consome descobre pela **ausencia**, em vez
+de receber uma operacao que falha — o mesmo erro do `-t sse` do `mcp-server`.
+
+**Apagar tem assinatura, e ela veio pronta.** `deleteGroup(id, { reassignTo })`:
+com destino os membros migram, sem destino ficam sem grupo, e a operacao devolve
+quantos foram afetados. E o que Redmine (`reassign_to_id`) e Jira
+(`moveIssuesTo`) ja oferecem. O unico resultado inaceitavel — tarefa apontando
+para grupo inexistente em silencio — nao e alcancavel.
 
 ## Notes
 Decorre de `decisoes/identidade-de-grupo-de-tasks.md`, **decidido — opcao A**.

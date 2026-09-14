@@ -119,6 +119,11 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin config [options]` - Configure automation level
   - `--level <manual|assisted|autopilot>` - Set commit automation level
 - `taskin lint` - Validate task files
+- `taskin group` - Manage task groups (alias: `groups`)
+  - `list` - List the groups
+  - `add <name> [--id <id>]` - Create a group
+  - `rename <id> <name>` - Rename it; no task file is touched
+  - `remove <id> [--reassign-to <id>]` - Delete it, saying where its tasks go
 - `taskin prioritize` - Number every task's priority, once and on purpose
   - `--dry-run` - Report how many would be numbered, without writing
 - `taskin dashboard [options]` - Start the web dashboard (see [Avatars](#avatars))
@@ -209,6 +214,7 @@ install answers happily, with the wrong set of tools. Skip the check with
 
 - `list_tasks` - List tasks, with optional filters
 - `prioritize_tasks` - Give every task a priority number, once and on purpose
+- `list_groups` - List the task groups, each with its id and name
 - `start_task` - Start working on a task
 - `finish_task` - Mark a task as finished
 

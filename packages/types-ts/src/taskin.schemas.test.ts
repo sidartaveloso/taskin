@@ -7,6 +7,7 @@ import {
   DayOfWeekSchema,
   EngagementMetricsSchema,
   GitCommitSchema,
+  GroupSchema,
   MascotConfigSchema,
   MascotNoiseReactionConfigSchema,
   NOTIFICATION_EVENTS,
@@ -38,6 +39,7 @@ import {
   UserSchema,
   UserStatsSchema,
 } from './taskin.schemas.js';
+import type { GroupId } from './taskin.types.js';
 
 describe('Taskin Schemas', () => {
   describe('TaskIdSchema', () => {
@@ -1262,5 +1264,38 @@ describe('AutomationConfigSchema - ciSkipTag', () => {
   it('rejects a non-string tag', () => {
     const result = AutomationConfigSchema.safeParse({ level: 'assisted', ciSkipTag: 42 });
     expect(result.success).toBe(false);
+  });
+});
+
+/**
+ * Grupo como entidade.
+ *
+ * A identidade ja existia (`GroupIdSchema`, marcado). O que faltava era o lugar
+ * onde o **nome** mora. Ate aqui ele era um campo solto repetido em cada tarefa
+ * do grupo — e a repeticao nao e teorica: o taskin ja tem essa desnormalizacao
+ * no assignee, que gravou o nome de exibicao em vez do id e custou 52 avisos de
+ * lint num repositorio consumidor.
+ */
+describe('GroupSchema', () => {
+  it('aceita um grupo com id e nome', () => {
+    const grupo = GroupSchema.parse({ id: 'g-abc', name: 'Sprint de outubro' });
+
+    expect(grupo.id).toBe('g-abc');
+    expect(grupo.name).toBe('Sprint de outubro');
+  });
+
+  it('recusa nome vazio — um grupo sem nome nao se distingue dos outros', () => {
+    expect(() => GroupSchema.parse({ id: 'g-abc', name: '' })).toThrow();
+  });
+
+  it('recusa id vazio', () => {
+    expect(() => GroupSchema.parse({ id: '', name: 'Sprint' })).toThrow();
+  });
+
+  it('o id vem marcado, como o das tarefas', () => {
+    const grupo = GroupSchema.parse({ id: 'g-abc', name: 'Sprint' });
+    const aceitaSoGroupId = (id: GroupId) => id;
+
+    expect(aceitaSoGroupId(grupo.id)).toBe('g-abc');
   });
 });

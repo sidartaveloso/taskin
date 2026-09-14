@@ -12,7 +12,6 @@ const stored: TaskFileLike = {
   createdAt: '2026-09-01T12:00:00.000Z',
   order: 10,
   groupId: parseGroupId('g-4f2a'),
-  groupName: 'Sprint',
   difficulty: 3,
   content: '# Task 020',
   filePath: 'TASKS/task-020-notificacoes.md',
@@ -58,16 +57,15 @@ describe('applyTaskUpdate', () => {
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
     expect(outcome.task.groupId).toBeUndefined();
-    expect(outcome.task.groupName).toBeUndefined();
   });
 
   it('should apply a new group', () => {
-    const outcome = applyTaskUpdate(stored, { groupId: 'g-novo', groupName: 'Outro' });
+    // So o id viaja: o nome do grupo vive no registro proprio desde a task-079.
+    const outcome = applyTaskUpdate(stored, { groupId: 'g-novo' });
 
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
     expect(outcome.task.groupId).toBe('g-novo');
-    expect(outcome.task.groupName).toBe('Outro');
   });
 
   it.each([

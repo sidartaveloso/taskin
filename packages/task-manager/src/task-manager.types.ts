@@ -1,4 +1,5 @@
 import type { Task, TaskId, TaskType } from '@opentask/taskin-types';
+import type { IGroupRegistry } from './group-registry.types.js';
 
 /**
  * Options for creating a new task
@@ -187,6 +188,15 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @param options - `dryRun` apenas conta, sem gravar
    * @returns Quantas existem, quantas estavam sem numero, e quantas mudaram
    */
+  /**
+   * Os grupos, quando a fonte tem o conceito — `undefined` quando nao tem.
+   *
+   * Opcional de proposito: o GitHub mapeia para milestone, o Redmine para
+   * categoria, e uma fonte sem nada equivalente simplesmente nao oferece. Quem
+   * consome descobre pela ausencia, em vez de chamar algo que falha.
+   */
+  readonly groupRegistry?: IGroupRegistry;
+
   prioritizeAll: (options?: { dryRun?: boolean }) => Promise<{
     total: number;
     withoutPriority: number;

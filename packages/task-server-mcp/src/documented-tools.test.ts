@@ -39,7 +39,13 @@ function ferramentasAnunciadas(markdown: string): Set<string> {
   for (const linha of markdown.split('\n')) {
     for (const padrao of padroes) {
       const nome = linha.match(padrao)?.[1];
-      if (nome?.endsWith('_task') || nome?.endsWith('_tasks')) nomes.add(nome);
+      /*
+       * Qualquer nome em posicao de anuncio conta. A versao anterior exigia
+       * sufixo `_task`/`_tasks`, uma convencao que valia quando as tres
+       * ferramentas eram sobre tarefas — e que calou quando `list_groups`
+       * chegou, deixando a guarda cega para ela.
+       */
+      if (nome) nomes.add(nome);
     }
   }
 

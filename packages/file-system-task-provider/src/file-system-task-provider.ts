@@ -11,6 +11,7 @@ import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
+import { FileSystemGroupRegistry } from './group-registry.js';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
 import {
   DEFAULT_METADATA_STYLE_ID,
@@ -106,6 +107,12 @@ export interface FileSystemTaskProviderOptions {
   readonly metadataStyle?: MetadataStyleId;
 
   /**
+   * Onde o registro de grupos mora. Ausente, ao lado do diretorio de tarefas —
+   * o mesmo `.taskin/` que ja guarda o registro de usuarios.
+   */
+  readonly taskinDir?: string;
+
+  /**
    * When set, `lint(fix)` rewrites every file's metadata block into this
    * style. Left unset — the default — `lint(fix)` normalizes each file within
    * the style it already uses.
@@ -119,6 +126,16 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   private metadataStyle: MetadataStyleId;
   private convertMetadataStyleTo: MetadataStyleId | undefined;
 
+  /**
+   * Os grupos deste projeto, como entidades.
+   *
+   * Exposto porque nem toda fonte tem o conceito: quem consome descobre pela
+   * presenca desta propriedade, em vez de chamar uma operacao que falha.
+   *
+   * @public
+   */
+  readonly groupRegistry: FileSystemGroupRegistry;
+
   constructor(
     private tasksDirectory: string,
     private userRegistry: IUserRegistry,
@@ -130,6 +147,16 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     this.logger = logger ?? NullLogger;
     this.metadataStyle = options.metadataStyle ?? DEFAULT_METADATA_STYLE_ID;
     this.convertMetadataStyleTo = options.convertMetadataStyleTo;
+
+    /*
+     * O registro recebe daqui a unica coisa que ele nao sabe fazer: mexer nas
+     * tarefas. Apagar um grupo tem que dizer para onde os membros vao, como
+     * Redmine (`reassign_to_id`) e Jira (`moveIssuesTo`) ja fazem.
+     */
+    this.groupRegistry = new FileSystemGroupRegistry(
+      options.taskinDir ?? path.join(tasksDirectory, '..', '.taskin'),
+      (de, para) => this.reassignGroup(de, para),
+    );
   }
 
   /**
@@ -222,6 +249,24 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   private readAssigneeLine(content: string): string | undefined {
     const i18n = getI18n(detectLocale(content));
     return readMetadataField(content, 'Assignee', i18n.assignee);
+  }
+
+  /**
+   * Move as tarefas de um grupo para outro — ou para nenhum.
+   *
+   * `para` ausente significa "sem grupo": a linha `Group:` sai do arquivo. E o
+   * unico lugar que mexe em tarefa quando um grupo e apagado, e devolve quantas
+   * foram afetadas para a operacao nunca ser invisivel.
+   */
+  private async reassignGroup(de: GroupId, para: GroupId | undefined): Promise<number> {
+    const tarefas = await this.getAllTasks();
+    const membros = tarefas.filter((t) => t.groupId === de);
+
+    for (const tarefa of membros) {
+      await this.updateTask({ ...tarefa, groupId: para });
+    }
+
+    return membros.length;
   }
 
   private async pathExists(target: string): Promise<boolean> {
@@ -323,10 +368,16 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       task.groupId || undefined,
       this.metadataStyle,
     );
+    /*
+     * O nome do grupo nao mora mais na tarefa (task-079): ele vive no registro
+     * de grupos, e aqui so o id viaja. Passar `undefined` remove a linha
+     * `GroupName:` que arquivos antigos ainda tenham — a migracao acontece
+     * sozinha, na primeira gravacao.
+     */
     updatedContent = setInlineField(
       updatedContent,
       this.labelFor(updatedContent, 'GroupName', i18n.groupName),
-      task.groupName || undefined,
+      undefined,
       this.metadataStyle,
     );
     updatedContent = setInlineField(
