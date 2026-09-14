@@ -1,4 +1,5 @@
 import type { Task, TaskId, TaskStatus } from '@opentask/taskin-types';
+import { numerarPrioridade } from './numerar-prioridade/index';
 import type {
   CreateTaskOptions,
   CreateTaskResult,
@@ -74,6 +75,36 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
    */
   async getAllTasks(): Promise<TTask[]> {
     return await this.taskProvider.getAllTasks();
+  }
+
+  async prioritizeAll(options: { dryRun?: boolean } = {}): Promise<{
+    total: number;
+    withoutPriority: number;
+    changed: number;
+  }> {
+    const tarefas = await this.taskProvider.getAllTasks();
+
+    /*
+     * Quem ja tem numero define a ordem; quem nao tem entra depois, na sequencia
+     * em que o provider devolveu.
+     */
+    const ordenadas = [...tarefas].sort((a, b) => {
+      if (a.order === undefined && b.order === undefined) return 0;
+      if (a.order === undefined) return 1;
+      if (b.order === undefined) return -1;
+      return a.order - b.order;
+    });
+
+    const mudancas = numerarPrioridade(ordenadas);
+    const semNumero = tarefas.filter((t) => t.order === undefined).length;
+
+    if (!options.dryRun) {
+      for (const tarefa of mudancas) {
+        await this.taskProvider.updateTask(tarefa as TTask);
+      }
+    }
+
+    return { total: tarefas.length, withoutPriority: semNumero, changed: mudancas.length };
   }
 
   async finishTask(taskId: TaskId): Promise<TTask> {

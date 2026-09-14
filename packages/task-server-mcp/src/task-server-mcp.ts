@@ -8,10 +8,11 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import type { ITaskManager } from '@opentask/taskin-task-manager';
 import {
   filterCriteriaJsonSchema,
   filterTasks,
+  type ITaskManager,
+  numerarPrioridade,
   parseFilterCriteria,
   summarizeTask,
   type TaskFilterCriteria,
@@ -206,6 +207,17 @@ export class TaskMCPServer implements ITaskMCPServer {
   listTools(): { tools: MCPTool[] } {
     const tools: MCPTool[] = [
       {
+        name: 'prioritize_tasks',
+        description:
+          'Give every task in the project a priority number, once and on purpose. Tasks that already carry one keep it; the gaps around them are filled. Running it again changes nothing. Use it on a project where only some tasks are prioritised — there, moving a task rewrites every file before it, and this ends that state.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            dryRun: { type: 'boolean', description: 'Report how many would be numbered, without writing' },
+          },
+        },
+      },
+      {
         name: 'list_tasks',
         description:
           'List the tasks in the project. Returns a JSON array with what identifies each task — id, title, status, type, assignee — without the markdown body. Fetch a task body by id after choosing one.',
@@ -257,6 +269,9 @@ export class TaskMCPServer implements ITaskMCPServer {
       this.log(`Calling tool: ${params.name}`, params.arguments);
 
       switch (params.name) {
+        case 'prioritize_tasks':
+          return await this.handlePrioritizeTasks(params.arguments ?? {});
+
         case 'list_tasks':
           return await this.handleListTasks(params.arguments ?? {});
 
@@ -516,6 +531,21 @@ Let me start by marking the task as done using the finish_task tool.`,
   private async selecionarTarefas(criteria: TaskFilterCriteria) {
     const tasks = await this.taskManager.getAllTasks();
     return filterTasks(tasks, criteria).map(summarizeTask);
+  }
+
+  /**
+   * Numeracao inicial de prioridade.
+   *
+   * Delega a mesma funcao que a CLI usa (`numerarPrioridade`), para as duas
+   * superficies nao divergirem na regra.
+   */
+  private async handlePrioritizeTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    const resultado = await this.taskManager.prioritizeAll({ dryRun: args.dryRun === true });
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify(resultado, null, 2) }],
+      isError: false,
+    };
   }
 
   private async handleListTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {
