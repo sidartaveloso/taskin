@@ -102,7 +102,7 @@ export const TaskTypeSchema = z.enum(TASK_TYPES);
  * @public
  */
 export const UserSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   id: z.string(),
   name: z.string(),
   /**
@@ -124,9 +124,9 @@ export const UserSchema = z.object({
    * nenhum codigo conseguia le-los. `github` interessa em especial ao provider
    * da task-041, que precisa casar assignee de issue com usuario.
    */
-  website: z.string().url().optional(),
-  github: z.string().url().optional(),
-  linkedin: z.string().url().optional(),
+  website: z.url().optional(),
+  github: z.url().optional(),
+  linkedin: z.url().optional(),
 });
 
 /**
@@ -147,7 +147,7 @@ export const UserSchema = z.object({
  * ```
  */
 export const TaskSchema = z.object({
-  createdAt: z.string().datetime(),
+  createdAt: z.iso.datetime(),
   id: TaskIdSchema,
   status: TaskStatusSchema,
   title: z.string(),
@@ -225,7 +225,7 @@ export const GitCommitSchema = z.object({
   date: z.preprocess((val) => {
     if (val instanceof Date) return val.toISOString();
     return String(val);
-  }, z.string().datetime()),
+  }, z.iso.datetime()),
   message: z.string(),
   filesChanged: z.number().int().nonnegative(),
   // Using z.coerce for git output (strings like "123") -> numbers
@@ -312,11 +312,11 @@ export const TaskStatsSchema = z.object({
   status: TaskStatusSchema,
   assignee: z.string().optional(),
   duration: z.coerce.number().nonnegative(), // in days
-  created: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
-  firstCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()).optional(),
-  lastCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()).optional(),
+  created: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
+  firstCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()).optional(),
+  lastCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()).optional(),
   statusChangedToDone: z
-    .preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime())
+    .preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime())
     .optional(),
   contributors: z.array(
     z.object({
@@ -354,8 +354,8 @@ export const TaskStatsSchema = z.object({
 export const UserStatsSchema = z.object({
   username: z.string(),
   period: StatsPeriodSchema,
-  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
-  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
+  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
+  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
   codeMetrics: CodeMetricsSchema,
   temporalMetrics: TemporalMetricsSchema,
   contributionMetrics: ContributionMetricsSchema,
@@ -378,8 +378,8 @@ export const UserStatsSchema = z.object({
  */
 export const TeamStatsSchema = z.object({
   period: StatsPeriodSchema,
-  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
-  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
+  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
+  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
   totalContributors: z.number().int().nonnegative(),
   totalCommits: z.number().int().nonnegative(),
   totalTasksCompleted: z.number().int().nonnegative(),
