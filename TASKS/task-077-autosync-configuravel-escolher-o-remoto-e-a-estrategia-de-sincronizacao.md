@@ -1,9 +1,10 @@
 # 🧩 Task 077 — autoSync configuravel: escolher o remoto e a estrategia de sincronizacao
 
-- Priority: 400
+- Priority: 20
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso
+- Difficulty: 3
 
 ## Description
 Hoje syncBeforeCreate() tem duas decisoes cravadas no codigo: o remoto e sempre 'origin' e a estrategia e sempre rebase. As duas precisam ser configuraveis, e a segunda precisa de uma opcao que nao altere a arvore de trabalho.

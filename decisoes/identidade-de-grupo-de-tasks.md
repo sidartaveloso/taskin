@@ -4,7 +4,7 @@ Tipo semântico:
 
 `registro_decisao_tecnica`
 
-Status: **em aberto** — depende de levantamento sobre providers
+Status: **decidido — opção A**, e agora. O levantamento sobre providers foi feito e está abaixo
 
 ## A decisão
 
@@ -62,22 +62,58 @@ preferências locais do cliente, não no domínio.
 - Coerente com "grupo é ferramenta de priorização, não conceito de projeto"
 - Perde o nome entre máquinas e entre usuários
 
-## O que falta para decidir
+## O levantamento que faltava, feito (14/09)
 
-O critério que trava a escolha é **como cada provider trata agrupamento**, porque
-a resposta muda o custo da opção A:
+O critério declarado era: *"se a maioria dos providers já expõe grupo como
+entidade com id e nome próprios, A é natural e barata"*. Foi consultada a
+documentação primária de cada um.
 
-- `file-system-task-provider` — hoje inline no `.md`, sem lugar natural para uma
-  entidade
-- `task-provider-pinia` — em memória, acompanha o que o domínio definir
-- **Redmine** (task-002, WIP) — tem hierarquia/categoria nativa? Mapeia para
-  grupo ou para `parent.type === 'task'`?
-- **GitHub** (citado no changeset da task-031 como provider não-arquivo) — não
-  tem grupo; teria milestone, label ou projeto. Nenhum é equivalente exato
+| tracker | o conceito | id próprio | nome próprio | CRUD próprio | órfão ao apagar |
+| --- | --- | --- | --- | --- | --- |
+| **Redmine** | `issue_categories` | sim | sim | `POST/PUT/DELETE /issue_categories/:id` | `reassign_to_id` no DELETE |
+| **GitHub** | milestones | `id` e `number` | `title` + `description` | cinco endpoints dedicados | não documentado |
+| **Jira** | components | sim | sim | `DELETE /rest/api/3/component/{id}` | `moveIssuesTo` no DELETE |
 
-Se a maioria dos providers já expõe grupo como entidade com id e nome próprios, A
-é natural e barata. Se a maioria não tem o conceito, B ou C evitam inventar no
-domínio algo que nenhuma fonte sabe representar.
+Não é maioria: **são todos**. E dois dos três já resolveram o problema que a
+opção A levanta — o que fazer com os membros quando o grupo é apagado — com um
+parâmetro de reatribuição na própria chamada de exclusão. Não é preciso inventar
+a resposta; basta copiá-la.
+
+A ressalva do texto anterior — *"o GitHub não tem grupo; nenhum é equivalente
+exato"* — superestimava a diferença. Um milestone **é** um balde nomeado de
+issues com identidade própria. O encaixe é imperfeito nas bordas (milestone tem
+data de entrega, grupo não), e não no miolo.
+
+## Por que "agora", e não depois
+
+**O teste vermelho deixou de existir.** O documento citava
+`PrioritizationPage.stories.ts` quebrado por causa do `groupName: null`. A
+task-072 restaurou `groupName` no `Task` da camada de design e passou a agrupar
+por identidade: os **216 testes** do `design-vue` passam. Com isso a opção B
+perde o argumento que a sustentava — não sobrou nada barato para destravar.
+
+**O nome não está "não sendo usado" — está sendo destruído.** Nos únicos dados
+reais em uso (4 tasks num repositório consumidor) há `Group:` e **nenhuma**
+linha `GroupName:`. A causa é o caminho de escrita:
+`file-system-task-provider.ts:327` chama `setInlineField(..., task.groupName ||
+undefined, ...)`, e um valor falsy **remove a linha**. Quem lia isso como "ninguém
+nomeia grupos" (eu, inclusive) lia errado: é a incoerência entre cópias se
+manifestando, que é exatamente o que a entidade previne.
+
+**O custo de migração nunca será menor.** Zero tasks com grupo no taskin, zero no
+geohub, quatro num consumidor — e essas quatro já perderam o nome, então não há o
+que preservar.
+
+## O precedente interno, e ele é um aviso
+
+O taskin já tem um registro separado: `.taskin/.taskin-users.json`. Mas a task
+grava `Assignee: Sidarta Veloso` — o **nome de exibição**, não o id. Essa
+desnormalização custou **52 avisos de lint** num repositório consumidor e um
+comando de CLI inteiro (task-055) para limpar.
+
+A lição é direta: o grupo mora num registro ao lado do de usuários, e a task
+referencia **só o `groupId`**. É o oposto do que foi feito com o assignee, e pelo
+motivo que o assignee já demonstrou na prática.
 
 ## Relação com o canônico
 

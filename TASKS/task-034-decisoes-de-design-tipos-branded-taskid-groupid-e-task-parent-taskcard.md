@@ -3,7 +3,8 @@
 - Status: pending
 - Type: docs
 - Assignee: sidartaveloso
-- Priority: 80
+- Priority: 10
+- Difficulty: 4
 
 ## Description
 
