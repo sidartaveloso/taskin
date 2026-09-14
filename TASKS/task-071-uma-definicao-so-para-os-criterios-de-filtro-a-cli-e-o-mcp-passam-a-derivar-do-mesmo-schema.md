@@ -1,6 +1,6 @@
 # 🧩 Task 071 — Uma definicao so para os criterios de filtro: a CLI e o MCP passam a derivar do mesmo schema
 
-- Status: in-progress
+- Status: done
 - Type: refactor
 - Priority: 245
 - Assignee: Sidarta Veloso
