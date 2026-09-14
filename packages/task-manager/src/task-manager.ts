@@ -1,4 +1,5 @@
 import type { Task, TaskId, TaskStatus } from '@opentask/taskin-types';
+import type { IGroupRegistry } from './group-registry.types';
 import { numerarPrioridade } from './numerar-prioridade/index';
 import type {
   CreateTaskOptions,
@@ -75,6 +76,11 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
    */
   async getAllTasks(): Promise<TTask[]> {
     return await this.taskProvider.getAllTasks();
+  }
+
+  /** Repassa o registro do provider, quando ele tem um. */
+  get groupRegistry(): IGroupRegistry | undefined {
+    return (this.taskProvider as { groupRegistry?: IGroupRegistry }).groupRegistry;
   }
 
   async prioritizeAll(options: { dryRun?: boolean } = {}): Promise<{

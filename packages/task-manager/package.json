@@ -33,10 +33,10 @@
       "default": "./dist/index.js"
     },
     "./testing": {
-      "types": "./dist/user-registry.contract.d.ts",
-      "import": "./dist/user-registry.contract.js",
-      "require": "./dist/user-registry.contract.js",
-      "default": "./dist/user-registry.contract.js"
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js",
+      "require": "./dist/testing.js",
+      "default": "./dist/testing.js"
     }
   },
   "scripts": {

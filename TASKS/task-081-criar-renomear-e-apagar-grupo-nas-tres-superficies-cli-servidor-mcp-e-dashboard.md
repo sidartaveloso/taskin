@@ -9,12 +9,35 @@
 Com a entidade no dominio e a persistencia pronta, as tres superficies passam a manipular grupo. Hoje so o dashboard agrupa, e por arrastar.
 
 ## Tasks
-- [ ] Teste vermelho por superficie, afirmando o efeito e nao a chamada
-- [ ] CLI: criar, listar, renomear e apagar grupo
-- [ ] MCP: as mesmas operacoes como ferramentas
-- [ ] Dashboard: renomear passa a persistir, e nao a escrever num no de arvore
-- [ ] Documentar nos READMEs, nos guias e no site (os dois idiomas)
-- [ ] `pnpm lint`, `typecheck`, `test` e `build` verdes
+- [x] Teste vermelho por superficie, afirmando o efeito e nao a chamada
+- [x] CLI: criar, listar, renomear e apagar grupo
+- [x] MCP: as mesmas operacoes como ferramentas
+- [x] Dashboard: renomear passa a persistir, e nao a escrever num no de arvore
+- [x] Documentar nos READMEs, nos guias e no site (os dois idiomas)
+- [x] `pnpm lint`, `typecheck`, `test` e `build` verdes
+
+### O que comprova cada item
+
+**CLI** — `taskin group` com `list`, `add`, `rename` e `remove`, exercitado de
+ponta a ponta contra o projeto de 500 tarefas (saidas na task-080).
+
+**MCP** — `list_groups`, que devolve `{ supported, groups }`: um provider sem o
+conceito responde `supported: false` em vez de falhar. A guarda
+`documented-tools.test.ts` recusou publicar a ferramenta sem documentacao, e so
+passou depois dos READMEs.
+
+**Dashboard** — o nome do grupo deixou de viajar dentro da tarefa e passa a ser
+resolvido por `/api/groups`, servido pelo proprio servidor do dashboard. Uma
+busca, um mapa, todas as tarefas. Conferido na tela: o quadro de priorizacao
+mostra `▼ Backlog · 3 itens` com as tres tarefas dentro, e o nome veio do
+registro.
+
+### Um defeito da guarda, corrigido no caminho
+
+O `documented-tools.test.ts` so reconhecia nomes terminados em `_task`/`_tasks` —
+convencao que valia quando as tres ferramentas eram sobre tarefas. Com
+`list_groups` ela ficou **cega** justamente para a ferramenta nova. O filtro
+passou a aceitar qualquer nome em posicao de anuncio.
 
 ## Notes
 Depende das tasks 079 e 080.

@@ -22,6 +22,5 @@ export interface TaskSummary {
   readonly assignee?: { readonly id: string; readonly name: string };
   readonly priority?: number;
   readonly groupId?: GroupId;
-  readonly groupName?: string;
   readonly difficulty?: number;
 }

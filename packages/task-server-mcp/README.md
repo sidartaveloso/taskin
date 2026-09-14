@@ -99,6 +99,7 @@ console.log('MCP server running');
 
 - `list_tasks` - List tasks as JSON, without the markdown body. Filters:
 - `prioritize_tasks` - Give every task a priority number, once and on purpose
+- `list_groups` - List the task groups, each with its id and name
   `status`, `type`, `assignee`, `open`, `closed`, `text`
 - `start_task` - Start working on a task
 - `finish_task` - Mark task as complete

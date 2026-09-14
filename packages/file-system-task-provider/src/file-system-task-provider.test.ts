@@ -313,7 +313,7 @@ Test description`;
       expect(task?.difficulty).toBeUndefined();
     });
 
-    it('should write Priority/Group/GroupName/Difficulty inline metadata (round-trip)', async () => {
+    it('should write Priority/Group/Difficulty inline metadata (round-trip)', async () => {
       const originalContent = `# Task 001 — Test Task
 Status: pending
 Type: feat
@@ -333,7 +333,6 @@ Test description`;
         type: 'feat',
         order: 30,
         groupId: 'g-xyz789',
-        groupName: 'Frontend',
         difficulty: 4,
       };
 
@@ -342,7 +341,8 @@ Test description`;
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
       expect(written).toMatch(/^Priority: 30$/m);
       expect(written).toMatch(/^Group: g-xyz789$/m);
-      expect(written).toMatch(/^GroupName: Frontend$/m);
+      // O nome do grupo nao mora mais na tarefa (task-079): vive no registro.
+      expect(written).not.toMatch(/^GroupName:/m);
       expect(written).toMatch(/^Difficulty: 4$/m);
 
       // Round-trip: reading the written content back should yield the same fields
@@ -351,7 +351,6 @@ Test description`;
       const reread = await provider.findTask('001');
       expect(reread?.order).toBe(30);
       expect(reread?.groupId).toBe('g-xyz789');
-      expect(reread?.groupName).toBe('Frontend');
       expect(reread?.difficulty).toBe(4);
     });
 
