@@ -1,6 +1,6 @@
 # 🧩 Task 084 — Comando de priorizacao inicial: numerar de uma vez, de proposito, em vez de como efeito colateral de um clique
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Priority: 250
 - Assignee: Sidarta Veloso
