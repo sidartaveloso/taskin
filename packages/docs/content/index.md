@@ -200,7 +200,7 @@ set of tools, so answering is not the same as answering correctly.
 
 | package | what it does |
 | --- | --- |
-| `taskin` | The CLI: `init`, `new`, `start`, `finish`, `lint`, `dashboard`, `mcp-install`, `mcp-server` |
+| `taskin` | The CLI: `init`, `new`, `start`, `finish`, `lint`, `prioritize`, `dashboard`, `mcp-install`, `mcp-server` |
 | `@opentask/taskin-types` | Zod schemas and the domain types |
 | `@opentask/taskin-task-manager` | The state transitions and the `ITaskProvider` contract |
 | `@opentask/taskin-file-system-provider` | The default provider, in markdown |

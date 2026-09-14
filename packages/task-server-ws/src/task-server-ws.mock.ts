@@ -41,6 +41,10 @@ export class MockTaskManager implements ITaskManager {
     return [];
   }
 
+  async prioritizeAll(): Promise<{ total: number; withoutPriority: number; changed: number }> {
+    return { total: 0, withoutPriority: 0, changed: 0 };
+  }
+
   async reviewTask(taskId: TaskId): Promise<Task> {
     return buildTask(taskId, { status: 'in-review' });
   }

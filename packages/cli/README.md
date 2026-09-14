@@ -119,6 +119,8 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin config [options]` - Configure automation level
   - `--level <manual|assisted|autopilot>` - Set commit automation level
 - `taskin lint` - Validate task files
+- `taskin prioritize` - Number every task's priority, once and on purpose
+  - `--dry-run` - Report how many would be numbered, without writing
 - `taskin dashboard [options]` - Start the web dashboard (see [Avatars](#avatars))
   - `--filter-open` - Show only open tasks
   - `--filter-closed` - Show only closed tasks
@@ -206,6 +208,7 @@ install answers happily, with the wrong set of tools. Skip the check with
 **Available MCP Tools:**
 
 - `list_tasks` - List tasks, with optional filters
+- `prioritize_tasks` - Give every task a priority number, once and on purpose
 - `start_task` - Start working on a task
 - `finish_task` - Mark a task as finished
 

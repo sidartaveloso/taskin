@@ -60,7 +60,7 @@ describe('ferramentas documentadas', () => {
     expect(inexistentes).toEqual([]);
   });
 
-  it('as tres ferramentas do servidor estao documentadas em algum lugar', () => {
+  it('todas as ferramentas do servidor estao documentadas em algum lugar', () => {
     const documentadas = new Set(
       DOCUMENTOS.flatMap((caminho) => [...ferramentasAnunciadas(readFileSync(join(RAIZ, caminho), 'utf-8'))]),
     );

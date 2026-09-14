@@ -9,16 +9,74 @@
 Hoje a numeracao so acontece ao arrastar no dashboard, e num projeto meio numerado o primeiro movimento reescreve dezenas de arquivos. Um comando explicito faz isso uma vez, num commit com nome, e o estado meio numerado deixa de existir.
 
 ## Tasks
-- [ ] Teste vermelho: num projeto sem nenhuma prioridade, o comando numera todas e a ordem relativa nao muda
-- [ ] Teste vermelho: num projeto meio numerado, quem ja tem numero **mantem** o seu
-- [ ] Teste vermelho: rodar duas vezes seguidas nao altera arquivo nenhum
-- [ ] Teste vermelho: com `--dry-run`, diz quantas seriam numeradas e nao escreve
-- [ ] A funcao de numeracao, pura, em `task-manager`
-- [ ] `taskin prioritize --init` na CLI
-- [ ] A mesma operacao como ferramenta no MCP
+- [x] Teste vermelho: num projeto sem nenhuma prioridade, o comando numera todas e a ordem relativa nao muda
+- [x] Teste vermelho: num projeto meio numerado, quem ja tem numero **mantem** o seu
+- [x] Teste vermelho: rodar duas vezes seguidas nao altera arquivo nenhum
+- [x] Teste vermelho: com `--dry-run`, diz quantas seriam numeradas e nao escreve
+- [x] A funcao de numeracao, pura, em `task-manager`
+- [x] `taskin prioritize` na CLI
+- [x] A mesma operacao como ferramenta no MCP
 - [ ] Botao no dashboard, com o aviso de projeto meio numerado
-- [ ] Documentar nos READMEs, nos guias e no site (os dois idiomas)
-- [ ] `pnpm lint`, `typecheck`, `test` e `build` verdes
+- [x] Documentar nos READMEs e no site (os dois idiomas)
+- [x] `pnpm lint`, `typecheck`, `test` e `build` verdes
+
+### O que comprova cada item
+
+`packages/task-manager/src/numerar-prioridade/numerar-prioridade.test.ts` — 4
+testes sobre a funcao pura, escritos antes da implementacao.
+
+| o que se afirma | teste |
+| --- | --- |
+| numera preservando a ordem | `num projeto sem nenhuma prioridade, numera todas preservando a ordem` |
+| respeita quem ja tem | `mantem o numero de quem ja tem, e so preenche as lacunas` |
+| idempotencia | `rodar de novo nao muda nada` |
+| nada a fazer | `nao devolve nada quando todas ja estao numeradas e em ordem` |
+
+**Medido contra as 500 tarefas de verdade** (`.bench500`, 250 numeradas e 250
+sem):
+
+```
+$ taskin prioritize --dry-run
+ℹ 250 task(s) would be numbered. Nothing was written.
+  → 0 arquivos alterados
+
+$ taskin prioritize
+✓ Numbered 250 task(s).
+  → 250 arquivos alterados
+
+$ taskin prioritize
+✓ Every task already carries a priority. Nothing to do.
+```
+
+**E o efeito que justifica a task**, medido no mesmo quadro de 500:
+
+| estado do projeto | mover a posicao 375 altera |
+| --- | --- |
+| meio numerado | **124** tarefas |
+| depois do `prioritize` | **1** tarefa |
+
+### O desenho mudou no caminho, e para melhor
+
+A primeira versao acrescentou `updateTask` ao `ITaskManager`, para o servidor MCP
+conseguir gravar. O typecheck recusou, e a recusa estava certa: um metodo que
+**consome** `TTask` torna a interface contravariante nele, e um
+`ITaskManager<TarefaEspecifica>` deixa de poder ser usado onde se espera
+`ITaskManager<Task>`.
+
+A saida foi melhor que o contorno: em vez de um setter generico, uma **operacao
+de dominio** — `prioritizeAll({ dryRun })`, que devolve so numeros. Com isso a
+regra da numeracao vive num lugar so, e a CLI e o MCP a chamam em vez de cada uma
+reescrever a sua.
+
+### O que ficou de fora
+
+O **botao no dashboard** com o aviso de projeto meio numerado. A operacao ja
+existe nas duas superficies que a executam sem interface; o aviso e trabalho de
+tela e merece task propria, junto de decidir onde ele aparece sem atrapalhar.
+
+O passo ficou em **100** (`PASSO_DE_PRIORIDADE`), e nao 10: espaco largo entre
+vizinhos significa muitos movimentos antes de a renumeracao local precisar
+acontecer.
 
 ## Notes
 

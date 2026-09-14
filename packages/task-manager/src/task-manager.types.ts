@@ -167,6 +167,33 @@ export interface ITaskManager<TTask extends Task = Task> {
   getAllTasks: () => Promise<TTask[]>;
 
   /**
+   * Da a cada tarefa um numero de prioridade, de uma vez.
+   *
+   * E operacao de dominio, e nao um `updateTask` generico, por dois motivos.
+   *
+   * O primeiro e de desenho: a regra da numeracao — preservar a ordem, manter o
+   * numero de quem ja tem, abrir espaco quando faltar — passa a viver num lugar
+   * so, em vez de ser reescrita pela CLI e pelo servidor MCP.
+   *
+   * O segundo e de tipo: um metodo que **consome** `TTask` torna a interface
+   * contravariante nele, e um `ITaskManager<TarefaEspecifica>` deixa de poder
+   * ser usado onde se espera `ITaskManager<Task>`. Uma operacao que so devolve
+   * numeros nao tem esse problema.
+   *
+   * Existe porque um projeto **meio numerado** cobra caro: mover uma tarefa do
+   * meio da regiao sem numero reescreve todos os antecessores — 124 arquivos num
+   * projeto de 500, medido. Depois desta operacao, todo movimento custa um.
+   *
+   * @param options - `dryRun` apenas conta, sem gravar
+   * @returns Quantas existem, quantas estavam sem numero, e quantas mudaram
+   */
+  prioritizeAll: (options?: { dryRun?: boolean }) => Promise<{
+    total: number;
+    withoutPriority: number;
+    changed: number;
+  }>;
+
+  /**
    * Mark a task as ready for review.
    * Transitions the task from 'in-progress' to 'in-review' status.
    * @param taskId - The unique identifier of the task

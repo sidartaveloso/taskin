@@ -192,7 +192,7 @@ errado de ferramentas, e responder não é o mesmo que responder certo.
 
 | pacote | o que faz |
 | --- | --- |
-| `taskin` | A CLI: `init`, `new`, `start`, `finish`, `lint`, `dashboard`, `mcp-install`, `mcp-server` |
+| `taskin` | A CLI: `init`, `new`, `start`, `finish`, `lint`, `prioritize`, `dashboard`, `mcp-install`, `mcp-server` |
 | `@opentask/taskin-types` | Schemas Zod e tipos do domínio |
 | `@opentask/taskin-task-manager` | As transições de estado e o contrato `ITaskProvider` |
 | `@opentask/taskin-file-system-provider` | O provider padrão, em markdown |
