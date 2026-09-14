@@ -37,6 +37,32 @@ uma tarefa de tres reportava **as tres** — ele documentava o comportamento den
 Passou a afirmar uma. Nao foi o teste que cedeu ao codigo: a asserção antiga
 descrevia o defeito.
 
+### Medido em escala, com 500 tarefas
+
+Projeto de carga com 500 tarefas, metade com `Priority` e metade sem, num
+repositorio git limpo. Dashboard aberto de verdade, clique na seta para cima da
+**segunda** tarefa — o gesto relatado:
+
+| | arquivos alterados |
+| --- | --- |
+| antes | **499 de 500** |
+| depois | **1 de 500** |
+
+O diff inteiro do depois:
+
+```
+ M TASKS/task-004-tarefa-de-carga-4.md
+-- Priority: 40
++- Priority: 10
+```
+
+**O pior caso, tambem medido:** mover uma tarefa do meio da regiao **sem**
+numero (posicao 375 de 500) altera **124** tarefas — os antecessores que
+precisam ganhar numero para a posicao poder ser expressa. E um custo pago uma
+vez: depois disso, mover ali custa uma. Fica registrado porque e a unica ponta
+que o conserto nao eliminou, e quem for atacar isso precisa mexer em como uma
+tarefa sem `order` se ordena, e nao no `commit`.
+
 ### Como ficou
 
 `commit()` passou a receber, quando a operacao sabe, **qual** tarefa se moveu.
