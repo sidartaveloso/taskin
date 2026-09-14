@@ -26,6 +26,15 @@ await run({
   // per run, or set it to 1 for a single-shot mode.
   maxIterations: 3,
 
+  // O padrao e 600s, e ele mata a rodada no meio do trabalho: um `pnpm install`
+  // ou um `pnpm test` deste monorepo passa de dez minutos sem imprimir nada
+  // quando a VM esta carregada, e o sandcastle interpreta o silencio como agente
+  // travado. Ja aconteceu com o agente no meio da task-071.
+  //
+  // O limite continua existindo para pegar agente de fato travado — so que agora
+  // com folga para o silencio legitimo de um comando longo.
+  idleTimeoutSeconds: 30 * 60,
+
   // Branch strategy — merge-to-head creates a temporary branch for the agent
   // to work on, then merges the result back to HEAD when the run completes.
   // Preferido a `head` aqui por isolar o trabalho do agente do que estiver
