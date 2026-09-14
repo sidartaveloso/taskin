@@ -3,7 +3,7 @@
 - Status: pending
 - Type: chore
 - Assignee: Sidarta Veloso
-- Priority: 200
+- Priority: 190
 
 ## Description
 
