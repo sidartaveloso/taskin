@@ -1,6 +1,6 @@
 # 🧩 Task 072 — O grupo se parte quando os membros nao ficam consecutivos: agrupar por identidade, e nao por adjacencia
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Priority: 238
 - Assignee: Sidarta Veloso
