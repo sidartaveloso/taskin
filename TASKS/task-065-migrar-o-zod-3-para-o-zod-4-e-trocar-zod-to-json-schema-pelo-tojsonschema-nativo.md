@@ -1,6 +1,6 @@
 # 🧩 Task 065 — Migrar o zod 3 para o zod 4 e trocar zod-to-json-schema pelo toJSONSchema nativo
 
-- Status: pending
+- Status: paused
 - Type: chore
 - Assignee: To be defined
 
@@ -83,6 +83,25 @@ rodar 110 testes contra o fonte de verdade.
       rodada no geohub também não achou sombreamento
 
 ## Notes
+
+### Estado, conferido na revisao
+
+Sete dos oito itens estao feitos, e o unico aberto e a limpeza separada
+(`.email()`, `.url()`, `z.string().datetime()`) — deixada de proposito para nao
+misturar assunto com a migracao.
+
+| o que se afirmava | como esta |
+| --- | --- |
+| zod 4 | `packages/types-ts` depende de `zod@^4.5.4` |
+| sem `zod-to-json-schema` | a dependencia saiu do repositorio |
+| geracao pelo nativo | `generate-schemas.ts:58` usa `z.toJSONSchema(schema, ...)` |
+
+Por isso o status saiu de `pending` para `paused`: `pending` descrevia uma
+tarefa que ninguem tocou, e esta tem a migracao inteira entregue.
+
+A nota do agente abaixo sobre o `pnpm lint` nao passar esta **desatualizada** — o
+erro era o `biome.json` das worktrees do sandcastle sendo lido como configuracao
+aninhada, corrigido depois. O `pnpm lint` passa.
 
 **`pnpm lint` não passa nesta branch, e não passava antes.** O erro é de
 formatação em `.claude/launch.json`, arquivo idêntico ao HEAD e não tocado aqui
