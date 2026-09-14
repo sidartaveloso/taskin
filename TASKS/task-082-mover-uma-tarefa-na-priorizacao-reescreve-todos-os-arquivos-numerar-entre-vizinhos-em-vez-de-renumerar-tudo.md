@@ -1,6 +1,6 @@
 # 🧩 Task 082 — Mover uma tarefa na priorizacao reescreve todos os arquivos: numerar entre vizinhos em vez de renumerar tudo
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Priority: 260
 - Assignee: Sidarta Veloso
