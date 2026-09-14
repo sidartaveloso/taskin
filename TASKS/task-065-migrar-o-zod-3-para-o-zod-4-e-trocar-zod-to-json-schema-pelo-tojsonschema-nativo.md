@@ -1,6 +1,6 @@
 # 🧩 Task 065 — Migrar o zod 3 para o zod 4 e trocar zod-to-json-schema pelo toJSONSchema nativo
 
-- Status: paused
+- Status: in-progress
 - Type: chore
 - Assignee: To be defined
 
