@@ -55,9 +55,18 @@ function savePrefs(storageKey: string, prefs: PersistedPrefs): void {
 
 /**
  * Builds the ordered task/group tree from a flat task list.
- * Tasks are sorted by `order` (undefined last, stable otherwise), then
- * consecutive tasks sharing the same parent group are clustered
- * into a single group node.
+ *
+ * Tasks are sorted by `order` (undefined last, stable otherwise), then grouped
+ * **by identity**: all tasks sharing a `parentId` land in the same group node,
+ * regardless of whether they end up adjacent after sorting or filtering. Grouping
+ * by adjacency was a latent bug — a group whose members were interleaved (by
+ * `order`) or split (by a filter applied upstream) would fracture into two nodes
+ * carrying the same `groupId` and `groupName`.
+ *
+ * Positioning: a group appears at its **lowest-order member** — because the input
+ * is pre-sorted, the group node is inserted where its first member is encountered,
+ * i.e. where its most-prioritized member would have sat. Members keep their sorted
+ * order inside the group. Standalone tasks stay at their own sorted position.
  */
 export function buildPriorityTree(tasks: Task[], collapsedGroups: Record<string, boolean> = {}): PriorityNode[] {
   const sorted = tasks
@@ -74,25 +83,26 @@ export function buildPriorityTree(tasks: Task[], collapsedGroups: Record<string,
     .map(({ task }) => task);
 
   const nodes: PriorityNode[] = [];
-  let currentGroup: PriorityGroupNode | null = null;
+  const groupsById = new Map<string, PriorityGroupNode>();
 
   for (const task of sorted) {
     const parentId = task.parent?.type === 'group' ? task.parent.id : undefined;
     if (parentId) {
-      if (currentGroup && currentGroup.groupId === parentId) {
-        currentGroup.items.push({ kind: 'task', task });
+      const existing = groupsById.get(parentId);
+      if (existing) {
+        existing.items.push({ kind: 'task', task });
         continue;
       }
-      currentGroup = {
+      const group: PriorityGroupNode = {
         kind: 'group',
         groupId: parentId,
         groupName: task.groupName ?? null,
         collapsed: !!collapsedGroups[parentId],
         items: [{ kind: 'task', task }],
       };
-      nodes.push(currentGroup);
+      groupsById.set(parentId, group);
+      nodes.push(group);
     } else {
-      currentGroup = null;
       nodes.push({ kind: 'task', task });
     }
   }
