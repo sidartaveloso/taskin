@@ -1,6 +1,6 @@
 # 🧩 Task 079 — Grupo vira entidade no dominio: Group com id e nome, e a task guarda so o groupId
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Priority: 258
 - Assignee: Sidarta Veloso
