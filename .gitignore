@@ -108,3 +108,6 @@ storybook-static
 
 # Anexos que o vitest grava durante a execucao (capturas de tela de falha).
 .vitest-attachments/
+
+# Projeto de carga para medir o custo de um movimento na priorizacao.
+.bench500/
