@@ -2,7 +2,12 @@
  * list command - List all tasks in the project
  */
 
-import { filterTasks, summarizeTask, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
+import {
+  filterCriteriaCliOptions,
+  filterTasks,
+  parseFilterCriteria,
+  summarizeTask,
+} from '@opentask/taskin-task-manager';
 import type { ListTasksOptions, Task, TaskStatus, TaskType } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, printHeader } from '../lib/colors.js';
@@ -14,27 +19,14 @@ export const listCommand = defineCommand({
   name: 'list [filter]',
   description: '📊 List all tasks in the project',
   alias: 'ls',
+  /*
+   * As opcoes de filtro saem do schema unico em `filterCriteriaCliOptions`, nao
+   * de uma lista escrita a mao aqui — a mesma definicao alimenta o schema JSON
+   * do MCP. O `--json` fica manual de proposito: e formato de saida, nao
+   * criterio.
+   */
   options: [
-    {
-      flags: '-s, --status <status>',
-      description: 'Filter by status (pending, in-progress, done, blocked)',
-    },
-    {
-      flags: '-t, --type <type>',
-      description: 'Filter by type (feat, fix, refactor, docs, test, chore)',
-    },
-    {
-      flags: '-u, --user <user>',
-      description: 'Filter by user',
-    },
-    {
-      flags: '--open',
-      description: 'Show only open tasks (pending, in-progress, blocked)',
-    },
-    {
-      flags: '--closed',
-      description: 'Show only closed tasks (done, canceled)',
-    },
+    ...filterCriteriaCliOptions(),
     {
       flags: '--json',
       description: 'Print the tasks as JSON, for other tools to consume',
@@ -74,19 +66,11 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
   /*
    * A selecao vive em `filterTasks`, no pacote agnostico, e nao aqui.
    *
-   * Havia duas implementacoes divergentes da mesma pergunta: esta, que casava
-   * o responsavel por substring em nome ou id, e a da classe `Taskin`, que
-   * casava `userId` exato. A saida em JSON e o servidor MCP fazem a mesma
-   * pergunta — seriam a terceira e a quarta.
+   * O criterio sai do `parse` do schema unico: nada de mapeamento a mao. O
+   * argumento posicional `filter` e o criterio `text`; o `--json` e as demais
+   * chaves que nao sao criterio o `parse` descarta.
    */
-  const criteria: TaskFilterCriteria = {
-    ...(options.status && { status: options.status }),
-    ...(options.type && { type: options.type }),
-    ...(options.assignee && { assignee: options.assignee }),
-    ...(options.open && { open: true }),
-    ...(options.closed && { closed: true }),
-    ...(filter && { text: filter }),
-  };
+  const criteria = parseFilterCriteria({ ...options, ...(filter && { text: filter }) });
 
   const filteredTasks = filterTasks(tasks, criteria);
 

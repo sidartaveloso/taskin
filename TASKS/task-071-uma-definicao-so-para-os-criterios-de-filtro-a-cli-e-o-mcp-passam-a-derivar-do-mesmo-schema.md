@@ -9,14 +9,14 @@
 Cada criterio de filtro existe em cinco lugares escritos a mao: o tipo, a flag da CLI, o mapeamento da CLI, o schema JSON do MCP e o mapeamento do MCP. Acrescentar um criterio exige lembrar dos cinco, e esquecer nao quebra nada — so faz uma superficie ficar para tras.
 
 ## Tasks
-- [ ] Teste vermelho: acrescentar um criterio ficticio ao schema e provar que ele aparece na CLI e no MCP sem edicao manual
-- [ ] Teste vermelho: um criterio sem superficie e **erro de compilacao**, nao aviso
-- [ ] O schema unico dos criterios, em zod
-- [ ] O schema JSON do `list_tasks` passa a ser derivado
-- [ ] As opcoes do `taskin list` passam a ser derivadas
-- [ ] Os dois mapeamentos para `TaskFilterCriteria` somem
-- [ ] Documentar como se acrescenta um criterio novo — que deve virar uma linha
-- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm test` e `pnpm build` verdes
+- [x] Teste vermelho: acrescentar um criterio ficticio ao schema e provar que ele aparece na CLI e no MCP sem edicao manual — `filter-criteria.test.ts` › "um criterio novo aparece no schema JSON do MCP…" e "…nas opcoes da CLI…": passam `FilterCriteriaSchema.extend({ fictional })` pelos geradores e provam que `fictional` emerge nas duas superficies.
+- [x] Teste vermelho: um criterio sem superficie e **erro de compilacao**, nao aviso — `filter-criteria.test.ts:20` tem um `@ts-expect-error` sobre `Record<keyof TaskFilterCriteria, CriterionSurface>` faltando `text`; se a omissao passar a compilar, `pnpm typecheck` falha (verificado: sem o gate, TS2578 acusa).
+- [x] O schema unico dos criterios, em zod — `packages/task-manager/src/filter-tasks/filter-criteria.ts` › `FilterCriteriaSchema`; `TaskFilterCriteria` agora e `z.infer` dele.
+- [x] O schema JSON do `list_tasks` passa a ser derivado — `filterCriteriaJsonSchema()` (via `z.toJSONSchema`) alimenta `inputSchema` em `task-server-mcp.ts:listTools`.
+- [x] As opcoes do `taskin list` passam a ser derivadas — `filterCriteriaCliOptions()` em `cli/src/commands/list.ts`; `taskin list --help` mostra `-u, --assignee`, `-s, --status`, etc.
+- [x] Os dois mapeamentos para `TaskFilterCriteria` somem — o literal em `list.ts` e o `criterioDe` do MCP sumiram; ambos usam `parseFilterCriteria` (o `parse` do schema). De quebra, corrige o sintoma `--user` vs `assignee`: a flag agora e `--assignee`, casada com a chave.
+- [x] Documentar como se acrescenta um criterio novo — que deve virar uma linha — docstring de `filter-criteria.ts` ("Como acrescentar um criterio novo": propriedade `.optional()` + entrada em `FILTER_CRITERIA_SURFACES`, e o passo 2 e cobrado pelo compilador). README do CLI passa a listar `--assignee` e o `[filter]` posicional.
+- [x] `pnpm lint`, `pnpm typecheck`, `pnpm test` e `pnpm build` verdes — nos tres pacotes tocados (task-manager 40 testes, task-server-mcp 19, cli 363) lint/typecheck/test verdes; `pnpm build` do monorepo verde (22/22). Os unicos testes vermelhos no `pnpm test` do monorepo sao os de navegador (`@vitest/browser-playwright` em design-vue e ui-sense), que nao rodam neste ambiente e nao importam este codigo.
 
 ## Notes
 
@@ -95,3 +95,13 @@ antes, aquela encolhe; se vier depois, ela e a prova de que o mecanismo funciona
 A ordem entre as duas e decisao de quem pegar — mas fazer a 070 a mao e depois
 generalizar tambem e legitimo, e ate mais honesto, porque generalizar a partir de
 dois casos reais erra menos que generalizar a partir de um.
+
+## Decisao registrada — o dashboard fica de fora, por ora
+
+O `?filter=` do dashboard **nao** passa a derivar do schema nesta task. O
+vocabulario dele e um so criterio (`text`/busca livre) lido de uma URL, sem as
+outras superficies; ligar `App.vue` ao pacote agnostico so para isso pagaria mais
+costura do que economiza. As tres superficies que compartilhavam a duplicacao
+real — o tipo, a CLI e o MCP — ja derivam do schema unico. Quando o dashboard
+crescer para expor mais criterios, `filterCriteriaJsonSchema`/
+`FILTER_CRITERIA_SURFACES` ja estao prontos para ele consumir.

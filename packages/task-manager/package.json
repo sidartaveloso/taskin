@@ -52,7 +52,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opentask/taskin-types": "workspace:*"
+    "@opentask/taskin-types": "workspace:*",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "typescript": "^6.0.0"
