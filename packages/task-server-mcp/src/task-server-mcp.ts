@@ -9,7 +9,13 @@ import {
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import type { ITaskManager } from '@opentask/taskin-task-manager';
-import { filterTasks, summarizeTask, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
+import {
+  filterCriteriaJsonSchema,
+  filterTasks,
+  parseFilterCriteria,
+  summarizeTask,
+  type TaskFilterCriteria,
+} from '@opentask/taskin-task-manager';
 import { type TaskId, TaskIdSchema, type TaskStatus } from '@opentask/taskin-types';
 import type {
   ITaskMCPServer,
@@ -203,18 +209,12 @@ export class TaskMCPServer implements ITaskMCPServer {
         name: 'list_tasks',
         description:
           'List the tasks in the project. Returns a JSON array with what identifies each task — id, title, status, type, assignee — without the markdown body. Fetch a task body by id after choosing one.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            status: { type: 'string', description: 'Exact status (pending, in-progress, done, ...)' },
-            type: { type: 'string', description: 'Exact type (feat, fix, chore, ...)' },
-            assignee: { type: 'string', description: 'Assignee id or name, whole or in part' },
-            open: { type: 'boolean', description: 'Only tasks still open' },
-            closed: { type: 'boolean', description: 'Only tasks already closed' },
-            text: { type: 'string', description: 'Free text over id, title, status and assignee' },
-          },
-          required: [],
-        },
+        /*
+         * O schema JSON dos criterios sai do schema unico em `task-manager`, o
+         * mesmo que valida a chamada e gera as flags da CLI — nao de uma lista
+         * escrita a mao aqui.
+         */
+        inputSchema: filterCriteriaJsonSchema(),
       },
       {
         name: 'start_task',
@@ -518,20 +518,8 @@ Let me start by marking the task as done using the finish_task tool.`,
     return filterTasks(tasks, criteria).map(summarizeTask);
   }
 
-  /** Converte os argumentos crus da chamada MCP no criterio tipado. */
-  private static criterioDe(args: Record<string, unknown>): TaskFilterCriteria {
-    return {
-      ...(typeof args.status === 'string' && { status: args.status as TaskFilterCriteria['status'] }),
-      ...(typeof args.type === 'string' && { type: args.type as TaskFilterCriteria['type'] }),
-      ...(typeof args.assignee === 'string' && { assignee: args.assignee }),
-      ...(args.open === true && { open: true }),
-      ...(args.closed === true && { closed: true }),
-      ...(typeof args.text === 'string' && { text: args.text }),
-    };
-  }
-
   private async handleListTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {
-    const tarefas = await this.selecionarTarefas(TaskMCPServer.criterioDe(args));
+    const tarefas = await this.selecionarTarefas(parseFilterCriteria(args));
 
     return {
       content: [{ type: 'text', text: JSON.stringify(tarefas, null, 2) }],

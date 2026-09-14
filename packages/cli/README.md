@@ -98,11 +98,12 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 ## Commands
 
 - `taskin init` - Initialize Taskin in your project with interactive setup
-- `taskin list [options]` - List all tasks
+- `taskin list [filter] [options]` - List all tasks (`filter` is free text over id, title, status and assignee)
   - `--open` - Show only open tasks (pending, in-progress, blocked)
   - `--closed` - Show only closed tasks (done, canceled)
   - `--status <status>` - Filter by specific status
   - `--type <type>` - Filter by task type
+  - `-u, --assignee <assignee>` - Filter by assignee id or name, whole or in part
 - `taskin new` - Create a new task (alias: `create`)
 - `taskin start <id>` - Start working on a task (suggests commits)
 - `taskin pause <id>` - Pause work on a task (auto-commits work in progress)
