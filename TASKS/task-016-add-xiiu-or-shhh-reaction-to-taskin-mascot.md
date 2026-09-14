@@ -3,7 +3,7 @@
 - Status: in-progress
 - Type: feat
 - Assignee: Sidarta Veloso
-- Priority: 40
+- Priority: 80
 
 ## Description
 

@@ -3,7 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: jorisveloso
-- Priority: 160
+- Priority: 30
 
 ## Description
 

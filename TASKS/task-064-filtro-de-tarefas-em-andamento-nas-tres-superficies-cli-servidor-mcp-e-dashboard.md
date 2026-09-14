@@ -3,7 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso
-- Priority: 230
+- Priority: 240
 
 ## Description
 Hoje so existe aberto e fechado. Aberto inclui pending, que nao esta sendo trabalhada, e fechado esconde tudo — falta o recorte do que comecou e ainda nao terminou. O dashboard nem filtro por status tem.

@@ -3,7 +3,8 @@
 - Status: paused
 - Type: feat
 - Assignee: Sidarta Veloso
-- Priority: 110
+- Priority: 60
+- Difficulty: 5
 
 ## Description
 

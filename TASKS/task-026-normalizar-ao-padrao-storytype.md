@@ -3,7 +3,8 @@
 - Status: in-progress
 - Type: refactor
 - Assignee: sidartaveloso
-- Priority: 80
+- Priority: 40
+- Difficulty: 5
 
 ## Description
 

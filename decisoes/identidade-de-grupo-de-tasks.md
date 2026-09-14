@@ -124,3 +124,16 @@ motivo que o assignee já demonstrou na prática.
 - `ParentRef` (`{ type: 'group'; id: GroupId } | { type: 'task'; id: TaskId }`)
   já está implementado no design-vue e não muda em nenhuma das opções — o que
   muda é onde o *nome* mora
+
+## Tarefas de implementação que decorrem
+
+| task | o que faz | depende de |
+| --- | --- | --- |
+| **079** | a entidade `Group` no domínio, `Task` só com `groupId`, e as operações no `ITaskProvider` | — |
+| **080** | o provider de arquivos persiste o registro; a linha `GroupName` sai do markdown | 079 |
+| **081** | criar, renomear e apagar grupo na CLI, no MCP e no dashboard | 079, 080 |
+
+**Sem migração, decidido.** Levantados os 20 projetos com taskin nesta máquina:
+só `nexo` tem grupo — 4 tasks, e nenhuma com `GroupName`. Não há nome a
+preservar, e o dono do repositório refará o grupo. A linha `GroupName` sai do
+formato sem caminho de compatibilidade.
