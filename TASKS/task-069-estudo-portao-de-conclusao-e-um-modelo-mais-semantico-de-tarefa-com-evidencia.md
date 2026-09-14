@@ -9,12 +9,12 @@
 Hoje o finish so troca o campo Status e nao olha o corpo da tarefa. Tres tarefas fecharam com o checklist inteiro em aberto. Avaliar as possibilidades e planejar — esta task nao implementa.
 
 ## Tasks
-- [ ] Levantar onde um portao poderia morar, e o que cada lugar custa
-- [ ] Decidir se "definicao de pronto" e conceito de dominio ou de provider
-- [ ] Desenhar como o portao distingue item **esquecido** de item **adiado**
-- [ ] Avaliar um modelo mais semantico de tarefa, com evidencia de conclusao
-- [ ] Escrever a recomendacao em `decisoes/`, com o que fica de fora e por que
-- [ ] Abrir as tasks de implementacao que a recomendacao pedir
+- [x] Levantar onde um portao poderia morar, e o que cada lugar custa — tabela de "dureza" na pergunta 3 de `decisoes/portao-de-conclusao-e-evidencia.md`
+- [x] Decidir se "definicao de pronto" e conceito de dominio ou de provider — pergunta 1: conceito e de dominio, representacao e de provider (capacidade opcional `getCompletionBlockers`)
+- [x] Desenhar como o portao distingue item **esquecido** de item **adiado** — pergunta 2: vocabulario `— adiado: <razao>` / `~~...~~`, razao vazia nao conta
+- [x] Avaliar um modelo mais semantico de tarefa, com evidencia de conclusao — pergunta 4: rejeitado o modelo rigido; convencao leve que o lint le, verificacao adiada
+- [x] Escrever a recomendacao em `decisoes/`, com o que fica de fora e por que — `decisoes/portao-de-conclusao-e-evidencia.md`, secao "O que fica de fora, e por que"
+- [x] Abrir as tasks de implementacao que a recomendacao pedir — task-073 (leitor unico), task-074 (finishTask avisa), task-075 (lint erro), task-076 (docs do vocabulario)
 
 ## Notes
 
