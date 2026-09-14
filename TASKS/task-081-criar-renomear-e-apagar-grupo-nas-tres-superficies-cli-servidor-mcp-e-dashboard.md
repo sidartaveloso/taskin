@@ -1,6 +1,6 @@
 # 🧩 Task 081 — Criar, renomear e apagar grupo nas tres superficies: CLI, servidor MCP e dashboard
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Priority: 254
 - Assignee: Sidarta Veloso
