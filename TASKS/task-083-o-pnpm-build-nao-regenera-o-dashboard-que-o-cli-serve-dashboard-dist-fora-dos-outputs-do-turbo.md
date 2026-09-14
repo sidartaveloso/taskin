@@ -9,10 +9,38 @@
 O comando dashboard serve packages/cli/dashboard-dist, produzido por build:dashboard. Esse diretorio nao esta nos outputs declarados do turbo, entao um acerto de cache restaura o dist e deixa o dashboard-dist velho no lugar.
 
 ## Tasks
-- [ ] Reproduzir: mexer num `.vue` ou num composable, rodar `pnpm build`, e conferir a data do bundle servido
-- [ ] Declarar `dashboard-dist/**` nos outputs do build do `taskin`
-- [ ] Conferir se `.vue` entra nos `inputs` — hoje o padrao e `src/**/*.{ts,js,tsx,jsx}`
-- [ ] Guarda que pegue a proxima ocorrencia
+- [x] Reproduzir: mexer num `.vue` ou num composable, rodar `pnpm build`, e conferir a data do bundle servido
+- [x] Declarar `dashboard-dist/**` nos outputs do build do `taskin`
+- [x] Conferir se `.vue` entra nos `inputs` — hoje o padrao e `src/**/*.{ts,js,tsx,jsx}`
+- [x] Guarda que pegue a proxima ocorrencia
+
+### O que comprova cada item
+
+**A reproducao** esta registrada na task-082: bundle servido de `10:21`, fonte de
+`18:32`, e o clique alterando 499 arquivos. Depois de reconstruir a mao, 1.
+
+**As duas correcoes no `turbo.json`**, na tarefa base `build`:
+
+| | antes | depois |
+| --- | --- | --- |
+| `outputs` | sem `dashboard-dist` | `dashboard-dist/**` incluido |
+| `inputs` | `src/**/*.{ts,js,tsx,jsx}` | `...,vue}` |
+
+O `.vue` faltando era o segundo buraco: mudanca em componente nao invalidava o
+cache.
+
+**A guarda:** `packages/cli/src/dashboard-bundle.test.ts` compara a data do
+bundle servido com a do fonte mais novo de `dashboard` e `design-vue`, e falha
+dizendo o que rodar. Verificada nos dois sentidos — passa com o bundle em dia, e
+com um `touch` no fonte:
+
+```
+→ O bundle servido (2026-09-14T21:40:52Z) e mais antigo que
+  .../use-prioritization.ts. Rode `pnpm --filter taskin run build:dashboard`.
+```
+
+Ela se cala quando ainda nao ha build, para nao falhar antes do `build:dashboard`
+rodar.
 
 ## Notes
 
