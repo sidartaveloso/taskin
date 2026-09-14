@@ -74,7 +74,17 @@ have been started.
    - List key decisions made
    - List files changed
    - Note any blockers for the next iteration
-6. **Close** — close the issue with the `finish_task` tool, explaining what was done.
+6. **Leave the evidence** — before closing, edit the task file itself: tick the
+   checklist items you completed, and write next to them **what proves it** —
+   the test names, the command someone can run, the file where the thing lives.
+   An item you did not do stays unticked, with the reason in the notes.
+
+   This is not bookkeeping. Neither `finish_task` nor the CLI touches the body
+   of a task — they only change the `Status` field. A task that says `done` with
+   an untouched checklist is indistinguishable from an agent that gave up and
+   closed it, and whoever reviews your work has nothing to start from.
+
+7. **Close** — close the issue with the `finish_task` tool, explaining what was done.
 
 ## Rules
 

@@ -63,15 +63,43 @@ pior do que encontrou.
 
 ## Tasks
 
-- [ ] `taskin users` lista o registro: id, nome, e-mail
-- [ ] `taskin users add` cadastra, com `--id`, `--name`, `--email`, e modo
+- [x] `taskin users` lista o registro: id, nome, e-mail
+- [x] `taskin users add` cadastra, com `--id`, `--name`, `--email`, e modo
       interativo quando faltarem
-- [ ] Ao cadastrar, reportar quantos `Assignee:` em uso passam a resolver — e
+- [x] Ao cadastrar, reportar quantos `Assignee:` em uso passam a resolver — e
       quais continuam sem resolver
-- [ ] Avisar quando o `name` escolhido deixa de fora um nome de autor de commit
+- [x] Avisar quando o `name` escolhido deixa de fora um nome de autor de commit
       que existe no historico
-- [ ] Recusar id duplicado, e id que dobre sobre um ja cadastrado
-- [ ] Changeset do `taskin`
+- [x] Recusar id duplicado, e id que dobre sobre um ja cadastrado
+- [x] Changeset do `taskin`
+
+### O que comprova cada item
+
+`packages/cli/src/commands/user.test.ts` — 18 testes, `pnpm --filter taskin test`.
+
+| item | teste |
+| --- | --- |
+| lista | `formats a list with one row per user carrying id, name and email`, `list prints every registered user` |
+| cadastra | `builds a user, deriving the id from the name when none is given`, `honours an explicit id over the derived slug`, `add persists a user derived from the flags` |
+| modo interativo | `promptMissingFields` em `user.ts:192`, sobre `inquirer` |
+| reporta quem passa a resolver | `splits in-use spellings into those that now resolve to the new user and those still unknown`, `counts a spelling that folds onto the new user (correctable) as now resolving`, `reports each distinct spelling once`, `add reports which in-use assignees now resolve and which still do not` |
+| avisa sobre autor de commit | `flags an author name that folds onto the user but the chosen name does not resolve`, `does not flag an author name the chosen name already resolves` |
+| recusa duplicado e fold | `finds a conflict on exact id`, `finds a conflict when a new id folds onto an existing one`, `reports no conflict for a genuinely new id`, `add refuses an id that folds onto one already registered`, `rejects an invalid email` |
+| changeset | `.changeset/user-command.md` |
+
+Exercicio ponta a ponta num projeto vazio:
+
+```
+$ taskin user add "Fulano de Tal" --email fulano@exemplo.com
+✓ Registered Fulano de Tal (fulano-de-tal) — fulano@exemplo.com
+ℹ Assignees that now resolve: "fulano-de-tal", "Fulano de Tal"
+```
+
+**Nota de processo.** O agente entregou o codigo e os testes, mas fechou a task
+sem marcar nada — nem o `taskin finish` nem o `finish_task` do MCP tocam no
+corpo da task, so no campo `Status`. Quem revisou nao tinha por onde comecar. Os
+itens acima foram conferidos um a um contra o codigo e os testes antes de serem
+marcados.
 
 ## Notes
 
