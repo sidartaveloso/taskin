@@ -1,6 +1,6 @@
 # 🧩 Task 080 — O provider de arquivos persiste os grupos num registro proprio, ao lado do de usuarios
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Priority: 256
 - Assignee: Sidarta Veloso
