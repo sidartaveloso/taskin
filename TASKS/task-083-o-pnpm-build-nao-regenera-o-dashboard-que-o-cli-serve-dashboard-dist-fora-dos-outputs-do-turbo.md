@@ -1,6 +1,6 @@
 # 🧩 Task 083 — O pnpm build nao regenera o dashboard que o CLI serve: dashboard-dist fora dos outputs do turbo
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Priority: 252
 - Assignee: Sidarta Veloso
