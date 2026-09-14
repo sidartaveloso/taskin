@@ -402,7 +402,9 @@ describe('usePrioritization', () => {
 
     const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
     expect(ids).toEqual(['c', 'a', 'b']);
-    expect(composable.changedTasks.value.map((t) => t.id).sort()).toEqual(['a', 'b', 'c']);
+    // So a tarefa movida muda de numero: `a` e `b` guardam os seus, e os
+    // arquivos delas nao sao reescritos. Antes as tres eram renumeradas.
+    expect(composable.changedTasks.value.map((t) => t.id)).toEqual(['c']);
   });
 
   function taskIdsFromGroup(node: PriorityNode): string[] {
@@ -1127,5 +1129,74 @@ describe('usePrioritization', () => {
         });
       });
     });
+  });
+});
+
+/**
+ * Quantas tarefas um movimento grava.
+ *
+ * O `changedTasks` e o que o app hospedeiro persiste — cada tarefa dessa lista
+ * vira uma escrita no `.md` dela. Num quadro comum isso seria detalhe de
+ * desempenho; aqui as tarefas sao **arquivos versionados**, entao cada entrada
+ * a mais e um arquivo a mais no `git status` e, com o autopilot ligado, dentro
+ * do commit.
+ *
+ * Por isso estes testes contam **quantas** mudaram, e nao se a ordem final ficou
+ * certa: a implementacao densa acerta a ordem e erra o custo, e um teste de
+ * ordem passaria por cima do defeito.
+ */
+describe('custo de um movimento', () => {
+  it('subir uma tarefa grava so a tarefa que subiu', () => {
+    const tasks = ref([
+      makeTask({ id: '001', order: 10 }),
+      makeTask({ id: '002', order: 20 }),
+      makeTask({ id: '003', order: 30 }),
+      makeTask({ id: '004', order: 40 }),
+    ]);
+    const board = usePrioritization(tasks);
+
+    board.moveUp('002');
+
+    expect(board.changedTasks.value.map((t) => t.id)).toEqual(['002']);
+  });
+
+  /*
+   * O caso que revela a numeracao densa: mover a ultima para o topo desloca
+   * todas as outras uma posicao, e renumerar por posicao reescreve a lista
+   * inteira. Numerando entre vizinhos, muda uma so.
+   */
+  it('mover da ultima posicao para a primeira grava uma tarefa so', () => {
+    const tasks = ref([
+      makeTask({ id: '001', order: 10 }),
+      makeTask({ id: '002', order: 20 }),
+      makeTask({ id: '003', order: 30 }),
+      makeTask({ id: '004', order: 40 }),
+    ]);
+    const board = usePrioritization(tasks);
+
+    board.moveUp('004');
+    board.moveUp('004');
+    board.moveUp('004');
+
+    expect(board.changedTasks.value.map((t) => t.id)).toEqual(['004']);
+  });
+
+  /*
+   * Metade das tarefas de um projeto real nao tem `order`. Dar numero a todas
+   * no primeiro movimento e exatamente o que faz o dashboard reescrever o
+   * repositorio inteiro — quem nao foi movida continua sem numero.
+   */
+  it('nao numera quem ninguem mexeu', () => {
+    const tasks = ref([
+      makeTask({ id: '001' }),
+      makeTask({ id: '002' }),
+      makeTask({ id: '003' }),
+      makeTask({ id: '004' }),
+    ]);
+    const board = usePrioritization(tasks);
+
+    board.moveUp('003');
+
+    expect(board.changedTasks.value.length).toBeLessThanOrEqual(2);
   });
 });

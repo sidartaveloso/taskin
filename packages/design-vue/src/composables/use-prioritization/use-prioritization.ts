@@ -212,20 +212,116 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     });
   }
 
-  /** Renumbers `order` in-place, preserving the current tree structure (including nested groups). */
-  function commit(): void {
-    let counter = 0;
+  /** Lista plana das tarefas na ordem em que a arvore as apresenta. */
+  function itensDaArvore(): Task[] {
+    const itens: Task[] = [];
     function walk(nodes: PriorityNode[]): void {
       for (const node of nodes) {
-        if (node.kind === 'task') {
-          counter++;
-          node.task.order = counter * orderStep;
-        } else {
-          walk(node.items);
-        }
+        if (node.kind === 'task') itens.push(node.task);
+        else walk(node.items);
       }
     }
     walk(treeInternal.value);
+    return itens;
+  }
+
+  /**
+   * Da numero apenas a quem precisa, preservando a estrutura da arvore.
+   *
+   * A versao anterior renumerava tudo por posicao (`posicao * passo`). A ordem
+   * saia certa e o custo saia errado: **as tarefas sao arquivos versionados**, e
+   * o app hospedeiro grava cada tarefa que aparece em `changedTasks`. Mover um
+   * item do fim para o topo reescrevia a lista inteira, e num projeto onde
+   * metade das tarefas ainda nao tinha `order` o primeiro movimento numerava
+   * todas de uma vez — dezenas de arquivos no `git status` por um clique de
+   * seta, e um commit gigante com o autopilot ligado.
+   *
+   * @param movidoId - A tarefa que acabou de se mover, quando a operacao sabe
+   *   qual foi. Com ela, so essa tarefa recebe numero novo: o valor entra
+   *   **entre** os vizinhos, e o resto da lista fica intacto. Sem ela — nas
+   *   operacoes que remexem varios itens — vale a passagem de reparo abaixo.
+   */
+  function commit(movidoId?: string): void {
+    const itens = itensDaArvore();
+    if (movidoId !== undefined && numerarMovido(itens, movidoId)) return;
+
+    /*
+     * Passagem de reparo: mantem o numero de quem ja expressa a propria posicao
+     * e so numera quem ficou fora de ordem.
+     */
+    let anterior = 0;
+    for (let i = 0; i < itens.length; i++) {
+      const atual = itens[i];
+      if (!atual) continue;
+      if (atual.order !== undefined && atual.order > anterior) {
+        anterior = atual.order;
+        continue;
+      }
+      const teto = itens.slice(i + 1).find((t) => t.order !== undefined && t.order > anterior)?.order;
+      const meio = teto === undefined ? anterior + orderStep : Math.floor((anterior + teto) / 2);
+      if (meio > anterior && (teto === undefined || meio < teto)) {
+        atual.order = meio;
+        anterior = meio;
+        continue;
+      }
+      for (let j = i; j < itens.length; j++) {
+        const item = itens[j];
+        if (!item) continue;
+        if (j > i && item.order !== undefined && item.order > anterior) break;
+        anterior += orderStep;
+        item.order = anterior;
+      }
+    }
+  }
+
+  /**
+   * Poe a tarefa movida entre os vizinhos, alterando so ela quando da.
+   *
+   * Devolve `false` quando nao ha como expressar a posicao mexendo em uma so —
+   * porque falta espaco entre os vizinhos, ou porque os vizinhos anteriores nem
+   * numero tem. Nesse caso quem chama cai na passagem de reparo.
+   */
+  function numerarMovido(itens: Task[], movidoId: string): boolean {
+    const i = itens.findIndex((t) => t.id === movidoId);
+    if (i < 0) return false;
+    const movido = itens[i];
+    if (!movido) return false;
+
+    const antes = itens[i - 1];
+    const depois = itens[i + 1];
+
+    /*
+     * Um item sem numero a frente nao atrapalha: sem `order` ele ja vai para o
+     * fim. Mas um item sem numero **atras** atrapalha, porque numerar o movido
+     * o jogaria na frente de quem nao tem numero.
+     *
+     * Quando isso acontece — o caso de um projeto onde ninguem priorizou ainda —
+     * a saida e numerar o **prefixo** ate o movido, e nao a lista inteira. Quem
+     * vem depois continua sem numero, indo para o fim na ordem em que ja estava.
+     */
+    if (i > 0 && (antes === undefined || antes.order === undefined)) {
+      let valor = 0;
+      for (let j = 0; j <= i; j++) {
+        const item = itens[j];
+        if (!item) continue;
+        if (item.order !== undefined && item.order > valor) {
+          valor = item.order;
+          continue;
+        }
+        valor += orderStep;
+        item.order = valor;
+      }
+      return true;
+    }
+
+    const piso = antes?.order ?? 0;
+    const teto = depois?.order;
+
+    const valor = teto === undefined ? piso + orderStep : Math.floor((piso + teto) / 2);
+    if (!(valor > piso) || (teto !== undefined && valor >= teto)) return false;
+
+    movido.order = valor;
+    return true;
   }
 
   const changedTasks = computed<Task[]>(() =>
@@ -391,7 +487,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     }
     pushHistory(preSnapshot);
     treeInternal.value = nodes;
-    commit();
+    commit(draggedId);
   }
 
   function moveAfter(draggedId: string, targetId: string): void {
@@ -733,7 +829,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
     pushHistory(preSnapshot);
     treeInternal.value = nodes;
-    commit();
+    commit(id);
   }
 
   /** Swap a node (task or group) with its next sibling — increases order / moves down. */
@@ -756,7 +852,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
     pushHistory(preSnapshot);
     treeInternal.value = nodes;
-    commit();
+    commit(id);
   }
 
   /** Dissolve a group: remove the group wrapper and promote its items in-place. */
