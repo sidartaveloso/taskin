@@ -61,6 +61,71 @@ describe('buildPriorityTree', () => {
     }
     expect(tree[1]?.kind).toBe('task');
   });
+
+  it('groups by identity, not adjacency: members split by order produce one node', () => {
+    // g1 members (a, c) are interleaved with a standalone task (b) by `order`.
+    const tasks = [
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2 }),
+      makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g1') } }),
+    ];
+
+    const tree = buildPriorityTree(tasks);
+
+    // A single g1 node, not two — and it holds both members.
+    const groupNodes = tree.filter((n) => n.kind === 'group');
+    expect(groupNodes).toHaveLength(1);
+    const g1 = groupNodes[0];
+    expect(g1?.kind === 'group' && g1.groupId).toBe(groupId('g1'));
+    expect(g1?.kind === 'group' && g1.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+      taskId('a'),
+      taskId('c'),
+    ]);
+  });
+
+  it('positions a group at its lowest-order member and keeps standalone tasks in order', () => {
+    // Same split as above: the group sits where its smallest-order member is (a=1),
+    // ahead of the standalone task b (order 2).
+    const tasks = [
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2 }),
+      makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g1') } }),
+    ];
+
+    const tree = buildPriorityTree(tasks);
+
+    expect(tree).toHaveLength(2);
+    expect(tree[0]?.kind).toBe('group');
+    expect(tree[1]?.kind === 'task' && tree[1].task.id).toBe(taskId('b'));
+  });
+
+  it('groups by identity when a prior filter removed the members in between', () => {
+    // Simulate a filter that already dropped the middle members of g1: the
+    // surviving members arrive non-consecutive in the (pre-sorted) input.
+    const all = [
+      makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g2') } }),
+      makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'd', order: 4, parent: { type: 'group', id: groupId('g2') } }),
+    ];
+    // A filter keeps g1's members; g2's survive too but interleaved by order.
+    const filtered = all;
+
+    const tree = buildPriorityTree(filtered);
+
+    const g1 = tree.find((n) => n.kind === 'group' && n.groupId === groupId('g1'));
+    const g2 = tree.find((n) => n.kind === 'group' && n.groupId === groupId('g2'));
+    // Exactly one node per identity, even though members interleave by order.
+    expect(tree.filter((n) => n.kind === 'group')).toHaveLength(2);
+    expect(g1?.kind === 'group' && g1.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+      taskId('a'),
+      taskId('c'),
+    ]);
+    expect(g2?.kind === 'group' && g2.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
+      taskId('b'),
+      taskId('d'),
+    ]);
+  });
 });
 
 describe('flattenPriorityTree / renumber', () => {
