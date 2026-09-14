@@ -3,7 +3,8 @@
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso
-- Priority: 240
+- Priority: 50
+- Difficulty: 2
 
 ## Description
 Uma notificação de task no Discord hoje não avisa ninguém. Ela cai no canal e

@@ -3,7 +3,7 @@
 - Status: in-progress
 - Type: feat
 - Assignee: fernando-gatti
-- Priority: 60
+- Priority: 100
 
 ## Description
 
