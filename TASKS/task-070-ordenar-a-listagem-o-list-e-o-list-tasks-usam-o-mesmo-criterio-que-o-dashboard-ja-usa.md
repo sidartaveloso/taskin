@@ -79,6 +79,21 @@ saida de terminal e num JSON de agente, agrupar pode ajudar ou so atrapalhar. Se
 nao acompanhar, a funcao extraida precisa separar "ordenar" de "agrupar" — o que
 provavelmente e uma melhoria por si so.
 
+Para o `--json`, a recomendacao e **nao montar arvore nenhuma**: emitir as
+tarefas planas, cada uma com o seu `groupId`, e deixar quem consome agrupar.
+Arvore e decisao de apresentacao, e um agente nao precisa dela.
+
+**Grupo parcial: decidido.** Quando o filtro deixa so parte de um grupo, mostrar
+os membros que casam, agrupados por identidade, com a contagem do que ficou de
+fora ("3 de 7"). Isso e honesto com quem le e nao quebra a promessa do filtro.
+
+Descartado de proposito: trazer o grupo inteiro quando qualquer membro casa. Seria
+util quando o grupo e a unidade de trabalho, mas faz `--open` devolver tarefas
+fechadas — um filtro que se alarga sozinho e pior que um filtro que esconde.
+
+Isso depende da **task-072**, que conserta o agrupamento por adjacencia: sem
+agrupar por identidade, um grupo parcial nem se reconhece como um grupo so.
+
 **Os nomes dos modos servem para um CLI?** `diff-asc` nasceu de um seletor de
 interface. Num terminal, `--sort difficulty --desc` talvez leia melhor. Mas o
 pedido foi **o mesmo padrao do dashboard**, e vocabulario unico entre superficies
