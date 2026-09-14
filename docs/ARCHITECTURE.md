@@ -210,7 +210,8 @@ LLM continues conversation
 #### @opentask/taskin-cli
 
 - **Comandos**:
-  - `taskin dashboard`: Inicia WebSocket server + Vite dev server
+  - `taskin dashboard` (serve `/avatar/<hash>` como proxy: o navegador nunca
+    fala com o provedor de avatar, e sem internet cai para as iniciais): Inicia WebSocket server + Vite dev server
     - `--port <number>`: Porta do Vite (padrão: 5173)
     - `--ws-port <number>`: Porta do WebSocket (padrão: 3001)
     - `--host <string>`: Host do servidor (padrão: localhost)

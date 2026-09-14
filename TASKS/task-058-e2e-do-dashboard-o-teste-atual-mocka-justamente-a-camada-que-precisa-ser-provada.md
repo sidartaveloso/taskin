@@ -58,11 +58,42 @@ o teste roda.
 
 ## Tasks
 
-- [ ] Extrair a montagem do app para uma funcao pura, sem tocar no
+- [x] Extrair a montagem do app para uma funcao pura, sem tocar no
       comportamento do comando
-- [ ] E2E que sobe o app em porta 0 e verifica as seis linhas da tabela acima
-- [ ] Manter o teste de selecao de porta que ja existe — ele cobre outra coisa
-- [ ] Conferir que o novo teste nao depende de porta fixa nem de rede externa
+- [x] E2E que sobe o app em porta 0 e verifica as seis linhas da tabela acima
+- [x] Manter o teste de selecao de porta que ja existe — ele cobre outra coisa
+- [x] Conferir que o novo teste nao depende de porta fixa nem de rede externa
+
+### O que comprova cada item
+
+A costura e `createDashboardApp` em `dashboard.ts:50`, exportada e importada
+pelo teste — a montagem do express deixou de estar presa dentro do comando.
+
+`packages/cli/src/commands/dashboard.e2e.test.ts` — 6 testes, um por linha da
+tabela:
+
+| o que se afirma | teste |
+| --- | --- |
+| nao vaza `X-Powered-By` | `does not leak the X-Powered-By header` |
+| cabecalhos de seguranca em toda resposta | `sets the security headers on every response` |
+| content-type dos estaticos | `serves static assets with the right content-type` |
+| nega dotfiles | `denies dotfiles like /.env (dotfiles: 'deny')` |
+| injeta `VITE_WS_URL` no html | `injects VITE_WS_URL into index.html` |
+| rota desconhecida cai no 404 | `routes unknown paths to the 404 catch-all` |
+
+O teste sobe em **porta 0** (o sistema escolhe uma livre) e nao alcanca rede
+externa, entao nao briga com nada que ja esteja rodando na maquina. O teste de
+selecao de porta que existia continua no lugar, em `dashboard.test.ts`, cobrindo
+outra coisa — os dois passam juntos:
+
+```
+✓ src/commands/dashboard.test.ts      (1 test)
+✓ src/commands/dashboard.e2e.test.ts  (6 tests)
+```
+
+**Nota de revisao.** O agente entregou tudo, mas fechou a task sem marcar nada.
+Os itens foram conferidos contra o codigo e a execucao dos testes antes de serem
+marcados.
 
 ## Notes
 

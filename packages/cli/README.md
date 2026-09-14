@@ -118,7 +118,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin config [options]` - Configure automation level
   - `--level <manual|assisted|autopilot>` - Set commit automation level
 - `taskin lint` - Validate task files
-- `taskin dashboard [options]` - Start the web dashboard
+- `taskin dashboard [options]` - Start the web dashboard (see [Avatars](#avatars))
   - `--filter-open` - Show only open tasks
   - `--filter-closed` - Show only closed tasks
 - `taskin mcp-server` - Start MCP server for Claude Desktop integration (alias: `mcp`)
@@ -126,6 +126,21 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `-f, --force` - Replace an existing `taskin` entry that differs
   - `--no-probe` - Skip starting the server to verify the entry works
 - `taskin help` - Show help information
+
+### Avatars
+
+The dashboard never sends your browser to a third party for an avatar image. The
+domain stores the **identity** — `avatarHash`, the md5 of the normalised email —
+and the dashboard server proxies the image at `/avatar/<hash>`, same-origin. The
+page therefore only ever asks its own server, which is what lets a strict
+`img-src 'self'` policy work and keeps each viewer's IP and referrer away from
+the avatar provider.
+
+**Without internet**, or when the provider is slow or has no image for that
+address, nothing hangs and nothing breaks: the request is aborted after a short
+timeout, the server answers 404 or 504, and the avatar component falls back to
+the person's initials. Both outcomes are cached — including the negative one, so
+a missing avatar is not re-fetched on every page load.
 
 ### The CI-skip tag
 

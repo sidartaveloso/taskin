@@ -9,12 +9,32 @@
 Hoje a URL absoluta do gravatar e gravada no dado de dominio e o navegador de quem abre o dashboard busca a imagem em gravatar.com. Isso vaza IP e referrer para terceiro, quebra sem internet e impede CSP restritiva.
 
 ## Tasks
-- [ ] Decidir o que o dominio guarda: a identidade (o hash) em vez da URL de um provedor
-- [ ] Rota de avatar no servidor do dashboard, com cache e limite de tempo
-- [ ] O dashboard passa a pedir caminho relativo
-- [ ] `Avatar.vue` cai para as iniciais quando a imagem falha, e nao so quando falta `src`
-- [ ] Atualizar o contrato de registro de usuarios, que hoje afirma a URL do gravatar
-- [ ] Documentar o comportamento sem internet
+- [x] Decidir o que o dominio guarda: a identidade (o hash) em vez da URL de um provedor
+- [x] Rota de avatar no servidor do dashboard, com cache e limite de tempo
+- [x] O dashboard passa a pedir caminho relativo
+- [x] `Avatar.vue` cai para as iniciais quando a imagem falha, e nao so quando falta `src`
+- [x] Atualizar o contrato de registro de usuarios, que hoje afirma a URL do gravatar
+- [x] Documentar o comportamento sem internet
+
+### O que comprova cada item
+
+`packages/cli/src/lib/avatar-proxy.test.ts` — 8 testes.
+
+| item | onde | prova |
+| --- | --- | --- |
+| dominio guarda o hash | `taskin.schemas.ts:118` (`avatarHash`), `user-registry.ts:38` | contrato e testes do registro deixaram de afirmar a URL do gravatar |
+| rota com cache e limite | `avatar-proxy.ts` | `serves a second request from cache without fetching again`, `re-fetches once the cache entry has expired`, `caches the negative result`, `aborts the provider request after the timeout` |
+| caminho relativo | `App.vue:104` — `/avatar/${avatarHash}` | `proxies the provider image on success and serves it same-origin` |
+| iniciais quando a imagem falha | `Avatar.vue:3` — `v-if="src && !failed"` com `@error` e reset | `returns 404 when the provider has no avatar, so the UI shows initials` |
+| contrato atualizado | `user-registry.contract.ts`, `user-registry.test.ts` | ambos passam a afirmar o hash |
+| documentacao | `packages/cli/README.md` (secao Avatars), `docs/ARCHITECTURE.md` | — |
+
+Ainda: `rejects a hash that is not 32 hex chars without fetching` — o proxy nao
+vira um buscador de URL arbitraria para quem chamar a rota.
+
+**Nota de revisao.** O agente entregou tudo menos a documentacao, e fechou a task
+sem marcar nada. A documentacao foi escrita na revisao; os outros cinco itens
+foram conferidos contra o codigo e os testes antes de serem marcados.
 
 ## Notes
 **Como e hoje.** `getGravatarUrl` em

@@ -9,11 +9,46 @@
 Quatro arquivos somam 30 corpos de teste que so afirmam expect(true).toBe(true). Eles contam como verdes no pnpm test e dao impressao de cobertura que nao existe — tres deles cobrem justamente o --dry-run de finish, start e pause.
 
 ## Tasks
-- [ ] `finish.dry-run.test.ts` — 8 corpos vazios
-- [ ] `start.dry-run.test.ts` — 8 corpos vazios
-- [ ] `pause.dry-run.test.ts` — 8 corpos vazios
-- [ ] `file-system-task-linter.test.ts` — 6 de 14
-- [ ] Guarda que impeça a proxima ocorrencia
+- [x] `finish.dry-run.test.ts` — 8 corpos vazios
+- [x] `start.dry-run.test.ts` — 8 corpos vazios
+- [x] `pause.dry-run.test.ts` — 8 corpos vazios
+- [x] `file-system-task-linter.test.ts` — 6 de 14
+- [x] Guarda que impeça a proxima ocorrencia
+
+### O que comprova cada item
+
+Os tres arquivos de placeholder foram **apagados**, e nao remendados: no lugar
+entraram testes ponta a ponta, que rodam o comando de verdade num projeto
+temporario e afirmam sobre a saida.
+
+| antes | depois | testes |
+| --- | --- | --- |
+| `finish.dry-run.test.ts`, 8 corpos vazios | `finish.dry-run.e2e.test.ts` | 3 |
+| `start.dry-run.test.ts`, 8 corpos vazios | `start.dry-run.e2e.test.ts` | 3 |
+| `pause.dry-run.test.ts`, 8 corpos vazios | `pause.dry-run.e2e.test.ts` | 3 |
+| `file-system-task-linter.test.ts`, 6 de 14 vazios | mesmo arquivo | 14, nenhum vazio |
+
+Nove testes ponta a ponta valem mais que os vinte e quatro corpos vazios que
+substituiram: cada um sobe o comando e verifica o que ele imprime e o que ele
+**nao** faz.
+
+**A guarda:** `packages/cli/src/no-empty-test-bodies.test.ts` varre os arquivos
+de teste do pacote e falha se encontrar um corpo vazio. Sem ela a forma volta —
+ja tinha voltado quatro vezes. Verificada junto com o resto:
+
+```
+✓ src/no-empty-test-bodies.test.ts       (1 test)
+✓ src/commands/finish.dry-run.e2e.test.ts (3 tests)
+✓ src/commands/pause.dry-run.e2e.test.ts  (3 tests)
+✓ src/commands/start.dry-run.e2e.test.ts  (3 tests)
+```
+
+O unico `expect(true).toBe(true)` que resta no repositorio esta dentro da propria
+guarda — e o texto que ela procura.
+
+**Nota de revisao.** O agente entregou tudo, mas fechou a task sem marcar nada.
+Os itens foram conferidos contra os arquivos e a execucao dos testes antes de
+serem marcados.
 
 ## Notes
 **O que sao.** Trinta corpos de teste cujo unico conteudo e
