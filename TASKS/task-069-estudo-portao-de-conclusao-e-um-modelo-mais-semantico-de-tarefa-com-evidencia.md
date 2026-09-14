@@ -1,6 +1,6 @@
 # 🧩 Task 069 — Estudo: portao de conclusao e um modelo mais semantico de tarefa, com evidencia
 
-- Status: in-progress
+- Status: done
 - Type: docs
 - Priority: 240
 - Assignee: Sidarta Veloso
