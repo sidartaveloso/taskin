@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.12
+
+### Patch Changes
+
+- @opentask/taskin-design-vue@0.3.3
+  - @opentask/taskin-task-provider-pinia@3.0.4
+
 ## 0.1.11
 
 ### Patch Changes
