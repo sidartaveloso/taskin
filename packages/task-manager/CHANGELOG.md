@@ -1,5 +1,33 @@
 # @opentask/taskin-task-manager
 
+## 3.2.0
+
+### Minor Changes
+
+- f84d9c6: Task groups are an entity now: the name lives in one place, and a task carries only the group id.
+  
+  Until now every member of a group carried its own copy of the name. Renaming meant writing N files with no transaction, so a failure halfway left the group answering to two names — and the write path deleted the name whenever it arrived empty, which is how a real project ended up with four grouped tasks and no name at all.
+  
+  - **`Group { id, name }`** in `@opentask/taskin-types`, and `groupName` is gone from `Task`.
+  - **`IGroupRegistry`** with a contract suite any provider proves itself against. Deleting a group says where its tasks go — `deleteGroup(id, { reassignTo })`, the same shape Redmine and Jira offer — so nothing is ever left pointing at a group that no longer exists.
+  - **A provider without groups simply does not expose the registry**, and callers find out by its absence rather than by an operation that fails.
+  - **`taskin group`** — `list`, `add`, `rename`, `remove` — plus `list_groups` over MCP, and the dashboard resolving names from the server instead of from each task.
+  
+  Renaming a three-member group used to be three writes. It is one, and no task file is touched.
+- 0aa99db: `taskin prioritize` gives every task a priority number, once and on purpose — and `prioritize_tasks` does the same over MCP.
+  
+  A project where only some tasks carry a priority is expensive to reorder: a task with no number sorts last, so giving one to a task in the middle means numbering every task before it. On a 500-task project, moving one from the middle of the unnumbered stretch rewrote **124 files**. After this command, the same move rewrites **one**.
+  
+  It preserves what you already decided: tasks that carry a number keep it, and the gaps around them are filled. Running it again writes nothing, so it is safe in a script. `--dry-run` reports how many would be numbered without touching anything.
+  
+  The rule itself lives in one place — `ITaskManager.prioritizeAll()` — so the CLI and the MCP server share it rather than each carrying a copy.
+
+### Patch Changes
+
+- Updated dependencies [f84d9c6]
+- Updated dependencies [0f83ec2]
+  - @opentask/taskin-types@2.3.0
+
 ## 3.1.0
 
 ### Minor Changes

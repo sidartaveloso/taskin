@@ -1,5 +1,13 @@
 # @opentask/taskin-design-vue
 
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [f84d9c6]
+- Updated dependencies [0f83ec2]
+  - @opentask/taskin-types@2.3.0
+
 ## 0.3.2
 
 ### Patch Changes

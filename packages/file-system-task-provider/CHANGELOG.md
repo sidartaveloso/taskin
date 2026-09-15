@@ -1,5 +1,29 @@
 # @opentask/taskin-file-system-provider
 
+## 3.3.0
+
+### Minor Changes
+
+- f84d9c6: Task groups are an entity now: the name lives in one place, and a task carries only the group id.
+  
+  Until now every member of a group carried its own copy of the name. Renaming meant writing N files with no transaction, so a failure halfway left the group answering to two names — and the write path deleted the name whenever it arrived empty, which is how a real project ended up with four grouped tasks and no name at all.
+  
+  - **`Group { id, name }`** in `@opentask/taskin-types`, and `groupName` is gone from `Task`.
+  - **`IGroupRegistry`** with a contract suite any provider proves itself against. Deleting a group says where its tasks go — `deleteGroup(id, { reassignTo })`, the same shape Redmine and Jira offer — so nothing is ever left pointing at a group that no longer exists.
+  - **A provider without groups simply does not expose the registry**, and callers find out by its absence rather than by an operation that fails.
+  - **`taskin group`** — `list`, `add`, `rename`, `remove` — plus `list_groups` over MCP, and the dashboard resolving names from the server instead of from each task.
+  
+  Renaming a three-member group used to be three writes. It is one, and no task file is touched.
+
+### Patch Changes
+
+- Updated dependencies [f84d9c6]
+- Updated dependencies [0aa99db]
+- Updated dependencies [0f83ec2]
+  - @opentask/taskin-types@2.3.0
+  - @opentask/taskin-task-manager@3.2.0
+  - @opentask/taskin-git-utils@3.0.4
+
 ## 3.2.4
 
 ### Patch Changes
