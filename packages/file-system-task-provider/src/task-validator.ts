@@ -121,6 +121,41 @@ export async function fixTaskFile(filePath: string, options: FixTaskFileOptions 
     const normalizedOriginal = normalizeForCompare(originalContentRaw);
 
     if (finalContent !== normalizedOriginal) {
+      /*
+       * Rede de seguranca: um `--fix` que so remove nao grava.
+       *
+       * A migracao de metadados reescreve o cabecalho — as secoes `## Status`,
+       * `## Type` e `## Assignee` viram linhas. Tudo o mais no corpo tem que
+       * sobreviver, e o titulo tambem.
+       *
+       * Existe por causa da task-078: um `lint --fix` no geohub apagou 93 linhas
+       * de conteudo em duas tarefas — titulo, `## Description` inteira, `##
+       * Tasks` e subitens —, e o gatilho nao reproduz, nem contra as 361
+       * tarefas reais com o mesmo binario. Sem poder consertar a causa, fecha-se
+       * a classe: se o resultado perdeu secao ou titulo, o arquivo fica como
+       * estava e o problema aparece como arquivo nao corrigido, e nao como
+       * conteudo perdido.
+       */
+      const secoesDoCorpo = (texto: string) =>
+        (texto.match(/^##[ \t]+(.+)$/gm) ?? []).filter(
+          (cabecalho) =>
+            !new RegExp(
+              `^##[ \\t]+(?:Status|Type|Assignee|${i18n.status}|${i18n.type}|${i18n.assignee})\\s*$`,
+              'i',
+            ).test(cabecalho),
+        ).length;
+
+      const perdeuSecao = secoesDoCorpo(finalContent) < secoesDoCorpo(content);
+      const perdeuTitulo = /^# /m.test(content) && !/^# /m.test(finalContent);
+
+      if (perdeuSecao || perdeuTitulo) {
+        console.error(
+          `Refusing to fix ${filePath}: the result would lose ${perdeuTitulo ? 'the title' : 'a body section'}. ` +
+            'The file was left untouched — please report this with the file contents.',
+        );
+        return false;
+      }
+
       await writeFile(filePath, finalContent, 'utf-8');
       return true;
     }
