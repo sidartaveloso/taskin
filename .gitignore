@@ -111,3 +111,6 @@ storybook-static
 
 # Projeto de carga para medir o custo de um movimento na priorizacao.
 .bench500/
+
+# Fixtures de reproducao da task-078.
+.fix078*/
