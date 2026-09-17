@@ -1,6 +1,6 @@
 # 🧩 Task 096 — o balao de pensamento cresce com a frase
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
 
