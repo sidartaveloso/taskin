@@ -9,6 +9,7 @@ import '@opentask/taskin-design-vue/style.css';
 import './custom.css';
 import { initAnalytics } from './analytics';
 import Layout from './Layout.vue';
+import LinkDaGaleria from './LinkDaGaleria.vue';
 import MascotTrackingDemo from './MascotTrackingDemo.vue';
 
 /**
@@ -24,6 +25,9 @@ export default {
   enhanceApp({ app }) {
     // Usado no corpo do index.md, onde ha largura para os controles de tracking
     app.component('MascotTrackingDemo', MascotTrackingDemo);
+
+    // Link para a galeria: ver o componente para o porque de nao ser markdown.
+    app.component('LinkDaGaleria', LinkDaGaleria);
 
     // `enhanceApp` roda no servidor tambem; o guard de `window` fica dentro do
     // `initAnalytics`. Pageview a cada rota vem do proprio SDK, via

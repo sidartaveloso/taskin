@@ -1,9 +1,19 @@
 import { defineConfig } from 'vitepress';
 
 const REPO = 'https://github.com/opentask/taskin';
-// Publicada em /components/ pelo workflow do Pages. Caminho relativo
-// resolve contra o `base`, entao funciona em dev e em producao.
-const COMPONENTS = '/components/';
+
+/**
+ * A galeria e publicada em /components/ pelo workflow do Pages. O caminho
+ * relativo resolve contra o `base`, entao funciona em dev e em producao.
+ *
+ * O `target` nao e decoracao: o roteador do vitepress intercepta o clique em
+ * qualquer ancora interna **sem** atributo `target` e tenta resolver o caminho
+ * como rota de markdown. Como /components/ e o Storybook copiado para dentro da
+ * arvore publicada, e nao uma pagina do vitepress, a navegacao pelo lado do
+ * cliente caia no 404 do proprio site — enquanto a URL digitada direto abria a
+ * galeria normalmente. Com `target`, o clique vira navegacao de verdade.
+ */
+const GALERIA = { link: '/components/', target: '_self' } as const;
 
 export default defineConfig({
   title: 'Taskin',
@@ -42,7 +52,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Quickstart', link: `${REPO}/blob/main/docs/QUICKSTART.md` },
-          { text: 'Components', link: COMPONENTS },
+          { text: 'Components', ...GALERIA },
         ],
         footer: { message: 'MIT', copyright: 'OpenTask' },
       },
@@ -54,7 +64,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Quickstart', link: `${REPO}/blob/main/docs/QUICKSTART.md` },
-          { text: 'Componentes', link: COMPONENTS },
+          { text: 'Componentes', ...GALERIA },
         ],
         footer: { message: 'MIT', copyright: 'OpenTask' },
       },
