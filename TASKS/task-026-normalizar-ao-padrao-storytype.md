@@ -41,9 +41,9 @@ Conferir um a um antes de aceitar: scaffold vazio versionado é pior que ausênc
 
 ## Tasks
 
-- [ ] Rodar `pnpm storytype normalize src/components --dry-run` em
+- [x] Rodar `pnpm storytype normalize src/components --dry-run` em
       `packages/design-vue` e revisar a lista inteira antes de aplicar
-- [ ] Separar, na lista, o que é convenção real do que é falso positivo do
+- [x] Separar, na lista, o que é convenção real do que é falso positivo do
       detector (módulo helper tratado como componente)
 - [ ] Aplicar a renomeação em commit próprio, sem misturar com mudança de
       conteúdo, para o `git log --follow` continuar seguindo
@@ -52,6 +52,49 @@ Conferir um a um antes de aceitar: scaffold vazio versionado é pior que ausênc
 - [ ] Rodar o dry-run de novo até sobrar só o que foi recusado de propósito
 - [ ] Changeset de `@opentask/taskin-design-vue`: os caminhos de import do pacote
       mudam, então quem depende dele vê diferença
+
+
+### A revisão do dry-run (16/09), e por que a aplicação foi revertida
+
+O dry-run propõe **20 componentes** em 16 pastas novas. A lista de destinos está
+correta — `avatar/`, `badge/`, `progress-bar/`, `day-bar/`, `task-card/`,
+`task-grid/` e afins são todos componentes de verdade. **Nenhum módulo helper
+foi tratado como componente**, que era o falso positivo previsto.
+
+O falso positivo real e outro, e o dry-run nao o mostra: **`organisms/taskin/`
+ja era uma pasta de familia**, com cinco componentes dentro (`Taskin`,
+`TaskinV1`, `TaskinWithShhh`, `TaskinWithFaceTracking`,
+`TaskinWithFullTracking`). O tool tratou-a como diretorio plano e **aninhou mais
+um nivel**, gerando `organisms/taskin/taskin/`, `organisms/taskin/taskin-v1/`…
+O certo seria achatar para `organisms/taskin/` e `organisms/taskin-v1/`.
+
+A aplicacao foi feita e **revertida**. Tres problemas apareceram, em ordem:
+
+1. **O aninhamento acima**, corrigido a mao.
+2. **Imports fora do escopo varrido.** O tool so reescreve dentro de
+   `src/components`; o `src/index.ts` do pacote, que exporta a familia inteira,
+   ficou apontando para caminhos que deixaram de existir. O barrel de
+   `organisms/taskin/` tambem foi substituido por um de componente unico,
+   perdendo as exportacoes nomeadas.
+3. **Regressao de teste.** Quatro specs de `templates/` passavam antes e
+   falharam depois (`Cannot read properties of undefined`), e a causa exige
+   entender resolucao de modulo numa arvore inteira movida — provavelmente um
+   import que passou a resolver para **outro** arquivo existente, e por isso nao
+   apareceu como erro de compilacao.
+
+São 109 arquivos. Nao e mudanca para empurrar sem entender o item 3.
+
+### O que fazer quando alguem retomar
+
+O caminho tem duas partes, e a primeira nao depende deste repositorio:
+
+**Corrigir o `storytype`** para reconhecer uma pasta de familia e achatar em vez
+de aninhar, e para varrer os imports do pacote inteiro — nao so do diretorio
+alvo. Enquanto isso nao existir, cada aplicacao exige o mesmo trabalho manual.
+
+**Aplicar em lotes**, e nao de uma vez: uma pasta por commit, com
+`pnpm test` do `design-vue` entre cada uma. Foi o tudo-de-uma-vez que tornou a
+regressao dificil de isolar.
 
 ## Notes
 
