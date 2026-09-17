@@ -62,6 +62,15 @@ export interface ListTasksOptions {
   type?: TaskType;
   open?: boolean;
   closed?: boolean;
+  active?: boolean;
+
+  /**
+   * Ordem da listagem, com o mesmo vocabulario do quadro de priorizacao.
+   *
+   * Nao e criterio de filtro — nao restringe nada, so reordena —, e por isso
+   * fica aqui e nao em `FilterCriteriaSchema`.
+   */
+  sort?: 'manual' | 'diff-asc' | 'diff-desc';
 }
 
 export interface CreateTaskOptions {

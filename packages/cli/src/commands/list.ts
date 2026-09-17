@@ -3,8 +3,10 @@
  */
 
 import {
+  agruparTarefas,
   filterCriteriaCliOptions,
   filterTasks,
+  ordenarTarefas,
   parseFilterCriteria,
   summarizeTask,
 } from '@opentask/taskin-task-manager';
@@ -26,6 +28,11 @@ export const listCommand = defineCommand({
    * criterio.
    */
   options: [
+    {
+      flags: '--sort <mode>',
+      description: 'Order: manual (priority), diff-asc or diff-desc',
+      defaultValue: 'manual',
+    },
     ...filterCriteriaCliOptions(),
     {
       flags: '--json',
@@ -36,6 +43,24 @@ export const listCommand = defineCommand({
     await listTasks(filter, options);
   },
 });
+
+/**
+ * Os nomes dos grupos, quando o provider tem o conceito.
+ *
+ * Um provider sem grupos nao expoe o registro, e a saida sai com `name`
+ * indefinido — o id ainda identifica o grupo.
+ */
+async function nomesDeGrupo(provider: unknown): Promise<Record<string, string>> {
+  const registro = (provider as { groupRegistry?: { listGroups: () => Promise<{ id: string; name: string }[]> } })
+    .groupRegistry;
+  if (!registro) return {};
+
+  try {
+    return Object.fromEntries((await registro.listGroups()).map((g) => [g.id, g.name]));
+  } catch {
+    return {};
+  }
+}
 
 async function listTasks(filter: string | undefined, options: ListTasksOptions): Promise<void> {
   // Check if project is initialized
@@ -72,10 +97,33 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
    */
   const criteria = parseFilterCriteria({ ...options, ...(filter && { text: filter }) });
 
-  const filteredTasks = filterTasks(tasks, criteria);
+  const filteredTasks = ordenarTarefas(filterTasks(tasks, criteria), options.sort);
 
   if (comoJson) {
-    console.log(JSON.stringify(filteredTasks.map(summarizeTask), null, 2));
+    /*
+     * A saida de maquina leva os grupos, e nao tarefas planas.
+     *
+     * `--json` nao e a interface do agente: e a interface de maquina do produto,
+     * e serve script, painel de terceiro e passo de CI. Emitir plano empurraria
+     * a regra de agrupamento para cada consumidor reimplementar. Quem quiser
+     * plano achata em uma linha; quem recebe plano nao reagrupa sem copiar a
+     * regra.
+     *
+     * Vai a estrutura semantica — grupo, id, membros, e quantos o filtro
+     * escondeu — e nao a decoracao de apresentacao.
+     */
+    const totais = tasks.reduce<Record<string, number>>((acc, t) => {
+      if (t.groupId !== undefined) acc[String(t.groupId)] = (acc[String(t.groupId)] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    const nos = agruparTarefas(filteredTasks, await nomesDeGrupo(taskProvider), totais).map((no) =>
+      no.kind === 'task'
+        ? summarizeTask(no.task)
+        : { group: { id: no.groupId, name: no.groupName, hidden: no.hidden }, tasks: no.tasks.map(summarizeTask) },
+    );
+
+    console.log(JSON.stringify(nos, null, 2));
     return;
   }
 

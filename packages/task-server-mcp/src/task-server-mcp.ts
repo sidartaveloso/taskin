@@ -12,7 +12,9 @@ import {
   filterCriteriaJsonSchema,
   filterTasks,
   type ITaskManager,
+  type ModoDeOrdenacao,
   numerarPrioridade,
+  ordenarTarefas,
   parseFilterCriteria,
   summarizeTask,
   type TaskFilterCriteria,
@@ -232,7 +234,21 @@ export class TaskMCPServer implements ITaskMCPServer {
          * mesmo que valida a chamada e gera as flags da CLI — nao de uma lista
          * escrita a mao aqui.
          */
-        inputSchema: filterCriteriaJsonSchema(),
+        inputSchema: {
+          ...filterCriteriaJsonSchema(),
+          properties: {
+            ...filterCriteriaJsonSchema().properties,
+            /*
+             * `sort` nao vem do schema de criterios de proposito: ordenar nao
+             * restringe nada. Fica ao lado, com o mesmo vocabulario do quadro
+             * de priorizacao do dashboard.
+             */
+            sort: {
+              type: 'string',
+              description: 'Order: manual (priority), diff-asc or diff-desc. Defaults to manual.',
+            },
+          },
+        },
       },
       {
         name: 'start_task',
@@ -537,9 +553,13 @@ Let me start by marking the task as done using the finish_task tool.`,
    * que a resposta aqui e a de `taskin list --json` nao possam divergir — ja
    * houve duas filtragens discordando no repositorio.
    */
-  private async selecionarTarefas(criteria: TaskFilterCriteria) {
+  private async selecionarTarefas(criteria: TaskFilterCriteria, modo: ModoDeOrdenacao = 'manual') {
     const tasks = await this.taskManager.getAllTasks();
-    return filterTasks(tasks, criteria).map(summarizeTask);
+    /*
+     * Ordenar antes de resumir: o resumo expoe `priority`, e a ordenacao
+     * trabalha com `order` — a traducao acontece depois, e nao no meio.
+     */
+    return ordenarTarefas(filterTasks(tasks, criteria), modo).map(summarizeTask);
   }
 
   /**
@@ -581,7 +601,8 @@ Let me start by marking the task as done using the finish_task tool.`,
   }
 
   private async handleListTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {
-    const tarefas = await this.selecionarTarefas(parseFilterCriteria(args));
+    const modo = args.sort === 'diff-asc' || args.sort === 'diff-desc' ? args.sort : 'manual';
+    const tarefas = await this.selecionarTarefas(parseFilterCriteria(args), modo);
 
     return {
       content: [{ type: 'text', text: JSON.stringify(tarefas, null, 2) }],
