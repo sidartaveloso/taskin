@@ -4,6 +4,7 @@
 - Status: in-progress
 - Type: fix
 - Assignee: Sidarta Veloso
+- Difficulty: 1
 
 ## Description
 Rodando 'taskin lint --fix' no geohub, 201 arquivos de task foram modificados: as prioridades foram renumeradas em massa (ex.: task-007 de 70 para 50) e 93 linhas de conteudo foram APAGADAS de dois arquivos (task-228 e task-238), incluindo titulo, descricao e itens. Nenhuma dessas mudancas foi pedida — o comando foi invocado para formatar UM arquivo recem-criado.

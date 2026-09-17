@@ -4,6 +4,7 @@
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 180
+- Difficulty: 4
 
 ## Description
 

@@ -4,6 +4,7 @@
 - Type: feat
 - Assignee: Sidarta Veloso
 - Priority: 210
+- Difficulty: 2
 
 ## Description
 

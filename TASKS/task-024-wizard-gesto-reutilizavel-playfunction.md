@@ -4,6 +4,7 @@
 - Type: feat
 - Assignee: fernando-gatti
 - Priority: 100
+- Difficulty: 3
 
 ## Description
 

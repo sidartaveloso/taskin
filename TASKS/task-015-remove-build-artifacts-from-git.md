@@ -3,6 +3,7 @@
 - Status: done
 - Type: chore
 - Assignee: Sidarta Veloso
+- Priority: 8351
 
 ## Description
 

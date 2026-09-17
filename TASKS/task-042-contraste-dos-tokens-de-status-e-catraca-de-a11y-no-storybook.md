@@ -4,6 +4,7 @@
 - Type: chore
 - Assignee: sidartaveloso
 - Priority: 190
+- Difficulty: 2
 
 ## Description
 

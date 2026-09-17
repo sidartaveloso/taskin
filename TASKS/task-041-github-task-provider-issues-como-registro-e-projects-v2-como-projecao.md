@@ -4,6 +4,7 @@
 - Type: feat
 - Assignee: jorisveloso
 - Priority: 30
+- Difficulty: 5
 
 ## Description
 

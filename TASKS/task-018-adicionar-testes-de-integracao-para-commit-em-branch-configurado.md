@@ -3,6 +3,7 @@
 - Status: done
 - Type: test
 - Assignee: Sidarta Veloso
+- Priority: 8551
 
 ## Description
 

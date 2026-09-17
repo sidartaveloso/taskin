@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
-- Priority: 260
+- Priority: 6451
 
 ## Description
 Deriva da decisão em `decisoes/portao-de-conclusao-e-evidencia.md` (task-069),

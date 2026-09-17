@@ -3,6 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
+- Priority: 10751
 
 ## Description
 O .mcp.json e escrito a mao e so vale no monorepo do taskin; quem instala do npm nao ganha nada, e rodar de um subdiretorio quebra a deteccao.
