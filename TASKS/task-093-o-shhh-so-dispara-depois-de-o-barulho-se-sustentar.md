@@ -1,6 +1,6 @@
 # 🧩 Task 093 — o shhh so dispara depois de o barulho se sustentar
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
 
