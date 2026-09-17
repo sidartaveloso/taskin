@@ -31,6 +31,7 @@ import {
   USERS_FILE_NAME,
   validateUsersFileLocation,
 } from './users-file-location.js';
+import { validarPriorizacao } from './validar-priorizacao/index.js';
 
 /**
  * Matches the H1 heading `# [🧩] Task NNN — Title`. The separator is anchored
@@ -623,10 +624,25 @@ ${i18n.notesPlaceholder}
     // que o usuário tem chance de ver e corrigir.
     allIssues.push(...(await validateUsersFileLocation(this.projectRoot)));
 
+    /*
+     * Os ids que o registro conhece, para o lint poder apontar grupo orfao —
+     * tarefa que diz pertencer a algo que nao existe. Sem o registro a
+     * validacao nao opina, em vez de adivinhar.
+     */
+    const gruposConhecidos = await this.groupRegistry
+      .listGroups()
+      .then((gs) => gs.map((g) => String(g.id)))
+      .catch(() => undefined);
+
     // Then validate all files
     for (const filePath of taskFiles) {
-      const issues = await validateTaskFile(filePath);
-      allIssues.push(...issues);
+      allIssues.push(...(await validateTaskFile(filePath)));
+
+      allIssues.push(
+        ...validarPriorizacao(filePath, await fs.readFile(filePath, 'utf-8'), {
+          ...(gruposConhecidos !== undefined && { gruposConhecidos }),
+        }),
+      );
     }
 
     return createLintResult(allIssues);

@@ -75,14 +75,63 @@ como literal aqui: duplicar `1..5` em dois lugares e como as regras divergem.
 
 ## Tasks
 
-- [ ] Validacao dos quatro campos, alimentada pela lista completa de tasks
-- [ ] Faixa e tipo derivados do schema do dominio, sem repetir os limites
-- [ ] `Priority` nao numerico e `Difficulty` fora da faixa viram erro, com a
+- [x] Validacao dos quatro campos, alimentada pela lista completa de tasks
+- [x] Faixa e tipo derivados do schema do dominio, sem repetir os limites
+- [x] `Priority` nao numerico e `Difficulty` fora da faixa viram erro, com a
       linha do arquivo na mensagem
-- [ ] Duplicidade de `Priority` e as inconsistencias de grupo viram aviso
-- [ ] Testes cobrindo os dois modos de falha de hoje: o valor descartado em
+- [x] Inconsistencia de grupo vira aviso
+- [x] Testes cobrindo os dois modos de falha de hoje: o valor descartado em
       silencio e o valor fora da faixa que atravessa
-- [ ] Changeset do `@opentask/taskin-file-system-provider`
+- [ ] Duplicidade de `Priority` vira aviso
+- [x] Changeset do `@opentask/taskin-file-system-provider`
+
+### O que comprova cada item
+
+`validar-priorizacao.test.ts` — 11 testes.
+
+| o que se afirma | teste |
+| --- | --- |
+| valor descartado em silencio | `Priority nao numerico e erro, e nao silencio` |
+| valor que atravessa | `Difficulty fora da faixa e erro`, `Difficulty fracionario e erro` |
+| aponta a linha | `diz em que linha o problema esta` |
+| grupo orfao | `grupo desconhecido e aviso, quando o registro e informado` |
+| nao adivinha | `sem registro informado, nao opina sobre grupo` |
+
+Exercitado num projeto temporario, com os tres problemas no mesmo arquivo:
+
+```
+❌ Priority "alta" is not a number — it is silently discarded…
+❌ Difficulty "9" is outside 1–5 — the board cannot render it.
+⚠  Group "g-que-nao-existe" is not in the group registry…
+```
+
+**A faixa e perguntada ao schema, e nao copiada dele.** Em vez de repetir `1` e
+`5` — ou pior, ler as entranhas do zod, que quebram numa atualizacao —, a
+validacao pergunta pela porta da frente qual o menor e o maior inteiro que
+`TaskSchema` aceita. Se o dominio afrouxar a faixa, a mensagem acompanha sozinha.
+
+**Isto fecha a ponta aberta da task-080:** o aviso de grupo orfao, que era o item
+declarado em aberto ali. O lint agora pergunta ao registro de grupos quais ids
+existem, e aponta a tarefa que diz pertencer a algo que nao existe — o mesmo
+silencio do assignee que "resolve para ninguem".
+
+### Um falso positivo encontrado rodando no proprio repositorio
+
+A primeira versao leu metadado **de dentro de bloco de codigo**, e a vitima foi
+esta propria task: ela ilustra o problema com um `- Difficulty: 9` de exemplo
+numa cerca de markdown, e a validacao tratou o exemplo como campo de verdade.
+
+Documentacao virando erro e falso positivo, e falso positivo ensina a ignorar o
+lint. Corrigido, com dois testes: um provando que o exemplo dentro da cerca e
+ignorado, outro provando que o campo de verdade **fora** dela continua sendo
+pego.
+
+### O que fica em aberto
+
+**Duplicidade de `Priority` como aviso.** Duas tarefas com o mesmo numero nao
+corrompem nada — a ordenacao desempata pela ordem de entrada —, mas indicam que
+alguem perdeu uma decisao. Precisa da lista inteira, e nao de um arquivo por vez,
+entao pede outro ponto de entrada. Fica declarado em vez de escondido.
 
 ## Notes
 

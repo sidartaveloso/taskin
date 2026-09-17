@@ -9,3 +9,4 @@ export * from './metadata-style/index';
 export * from './task-file.types';
 export * from './user-registry';
 export * from './users-file-location';
+export * from './validar-priorizacao/index.js';
