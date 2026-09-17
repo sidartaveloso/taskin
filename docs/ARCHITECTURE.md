@@ -244,7 +244,9 @@ ruído ambiente, validado por `MascotConfigSchema` em `@opentask/taskin-types`:
         "enabled": true,
         "threshold": 0.7,
         "debounceMs": 5000,
-        "sound": false
+        "sound": true,
+        "phrase": "Bruno, Shhhhhhhhhhhh...",
+        "volume": 1
       }
     }
   }
@@ -253,7 +255,18 @@ ruído ambiente, validado por `MascotConfigSchema` em `@opentask/taskin-types`:
 
 Os campos têm defaults conservadores (`enabled: false`, `threshold: 0.06`,
 `debounceMs: 1500`, `sound: false`) — sem `enabled: true` explícito o microfone
-nunca é solicitado. As funções puras `resolveMascotNoiseSettings` e
+nunca é solicitado. `phrase` (default `"Shhhhhh..."`) é o que o mascote fala em
+voz alta e mostra no balão, e `volume` (default `1`) é a altura desse som.
+Dirigir o pedido a alguém — `"Bruno, Shhhhhhhhhhhh..."` — é o ponto: quem está
+falando alto não está olhando para a tela, e é o mascote quem pede silêncio no
+lugar da pessoa que precisa se concentrar.
+
+Com `sound: true` saem duas camadas, e a segunda nunca falta: a **fala**, pelo
+`speechSynthesis` do próprio navegador, e o **chiado**, sintetizado com Web
+Audio (ruído branco por um filtro de banda alta, que é literalmente o que uma
+sibilante é). Não há arquivo de áudio para baixar, licenciar ou versionar, e a
+duração do chiado acompanha os `h` da frase. O navegador só libera áudio depois
+de um gesto do usuário na página — antes disso o balão aparece e o som não. As funções puras `resolveMascotNoiseSettings` e
 `resolveShhhReactionPlan` (mesmo pacote) derivam, respectivamente, as
 configurações com defaults aplicados e o plano da reação (honrando
 `prefers-reduced-motion`). O organismo `TaskinWithShhh`

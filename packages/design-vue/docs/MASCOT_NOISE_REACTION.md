@@ -40,12 +40,13 @@ props `noise*` individuais.
 
 <script setup lang="ts">
 import { TaskinWithShhh } from '@opentask/taskin-design-vue';
-import type { MascotConfig } from '@opentask/taskin-types';
+import type { MascotConfigInput } from '@opentask/taskin-types';
 
-// Normalmente lido do `.taskin.json`
-const mascotConfig: MascotConfig = {
+// Normalmente lido do `.taskin.json`. `MascotConfigInput` e o bloco como se
+// escreve — todo campo opcional, porque o schema preenche o resto.
+const mascotConfig: MascotConfigInput = {
   reactions: {
-    noise: { enabled: true, threshold: 0.7, debounceMs: 5000, sound: false },
+    noise: { enabled: true, threshold: 0.7, sound: true, phrase: 'Bruno, Shhhhhhhhhhhh...' },
   },
 };
 </script>
@@ -61,7 +62,9 @@ Sem o bloco `mascot`, use as props diretas (todas com defaults conservadores):
     :enable-noise-reactions="true"
     :noise-threshold="0.06"
     :noise-debounce-ms="1500"
-    :noise-sound="false"
+    :noise-sound="true"
+    shhh-phrase="Bruno, Shhhhhhhhhhhh..."
+    :shhh-volume="1"
   />
 </template>
 ```
@@ -80,7 +83,9 @@ equivale a todos os defaults — o mascote fica em silêncio até ser habilitado
         "enabled": true,
         "threshold": 0.7,
         "debounceMs": 5000,
-        "sound": false
+        "sound": true,
+        "phrase": "Bruno, Shhhhhhhhhhhh...",
+        "volume": 1
       }
     }
   }
@@ -92,7 +97,30 @@ equivale a todos os defaults — o mascote fica em silêncio até ser habilitado
 | `enabled`    | boolean | `false` | Liga a reação. Desligada por padrão para nunca pedir o microfone sem intenção do usuário.   |
 | `threshold`  | number  | `0.06`  | Amplitude RMS (`0..1`) que o nível ambiente precisa atingir para disparar. Conservador.     |
 | `debounceMs` | number  | `1500`  | Intervalo mínimo, em ms, entre duas reações.                                                |
-| `sound`      | boolean | `false` | Toca a pista de áudio curta opcional junto da reação visual.                                |
+| `sound`      | boolean | `false` | Faz o mascote pedir silêncio em voz alta, junto da reação visual.                           |
+| `phrase`     | string  | `"Shhhhhh..."` | O que ele fala e mostra no balão. Pode ter nome: `"Bruno, Shhhhhhhhhhhh..."`.        |
+| `volume`     | number  | `1`     | Altura do som, `0..1`. Alto por padrão: a sala precisa ouvir.                               |
+
+### Por que o som importa
+
+O caso de uso é concreto: o Taskin fica no celular, tela ligada, virado para
+quem programa. Quando alguém fala alto na sala, é ele quem pede silêncio — em
+vez de a pessoa precisar interromper o próprio trabalho para fazer isso. Um
+balão na tela não resolve, porque quem está falando não está olhando para a
+tela; por isso `sound` precisa sair som de verdade.
+
+São duas camadas, e a segunda nunca falta:
+
+- **a fala**, pelo `speechSynthesis` do próprio navegador, que diz a frase
+  inteira — é daí que vem a possibilidade de dirigir o pedido a alguém;
+- **o chiado**, sintetizado com Web Audio: ruído branco por um filtro de banda
+  alta, que é literalmente o que uma sibilante é. Não há arquivo de áudio para
+  baixar, licenciar ou versionar, funciona sem rede, e a duração acompanha os
+  `h` da frase — quem escreve `Shhhhhhhhhhhh...` está pedindo mais silêncio que
+  quem escreve `Shh`.
+
+O navegador só libera áudio depois de um gesto do usuário na página. Antes
+disso o balão aparece e o som não — não é defeito, é política do navegador.
 
 ## 🧩 Props do `TaskinWithShhh`
 
