@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.13
+
+### Patch Changes
+
+- Updated dependencies [37a0b34]
+  - @opentask/taskin-design-vue@0.4.0
+  - @opentask/taskin-task-manager@3.2.1
+  - @opentask/taskin-task-provider-pinia@3.0.5
+
 ## 0.1.12
 
 ### Patch Changes
