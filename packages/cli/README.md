@@ -102,6 +102,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `--open` - Show only open tasks (pending, in-progress, blocked)
   - `--closed` - Show only closed tasks (done, canceled)
   - `--active` - Show only tasks started and not finished (in-progress, paused, in-review)
+  - `--sort <mode>` - `manual` (priority, the default), `diff-asc` or `diff-desc`
   - `--status <status>` - Filter by specific status
   - `--type <type>` - Filter by task type
   - `-u, --assignee <assignee>` - Filter by assignee id or name, whole or in part
@@ -217,6 +218,12 @@ install answers happily, with the wrong set of tools. Skip the check with
 - `list_tasks` - List tasks, with optional filters
 - `prioritize_tasks` - Give every task a priority number, once and on purpose
 - `list_groups` - List the task groups, each with its id and name
+
+The listing tools take the same `sort` vocabulary the prioritization board uses:
+`manual` (by priority), `diff-asc` and `diff-desc`. `taskin list --json` emits
+groups as groups — a group node carries its id, its name, the members that
+matched, and how many the filter left out — so a consumer never has to
+reimplement the grouping rule to get it back.
 - `start_task` - Start working on a task
 - `finish_task` - Mark a task as finished
 

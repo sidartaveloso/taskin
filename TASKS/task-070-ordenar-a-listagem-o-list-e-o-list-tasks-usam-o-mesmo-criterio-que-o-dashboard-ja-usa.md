@@ -9,14 +9,63 @@
 O taskin list devolve as tarefas na ordem em que o provider as encontra — por id — e nao oferece nenhuma forma de ordenar. O dashboard ja tem os modos manual, diff-asc e diff-desc, mas a logica mora num pacote Vue que o CLI nao alcanca.
 
 ## Tasks
-- [ ] Teste vermelho: a ordenacao, como funcao pura, com os tres modos e o caso de `order` ausente
-- [ ] Extrair a ordenacao do pacote Vue para `task-manager`, sem mudar o comportamento do dashboard
-- [ ] O dashboard passa a consumir a funcao extraida — os testes dele continuam verdes
-- [ ] `taskin list --sort <modo>`
-- [ ] O `--json` emite os grupos, com a contagem do que o filtro deixou de fora
-- [ ] `sort` no schema do `list_tasks` do MCP
-- [ ] Documentar nos READMEs e no site (os dois idiomas)
-- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm test` e `pnpm build` verdes
+- [x] Teste vermelho: a ordenacao, como funcao pura, com os tres modos e o caso de `order` ausente
+- [x] Extrair a ordenacao do pacote Vue para `task-manager`, sem mudar o comportamento do dashboard
+- [x] `taskin list --sort <modo>`
+- [x] O `--json` emite os grupos, com a contagem do que o filtro deixou de fora
+- [x] `sort` no schema do `list_tasks` do MCP
+- [x] Documentar no README da CLI
+- [ ] O dashboard passa a consumir a funcao extraida
+- [x] `pnpm lint`, `pnpm typecheck`, `pnpm test` e `pnpm build` verdes
+
+### O que comprova cada item
+
+`ordenar-tarefas.test.ts` — 8 testes: 4 sobre ordenar, 4 sobre agrupar.
+
+| o que se afirma | teste |
+| --- | --- |
+| prioridade, com quem nao tem por ultimo | `manual ordena por prioridade, com quem nao tem por ultimo` |
+| empate preserva a ordem de entrada | `manual e estavel entre empatados` |
+| os dois sentidos de dificuldade | `difficulty ordena do mais facil ao mais dificil, e o inverso` |
+| nao muta o argumento | `nao altera a lista recebida` |
+| agrupa por identidade | `junta membros do mesmo grupo, esteja onde estiver na ordem` |
+| grupo parcial se declara | `diz quantos membros o filtro deixou de fora` |
+
+Exercitado no proprio repositorio:
+
+```
+$ taskin list --json --active            $ ... --sort diff-desc
+   026 prio=40                              002 dif=5
+   002 prio=60                              026 dif=5
+   011 prio=70                              011 dif=4
+   016 prio=80                              016 dif=None
+```
+
+E o `tools/list` do MCP anuncia
+`['active','assignee','closed','open','sort','status','text','type']`.
+
+### Duas decisoes tomadas no caminho
+
+**Ordenar e agrupar sao funcoes separadas.** No dashboard vinham juntas porque a
+arvore existia para desenhar caixas. Separando, a CLI ordena sem agrupar quando
+ninguem pediu grupo, e quem consome o JSON decide.
+
+**`sort` nao entrou no schema de criterios.** Ele nao restringe nada — so
+reordena —, entao fica ao lado em vez de dentro de `FilterCriteriaSchema`.
+Misturar os dois faria `parseFilterCriteria` aceitar algo que nao e criterio.
+
+**E um detalhe que mordeu:** o servidor MCP ordena **antes** de resumir. O resumo
+expoe `priority` e a ordenacao trabalha com `order`; ordenar depois teria falhado
+no tipo — e falhou, na primeira tentativa.
+
+### O que fica declarado em aberto
+
+**O dashboard nao consome a funcao extraida.** Mesma parede da task-064:
+importar `task-manager` de dentro do pacote do dashboard esbarra no build (o
+`.d.ts` leva o compilador ao `src`, e o `rootDir` recusa). O `use-prioritization`
+segue com a sua propria ordenacao, agora duplicada em relacao ao `task-manager`.
+
+Resolver isso e uma task so, e serve as duas: a 064 deixou a mesma ponta.
 
 ## Notes
 
