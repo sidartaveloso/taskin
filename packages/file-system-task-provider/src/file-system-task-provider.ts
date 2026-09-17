@@ -1,7 +1,7 @@
 import type {
   CreateTaskOptions,
-  ITaskProvider,
   CriterioEmAberto,
+  ITaskProvider,
   IUserRegistry,
   LintResult,
   ValidationIssue,
@@ -12,6 +12,7 @@ import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
+import { criteriosEmAberto, validarConclusao } from './criterios-de-conclusao/index.js';
 import { FileSystemGroupRegistry } from './group-registry.js';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
 import {
@@ -32,7 +33,6 @@ import {
   USERS_FILE_NAME,
   validateUsersFileLocation,
 } from './users-file-location.js';
-import { criteriosEmAberto, validarConclusao } from './criterios-de-conclusao/index.js';
 import { validarPrioridadesDuplicadas, validarPriorizacao } from './validar-priorizacao/index.js';
 
 /**
@@ -563,6 +563,7 @@ ${metadata}
 ${description || i18n.descriptionPlaceholder}
 
 ## ${i18n.tasks}
+<!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
 - [ ] Task 1
 - [ ] Task 2
 - [ ] Task 3

@@ -2,9 +2,9 @@ import type { Task, TaskId, TaskStatus } from '@opentask/taskin-types';
 import type { IGroupRegistry } from './group-registry.types';
 import { numerarPrioridade } from './numerar-prioridade/index';
 import type {
-  CriterioEmAberto,
   CreateTaskOptions,
   CreateTaskResult,
+  CriterioEmAberto,
   ITaskManager,
   ITaskProvider,
   LintResult,
