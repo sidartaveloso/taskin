@@ -3,43 +3,9 @@ import { promisify } from 'node:util';
 import { estadoDaVersaoNoNpm } from './cliente-npm';
 import type { EstadoNoRegistry } from './cliente-npm/cliente-npm.types';
 import { lerPacotesPublicaveis, parsearTagsDoLsRemote } from './reconciliador-de-tags/reconciliador-de-tags';
-import { planejarMarcos } from './sincronizador-de-marcos';
+import { marcarMarco, planejarMarcos } from './sincronizador-de-marcos';
 
 const exec = promisify(execFile);
-
-function mensagemDe(erro: unknown): string {
-  if (typeof erro === 'object' && erro !== null && 'stderr' in erro) {
-    const { stderr } = erro as { stderr: unknown };
-    if (typeof stderr === 'string' && stderr.trim().length > 0) return stderr.trim();
-  }
-  return erro instanceof Error ? erro.message : String(erro);
-}
-
-/**
- * Cria e empurra a tag apontando para o commit atual, e abre o GitHub Release.
- * Ambas as operacoes toleram "ja existe": se um retry anterior empurrou a tag
- * mas caiu antes do Release, esta passada completa o que faltou sem quebrar.
- */
-async function marcar(tag: string, sha: string): Promise<void> {
-  try {
-    await exec('git', ['tag', tag, sha]);
-    await exec('git', ['push', 'origin', tag]);
-    console.log(`🏷️  pushed tag ${tag} → ${sha}`);
-  } catch (erro) {
-    const motivo = mensagemDe(erro);
-    if (!/already exists|tag shorthand/.test(motivo)) throw erro;
-    console.log(`🏷️  tag ${tag} already on remote`);
-  }
-
-  try {
-    await exec('gh', ['release', 'create', tag, '--title', tag, '--notes', `Automated release for \`${tag}\`.`]);
-    console.log(`📦 created Release ${tag}`);
-  } catch (erro) {
-    const motivo = mensagemDe(erro);
-    if (!/already exists/.test(motivo)) throw erro;
-    console.log(`📦 Release ${tag} already exists`);
-  }
-}
 
 /**
  * Deriva tags e Releases do que esta no npm, nao do que a passada de
@@ -86,7 +52,11 @@ const sincronizar = async () => {
   const sha = shaBruto.trim();
 
   for (const item of plano.aMarcar) {
-    await marcar(item.tag, sha);
+    const { tag, tagLocal, tagNoRemoto, release } = await marcarMarco(exec, { tag: item.tag, sha });
+    const local = tagLocal === 'feito' ? `created → ${sha}` : 'already local';
+    const remoto = tagNoRemoto === 'feito' ? 'pushed to remote' : 'already on remote';
+    console.log(`🏷️  tag ${tag}: ${local}, ${remoto}`);
+    console.log(`📦 Release ${tag}: ${release === 'feito' ? 'created' : 'already exists'}`);
   }
 
   console.log(`\n✅ Synced ${plano.aMarcar.length} missing marker(s) from npm.`);
