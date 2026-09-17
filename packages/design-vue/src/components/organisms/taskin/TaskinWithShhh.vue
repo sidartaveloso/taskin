@@ -109,9 +109,18 @@ export interface Props {
   noiseSustainRatio?: number;
   noiseSound?: boolean;
   /**
-   * What the mascot says out loud and shows in the bubble. Naming the person is
-   * the point: "Bruno, Shhhhhhhhhhhh..." asks for silence far better than a
-   * generic hiss, and it is the mascot asking instead of you.
+   * Quem o mascote chama. E a unica parte que a sintese de voz pronuncia: sai
+   * "Bruno," — pausa — e so entao o chiado, no ritmo de uma frase falada.
+   * Vazio: o mascote so chia, sem endereco.
+   */
+  shhhName?: string;
+  /**
+   * O que aparece no balao depois do nome, e de onde sai a duracao do chiado.
+   * Quem escreve mais `h` esta pedindo mais silencio.
+   *
+   * Nao e falado: mandar o `speechSynthesis` pronunciar "Shhhhhhhhhhhh..." dava
+   * um arrastado sem sentido por cima do chiado sintetizado, que e quem sabe
+   * fazer esse som.
    */
   shhhPhrase?: string;
   /** Loudness of the spoken reaction, 0..1. Loud by default — the room has to hear it. */
@@ -128,6 +137,7 @@ const props = withDefaults(defineProps<Props>(), {
   noiseSustainMs: 0,
   noiseSustainRatio: 0.6,
   noiseSound: false,
+  shhhName: '',
   shhhPhrase: 'Shhhhhh...',
   shhhVolume: 1,
 });
@@ -195,6 +205,12 @@ const noiseSustainMsRef = ref<number>(noiseSettings.value.sustainMs);
 const noiseSustainRatioRef = ref<number>(noiseSettings.value.sustainRatio);
 const noiseSoundRef = ref<boolean>(noiseSettings.value.sound);
 const shhhPhraseRef = ref<string>(noiseSettings.value.phrase);
+const shhhNameRef = ref<string>(props.shhhName);
+
+/** O balao mostra a frase inteira; a voz so pronuncia o nome. */
+const shhhFraseCompleta = computed(() =>
+  shhhNameRef.value.trim() ? `${shhhNameRef.value.trim()}, ${shhhPhraseRef.value}` : shhhPhraseRef.value,
+);
 const shhhVolumeRef = ref<number>(noiseSettings.value.volume);
 
 // A voz so existe no navegador, e so e montada uma vez: o contexto de audio
@@ -233,14 +249,18 @@ const triggerShhhReaction = () => {
   // Both branches surface the "shh" bubble; only the animated branch moves the
   // mouth/mood, so the reduced-motion fallback stays a static badge.
   showThoughtBubble.value = true;
-  thoughtBubbleText.value = shhhPhraseRef.value;
+  thoughtBubbleText.value = shhhFraseCompleta.value;
 
   // O balao e para quem olha a tela; o som e para quem esta falando alto e nao
   // esta olhando. E por isso que o `sound` nao pode continuar sendo um
   // interruptor que nao faz nada.
   if (plan.playSound) {
     voz ??= criarVozDoShhhDoNavegador();
-    void voz?.shush({ phrase: shhhPhraseRef.value, volume: shhhVolumeRef.value });
+    void voz?.shush({
+      name: shhhNameRef.value,
+      phrase: shhhPhraseRef.value,
+      volume: shhhVolumeRef.value,
+    });
   }
   if (plan.animate) {
     mouthExpression.value = 'o-shape';

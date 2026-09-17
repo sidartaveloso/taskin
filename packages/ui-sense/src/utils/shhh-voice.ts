@@ -6,14 +6,20 @@
  * Para isso o som precisa sair alto o bastante para atravessar a sala, e nao
  * apenas aparecer num balao na tela.
  *
- * Sao duas camadas, e a segunda nunca falta:
+ * Sao duas camadas, **em sequencia**, e a segunda nunca falta:
  *
- * - **a fala**, pelo `speechSynthesis` do proprio navegador, que diz a frase
- *   inteira — e por isso que da para dirigir o pedido a uma pessoa;
+ * - **a fala**, pelo `speechSynthesis` do proprio navegador, que diz apenas o
+ *   NOME de quem esta sendo chamado — e por isso que da para dirigir o pedido a
+ *   uma pessoa;
  * - **o chiado**, sintetizado com Web Audio: ruido branco passado por um filtro
  *   de banda alta, que e literalmente o que uma sibilante e. Nao ha arquivo de
  *   audio para baixar, licenciar ou versionar, funciona sem rede, e a duracao e
  *   o volume ficam sob controle.
+ *
+ * A ordem e o lapso entre as duas sao o que faz aquilo soar como fala. Antes as
+ * duas camadas comecavam juntas e o `speechSynthesis` ainda tentava pronunciar
+ * "Shhhhhhhhhhhh...", o que saia embolado e sem sentido — o chiado sintetizado
+ * ja e quem sabe fazer esse som. Agora e "Bruno," — pausa — "shhhhh".
  */
 
 /** Quanto tempo cada `h` da frase acrescenta ao chiado. */
@@ -22,19 +28,40 @@ const MS_POR_H = 90;
 const DURACAO_MINIMA_MS = 400;
 const DURACAO_MAXIMA_MS = 3000;
 
+/**
+ * Lapso entre o fim do nome e o comeco do chiado. Curto o bastante para
+ * continuar sendo a mesma frase, longo o bastante para nao soar como uma
+ * interrupcao: e a virgula de "Bruno, shhhhh".
+ */
+const PAUSA_APOS_O_NOME_MS = 260;
+
+/** Quanto se espera por uma fala travada antes de chiar assim mesmo. */
+const ESPERA_MAXIMA_DA_FALA_MS = 4000;
+
 export interface ShhhFala {
   texto: string;
   volume: number;
 }
 
 export interface ShhhPlan {
-  /** A frase a falar, ou `null` quando o navegador nao tem sintese de voz. */
+  /**
+   * O nome a chamar, ou `null` quando nao ha nome ou o navegador nao tem
+   * sintese de voz.
+   */
   fala: ShhhFala | null;
+  /** Lapso entre o fim da fala e o inicio do chiado. Zero quando nao ha fala. */
+  pausaMs: number;
   /** O chiado, sempre presente: e ele que atravessa a sala. */
   chiado: { duracaoMs: number; volume: number };
 }
 
 export interface ShhhPedido {
+  /**
+   * Quem esta sendo chamado. E a unica coisa que a sintese de voz pronuncia —
+   * "Bruno" vira "Bruno,", e o chiado vem depois.
+   */
+  name?: string;
+  /** O que aparece no balao e de onde sai a duracao do chiado. */
   phrase: string;
   volume: number;
 }
@@ -46,12 +73,23 @@ export interface ShhhPedido {
  * A duracao acompanha os `h` da frase — quem escreve `Shhhhhhhhhhhh...` esta
  * pedindo mais silencio que quem escreve `Shh`, e o chiado obedece.
  */
-export function planejarShhh({ phrase, volume, vozDisponivel }: ShhhPedido & { vozDisponivel: boolean }): ShhhPlan {
+export function planejarShhh({
+  name,
+  phrase,
+  volume,
+  vozDisponivel,
+}: ShhhPedido & { vozDisponivel: boolean }): ShhhPlan {
   const hh = (phrase.match(/h/gi) ?? []).length;
   const duracaoMs = Math.min(DURACAO_MAXIMA_MS, Math.max(DURACAO_MINIMA_MS, hh * MS_POR_H));
 
+  // A virgula nao e enfeite: ela e o que faz a sintese de voz descer a entoacao
+  // e deixar o espaco onde o chiado entra.
+  const nome = name?.trim();
+  const fala = vozDisponivel && nome ? { texto: `${nome},`, volume } : null;
+
   return {
-    fala: vozDisponivel ? { texto: phrase, volume } : null,
+    fala,
+    pausaMs: fala ? PAUSA_APOS_O_NOME_MS : 0,
     chiado: { duracaoMs, volume },
   };
 }
@@ -59,8 +97,16 @@ export function planejarShhh({ phrase, volume, vozDisponivel }: ShhhPedido & { v
 export interface ShhhVoiceDeps {
   /** Como abrir o contexto de audio. Injetado para o teste nao precisar de Web Audio. */
   criarContexto: () => AudioContext;
-  /** Como falar a frase, ou `null` quando o navegador nao oferece sintese. */
-  falar: ((fala: ShhhFala) => void) | null;
+  /**
+   * Como falar o nome. A promessa resolve quando a fala termina — e disso que
+   * depende o chiado entrar na hora certa. `null` quando o navegador nao
+   * oferece sintese.
+   */
+  falar: ((fala: ShhhFala) => Promise<void>) | null;
+  /** Como esperar. Injetado para o teste nao gastar tempo de verdade. */
+  aguardar?: (ms: number) => Promise<void>;
+  /** Teto da espera pela fala. Ver a rede de seguranca em `shush`. */
+  esperaMaximaDaFalaMs?: number;
 }
 
 export interface ShhhVoice {
@@ -77,10 +123,29 @@ function encherComRuido(buffer: AudioBuffer): void {
  * Monta a voz sobre as dependencias dadas. Em producao use
  * {@link criarVozDoShhhDoNavegador}; nos testes, passe dublês.
  */
-export function createShhhVoice({ criarContexto, falar }: ShhhVoiceDeps): ShhhVoice {
+export function createShhhVoice({
+  criarContexto,
+  falar,
+  aguardar = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)),
+  esperaMaximaDaFalaMs = ESPERA_MAXIMA_DA_FALA_MS,
+}: ShhhVoiceDeps): ShhhVoice {
   return {
-    async shush({ phrase, volume }) {
-      const plano = planejarShhh({ phrase, volume, vozDisponivel: falar !== null });
+    async shush({ name, phrase, volume }) {
+      const plano = planejarShhh({ name, phrase, volume, vozDisponivel: falar !== null });
+
+      /*
+       * O nome primeiro, e o chiado so depois da pausa. A ordem e o ponto: as
+       * duas camadas juntas viram ruido, e o pedido perde o endereco.
+       *
+       * A corrida com `esperaMaximaDaFalaMs` e rede de seguranca: o `onend` do
+       * `speechSynthesis` nao dispara em alguns navegadores quando a aba perde
+       * o foco, e o chiado — que e a camada que atravessa a sala — nao pode
+       * ficar refem disso.
+       */
+      if (plano.fala && falar) {
+        await Promise.race([falar(plano.fala), aguardar(esperaMaximaDaFalaMs)]);
+        await aguardar(plano.pausaMs);
+      }
 
       // O audio do navegador recusa antes do primeiro gesto do usuario, e a
       // aba pode estar sem saida de som. Nada disso justifica derrubar a
@@ -117,10 +182,8 @@ export function createShhhVoice({ criarContexto, falar }: ShhhVoiceDeps): ShhhVo
         fonte.start();
         fonte.stop(agora + segundos);
       } catch {
-        // Sem audio: segue so com a fala, se houver.
+        // Sem audio: o nome ja foi chamado, e o balao continua na tela.
       }
-
-      if (plano.fala && falar) falar(plano.fala);
     },
   };
 }
@@ -148,15 +211,18 @@ export function criarVozDoShhhDoNavegador(): ShhhVoice | null {
       return contexto;
     },
     falar: sintese
-      ? ({ texto, volume }) => {
-          // Cancela a fala anterior: dois pedidos de silencio sobrepostos
-          // viram ruido, que e o oposto do que se quer.
-          sintese.cancel();
-          const fala = new SpeechSynthesisUtterance(texto);
-          fala.volume = volume;
-          fala.rate = 0.9;
-          sintese.speak(fala);
-        }
+      ? ({ texto, volume }) =>
+          new Promise<void>((resolve) => {
+            // Cancela a fala anterior: dois pedidos de silencio sobrepostos
+            // viram ruido, que e o oposto do que se quer.
+            sintese.cancel();
+            const fala = new SpeechSynthesisUtterance(texto);
+            fala.volume = volume;
+            fala.rate = 0.9;
+            fala.onend = () => resolve();
+            fala.onerror = () => resolve();
+            sintese.speak(fala);
+          })
       : null,
   });
 }

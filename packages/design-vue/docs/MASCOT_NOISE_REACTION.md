@@ -52,7 +52,20 @@ toca é derivada por funções puras de `@opentask/taskin-types`.
    reação como se o ruído tivesse sido detectado — sem passar pelo detector e
    mesmo com o microfone desligado. É como se ajusta frase, voz e volume sem
    precisar fazer barulho na sala.
-5. A cada disparo o componente resolve o _plano_ da reação com
+5. A reação sai em sequência, e não tudo junto: a síntese de voz pronuncia
+   **apenas o nome** (`shhhName`), com vírgula, e o chiado sintetizado entra
+   depois de a fala terminar mais um lapso curto. É o ritmo de "Bruno, shhhhh".
+
+   A `shhhPhrase` não é falada — ela aparece no balão, depois do nome, e define
+   a duração do chiado pelos seus `h`. Mandar o `speechSynthesis` pronunciar
+   "Shhhhhhhhhhhh..." dava um arrastado sem sentido por cima do chiado, que é
+   quem sabe fazer esse som.
+
+   Se o `onend` da síntese não disparar — acontece em alguns navegadores quando
+   a aba perde o foco —, o chiado entra assim mesmo depois de um teto de espera:
+   é a camada que atravessa a sala, e não pode ficar refém disso.
+
+6. A cada disparo o componente resolve o _plano_ da reação com
    `resolveShhhReactionPlan`, honrando a preferência de movimento reduzido do
    sistema (`prefers-reduced-motion`) e a opção de som.
 
