@@ -1,5 +1,60 @@
 # @opentask/taskin-file-system-provider
 
+## 3.3.0
+
+### Minor Changes
+
+- f84d9c6: Task groups are an entity now: the name lives in one place, and a task carries only the group id.
+  
+  Until now every member of a group carried its own copy of the name. Renaming meant writing N files with no transaction, so a failure halfway left the group answering to two names — and the write path deleted the name whenever it arrived empty, which is how a real project ended up with four grouped tasks and no name at all.
+  
+  - **`Group { id, name }`** in `@opentask/taskin-types`, and `groupName` is gone from `Task`.
+  - **`IGroupRegistry`** with a contract suite any provider proves itself against. Deleting a group says where its tasks go — `deleteGroup(id, { reassignTo })`, the same shape Redmine and Jira offer — so nothing is ever left pointing at a group that no longer exists.
+  - **A provider without groups simply does not expose the registry**, and callers find out by its absence rather than by an operation that fails.
+  - **`taskin group`** — `list`, `add`, `rename`, `remove` — plus `list_groups` over MCP, and the dashboard resolving names from the server instead of from each task.
+  
+  Renaming a three-member group used to be three writes. It is one, and no task file is touched.
+- 6e1c7fa: Three loose ends closed: duplicate priorities are flagged, the dashboard stops carrying its own copies of the domain rules, and the prioritisation warning reaches the screen.
+  
+  **`taskin lint` flags duplicate priorities.** Two tasks on the same number corrupt nothing — ordering breaks the tie by input order — but they mean a decision was lost somewhere. It only shows up looking at the whole set, so it is a pass of its own. Absence is not duplication: tasks with no priority are never compared against each other.
+  
+  **The dashboard consumes the domain rules instead of copying them.** Both the filter sets and the manual sort were byte-for-byte copies living in the Vue packages, because importing the domain package appeared to be blocked by the build. It was not the declaration files: the repo's base config marks every package as a composite project, and a composite project consuming another has to declare the reference. Two lines of configuration.
+  
+  `ordenarTarefas` now asks for `OrdenavelPorPrioridade` — the two fields it reads — instead of a whole `Task`, which is what lets the board's own view model share the rule.
+  
+  **The board warns before it costs you.** On a project where only some tasks carry a priority, the first drag rewrites every file above it. The dashboard now says how many are unnumbered and offers to number them once, and the warning disappears when the state it warns about does.
+- 93a60fe: A task marked `done` has to say what was actually done.
+  
+  This comes from a real audit: of eight tasks closed by autonomous agents over two days, **four** read `done` with the whole checklist untouched. In every one of them the work was genuinely finished and covered by tests — but the file showed none of it, so whoever reviewed had nowhere to start. In one, the audit found an item that had in fact **not** been done, hidden among five that had.
+  
+  Three spellings, and only three: `- [x] item` is done, `- [ ] item` is open, and `- [ ] item — adiado: <reason>` is dropped on purpose, with the decision written down. An empty reason does not count — otherwise the convention would be theatre.
+  
+  Two places ask for it, and they ask differently. **`taskin finish` warns**: it names the open items and their lines, then closes the task anyway, because finishing is a one-shot gesture and refusing there only teaches people to route around it. **`taskin lint` refuses**: a `done` task with an unjustified open item is an error, and CI is where the demand can afford to be hard. `canceled` is exempt — an abandoned task owes nobody a ticked box.
+  
+  Both read the checklist through the same parser, so the linter can never refuse what `finish` just accepted. Providers without the concept of a checklist simply do not implement the capability, and close with no gate at all.
+  
+  Evidence belongs next to the ticked item — a test name, a command, a file — and `TASKS/README.md` now documents the whole vocabulary, including where it came from.
+- 5144b0d: `taskin lint` now checks the prioritisation fields, which used to pass with nobody looking.
+  
+  Two failure modes, both silent until now. A non-numeric `Priority` was **discarded**: `Number('alta')` is `NaN`, the parser drops it, and the task simply reads as unprioritised — the information vanished without a word. A `Difficulty` outside 1–5 **went through**, because the parser only checked that it was a number, and reached the board where the component expects 1 to 5.
+  
+  Both are errors now, each pointing at the line. A task referencing a group the registry does not know is a warning — the same silence as an assignee that "resolves to nobody".
+  
+  The range is asked of the domain schema rather than copied from it, so loosening it in one place is enough. And metadata written inside a fenced code block is ignored: a task that documents the problem with an example is documentation, not a defect.
+
+### Patch Changes
+
+- Updated dependencies [d5fafdd]
+- Updated dependencies [f84d9c6]
+- Updated dependencies [9d11a3d]
+- Updated dependencies [6e1c7fa]
+- Updated dependencies [93a60fe]
+- Updated dependencies [0aa99db]
+- Updated dependencies [0f83ec2]
+  - @opentask/taskin-task-manager@3.2.0
+  - @opentask/taskin-types@2.3.0
+  - @opentask/taskin-git-utils@3.0.4
+
 ## 3.2.4
 
 ### Patch Changes
