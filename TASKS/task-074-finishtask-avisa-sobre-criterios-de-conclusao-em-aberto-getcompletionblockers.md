@@ -1,6 +1,6 @@
 # 🧩 Task 074 — finishTask avisa sobre critérios de conclusão em aberto (getCompletionBlockers)
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
 - Priority: 260
