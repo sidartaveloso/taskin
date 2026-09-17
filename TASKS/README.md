@@ -348,3 +348,64 @@ grep -h "Assignee:" TASKS/*.md | sort | uniq -c
 ---
 
 **Lembre-se**: Uma tarefa bem documentada é uma tarefa meio feita! 🚀
+
+
+## ✅ Como marcar um item concluído
+
+O `## Tasks` de uma tarefa não é decoração: é o registro do que foi feito, e é
+por ele que alguém revisa o trabalho sem reler mil linhas de diff.
+
+Três formas, e só três:
+
+| escrita | significa |
+| --- | --- |
+| `- [x] O item` | **feito** |
+| `- [ ] O item` | **em aberto** — bloqueia a conclusão |
+| `- [ ] O item — adiado: <razão>` | **adiado**, com a decisão declarada |
+
+### A evidência vai junto do item feito
+
+Marcar não basta: um `[x]` sozinho é indistinguível de alguém que desistiu e
+marcou. Escreva ao lado o que comprova — o nome do teste, o comando que se pode
+rodar, o arquivo onde a coisa vive:
+
+```markdown
+- [x] O comando recusa id duplicado — `user.test.ts`, 18 testes
+- [x] Migração aplicada — `pnpm taskin lint` verde em 361 arquivos
+```
+
+É texto livre, de propósito. O que importa é que a próxima pessoa consiga
+**conferir**, e "conferi manualmente" não é conferível.
+
+### Adiar é legítimo; esquecer não é
+
+Fechar uma tarefa decidindo não fazer um item é uma decisão normal — desde que
+ela esteja escrita:
+
+```markdown
+- [ ] Suporte a Redmine — adiado: depende do provider, que ainda não existe
+```
+
+**Razão vazia não conta.** Escrever `— adiado:` e nada depois deixaria qualquer
+item aberto virar decisão declarada, e a convenção viraria teatro.
+
+Aceita-se travessão ou hífen, com ou sem acento, em português ou inglês
+(`adiado`, `deferred`, `postponed`).
+
+### Quem cobra isso
+
+- **`taskin finish`** avisa, no momento em que você fecha, quais itens ficaram
+  em aberto. Não recusa: fechar é um gesto único, muitas vezes com pressa.
+- **`taskin lint`** recusa: tarefa `done` com item em aberto e sem justificativa
+  é **erro**, e quebra o CI. É onde a exigência aguenta ser dura.
+
+`canceled` não exige checklist — cancelada é abandonada, e cobrar itens marcados
+ali seria absurdo.
+
+### De onde essa convenção veio
+
+De uma auditoria real. Das oito tarefas fechadas por agentes autônomos em 12 e
+13 de setembro, **quatro** constavam como `done` com o checklist inteiro em
+aberto. Em todas o trabalho estava feito e coberto por testes — mas o arquivo não
+mostrava nada disso. E numa delas a auditoria descobriu que um item de fato
+**não** tinha sido feito, escondido entre os cinco que estavam.

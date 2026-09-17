@@ -81,11 +81,7 @@ describe('lerCriteriosDeConclusao', () => {
 
 describe('criteriosEmAberto', () => {
   it('devolve so os que impedem a conclusao', () => {
-    const conteudo = comTarefas(
-      '- [x] Feito',
-      '- [ ] Esquecido',
-      '- [ ] Decidido nao fazer — adiado: fora de escopo',
-    );
+    const conteudo = comTarefas('- [x] Feito', '- [ ] Esquecido', '- [ ] Decidido nao fazer — adiado: fora de escopo');
 
     const bloqueios = criteriosEmAberto(conteudo);
 
