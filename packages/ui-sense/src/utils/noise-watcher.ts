@@ -25,6 +25,33 @@ export interface NoiseThresholdOptions {
    * conversando. Com 1 a exigencia volta a ser ininterrupta.
    */
   sustainRatio?: number;
+  /**
+   * Chamada a cada amostra, depois da decisao de disparar, com o estado do
+   * criterio. Serve ao painel de debug: no criterio de fracao nao existe um
+   * relogio regressivo simples — quem so olha o tempo desde o inicio do barulho
+   * ve um numero que mente quando a pessoa faz uma pausa.
+   */
+  onProgress?: (progress: NoiseProgress) => void;
+}
+
+/**
+ * Estado do criterio no instante de uma amostra, para exibicao.
+ */
+export interface NoiseProgress {
+  /** Fracao da janela atualmente acima do limiar, de 0 a 1. */
+  ratio: number;
+  /** Fracao exigida para disparar. */
+  requiredRatio: number;
+  /** Quanto falta para a janela ficar coberta, em ms. Zero quando ja esta. */
+  msUntilWindowFull: number;
+  /** Quanto falta do debounce, em ms. Zero quando ja pode disparar. */
+  msUntilDebounceOver: number;
+  /**
+   * Quanto falta para disparar SE o barulho continuar no ritmo atual, em ms.
+   * Zero significa que acabou de disparar nesta amostra; `null`, que ainda nao
+   * ha amostras suficientes nem para estimar o intervalo entre elas.
+   */
+  msUntilFire: number | null;
 }
 
 /** Terceiro argumento de `onNoiseAbove`: o objeto de tempos, ou so o debounce. */
@@ -60,6 +87,7 @@ interface ThresholdListener {
   debounceMs: number;
   sustainMs: number;
   sustainRatio: number;
+  onProgress?: (progress: NoiseProgress) => void;
   lastFired: number;
   /** Amostras dentro da janela: instante e se estavam acima do limiar. */
   samples: { t: number; loud: boolean }[];
@@ -69,7 +97,7 @@ interface ThresholdListener {
 
 const resolveTiming = (
   timing: NoiseThresholdTiming | undefined,
-): { debounceMs: number; sustainMs: number; sustainRatio: number } => {
+): { debounceMs: number; sustainMs: number; sustainRatio: number; onProgress?: (p: NoiseProgress) => void } => {
   if (typeof timing === 'number') {
     return {
       debounceMs: timing,
@@ -81,7 +109,38 @@ const resolveTiming = (
     debounceMs: timing?.debounceMs ?? DEFAULT_NOISE_DEBOUNCE_MS,
     sustainMs: timing?.sustainMs ?? DEFAULT_NOISE_SUSTAIN_MS,
     sustainRatio: timing?.sustainRatio ?? DEFAULT_NOISE_SUSTAIN_RATIO,
+    onProgress: timing?.onProgress,
   };
+};
+
+/**
+ * Quanto falta para a ocupacao da janela cruzar a fracao exigida, supondo que
+ * toda amostra daqui para frente venha alta. Simula o deslizar da janela em
+ * passos de `passo`, e termina sempre: uma janela inteira de barulho da
+ * ocupacao 1, que cobre qualquer fracao exigida.
+ */
+const preverDisparoPorOcupacao = (
+  samples: { t: number; loud: boolean }[],
+  agora: number,
+  janelaMs: number,
+  fracaoExigida: number,
+  passo: number,
+): number => {
+  const simulacao = samples.map((s) => ({ ...s }));
+  let t = agora;
+  const maximoDePassos = Math.ceil(janelaMs / passo) + 1;
+
+  for (let i = 0; i <= maximoDePassos; i++) {
+    const altas = simulacao.reduce((n, s) => n + (s.loud ? 1 : 0), 0);
+    if (simulacao.length > 0 && altas / simulacao.length >= fracaoExigida) return t - agora;
+
+    t += passo;
+    simulacao.push({ t, loud: true });
+    const inicio = t - janelaMs;
+    while (simulacao.length > 0 && (simulacao[0] as { t: number }).t < inicio) simulacao.shift();
+  }
+
+  return t - agora;
 };
 
 /**
@@ -105,7 +164,7 @@ export function createNoiseDispatcher(): NoiseDispatcher {
 
   return {
     onNoiseAbove(threshold: number, cb: NoiseCallback, timing?: NoiseThresholdTiming) {
-      const { debounceMs, sustainMs, sustainRatio } = resolveTiming(timing);
+      const { debounceMs, sustainMs, sustainRatio, onProgress } = resolveTiming(timing);
       // Start in the distant past so the first sample above the threshold fires
       // regardless of where the clock happens to start.
       const listener: ThresholdListener = {
@@ -114,6 +173,7 @@ export function createNoiseDispatcher(): NoiseDispatcher {
         debounceMs,
         sustainMs,
         sustainRatio,
+        onProgress,
         lastFired: Number.NEGATIVE_INFINITY,
         samples: [],
         firstSampleAt: null,
@@ -141,18 +201,36 @@ export function createNoiseDispatcher(): NoiseDispatcher {
       }
       for (const l of listeners) {
         const loud = rms >= l.threshold;
+        let disparouAgora = false;
         const fire = () => {
           // O debounce conta do disparo, nao do inicio do barulho: os dois
           // tempos sao independentes e podem ser lidos separados.
           if (now - l.lastFired <= l.debounceMs) return;
           l.lastFired = now;
+          disparouAgora = true;
           try {
             l.cb();
           } catch {}
         };
 
+        /** O estado e calculado depois da decisao: o debounce ja conta do disparo desta amostra. */
+        const relatar = (ratio: number, msUntilWindowFull: number, msUntilFire: number | null) => {
+          if (!l.onProgress) return;
+          const msUntilDebounceOver = Math.max(0, l.debounceMs - (now - l.lastFired));
+          try {
+            l.onProgress({
+              ratio,
+              requiredRatio: l.sustainRatio,
+              msUntilWindowFull,
+              msUntilDebounceOver,
+              msUntilFire: disparouAgora ? msUntilDebounceOver : msUntilFire,
+            });
+          } catch {}
+        };
+
         if (l.sustainMs <= 0) {
           if (loud) fire();
+          relatar(loud ? 1 : 0, 0, Math.max(0, l.debounceMs - (now - l.lastFired)));
           continue;
         }
 
@@ -163,13 +241,33 @@ export function createNoiseDispatcher(): NoiseDispatcher {
           l.samples.shift();
         }
 
+        const altas = l.samples.reduce((n, s) => n + (s.loud ? 1 : 0), 0);
+        const ratio = l.samples.length > 0 ? altas / l.samples.length : 0;
+        const msUntilWindowFull = Math.max(0, l.sustainMs - (now - l.firstSampleAt));
+
         // Enquanto nao se observou uma janela inteira nao da para falar em
         // fracao: as primeiras amostras altas dariam 100% e disparariam na hora,
         // que e exatamente o que este criterio existe para evitar.
-        if (now - l.firstSampleAt < l.sustainMs) continue;
+        const janelaCoberta = msUntilWindowFull === 0;
+        if (janelaCoberta && ratio >= l.sustainRatio) fire();
 
-        const altas = l.samples.reduce((n, s) => n + (s.loud ? 1 : 0), 0);
-        if (altas / l.samples.length >= l.sustainRatio) fire();
+        if (!l.onProgress) continue;
+
+        // Sem duas amostras nao da nem para estimar o intervalo entre elas, e
+        // sem isso qualquer previsao seria chute.
+        const primeira = l.samples[0] as { t: number } | undefined;
+        const passo = l.samples.length >= 2 && primeira ? (now - primeira.t) / (l.samples.length - 1) : null;
+
+        const previsao =
+          passo === null
+            ? null
+            : Math.max(
+                preverDisparoPorOcupacao(l.samples, now, l.sustainMs, l.sustainRatio, passo),
+                msUntilWindowFull,
+                Math.max(0, l.debounceMs - (now - l.lastFired)),
+              );
+
+        relatar(ratio, msUntilWindowFull, previsao);
       }
     },
   };

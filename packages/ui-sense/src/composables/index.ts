@@ -1,5 +1,10 @@
-export type { NoiseDispatcher, NoiseWatcher } from '../utils/noise-watcher';
-export { createNoiseDispatcher, createNoiseWatcher, DEFAULT_NOISE_DEBOUNCE_MS } from '../utils/noise-watcher';
+/*
+ * Reexportacao inteira, e nao uma lista a mao: a lista anterior nomeava tres
+ * simbolos e ja estava defasada — `NoiseThresholdOptions`, `NoiseProgress` e os
+ * dois defaults de sustentacao existiam no modulo e nao chegavam a quem instala
+ * o pacote.
+ */
+export * from '../utils/noise-watcher';
 export * from './use-element-tracking';
 export * from './use-eye-tracking';
 export * from './use-face-landmarker';

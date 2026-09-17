@@ -37,11 +37,22 @@ toca é derivada por funções puras de `@opentask/taskin-types`.
    não carrega `sustainMs` nem `sustainRatio` — hoje são props do componente e
    controles da story.
 
-3. O painel `NoiseTrackingControls` tem um botão **Test Shhh** que dispara a
+3. O painel de debug (`showDebug`) mostra o critério por dentro, alimentado pelo
+   `onProgress` do próprio `onNoiseAbove`: `occupancy` é a ocupação atual contra
+   a exigida, `windowFull` é quanto falta para a janela ficar coberta,
+   `debounce` é quanto falta até poder falar de novo, e `firesIn` é a previsão
+   de quanto falta para disparar **se o barulho continuar no ritmo atual**.
+
+   Não é um relógio regressivo, e a diferença é real: como o disparo depende da
+   ocupação dos últimos segundos, uma pausa longa _aumenta_ o tempo que falta.
+   Por isso a previsão carrega a condição escrita junto, e some (`?`) enquanto
+   não há amostras suficientes nem para estimar o intervalo entre elas.
+
+4. O painel `NoiseTrackingControls` tem um botão **Test Shhh** que dispara a
    reação como se o ruído tivesse sido detectado — sem passar pelo detector e
    mesmo com o microfone desligado. É como se ajusta frase, voz e volume sem
    precisar fazer barulho na sala.
-4. A cada disparo o componente resolve o _plano_ da reação com
+5. A cada disparo o componente resolve o _plano_ da reação com
    `resolveShhhReactionPlan`, honrando a preferência de movimento reduzido do
    sistema (`prefers-reduced-motion`) e a opção de som.
 
