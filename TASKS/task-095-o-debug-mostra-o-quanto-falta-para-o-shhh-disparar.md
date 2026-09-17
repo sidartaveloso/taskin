@@ -1,6 +1,6 @@
 # 🧩 Task 095 — o debug mostra o quanto falta para o shhh disparar
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
 
