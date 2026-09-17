@@ -1,26 +1,15 @@
 import type { Ref } from 'vue';
 import type { TaskinEyesProps } from '../../atoms/taskin-eyes/TaskinEyes.types';
+import type { TASKIN_MOODS } from './Taskin.moods';
 
 export type TaskinArmSide = 'left' | 'right';
 
-export type TaskinMood =
-  | 'neutral'
-  | 'smirk'
-  | 'happy'
-  | 'annoyed'
-  | 'sarcastic'
-  | 'crying'
-  | 'cold'
-  | 'hot'
-  | 'dancing'
-  | 'furious'
-  | 'sleeping'
-  | 'in-love'
-  | 'tired'
-  | 'thoughtful'
-  | 'vomiting'
-  | 'taking-selfie'
-  | 'farting';
+/**
+ * O humor do Taskin. Deriva de `TASKIN_MOODS`, que e a lista de verdade: assim
+ * acrescentar um humor e mexer em um lugar so, e nenhum consumidor fica com uma
+ * copia envelhecida da lista.
+ */
+export type TaskinMood = (typeof TASKIN_MOODS)[number];
 
 export type TaskinTentacleId =
   | 'tentacle-front-left'

@@ -46,6 +46,7 @@ export {
   Taskin,
   TaskinV1,
 } from './components/organisms/taskin';
+export * from './components/organisms/taskin/Taskin.moods';
 export * from './components/organisms/taskin/Taskin.types';
 export { default as TaskinWithFaceTracking } from './components/organisms/taskin/TaskinWithFaceTracking.vue';
 export * from './components/pages';
