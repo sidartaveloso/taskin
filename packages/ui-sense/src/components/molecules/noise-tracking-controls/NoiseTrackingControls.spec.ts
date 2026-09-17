@@ -39,8 +39,24 @@ describe('NoiseTrackingControls', () => {
 
   it('emits update:noiseDebounceMs on debounce change', async () => {
     const wrapper = mount(NoiseTrackingControls);
-    await wrapper.find('input[type="number"]').setValue('2000');
+    await wrapper.find('[data-field="debounce"]').setValue('2000');
     expect(wrapper.emitted('update:noiseDebounceMs')).toEqual([[2000]]);
+  });
+
+  /*
+   * Sustentacao e debounce sao dois tempos diferentes e ficam em campos
+   * separados: um diz por quanto tempo o barulho precisa se manter alto antes
+   * do primeiro pedido de silencio, o outro quanto tempo passa ate o proximo.
+   */
+  it('emits update:noiseSustainMs on sustain change', async () => {
+    const wrapper = mount(NoiseTrackingControls);
+    await wrapper.find('[data-field="sustain"]').setValue('3000');
+    expect(wrapper.emitted('update:noiseSustainMs')).toEqual([[3000]]);
+  });
+
+  it('shows the sustain value it was given', () => {
+    const wrapper = mount(NoiseTrackingControls, { props: { noiseSustainMs: 2500 } });
+    expect((wrapper.find('[data-field="sustain"]').element as HTMLInputElement).value).toBe('2500');
   });
 
   it('emits update:noiseSound on sound checkbox change', async () => {
