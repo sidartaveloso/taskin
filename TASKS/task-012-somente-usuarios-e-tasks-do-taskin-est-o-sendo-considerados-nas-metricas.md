@@ -10,6 +10,6 @@ as metricas deveriam considerar todos os usuarios do taskin e também todos os u
 
 ## Tasks
 
-- [ ] ao executar o comando ˜taskin stats˜ todos os commits devem ser configurados, mesmo os que não tem relação com tarefas gerenciadas pelo taskin
-- [ ] ao executar o comando ˜taskin stats --team˜ todos os usuários do taskin e também do repositorio git devem ser considerados
-- [ ] Cenários de testes comprovando o funcionamento concluído com sucesso
+- [ ] ao executar o comando ˜taskin stats˜ todos os commits devem ser configurados, mesmo os que não tem relação com tarefas gerenciadas pelo taskin — adiado: tarefa fechada antes de o checklist fazer parte do registro; a evidencia nao e reconstruivel hoje
+- [ ] ao executar o comando ˜taskin stats --team˜ todos os usuários do taskin e também do repositorio git devem ser considerados — adiado: tarefa fechada antes de o checklist fazer parte do registro; a evidencia nao e reconstruivel hoje
+- [ ] Cenários de testes comprovando o funcionamento concluído com sucesso — adiado: tarefa fechada antes de o checklist fazer parte do registro; a evidencia nao e reconstruivel hoje
