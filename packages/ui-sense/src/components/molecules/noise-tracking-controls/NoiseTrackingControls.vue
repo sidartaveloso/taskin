@@ -9,6 +9,19 @@
         {{ isActive ? 'Stop' : 'Start' }} Noise Watcher
       </button>
 
+      <!--
+        Sem `disabled`: o sentido do botao e ouvir a reacao com o microfone
+        desligado, para ajustar frase, voz e volume sem gritar na sala.
+      -->
+      <button
+        class="control-button control-button--secondary"
+        data-action="trigger-shhh"
+        type="button"
+        @click="emit('trigger-shhh')"
+      >
+        Test Shhh
+      </button>
+
       <div class="status" v-if="isActive">
         <span class="status-indicator" /> Listening for noise...
       </div>
@@ -61,7 +74,7 @@
       </label>
 
       <label class="control-field">
-        <span class="control-field__label" title="Tempo continuo acima do limiar antes do primeiro pedido de silencio">
+        <span class="control-field__label" title="Janela em que o ruido e medido antes do primeiro pedido de silencio">
           Sustain
         </span>
         <input
@@ -74,6 +87,23 @@
           @change="onSustainChange($event)"
         />
         <span class="control-field__unit">ms</span>
+      </label>
+
+      <label class="control-field">
+        <span class="control-field__label" title="Fracao da janela que precisa estar acima do limiar">
+          Ratio
+        </span>
+        <input
+          class="control-field__range"
+          data-field="ratio"
+          type="range"
+          min="0.1"
+          max="1"
+          step="0.05"
+          :value="noiseSustainRatio ?? 0.6"
+          @input="onRatioInput($event)"
+        />
+        <output class="value">{{ formattedRatio }}</output>
       </label>
 
       <label class="control-field">
@@ -112,6 +142,9 @@ const emit = defineEmits<NoiseTrackingControlsEmits>();
  */
 const formattedThreshold = computed(() => (props.noiseThreshold ?? 0).toFixed(3));
 
+/** Fracao como porcentagem: "60%" se le melhor que "0.60" num painel de ajuste. */
+const formattedRatio = computed(() => `${Math.round((props.noiseSustainRatio ?? 0.6) * 100)}%`);
+
 function onThresholdInput(e: Event) {
   const v = (e.target as HTMLInputElement).value;
   emit('update:noiseThreshold', Number(v));
@@ -125,6 +158,11 @@ function onDebounceChange(e: Event) {
 function onSustainChange(e: Event) {
   const v = (e.target as HTMLInputElement).value;
   emit('update:noiseSustainMs', Number(v));
+}
+
+function onRatioInput(e: Event) {
+  const v = (e.target as HTMLInputElement).value;
+  emit('update:noiseSustainRatio', Number(v));
 }
 </script>
 
@@ -173,6 +211,17 @@ export default {
 
 .control-button:hover:not(:disabled) {
   background: var(--bg-header-dark);
+}
+
+/* Secundario: o gatilho manual e de ajuste, nao a acao principal do painel. */
+.control-button--secondary {
+  background: var(--bg-section-light);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-muted);
+}
+
+.control-button--secondary:hover:not(:disabled) {
+  background: var(--bg-badge);
 }
 
 .control-button:disabled {

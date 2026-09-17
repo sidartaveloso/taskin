@@ -16,22 +16,32 @@ toca é derivada por funções puras de `@opentask/taskin-types`.
 
 1. `createNoiseWatcher()` abre o microfone (Web Audio API) e emite o nível RMS
    (amplitude, faixa `0..1`).
-2. `onNoiseAbove(threshold, cb, { sustainMs, debounceMs })` chama `cb` quando o
-   nível se mantém acima do `threshold` por `sustainMs` milissegundos seguidos,
-   respeitando o `debounceMs` até o disparo seguinte. O terceiro argumento
-   também aceita só um número, que continua significando `debounceMs`.
+2. `onNoiseAbove(threshold, cb, { sustainMs, sustainRatio, debounceMs })` chama
+   `cb` quando o ruído **ocupa** a janela o bastante: dentro dos últimos
+   `sustainMs` milissegundos, pelo menos a fração `sustainRatio` das amostras
+   esteve acima do `threshold`. Depois de disparar, `debounceMs` é o tempo até o
+   próximo. O terceiro argumento também aceita só um número, que continua
+   significando `debounceMs`.
 
-   Os dois tempos respondem a perguntas diferentes: `sustainMs` é quanto tempo o
-   barulho precisa se manter alto **antes** do primeiro pedido de silêncio, e
-   `debounceMs` é quanto tempo o mascote fica calado **depois** dele. Com
-   `sustainMs` em zero — o padrão — a primeira amostra acima do limiar dispara,
-   e uma porta batendo vale o mesmo que um minuto de conversa alta. Uma única
-   amostra abaixo do limiar zera a contagem: a sustentação é contínua.
+   **Por que fração e não uma sequência ininterrupta.** Uma fala não é um platô:
+   entre sílabas e frases há vales de 100 a 400ms. Exigir barulho contínuo
+   detecta um secador de cabelo e nunca detecta uma conversa. Numa janela de 3s,
+   uma porta batendo ocupa 1 a 4% e uma conversa alta ocupa 60 a 87% — daí o
+   padrão de 0.6. Com `sustainRatio: 1` a exigência volta a ser ininterrupta, e
+   com `sustainMs: 0` — o padrão — a primeira amostra alta dispara, como antes.
+
+   A janela só é avaliada depois de observada por inteiro; sem isso a primeira
+   amostra alta daria 100% e dispararia na hora.
 
    A configuração persistida (`mascot.reactions.noise` no `.taskin.json`) ainda
-   não carrega o `sustainMs` — hoje ele é prop do componente e controle da
-   story.
-3. A cada disparo o componente resolve o _plano_ da reação com
+   não carrega `sustainMs` nem `sustainRatio` — hoje são props do componente e
+   controles da story.
+
+3. O painel `NoiseTrackingControls` tem um botão **Test Shhh** que dispara a
+   reação como se o ruído tivesse sido detectado — sem passar pelo detector e
+   mesmo com o microfone desligado. É como se ajusta frase, voz e volume sem
+   precisar fazer barulho na sala.
+4. A cada disparo o componente resolve o _plano_ da reação com
    `resolveShhhReactionPlan`, honrando a preferência de movimento reduzido do
    sistema (`prefers-reduced-motion`) e a opção de som.
 

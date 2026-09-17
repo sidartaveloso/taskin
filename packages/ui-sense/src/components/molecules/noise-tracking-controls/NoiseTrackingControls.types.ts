@@ -15,10 +15,17 @@ export interface NoiseTrackingControlsProps {
   noiseDebounceMs?: number;
 
   /**
-   * Milliseconds the level must stay above the threshold before the first
-   * reaction. Zero reacts to the first loud sample, as before.
+   * Sliding window, in milliseconds, over which the noise is measured. Zero
+   * reacts to the first loud sample.
    */
   noiseSustainMs?: number;
+
+  /**
+   * Fraction of that window (0..1) that must be above the threshold. Speech is
+   * not a plateau, so requiring an unbroken stretch never fires on a
+   * conversation; 1 restores the unbroken requirement.
+   */
+  noiseSustainRatio?: number;
 
   /** Whether to play a short sound on reaction */
   noiseSound?: boolean;
@@ -32,5 +39,8 @@ export interface NoiseTrackingControlsEmits {
   (event: 'update:noiseThreshold', value: number): void;
   (event: 'update:noiseDebounceMs', value: number): void;
   (event: 'update:noiseSustainMs', value: number): void;
+  (event: 'update:noiseSustainRatio', value: number): void;
+  /** Play the reaction right now, as if the noise had been detected. */
+  (event: 'trigger-shhh'): void;
   (event: 'update:noiseSound', value: boolean): void;
 }

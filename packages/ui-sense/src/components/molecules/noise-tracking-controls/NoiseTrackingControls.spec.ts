@@ -65,6 +65,22 @@ describe('NoiseTrackingControls', () => {
     expect(wrapper.emitted('update:noiseSound')).toEqual([[true]]);
   });
 
+  /*
+   * Ajustar frase, voz e volume junto com o detector nao diz qual dos dois
+   * esta errado. O botao dispara a reacao sem passar pelo detector, e e o que
+   * permite calibrar o estilo sem gritar na sala.
+   */
+  it('emits trigger-shhh when the test button is clicked', async () => {
+    const wrapper = mount(NoiseTrackingControls);
+    await wrapper.find('[data-action="trigger-shhh"]').trigger('click');
+    expect(wrapper.emitted('trigger-shhh')).toHaveLength(1);
+  });
+
+  it('keeps the test button usable with the microphone off', () => {
+    const wrapper = mount(NoiseTrackingControls, { props: { isActive: false, enableNoiseReactions: false } });
+    expect((wrapper.find('[data-action="trigger-shhh"]').element as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it('shows the error message when error is set', () => {
     const wrapper = mount(NoiseTrackingControls, { props: { error: 'mic unavailable' } });
     expect(wrapper.text()).toContain('mic unavailable');

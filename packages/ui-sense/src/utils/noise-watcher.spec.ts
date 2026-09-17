@@ -154,21 +154,23 @@ describe('createNoiseDispatcher com sustentacao', () => {
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
-  it('zera o acumulo quando uma amostra cai abaixo do limiar', () => {
+  /*
+   * Este teste ja exigiu o contrario: na primeira versao uma amostra baixa
+   * zerava o acumulo. O criterio mudou porque ele nao detectava fala — uma
+   * pausa entre palavras nao e silencio na sala, e agora nao desfaz o que ja
+   * foi medido.
+   */
+  it('nao deixa uma pausa curta desfazer o que ja foi medido', () => {
     const dispatcher = createNoiseDispatcher();
     const cb = vi.fn();
     dispatcher.onNoiseAbove(0.5, cb, { sustainMs: 1000 });
 
     dispatcher.dispatch(0.9, 0);
     dispatcher.dispatch(0.9, 900);
-    // o silencio no meio desfaz o acumulo: a contagem recomeca do zero
     dispatcher.dispatch(0.1, 950);
     dispatcher.dispatch(0.9, 1000);
-    dispatcher.dispatch(0.9, 1900);
 
-    expect(cb).not.toHaveBeenCalled();
-
-    dispatcher.dispatch(0.9, 2000);
+    // tres altas contra uma baixa na janela: 75%, acima da fracao padrao
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
@@ -225,5 +227,104 @@ describe('createNoiseDispatcher com sustentacao', () => {
 
     dispatcher.dispatch(0.9, 200 + DEFAULT_NOISE_DEBOUNCE_MS + 1);
     expect(cb).toHaveBeenCalledTimes(2);
+  });
+});
+
+/**
+ * Uma fala nao e um plato: entre silabas e frases ha vales de 100 a 400ms. O
+ * criterio de sustentacao continua zera o acumulo em cada vale, entao detecta
+ * um secador de cabelo e nao detecta gente conversando — que e o caso para o
+ * qual a reacao existe. Por isso a sustentacao e medida como FRACAO de uma
+ * janela deslizante, e nao como sequencia ininterrupta.
+ */
+describe('createNoiseDispatcher com fracao da janela', () => {
+  const PASSO = 40;
+
+  /** Alimenta `padrao` (true = alto) repetido, uma amostra a cada `PASSO` ms. */
+  const alimentar = (
+    dispatcher: ReturnType<typeof createNoiseDispatcher>,
+    padrao: boolean[],
+    repeticoes: number,
+    inicio = 0,
+  ): number => {
+    let t = inicio;
+    for (let r = 0; r < repeticoes; r++) {
+      for (const alto of padrao) {
+        dispatcher.dispatch(alto ? 0.9 : 0.01, t);
+        t += PASSO;
+      }
+    }
+    return t;
+  };
+
+  it('dispara com uma fala alta que tem pausas entre as palavras', () => {
+    const dispatcher = createNoiseDispatcher();
+    const cb = vi.fn();
+    dispatcher.onNoiseAbove(0.5, cb, { sustainMs: 2000, sustainRatio: 0.6 });
+
+    // 4 amostras altas (160ms de palavra) e 1 baixa (40ms de pausa): 80% da janela
+    alimentar(dispatcher, [true, true, true, true, false], 12);
+
+    expect(cb).toHaveBeenCalled();
+  });
+
+  it('nao dispara com uma porta batendo no meio do silencio', () => {
+    const dispatcher = createNoiseDispatcher();
+    const cb = vi.fn();
+    dispatcher.onNoiseAbove(0.5, cb, { sustainMs: 2000, sustainRatio: 0.6 });
+
+    // uma unica amostra alta a cada 20 (5% da janela)
+    alimentar(dispatcher, [true, ...Array(19).fill(false)], 6);
+
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('nao dispara antes de a janela estar cheia, por mais alto que esteja', () => {
+    const dispatcher = createNoiseDispatcher();
+    const cb = vi.fn();
+    dispatcher.onNoiseAbove(0.5, cb, { sustainMs: 2000, sustainRatio: 0.6 });
+
+    // 1s inteiro de barulho continuo, metade da janela pedida
+    alimentar(dispatcher, [true], 25);
+
+    expect(cb).not.toHaveBeenCalled();
+
+    alimentar(dispatcher, [true], 26, 25 * PASSO);
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('com ratio 1 volta a exigir barulho ininterrupto', () => {
+    const dispatcher = createNoiseDispatcher();
+    const cb = vi.fn();
+    dispatcher.onNoiseAbove(0.5, cb, { sustainMs: 1000, sustainRatio: 1 });
+
+    // a mesma fala com pausas do primeiro caso nao basta aqui
+    alimentar(dispatcher, [true, true, true, true, false], 12);
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('ignora a fracao quando nao ha janela de sustentacao', () => {
+    const dispatcher = createNoiseDispatcher();
+    const cb = vi.fn();
+    dispatcher.onNoiseAbove(0.5, cb, { sustainMs: 0, sustainRatio: 0.6 });
+
+    dispatcher.dispatch(0.9, 0);
+
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('esquece o barulho que saiu da janela', () => {
+    const dispatcher = createNoiseDispatcher();
+    const cb = vi.fn();
+    dispatcher.onNoiseAbove(0.5, cb, { sustainMs: 1000, sustainRatio: 0.6 });
+
+    // 1s de barulho seguido de 1s de silencio: quando a janela enche de novo,
+    // o barulho antigo ja saiu dela e nao conta
+    alimentar(dispatcher, [true], 26);
+    expect(cb).toHaveBeenCalledTimes(1);
+
+    const t = alimentar(dispatcher, [false], 25, 26 * PASSO);
+    alimentar(dispatcher, [true, false, false], 8, t);
+    expect(cb).toHaveBeenCalledTimes(1);
   });
 });
