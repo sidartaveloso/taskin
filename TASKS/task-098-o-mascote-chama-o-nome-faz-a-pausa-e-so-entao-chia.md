@@ -1,6 +1,6 @@
 # 🧩 Task 098 — o mascote chama o nome, faz a pausa e so entao chia
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
 
