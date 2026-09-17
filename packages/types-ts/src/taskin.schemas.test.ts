@@ -1118,11 +1118,20 @@ describe('MascotNoiseReactionConfigSchema', () => {
       threshold: 0.06,
       debounceMs: 1500,
       sound: false,
+      phrase: 'Shhhhhh...',
+      volume: 1,
     });
   });
 
   it('keeps values the user set', () => {
-    const config = { enabled: true, threshold: 0.7, debounceMs: 5000, sound: true };
+    const config = {
+      enabled: true,
+      threshold: 0.7,
+      debounceMs: 5000,
+      sound: true,
+      phrase: 'Bruno, Shhhhhhhhhhhh...',
+      volume: 0.8,
+    };
     expect(MascotNoiseReactionConfigSchema.parse(config)).toEqual(config);
   });
 
@@ -1140,13 +1149,22 @@ describe('MascotNoiseReactionConfigSchema', () => {
 describe('MascotConfigSchema', () => {
   it('defaults the reactions block so an empty mascot config is inert', () => {
     expect(MascotConfigSchema.parse({})).toEqual({
-      reactions: { noise: { enabled: false, threshold: 0.06, debounceMs: 1500, sound: false } },
+      reactions: {
+        noise: { enabled: false, threshold: 0.06, debounceMs: 1500, sound: false, phrase: 'Shhhhhh...', volume: 1 },
+      },
     });
   });
 
   it('reads a partial noise block and fills the rest', () => {
     const result = MascotConfigSchema.parse({ reactions: { noise: { enabled: true, threshold: 0.5 } } });
-    expect(result.reactions.noise).toEqual({ enabled: true, threshold: 0.5, debounceMs: 1500, sound: false });
+    expect(result.reactions.noise).toEqual({
+      enabled: true,
+      threshold: 0.5,
+      debounceMs: 1500,
+      sound: false,
+      phrase: 'Shhhhhh...',
+      volume: 1,
+    });
   });
 });
 
@@ -1178,6 +1196,8 @@ describe('resolveMascotNoiseSettings', () => {
       threshold: 0.06,
       debounceMs: 1500,
       sound: false,
+      phrase: 'Shhhhhh...',
+      volume: 1,
     });
   });
 
@@ -1187,9 +1207,25 @@ describe('resolveMascotNoiseSettings', () => {
 
   it('flattens a full mascot block into ready-to-pass settings', () => {
     const settings = resolveMascotNoiseSettings({
-      reactions: { noise: { enabled: true, threshold: 0.7, debounceMs: 5000, sound: true } },
+      reactions: {
+        noise: {
+          enabled: true,
+          threshold: 0.7,
+          debounceMs: 5000,
+          sound: true,
+          phrase: 'Bruno, Shhhhhhhhhhhh...',
+          volume: 0.5,
+        },
+      },
     });
-    expect(settings).toEqual({ enabled: true, threshold: 0.7, debounceMs: 5000, sound: true });
+    expect(settings).toEqual({
+      enabled: true,
+      threshold: 0.7,
+      debounceMs: 5000,
+      sound: true,
+      phrase: 'Bruno, Shhhhhhhhhhhh...',
+      volume: 0.5,
+    });
   });
 
   it('fills the defaults for fields omitted from a partial noise block', () => {
@@ -1198,7 +1234,24 @@ describe('resolveMascotNoiseSettings', () => {
       threshold: 0.06,
       debounceMs: 1500,
       sound: false,
+      phrase: 'Shhhhhh...',
+      volume: 1,
     });
+  });
+
+  it('aceita a frase com o nome de quem esta falando alto — e o caso de uso', () => {
+    const settings = resolveMascotNoiseSettings({
+      reactions: { noise: { phrase: 'Bruno, Shhhhhhhhhhhh...' } },
+    });
+    expect(settings.phrase).toBe('Bruno, Shhhhhhhhhhhh...');
+  });
+
+  it('recusa volume fora de 0..1, que so poderia distorcer o som', () => {
+    expect(() => resolveMascotNoiseSettings({ reactions: { noise: { volume: 1.5 } } })).toThrow();
+  });
+
+  it('recusa frase vazia: um balao em branco nao pede silencio a ninguem', () => {
+    expect(() => resolveMascotNoiseSettings({ reactions: { noise: { phrase: '   ' } } })).toThrow();
   });
 
   it('throws on an out-of-range threshold, refusing to pass an invalid setting downstream', () => {

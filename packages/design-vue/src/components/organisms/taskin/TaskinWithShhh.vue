@@ -60,9 +60,10 @@
 </template>
 
 <script setup lang="ts">
-import { type MascotConfig, resolveMascotNoiseSettings, resolveShhhReactionPlan } from '@opentask/taskin-types';
+import { type MascotConfigInput, resolveMascotNoiseSettings, resolveShhhReactionPlan } from '@opentask/taskin-types';
 import {
   createNoiseWatcher,
+  criarVozDoShhhDoNavegador,
   FaceTrackingDebug,
   NoiseTrackingControls,
   TrackingControls,
@@ -83,12 +84,20 @@ export interface Props {
    * the individual `noise*` props below, so a consumer can wire config straight
    * through without unpacking it first.
    */
-  mascot?: MascotConfig;
+  mascot?: MascotConfigInput;
   // noise reaction props (used when `mascot` is not provided)
   enableNoiseReactions?: boolean;
   noiseThreshold?: number; // RMS threshold (0..1)
   noiseDebounceMs?: number;
   noiseSound?: boolean;
+  /**
+   * What the mascot says out loud and shows in the bubble. Naming the person is
+   * the point: "Bruno, Shhhhhhhhhhhh..." asks for silence far better than a
+   * generic hiss, and it is the mascot asking instead of you.
+   */
+  shhhPhrase?: string;
+  /** Loudness of the spoken reaction, 0..1. Loud by default — the room has to hear it. */
+  shhhVolume?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -99,6 +108,8 @@ const props = withDefaults(defineProps<Props>(), {
   noiseThreshold: 0.06,
   noiseDebounceMs: 1500,
   noiseSound: false,
+  shhhPhrase: 'Shhhhhh...',
+  shhhVolume: 1,
 });
 
 // Resolve the effective noise settings: the `mascot` config block wins when
@@ -111,6 +122,8 @@ const noiseSettings = computed(() =>
         threshold: props.noiseThreshold,
         debounceMs: props.noiseDebounceMs,
         sound: props.noiseSound,
+        phrase: props.shhhPhrase,
+        volume: props.shhhVolume,
       },
 );
 
@@ -151,6 +164,12 @@ const enableNoiseReactionsRef = ref<boolean>(noiseSettings.value.enabled);
 const noiseThresholdRef = ref<number>(noiseSettings.value.threshold);
 const noiseDebounceMsRef = ref<number>(noiseSettings.value.debounceMs);
 const noiseSoundRef = ref<boolean>(noiseSettings.value.sound);
+const shhhPhraseRef = ref<string>(noiseSettings.value.phrase);
+const shhhVolumeRef = ref<number>(noiseSettings.value.volume);
+
+// A voz so existe no navegador, e so e montada uma vez: o contexto de audio
+// dela e caro e o navegador limita quantos podem ser abertos.
+let voz: ReturnType<typeof criarVozDoShhhDoNavegador> = null;
 
 const toggleTracking = () => {
   if (faceLandmarker.state.value.isDetecting) faceLandmarker.stopDetection();
@@ -177,7 +196,15 @@ const triggerShhhReaction = () => {
   // Both branches surface the "shh" bubble; only the animated branch moves the
   // mouth/mood, so the reduced-motion fallback stays a static badge.
   showThoughtBubble.value = true;
-  thoughtBubbleText.value = 'shh...';
+  thoughtBubbleText.value = shhhPhraseRef.value;
+
+  // O balao e para quem olha a tela; o som e para quem esta falando alto e nao
+  // esta olhando. E por isso que o `sound` nao pode continuar sendo um
+  // interruptor que nao faz nada.
+  if (plan.playSound) {
+    voz ??= criarVozDoShhhDoNavegador();
+    void voz?.shush({ phrase: shhhPhraseRef.value, volume: shhhVolumeRef.value });
+  }
   if (plan.animate) {
     mouthExpression.value = 'o-shape';
     currentMood.value = 'thoughtful';
@@ -272,9 +299,6 @@ onMounted(async () => {
         noiseThresholdRef.value,
         () => {
           triggerShhhReaction();
-          if (noiseSoundRef.value) {
-            // no sound asset presently
-          }
         },
         noiseDebounceMsRef.value,
       );

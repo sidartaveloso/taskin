@@ -4,6 +4,7 @@ import type { FaceTrackingDebugProps } from '../components/molecules/face-tracki
 import type { NoiseTrackingControlsProps } from '../components/molecules/noise-tracking-controls/NoiseTrackingControls.types';
 import type { TrackingControlsProps } from '../components/molecules/tracking-controls/TrackingControls.types';
 import type { NoiseWatcher } from '../utils/noise-watcher';
+import type { ShhhVoice } from '../utils/shhh-voice';
 
 export { defaultFunctions } from '../components/organisms/gesture-system/GestureSystem.types';
 
@@ -233,3 +234,18 @@ export const createNoiseWatcher = vi.fn(
     stop: vi.fn(async () => undefined),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// Shhh voice
+// ---------------------------------------------------------------------------
+
+// O planejador e puro — vai inteiro, para o modulo mockado continuar sendo
+// substituto completo do real. So o que toca Web Audio e `speechSynthesis` e
+// que vira dublê.
+export { planejarShhh } from '../utils/shhh-voice';
+
+export const shhhVoiceMock: ShhhVoice = { shush: vi.fn(async () => undefined) };
+
+export const createShhhVoice = vi.fn((): ShhhVoice => shhhVoiceMock);
+
+export const criarVozDoShhhDoNavegador = vi.fn((): ShhhVoice | null => shhhVoiceMock);

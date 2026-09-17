@@ -398,6 +398,17 @@ export type TaskinConfigInput = z.input<typeof TaskinConfigSchema>;
 export type MascotConfig = z.infer<typeof MascotConfigSchema>;
 
 /**
+ * O bloco `mascot` **como se escreve** no `.taskin.json`: todo campo e
+ * opcional, porque o schema preenche o que faltar. E este o tipo que um
+ * consumidor deve pedir quando recebe configuracao de fora — exigir
+ * {@link MascotConfig}, que ja tem os defaults aplicados, obrigaria quem so quer
+ * ligar o som a escrever tambem o limiar, o debounce e o volume.
+ *
+ * @public
+ */
+export type MascotConfigInput = z.input<typeof MascotConfigSchema>;
+
+/**
  * Resolved ambient-noise reaction config for the mascot.
  * @public
  */

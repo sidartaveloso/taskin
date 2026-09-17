@@ -779,6 +779,17 @@ export const MascotNoiseReactionConfigSchema = z.object({
   debounceMs: z.number().int().nonnegative().default(1500),
   /** Play the optional short audio cue alongside the visual reaction. */
   sound: z.boolean().default(false),
+  /**
+   * What the mascot says, and shows in the bubble. Naming the person is the
+   * point — "Bruno, Shhhhhhhhhhhh..." asks for silence far better than a
+   * generic hiss, and it is the mascot doing the asking instead of you.
+   */
+  phrase: z.string().trim().min(1).default('Shhhhhh...'),
+  /**
+   * Loudness of the audio cue, 0..1. Defaults to the top of the range: the
+   * reaction only works if the room hears it from where the phone is sitting.
+   */
+  volume: z.number().min(0).max(1).default(1),
 });
 
 /**
@@ -816,6 +827,10 @@ export interface MascotNoiseSettings {
   debounceMs: number;
   /** Whether to play the optional short audio cue alongside the visual reaction. */
   sound: boolean;
+  /** What the mascot says and shows in the bubble. */
+  phrase: string;
+  /** Loudness of the audio cue, 0..1. */
+  volume: number;
 }
 
 /**
@@ -830,12 +845,14 @@ export interface MascotNoiseSettings {
  * @example
  * ```ts
  * resolveMascotNoiseSettings({ reactions: { noise: { enabled: true } } });
- * // → { enabled: true, threshold: 0.06, debounceMs: 1500, sound: false }
+ * // → { enabled: true, threshold: 0.06, debounceMs: 1500, sound: false,
+ * //     phrase: 'Shhhhhh...', volume: 1 }
  * ```
  */
 export const resolveMascotNoiseSettings = (mascot?: z.input<typeof MascotConfigSchema> | null): MascotNoiseSettings => {
-  const { enabled, threshold, debounceMs, sound } = MascotConfigSchema.parse(mascot ?? {}).reactions.noise;
-  return { enabled, threshold, debounceMs, sound };
+  const { enabled, threshold, debounceMs, sound, phrase, volume } = MascotConfigSchema.parse(mascot ?? {}).reactions
+    .noise;
+  return { enabled, threshold, debounceMs, sound, phrase, volume };
 };
 
 /**

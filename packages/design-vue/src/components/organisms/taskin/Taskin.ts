@@ -340,9 +340,36 @@ export default defineComponent({
       type: String as PropType<MouthExpression>,
       default: undefined,
     },
+    /**
+     * Mostra o balao de pensamento independentemente do humor. Sem isto so o
+     * humor `thoughtful` tinha balao, e sempre com o mesmo `?`.
+     */
+    showThoughtBubble: {
+      type: Boolean,
+      default: undefined,
+    },
+    /** O que vai escrito no balao. */
+    thoughtBubbleText: {
+      type: String,
+      default: undefined,
+    },
   },
   setup(props) {
-    const config = computed(() => MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral);
+    /**
+     * O humor traz a configuracao base; as props de balao, quando vem, mandam
+     * nela. E o que permite o mascote dizer "Bruno, Shhhhhhhhhhhh..." em vez do
+     * `?` fixo que o humor `thoughtful` carrega.
+     */
+    const config = computed(() => {
+      const doHumor = MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral;
+      if (props.showThoughtBubble === undefined && props.thoughtBubbleText === undefined) return doHumor;
+
+      return {
+        ...doHumor,
+        showThoughtBubble: props.showThoughtBubble ?? doHumor.showThoughtBubble,
+        thoughtBubbleText: props.thoughtBubbleText ?? doHumor.thoughtBubbleText,
+      };
+    });
     const idleTimer = ref<number | null>(null);
     const blinkEyes = ref(false);
     const wiggleTentacles = ref(false);
