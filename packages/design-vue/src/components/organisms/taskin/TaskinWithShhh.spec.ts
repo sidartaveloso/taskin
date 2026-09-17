@@ -51,21 +51,50 @@ describe('TaskinWithShhh', () => {
   });
 
   it('mostra a frase configurada no balao, e nao um "shh" generico', async () => {
-    const wrapper = mount(TaskinWithShhh, { props: { shhhPhrase: 'Bruno, Shhhhhhhhhhhh...' } });
+    const wrapper = mount(TaskinWithShhh, { props: { shhhPhrase: 'Shhhhhhhhhhhh...' } });
 
     await pedirSilencio(wrapper);
 
-    expect(wrapper.text()).toContain('Bruno, Shhhhhhhhhhhh...');
+    expect(wrapper.text()).toContain('Shhhhhhhhhhhh...');
   });
 
-  it('fala alto quando o som esta ligado — o interruptor precisa fazer alguma coisa', async () => {
+  /*
+   * O balao mostra a frase inteira, com o nome na frente; a voz so pronuncia o
+   * nome. Sao papeis diferentes de propriedades diferentes.
+   */
+  it('junta o nome a frase no balao', async () => {
     const wrapper = mount(TaskinWithShhh, {
-      props: { noiseSound: true, shhhPhrase: 'Bruno, Shhhhhhhhhhhh...', shhhVolume: 0.8 },
+      props: { shhhName: 'Bruno', shhhPhrase: 'Shhhhhhhhhhhh...' },
     });
 
     await pedirSilencio(wrapper);
 
-    expect(shhhVoiceMock.shush).toHaveBeenCalledWith({ phrase: 'Bruno, Shhhhhhhhhhhh...', volume: 0.8 });
+    expect(wrapper.find('#effect-thought-bubble text').text()).toBe('Bruno, Shhhhhhhhhhhh...');
+  });
+
+  it('mostra so a frase quando nao ha nome a chamar', async () => {
+    const wrapper = mount(TaskinWithShhh, { props: { shhhPhrase: 'Shhhhhhhhhhhh...' } });
+
+    await pedirSilencio(wrapper);
+
+    // no balao, e nao em `wrapper.text()`: o painel de controles em volta tem
+    // texto proprio e virgulas que nao dizem nada sobre esta regra
+    expect(wrapper.find('#effect-thought-bubble text').text()).toBe('Shhhhhhhhhhhh...');
+  });
+
+  it('fala alto quando o som esta ligado — o interruptor precisa fazer alguma coisa', async () => {
+    const wrapper = mount(TaskinWithShhh, {
+      props: { noiseSound: true, shhhName: 'Bruno', shhhPhrase: 'Shhhhhhhhhhhh...', shhhVolume: 0.8 },
+    });
+
+    await pedirSilencio(wrapper);
+
+    // nome e frase vao separados: e a voz que decide o que pronunciar e quando
+    expect(shhhVoiceMock.shush).toHaveBeenCalledWith({
+      name: 'Bruno',
+      phrase: 'Shhhhhhhhhhhh...',
+      volume: 0.8,
+    });
   });
 
   it('fica calado quando o som esta desligado, mas ainda mostra o balao', async () => {

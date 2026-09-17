@@ -2,11 +2,35 @@ import { describe, expect, it, vi } from 'vitest';
 import { createShhhVoice, planejarShhh } from './shhh-voice';
 
 describe('planejarShhh', () => {
-  it('fala a frase e chia junto quando ha voz no navegador', () => {
+  /*
+   * A fala e o NOME, nao a frase inteira. Mandar o `speechSynthesis` pronunciar
+   * "Shhhhhhhhhhhh..." produzia um arrastado sem sentido por cima do chiado
+   * sintetizado, que e quem sabe fazer esse som.
+   */
+  it('fala o nome de quem esta sendo chamado, e nao a frase inteira', () => {
+    const plano = planejarShhh({ name: 'Bruno', phrase: 'Shhhhhh...', volume: 1, vozDisponivel: true });
+
+    expect(plano.fala).toEqual({ texto: 'Bruno,', volume: 1 });
+    expect(plano.chiado.volume).toBe(1);
+  });
+
+  it('nao fala nada quando nao ha nome — so chia', () => {
     const plano = planejarShhh({ phrase: 'Shhhhhh...', volume: 1, vozDisponivel: true });
 
-    expect(plano.fala).toEqual({ texto: 'Shhhhhh...', volume: 1 });
-    expect(plano.chiado.volume).toBe(1);
+    expect(plano.fala).toBeNull();
+    expect(plano.chiado.duracaoMs).toBeGreaterThan(0);
+  });
+
+  it('reserva um lapso entre a fala e o chiado, para soar como fala', () => {
+    const plano = planejarShhh({ name: 'Bruno', phrase: 'Shhhhhh...', volume: 1, vozDisponivel: true });
+
+    expect(plano.pausaMs).toBeGreaterThan(0);
+  });
+
+  it('nao reserva lapso nenhum quando nao ha fala antes', () => {
+    const plano = planejarShhh({ phrase: 'Shhhhhh...', volume: 1, vozDisponivel: true });
+
+    expect(plano.pausaMs).toBe(0);
   });
 
   it('chia mesmo sem voz — o som e o que atravessa a sala', () => {
@@ -36,10 +60,16 @@ describe('planejarShhh', () => {
   });
 
   it('carrega o volume pedido para os dois canais', () => {
-    const plano = planejarShhh({ phrase: 'Shhh', volume: 0.3, vozDisponivel: true });
+    const plano = planejarShhh({ name: 'Bruno', phrase: 'Shhh', volume: 0.3, vozDisponivel: true });
 
     expect(plano.fala?.volume).toBe(0.3);
     expect(plano.chiado.volume).toBe(0.3);
+  });
+
+  it('ignora um nome so de espacos', () => {
+    const plano = planejarShhh({ name: '   ', phrase: 'Shhh', volume: 1, vozDisponivel: true });
+
+    expect(plano.fala).toBeNull();
   });
 });
 
@@ -65,18 +95,87 @@ describe('createShhhVoice', () => {
     return { contexto, fonte, gain };
   };
 
-  it('toca o chiado e fala a frase', async () => {
+  it('chama o nome e so depois chia, na ordem', async () => {
     const { contexto, fonte } = contextoFalso();
-    const falar = vi.fn();
+    const ordem: string[] = [];
+    const falar = vi.fn(async () => {
+      ordem.push('fala');
+    });
+    fonte.start.mockImplementation(() => {
+      ordem.push('chiado');
+    });
+
     const voz = createShhhVoice({
       criarContexto: () => contexto as unknown as AudioContext,
       falar,
+      aguardar: async (ms: number) => {
+        ordem.push(`pausa:${ms}`);
+      },
     });
 
-    await voz.shush({ phrase: 'Bruno, Shhhh...', volume: 0.7 });
+    await voz.shush({ name: 'Bruno', phrase: 'Shhhh...', volume: 0.7 });
+
+    expect(falar).toHaveBeenCalledWith({ texto: 'Bruno,', volume: 0.7 });
+    expect(ordem[0]).toBe('fala');
+    expect(ordem[ordem.length - 1]).toBe('chiado');
+    // o lapso entre uma coisa e outra e o que faz soar como fala; a outra
+    // espera na lista e a rede de seguranca da fala travada
+    expect(ordem).toContain('pausa:260');
+    expect(ordem.indexOf('pausa:260')).toBeLessThan(ordem.indexOf('chiado'));
+  });
+
+  it('espera a fala terminar de verdade antes de chiar', async () => {
+    const { contexto, fonte } = contextoFalso();
+    let terminarFala: (() => void) | null = null;
+    const voz = createShhhVoice({
+      criarContexto: () => contexto as unknown as AudioContext,
+      falar: () =>
+        new Promise<void>((resolve) => {
+          terminarFala = resolve;
+        }),
+      aguardar: async () => {},
+    });
+
+    const pedido = voz.shush({ name: 'Bruno', phrase: 'Shhhh...', volume: 1 });
+    await Promise.resolve();
+
+    expect(fonte.start).not.toHaveBeenCalled();
+
+    (terminarFala as unknown as () => void)();
+    await pedido;
 
     expect(fonte.start).toHaveBeenCalled();
-    expect(falar).toHaveBeenCalledWith({ texto: 'Bruno, Shhhh...', volume: 0.7 });
+  });
+
+  it('chia na hora quando nao ha nome a chamar', async () => {
+    const { contexto, fonte } = contextoFalso();
+    const falar = vi.fn(async () => {});
+    const voz = createShhhVoice({
+      criarContexto: () => contexto as unknown as AudioContext,
+      falar,
+      aguardar: async () => {},
+    });
+
+    await voz.shush({ phrase: 'Shhhh...', volume: 1 });
+
+    expect(falar).not.toHaveBeenCalled();
+    expect(fonte.start).toHaveBeenCalled();
+  });
+
+  it('nao deixa uma fala travada segurar o chiado para sempre', async () => {
+    const { contexto, fonte } = contextoFalso();
+    const voz = createShhhVoice({
+      criarContexto: () => contexto as unknown as AudioContext,
+      // uma promessa que nunca resolve: `onend` do speechSynthesis nao dispara
+      // em alguns navegadores quando a aba perde o foco
+      falar: () => new Promise<void>(() => {}),
+      aguardar: async () => {},
+      esperaMaximaDaFalaMs: 0,
+    });
+
+    await voz.shush({ name: 'Bruno', phrase: 'Shhhh...', volume: 1 });
+
+    expect(fonte.start).toHaveBeenCalled();
   });
 
   it('chia do mesmo jeito quando o navegador nao tem sintese de voz', async () => {
