@@ -135,7 +135,22 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
 
   if (!options.skipUpdate) {
     info('Marking task as done...');
-    const updatedTask = await taskManager.finishTask(task.id);
+    const { task: updatedTask, blockers } = await taskManager.finishTaskComRelato(task.id);
+
+    /*
+     * Avisa, e nao recusa. Fechar acontece uma vez e muitas vezes com pressa;
+     * recusar aqui tornaria o comando fragil e ensinaria a contornar. O portao
+     * duro vive no `lint`, que roda em CI. Aqui o papel e dizer, enquanto a
+     * pessoa ainda esta olhando, o que ficou para tras.
+     */
+    if (blockers.length > 0) {
+      warning(`${blockers.length} completion criteria still open:`);
+      for (const b of blockers) {
+        console.log(colors.secondary(`  • ${b.texto}${b.linha === undefined ? '' : ` (line ${b.linha})`}`));
+      }
+      info('Tick them, or say why they were dropped: "— adiado: <reason>". `taskin lint` will ask.');
+      console.log();
+    }
     success(`Task ${updatedTask.id} completed successfully! 🎉`);
     success(`Status changed to: ${updatedTask.status}`);
 

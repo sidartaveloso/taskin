@@ -125,6 +125,10 @@ export class MockMCPTaskManager implements ITaskManager {
     return Array.from(this.tasks.values());
   }
 
+  async finishTaskComRelato(taskId: TaskId): Promise<{ task: Task; blockers: [] }> {
+    return { task: await this.finishTask(taskId), blockers: [] };
+  }
+
   async prioritizeAll(): Promise<{ total: number; withoutPriority: number; changed: number }> {
     return { total: this.tasks.size, withoutPriority: 0, changed: 0 };
   }

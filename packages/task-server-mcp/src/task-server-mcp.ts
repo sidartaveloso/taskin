@@ -369,7 +369,13 @@ export class TaskMCPServer implements ITaskMCPServer {
    * Handle finish_task tool
    */
   private async handleFinishTask(taskId: TaskId): Promise<MCPToolCallResult> {
-    const task = await this.taskManager.finishTask(taskId);
+    /*
+     * O relato dos criterios em aberto viaja junto: um agente que fecha uma
+     * tarefa precisa ver o que ficou para tras tanto quanto uma pessoa — foi
+     * justamente um agente que fechou quatro tarefas com o checklist inteiro em
+     * aberto.
+     */
+    const { task, blockers } = await this.taskManager.finishTaskComRelato(taskId);
     await this.notifyStatusChange(task.id, task.status);
 
     return {
@@ -386,6 +392,14 @@ export class TaskMCPServer implements ITaskMCPServer {
                 status: task.status,
                 type: task.type,
               },
+              /*
+               * O que ficou em aberto viaja na resposta, e nao so no texto: um
+               * agente precisa poder **reagir** a isso, e nao apenas ler.
+               */
+              openCriteria: blockers,
+              ...(blockers.length > 0 && {
+                hint: 'Tick these in the task file, or say why they were dropped: "— adiado: <reason>".',
+              }),
             },
             null,
             2,

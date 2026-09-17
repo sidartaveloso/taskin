@@ -1,6 +1,7 @@
 import type {
   CreateTaskOptions,
   ITaskProvider,
+  CriterioEmAberto,
   IUserRegistry,
   LintResult,
   ValidationIssue,
@@ -31,7 +32,7 @@ import {
   USERS_FILE_NAME,
   validateUsersFileLocation,
 } from './users-file-location.js';
-import { validarConclusao } from './criterios-de-conclusao/index.js';
+import { criteriosEmAberto, validarConclusao } from './criterios-de-conclusao/index.js';
 import { validarPrioridadesDuplicadas, validarPriorizacao } from './validar-priorizacao/index.js';
 
 /**
@@ -260,6 +261,19 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
    * unico lugar que mexe em tarefa quando um grupo e apagado, e devolve quantas
    * foram afetadas para a operacao nunca ser invisivel.
    */
+  /**
+   * Os itens do `## Tasks` que ainda bloqueiam, lidos pelo **mesmo** leitor que
+   * o lint usa (task-073).
+   *
+   * Um segundo parser divergiria, e divergir aqui significa o lint recusar o que
+   * o `finish` acabou de aceitar — pior que nao ter portao.
+   */
+  async getCompletionBlockers(task: TaskFile): Promise<CriterioEmAberto[]> {
+    const conteudo = task.content || (await fs.readFile(task.filePath, 'utf-8'));
+
+    return criteriosEmAberto(conteudo).map((c) => ({ texto: c.texto, linha: c.linha }));
+  }
+
   private async reassignGroup(de: GroupId, para: GroupId | undefined): Promise<number> {
     const tarefas = await this.getAllTasks();
     const membros = tarefas.filter((t) => t.groupId === de);
