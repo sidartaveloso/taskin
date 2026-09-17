@@ -1,6 +1,6 @@
 # 🧩 Task 094 — a fala com pausas conta como barulho, e da para ouvir o shhh sem gritar
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
 
