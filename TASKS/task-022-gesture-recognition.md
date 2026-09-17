@@ -4,6 +4,7 @@
 - Type: feat
 - Assignee: To be defined
 - Priority: 90
+- Difficulty: 3
 
 ## Description
 

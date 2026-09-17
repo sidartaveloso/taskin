@@ -4,6 +4,7 @@
 - Type: chore
 - Assignee: Sidarta Veloso
 - Priority: 200
+- Difficulty: 2
 
 ## Description
 

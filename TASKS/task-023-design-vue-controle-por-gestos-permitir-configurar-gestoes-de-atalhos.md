@@ -4,6 +4,7 @@
 - Type: `feat`
 - Assignee: sidartaveloso
 - Epic: (Vincule à Epic de Controle por Gestos, se houver)
+- Priority: 8951
 
 > **Nota (registro histórico):** Spec original do sistema de gestos de atalho
 > configuráveis. A implementação foi distribuída entre a task-022 (núcleo de

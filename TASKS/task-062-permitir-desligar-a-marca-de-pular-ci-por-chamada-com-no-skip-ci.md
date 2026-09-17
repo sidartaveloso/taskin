@@ -3,6 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
+- Priority: 10951
 
 ## Description
 A marca vem da configuracao do projeto e vale para todo commit de status. Quando o push carrega trabalho junto, o commit de status fica no topo e o GitHub pula tudo. Falta um jeito de dizer 'nesta chamada, nao'.

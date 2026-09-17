@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
+- Priority: 10851
 
 ## Description
 No transporte stdio o stdout carrega as mensagens JSON-RPC; o comando despeja o cabecalho e a lista de ferramentas ali. E a flag -t sse esta anunciada no --help mas o connect responde 'not yet implemented'.

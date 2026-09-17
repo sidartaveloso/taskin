@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: fix
-- Priority: 260
+- Priority: 6551
 - Assignee: Sidarta Veloso
 
 ## Description

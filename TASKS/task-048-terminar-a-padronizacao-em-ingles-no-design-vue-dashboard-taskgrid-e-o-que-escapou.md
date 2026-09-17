@@ -4,6 +4,7 @@
 - Type: refactor
 - Assignee: sidartaveloso
 - Priority: 140
+- Difficulty: 1
 
 ## Description
 
