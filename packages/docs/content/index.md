@@ -176,6 +176,9 @@ Jira, you trade those properties for the ones Jira gives you.
 The MCP server exposes the work queue as tools, and the agent that already reads
 your repository starts acting on it:
 
+Three filters, the same on every surface: `open` (anything not finished), `closed`, and `active` — started and not finished, which is what you want on screen while work is happening.
+
+
 ```
 you:    "finish task 042"
 agent:  → finish_task(taskId: "042")

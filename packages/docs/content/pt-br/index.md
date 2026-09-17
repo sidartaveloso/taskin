@@ -168,6 +168,9 @@ Jira, você troca essas propriedades pelas que o Jira dá.
 O servidor MCP expõe a fila de trabalho como ferramentas, e o agente que já lê o
 seu repositório passa a mexer nela:
 
+Três filtros, iguais em todas as superfícies: `open` (tudo que não terminou), `closed`, e `active` — começou e não terminou, que é o que interessa na tela enquanto o trabalho acontece.
+
+
 ```
 você:    "termina a task 042"
 agente:  → finish_task(taskId: "042")

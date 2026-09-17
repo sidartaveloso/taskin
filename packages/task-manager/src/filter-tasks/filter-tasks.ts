@@ -12,6 +12,20 @@ const EM_ABERTO: readonly TaskStatus[] = ['pending', 'in-progress', 'paused', 'i
 
 const ENCERRADOS: readonly TaskStatus[] = ['done', 'canceled'];
 
+/**
+ * Comecou e nao terminou.
+ *
+ * O meio que faltava entre `open` e `status: 'in-progress'`. `open` inclui
+ * `pending` — o que ainda nao comecou, e que num painel de acompanhamento e
+ * ruido. `in-progress` sozinho e estreito demais: a tarefa some da tela no
+ * instante em que alguem a pausa ou a manda para revisao.
+ *
+ * `blocked` fica de fora por decisao declarada: bloqueada e trabalho comecado,
+ * mas ninguem esta mexendo nela agora, e quem olha "o que esta andando" nao
+ * quer ve-la ali.
+ */
+const ATIVAS: readonly TaskStatus[] = ['in-progress', 'paused', 'in-review'];
+
 const contem = (valor: string | undefined, procurado: string): boolean =>
   valor?.toLowerCase().includes(procurado) ?? false;
 
@@ -45,6 +59,8 @@ export function filterTasks(tasks: readonly Task[], criteria: TaskFilterCriteria
     } else if (criteria.open && !EM_ABERTO.includes(task.status)) {
       return false;
     } else if (criteria.closed && !ENCERRADOS.includes(task.status)) {
+      return false;
+    } else if (criteria.active && !ATIVAS.includes(task.status)) {
       return false;
     }
 

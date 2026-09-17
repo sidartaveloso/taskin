@@ -9,12 +9,46 @@
 Hoje so existe aberto e fechado. Aberto inclui pending, que nao esta sendo trabalhada, e fechado esconde tudo — falta o recorte do que comecou e ainda nao terminou. O dashboard nem filtro por status tem.
 
 ## Tasks
-- [ ] Definir `active` em `filterTasks`, com teste, junto de `open` e `closed`
-- [ ] CLI: `taskin list --active`
-- [ ] MCP: `active` no schema do `list_tasks` e no `criterioDe`
-- [ ] Dashboard: o parametro `filter` passa a aceitar o mesmo vocabulario da CLI
-- [ ] CLI: `taskin dashboard --active`
-- [ ] Documentar nos READMEs, nos guias e no site (os dois idiomas)
+- [x] Definir `active` em `filterTasks`, com teste, junto de `open` e `closed`
+- [x] CLI: `taskin list --active`
+- [x] MCP: `active` no schema do `list_tasks`
+- [x] Dashboard: `?filter=active` e `taskin dashboard --active`
+- [x] Documentar nos READMEs e no site (os dois idiomas)
+- [x] `pnpm lint`, `typecheck`, `test` e `build` verdes
+
+### O que comprova cada item
+
+4 testes novos em `filter-tasks.test.ts`, no bloco **filtro active**:
+
+| o que se afirma | teste |
+| --- | --- |
+| traz in-progress, paused e in-review | `traz o que comecou e nao terminou` |
+| `pending` fica de fora | `deixa pending de fora — nao comecou` |
+| `blocked` fica de fora | `deixa blocked de fora, por decisao declarada` |
+| e o meio que faltava | `e mais estreito que open e mais largo que in-progress` |
+
+Exercitado de verdade: `taskin list --json --active` devolve 7 tarefas, todas
+`in-progress` ou `paused`, e o `tools/list` do servidor MCP anuncia
+`['active', 'assignee', 'closed', 'open', 'status', 'text', 'type']`.
+
+### A task-071 pagou o investimento aqui
+
+`active` entrou em **dois** lugares — o schema e o mapa de superficies de
+`filter-criteria.ts` — e apareceu sozinho na flag da CLI e no schema JSON do
+MCP. Antes seriam cinco edicoes, e esquecer uma nao quebraria nada.
+
+O `satisfies Record<keyof TaskFilterCriteria, CriterionSurface>` faz o resto:
+acrescentar um criterio sem declarar onde ele mora **nao compila**.
+
+### O que fica declarado em aberto
+
+**O dashboard ainda tem a regra copiada.** Ele reimplementa os conjuntos em
+`App.vue` em vez de consumir `filterTasks`, porque importar `task-manager` dali
+esbarra no build — o `.d.ts` do pacote leva o compilador ao `src`, e o `rootDir`
+do dashboard recusa. A copia esta comentada no arquivo dizendo que e copia.
+
+Enquanto isso nao for resolvido, mexer no conjunto `ATIVAS` exige mexer em dois
+lugares. E a terceira superficie sobrevivendo a task-071, e merece task propria.
 
 ## Notes
 **O que ja existe, para nao reimplementar.** Levantado antes de escrever esta

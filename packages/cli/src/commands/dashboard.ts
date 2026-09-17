@@ -26,6 +26,7 @@ interface DashboardOptions {
   host?: string;
   open?: boolean;
   closed?: boolean;
+  active?: boolean;
 }
 
 export interface DashboardAppOptions {
@@ -201,6 +202,10 @@ export const dashboardCommand = defineCommand({
       flags: '--closed',
       description: 'Show only closed tasks (done, canceled)',
     },
+    {
+      flags: '--active',
+      description: 'Show only tasks started and not finished (in-progress, paused, in-review)',
+    },
   ],
   handler: async (options: DashboardOptions) => {
     await startDashboard(options);
@@ -332,6 +337,8 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       filterParams.set('filter', 'open');
     } else if (options.closed) {
       filterParams.set('filter', 'closed');
+    } else if (options.active) {
+      filterParams.set('filter', 'active');
     }
     const filterQuery = filterParams.toString() ? `?${filterParams.toString()}` : '';
 
@@ -352,6 +359,8 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       info(`  • Filter: ${chalk.yellow('Open tasks only')}`);
     } else if (options.closed) {
       info(`  • Filter: ${chalk.yellow('Closed tasks only')}`);
+    } else if (options.active) {
+      info(`  • Filter: ${chalk.yellow('Active tasks only')}`);
     }
     info(`  • Press ${chalk.bold('Ctrl+C')} to stop both servers`);
     info('');
