@@ -1,5 +1,12 @@
 # @opentask/taskin-task-manager
 
+## 3.2.1
+
+### Patch Changes
+
+- Updated dependencies [37a0b34]
+  - @opentask/taskin-types@2.4.0
+
 ## 3.2.0
 
 ### Minor Changes
