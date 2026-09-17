@@ -61,9 +61,28 @@
       </label>
 
       <label class="control-field">
-        <span class="control-field__label">Debounce</span>
+        <span class="control-field__label" title="Tempo continuo acima do limiar antes do primeiro pedido de silencio">
+          Sustain
+        </span>
         <input
           class="control-field__number"
+          data-field="sustain"
+          type="number"
+          min="0"
+          step="100"
+          :value="noiseSustainMs ?? 0"
+          @change="onSustainChange($event)"
+        />
+        <span class="control-field__unit">ms</span>
+      </label>
+
+      <label class="control-field">
+        <span class="control-field__label" title="Intervalo minimo ate o proximo pedido de silencio">
+          Debounce
+        </span>
+        <input
+          class="control-field__number"
+          data-field="debounce"
           type="number"
           min="0"
           step="100"
@@ -101,6 +120,11 @@ function onThresholdInput(e: Event) {
 function onDebounceChange(e: Event) {
   const v = (e.target as HTMLInputElement).value;
   emit('update:noiseDebounceMs', Number(v));
+}
+
+function onSustainChange(e: Event) {
+  const v = (e.target as HTMLInputElement).value;
+  emit('update:noiseSustainMs', Number(v));
 }
 </script>
 

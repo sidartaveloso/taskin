@@ -16,8 +16,21 @@ toca é derivada por funções puras de `@opentask/taskin-types`.
 
 1. `createNoiseWatcher()` abre o microfone (Web Audio API) e emite o nível RMS
    (amplitude, faixa `0..1`).
-2. `onNoiseAbove(threshold, cb, debounceMs)` chama `cb` quando o nível cruza o
-   `threshold`, respeitando o `debounceMs` para não disparar em rajada.
+2. `onNoiseAbove(threshold, cb, { sustainMs, debounceMs })` chama `cb` quando o
+   nível se mantém acima do `threshold` por `sustainMs` milissegundos seguidos,
+   respeitando o `debounceMs` até o disparo seguinte. O terceiro argumento
+   também aceita só um número, que continua significando `debounceMs`.
+
+   Os dois tempos respondem a perguntas diferentes: `sustainMs` é quanto tempo o
+   barulho precisa se manter alto **antes** do primeiro pedido de silêncio, e
+   `debounceMs` é quanto tempo o mascote fica calado **depois** dele. Com
+   `sustainMs` em zero — o padrão — a primeira amostra acima do limiar dispara,
+   e uma porta batendo vale o mesmo que um minuto de conversa alta. Uma única
+   amostra abaixo do limiar zera a contagem: a sustentação é contínua.
+
+   A configuração persistida (`mascot.reactions.noise` no `.taskin.json`) ainda
+   não carrega o `sustainMs` — hoje ele é prop do componente e controle da
+   story.
 3. A cada disparo o componente resolve o _plano_ da reação com
    `resolveShhhReactionPlan`, honrando a preferência de movimento reduzido do
    sistema (`prefers-reduced-motion`) e a opção de som.
