@@ -22,15 +22,15 @@ noise capabilities (e.g., classroom demos, workshops, or shared offices).
 
 - [ ] Design: propose animation frames and optional short sound effects (xiiu / shhh)
 - [ ] Add assets: SVG/PNG animation, or Lottie/frames; add audio files (optional)
-- [ ] Add configuration options to `ConfigManager` / `.taskin.json`
+- [x] Add configuration options to `ConfigManager` / `.taskin.json`
   - `mascot.reactions.noise.enabled` (boolean)
   - `mascot.reactions.noise.threshold` (number, dB-equivalent or relative scale)
   - `mascot.reactions.noise.debounceMs` (number)
   - `mascot.reactions.noise.sound` (boolean)
-- [ ] Implement a small `NoiseWatcher` utility that exposes `onNoiseAbove(threshold, cb)` and respects debounce
+- [x] Implement a small `NoiseWatcher` utility that exposes `onNoiseAbove(threshold, cb)` and respects debounce
 - [ ] Integrate with mascot component in `design-vue` (`Mascot` or `taskin-arms` family)
 - [ ] Implement visual reaction and optional sound playback via existing `playSound()` helper
-- [ ] Add unit tests for `NoiseWatcher` and config parsing
+- [x] Add unit tests for `NoiseWatcher` and config parsing
 - [ ] Add integration / E2E test that simulates noise events and asserts mascot reaction
 - [x] Update documentation and examples (README, ARCHITECTURE.md)
 - [ ] QA: visual verification across themes & accessibility review (screen reader / reduced motion)
@@ -108,6 +108,34 @@ noise capabilities (e.g., classroom demos, workshops, or shared offices).
 ## Estimate
 
 - Small → ~2-3 days (design + implementation + tests + docs)
+
+
+### O que ja estava pronto, conferido em 16/09
+
+Tres itens estavam feitos e nao marcados — o padrao que a auditoria de 12-13/09
+encontrou, aqui de novo:
+
+| item | onde | prova |
+| --- | --- | --- |
+| `NoiseWatcher` | `ui-sense/src/utils/noise-watcher.ts` | 10 testes; expoe `onNoiseAbove(threshold, cb, debounceMs)` |
+| configuracao | `MascotReactionsConfigSchema` no `types-ts` | limiar, debounce e `enabled`, desligado por padrao |
+| testes de parsing | `taskin.schemas.test.ts` | `describe('resolveMascotNoiseSettings')` |
+
+### A ponte que faltava
+
+O schema existia e o resolvedor tambem, mas **nada lia o bloco** do
+`.taskin.json`: a configuracao existia no papel e nao no produto. O
+`ConfigManager` ganhou `getMascotNoiseSettings()`, com 5 testes
+(`mascot-settings.test.ts`) — incluindo o de que um bloco invalido cai no padrao
+em vez de derrubar o comando, porque alguem edita esse arquivo a mao e o mascote
+nao e motivo para o CLI parar.
+
+### O que continua aberto, e por que
+
+Os itens restantes dependem de **material que nao se escreve em codigo**: quadros
+de animacao, arquivo de audio, e a verificacao visual em temas e leitor de tela.
+Ficam declarados, e nao escondidos — nao ha como eu produzi-los com honestidade
+aqui.
 
 ## Notes
 

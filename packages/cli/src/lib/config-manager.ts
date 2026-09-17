@@ -14,7 +14,7 @@ import type {
   TaskinConfig,
   TaskinConfigInput,
 } from '@opentask/taskin-types';
-import { TaskinConfigSchema } from '@opentask/taskin-types';
+import { type MascotNoiseSettings, resolveMascotNoiseSettings, TaskinConfigSchema } from '@opentask/taskin-types';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
@@ -178,6 +178,24 @@ export class ConfigManager {
    * Returns `[skip ci]` when unconfigured. An empty string is a real answer —
    * it means the project wants CI to run — so it is returned as-is.
    */
+  /**
+   * Como o mascote deve reagir ao ruido, com os padroes ja aplicados.
+   *
+   * O schema e o resolvedor (`resolveMascotNoiseSettings`) ja existiam, mas
+   * nada lia o bloco do `.taskin.json` — a configuracao existia no papel e nao
+   * no produto. Este metodo e a ponte.
+   *
+   * Um bloco invalido cai no padrao em vez de derrubar o comando: alguem edita
+   * esse arquivo a mao, e o mascote nao e motivo para o CLI parar.
+   */
+  getMascotNoiseSettings(): MascotNoiseSettings {
+    try {
+      return resolveMascotNoiseSettings(this.loadConfig().mascot);
+    } catch {
+      return resolveMascotNoiseSettings(undefined);
+    }
+  }
+
   getCiSkipTag(): string {
     return this.getAutomationConfig().ciSkipTag ?? DEFAULT_CI_SKIP_TAG;
   }
