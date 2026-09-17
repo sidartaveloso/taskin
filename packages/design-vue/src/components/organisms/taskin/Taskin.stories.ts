@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { defineComponent, h, onMounted, onUnmounted, ref } from 'vue';
 import Taskin from './Taskin';
+import { TASKIN_MOODS } from './Taskin.moods';
 import type { TaskinMood } from './Taskin.types';
 
 const meta = {
@@ -18,25 +19,7 @@ const meta = {
   argTypes: {
     mood: {
       control: 'select',
-      options: [
-        'neutral',
-        'smirk',
-        'happy',
-        'annoyed',
-        'sarcastic',
-        'crying',
-        'cold',
-        'hot',
-        'dancing',
-        'furious',
-        'sleeping',
-        'in-love',
-        'tired',
-        'thoughtful',
-        'vomiting',
-        'taking-selfie',
-        'farting',
-      ] as TaskinMood[],
+      options: [...TASKIN_MOODS],
       description: 'The mood state of the Taskin mascot',
     },
     size: {
@@ -89,27 +72,7 @@ export const AllMoods: Story = {
       </div>
     `,
     data() {
-      return {
-        moods: [
-          'neutral',
-          'smirk',
-          'happy',
-          'annoyed',
-          'sarcastic',
-          'crying',
-          'cold',
-          'hot',
-          'dancing',
-          'furious',
-          'sleeping',
-          'in-love',
-          'tired',
-          'thoughtful',
-          'vomiting',
-          'taking-selfie',
-          'farting',
-        ],
-      };
+      return { moods: TASKIN_MOODS };
     },
   }),
 };
