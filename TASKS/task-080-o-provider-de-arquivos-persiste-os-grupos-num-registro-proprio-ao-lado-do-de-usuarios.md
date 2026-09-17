@@ -13,7 +13,7 @@ A linha GroupName sai do markdown e o nome passa a viver num registro unico. Apa
 - [x] Registro de grupos em arquivo proprio, no formato decidido
 - [x] A linha `GroupName:` sai do markdown, e o validador para de esperar por ela
 - [x] Apagar grupo executa o que a task-079 decidiu para os membros
-- [ ] Grupo referenciado e inexistente vira aviso de lint, e nao falha silenciosa
+- [x] Grupo referenciado e inexistente vira aviso de lint, e nao falha silenciosa
 - [x] `pnpm lint`, `typecheck`, `test` e `build` verdes
 
 ### O que comprova cada item

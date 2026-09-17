@@ -13,5 +13,5 @@ Type, Title, Description, User
 ## Tasks
 
 - [x] Create test to new command
-- [ ] Run CLI
-- [ ] Publish the new version
+- [ ] Run CLI — adiado: tarefa fechada antes de o checklist fazer parte do registro; a evidencia nao e reconstruivel hoje
+- [ ] Publish the new version — adiado: tarefa fechada antes de o checklist fazer parte do registro; a evidencia nao e reconstruivel hoje

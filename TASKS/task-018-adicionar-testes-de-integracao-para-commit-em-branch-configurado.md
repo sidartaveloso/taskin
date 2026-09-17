@@ -26,7 +26,7 @@ Os testes unitários atuais em `git-service.default-branch.test.ts` validam apen
 - [x] Adicionar testes de stash/unstash com mudanças locais reais
 - [x] Testar rollback em caso de falha durante troca de branch
 - [x] Validar restauração do estado original após erros
-- [ ] Testar cenários com conflitos no stash pop (scenario complexo, não implementado)
+- [ ] Testar cenários com conflitos no stash pop (scenario complexo, não implementado) — adiado: tarefa fechada antes de o checklist fazer parte do registro; a evidencia nao e reconstruivel hoje
 - [x] Adicionar teste para branch inexistente
 - [x] Validar comportamento quando já está no branch alvo
 - [x] Adicionar testes E2E no CLI usando repositório git temporário

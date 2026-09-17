@@ -31,6 +31,7 @@ import {
   USERS_FILE_NAME,
   validateUsersFileLocation,
 } from './users-file-location.js';
+import { validarConclusao } from './criterios-de-conclusao/index.js';
 import { validarPrioridadesDuplicadas, validarPriorizacao } from './validar-priorizacao/index.js';
 
 /**
@@ -638,8 +639,11 @@ ${i18n.notesPlaceholder}
     for (const filePath of taskFiles) {
       allIssues.push(...(await validateTaskFile(filePath)));
 
+      const conteudoDoArquivo = await fs.readFile(filePath, 'utf-8');
+
+      allIssues.push(...validarConclusao(filePath, conteudoDoArquivo));
       allIssues.push(
-        ...validarPriorizacao(filePath, await fs.readFile(filePath, 'utf-8'), {
+        ...validarPriorizacao(filePath, conteudoDoArquivo, {
           ...(gruposConhecidos !== undefined && { gruposConhecidos }),
         }),
       );

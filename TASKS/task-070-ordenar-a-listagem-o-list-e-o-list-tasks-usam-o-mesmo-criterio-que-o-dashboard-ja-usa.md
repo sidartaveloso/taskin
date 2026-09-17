@@ -15,7 +15,7 @@ O taskin list devolve as tarefas na ordem em que o provider as encontra — por 
 - [x] O `--json` emite os grupos, com a contagem do que o filtro deixou de fora
 - [x] `sort` no schema do `list_tasks` do MCP
 - [x] Documentar no README da CLI
-- [ ] O dashboard passa a consumir a funcao extraida
+- [x] O dashboard passa a consumir a funcao extraida
 - [x] `pnpm lint`, `pnpm typecheck`, `pnpm test` e `pnpm build` verdes
 
 ### O que comprova cada item
