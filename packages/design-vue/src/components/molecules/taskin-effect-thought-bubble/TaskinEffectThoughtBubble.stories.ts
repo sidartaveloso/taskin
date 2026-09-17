@@ -85,3 +85,28 @@ export const NoAnimation: Story = {
     },
   },
 };
+
+/**
+ * O caso que quebrou o balao antigo: a frase do shhh e configuravel, e chamar a
+ * pessoa pelo nome e o ponto. Em uma linha de 24px isto saia inteiro por fora do
+ * desenho; agora a fonte cede e o balao cresce para a direita, longe da cabeca.
+ */
+export const LongPhrase: Story = {
+  args: {
+    text: 'Bruno, Shhhhhhhhhhhh...',
+  },
+};
+
+/** Uma palavra unica que nao cabe em linha nenhuma so pode ser partida. */
+export const SingleLongWord: Story = {
+  args: {
+    text: 'Shhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh',
+  },
+};
+
+/** O limite do que o balao aguenta: mais linhas, na menor fonte. */
+export const VeryLongPhrase: Story = {
+  args: {
+    text: 'Pessoal, silencio total agora por favor que ja passou da hora',
+  },
+};
