@@ -1,6 +1,6 @@
 # 🧩 Task 064 — Filtro de tarefas em andamento nas tres superficies: CLI, servidor MCP e dashboard
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
 - Priority: 890
