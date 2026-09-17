@@ -1,5 +1,26 @@
 # @opentask/taskin-types
 
+## 2.3.0
+
+### Minor Changes
+
+- f84d9c6: Task groups are an entity now: the name lives in one place, and a task carries only the group id.
+  
+  Until now every member of a group carried its own copy of the name. Renaming meant writing N files with no transaction, so a failure halfway left the group answering to two names — and the write path deleted the name whenever it arrived empty, which is how a real project ended up with four grouped tasks and no name at all.
+  
+  - **`Group { id, name }`** in `@opentask/taskin-types`, and `groupName` is gone from `Task`.
+  - **`IGroupRegistry`** with a contract suite any provider proves itself against. Deleting a group says where its tasks go — `deleteGroup(id, { reassignTo })`, the same shape Redmine and Jira offer — so nothing is ever left pointing at a group that no longer exists.
+  - **A provider without groups simply does not expose the registry**, and callers find out by its absence rather than by an operation that fails.
+  - **`taskin group`** — `list`, `add`, `rename`, `remove` — plus `list_groups` over MCP, and the dashboard resolving names from the server instead of from each task.
+  
+  Renaming a three-member group used to be three writes. It is one, and no task file is touched.
+
+### Patch Changes
+
+- 0f83ec2: The schemas use zod 4's own spellings: `z.email()`, `z.url()` and `z.iso.datetime()` replace the deprecated `z.string().email()`, `z.string().url()` and `z.string().datetime()`.
+  
+  Behaviour is unchanged — the package's 116 schema tests, which exercise valid and invalid input alike, pass untouched, and JSON Schema generation still emits the same two documents. This is the cleanup that was deliberately left out of the zod 3 → 4 migration so the two concerns would not share a commit.
+
 ## 2.2.0
 
 ### Minor Changes

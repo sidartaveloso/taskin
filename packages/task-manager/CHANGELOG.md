@@ -1,5 +1,67 @@
 # @opentask/taskin-task-manager
 
+## 3.2.0
+
+### Minor Changes
+
+- d5fafdd: A third filter: `active` — tasks that started and have not finished.
+  
+  `open` includes `pending`, which is work nobody has begun; on a board you are watching while work happens, that is noise. `status: in-progress` is the opposite problem: a task vanishes the moment someone pauses it or sends it for review. `active` is the middle that was missing — `in-progress`, `paused` and `in-review`.
+  
+  `blocked` stays out, deliberately: it is work that started, but nobody is moving it right now.
+  
+  Available as `taskin list --active`, as `active` on the MCP `list_tasks` tool, and as `taskin dashboard --active` / `?filter=active`.
+- f84d9c6: Task groups are an entity now: the name lives in one place, and a task carries only the group id.
+  
+  Until now every member of a group carried its own copy of the name. Renaming meant writing N files with no transaction, so a failure halfway left the group answering to two names — and the write path deleted the name whenever it arrived empty, which is how a real project ended up with four grouped tasks and no name at all.
+  
+  - **`Group { id, name }`** in `@opentask/taskin-types`, and `groupName` is gone from `Task`.
+  - **`IGroupRegistry`** with a contract suite any provider proves itself against. Deleting a group says where its tasks go — `deleteGroup(id, { reassignTo })`, the same shape Redmine and Jira offer — so nothing is ever left pointing at a group that no longer exists.
+  - **A provider without groups simply does not expose the registry**, and callers find out by its absence rather than by an operation that fails.
+  - **`taskin group`** — `list`, `add`, `rename`, `remove` — plus `list_groups` over MCP, and the dashboard resolving names from the server instead of from each task.
+  
+  Renaming a three-member group used to be three writes. It is one, and no task file is touched.
+- 9d11a3d: Listings can be ordered: `taskin list --sort <mode>` and a `sort` argument on the MCP `list_tasks` tool, using the same vocabulary the prioritization board already uses — `manual` (by priority), `diff-asc`, `diff-desc`.
+  
+  Until now `taskin list` returned tasks in whatever order the provider found them, which in practice is by id: the priority column went up and down with no pattern, and whoever read the output had to reorder it in their head. That cost is not hypothetical — an autonomous agent reading the list picked a task with priority 30 while one with 255 sat in the same output.
+  
+  `taskin list --json` now also emits **groups as groups**. A group node carries its id, its name, the members that matched the filter, and how many the filter left out — so a partial group says so instead of quietly looking whole, and a consumer never has to reimplement the grouping rule to get it back.
+  
+  Sorting and grouping are separate functions in `@opentask/taskin-task-manager`, so a caller that wants order without grouping gets exactly that.
+- 6e1c7fa: Three loose ends closed: duplicate priorities are flagged, the dashboard stops carrying its own copies of the domain rules, and the prioritisation warning reaches the screen.
+  
+  **`taskin lint` flags duplicate priorities.** Two tasks on the same number corrupt nothing — ordering breaks the tie by input order — but they mean a decision was lost somewhere. It only shows up looking at the whole set, so it is a pass of its own. Absence is not duplication: tasks with no priority are never compared against each other.
+  
+  **The dashboard consumes the domain rules instead of copying them.** Both the filter sets and the manual sort were byte-for-byte copies living in the Vue packages, because importing the domain package appeared to be blocked by the build. It was not the declaration files: the repo's base config marks every package as a composite project, and a composite project consuming another has to declare the reference. Two lines of configuration.
+  
+  `ordenarTarefas` now asks for `OrdenavelPorPrioridade` — the two fields it reads — instead of a whole `Task`, which is what lets the board's own view model share the rule.
+  
+  **The board warns before it costs you.** On a project where only some tasks carry a priority, the first drag rewrites every file above it. The dashboard now says how many are unnumbered and offers to number them once, and the warning disappears when the state it warns about does.
+- 93a60fe: A task marked `done` has to say what was actually done.
+  
+  This comes from a real audit: of eight tasks closed by autonomous agents over two days, **four** read `done` with the whole checklist untouched. In every one of them the work was genuinely finished and covered by tests — but the file showed none of it, so whoever reviewed had nowhere to start. In one, the audit found an item that had in fact **not** been done, hidden among five that had.
+  
+  Three spellings, and only three: `- [x] item` is done, `- [ ] item` is open, and `- [ ] item — adiado: <reason>` is dropped on purpose, with the decision written down. An empty reason does not count — otherwise the convention would be theatre.
+  
+  Two places ask for it, and they ask differently. **`taskin finish` warns**: it names the open items and their lines, then closes the task anyway, because finishing is a one-shot gesture and refusing there only teaches people to route around it. **`taskin lint` refuses**: a `done` task with an unjustified open item is an error, and CI is where the demand can afford to be hard. `canceled` is exempt — an abandoned task owes nobody a ticked box.
+  
+  Both read the checklist through the same parser, so the linter can never refuse what `finish` just accepted. Providers without the concept of a checklist simply do not implement the capability, and close with no gate at all.
+  
+  Evidence belongs next to the ticked item — a test name, a command, a file — and `TASKS/README.md` now documents the whole vocabulary, including where it came from.
+- 0aa99db: `taskin prioritize` gives every task a priority number, once and on purpose — and `prioritize_tasks` does the same over MCP.
+  
+  A project where only some tasks carry a priority is expensive to reorder: a task with no number sorts last, so giving one to a task in the middle means numbering every task before it. On a 500-task project, moving one from the middle of the unnumbered stretch rewrote **124 files**. After this command, the same move rewrites **one**.
+  
+  It preserves what you already decided: tasks that carry a number keep it, and the gaps around them are filled. Running it again writes nothing, so it is safe in a script. `--dry-run` reports how many would be numbered without touching anything.
+  
+  The rule itself lives in one place — `ITaskManager.prioritizeAll()` — so the CLI and the MCP server share it rather than each carrying a copy.
+
+### Patch Changes
+
+- Updated dependencies [f84d9c6]
+- Updated dependencies [0f83ec2]
+  - @opentask/taskin-types@2.3.0
+
 ## 3.1.0
 
 ### Minor Changes
