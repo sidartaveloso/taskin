@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "@opentask/taskin-design-vue": "workspace:*",
+    "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-task-provider-pinia": "workspace:*",
     "pinia": "^2.2.8"
   },

@@ -60,12 +60,27 @@ no tipo — e falhou, na primeira tentativa.
 
 ### O que fica declarado em aberto
 
-**O dashboard nao consome a funcao extraida.** Mesma parede da task-064:
-importar `task-manager` de dentro do pacote do dashboard esbarra no build (o
-`.d.ts` leva o compilador ao `src`, e o `rootDir` recusa). O `use-prioritization`
-segue com a sua propria ordenacao, agora duplicada em relacao ao `task-manager`.
+### A copia do dashboard, eliminada depois
 
-Resolver isso e uma task so, e serve as duas: a 064 deixou a mesma ponta.
+O `buildPriorityTree` carregava uma copia **byte a byte** de
+`ordenarTarefas(_, 'manual')` — a mesma regra de `order` com ausente por ultimo e
+empate estavel. Agora chama a funcao.
+
+Duas coisas destravaram isso:
+
+**A referencia de projeto que faltava** no `tsconfig` do `design-vue`, a mesma
+da task-064 — a base define `composite: true`, e projeto composto que consome
+outro precisa declara-la.
+
+**A funcao passou a pedir menos.** Ela exigia `Task` inteira, o que a tornava
+inalcancavel para o modelo de tela do quadro de priorizacao. Agora pede
+`OrdenavelPorPrioridade` — so `order` e `difficulty`, os dois campos que ela
+le —, e as duas superficies compartilham a regra.
+
+**O que nao foi unificado, e por que:** a ordenacao por dificuldade do quadro
+opera sobre a **arvore**, ranqueando um grupo pelo maximo dos membros. Nao e a
+mesma funcao que ordenar uma lista plana, e forcar a igualdade mudaria o
+comportamento da tela.
 
 ## Notes
 

@@ -31,7 +31,7 @@ import {
   USERS_FILE_NAME,
   validateUsersFileLocation,
 } from './users-file-location.js';
-import { validarPriorizacao } from './validar-priorizacao/index.js';
+import { validarPrioridadesDuplicadas, validarPriorizacao } from './validar-priorizacao/index.js';
 
 /**
  * Matches the H1 heading `# [🧩] Task NNN — Title`. The separator is anchored
@@ -644,6 +644,18 @@ ${i18n.notesPlaceholder}
         }),
       );
     }
+
+    /*
+     * Duplicidade so aparece olhando o conjunto: nenhum arquivo, sozinho, sabe
+     * que outro carrega o mesmo numero. Por isso esta passada vem depois do
+     * laco, e nao dentro dele.
+     */
+    const todas = await this.getAllTasks();
+    allIssues.push(
+      ...validarPrioridadesDuplicadas(
+        todas.map((t) => ({ file: t.filePath, ...(t.order !== undefined && { priority: t.order }) })),
+      ),
+    );
 
     return createLintResult(allIssues);
   }

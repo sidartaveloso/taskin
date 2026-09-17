@@ -1,4 +1,14 @@
 <template>
+  <div v-if="semPrioridade > 0" class="aviso-prioridade">
+    <span>
+      <strong>{{ semPrioridade }}</strong> tarefa(s) ainda sem prioridade. Enquanto o projeto
+      estiver meio numerado, mover uma tarefa reescreve todos os arquivos antes dela.
+    </span>
+    <button type="button" :disabled="numerando" @click="numerarTudo">
+      {{ numerando ? 'Numerando…' : 'Numerar agora' }}
+    </button>
+  </div>
+
   <div class="mode-toggle">
     <button
       type="button"
@@ -34,6 +44,7 @@
 <script setup lang="ts">
 import type { Task, TaskStatus } from '@opentask/taskin-design-vue';
 import { Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
+import { filterTasks } from '@opentask/taskin-task-manager';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
@@ -82,7 +93,39 @@ const connectionError = computed(() => connectionStatus.value.error);
  */
 const gruposPorId = ref<Record<string, string>>({});
 
+/*
+ * Quantas tarefas ainda nao tem prioridade.
+ *
+ * Num projeto meio numerado, o primeiro arrastar reescreve todos os
+ * antecessores — 124 arquivos num projeto de 500, medido. O aviso existe para a
+ * pessoa saber disso **antes** de descobrir pelo `git status`.
+ */
+const semPrioridade = ref(0);
+const numerando = ref(false);
+
+async function consultarPrioridade() {
+  try {
+    const r = await fetch('/api/prioritize');
+    const previa = (await r.json()) as { withoutPriority?: number } | undefined;
+    semPrioridade.value = previa?.withoutPriority ?? 0;
+  } catch {
+    semPrioridade.value = 0;
+  }
+}
+
+async function numerarTudo() {
+  numerando.value = true;
+  try {
+    await fetch('/api/prioritize', { method: 'POST' });
+    await consultarPrioridade();
+  } finally {
+    numerando.value = false;
+  }
+}
+
 onMounted(async () => {
+  void consultarPrioridade();
+
   try {
     const resposta = await fetch('/api/groups');
     const { groups } = (await resposta.json()) as { groups: { id: string; name: string }[] };
@@ -96,28 +139,17 @@ const tasks = computed<Task[]>(() => {
   const filter = new URLSearchParams(window.location.search).get('filter');
 
   /*
-   * `active` — comecou e nao terminou.
+   * A regra de filtro vem do dominio, e nao daqui.
    *
-   * O mesmo conjunto que `ATIVAS` define em `task-manager`: `in-progress`,
-   * `paused` e `in-review`. `blocked` fica de fora por decisao declarada.
+   * Ate a task-064 esta tela reimplementava `open` e `closed` a mao, e por isso
+   * nao conhecia `active` — a mesma duplicacao que a task-071 matou entre a CLI
+   * e o servidor MCP, sobrevivendo na terceira superficie.
    *
-   * **Isto e uma copia, e a copia e conhecida.** A task-071 acabou com a
-   * duplicacao entre a CLI e o servidor MCP, que hoje derivam de uma definicao
-   * so; esta tela ficou de fora porque consumir `task-manager` daqui esbarra no
-   * build (o `.d.ts` do pacote leva o compilador ao `src`, e o `rootDir` do
-   * dashboard recusa). Enquanto isso nao for resolvido, mexer num conjunto
-   * exige mexer nos dois lugares.
+   * O que destravou foi `disableSourceOfProjectReferenceRedirect` no tsconfig:
+   * sem ele o compilador seguia o `.d.ts` do pacote ate o `src`, e o `rootDir`
+   * recusava.
    */
-  const ATIVAS = ['in-progress', 'paused', 'in-review'];
-
-  let filtered = taskStore.tasks;
-  if (filter === 'open') {
-    filtered = taskStore.tasks.filter((t) => t.status !== 'done' && t.status !== 'canceled');
-  } else if (filter === 'closed') {
-    filtered = taskStore.tasks.filter((t) => t.status === 'done' || t.status === 'canceled');
-  } else if (filter === 'active') {
-    filtered = taskStore.tasks.filter((t) => ATIVAS.includes(t.status));
-  }
+  const filtered = filter ? filterTasks(taskStore.tasks, { [filter]: true }) : taskStore.tasks;
 
   const mapped = filtered.map((source) => {
     const progressPercentage = PROGRESS_BY_STATUS[source.status];
@@ -229,6 +261,50 @@ body {
 </style>
 
 <style scoped>
+.aviso-prioridade {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 8px;
+  border-left: 3px solid #b7791f;
+  background: #fffaf0;
+  color: #744210;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.aviso-prioridade button {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border: 1px solid #b7791f;
+  border-radius: 4px;
+  background: transparent;
+  color: #744210;
+  font: inherit;
+  cursor: pointer;
+}
+
+.aviso-prioridade button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+  .aviso-prioridade {
+    background: #2a2015;
+    color: #f0d9a8;
+    border-left-color: #d69e2e;
+  }
+
+  .aviso-prioridade button {
+    border-color: #d69e2e;
+    color: #f0d9a8;
+  }
+}
+
 .mode-toggle {
   display: flex;
   gap: 0.5rem;

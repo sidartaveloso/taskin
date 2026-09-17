@@ -2,6 +2,7 @@
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,
+    "disableSourceOfProjectReferenceRedirect": true,
     "jsx": "preserve",
     "jsxImportSource": "vue",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -19,5 +20,10 @@
   },
   "exclude": ["node_modules", "dist", "storybook-static"],
   "extends": "../../tsconfig.base.json",
-  "include": ["src/**/*", ".storybook/**/*"]
+  "include": ["src/**/*", ".storybook/**/*"],
+  "references": [
+    {
+      "path": "../task-manager"
+    }
+  ]
 }

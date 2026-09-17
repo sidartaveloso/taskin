@@ -1,6 +1,6 @@
 import type { ValidationIssue } from '@opentask/taskin-task-manager';
 import { describe, expect, it } from 'vitest';
-import { validarPriorizacao } from './validar-priorizacao.js';
+import { validarPrioridadesDuplicadas, validarPriorizacao } from './validar-priorizacao.js';
 
 const arquivo = (linhas: string[]) => linhas.join('\n');
 
@@ -103,5 +103,62 @@ describe('validarPriorizacao', () => {
     const conteudo = arquivo([...base, '- Priority: alta', '- Difficulty: 9']);
 
     expect(mensagens(validarPriorizacao('a.md', conteudo))).toHaveLength(2);
+  });
+});
+
+/**
+ * Duplicidade so aparece olhando o conjunto.
+ *
+ * Um arquivo por vez nunca ve isso — e por isso ficou de fora da primeira
+ * versao. Nao corrompe nada: a ordenacao desempata pela ordem de entrada. Mas
+ * indica que alguem perdeu uma decisao, porque duas tarefas com o mesmo numero
+ * foram, em algum momento, a mesma posicao na fila.
+ */
+describe('validarPrioridadesDuplicadas', () => {
+  it('nao reclama quando cada prioridade e unica', () => {
+    const issues = validarPrioridadesDuplicadas([
+      { file: 'a.md', priority: 10 },
+      { file: 'b.md', priority: 20 },
+    ]);
+
+    expect(issues).toEqual([]);
+  });
+
+  it('avisa nos dois arquivos que compartilham o numero', () => {
+    const issues = validarPrioridadesDuplicadas([
+      { file: 'a.md', priority: 10 },
+      { file: 'b.md', priority: 10 },
+      { file: 'c.md', priority: 30 },
+    ]);
+
+    expect(issues).toHaveLength(2);
+    expect(issues.map((i) => i.file).sort()).toEqual(['a.md', 'b.md']);
+    expect(issues[0]?.severity).toBe('warning');
+    expect(issues[0]?.message).toContain('10');
+  });
+
+  it('a mensagem nomeia com quem o numero e compartilhado', () => {
+    const issues = validarPrioridadesDuplicadas([
+      { file: 'a.md', priority: 10 },
+      { file: 'b.md', priority: 10 },
+    ]);
+
+    expect(issues.find((i) => i.file === 'a.md')?.message).toContain('b.md');
+  });
+
+  it('ignora quem nao tem prioridade — ausencia nao e duplicidade', () => {
+    const issues = validarPrioridadesDuplicadas([{ file: 'a.md' }, { file: 'b.md' }, { file: 'c.md' }]);
+
+    expect(issues).toEqual([]);
+  });
+
+  it('aguenta tres ou mais no mesmo numero', () => {
+    const issues = validarPrioridadesDuplicadas([
+      { file: 'a.md', priority: 10 },
+      { file: 'b.md', priority: 10 },
+      { file: 'c.md', priority: 10 },
+    ]);
+
+    expect(issues).toHaveLength(3);
   });
 });

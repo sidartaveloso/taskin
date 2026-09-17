@@ -11,6 +11,21 @@ import type { Task } from '@opentask/taskin-types';
  */
 export type ModoDeOrdenacao = 'manual' | 'diff-asc' | 'diff-desc';
 
+/**
+ * O que a ordenacao precisa saber, e nada alem disso.
+ *
+ * Exigir `Task` inteira deixaria a funcao inalcancavel para quem tem outra
+ * forma de tarefa — o quadro de priorizacao do dashboard, por exemplo, usa um
+ * modelo de tela proprio. Pedir so os dois campos que ela le e o que permite as
+ * duas superficies compartilharem a regra em vez de cada uma ter a sua copia.
+ *
+ * @public
+ */
+export interface OrdenavelPorPrioridade {
+  readonly order?: number;
+  readonly difficulty?: number;
+}
+
 /** Um no da listagem: uma tarefa solta, ou um grupo com os membros que casaram. */
 export type NoDaListagem<TTask extends Task = Task> =
   | { readonly kind: 'task'; readonly task: TTask }
@@ -36,7 +51,7 @@ export type NoDaListagem<TTask extends Task = Task> =
  *
  * @public
  */
-export function ordenarTarefas<TTask extends Task>(
+export function ordenarTarefas<TTask extends OrdenavelPorPrioridade>(
   tarefas: readonly TTask[],
   modo: ModoDeOrdenacao = 'manual',
 ): TTask[] {
