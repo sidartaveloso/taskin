@@ -20,6 +20,8 @@ const meta = {
     isActive: false,
     enableNoiseReactions: false,
     noiseThreshold: 0.06,
+    noiseSustainMs: 3000,
+    noiseSustainRatio: 0.6,
     noiseDebounceMs: 1500,
     noiseSound: false,
   },
@@ -72,15 +74,20 @@ export const Interactive: Story = {
         @toggle-noise="state.isActive = !state.isActive"
         @update:enableNoiseReactions="state.enableNoiseReactions = $event"
         @update:noiseThreshold="state.noiseThreshold = $event"
+        @update:noiseSustainMs="state.noiseSustainMs = $event"
+        @update:noiseSustainRatio="state.noiseSustainRatio = $event"
         @update:noiseDebounceMs="state.noiseDebounceMs = $event"
         @update:noiseSound="state.noiseSound = $event"
+        @trigger-shhh="state.triggered = (state.triggered ?? 0) + 1"
       />
     `,
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const button = canvas.getByRole('button');
+    // Dois botoes no painel desde o gatilho manual: o de ligar o microfone e o
+    // "Test Shhh". Buscar por papel sem nome pegaria os dois.
+    const button = canvas.getByRole('button', { name: /Noise Watcher/ });
     await expect(button).toHaveTextContent('Start Noise Watcher');
     await expect(canvas.queryByText('Listening for noise...')).toBeNull();
 
@@ -95,7 +102,7 @@ export const Interactive: Story = {
      * O valor mostrado tem tres casas fixas de proposito: com o passo de 0.001
      * o texto mudaria de largura a cada arrasto, empurrando o resto da linha.
      */
-    const slider = canvas.getByRole('slider') as HTMLInputElement;
+    const slider = canvasElement.querySelector('input[type="range"]:not([data-field])') as HTMLInputElement;
     slider.value = '0.12';
     await fireEvent.input(slider);
 
@@ -110,5 +117,25 @@ export const Interactive: Story = {
     await waitFor(async () => {
       await expect(reactions.checked).toBe(true);
     });
+
+    /*
+     * A fracao e mostrada em porcentagem: "60%" se le melhor que "0.60" num
+     * painel de ajuste.
+     */
+    const ratio = canvasElement.querySelector('[data-field="ratio"]') as HTMLInputElement;
+    ratio.value = '0.8';
+    await fireEvent.input(ratio);
+
+    await waitFor(async () => {
+      await expect(canvas.getByText('80%')).toBeTruthy();
+    });
+
+    /*
+     * O gatilho manual continua clicavel de qualquer estado: o sentido dele e
+     * ouvir a reacao sem depender do microfone nem do detector.
+     */
+    const testar = canvas.getByRole('button', { name: 'Test Shhh' }) as HTMLButtonElement;
+    await expect(testar.disabled).toBe(false);
+    await fireEvent.click(testar);
   },
 };

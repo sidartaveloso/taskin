@@ -29,12 +29,15 @@
       :noise-threshold="noiseThresholdRef"
       :noise-debounce-ms="noiseDebounceMsRef"
       :noise-sustain-ms="noiseSustainMsRef"
+      :noise-sustain-ratio="noiseSustainRatioRef"
       :noise-sound="noiseSoundRef"
       @toggle-noise="toggleNoise"
       @update:enable-noise-reactions="setEnableNoiseReactions"
       @update:noise-threshold="setNoiseThreshold"
       @update:noise-debounce-ms="setNoiseDebounceMs"
       @update:noise-sustain-ms="setNoiseSustainMs"
+      @update:noise-sustain-ratio="setNoiseSustainRatio"
+      @trigger-shhh="triggerShhhReaction"
       @update:noise-sound="setNoiseSound"
     />
 
@@ -92,12 +95,17 @@ export interface Props {
   noiseThreshold?: number; // RMS threshold (0..1)
   noiseDebounceMs?: number;
   /**
-   * Quanto tempo o nivel precisa se manter acima do limiar antes do primeiro
-   * disparo, em ms. Zero — o padrao — dispara na primeira amostra alta, como
-   * antes. Um estalo de porta e um minuto de conversa alta so deixam de valer o
-   * mesmo quando isto e maior que zero.
+   * Janela em que o ruido e medido antes do primeiro disparo, em ms. Zero — o
+   * padrao — dispara na primeira amostra alta. Um estalo de porta e um minuto
+   * de conversa alta so deixam de valer o mesmo quando isto e maior que zero.
    */
   noiseSustainMs?: number;
+  /**
+   * Fracao dessa janela que precisa estar acima do limiar, de 0 a 1. Uma fala
+   * tem vales de 100 a 400ms entre palavras, entao exigir barulho ininterrupto
+   * (fracao 1) nunca dispara numa conversa.
+   */
+  noiseSustainRatio?: number;
   noiseSound?: boolean;
   /**
    * What the mascot says out loud and shows in the bubble. Naming the person is
@@ -117,6 +125,7 @@ const props = withDefaults(defineProps<Props>(), {
   noiseThreshold: 0.06,
   noiseDebounceMs: 1500,
   noiseSustainMs: 0,
+  noiseSustainRatio: 0.6,
   noiseSound: false,
   shhhPhrase: 'Shhhhhh...',
   shhhVolume: 1,
@@ -128,12 +137,17 @@ const noiseSettings = computed(() =>
   props.mascot
     ? // O bloco do `.taskin.json` ainda nao carrega a sustentacao (task-093
       // ficou no Storybook), entao ela vem da prop mesmo nesse caminho.
-      { ...resolveMascotNoiseSettings(props.mascot), sustainMs: props.noiseSustainMs }
+      {
+        ...resolveMascotNoiseSettings(props.mascot),
+        sustainMs: props.noiseSustainMs,
+        sustainRatio: props.noiseSustainRatio,
+      }
     : {
         enabled: props.enableNoiseReactions,
         threshold: props.noiseThreshold,
         debounceMs: props.noiseDebounceMs,
         sustainMs: props.noiseSustainMs,
+        sustainRatio: props.noiseSustainRatio,
         sound: props.noiseSound,
         phrase: props.shhhPhrase,
         volume: props.shhhVolume,
@@ -177,6 +191,7 @@ const enableNoiseReactionsRef = ref<boolean>(noiseSettings.value.enabled);
 const noiseThresholdRef = ref<number>(noiseSettings.value.threshold);
 const noiseDebounceMsRef = ref<number>(noiseSettings.value.debounceMs);
 const noiseSustainMsRef = ref<number>(noiseSettings.value.sustainMs);
+const noiseSustainRatioRef = ref<number>(noiseSettings.value.sustainRatio);
 const noiseSoundRef = ref<boolean>(noiseSettings.value.sound);
 const shhhPhraseRef = ref<string>(noiseSettings.value.phrase);
 const shhhVolumeRef = ref<number>(noiseSettings.value.volume);
@@ -253,6 +268,10 @@ function setNoiseSustainMs(v: number) {
   noiseSustainMsRef.value = v;
 }
 
+function setNoiseSustainRatio(v: number) {
+  noiseSustainRatioRef.value = v;
+}
+
 function setNoiseSound(v: boolean) {
   noiseSoundRef.value = v;
 }
@@ -325,6 +344,7 @@ const subscribeToNoise = () => {
   noiseUnsub = noiseWatcher.onNoiseAbove(noiseThresholdRef.value, () => triggerShhhReaction(), {
     debounceMs: noiseDebounceMsRef.value,
     sustainMs: noiseSustainMsRef.value,
+    sustainRatio: noiseSustainRatioRef.value,
   });
 };
 
@@ -384,7 +404,7 @@ watch(enableNoiseReactionsRef, async (v) => {
   }
 });
 
-watch([noiseThresholdRef, noiseDebounceMsRef, noiseSustainMsRef], () => {
+watch([noiseThresholdRef, noiseDebounceMsRef, noiseSustainMsRef, noiseSustainRatioRef], () => {
   if (noiseUnsub && noiseWatcher) subscribeToNoise();
 });
 
@@ -419,6 +439,7 @@ const debugInfo = computed(() => {
       threshold: noiseThresholdRef.value,
       debounceMs: noiseDebounceMsRef.value,
       sustainMs: noiseSustainMsRef.value,
+      sustainRatio: noiseSustainRatioRef.value,
       microphoneAvailable: !!noiseWatcher,
     },
   };
