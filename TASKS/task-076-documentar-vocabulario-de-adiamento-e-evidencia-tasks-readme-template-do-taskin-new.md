@@ -1,6 +1,6 @@
 # 🧩 Task 076 — Documentar vocabulário de adiamento e evidência (TASKS/README + template do taskin new)
 
-- Status: pending
+- Status: in-progress
 - Type: docs
 - Assignee: Sidarta Veloso
 - Priority: 280
