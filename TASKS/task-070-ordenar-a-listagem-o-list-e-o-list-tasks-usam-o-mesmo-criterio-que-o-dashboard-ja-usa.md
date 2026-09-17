@@ -1,6 +1,6 @@
 # 🧩 Task 070 — Ordenar a listagem: o list e o list_tasks usam o mesmo criterio que o dashboard ja usa
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Priority: 880
 - Assignee: Sidarta Veloso
