@@ -1,6 +1,6 @@
 # 🧩 Task 073 — Leitor único de critérios de conclusão do provider de arquivos (feito/aberto/adiado/evidência)
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: Sidarta Veloso
 - Priority: 250
