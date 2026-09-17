@@ -145,3 +145,54 @@ export function validarPriorizacao(
 
   return issues;
 }
+
+/** Uma tarefa vista pelo conjunto: so o arquivo e o numero importam aqui. */
+export interface PrioridadeDeArquivo {
+  readonly file: string;
+  readonly priority?: number;
+}
+
+/**
+ * Aponta prioridades repetidas entre tarefas.
+ *
+ * Isto **so** aparece olhando o conjunto, e por isso nao cabe na validacao de
+ * um arquivo por vez: nenhum arquivo, sozinho, sabe que outro carrega o mesmo
+ * numero.
+ *
+ * E aviso, e nao erro. Duas tarefas com a mesma prioridade nao corrompem nada —
+ * a ordenacao desempata pela ordem de entrada, de forma estavel. Mas indicam
+ * que alguem perdeu uma decisao: as duas foram, em algum momento, a mesma
+ * posicao na fila, e agora a fila nao sabe qual vem antes.
+ *
+ * Ausencia nao e duplicidade: tarefas sem `Priority` nao sao comparadas entre
+ * si, porque "ninguem priorizou ainda" e um estado legitimo e comum.
+ *
+ * @public
+ */
+export function validarPrioridadesDuplicadas(tarefas: readonly PrioridadeDeArquivo[]): ValidationIssue[] {
+  const porPrioridade = new Map<number, string[]>();
+
+  for (const { file, priority } of tarefas) {
+    if (priority === undefined) continue;
+    const existente = porPrioridade.get(priority);
+    if (existente) existente.push(file);
+    else porPrioridade.set(priority, [file]);
+  }
+
+  const issues: ValidationIssue[] = [];
+
+  for (const [prioridade, arquivos] of porPrioridade) {
+    if (arquivos.length < 2) continue;
+
+    for (const file of arquivos) {
+      const outros = arquivos.filter((f) => f !== file);
+      issues.push({
+        file,
+        message: `Priority ${prioridade} is shared with ${outros.join(', ')} — the queue cannot tell which comes first.`,
+        severity: 'warning',
+      });
+    }
+  }
+
+  return issues;
+}

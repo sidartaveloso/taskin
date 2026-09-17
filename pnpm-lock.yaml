@@ -194,6 +194,9 @@ importers:
       '@opentask/taskin-design-vue':
         specifier: workspace:*
         version: link:../design-vue
+      '@opentask/taskin-task-manager':
+        specifier: workspace:*
+        version: link:../task-manager
       '@opentask/taskin-task-provider-pinia':
         specifier: workspace:*
         version: link:../task-provider-pinia
@@ -246,6 +249,9 @@ importers:
       '@mediapipe/tasks-vision':
         specifier: 0.10.22-rc.20250304
         version: 0.10.22-rc.20250304
+      '@opentask/taskin-task-manager':
+        specifier: workspace:*
+        version: link:../task-manager
       '@opentask/taskin-types':
         specifier: workspace:*
         version: link:../types-ts

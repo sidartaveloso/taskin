@@ -82,7 +82,25 @@ como literal aqui: duplicar `1..5` em dois lugares e como as regras divergem.
 - [x] Inconsistencia de grupo vira aviso
 - [x] Testes cobrindo os dois modos de falha de hoje: o valor descartado em
       silencio e o valor fora da faixa que atravessa
-- [ ] Duplicidade de `Priority` vira aviso
+- [x] Duplicidade de `Priority` vira aviso
+
+### A duplicidade, fechada depois
+
+So aparece olhando o **conjunto**: nenhum arquivo, sozinho, sabe que outro
+carrega o mesmo numero. Por isso a passada vem depois do laco de validacao, e
+nao dentro dele.
+
+E aviso, e nao erro. Duas tarefas com a mesma prioridade nao corrompem nada — a
+ordenacao desempata pela ordem de entrada, de forma estavel. Mas indicam que
+alguem perdeu uma decisao: as duas foram, em algum momento, a mesma posicao na
+fila.
+
+Cinco testes em `validarPrioridadesDuplicadas`, incluindo o caso de tres ou mais
+no mesmo numero, e o de que **ausencia nao e duplicidade** — tarefas sem
+`Priority` nao sao comparadas entre si, porque "ninguem priorizou ainda" e um
+estado legitimo.
+
+Rodando neste repositorio, apontou **12 avisos** reais.
 - [x] Changeset do `@opentask/taskin-file-system-provider`
 
 ### O que comprova cada item

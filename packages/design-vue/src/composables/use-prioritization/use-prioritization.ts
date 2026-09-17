@@ -1,3 +1,4 @@
+import { ordenarTarefas } from '@opentask/taskin-task-manager';
 import { computed, type Ref, ref, shallowRef, watch } from 'vue';
 import type { GroupId, Task } from '../../types';
 import type {
@@ -69,18 +70,15 @@ function savePrefs(storageKey: string, prefs: PersistedPrefs): void {
  * order inside the group. Standalone tasks stay at their own sorted position.
  */
 export function buildPriorityTree(tasks: Task[], collapsedGroups: Record<string, boolean> = {}): PriorityNode[] {
-  const sorted = tasks
-    .map((task, index) => ({ task, index }))
-    .sort((a, b) => {
-      const orderA = a.task.order;
-      const orderB = b.task.order;
-      if (orderA === undefined && orderB === undefined) return a.index - b.index;
-      if (orderA === undefined) return 1;
-      if (orderB === undefined) return -1;
-      if (orderA !== orderB) return orderA - orderB;
-      return a.index - b.index;
-    })
-    .map(({ task }) => task);
+  /*
+   * A ordenacao manual vem do dominio, e nao daqui.
+   *
+   * Esta funcao carregava uma copia byte a byte de `ordenarTarefas(_, 'manual')`
+   * — a mesma regra de `order` com ausente por ultimo e empate estavel. Elas
+   * conviveram porque `task-manager` era inalcancavel deste pacote; o que
+   * destravou foi declarar a referencia de projeto no `tsconfig`, que faltava.
+   */
+  const sorted = ordenarTarefas(tasks, 'manual');
 
   const nodes: PriorityNode[] = [];
   const groupsById = new Map<string, PriorityGroupNode>();

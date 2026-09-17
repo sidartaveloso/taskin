@@ -38,6 +38,10 @@ export interface DashboardAppOptions {
   wsPort: number;
   /** Como perguntar os grupos do projeto. Ausente quando o provider nao tem o conceito. */
   readonly groups?: () => Promise<{ id: string; name: string }[]>;
+  /** Numeracao inicial de prioridade. Ausente quando nao ha manager disponivel. */
+  readonly prioritize?: (options: {
+    dryRun?: boolean;
+  }) => Promise<{ total: number; withoutPriority: number; changed: number }>;
 }
 
 /**
@@ -50,7 +54,13 @@ export interface DashboardAppOptions {
  * routes. See task-058: mocking the layer under change (express, the static
  * server) is ceremony, not a test.
  */
-export function createDashboardApp({ dashboardDist, host, wsPort, groups }: DashboardAppOptions): express.Express {
+export function createDashboardApp({
+  dashboardDist,
+  host,
+  wsPort,
+  groups,
+  prioritize,
+}: DashboardAppOptions): express.Express {
   const app = express();
 
   // Security: Disable X-Powered-By header
@@ -119,6 +129,33 @@ export function createDashboardApp({ dashboardDist, host, wsPort, groups }: Dash
         res.json({ groups: (await groups?.()) ?? [] });
       } catch {
         res.json({ groups: [] });
+      }
+    })();
+  });
+
+  /*
+   * Priorizacao inicial, pela tela.
+   *
+   * Num projeto meio numerado o primeiro arrastar reescreve dezenas de arquivos
+   * — 124 num projeto de 500, medido. O `GET` diz o tamanho do problema para a
+   * tela poder avisar antes; o `POST` executa, uma vez, de proposito.
+   */
+  app.get('/api/prioritize', (_req, res) => {
+    void (async () => {
+      try {
+        res.json(await prioritize?.({ dryRun: true }));
+      } catch {
+        res.json(undefined);
+      }
+    })();
+  });
+
+  app.post('/api/prioritize', (_req, res) => {
+    void (async () => {
+      try {
+        res.json(await prioritize?.({}));
+      } catch (erro) {
+        res.status(500).json({ error: erro instanceof Error ? erro.message : 'failed' });
       }
     })();
   });
@@ -321,6 +358,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       host,
       wsPort,
       groups: registroDeGrupos ? () => registroDeGrupos.listGroups() : undefined,
+      prioritize: (opcoes) => new TaskManager(provider).prioritizeAll(opcoes),
     });
 
     const { server: httpServer, port: actualPort } = await startHttpServer(app, port, host);

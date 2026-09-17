@@ -16,7 +16,8 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2022",
-    "types": ["vite/client", "vitest/globals"]
+    "types": ["vite/client", "vitest/globals"],
+    "disableSourceOfProjectReferenceRedirect": true
   },
   "exclude": ["node_modules", "dist", "storybook-static"],
   "extends": "../../tsconfig.base.json",
@@ -30,6 +31,9 @@
   "references": [
     {
       "path": "../types-ts"
+    },
+    {
+      "path": "../task-manager"
     }
   ]
 }

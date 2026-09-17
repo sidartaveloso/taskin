@@ -42,13 +42,15 @@ acrescentar um criterio sem declarar onde ele mora **nao compila**.
 
 ### O que fica declarado em aberto
 
-**O dashboard ainda tem a regra copiada.** Ele reimplementa os conjuntos em
-`App.vue` em vez de consumir `filterTasks`, porque importar `task-manager` dali
-esbarra no build — o `.d.ts` do pacote leva o compilador ao `src`, e o `rootDir`
-do dashboard recusa. A copia esta comentada no arquivo dizendo que e copia.
+### A copia do dashboard, eliminada depois
 
-Enquanto isso nao for resolvido, mexer no conjunto `ATIVAS` exige mexer em dois
-lugares. E a terceira superficie sobrevivendo a task-071, e merece task propria.
+Ele passou a consumir `filterTasks` de verdade. A parede de build nao era o
+`.d.ts`: a base do repositorio define `composite: true`, entao o dashboard **e**
+projeto composto — e projeto composto que consome outro precisa **declarar a
+referencia** no `tsconfig`. Faltava `references: [{ path: '../task-manager' }]`.
+
+Duas linhas de configuracao, e o erro que parecia exigir reestruturar o build
+(`TS6059`/`TS6307`, "nao esta sob o rootDir") desapareceu.
 
 ## Notes
 **O que ja existe, para nao reimplementar.** Levantado antes de escrever esta

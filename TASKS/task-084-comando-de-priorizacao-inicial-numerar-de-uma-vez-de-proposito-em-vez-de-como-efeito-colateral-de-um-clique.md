@@ -16,7 +16,20 @@ Hoje a numeracao so acontece ao arrastar no dashboard, e num projeto meio numera
 - [x] A funcao de numeracao, pura, em `task-manager`
 - [x] `taskin prioritize` na CLI
 - [x] A mesma operacao como ferramenta no MCP
-- [ ] Botao no dashboard, com o aviso de projeto meio numerado
+- [x] Botao no dashboard, com o aviso de projeto meio numerado
+
+### O aviso na tela, fechado depois
+
+O servidor ganhou duas rotas: `GET /api/prioritize` devolve a previa sem gravar,
+e `POST` executa. A tela consulta a previa ao abrir e, **so quando ha o que
+numerar**, mostra a faixa:
+
+> 250 tarefa(s) ainda sem prioridade. Enquanto o projeto estiver meio numerado,
+> mover uma tarefa reescreve todos os arquivos antes dela. **[Numerar agora]**
+
+Verificado contra o projeto de 500, metade sem prioridade: o clique numerou
+**250 arquivos**, e a previa passou a `withoutPriority: 0`. A faixa some sozinha
+depois disso, porque o estado que ela avisa deixou de existir.
 - [x] Documentar nos READMEs e no site (os dois idiomas)
 - [x] `pnpm lint`, `typecheck`, `test` e `build` verdes
 
