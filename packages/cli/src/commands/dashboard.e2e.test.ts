@@ -56,26 +56,26 @@ describe('dashboard app (e2e)', () => {
   });
 
   it('does not leak the X-Powered-By header', async () => {
-    const res = await fetch(baseUrl + '/');
+    const res = await fetch(`${baseUrl}/`);
     expect(res.headers.get('x-powered-by')).toBeNull();
   });
 
   it('sets the security headers on every response', async () => {
-    const res = await fetch(baseUrl + '/');
+    const res = await fetch(`${baseUrl}/`);
     expect(res.headers.get('x-frame-options')).toBe('DENY');
     expect(res.headers.get('x-content-type-options')).toBe('nosniff');
     expect(res.headers.get('content-security-policy')).toContain("default-src 'self'");
   });
 
   it('serves static assets with the right content-type', async () => {
-    const res = await fetch(baseUrl + '/assets/app.js');
+    const res = await fetch(`${baseUrl}/assets/app.js`);
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('javascript');
     expect(await res.text()).toContain('console.log');
   });
 
   it("denies dotfiles like /.env (dotfiles: 'deny')", async () => {
-    const res = await fetch(baseUrl + '/.env');
+    const res = await fetch(`${baseUrl}/.env`);
     // `deny` never serves the body; in express 5 it falls through to the 404
     // catch-all. The regression that matters is flipping to `allow`, which
     // answers 200 and leaks the file — so assert both status and body.
@@ -84,7 +84,7 @@ describe('dashboard app (e2e)', () => {
   });
 
   it('injects VITE_WS_URL into index.html', async () => {
-    const res = await fetch(baseUrl + '/');
+    const res = await fetch(`${baseUrl}/`);
     expect(res.status).toBe(200);
     const html = await res.text();
     expect(html).toContain(`window.VITE_WS_URL = 'ws://${HOST}:${WS_PORT}'`);
@@ -94,7 +94,7 @@ describe('dashboard app (e2e)', () => {
   });
 
   it('routes unknown paths to the 404 catch-all (proves routing survives)', async () => {
-    const res = await fetch(baseUrl + '/definitely-not-a-route');
+    const res = await fetch(`${baseUrl}/definitely-not-a-route`);
     expect(res.status).toBe(404);
     expect(await res.text()).toBe('Not Found');
   });
