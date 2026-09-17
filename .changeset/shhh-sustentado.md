@@ -27,5 +27,17 @@ toca a reação como se tivesse detectado — com o microfone desligado, ignoran
 limiar e tempos — para ajustar frase, voz e volume sem gritar na sala.
 `TaskinWithShhh` ganhou as props `noiseSustainMs` e `noiseSustainRatio`.
 
+`onNoiseAbove` aceita ainda um `onProgress`, chamado a cada amostra com o estado
+do critério: ocupação atual, quanto falta para a janela encher, quanto falta do
+debounce e uma previsão de quanto falta para disparar se o barulho continuar. O
+painel de debug do `TaskinWithShhh` mostra esses quatro números. Não é um
+relógio regressivo de propósito — neste critério uma pausa longa aumenta o tempo
+que falta, então a previsão vem com a condição escrita junto.
+
+O barril de `composables` do `ui-sense` passou a reexportar o módulo inteiro do
+noise watcher. A lista escrita à mão que havia ali nomeava três símbolos e já
+estava defasada, deixando tipos e defaults públicos fora do alcance de quem
+instala o pacote.
+
 O padrão continua sendo `sustainMs: 0`, e o terceiro argumento numérico continua
 significando `debounceMs`: nada do que já existia muda de comportamento.

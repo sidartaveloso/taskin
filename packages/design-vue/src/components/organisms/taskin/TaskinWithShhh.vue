@@ -70,6 +70,7 @@ import {
   createNoiseWatcher,
   criarVozDoShhhDoNavegador,
   FaceTrackingDebug,
+  type NoiseProgress,
   NoiseTrackingControls,
   TrackingControls,
   useFaceLandmarker,
@@ -207,6 +208,13 @@ const toggleTracking = () => {
 
 // Noise watcher
 let noiseWatcher: Awaited<ReturnType<typeof createNoiseWatcher>> | null = null;
+
+/**
+ * Estado do criterio na ultima amostra, para o painel de debug. Fica nulo
+ * quando nao ha inscricao: melhor um campo vazio do que um numero parado que
+ * parece atual.
+ */
+const noiseProgress = ref<NoiseProgress | null>(null);
 let noiseUnsub: (() => void) | null = null;
 
 // Read the OS/browser reduced-motion preference at reaction time so the mascot
@@ -345,6 +353,9 @@ const subscribeToNoise = () => {
     debounceMs: noiseDebounceMsRef.value,
     sustainMs: noiseSustainMsRef.value,
     sustainRatio: noiseSustainRatioRef.value,
+    onProgress: (p) => {
+      noiseProgress.value = p;
+    },
   });
 };
 
@@ -369,6 +380,7 @@ onUnmounted(async () => {
       noiseUnsub();
     } catch {}
     noiseUnsub = null;
+    noiseProgress.value = null;
   }
   if (noiseWatcher) {
     try {
@@ -394,6 +406,8 @@ watch(enableNoiseReactionsRef, async (v) => {
         noiseUnsub();
       } catch {}
       noiseUnsub = null;
+      noiseProgress.value = null;
+      noiseProgress.value = null;
     }
     if (noiseWatcher) {
       try {
@@ -410,6 +424,28 @@ watch([noiseThresholdRef, noiseDebounceMsRef, noiseSustainMsRef, noiseSustainRat
 
 const noiseLevel = ref<number | null>(null);
 let noiseLevelUnsubLocal: (() => void) | null = null;
+
+/** Segundos com uma casa: no painel o numero muda a cada 40ms e precisa parar quieto. */
+const emSegundos = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
+
+/**
+ * O pedido era um relogio regressivo desde o inicio do barulho. Ele nao existe
+ * neste criterio: o disparo depende da ocupacao dos ultimos segundos, entao uma
+ * pausa longa AUMENTA o tempo que falta. O que da para mostrar sem mentir e o
+ * estado do criterio — e uma previsao dita como previsao.
+ */
+const noiseCountdown = computed(() => {
+  const p = noiseProgress.value;
+  if (!p) return { occupancy: null, windowFull: null, debounce: null, firesIn: null };
+
+  return {
+    occupancy: `${Math.round(p.ratio * 100)}% / ${Math.round(p.requiredRatio * 100)}%`,
+    windowFull: p.msUntilWindowFull > 0 ? emSegundos(p.msUntilWindowFull) : 'ok',
+    debounce: p.msUntilDebounceOver > 0 ? emSegundos(p.msUntilDebounceOver) : 'livre',
+    firesIn:
+      p.msUntilFire === null ? '?' : p.msUntilFire === 0 ? 'agora' : `${emSegundos(p.msUntilFire)} (se continuar)`,
+  };
+});
 
 const debugInfo = computed(() => {
   const bs = faceLandmarker.state.value.blendShapes;
@@ -441,6 +477,7 @@ const debugInfo = computed(() => {
       sustainMs: noiseSustainMsRef.value,
       sustainRatio: noiseSustainRatioRef.value,
       microphoneAvailable: !!noiseWatcher,
+      ...noiseCountdown.value,
     },
   };
 });

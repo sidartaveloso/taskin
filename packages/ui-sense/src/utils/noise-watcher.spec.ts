@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createNoiseDispatcher, DEFAULT_NOISE_DEBOUNCE_MS } from './noise-watcher';
+import { createNoiseDispatcher, DEFAULT_NOISE_DEBOUNCE_MS, type NoiseProgress } from './noise-watcher';
 
 describe('createNoiseDispatcher', () => {
   it('fires the callback when a sample reaches the threshold', () => {
@@ -326,5 +326,148 @@ describe('createNoiseDispatcher com fracao da janela', () => {
     const t = alimentar(dispatcher, [false], 25, 26 * PASSO);
     alimentar(dispatcher, [true, false, false], 8, t);
     expect(cb).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * O pedido original era um relogio regressivo desde o inicio do barulho. Nesse
+ * criterio ele nao existe: o disparo depende do que ainda vai acontecer, e uma
+ * pausa longa AUMENTA o tempo que falta. O que o debug mostra e o estado real —
+ * quanto falta para a janela encher, a ocupacao contra a exigida, o debounce, e
+ * uma previsao explicitamente condicionada a o barulho continuar.
+ */
+describe('createNoiseDispatcher: progresso para o debug', () => {
+  const PASSO = 40;
+
+  it('relata a ocupacao da janela e a fracao exigida', () => {
+    const dispatcher = createNoiseDispatcher();
+    let progresso: NoiseProgress | null = null;
+    dispatcher.onNoiseAbove(0.5, () => {}, {
+      sustainMs: 400,
+      sustainRatio: 0.6,
+      onProgress: (p) => {
+        progresso = p;
+      },
+    });
+
+    /*
+     * Uma janela de 400ms a 40ms por amostra guarda 11 amostras: as dez
+     * anteriores mais a atual. Alimentando exatamente essas onze, com tres
+     * altas, a ocupacao e 3/11 — contar "1 em cada 4" daria 0.25 e erraria,
+     * porque a borda da janela nao cai num multiplo do padrao.
+     */
+    const altas = new Set([0, 4, 8]);
+    for (let i = 0; i < 11; i++) {
+      dispatcher.dispatch(altas.has(i) ? 0.9 : 0.01, i * PASSO);
+    }
+
+    expect(progresso).not.toBeNull();
+    expect((progresso as unknown as NoiseProgress).ratio).toBeCloseTo(3 / 11, 5);
+    expect((progresso as unknown as NoiseProgress).requiredRatio).toBe(0.6);
+  });
+
+  it('conta quanto falta para a janela ficar coberta', () => {
+    const dispatcher = createNoiseDispatcher();
+    let progresso: NoiseProgress | null = null;
+    dispatcher.onNoiseAbove(0.5, () => {}, {
+      sustainMs: 1000,
+      onProgress: (p) => {
+        progresso = p;
+      },
+    });
+
+    dispatcher.dispatch(0.9, 0);
+    expect((progresso as unknown as NoiseProgress).msUntilWindowFull).toBe(1000);
+
+    dispatcher.dispatch(0.9, 600);
+    expect((progresso as unknown as NoiseProgress).msUntilWindowFull).toBe(400);
+
+    dispatcher.dispatch(0.9, 1000);
+    expect((progresso as unknown as NoiseProgress).msUntilWindowFull).toBe(0);
+  });
+
+  it('mostra o debounce correndo depois de um disparo', () => {
+    const dispatcher = createNoiseDispatcher();
+    let progresso: NoiseProgress | null = null;
+    dispatcher.onNoiseAbove(0.5, () => {}, {
+      sustainMs: 0,
+      debounceMs: 2000,
+      onProgress: (p) => {
+        progresso = p;
+      },
+    });
+
+    dispatcher.dispatch(0.9, 0);
+    expect((progresso as unknown as NoiseProgress).msUntilDebounceOver).toBe(2000);
+
+    dispatcher.dispatch(0.9, 1500);
+    expect((progresso as unknown as NoiseProgress).msUntilDebounceOver).toBe(500);
+
+    // amostra baixa: nao dispara, entao da para ver a contagem zerada
+    dispatcher.dispatch(0.01, 2001);
+    expect((progresso as unknown as NoiseProgress).msUntilDebounceOver).toBe(0);
+
+    // e uma amostra alta no mesmo instante dispara e reinicia a contagem
+    dispatcher.dispatch(0.9, 2001);
+    expect((progresso as unknown as NoiseProgress).msUntilDebounceOver).toBe(2000);
+  });
+
+  it('preve o disparo, e a previsao bate com o que acontece', () => {
+    const dispatcher = createNoiseDispatcher();
+    const disparos: number[] = [];
+    let progresso: NoiseProgress | null = null;
+    let agora = 0;
+
+    dispatcher.onNoiseAbove(
+      0.5,
+      () => {
+        disparos.push(agora);
+      },
+      {
+        sustainMs: 1000,
+        sustainRatio: 0.6,
+        debounceMs: 0,
+        onProgress: (p) => {
+          progresso = p;
+        },
+      },
+    );
+
+    // alternando alto e baixo: ocupacao em torno de 50%, abaixo dos 60% exigidos
+    for (let i = 0; i < 40; i++) {
+      dispatcher.dispatch(i % 2 === 0 ? 0.9 : 0.01, agora);
+      agora += PASSO;
+    }
+    expect(disparos).toHaveLength(0);
+
+    const momentoDaPrevisao = agora - PASSO;
+    const previsto = (progresso as unknown as NoiseProgress).msUntilFire;
+    expect(previsto).not.toBeNull();
+    expect(previsto as number).toBeGreaterThan(0);
+
+    // a partir daqui, so barulho — exatamente a condicao da previsao
+    for (let i = 0; i < 60 && disparos.length === 0; i++) {
+      dispatcher.dispatch(0.9, agora);
+      agora += PASSO;
+    }
+
+    expect(disparos).toHaveLength(1);
+    expect((disparos[0] as number) - momentoDaPrevisao).toBe(previsto);
+  });
+
+  it('nao promete disparo nenhum quando ainda nao ha o que medir', () => {
+    const dispatcher = createNoiseDispatcher();
+    let progresso: NoiseProgress | null = null;
+    dispatcher.onNoiseAbove(0.5, () => {}, {
+      sustainMs: 1000,
+      onProgress: (p) => {
+        progresso = p;
+      },
+    });
+
+    dispatcher.dispatch(0.01, 0);
+
+    // uma amostra so nao da nem para estimar o intervalo entre amostras
+    expect((progresso as unknown as NoiseProgress).msUntilFire).toBeNull();
   });
 });

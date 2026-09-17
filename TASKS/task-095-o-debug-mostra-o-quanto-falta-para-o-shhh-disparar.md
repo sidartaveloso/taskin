@@ -11,19 +11,53 @@ No criterio de fracao da janela nao existe um relogio regressivo simples: o disp
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
 
 ### Estado do critério no núcleo (`@opentask/ui-sense`)
-- [ ] Testes antes do código: a ocupação relatada bate com a fração de amostras altas; `msUntilWindowFull` cai até zero conforme a janela enche; o debounce aparece como tempo restante; a previsão de disparo bate com o disparo real quando o barulho continua
-- [ ] `NoiseProgress` e a opção `onProgress` em `onNoiseAbove`, chamada a cada amostra depois da decisão de disparar
-- [ ] Previsão simulando amostras altas futuras até a fração cruzar a exigida, com passo estimado das próprias amostras
+- [x] Testes antes do código: a ocupação relatada bate com a fração de amostras altas; `msUntilWindowFull` cai até zero conforme a janela enche; o debounce aparece como tempo restante; a previsão de disparo bate com o disparo real quando o barulho continua
+- [x] `NoiseProgress` e a opção `onProgress` em `onNoiseAbove`, chamada a cada amostra depois da decisão de disparar
+- [x] Previsão simulando amostras altas futuras até a fração cruzar a exigida, com passo estimado das próprias amostras
 
 ### Debug do componente
-- [ ] `TaskinWithShhh` assina o `onProgress` e leva os números ao `debugInfo`, em texto legível no painel `Shhh Detection`
-- [ ] Story `BrunoShhh` com o debug ligado mostrando o estado
+- [x] `TaskinWithShhh` assina o `onProgress` e leva os números ao `debugInfo`, em texto legível no painel `Shhh Detection`
+- [x] Story `BrunoShhh` com o debug ligado mostrando o estado
 
 ### Fechamento
-- [ ] `MASCOT_NOISE_REACTION.md` e changeset
-- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm format`, `pnpm test`
+- [x] `MASCOT_NOISE_REACTION.md` e changeset
+- [x] `pnpm lint`, `pnpm typecheck`, `pnpm format`, `pnpm test`
 
 ## Notes
+
+### Evidência do que foi feito
+- **Núcleo**: `packages/ui-sense/src/utils/noise-watcher.ts` — tipo
+  `NoiseProgress`, opção `onProgress` e `preverDisparoPorOcupacao`, que simula o
+  deslizar da janela com amostras altas até a ocupação cruzar a exigida. Cinco
+  testes novos em `noise-watcher.spec.ts` (`describe('createNoiseDispatcher:
+  progresso para o debug')`), escritos antes do código e vermelhos na primeira
+  execução; o arquivo fecha em 28 testes.
+- **A previsão é testada contra a realidade**: o teste `preve o disparo, e a
+  previsao bate com o que acontece` captura o número previsto, segue alimentando
+  barulho e exige que o disparo ocorra exatamente no instante previsto.
+- **Componente**: `TaskinWithShhh.vue` — `noiseProgress`, o computed
+  `noiseCountdown` e os quatro campos no painel `Shhh Detection`
+  (`occupancy`, `windowFull`, `debounce`, `firesIn`). O estado é zerado ao
+  cancelar a inscrição, para o painel não mostrar número parado como se fosse
+  atual.
+- **Verificação**: `pnpm lint`, `pnpm format`, `pnpm typecheck` (27/27) e
+  `pnpm test` (42/42) verdes.
+
+### Um defeito encontrado no caminho
+O barril `packages/ui-sense/src/composables/index.ts` listava à mão três
+símbolos do noise watcher e já estava defasado: `NoiseThresholdOptions`,
+`NoiseThresholdTiming`, `DEFAULT_NOISE_SUSTAIN_MS` e `DEFAULT_NOISE_SUSTAIN_RATIO`
+existiam no módulo e não chegavam a quem instala o pacote — foi assim que o
+`NoiseProgress` apareceu como "has no exported member" no typecheck. Trocado por
+`export * from '../utils/noise-watcher'`, que não diverge de novo.
+
+### Duas expectativas minhas que estavam erradas
+O teste da ocupação supunha "1 em cada 4 amostras dá 25%", ignorando que a
+janela guarda 11 amostras e a borda não cai num múltiplo do padrão; passou a
+alimentar exatamente a janela e a exigir 3/11. O teste do debounce esperava
+zero no instante em que ele expira, mas nesse instante a amostra alta dispara e
+reinicia a contagem — passou a verificar o zero com uma amostra baixa, e o
+reinício com uma alta.
 
 ### Por que não é um relógio regressivo simples
 No critério de fração da janela o disparo depende do que ainda vai acontecer:
