@@ -1,6 +1,6 @@
 # 🧩 Task 075 — Lint: task done com item de checklist em aberto sem justificativa é erro
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: Sidarta Veloso
 - Priority: 270
