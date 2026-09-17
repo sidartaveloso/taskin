@@ -101,6 +101,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin list [filter] [options]` - List all tasks (`filter` is free text over id, title, status and assignee)
   - `--open` - Show only open tasks (pending, in-progress, blocked)
   - `--closed` - Show only closed tasks (done, canceled)
+  - `--active` - Show only tasks started and not finished (in-progress, paused, in-review)
   - `--status <status>` - Filter by specific status
   - `--type <type>` - Filter by task type
   - `-u, --assignee <assignee>` - Filter by assignee id or name, whole or in part
@@ -127,6 +128,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin prioritize` - Number every task's priority, once and on purpose
   - `--dry-run` - Report how many would be numbered, without writing
 - `taskin dashboard [options]` - Start the web dashboard (see [Avatars](#avatars))
+  - `--open` / `--closed` / `--active` - Open the board on one of the three filters
   - `--filter-open` - Show only open tasks
   - `--filter-closed` - Show only closed tasks
 - `taskin mcp-server` - Start MCP server for Claude Desktop integration (alias: `mcp`)

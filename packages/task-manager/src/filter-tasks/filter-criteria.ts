@@ -40,6 +40,7 @@ export const FilterCriteriaSchema = z.object({
   assignee: z.string().optional(),
   open: z.boolean().optional(),
   closed: z.boolean().optional(),
+  active: z.boolean().optional(),
   text: z.string().optional(),
 });
 
@@ -80,6 +81,10 @@ export const FILTER_CRITERIA_SURFACES = {
   assignee: { description: 'Assignee id or name, whole or in part', cli: { kind: 'flag', short: 'u' } },
   open: { description: 'Only tasks still open', cli: { kind: 'flag' } },
   closed: { description: 'Only tasks already closed', cli: { kind: 'flag' } },
+  active: {
+    description: 'Only tasks started and not finished (in-progress, paused, in-review)',
+    cli: { kind: 'flag' },
+  },
   text: { description: 'Free text over id, title, status and assignee', cli: { kind: 'positional' } },
 } satisfies Record<keyof TaskFilterCriteria, CriterionSurface>;
 

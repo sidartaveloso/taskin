@@ -95,11 +95,28 @@ onMounted(async () => {
 const tasks = computed<Task[]>(() => {
   const filter = new URLSearchParams(window.location.search).get('filter');
 
+  /*
+   * `active` — comecou e nao terminou.
+   *
+   * O mesmo conjunto que `ATIVAS` define em `task-manager`: `in-progress`,
+   * `paused` e `in-review`. `blocked` fica de fora por decisao declarada.
+   *
+   * **Isto e uma copia, e a copia e conhecida.** A task-071 acabou com a
+   * duplicacao entre a CLI e o servidor MCP, que hoje derivam de uma definicao
+   * so; esta tela ficou de fora porque consumir `task-manager` daqui esbarra no
+   * build (o `.d.ts` do pacote leva o compilador ao `src`, e o `rootDir` do
+   * dashboard recusa). Enquanto isso nao for resolvido, mexer num conjunto
+   * exige mexer nos dois lugares.
+   */
+  const ATIVAS = ['in-progress', 'paused', 'in-review'];
+
   let filtered = taskStore.tasks;
   if (filter === 'open') {
     filtered = taskStore.tasks.filter((t) => t.status !== 'done' && t.status !== 'canceled');
   } else if (filter === 'closed') {
     filtered = taskStore.tasks.filter((t) => t.status === 'done' || t.status === 'canceled');
+  } else if (filter === 'active') {
+    filtered = taskStore.tasks.filter((t) => ATIVAS.includes(t.status));
   }
 
   const mapped = filtered.map((source) => {

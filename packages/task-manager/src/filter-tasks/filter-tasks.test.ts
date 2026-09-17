@@ -82,3 +82,48 @@ describe('filterTasks', () => {
     expect(TAREFAS).toEqual(original);
   });
 });
+
+/**
+ * "Em andamento" nao e `in-progress`, e nao e `open`.
+ *
+ * `open` inclui `pending` — o que ainda nao comecou, e que no painel e ruido.
+ * `in-progress` sozinho e estreito demais: uma tarefa some da tela no instante
+ * em que alguem a pausa ou a manda para revisao, o que e enganoso.
+ *
+ * `active` e o meio que faltava: **comecou e nao terminou**. `blocked` fica de
+ * fora por decisao declarada — ninguem esta trabalhando numa bloqueada agora.
+ */
+describe('filtro active', () => {
+  const tarefas = [
+    tarefa({ id: '001', status: 'pending' }),
+    tarefa({ id: '002', status: 'in-progress' }),
+    tarefa({ id: '003', status: 'paused' }),
+    tarefa({ id: '004', status: 'in-review' }),
+    tarefa({ id: '005', status: 'blocked' }),
+    tarefa({ id: '006', status: 'done' }),
+    tarefa({ id: '007', status: 'canceled' }),
+  ];
+
+  it('traz o que comecou e nao terminou', () => {
+    const ids = filterTasks(tarefas, { active: true }).map((t) => String(t.id));
+
+    expect(ids).toEqual(['002', '003', '004']);
+  });
+
+  it('deixa pending de fora — nao comecou', () => {
+    expect(filterTasks(tarefas, { active: true }).map((t) => String(t.id))).not.toContain('001');
+  });
+
+  it('deixa blocked de fora, por decisao declarada', () => {
+    expect(filterTasks(tarefas, { active: true }).map((t) => String(t.id))).not.toContain('005');
+  });
+
+  it('e mais estreito que open e mais largo que in-progress', () => {
+    const abertas = filterTasks(tarefas, { open: true }).length;
+    const ativas = filterTasks(tarefas, { active: true }).length;
+    const emProgresso = filterTasks(tarefas, { status: 'in-progress' }).length;
+
+    expect(ativas).toBeLessThan(abertas);
+    expect(ativas).toBeGreaterThan(emProgresso);
+  });
+});
