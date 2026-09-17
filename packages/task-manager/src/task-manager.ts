@@ -2,6 +2,7 @@ import type { Task, TaskId, TaskStatus } from '@opentask/taskin-types';
 import type { IGroupRegistry } from './group-registry.types';
 import { numerarPrioridade } from './numerar-prioridade/index';
 import type {
+  CriterioEmAberto,
   CreateTaskOptions,
   CreateTaskResult,
   ITaskManager,
@@ -111,6 +112,27 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     }
 
     return { total: tarefas.length, withoutPriority: semNumero, changed: mudancas.length };
+  }
+
+  /**
+   * Conclui a tarefa e **relata** o que ficou em aberto.
+   *
+   * Avisa, e nao recusa. Fechar uma tarefa e um gesto que acontece uma vez,
+   * muitas vezes com pressa; recusar ali torna o comando fragil e ensina a
+   * contornar. O portao duro vive no `lint`, que roda em CI e quebra o build —
+   * aqui o papel e dizer, no momento em que a pessoa ainda esta olhando, o que
+   * ficou para tras.
+   *
+   * Um provider sem a capacidade conclui sem portao nenhum.
+   */
+  async finishTaskComRelato(taskId: TaskId): Promise<{ task: TTask; blockers: CriterioEmAberto[] }> {
+    const task = await this.taskProvider.findTask(taskId);
+    if (!task) throw new Error(`Task with ID '${taskId}' not found.`);
+
+    const blockers = (await this.taskProvider.getCompletionBlockers?.(task)) ?? [];
+    const atualizada = await this.finishTask(taskId);
+
+    return { task: atualizada, blockers };
   }
 
   async finishTask(taskId: TaskId): Promise<TTask> {

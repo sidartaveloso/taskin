@@ -41,6 +41,14 @@ export type ValidationSeverity = 'error' | 'warning' | 'info';
  * A validation error or warning found during linting
  * @public
  */
+/** Um criterio que ainda impede a conclusao. */
+export interface CriterioEmAberto {
+  /** O texto do item, como escrito. */
+  readonly texto: string;
+  /** Onde ele esta, quando a fonte sabe dizer. */
+  readonly linha?: number;
+}
+
 export interface ValidationIssue {
   /** The file or task that has the issue */
   file: string;
@@ -131,6 +139,20 @@ export interface ITaskProvider<TTask extends Task = Task> {
    * @returns The lint result with any validation issues found
    */
   lint: (fix?: boolean) => Promise<LintResult>;
+
+  /**
+   * Os criterios de conclusao que ainda bloqueiam esta tarefa, se a fonte tiver
+   * o conceito.
+   *
+   * **Opcional de proposito.** Checklist e uma forma do provider de arquivos: o
+   * Jira tem subtarefas, o GitHub tem itens de lista na descricao. Um provider
+   * sem nada equivalente simplesmente nao implementa, e o `finishTask` conclui
+   * sem portao — em vez de chamar algo que falha.
+   *
+   * O conceito e de dominio ("o que falta para isto estar pronto?"); a
+   * representacao e de provider.
+   */
+  getCompletionBlockers?: (task: TTask) => Promise<CriterioEmAberto[]>;
 }
 
 /**
@@ -197,6 +219,16 @@ export interface ITaskManager<TTask extends Task = Task> {
    */
   readonly groupRegistry?: IGroupRegistry;
 
+  /**
+   * Conclui a tarefa e relata os criterios que ficaram em aberto.
+   *
+   * Avisa, e nao recusa: fechar e um gesto unico, muitas vezes com pressa, e
+   * recusar ali torna o comando fragil. O portao duro vive no `lint`.
+   *
+   * O relato vem vazio quando o provider nao tem o conceito de checklist.
+   */
+  finishTaskComRelato: (taskId: TaskId) => Promise<{ task: TTask; blockers: CriterioEmAberto[] }>;
+
   prioritizeAll: (options?: { dryRun?: boolean }) => Promise<{
     total: number;
     withoutPriority: number;
@@ -246,4 +278,18 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @returns The lint result with any validation issues found
    */
   lint: (fix?: boolean) => Promise<LintResult>;
+
+  /**
+   * Os criterios de conclusao que ainda bloqueiam esta tarefa, se a fonte tiver
+   * o conceito.
+   *
+   * **Opcional de proposito.** Checklist e uma forma do provider de arquivos: o
+   * Jira tem subtarefas, o GitHub tem itens de lista na descricao. Um provider
+   * sem nada equivalente simplesmente nao implementa, e o `finishTask` conclui
+   * sem portao — em vez de chamar algo que falha.
+   *
+   * O conceito e de dominio ("o que falta para isto estar pronto?"); a
+   * representacao e de provider.
+   */
+  getCompletionBlockers?: (task: TTask) => Promise<CriterioEmAberto[]>;
 }
