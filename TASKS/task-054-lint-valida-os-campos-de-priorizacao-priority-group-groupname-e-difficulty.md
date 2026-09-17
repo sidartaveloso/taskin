@@ -1,6 +1,6 @@
 # 🧩 Task 054 — Lint valida os campos de priorizacao: Priority, Group, GroupName e Difficulty
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
 - Priority: 870
