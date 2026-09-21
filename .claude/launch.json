@@ -37,6 +37,12 @@
       "runtimeArgs": ["../packages/cli/dist/index.js", "dashboard", "--port", "6120", "--ws-port", "6121"],
       "cwd": ".bench500",
       "port": 6120
+    },
+    {
+      "name": "taskin-mascote",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@opentask/taskin-mascote", "run", "dev", "--port", "6130"],
+      "port": 6130
     }
   ]
 }

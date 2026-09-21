@@ -117,4 +117,28 @@ describe('TaskinWithShhh', () => {
 
     expect(wrapper.text()).toContain('Pessoal, Shhhhh...');
   });
+
+  it('esconde os controles quando pedido — e assim que ele vive num celular', () => {
+    const wrapper = mount(TaskinWithShhh, { props: { showControls: false } });
+
+    expect(wrapper.find('[data-testid="mock-toggle-noise"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="mock-toggle-tracking"]').exists()).toBe(false);
+    expect(wrapper.find('.mascot-container').exists()).toBe(true);
+  });
+
+  it('le a sustentacao e o nome do bloco mascot, que agora os carrega', async () => {
+    const wrapper = mount(TaskinWithShhh, {
+      props: {
+        mascot: {
+          reactions: {
+            noise: { enabled: true, sound: true, name: 'Bruno', sustainMs: 2000, sustainRatio: 0.4 },
+          },
+        },
+      },
+    });
+
+    await pedirSilencio(wrapper);
+
+    expect(shhhVoiceMock.shush).toHaveBeenCalledWith(expect.objectContaining({ name: 'Bruno' }));
+  });
 });

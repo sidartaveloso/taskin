@@ -1,6 +1,6 @@
 # 🧩 Task 099 — Um PWA so do mascote: o Taskin em tela cheia no celular, olhando e pedindo silencio
 
-- Status: pending
+- Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
 
@@ -9,88 +9,83 @@ Um pacote novo, aplicacao instalavel, com o Taskin ocupando a tela inteira do ce
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Pacote novo `@opentask/taskin-mascote` (Vite + Vue), com build de aplicacao como o `build:app` do dashboard
-- [ ] Tela unica: o `Taskin` ocupando a viewport inteira, sem os controles de laboratorio da story
-- [ ] Tela de entrada com um botao — e o gesto que libera audio, camera e microfone de uma vez
-- [ ] Gaveta de ajustes: nome a chamar, limiar, sustentacao, volume, ligar/desligar camera
-- [ ] Persistir os ajustes no `localStorage`, com o mesmo formato do bloco `mascot.reactions.noise`
-- [ ] Manter a tela acesa com a Screen Wake Lock API, e readquirir o lock quando a aba volta a ficar visivel
-- [ ] `manifest.webmanifest` e icones para instalar na tela inicial; display `standalone`, orientacao `portrait`
-- [ ] Service worker para abrir sem rede depois da primeira visita
-- [ ] Modo economico: rastreamento facial em cadencia reduzida, e um modo so-microfone sem camera
-- [ ] Publicar junto do site, no mesmo workflow do Pages, em um subcaminho proprio
-- [ ] Testar no aparelho de verdade: iOS Safari e Android Chrome, instalado na tela inicial
-- [ ] Documentar como apoiar o celular e o que cada ajuste faz
+- [x] Pacote novo `@opentask/taskin-mascote` (Vite + Vue), publicado como aplicacao
+- [x] Tela unica: o `Taskin` ocupando a viewport, sem os controles de laboratorio (`showControls: false`)
+- [x] Tela de entrada com um botao — e o gesto que libera audio, camera, microfone e trava de tela
+- [x] Gaveta de ajustes: nome a chamar, frase, som, volume, sensibilidade, insistencia
+- [x] Persistir no `localStorage` no mesmo formato do bloco `mascot.reactions.noise`
+- [x] Manter a tela acesa com a Screen Wake Lock API, reconquistando no `visibilitychange`
+- [x] `manifest.webmanifest` e icones, `standalone` e `portrait`
+- [x] Service worker (vite-plugin-pwa) para abrir sem rede depois da primeira visita
+- [x] Publicar junto do site, no mesmo workflow do Pages, em `/taskin/mascote/`
+- [x] Fechar a divergencia que o caso revelou: `sustainMs`, `sustainRatio` e `name` no `.taskin.json`
+- [x] Documentar: `README.md` do pacote e `docs/ARCHITECTURE.md`
+- [ ] Modo economico com rastreamento em cadencia reduzida — adiado: exige medir consumo num aparelho de verdade, que e o passo seguinte
+- [ ] Testar instalado no iOS Safari e no Android Chrome — adiado: depende do aparelho; e a unica verificacao que o navegador do desenvolvimento nao substitui
 
 ## Notes
 
-### O que e
+### O que foi entregue
 
-O Taskin em tela cheia num celular apoiado abaixo do monitor, virado para quem
-programa. Ele acompanha os olhos e o rosto pela camera frontal e, quando alguem
-na sala fala alto, dispara o shhh — chama a pessoa pelo nome, faz a pausa e
-chia, como a task-098 deixou.
+Um pacote novo, `@opentask/taskin-mascote`, que e o `TaskinWithShhh` empacotado
+para viver num aparelho. A aplicacao inteira e uma tela: portao de entrada,
+mascote em tela cheia, e uma engrenagem discreta que abre a gaveta de ajustes.
 
-A story `BrunoShhh` ja mostra a funcionalidade. O que falta e tudo que uma story
-nao precisa resolver: viver o dia inteiro num aparelho, com a tela acesa, fora
-do `localhost`, sem `.taskin.json` para ler, e sem torrar a bateria.
+O comportamento nao e novo — ele ja existia inteiro no organismo, e as tasks 092
+a 098 o deixaram no ponto. O trabalho aqui foi de empacotamento e de aparelho.
 
-### O que vem pronto
+### As tres decisoes que o navegador impos
 
-- `TaskinWithShhh` (`@opentask/taskin-design-vue`) — a reacao completa.
-- `useFaceLandmarker` e `createNoiseWatcher` (`@opentask/ui-sense`).
-- `createShhhVoice` — fala pelo `speechSynthesis` e chiado sintetizado.
-- O esquema de configuracao em `@opentask/taskin-types`
-  (`MascotConfigInput`, `resolveMascotNoiseSettings`).
+**A tela apaga.** `criarTrancaDeTela` encapsula a Screen Wake Lock API com as
+duas regras que ela tem: so e concedida apos interacao do usuario, e **e
+liberada sozinha quando a aba deixa de estar visivel**. A segunda e a que pega
+quem so pede a trava uma vez no inicio; por isso `useTrancaDeTela` reconquista
+no `visibilitychange`. Quando nao da — bateria baixa, aparelho sem a API — o
+motivo aparece na gaveta em vez de o mascote fingir que esta tudo bem.
 
-O trabalho e de empacotamento e de aparelho, nao de mascote.
+**Camera, microfone e audio pedem gesto e contexto seguro.** Dai o portao com um
+botao: nao e tela de carregamento, e o unico momento em que o navegador libera
+as tres coisas. E dai tambem publicar junto do site: um celular acessando o
+computador por IP da rede local nao e HTTPS nem `localhost`, entao nao serviria.
 
-### O que a story nao resolve, e aqui precisa
+**Nao ha `.taskin.json` num celular.** O que vai para o `localStorage` e um
+bloco `mascot` no formato do arquivo, validado pela mesma
+`resolveMascotNoiseSettings`. Guardar o objeto ja resolvido seria mais simples e
+criaria uma segunda definicao do que e uma reacao a ruido. Do jeito que ficou, o
+que se ajusta no celular pode ser colado no arquivo de um projeto.
 
-**A tela apaga.** Um celular apagado nao olha para ninguem. A Screen Wake Lock
-API (`navigator.wakeLock.request('screen')`) resolve, mas exige HTTPS, so
-funciona apos interacao e **e liberada quando a aba fica oculta** — entao
-precisa ser readquirida no `visibilitychange`. Sem isso o mascote morre no
-primeiro alt-tab.
+### A divergencia que o caso revelou
 
-**Camera e microfone fora do localhost.** `getUserMedia` exige contexto seguro:
-ou HTTPS, ou `localhost`. Um celular acessando o computador por IP da rede local
-nao e nenhum dos dois. Publicar junto do site no GitHub Pages resolve de graca —
-o aparelho abre uma URL e pronto. **Risco a verificar no aparelho**: o Safari do
-iOS ja teve historico de negar camera e microfone a aplicacoes instaladas na
-tela inicial rodando em `standalone`; e preciso testar instalado, e nao apenas
-na aba.
+Ao ir gravar a configuracao, apareceu que `sustainMs`, `sustainRatio` e `name`
+so existiam como prop do componente — o `.taskin.json` nao os carregava, e o
+proprio codigo dizia isso num comentario e contornava lendo da prop mesmo quando
+recebia o bloco. Sem fechar isso, o mascote no celular nao teria como guardar o
+nome de quem chamar. Os tres entraram no schema e o contorno saiu.
 
-**O audio so toca depois de um gesto.** Por isso a tela de entrada com um botao:
-nao e enfeite, e o unico momento em que o navegador libera som, camera e
-microfone. Um botao, e o resto do dia o mascote so trabalha.
+### Evidencia
 
-**Nao ha `.taskin.json` num celular.** A configuracao vai para o
-`localStorage`, mas **no mesmo formato** do bloco `mascot.reactions.noise` — a
-mesma funcao `resolveMascotNoiseSettings` valida os dois, para nao nascer uma
-segunda definicao do que e uma reacao a ruido.
+- `packages/mascote/src/composables/tranca-de-tela.spec.ts` — 6 testes: concede,
+  nao pede duas vezes, pede de novo apos o navegador liberar, explica a recusa
+  sem derrubar, avisa quando a API nao existe, e solta uma vez so.
+- `packages/mascote/src/composables/ajustes.spec.ts` — 9 testes: defaults, JSON
+  quebrado, valor fora da faixa, ausencia de armazenamento, recusa de bloco
+  invalido antes de gravar, e ida-e-volta.
+- `packages/mascote/src/App.spec.ts` — 6 testes, com a API de wake lock de
+  verdade no jsdom: abre no portao, o toque e que pede a trava, o mascote vem
+  sem controles, os ajustes gravados chegam como bloco, a gaveta fica fechada, e
+  o que se muda nela sobrevive.
+- `packages/design-vue/.../TaskinWithShhh.spec.ts` — dois testes novos:
+  `showControls: false` e a sustentacao vinda do bloco.
+- `packages/types-ts/src/taskin.schemas.test.ts` — 127 testes.
+- Verificado no navegador em 375x812: portao, mascote em tela cheia sem
+  controles, gaveta abrindo, e a trava reportando a recusa do ambiente.
+- Suite completa verde: 44 tarefas do turbo.
 
-**Bateria e calor.** Rodar o `FaceLandmarker` continuamente num celular custa
-caro, e um aparelho quente reduz o proprio desempenho. Precisa de cadencia
-reduzida para o rastreamento e de um modo so-microfone, em que o mascote nao
-olha mas ainda pede silencio — que ja e metade do valor.
+### O que fica para o aparelho
 
-### Decisoes a tomar
-
-- **Onde publicar.** Junto do site, no mesmo workflow do Pages, parece o
-  caminho: da HTTPS de graca e o celular so precisa abrir um endereco. A
-  alternativa e o `taskin dashboard` servir a pagina, mas ai volta o problema do
-  contexto seguro na rede local.
-- **Se le tarefas.** A versao minima nao precisa: e um mascote, nao um painel.
-  Mas ele ja sabe reagir a estado de tarefa, e o celular esta ali parado. Fica
-  para depois, e de proposito.
-- **Relacao com a task-097.** A escada de humores — o mascote se irritando por
-  etapas quando o barulho insiste — e o comportamento que mais aparece num
-  aparelho ligado o dia inteiro. As duas se reforcam, mas nenhuma bloqueia a
-  outra.
-
-### Como saber que ficou pronto
-
-Com o celular apoiado abaixo do monitor, tela acesa sozinha por uma hora: o
-mascote acompanha quem esta na frente, e uma conversa alta na sala faz ele
-chamar a pessoa pelo nome e chiar, sem ninguem tocar no aparelho.
+Duas coisas nao dava para fazer aqui, e estao desmarcadas acima. O modo
+economico precisa de medicao de consumo real. E o **risco que mais importa**:
+o Safari do iOS ja teve historico de negar camera e microfone a aplicacoes
+instaladas na tela inicial rodando em `standalone`. Isso precisa ser conferido
+instalado no aparelho — se falhar, o caminho conhecido e abrir pela aba em vez
+de instalar, e a task volta.

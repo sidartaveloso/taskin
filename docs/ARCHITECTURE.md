@@ -275,6 +275,14 @@ configurações com defaults aplicados e o plano da reação (honrando
 Consulte `packages/design-vue/docs/MASCOT_NOISE_REACTION.md` para o guia
 completo (props, acessibilidade, privacidade e testes).
 
+O pacote `@opentask/taskin-mascote` é esse organismo empacotado como aplicação
+instalável: o Taskin em tela cheia num celular apoiado abaixo do monitor,
+publicado junto do site em `/taskin/mascote/`. Ele não lê `.taskin.json` — não
+há arquivo num aparelho —, mas grava no `localStorage` um bloco `mascot` no
+**mesmo formato**, lido pela mesma `resolveMascotNoiseSettings`, de modo que o
+que se ajusta no celular pode ser colado no arquivo de um projeto. Ver
+`packages/mascote/README.md`.
+
 ## Métricas e Analytics
 
 O Taskin separa agora as responsabilidades de armazenamento das responsabilidades

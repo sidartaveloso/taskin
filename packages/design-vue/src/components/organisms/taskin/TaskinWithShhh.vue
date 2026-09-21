@@ -9,6 +9,7 @@
     />
 
     <TrackingControls
+      v-if="showControls"
       :controls="['webcam', 'eyes', 'mouth', 'expressions']"
       :is-detecting="faceLandmarker.state.value.isDetecting"
       :error="faceLandmarker.state.value.error"
@@ -24,6 +25,7 @@
     />
 
     <NoiseTrackingControls
+      v-if="showControls"
       :is-active="!!noiseWatcher"
       :enable-noise-reactions="enableNoiseReactionsRef"
       :noise-threshold="noiseThresholdRef"
@@ -85,6 +87,13 @@ export interface Props {
   showWebcam?: boolean;
   showDebug?: boolean;
   /**
+   * Mostra os controles de rastreamento e de ruido em volta do mascote. Ligados
+   * por padrao, que e o uso de laboratorio — no Storybook e onde se mexe neles.
+   * Desligados, sobra so o mascote: e assim que ele vive num celular apoiado
+   * abaixo do monitor, onde nao ha nada a ajustar durante o dia.
+   */
+  showControls?: boolean;
+  /**
    * The `mascot` block from `.taskin.json`. When provided, its
    * `reactions.noise` settings seed the noise reaction and take precedence over
    * the individual `noise*` props below, so a consumer can wire config straight
@@ -131,6 +140,7 @@ const props = withDefaults(defineProps<Props>(), {
   mascotSize: 300,
   showWebcam: false,
   showDebug: false,
+  showControls: true,
   enableNoiseReactions: false,
   noiseThreshold: 0.06,
   noiseDebounceMs: 1500,
@@ -146,13 +156,7 @@ const props = withDefaults(defineProps<Props>(), {
 // present, otherwise fall back to the individual props (already defaulted).
 const noiseSettings = computed(() =>
   props.mascot
-    ? // O bloco do `.taskin.json` ainda nao carrega a sustentacao (task-093
-      // ficou no Storybook), entao ela vem da prop mesmo nesse caminho.
-      {
-        ...resolveMascotNoiseSettings(props.mascot),
-        sustainMs: props.noiseSustainMs,
-        sustainRatio: props.noiseSustainRatio,
-      }
+    ? resolveMascotNoiseSettings(props.mascot)
     : {
         enabled: props.enableNoiseReactions,
         threshold: props.noiseThreshold,
@@ -160,6 +164,7 @@ const noiseSettings = computed(() =>
         sustainMs: props.noiseSustainMs,
         sustainRatio: props.noiseSustainRatio,
         sound: props.noiseSound,
+        name: props.shhhName,
         phrase: props.shhhPhrase,
         volume: props.shhhVolume,
       },
@@ -205,7 +210,7 @@ const noiseSustainMsRef = ref<number>(noiseSettings.value.sustainMs);
 const noiseSustainRatioRef = ref<number>(noiseSettings.value.sustainRatio);
 const noiseSoundRef = ref<boolean>(noiseSettings.value.sound);
 const shhhPhraseRef = ref<string>(noiseSettings.value.phrase);
-const shhhNameRef = ref<string>(props.shhhName);
+const shhhNameRef = ref<string>(noiseSettings.value.name);
 
 /** O balao mostra a frase inteira; a voz so pronuncia o nome. */
 const shhhFraseCompleta = computed(() =>

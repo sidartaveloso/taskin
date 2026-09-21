@@ -166,21 +166,29 @@ jobs:
 
           SITE=packages/docs/content/.vitepress/dist
           STORYBOOK=storybook-static
+          MASCOTE=packages/mascote/dist
 
           test -f "$SITE/index.html" || { echo "site nao buildou: $SITE/index.html ausente"; exit 1; }
           test -f "$STORYBOOK/index.html" || { echo "storybook nao buildou: $STORYBOOK/index.html ausente"; exit 1; }
+          test -f "$MASCOTE/index.html" || { echo "mascote nao buildou: $MASCOTE/index.html ausente"; exit 1; }
 
           # Badge com o commit, para dar para saber o que esta no ar
           echo "<div style='position:fixed;bottom:10px;right:10px;background:#333;color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;z-index:9999;'>$(git rev-parse --short HEAD)</div>" >> "$STORYBOOK/index.html"
 
-          mkdir -p deploy/components
+          mkdir -p deploy/components deploy/mascote
           cp -r "$SITE/." deploy/
           cp -r "$STORYBOOK/." deploy/components/
+          # O mascote pede camera, microfone e trava de tela — todos exigem
+          # contexto seguro. Publicado aqui, ele herda o HTTPS do Pages, e o
+          # celular so precisa abrir um endereco.
+          cp -r "$MASCOTE/." deploy/mascote/
 
           echo "Arvore montada:"
           ls deploy
           test -f deploy/index.html
           test -f deploy/components/index.html
+          test -f deploy/mascote/index.html
+          test -f deploy/mascote/manifest.webmanifest
 
       # Fora da `main`, o resultado fica como artefato de CI: a quebra aparece
       # no PR e o site publicado nao e tocado.

@@ -33,7 +33,15 @@
     },
     "build": {
       "dependsOn": ["install", "^build"],
-      "inputs": ["src/**/*.{ts,js,tsx,jsx,vue}", "content/**", "package.json", "tsconfig.json"],
+      "inputs": [
+        "src/**/*.{ts,js,tsx,jsx,vue}",
+        "content/**",
+        "package.json",
+        "tsconfig.json",
+        "index.html",
+        "vite.config.ts",
+        "public/**"
+      ],
       "outputs": ["dist/**", "build/**", "generated/**", "content/.vitepress/dist/**", "dashboard-dist/**"]
     },
     "clean": {
