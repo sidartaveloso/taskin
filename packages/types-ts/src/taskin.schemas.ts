@@ -777,6 +777,18 @@ export const MascotNoiseReactionConfigSchema = z.object({
   threshold: z.number().min(0).max(1).default(0.06),
   /** Minimum gap between two reactions, in milliseconds. */
   debounceMs: z.number().int().nonnegative().default(1500),
+  /**
+   * Janela em que o ruído é medido antes do primeiro disparo, em ms. Zero — o
+   * padrão — dispara na primeira amostra alta, e então um estalo de porta vale
+   * o mesmo que um minuto de conversa.
+   */
+  sustainMs: z.number().int().nonnegative().default(0),
+  /**
+   * Fração dessa janela que precisa estar acima do limiar, de 0 a 1. A fala tem
+   * vales de 100 a 400ms entre palavras, então exigir barulho ininterrupto
+   * (fração 1) nunca dispararia numa conversa.
+   */
+  sustainRatio: z.number().min(0).max(1).default(0.6),
   /** Play the optional short audio cue alongside the visual reaction. */
   sound: z.boolean().default(false),
   /**
@@ -784,6 +796,11 @@ export const MascotNoiseReactionConfigSchema = z.object({
    * point — "Bruno, Shhhhhhhhhhhh..." asks for silence far better than a
    * generic hiss, and it is the mascot doing the asking instead of you.
    */
+  /**
+   * Quem chamar. Fica separado da frase porque é a única parte que a síntese de
+   * voz pronuncia antes da pausa — "Bruno," e só então o chiado.
+   */
+  name: z.string().trim().default(''),
   phrase: z.string().trim().min(1).default('Shhhhhh...'),
   /**
    * Loudness of the audio cue, 0..1. Defaults to the top of the range: the
@@ -827,6 +844,12 @@ export interface MascotNoiseSettings {
   debounceMs: number;
   /** Whether to play the optional short audio cue alongside the visual reaction. */
   sound: boolean;
+  /** Janela de medição antes do primeiro disparo, em ms. Zero dispara na primeira amostra. */
+  sustainMs: number;
+  /** Fração da janela que precisa estar acima do limiar, 0..1. */
+  sustainRatio: number;
+  /** Quem chamar, pronunciado antes da pausa. Vazio quando o pedido não tem destinatário. */
+  name: string;
   /** What the mascot says and shows in the bubble. */
   phrase: string;
   /** Loudness of the audio cue, 0..1. */
@@ -850,9 +873,9 @@ export interface MascotNoiseSettings {
  * ```
  */
 export const resolveMascotNoiseSettings = (mascot?: z.input<typeof MascotConfigSchema> | null): MascotNoiseSettings => {
-  const { enabled, threshold, debounceMs, sound, phrase, volume } = MascotConfigSchema.parse(mascot ?? {}).reactions
-    .noise;
-  return { enabled, threshold, debounceMs, sound, phrase, volume };
+  const { enabled, threshold, debounceMs, sustainMs, sustainRatio, sound, name, phrase, volume } =
+    MascotConfigSchema.parse(mascot ?? {}).reactions.noise;
+  return { enabled, threshold, debounceMs, sustainMs, sustainRatio, sound, name, phrase, volume };
 };
 
 /**

@@ -1118,8 +1118,11 @@ describe('MascotNoiseReactionConfigSchema', () => {
       threshold: 0.06,
       debounceMs: 1500,
       sound: false,
+      name: '',
       phrase: 'Shhhhhh...',
       volume: 1,
+      sustainMs: 0,
+      sustainRatio: 0.6,
     });
   });
 
@@ -1128,8 +1131,11 @@ describe('MascotNoiseReactionConfigSchema', () => {
       enabled: true,
       threshold: 0.7,
       debounceMs: 5000,
+      sustainMs: 2000,
+      sustainRatio: 0.4,
       sound: true,
-      phrase: 'Bruno, Shhhhhhhhhhhh...',
+      name: 'Bruno',
+      phrase: 'Shhhhhhhhhhhh...',
       volume: 0.8,
     };
     expect(MascotNoiseReactionConfigSchema.parse(config)).toEqual(config);
@@ -1150,7 +1156,17 @@ describe('MascotConfigSchema', () => {
   it('defaults the reactions block so an empty mascot config is inert', () => {
     expect(MascotConfigSchema.parse({})).toEqual({
       reactions: {
-        noise: { enabled: false, threshold: 0.06, debounceMs: 1500, sound: false, phrase: 'Shhhhhh...', volume: 1 },
+        noise: {
+          enabled: false,
+          threshold: 0.06,
+          debounceMs: 1500,
+          sustainMs: 0,
+          sustainRatio: 0.6,
+          sound: false,
+          name: '',
+          phrase: 'Shhhhhh...',
+          volume: 1,
+        },
       },
     });
   });
@@ -1162,8 +1178,11 @@ describe('MascotConfigSchema', () => {
       threshold: 0.5,
       debounceMs: 1500,
       sound: false,
+      name: '',
       phrase: 'Shhhhhh...',
       volume: 1,
+      sustainMs: 0,
+      sustainRatio: 0.6,
     });
   });
 });
@@ -1196,8 +1215,11 @@ describe('resolveMascotNoiseSettings', () => {
       threshold: 0.06,
       debounceMs: 1500,
       sound: false,
+      name: '',
       phrase: 'Shhhhhh...',
       volume: 1,
+      sustainMs: 0,
+      sustainRatio: 0.6,
     });
   });
 
@@ -1212,8 +1234,11 @@ describe('resolveMascotNoiseSettings', () => {
           enabled: true,
           threshold: 0.7,
           debounceMs: 5000,
+          sustainMs: 2000,
+          sustainRatio: 0.4,
           sound: true,
-          phrase: 'Bruno, Shhhhhhhhhhhh...',
+          name: 'Bruno',
+          phrase: 'Shhhhhhhhhhhh...',
           volume: 0.5,
         },
       },
@@ -1222,8 +1247,11 @@ describe('resolveMascotNoiseSettings', () => {
       enabled: true,
       threshold: 0.7,
       debounceMs: 5000,
+      sustainMs: 2000,
+      sustainRatio: 0.4,
       sound: true,
-      phrase: 'Bruno, Shhhhhhhhhhhh...',
+      name: 'Bruno',
+      phrase: 'Shhhhhhhhhhhh...',
       volume: 0.5,
     });
   });
@@ -1234,9 +1262,35 @@ describe('resolveMascotNoiseSettings', () => {
       threshold: 0.06,
       debounceMs: 1500,
       sound: false,
+      name: '',
       phrase: 'Shhhhhh...',
       volume: 1,
+      sustainMs: 0,
+      sustainRatio: 0.6,
     });
+  });
+
+  it('carrega a sustentacao, que ate aqui so existia como prop do componente', () => {
+    const settings = resolveMascotNoiseSettings({
+      reactions: { noise: { sustainMs: 2000, sustainRatio: 0.4 } },
+    });
+    expect(settings.sustainMs).toBe(2000);
+    expect(settings.sustainRatio).toBe(0.4);
+  });
+
+  it('nao sustenta nada por padrao: dispara na primeira amostra alta', () => {
+    expect(resolveMascotNoiseSettings().sustainMs).toBe(0);
+    expect(resolveMascotNoiseSettings().sustainRatio).toBe(0.6);
+  });
+
+  it('recusa fracao de sustentacao fora de 0..1', () => {
+    expect(() => resolveMascotNoiseSettings({ reactions: { noise: { sustainRatio: 1.2 } } })).toThrow();
+  });
+
+  it('guarda o nome de quem chamar, separado da frase', () => {
+    const settings = resolveMascotNoiseSettings({ reactions: { noise: { name: 'Bruno' } } });
+    expect(settings.name).toBe('Bruno');
+    expect(settings.phrase).toBe('Shhhhhh...');
   });
 
   it('aceita a frase com o nome de quem esta falando alto — e o caso de uso', () => {
