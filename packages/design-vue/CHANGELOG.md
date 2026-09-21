@@ -1,5 +1,102 @@
 # @opentask/taskin-design-vue
 
+## 0.5.0
+
+### Minor Changes
+
+- 6dd91b7: O mascote chama o nome, faz a pausa e só então chia
+  
+  As duas camadas do shhh começavam juntas, e a síntese de voz ainda tentava
+  pronunciar "Shhhhhhhhhhhh..." — saía tudo embolado, e o pedido perdia o
+  endereço. Agora `shush` fala **apenas o nome**, espera a fala terminar mais um
+  lapso curto, e só então toca o chiado sintetizado: o ritmo de "Bruno, shhhhh".
+  
+  `ShhhPedido` ganhou o campo `name`, e `planejarShhh` devolve também o `pausaMs`
+  entre as duas camadas. A dependência `falar` passou a devolver `Promise<void>`,
+  resolvida no `onend` da fala — é disso que depende o chiado entrar na hora
+  certa. Há um teto de espera para o caso de o `onend` não disparar, o que
+  acontece em alguns navegadores quando a aba perde o foco: o chiado é a camada
+  que atravessa a sala e não pode ficar refém da fala.
+  
+  `TaskinWithShhh` ganhou a prop `shhhName`, editável no painel de controles da
+  story. O balão mostra "nome, frase"; a voz pronuncia só o nome; a `shhhPhrase`
+  continua definindo a duração do chiado pelos seus `h` e não é mais falada.
+- 23c11ed: O bloco `mascot.reactions.noise` passa a carregar `sustainMs`, `sustainRatio` e
+  `name`, e o `TaskinWithShhh` ganha `showControls`.
+  
+  A sustentação do ruído e o nome de quem chamar existiam como prop do componente
+  e não no `.taskin.json` — o próprio código dizia isso num comentário, e
+  contornava lendo da prop mesmo quando recebia o bloco de configuração. Agora as
+  duas fontes carregam os mesmos campos, e o contorno saiu.
+  
+  `showControls` desliga os controles de rastreamento e de ruído em volta do
+  mascote. Ligados seguem sendo o padrão, que é o uso de laboratório; desligados,
+  sobra só o mascote — que é como ele vive num celular apoiado abaixo do monitor,
+  onde não há nada a ajustar durante o dia.
+- d68a2f5: O pedido de silêncio agora mede quanto da janela foi barulhento
+  
+  `onNoiseAbove` passa a aceitar `{ sustainMs, sustainRatio, debounceMs }`. A
+  reação dispara quando, dentro dos últimos `sustainMs` milissegundos, pelo menos
+  a fração `sustainRatio` das amostras esteve acima do limiar. Antes bastava uma
+  única amostra alta — uma porta batendo pedia silêncio igual a um minuto de
+  conversa alta.
+  
+  A medida é por fração, e não por sequência ininterrupta, porque uma fala não é
+  um platô: entre sílabas e frases há vales de 100 a 400ms, e exigir barulho
+  contínuo nunca dispararia numa conversa. Numa janela de 3s uma porta batendo
+  ocupa 1 a 4% e uma conversa alta ocupa 60 a 87%, e o padrão de 0.6 cai no vão
+  entre os dois. `sustainRatio: 1` restaura a exigência ininterrupta.
+  
+  O amostrador passou de 100ms para 40ms entre leituras: cada leitura cobre
+  `fftSize / sampleRate` de áudio (~43ms a 48kHz), então o intervalo antigo
+  observava menos da metade da linha do tempo, inventando vales e deixando
+  estalos curtos passarem inteiros entre duas leituras.
+  
+  `NoiseTrackingControls` ganhou o campo `Ratio` e um botão **Test Shhh**, que
+  toca a reação como se tivesse detectado — com o microfone desligado, ignorando
+  limiar e tempos — para ajustar frase, voz e volume sem gritar na sala.
+  `TaskinWithShhh` ganhou as props `noiseSustainMs` e `noiseSustainRatio`.
+  
+  `onNoiseAbove` aceita ainda um `onProgress`, chamado a cada amostra com o estado
+  do critério: ocupação atual, quanto falta para a janela encher, quanto falta do
+  debounce e uma previsão de quanto falta para disparar se o barulho continuar. O
+  painel de debug do `TaskinWithShhh` mostra esses quatro números. Não é um
+  relógio regressivo de propósito — neste critério uma pausa longa aumenta o tempo
+  que falta, então a previsão vem com a condição escrita junto.
+  
+  O barril de `composables` do `ui-sense` passou a reexportar o módulo inteiro do
+  noise watcher. A lista escrita à mão que havia ali nomeava três símbolos e já
+  estava defasada, deixando tipos e defaults públicos fora do alcance de quem
+  instala o pacote.
+  
+  O padrão continua sendo `sustainMs: 0`, e o terceiro argumento numérico continua
+  significando `debounceMs`: nada do que já existia muda de comportamento.
+
+### Patch Changes
+
+- 9e15f2d: O balão de pensamento cresce com a frase
+  
+  `<text>` em SVG não quebra linha, e o balão era uma elipse fixa de `rx: 35` com
+  uma única linha de 24px. Qualquer frase maior que meia dúzia de caracteres saía
+  por fora do desenho — e a frase do shhh é configurável justamente para chamar a
+  pessoa pelo nome, como em "Bruno, Shhhhhhhhhhhh...".
+  
+  Agora o layout vem do conteúdo: a frase é quebrada em linhas, a fonte cede de
+  24px até 11px antes de partir qualquer palavra ao meio, e a elipse é
+  dimensionada pelo texto. O balão cresce para a direita antes da esquerda, para
+  não cobrir a cabeça do mascote, e nunca ultrapassa o quadro. As duas bolhas da
+  ponta acompanham o balão em vez de ficarem em posição fixa.
+  
+  O balão padrão (`?`) continua exatamente onde estava, no mesmo tamanho. A linha
+  quebrada num espaço guarda esse espaço, para o texto não se emendar para quem
+  copia ou usa leitor de tela.
+- Updated dependencies [6dd91b7]
+- Updated dependencies [23c11ed]
+- Updated dependencies [d68a2f5]
+  - @opentask/ui-sense@0.6.0
+  - @opentask/taskin-types@2.5.0
+  - @opentask/taskin-task-manager@3.2.2
+
 ## 0.4.0
 
 ### Minor Changes

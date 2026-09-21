@@ -1,5 +1,17 @@
 # taskin
 
+## 4.4.2
+
+### Patch Changes
+
+- Updated dependencies [23c11ed]
+  - @opentask/taskin-types@2.5.0
+  - @opentask/taskin-file-system-provider@3.3.2
+  - @opentask/taskin-git-utils@3.0.6
+  - @opentask/taskin-task-manager@3.2.2
+  - @opentask/taskin-task-server-mcp@0.5.2
+  - @opentask/taskin-task-server-ws@0.3.6
+
 ## 4.4.1
 
 ### Patch Changes
