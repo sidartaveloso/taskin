@@ -1,8 +1,10 @@
 # Task 016 — Add "Xiiu" / "Shhh" reaction to Taskin mascot
 
-Status: pending  
-Type: feat  
-Assignee: Sidarta Veloso
+- Status: in-progress
+- Type: feat
+- Assignee: Sidarta Veloso
+- Priority: 80
+- Difficulty: 1
 
 ## Description
 
@@ -20,17 +22,17 @@ noise capabilities (e.g., classroom demos, workshops, or shared offices).
 
 - [ ] Design: propose animation frames and optional short sound effects (xiiu / shhh)
 - [ ] Add assets: SVG/PNG animation, or Lottie/frames; add audio files (optional)
-- [ ] Add configuration options to `ConfigManager` / `.taskin.json`
+- [x] Add configuration options to `ConfigManager` / `.taskin.json`
   - `mascot.reactions.noise.enabled` (boolean)
   - `mascot.reactions.noise.threshold` (number, dB-equivalent or relative scale)
   - `mascot.reactions.noise.debounceMs` (number)
   - `mascot.reactions.noise.sound` (boolean)
-- [ ] Implement a small `NoiseWatcher` utility that exposes `onNoiseAbove(threshold, cb)` and respects debounce
+- [x] Implement a small `NoiseWatcher` utility that exposes `onNoiseAbove(threshold, cb)` and respects debounce
 - [ ] Integrate with mascot component in `design-vue` (`Mascot` or `taskin-arms` family)
 - [ ] Implement visual reaction and optional sound playback via existing `playSound()` helper
-- [ ] Add unit tests for `NoiseWatcher` and config parsing
+- [x] Add unit tests for `NoiseWatcher` and config parsing
 - [ ] Add integration / E2E test that simulates noise events and asserts mascot reaction
-- [ ] Update documentation and examples (README, ARCHITECTURE.md)
+- [x] Update documentation and examples (README, ARCHITECTURE.md)
 - [ ] QA: visual verification across themes & accessibility review (screen reader / reduced motion)
 
 ## Acceptance Criteria
@@ -107,6 +109,115 @@ noise capabilities (e.g., classroom demos, workshops, or shared offices).
 
 - Small → ~2-3 days (design + implementation + tests + docs)
 
+
+### O que ja estava pronto, conferido em 16/09
+
+Tres itens estavam feitos e nao marcados — o padrao que a auditoria de 12-13/09
+encontrou, aqui de novo:
+
+| item | onde | prova |
+| --- | --- | --- |
+| `NoiseWatcher` | `ui-sense/src/utils/noise-watcher.ts` | 10 testes; expoe `onNoiseAbove(threshold, cb, debounceMs)` |
+| configuracao | `MascotReactionsConfigSchema` no `types-ts` | limiar, debounce e `enabled`, desligado por padrao |
+| testes de parsing | `taskin.schemas.test.ts` | `describe('resolveMascotNoiseSettings')` |
+
+### A ponte que faltava
+
+O schema existia e o resolvedor tambem, mas **nada lia o bloco** do
+`.taskin.json`: a configuracao existia no papel e nao no produto. O
+`ConfigManager` ganhou `getMascotNoiseSettings()`, com 5 testes
+(`mascot-settings.test.ts`) — incluindo o de que um bloco invalido cai no padrao
+em vez de derrubar o comando, porque alguem edita esse arquivo a mao e o mascote
+nao e motivo para o CLI parar.
+
+### O que continua aberto, e por que
+
+Os itens restantes dependem de **material que nao se escreve em codigo**: quadros
+de animacao, arquivo de audio, e a verificacao visual em temas e leitor de tela.
+Ficam declarados, e nao escondidos — nao ha como eu produzi-los com honestidade
+aqui.
+
 ## Notes
 
 Add any relevant links to design files, audio resources, or prototype sketches here.
+
+## Progress (RALPH, 2026-09-13)
+
+O grosso da reação já estava construído em iterações anteriores: `NoiseWatcher`
+e `NoiseTrackingControls` em `@opentask/ui-sense` e o organismo
+`TaskinWithShhh` em `design-vue` (com spec). Esta iteração fechou os dois
+critérios de aceitação que ainda faltavam e eram testáveis fora do browser:
+
+- `createNoiseDispatcher` — núcleo puro (limiar + debounce + níveis) extraído do
+  `NoiseWatcher`, com relógio injetável; coberto por `noise-watcher.spec.ts`.
+- `MascotConfigSchema` (`reactions.noise.{enabled,threshold,debounceMs,sound}`)
+  em `@opentask/taskin-types`, plugado como `mascot` opcional no
+  `TaskinConfigSchema`, com defaults conservadores e testes de parsing.
+
+## Progress (RALPH, 2026-09-13 — segunda passada)
+
+Fechei a etapa de *derivação* do caminho config → props, que era a parte
+testável fora do browser:
+
+- `resolveMascotNoiseSettings(mascot?)` em `@opentask/taskin-types` — função pura
+  que lê o bloco `mascot` como escrito no `.taskin.json` (parcial, ausente ou
+  `null`) e devolve `{ enabled, threshold, debounceMs, sound }` já com os
+  defaults do schema aplicados. Coberta por 5 testes em `taskin.schemas.test.ts`
+  (defaults, `null`, bloco completo, bloco parcial, e rejeição de threshold fora
+  de faixa). Testes rodam em node (112 passam).
+- `TaskinWithShhh.vue` ganhou a prop opcional `mascot?: MascotConfig`; quando
+  presente, as configurações de ruído vêm de `resolveMascotNoiseSettings` e têm
+  precedência sobre as props `noise*` individuais. Um consumidor pode agora
+  repassar o bloco de config direto, sem desempacotar. `vue-tsc` passa.
+
+## Progress (RALPH, 2026-09-13 — terceira passada)
+
+Fechei o critério de acessibilidade que ainda era derivável fora do browser: a
+decisão de *como* a reação toca conforme as preferências do usuário.
+
+- `resolveShhhReactionPlan({ sound, prefersReducedMotion? })` em
+  `@opentask/taskin-types` — função pura que devolve `{ animate, playSound,
+  showBadge }`. `prefers-reduced-motion` troca a animação por um badge estático
+  (`animate:false, showBadge:true`) e `sound` fica ortogonal ao movimento (quem
+  optou por som e usa reduced-motion ainda ouve). Coberta por 4 testes em
+  `taskin.schemas.test.ts` (116 passam em node).
+- `TaskinWithShhh.vue` lê `prefers-reduced-motion` via `matchMedia` no momento da
+  reação e passa por `resolveShhhReactionPlan`; sob reduced-motion o mascote só
+  mostra o balão "shh..." estático, sem mexer boca/humor. `vue-tsc` passa.
+
+Restante para dar a task como concluída:
+
+- [ ] Montar o `TaskinWithShhh` em alguma superfície do dashboard e ligar a
+      leitura do `.taskin.json` até a prop `mascot` (hoje o dashboard não
+      renderiza o mascote e recebe tasks por WS, não lê o arquivo de config).
+      A derivação já está pronta e testada; falta o ponto de montagem.
+- [ ] Asset de áudio real para `sound=true` (hoje o caminho é visual-only).
+- [ ] Documentação (README/ARCHITECTURE) e exemplos.
+- [ ] QA de acessibilidade no browser: a derivação de `prefers-reduced-motion`
+      já está feita e testada (`resolveShhhReactionPlan`); falta a verificação
+      visual do badge estático e a leitura por leitor de tela.
+- [ ] Rodar os specs de browser/storybook (`TaskinWithShhh.spec`) — não
+      executados no ambiente RALPH (host sem `libnss3`, sem root para instalar).
+
+## Progress (RALPH, 2026-09-13 — quarta passada)
+
+Fechei o item de documentação do checklist (`README, ARCHITECTURE.md`), que era
+o próximo passo testável fora do browser:
+
+- Novo guia `packages/design-vue/docs/MASCOT_NOISE_REACTION.md`, no mesmo padrão
+  do `FACE_TRACKING.md`: como funciona (Web Audio → `NoiseWatcher` → plano da
+  reação), uso do `TaskinWithShhh` (via bloco `mascot` do `.taskin.json` e via
+  props `noise*`), tabela do schema `mascot.reactions.noise`, os helpers puros
+  `resolveMascotNoiseSettings`/`resolveShhhReactionPlan`, e seções de
+  acessibilidade, privacidade e testes.
+- `docs/ARCHITECTURE.md`: a seção `## Configuração` (antes vazia) ganhou a
+  subseção do bloco `mascot`, com o exemplo de `.taskin.json`, os defaults e um
+  link para o guia do design-vue.
+- `packages/design-vue/README.md`: subseção "Interactive mascots" listando
+  `TaskinWithFaceTracking` e `TaskinWithShhh` com links para os respectivos docs.
+
+Restam apenas os itens que dependem do browser/dashboard: montar o
+`TaskinWithShhh` numa superfície do dashboard e ligar a leitura do
+`.taskin.json`, o asset de áudio real para `sound=true`, e a QA de
+acessibilidade no browser (verificação visual do badge estático + leitor de
+tela).

@@ -1,13 +1,15 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { h } from 'vue';
 import type { Task } from '../../types';
+import { groupId } from '../../types';
 import PrioritizationPage from './PrioritizationPage.vue';
 
 const meta: Meta<typeof PrioritizationPage> = {
   title: 'Pages/PrioritizationPage',
   component: PrioritizationPage,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   parameters: {
     docs: {
       description: {
@@ -23,9 +25,9 @@ export default meta;
 type Story = StoryObj<typeof PrioritizationPage>;
 
 const createTask = (id: string, overrides: Partial<Task> = {}): Task => ({
-  id,
+  id: parseTaskId(id),
   number: Number(id),
-  title: `Task ${id}: exemplo de título de tarefa`,
+  title: `Task ${id}: example task title`,
   status: 'pending',
   type: 'feat',
   dates: { created: new Date('2026-07-01') },
@@ -37,14 +39,14 @@ const mockTasks: Task[] = [
   createTask('002', {
     order: 20,
     type: 'fix',
-    groupId: 'g1',
+    parent: { type: 'group', id: groupId('g1') },
     groupName: 'Backend',
     difficulty: 4,
   }),
   createTask('003', {
     order: 30,
     type: 'refactor',
-    groupId: 'g1',
+    parent: { type: 'group', id: groupId('g1') },
     groupName: 'Backend',
   }),
   createTask('004', { order: 40, type: 'docs' }),
@@ -191,10 +193,11 @@ export const DragAndDropInteractions: Story = {
       // Subgroup is nested inside the parent
       const subGroups = parentGroup!.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       expect(subGroups.length).toBe(1);
-      const subGroup = subGroups[0];
-      expect(subGroup.textContent).toContain('2 items');
-      expect(within(subGroup).getByTestId('priority-card-001')).toBeTruthy();
-      expect(within(subGroup).getByTestId('priority-card-002')).toBeTruthy();
+      const [subGroup] = subGroups;
+      expect(subGroup).toBeTruthy();
+      expect(subGroup?.textContent).toContain('2 items');
+      expect(within(subGroup as HTMLElement).getByTestId('priority-card-001')).toBeTruthy();
+      expect(within(subGroup as HTMLElement).getByTestId('priority-card-002')).toBeTruthy();
       // Card 004 stays directly in the parent
       expect(within(parentGroup!).getByTestId('priority-card-004')).toBeTruthy();
     });
@@ -222,10 +225,10 @@ export const DragAndDropInteractions: Story = {
 // ---------------------------------------------------------------------------
 
 const groupedTasks: Task[] = [
-  createTask('001', { order: 10, groupId: 'g1', groupName: 'Alpha' }),
-  createTask('002', { order: 20, groupId: 'g1', groupName: 'Alpha' }),
-  createTask('003', { order: 30, groupId: 'g2', groupName: 'Beta' }),
-  createTask('004', { order: 40, groupId: 'g2', groupName: 'Beta' }),
+  createTask('001', { order: 10, parent: { type: 'group', id: groupId('g1') }, groupName: 'Alpha' }),
+  createTask('002', { order: 20, parent: { type: 'group', id: groupId('g1') }, groupName: 'Alpha' }),
+  createTask('003', { order: 30, parent: { type: 'group', id: groupId('g2') }, groupName: 'Beta' }),
+  createTask('004', { order: 40, parent: { type: 'group', id: groupId('g2') }, groupName: 'Beta' }),
   createTask('005', { order: 50 }),
   createTask('006', { order: 60 }),
 ];
@@ -280,8 +283,8 @@ export const GroupDragInteractions: Story = {
       const groups = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       expect(groups.length).toBe(2);
       // Beta should now be first
-      expect(groups[0].textContent).toContain('Beta');
-      expect(groups[1].textContent).toContain('Alpha');
+      expect(groups[0]?.textContent).toContain('Beta');
+      expect(groups[1]?.textContent).toContain('Alpha');
     });
 
     // 2. Drop Alpha onto Beta (middle) → nest both under a parent
@@ -290,7 +293,6 @@ export const GroupDragInteractions: Story = {
     await dragGroupOnto(alphaHead, betaGroupAfterReorder, 'middle');
     await waitFor(() => {
       // Only the parent group should show at top level
-      const groups = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-group-"]');
       // Parent group + 2 standalone tasks = 1 + 2 direct children
       const nodeList = canvasElement.querySelector('.node-list')!;
       const directChildren = nodeList.children;
@@ -309,7 +311,7 @@ export const GroupDragInteractions: Story = {
 
 const gestureMockTasks: Task[] = [
   {
-    id: '001',
+    id: parseTaskId('001'),
     number: 1,
     title: 'Implementar login',
     status: 'pending',
@@ -319,7 +321,7 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '002',
+    id: parseTaskId('002'),
     number: 2,
     title: 'Corrigir bug no cadastro',
     status: 'pending',
@@ -329,9 +331,9 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '003',
+    id: parseTaskId('003'),
     number: 3,
-    title: 'Refatorar módulo de pagamento',
+    title: 'Refactor the payment module',
     status: 'pending',
     type: 'refactor',
     order: 30,
@@ -339,7 +341,7 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '004',
+    id: parseTaskId('004'),
     number: 4,
     title: 'Adicionar testes',
     status: 'pending',
@@ -349,7 +351,7 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '005',
+    id: parseTaskId('005'),
     number: 5,
     title: 'Documentar API',
     status: 'pending',
@@ -359,7 +361,7 @@ const gestureMockTasks: Task[] = [
     dates: { created: new Date() },
   },
   {
-    id: '006',
+    id: parseTaskId('006'),
     number: 6,
     title: 'Configurar CI/CD',
     status: 'pending',
@@ -371,6 +373,7 @@ const gestureMockTasks: Task[] = [
 ];
 
 export const GestureControl: Story = {
+  tags: ['webcam'],
   render: () => ({
     setup() {
       return () =>
@@ -400,7 +403,7 @@ export const GestureControl: Story = {
     docs: {
       description: {
         story:
-          '📹 Controle total da priorização por gestos manuais via webcam. O `GestureSystem` integrado gerencia câmera, reconhecimento e wizard. Clique em "Iniciar Detecção" e selecione um card para começar.',
+          '📹 Full control of prioritization through hand gestures over the webcam. The embedded `GestureSystem` owns the camera, the recognition and the wizard. Click "Start Detection" and pick a card to begin.',
       },
     },
   },

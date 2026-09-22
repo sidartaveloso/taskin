@@ -83,7 +83,7 @@ describe('TelegramProvider', () => {
   it('should format message as MarkdownV2', async () => {
     let callUrl = '';
     let sentBody: URLSearchParams | null = null;
-    globalThis.fetch = vi.fn().mockImplementation(async (url: string, opts: any) => {
+    globalThis.fetch = vi.fn().mockImplementation(async (url: string, opts: RequestInit) => {
       callUrl = url;
       sentBody = opts.body as URLSearchParams;
       return {
@@ -106,7 +106,7 @@ describe('TelegramProvider', () => {
 
   it('should format title and description into message text', async () => {
     let sentBody: URLSearchParams | null = null;
-    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: RequestInit) => {
       sentBody = opts.body as URLSearchParams;
       return {
         ok: true,
@@ -132,7 +132,7 @@ describe('TelegramProvider', () => {
 
   it('should escape Telegram MarkdownV2 special characters in title', async () => {
     let sentBody: URLSearchParams | null = null;
-    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: RequestInit) => {
       sentBody = opts.body as URLSearchParams;
       return {
         ok: true,
@@ -162,7 +162,7 @@ describe('TelegramProvider', () => {
 
   it('should handle message with only fields (no title)', async () => {
     let sentBody: URLSearchParams | null = null;
-    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: any) => {
+    globalThis.fetch = vi.fn().mockImplementation(async (_url: string, opts: RequestInit) => {
       sentBody = opts.body as URLSearchParams;
       return {
         ok: true,

@@ -1,11 +1,20 @@
 # Dependencies
 node_modules/
+# O sandcastle monta o worktree dentro do container, e o pnpm de la
+# materializa o seu store aqui quando nao encontra o do host.
+.pnpm-store/
 .pnp
 .pnp.js
 
 # Testing
 coverage/
 .nyc_output/
+__screenshots__/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+test-results-report.html
 
 # Build outputs
 dist/
@@ -78,14 +87,30 @@ generated/
 .cache/
 .temp/
 tmp/
+test-temp-e2e/
 
 # VitePress
 .vitepress/cache/
 .vitepress/dist/
-packages/docs/content/
+# O conteudo do site e fonte versionada; so o que o vitepress gera fica de fora.
+# A regra antiga ignorava `packages/docs/content/` inteiro — foi por isso que o
+# site nasceu vazio e ficou nove meses assim: qualquer markdown escrito ali era
+# ignorado sem aviso. A config tambem precisa ser versionada, senao o vitepress
+# usa o target antigo do Vite e o build quebra no esbuild 0.28. Ver task-045.
+packages/docs/content/.vitepress/cache/
+packages/docs/content/.vitepress/dist/
 
 # OS
 Thumbs.db
 
 *storybook.log
 storybook-static
+
+# Anexos que o vitest grava durante a execucao (capturas de tela de falha).
+.vitest-attachments/
+
+# Projeto de carga para medir o custo de um movimento na priorizacao.
+.bench500/
+
+# Fixtures de reproducao da task-078.
+.fix078*/

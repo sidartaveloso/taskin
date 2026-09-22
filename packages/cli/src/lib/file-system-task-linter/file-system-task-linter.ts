@@ -1,3 +1,4 @@
+import { readMetadataField } from '@opentask/taskin-file-system-provider';
 import { TASK_STATUSES, TASK_TYPES } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import { readdir, readFile } from 'fs/promises';
@@ -29,11 +30,11 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
    * Validate task file name format (FileSystem-specific)
    */
   validateFileName(fileName: string): FileValidationError | null {
-    const pattern = /^task-\d{2,3}-[a-z0-9-]+\.md$/;
+    const pattern = /^task-\d{2,3}(?:-[a-z0-9-]+)?\.md$/;
     if (!pattern.test(fileName)) {
       return {
         file: fileName,
-        message: 'Invalid filename. Expected: task-NNN-kebab-case-title.md',
+        message: 'Invalid filename. Expected: task-NNN-kebab-case-title.md (or task-NNN.md)',
         severity: 'error',
       };
     }
@@ -41,15 +42,15 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
   }
 
   private extractMetadata(content: string): TaskMetadata {
-    const headerSection = content.split(/^##/m)[0];
-    const statusMatch = headerSection.match(/^Status:\s*(.+)$/im);
-    const typeMatch = headerSection.match(/^Type:\s*(.+)$/im);
-    const assigneeMatch = headerSection.match(/^Assignee:\s*(.+)$/im);
-
+    /*
+     * A marcacao (`- ` no inicio, `\\` no fim) e formatacao da linha, nao parte
+     * do valor. Ler pelo modulo de estilos e o que faz os tres estilos
+     * chegarem aqui como o mesmo dado.
+     */
     return {
-      status: statusMatch?.[1]?.trim().toLowerCase(),
-      type: typeMatch?.[1]?.trim().toLowerCase(),
-      assignee: assigneeMatch?.[1]?.trim(),
+      status: readMetadataField(content, 'Status')?.toLowerCase(),
+      type: readMetadataField(content, 'Type')?.toLowerCase(),
+      assignee: readMetadataField(content, 'Assignee'),
     };
   }
 

@@ -1,9 +1,11 @@
 # Task 025 — Aplicar configurador de gestos na tela de priorização
 
-Status: pending  
-Type: feat  
-Assignee: fernandogatti  
-Depends on: task-024
+- Status: pending
+- Type: feat
+- Assignee: fernando-gatti
+- Depends on: task-024
+- Priority: 110
+- Difficulty: 2
 
 ## Description
 

@@ -65,6 +65,31 @@ describe('FileSystemTaskProvider', () => {
       const task = await provider.findTask('001');
       expect(task).toBeUndefined();
     });
+
+    it('should extract the full title even when it contains the word "task"', async () => {
+      (fs.readdir as Mock).mockResolvedValue(['task-031-revisar-se-task-manager-deveria.md']);
+      (fs.readFile as Mock).mockResolvedValue(
+        '# Task 031 — revisar se task-manager deveria lidar com taskfile ou task',
+      );
+
+      const task = await provider.findTask('031');
+
+      expect(task?.title).toBe('revisar se task-manager deveria lidar com taskfile ou task');
+    });
+
+    it('should find a task file named without a title slug (task-004.md)', async () => {
+      (fs.readdir as Mock).mockResolvedValue(['task-004.md']);
+      (fs.readFile as Mock).mockResolvedValue(
+        '# Task 004 — Sem titulo\n\nStatus: pending\nType: feat\nAssignee: A definir',
+      );
+
+      const task = await provider.findTask('004');
+
+      expect(task).toBeDefined();
+      expect(task?.id).toBe('004');
+      expect(task?.filePath).toBe('/fake/tasks/task-004.md');
+      expect(fs.readFile).toHaveBeenCalledWith('/fake/tasks/task-004.md', 'utf-8');
+    });
   });
 
   describe('updateTask', () => {
@@ -127,7 +152,7 @@ Test description`;
 
       const result = await provider.createTask({ title, type: 'feat' });
 
-      expect(result.taskId).toBe('001');
+      expect(result.task.id).toBe('001');
       expect(result.filePath).toBe(filePath);
       expect(fs.writeFile).toHaveBeenCalledWith(expect.stringContaining(fileName), expect.any(String), 'utf-8');
       // Ensure the generated content uses English inline metadata
@@ -165,7 +190,7 @@ Test description`;
 
       const result = await providerPT.createTask({ title, type: 'feat' });
 
-      expect(result.taskId).toBe('001');
+      expect(result.task.id).toBe('001');
       expect(result.filePath).toBe(filePath);
       expect(fs.writeFile).toHaveBeenCalledWith(expect.stringContaining(fileName), expect.any(String), 'utf-8');
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
@@ -201,7 +226,7 @@ Test description`;
 
       const result = await provider.createTask({ title, type: 'feat' });
 
-      expect(result.taskId).toBe('001');
+      expect(result.task.id).toBe('001');
       expect(result.filePath).toBe(filePath);
       expect(result.filePath).toContain(expectedSlug);
       expect(result.filePath).not.toContain('ã');
@@ -250,10 +275,10 @@ Test description`;
       const content = `# Task 001 — Prioritized Task
 Status: pending
 Type: feat
-Priority: 20
-Group: g-abc123
-GroupName: Backend
-Difficulty: 3
+Priority: 20\\
+Group: g-abc123\\
+GroupName: Backend\\
+Difficulty: 3\\
 
 ## Description
 Test description`;
@@ -288,7 +313,7 @@ Test description`;
       expect(task?.difficulty).toBeUndefined();
     });
 
-    it('should write Priority/Group/GroupName/Difficulty inline metadata (round-trip)', async () => {
+    it('should write Priority/Group/Difficulty inline metadata (round-trip)', async () => {
       const originalContent = `# Task 001 — Test Task
 Status: pending
 Type: feat
@@ -308,7 +333,6 @@ Test description`;
         type: 'feat',
         order: 30,
         groupId: 'g-xyz789',
-        groupName: 'Frontend',
         difficulty: 4,
       };
 
@@ -317,7 +341,8 @@ Test description`;
       const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
       expect(written).toMatch(/^Priority: 30$/m);
       expect(written).toMatch(/^Group: g-xyz789$/m);
-      expect(written).toMatch(/^GroupName: Frontend$/m);
+      // O nome do grupo nao mora mais na tarefa (task-079): vive no registro.
+      expect(written).not.toMatch(/^GroupName:/m);
       expect(written).toMatch(/^Difficulty: 4$/m);
 
       // Round-trip: reading the written content back should yield the same fields
@@ -326,7 +351,6 @@ Test description`;
       const reread = await provider.findTask('001');
       expect(reread?.order).toBe(30);
       expect(reread?.groupId).toBe('g-xyz789');
-      expect(reread?.groupName).toBe('Frontend');
       expect(reread?.difficulty).toBe(4);
     });
 
@@ -475,6 +499,25 @@ Minimal task with no status or type`;
       expect(tasks[0].type).toBe('feat');
     });
 
+    it('should extract the numeric id from a file without a title slug (task-004.md)', async () => {
+      const taskContent = `# Task 004 — Sem titulo
+Status: pending
+Type: feat
+Assignee: A definir
+
+## Description
+Descrição`;
+
+      (fs.readdir as Mock).mockResolvedValue(['task-004.md']);
+      (fs.readFile as Mock).mockResolvedValue(taskContent);
+
+      const tasks = await provider.getAllTasks();
+
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].id).toBe('004');
+      expect(tasks[0].filePath).toBe('/fake/tasks/task-004.md');
+    });
+
     it('should parse pt-BR localized task files', async () => {
       const taskContentPT = `# Task 001 — Tarefa em Português
 Status: em-progresso
@@ -587,7 +630,7 @@ Task with registered user`;
         description: 'Test lifecycle',
       });
 
-      const taskId = result.taskId;
+      const taskId = result.task.id;
       expect(taskId).toBe('001');
       expect(result.task.title).toBe(title);
       expect(result.task.status).toBe('pending');
@@ -677,7 +720,7 @@ Task with registered user`;
         description: 'Quick fix',
       });
 
-      const taskId = result.taskId;
+      const taskId = result.task.id;
       expect(result.task.status).toBe('pending');
       expect(result.task.title).toBe(title);
       expect(result.task.type).toBe('fix');
@@ -898,9 +941,9 @@ Tarefa em português`;
       expect(capturedContent).toContain('## Tarefas');
       expect(capturedContent).toContain('## Notas');
       // Inline metadata keys should also be in Portuguese
-      expect(capturedContent).toMatch(/^Status: pending/m);
-      expect(capturedContent).toMatch(/^Tipo: feat/m);
-      expect(capturedContent).toMatch(/^Responsável: Maria/m);
+      expect(capturedContent).toMatch(/^- Status: pending/m);
+      expect(capturedContent).toMatch(/^- Tipo: feat/m);
+      expect(capturedContent).toMatch(/^- Responsável: Maria/m);
     });
 
     it('should inherit locale from existing tasks even with English provider', async () => {
@@ -958,9 +1001,9 @@ Primeira tarefa em português`;
       expect(capturedContent).toContain('## Descrição');
       expect(capturedContent).toContain('## Tarefas');
       expect(capturedContent).toContain('## Notas');
-      expect(capturedContent).toMatch(/^Status: pending/m);
-      expect(capturedContent).toMatch(/^Tipo: fix/m);
-      expect(capturedContent).toMatch(/^Responsável: Maria/m);
+      expect(capturedContent).toMatch(/^- Status: pending/m);
+      expect(capturedContent).toMatch(/^- Tipo: fix/m);
+      expect(capturedContent).toMatch(/^- Responsável: Maria/m);
 
       // Should NOT contain English headers
       expect(capturedContent).not.toContain('## Description');
@@ -1009,9 +1052,9 @@ Primeira tarefa em português`;
       expect(capturedContent).toContain('## Tasks');
       expect(capturedContent).toContain('## Notes');
       // Inline metadata keys always in English
-      expect(capturedContent).toMatch(/^Status: pending/m);
-      expect(capturedContent).toMatch(/^Type: feat/m);
-      expect(capturedContent).toMatch(/^Assignee: John/m);
+      expect(capturedContent).toMatch(/^- Status: pending/m);
+      expect(capturedContent).toMatch(/^- Type: feat/m);
+      expect(capturedContent).toMatch(/^- Assignee: John/m);
     });
 
     it('should not corrupt Portuguese content during multiple status changes', async () => {

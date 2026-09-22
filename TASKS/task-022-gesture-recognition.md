@@ -1,8 +1,10 @@
 # Task 022 — Gesture Recognition com MediaPipe GestureRecognizer (núcleo)
 
-Status: pending  
-Type: feat  
-Assignee: developer
+- Status: pending
+- Type: feat
+- Assignee: To be defined
+- Priority: 90
+- Difficulty: 3
 
 ## Description
 

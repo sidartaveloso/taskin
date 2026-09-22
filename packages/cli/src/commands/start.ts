@@ -2,15 +2,17 @@
  * start command - Start a task
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
-import { GitService, type IGitService } from '@opentask/taskin-git-utils';
+import { buildTaskStatusCommitMessage, GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import path from 'path';
+import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
+import { normalizeTaskId } from '../lib/task-id.js';
 import { defineCommand } from './define-command/index.js';
 
 interface StartTaskOptions {
@@ -18,6 +20,8 @@ interface StartTaskOptions {
   base?: string;
   sound?: boolean;
   dryRun?: boolean;
+  /** `false` com --no-skip-ci: nao marca o commit de status. */
+  skipCi?: boolean;
 }
 
 export const startCommand = defineCommand({
@@ -41,35 +45,34 @@ export const startCommand = defineCommand({
       flags: '--dry-run',
       description: 'Show what would be executed without running',
     },
+    {
+      flags: '--no-skip-ci',
+      description: 'Write the status commit without the CI-skip tag',
+    },
   ],
   handler: async (taskId: string, options: StartTaskOptions) => {
     await startTask(taskId, options);
   },
 });
 
-async function startTask(taskId: string, _options: StartTaskOptions, gitService?: IGitService): Promise<void> {
+async function startTask(taskId: string, options: StartTaskOptions, gitService?: IGitService): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
   printHeader(`Starting Task ${taskId}`, '🚀');
 
   // Normalize task ID
-  const normalizedId = taskId.replace(/^task-/, '').padStart(3, '0');
+  const normalizedId = normalizeTaskId(taskId);
+  if (!normalizedId) {
+    error(`'${taskId}' is not a task id. Expected something like 020 or task-020.`);
+    process.exit(1);
+  }
 
-  // Find TASKS directory
-  const tasksDir = path.join(process.cwd(), 'TASKS');
-
-  // Initialize UserRegistry
-  const monorepoRoot = path.dirname(tasksDir);
-  const taskinDir = path.join(monorepoRoot, '.taskin');
-  const userRegistry = new UserRegistry({ taskinDir });
-  await userRegistry.load();
+  const { provider: taskProvider, userRegistry, projectRoot: monorepoRoot } = await resolveTaskProvider();
 
   // Ensure the current user exists in the registry
   await userRegistry.ensureCurrentUser();
 
-  // Initialize task manager
-  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
   const taskManager = new TaskManager(taskProvider);
 
   // Find task
@@ -83,8 +86,19 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
   info(`Found task: ${task.title}`);
   info(`Current status: ${task.status}`);
 
+  // Load automation config. Read before the dry run so the preview shows the
+  // commit this project would actually make, tag included.
+  const configManager = new ConfigManager(monorepoRoot);
+  const behavior = configManager.getAutomationBehavior();
+  const ciSkipTag = resolveCiSkipTag(behavior.ciSkipTag, options.skipCi);
+  const statusCommitMessage = buildTaskStatusCommitMessage({
+    taskId: normalizedId,
+    status: 'in-progress',
+    ciSkipTag,
+  });
+
   // Dry run mode - show what would be executed
-  if (_options.dryRun) {
+  if (options.dryRun) {
     console.log();
     info('🔍 Dry run mode - showing what would be executed:');
     console.log();
@@ -97,12 +111,12 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
     console.log(colors.secondary(`  - Create branch: git checkout -b feat/task-${normalizedId}`));
     console.log(
       colors.secondary(
-        `  - Commit status: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip-ci]"`,
+        `  - Commit status: git add TASKS/task-${normalizedId}-*.md && git commit -m "${statusCommitMessage}"`,
       ),
     );
     console.log();
 
-    info('✓ Dry run complete');
+    info('Dry run complete');
     return;
   }
 
@@ -125,18 +139,14 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
   success(`Task ${updatedTask.id} started successfully!`);
   success(`Status changed to: ${updatedTask.status}`);
 
-  // Load automation config
-  const configManager = new ConfigManager(monorepoRoot);
-  const behavior = configManager.getAutomationBehavior();
-
   // Initialize Git service
-  const git = gitService ?? new GitService(process.cwd());
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
 
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
     const committed = await git.commitTaskStatusChangeOnBranch(normalizedId, 'in-progress', behavior.defaultBranch);
     if (committed) {
-      success('✓ Auto-committed status change');
+      success('Auto-committed status change');
       // Ignore if nothing to commit
     }
   }
@@ -148,7 +158,7 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
     info('Next steps (suggestions):');
     console.log(
       colors.secondary(
-        `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - atualiza status para in-progress [skip ci]"`,
+        `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "${statusCommitMessage}"`,
       ),
     );
     console.log(colors.secondary(`  2. Create a branch: git checkout -b feat/task-${normalizedId}`));
@@ -166,7 +176,7 @@ async function startTask(taskId: string, _options: StartTaskOptions, gitService?
   await sendTaskNotification(configManager, 'task:start', normalizedId, task.title);
 
   // Play start sound if not disabled
-  if (_options.sound !== false) {
+  if (options.sound !== false) {
     playSound('start');
   }
 }

@@ -15,16 +15,20 @@ import type {
   DayOfWeekSchema,
   EngagementMetricsSchema,
   GitCommitSchema,
+  GroupIdSchema,
   HookConfigSchema,
   HookContextSchema,
   HookOptionsSchema,
   HookResultSchema,
   HookSettingsSchema,
+  MascotConfigSchema,
+  MascotNoiseReactionConfigSchema,
   NotificationConfigSchema,
   NotificationDiscordConfigSchema,
   NotificationEventSchema,
   NotificationFieldSchema,
   NotificationMessageSchema,
+  NotificationProviderNameSchema,
   NotificationResultSchema,
   NotificationTelegramConfigSchema,
   ProviderConfigSchema,
@@ -33,6 +37,7 @@ import type {
   StatsQuerySchema,
   TaskIdSchema,
   TaskinConfigSchema,
+  TaskPrioritizationUpdateSchema,
   TaskSchema,
   TaskStatsSchema,
   TaskStatusSchema,
@@ -45,11 +50,27 @@ import type {
 } from './taskin.schemas';
 
 export interface ListTasksOptions {
+  /** Imprime as tarefas como JSON, para outra ferramenta consumir. */
+  json?: boolean;
   assignee?: string;
-  status?: string;
-  type?: string;
+  /**
+   * Tipados pelo dominio, e nao como `string` solta: quem filtra compara com
+   * `Task.status` e `Task.type`, e um valor fora do conjunto nunca casaria —
+   * falhava em silencio, devolvendo lista vazia como se nao houvesse tarefa.
+   */
+  status?: TaskStatus;
+  type?: TaskType;
   open?: boolean;
   closed?: boolean;
+  active?: boolean;
+
+  /**
+   * Ordem da listagem, com o mesmo vocabulario do quadro de priorizacao.
+   *
+   * Nao e criterio de filtro — nao restringe nada, so reordena —, e por isso
+   * fica aqui e nao em `FilterCriteriaSchema`.
+   */
+  sort?: 'manual' | 'diff-asc' | 'diff-desc';
 }
 
 export interface CreateTaskOptions {
@@ -81,6 +102,11 @@ export interface FinishTaskOptions {
 export interface LintTasksOptions {
   path?: string;
   fix?: boolean;
+  /**
+   * Marking style to rewrite the metadata block into, for providers that keep
+   * tasks as text. Requires `fix`.
+   */
+  metadataStyle?: string;
 }
 
 /**
@@ -166,17 +192,28 @@ export interface ITaskin {
 }
 
 /**
- * Unique identifier for a task (UUID branded type).
+ * Unique identifier for a task (branded type).
  * Use this type for type-safe task ID handling across the system.
+ *
+ * Produza um com `parseTaskId`, nunca com `as`: a marca so vale enquanto o
+ * unico caminho ate ela passar pela validacao.
  *
  * @public
  * @example
  * ```ts
  * function getTask(id: TaskId): Task { ... }
- * const taskId: TaskId = '550e8400-e29b-41d4-a716-446655440000' as TaskId;
+ * const id = parseTaskId('020');
  * ```
  */
 export type TaskId = z.infer<typeof TaskIdSchema>;
+
+/**
+ * Unique identifier for a task group (branded type).
+ * Distinto de {@link TaskId} no compilador: trocar um pelo outro nao compila.
+ *
+ * @public
+ */
+export type GroupId = z.infer<typeof GroupIdSchema>;
 
 /**
  * Status of a task in its lifecycle.
@@ -201,6 +238,13 @@ export type TaskType = z.infer<typeof TaskTypeSchema>;
  * @public
  */
 export type Task = z.infer<typeof TaskSchema>;
+
+/**
+ * The mutable slice of a task, as accepted from a client.
+ *
+ * @public
+ */
+export type TaskPrioritizationUpdate = z.infer<typeof TaskPrioritizationUpdateSchema>;
 
 /**
  * Represents a user in the Taskin system.
@@ -335,6 +379,48 @@ export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
  */
 export type TaskinConfig = z.infer<typeof TaskinConfigSchema>;
 
+/**
+ * Taskin configuration as it may be *written*.
+ *
+ * The difference from {@link TaskinConfig} is the schema's defaults: fields
+ * like `automation.ciSkipTag` are required on the way out and optional on the
+ * way in. Anything that hands a config to the schema for parsing should take
+ * this type, so a caller is not forced to spell out values the schema fills in.
+ *
+ * @public
+ */
+export type TaskinConfigInput = z.input<typeof TaskinConfigSchema>;
+
+/**
+ * Mascot configuration block (.taskin.json `mascot`).
+ * @public
+ */
+export type MascotConfig = z.infer<typeof MascotConfigSchema>;
+
+/**
+ * O bloco `mascot` **como se escreve** no `.taskin.json`: todo campo e
+ * opcional, porque o schema preenche o que faltar. E este o tipo que um
+ * consumidor deve pedir quando recebe configuracao de fora — exigir
+ * {@link MascotConfig}, que ja tem os defaults aplicados, obrigaria quem so quer
+ * ligar o som a escrever tambem o limiar, o debounce e o volume.
+ *
+ * @public
+ */
+export type MascotConfigInput = z.input<typeof MascotConfigSchema>;
+
+/**
+ * Resolved ambient-noise reaction config for the mascot.
+ * @public
+ */
+export type MascotNoiseReactionConfig = z.infer<typeof MascotNoiseReactionConfigSchema>;
+
+/**
+ * Ambient-noise reaction config as it may be *written* in .taskin.json, before
+ * the schema fills in defaults.
+ * @public
+ */
+export type MascotNoiseReactionConfigInput = z.input<typeof MascotNoiseReactionConfigSchema>;
+
 // ============================================================================
 // Hook System Types
 // ============================================================================
@@ -446,6 +532,13 @@ export interface IHookRunner {
 export type NotificationEvent = z.infer<typeof NotificationEventSchema>;
 
 /**
+ * Name of a notification channel.
+ *
+ * @public
+ */
+export type NotificationProviderName = z.infer<typeof NotificationProviderNameSchema>;
+
+/**
  * A single field in a structured notification message.
  *
  * @public
@@ -503,8 +596,8 @@ export type NotificationConfig = z.infer<typeof NotificationConfigSchema>;
  * ```
  */
 export interface INotificationProvider {
-  /** Provider name identifier */
-  readonly name: string;
+  /** Provider name identifier — also the key used by the event filter */
+  readonly name: NotificationProviderName;
   /**
    * Send a notification message.
    *

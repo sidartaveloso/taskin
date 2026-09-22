@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-dashboard",
-  "version": "0.1.7",
+  "version": "0.1.14",
   "description": "Dashboard web component for task management with Taskin",
   "motivation": "Provide visual interface for task management",
   "solve": "Embeddable Vue dashboard component for task visualization",
@@ -26,7 +26,7 @@
     "build": "vite build && vue-tsc --emitDeclarationOnly --skipLibCheck",
     "build:app": "vite build --config vite.config.app.ts",
     "preview": "vite preview",
-    "storybook": "storybook dev -p 6006",
+    "storybook": "storybook dev -p 6109",
     "build-storybook": "storybook build",
     "test": "vitest run || true",
     "test:ui": "vitest --ui",
@@ -42,11 +42,17 @@
     "visualization"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sidartaveloso/taskin.git",
+    "directory": "packages/dashboard"
+  },
   "peerDependencies": {
     "vue": "^3.5.0"
   },
   "dependencies": {
     "@opentask/taskin-design-vue": "workspace:*",
+    "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-task-provider-pinia": "workspace:*",
     "pinia": "^2.2.8"
   },

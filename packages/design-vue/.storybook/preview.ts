@@ -1,6 +1,20 @@
 import type { Preview } from '@storybook/vue3-vite';
 import './preview.css'; // Import global styles
 
+// A CSS do ui-sense e um artefato separado do JS. Nos testes unitarios o
+// `vitest.config.ts` faz alias do pacote para o fonte, entao os `<style scoped>`
+// compilam inline e tudo aparece estilizado. No Storybook nao ha esse alias: o
+// pacote resolve para `dist/index.js`, e sem este import os componentes do
+// ui-sense (TrackingControls, NoiseTrackingControls, WebcamVideo) renderizam
+// crus — botao sem estilo, checkbox nativo, fieldset pelado. Parecia
+// implementacao propria de controle; era falta da folha de estilos.
+import '@opentask/ui-sense/style.css';
+import { initAnalytics } from './analytics';
+
+// A galeria e publicada em /components/ e compartilha o projeto PostHog com a
+// landing. O `taskin_surface` separa os eventos dos dois nos dashboards.
+initAnalytics('components');
+
 const preview: Preview = {
   parameters: {
     options: {

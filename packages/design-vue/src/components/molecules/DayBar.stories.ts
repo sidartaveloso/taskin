@@ -2,9 +2,20 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import DayBar from './DayBar.vue';
 
 const meta = {
-  title: 'Molecules/DayBar',
+  title: 'Molecules/Task/DayBar',
   component: DayBar,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
+  /*
+   * `day` e obrigatoria, entao o meta a fornece: as stories que so definem um
+   * `render` proprio herdam daqui em vez de repetir a fixture.
+   */
+  args: {
+    day: {
+      date: new Date('2026-09-03'),
+      hours: 6,
+      description: 'Dashboard implementation and component work',
+    },
+  },
   argTypes: {
     maxHours: {
       control: { type: 'number', min: 1, max: 24 },
@@ -24,7 +35,7 @@ export const Today: Story = {
     day: {
       date: new Date(),
       hours: 6,
-      description: 'Implementação do dashboard e criação de componentes',
+      description: 'Dashboard implementation and component work',
     },
     maxHours: 8,
   },
@@ -35,7 +46,7 @@ export const Yesterday: Story = {
     day: {
       date: new Date(Date.now() - 24 * 60 * 60 * 1000),
       hours: 8,
-      description: 'Reuniões e planejamento do sprint',
+      description: 'Meetings and sprint planning',
     },
     maxHours: 8,
   },
@@ -75,7 +86,6 @@ export const Compact: Story = {
 };
 
 export const MonthProgress: Story = {
-  args: {},
   render: () => ({
     components: { DayBar },
     template: `
@@ -83,12 +93,12 @@ export const MonthProgress: Story = {
         <h3 style="margin: 0 0 1rem 0; color: #1a1a1a;">Progresso da Semana</h3>
 
         <DayBar
-          :day="{ date: new Date(), hours: 6, description: 'Implementação do dashboard' }"
+          :day="{ date: new Date(), hours: 6, description: 'Dashboard implementation' }"
           :maxHours="8"
         />
 
         <DayBar
-          :day="{ date: new Date(Date.now() - 24 * 60 * 60 * 1000), hours: 8, description: 'Reuniões e planejamento' }"
+          :day="{ date: new Date(Date.now() - 24 * 60 * 60 * 1000), hours: 8, description: 'Meetings and planning' }"
           :maxHours="8"
         />
 
@@ -103,7 +113,7 @@ export const MonthProgress: Story = {
         />
 
         <DayBar
-          :day="{ date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), hours: 8, description: 'Testes e documentação' }"
+          :day="{ date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), hours: 8, description: 'Tests and documentation' }"
           :maxHours="8"
         />
       </div>
@@ -112,12 +122,11 @@ export const MonthProgress: Story = {
 };
 
 export const CompactWeek: Story = {
-  args: {},
   render: () => ({
     components: { DayBar },
     template: `
       <div style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1.5rem; background: #f5f5f5; border-radius: 8px; max-width: 300px;">
-        <h4 style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.875rem;">Últimos 5 dias</h4>
+        <h4 style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.875rem;">Last 5 days</h4>
 
         <DayBar
           :day="{ date: new Date(), hours: 6 }"

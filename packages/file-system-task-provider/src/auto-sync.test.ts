@@ -364,3 +364,99 @@ describe('squashTaskFileOnDone', () => {
     expect(commitMessage).toContain('done');
   });
 });
+
+// ============================================================================
+// Tag de skip de CI — task-052
+// ============================================================================
+
+describe('ciSkipTag', () => {
+  let mockGit: ReturnType<typeof createMockGitService>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGit = createMockGitService();
+  });
+
+  it('marks the pushAfterCreate commit with [skip ci] by default', async () => {
+    await pushAfterCreate(mockGit, {
+      taskId: '042',
+      title: 'Implement login',
+      defaultBranch: 'tasks',
+    });
+
+    const message = mockGit.addAndCommit.mock.calls[0]?.[1] as string;
+    expect(message).toBe('docs(TASKS): task-042 - Implement login [skip ci]');
+  });
+
+  it('never emits the hyphenated tag on pushAfterCreate', async () => {
+    await pushAfterCreate(mockGit, {
+      taskId: '042',
+      title: 'Implement login',
+      defaultBranch: 'tasks',
+    });
+
+    const message = mockGit.addAndCommit.mock.calls[0]?.[1] as string;
+    expect(message).not.toContain('[skip-ci]');
+  });
+
+  it('honours a configured tag on pushAfterCreate', async () => {
+    await pushAfterCreate(mockGit, {
+      taskId: '042',
+      title: 'Implement login',
+      defaultBranch: 'tasks',
+      ciSkipTag: '[ci skip]',
+    });
+
+    const message = mockGit.addAndCommit.mock.calls[0]?.[1] as string;
+    expect(message).toBe('docs(TASKS): task-042 - Implement login [ci skip]');
+  });
+
+  it('appends nothing on pushAfterCreate when the tag is empty', async () => {
+    await pushAfterCreate(mockGit, {
+      taskId: '042',
+      title: 'Implement login',
+      defaultBranch: 'tasks',
+      ciSkipTag: '',
+    });
+
+    const message = mockGit.addAndCommit.mock.calls[0]?.[1] as string;
+    expect(message).toBe('docs(TASKS): task-042 - Implement login');
+  });
+
+  it('marks the squash commit with [skip ci] by default', async () => {
+    await squashTaskFileOnDone(mockGit, {
+      taskId: '042',
+      defaultBranch: 'tasks',
+      originBranch: 'develop',
+    });
+
+    const message = mockGit.commit.mock.calls[0]?.[0] as string;
+    expect(message).toBe('docs(TASKS): task-042 - done [skip ci]');
+  });
+
+  it('honours a configured tag on the squash commit', async () => {
+    await squashTaskFileOnDone(mockGit, {
+      taskId: '042',
+      defaultBranch: 'tasks',
+      originBranch: 'develop',
+      ciSkipTag: '[no ci]',
+    });
+
+    const message = mockGit.commit.mock.calls[0]?.[0] as string;
+    expect(message).toBe('docs(TASKS): task-042 - done [no ci]');
+  });
+
+  it('carries the tag from SyncConfig through createTaskWithSync', async () => {
+    await createTaskWithSync(
+      mockGit,
+      { autoSync: true, defaultBranch: 'tasks', ciSkipTag: '[ci skip]' },
+      {
+        title: 'Implement login',
+        type: 'feat',
+      },
+    );
+
+    const message = mockGit.addAndCommit.mock.calls[0]?.[1] as string;
+    expect(message).toContain('[ci skip]');
+  });
+});

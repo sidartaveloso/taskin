@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import DashboardHeader from './DashboardHeader.vue';
 
 const meta: Meta<typeof DashboardHeader> = {
-  title: 'Organisms/DashboardHeader',
+  title: 'Organisms/Task/DashboardHeader',
   component: DashboardHeader,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     title: {
       control: 'text',
@@ -43,7 +43,7 @@ const meta: Meta<typeof DashboardHeader> = {
   args: {
     title: 'Taskin Dashboard',
     status: 'connected',
-    statusText: 'Conectado',
+    statusText: 'Connected',
     showRetry: false,
     isRetrying: false,
     retryText: 'Tentar novamente',
@@ -57,7 +57,7 @@ type Story = StoryObj<typeof meta>;
 export const Connected: Story = {
   args: {
     status: 'connected',
-    statusText: 'Conectado',
+    statusText: 'Connected',
   },
 };
 
@@ -72,15 +72,15 @@ export const Disconnected: Story = {
 export const Connecting: Story = {
   args: {
     status: 'connecting',
-    statusText: 'Conectando...',
+    statusText: 'Connecting...',
   },
 };
 
 export const WithError: Story = {
   args: {
     status: 'error',
-    statusText: 'Erro de conexão',
-    errorMessage: 'Não foi possível conectar ao servidor WebSocket',
+    statusText: 'Connection error',
+    errorMessage: 'Could not connect to the WebSocket server',
     showRetry: true,
   },
 };
@@ -88,7 +88,7 @@ export const WithError: Story = {
 export const Retrying: Story = {
   args: {
     status: 'error',
-    statusText: 'Erro de conexão',
+    statusText: 'Connection error',
     errorMessage: 'Tentando reconectar...',
     showRetry: true,
     isRetrying: true,

@@ -1,4 +1,5 @@
-import type { Task, TaskType } from '@opentask/taskin-types';
+import type { Task, TaskId, TaskType } from '@opentask/taskin-types';
+import type { IGroupRegistry } from './group-registry.types.js';
 
 /**
  * Options for creating a new task
@@ -28,8 +29,6 @@ export interface CreateTaskOptions {
 export interface CreateTaskResult<TTask extends Task = Task> {
   /** The created task */
   task: TTask;
-  /** The generated task ID */
-  taskId: string;
 }
 
 /**
@@ -42,6 +41,14 @@ export type ValidationSeverity = 'error' | 'warning' | 'info';
  * A validation error or warning found during linting
  * @public
  */
+/** Um criterio que ainda impede a conclusao. */
+export interface CriterioEmAberto {
+  /** O texto do item, como escrito. */
+  readonly texto: string;
+  /** Onde ele esta, quando a fonte sabe dizer. */
+  readonly linha?: number;
+}
+
 export interface ValidationIssue {
   /** The file or task that has the issue */
   file: string;
@@ -86,38 +93,44 @@ export interface LintResult {
  * @typeParam TTask - The task shape this provider reads and writes
  * @public
  */
+/*
+ * Os membros sao propriedades de funcao, nao metodos, de proposito: TypeScript
+ * trata metodos como bivariantes mesmo com `strictFunctionTypes`, e isso
+ * deixava `ITaskProvider<TaskFile>` ser atribuido a `ITaskProvider<Task>` — o
+ * que compila e depois quebra em `updateTask`, que le `task.filePath`.
+ */
 export interface ITaskProvider<TTask extends Task = Task> {
   /**
    * Initialize the provider, performing any necessary setup or loading.
    * This may involve reading existing tasks, setting up connections, etc.
    */
-  initialize(): Promise<void>;
+  initialize: () => Promise<void>;
 
   /**
    * Find a specific task by its ID.
    * @param taskId - The unique identifier of the task
    * @returns The task if found, undefined otherwise
    */
-  findTask(taskId: string): Promise<TTask | undefined>;
+  findTask: (taskId: TaskId) => Promise<TTask | undefined>;
 
   /**
    * Retrieve all tasks from the provider.
    * @returns Array of all tasks
    */
-  getAllTasks(): Promise<TTask[]>;
+  getAllTasks: () => Promise<TTask[]>;
 
   /**
    * Update an existing task.
    * @param task - The task with updated information
    */
-  updateTask(task: TTask): Promise<void>;
+  updateTask: (task: TTask) => Promise<void>;
 
   /**
    * Create a new task.
    * @param options - Options for creating the task
    * @returns The created task information
    */
-  createTask(options: CreateTaskOptions): Promise<CreateTaskResult<TTask>>;
+  createTask: (options: CreateTaskOptions) => Promise<CreateTaskResult<TTask>>;
 
   /**
    * Validate all tasks managed by this provider.
@@ -125,7 +138,21 @@ export interface ITaskProvider<TTask extends Task = Task> {
    * @param fix - If true, attempt to automatically fix validation issues
    * @returns The lint result with any validation issues found
    */
-  lint(fix?: boolean): Promise<LintResult>;
+  lint: (fix?: boolean) => Promise<LintResult>;
+
+  /**
+   * Os criterios de conclusao que ainda bloqueiam esta tarefa, se a fonte tiver
+   * o conceito.
+   *
+   * **Opcional de proposito.** Checklist e uma forma do provider de arquivos: o
+   * Jira tem subtarefas, o GitHub tem itens de lista na descricao. Um provider
+   * sem nada equivalente simplesmente nao implementa, e o `finishTask` conclui
+   * sem portao — em vez de chamar algo que falha.
+   *
+   * O conceito e de dominio ("o que falta para isto estar pronto?"); a
+   * representacao e de provider.
+   */
+  getCompletionBlockers?: (task: TTask) => Promise<CriterioEmAberto[]>;
 }
 
 /**
@@ -148,7 +175,65 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @returns The updated task
    * @throws Error if task is not found
    */
-  finishTask(taskId: string): Promise<TTask>;
+  finishTask: (taskId: TaskId) => Promise<TTask>;
+
+  /**
+   * Every task the configured provider knows about.
+   *
+   * Delegates to the provider, like {@link ITaskManager.lint} does. Listing is
+   * a domain question — "what work exists?" — and a consumer that only holds a
+   * manager should not need the provider to answer it. The MCP server did, and
+   * shipped a `taskin://tasks` resource that answered with a placeholder.
+   *
+   * @returns The tasks, in whatever order the provider returns them
+   */
+  getAllTasks: () => Promise<TTask[]>;
+
+  /**
+   * Da a cada tarefa um numero de prioridade, de uma vez.
+   *
+   * E operacao de dominio, e nao um `updateTask` generico, por dois motivos.
+   *
+   * O primeiro e de desenho: a regra da numeracao — preservar a ordem, manter o
+   * numero de quem ja tem, abrir espaco quando faltar — passa a viver num lugar
+   * so, em vez de ser reescrita pela CLI e pelo servidor MCP.
+   *
+   * O segundo e de tipo: um metodo que **consome** `TTask` torna a interface
+   * contravariante nele, e um `ITaskManager<TarefaEspecifica>` deixa de poder
+   * ser usado onde se espera `ITaskManager<Task>`. Uma operacao que so devolve
+   * numeros nao tem esse problema.
+   *
+   * Existe porque um projeto **meio numerado** cobra caro: mover uma tarefa do
+   * meio da regiao sem numero reescreve todos os antecessores — 124 arquivos num
+   * projeto de 500, medido. Depois desta operacao, todo movimento custa um.
+   *
+   * @param options - `dryRun` apenas conta, sem gravar
+   * @returns Quantas existem, quantas estavam sem numero, e quantas mudaram
+   */
+  /**
+   * Os grupos, quando a fonte tem o conceito — `undefined` quando nao tem.
+   *
+   * Opcional de proposito: o GitHub mapeia para milestone, o Redmine para
+   * categoria, e uma fonte sem nada equivalente simplesmente nao oferece. Quem
+   * consome descobre pela ausencia, em vez de chamar algo que falha.
+   */
+  readonly groupRegistry?: IGroupRegistry;
+
+  /**
+   * Conclui a tarefa e relata os criterios que ficaram em aberto.
+   *
+   * Avisa, e nao recusa: fechar e um gesto unico, muitas vezes com pressa, e
+   * recusar ali torna o comando fragil. O portao duro vive no `lint`.
+   *
+   * O relato vem vazio quando o provider nao tem o conceito de checklist.
+   */
+  finishTaskComRelato: (taskId: TaskId) => Promise<{ task: TTask; blockers: CriterioEmAberto[] }>;
+
+  prioritizeAll: (options?: { dryRun?: boolean }) => Promise<{
+    total: number;
+    withoutPriority: number;
+    changed: number;
+  }>;
 
   /**
    * Mark a task as ready for review.
@@ -157,7 +242,7 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @returns The updated task
    * @throws Error if task is not found or not in 'in-progress' status
    */
-  reviewTask(taskId: string): Promise<TTask>;
+  reviewTask: (taskId: TaskId) => Promise<TTask>;
 
   /**
    * Start working on a task.
@@ -167,7 +252,7 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @returns The updated task
    * @throws Error if task is not found, already in progress, or already done
    */
-  startTask(taskId: string): Promise<TTask>;
+  startTask: (taskId: TaskId) => Promise<TTask>;
 
   /**
    * Pause work on a task.
@@ -177,14 +262,14 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @returns The updated task
    * @throws Error if task is not found or not in 'in-progress' status
    */
-  pauseTask(taskId: string): Promise<TTask>;
+  pauseTask: (taskId: TaskId) => Promise<TTask>;
 
   /**
    * Create a new task.
    * @param options - Options for creating the task
    * @returns The created task information
    */
-  createTask(options: CreateTaskOptions): Promise<CreateTaskResult<TTask>>;
+  createTask: (options: CreateTaskOptions) => Promise<CreateTaskResult<TTask>>;
 
   /**
    * Validate all tasks in the system.
@@ -192,5 +277,19 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @param fix - If true, attempt to automatically fix validation issues
    * @returns The lint result with any validation issues found
    */
-  lint(fix?: boolean): Promise<LintResult>;
+  lint: (fix?: boolean) => Promise<LintResult>;
+
+  /**
+   * Os criterios de conclusao que ainda bloqueiam esta tarefa, se a fonte tiver
+   * o conceito.
+   *
+   * **Opcional de proposito.** Checklist e uma forma do provider de arquivos: o
+   * Jira tem subtarefas, o GitHub tem itens de lista na descricao. Um provider
+   * sem nada equivalente simplesmente nao implementa, e o `finishTask` conclui
+   * sem portao — em vez de chamar algo que falha.
+   *
+   * O conceito e de dominio ("o que falta para isto estar pronto?"); a
+   * representacao e de provider.
+   */
+  getCompletionBlockers?: (task: TTask) => Promise<CriterioEmAberto[]>;
 }

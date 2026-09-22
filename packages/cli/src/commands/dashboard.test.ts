@@ -12,11 +12,14 @@ vi.mock('../lib/colors.js', () => ({
   warning: vi.fn(),
 }));
 
-vi.mock('@opentask/taskin-file-system-provider', () => ({
-  FileSystemTaskProvider: vi.fn(),
-  UserRegistry: vi.fn().mockImplementation(() => ({
-    load: vi.fn().mockResolvedValue(undefined),
-  })),
+// O comando escolhe o provider pela factory; este teste e sobre selecao de porta
+vi.mock('../lib/provider-factory/index.js', () => ({
+  resolveTaskProvider: vi.fn().mockResolvedValue({
+    provider: {},
+    userRegistry: { load: vi.fn().mockResolvedValue(undefined) },
+    projectRoot: '/tmp/taskin-test',
+    providerType: 'fs',
+  }),
 }));
 
 vi.mock('@opentask/taskin-task-manager', () => ({

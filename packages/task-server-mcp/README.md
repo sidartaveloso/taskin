@@ -97,12 +97,31 @@ console.log('MCP server running');
 
 ## MCP Tools
 
-- `list_tasks` - List all tasks with filters
-- `get_task` - Get task details
+- `list_tasks` - List tasks as JSON, without the markdown body. Filters:
+- `prioritize_tasks` - Give every task a priority number, once and on purpose
+- `list_groups` - List the task groups, each with its id and name
+  `status`, `type`, `assignee`, `open`, `closed`, `text`
 - `start_task` - Start working on a task
 - `finish_task` - Mark task as complete
-- `pause_task` - Pause task work
-- `lint_tasks` - Validate tasks
+
+`get_task`, `pause_task` and `lint_tasks` appeared in this list before they
+existed, and still do not.
+
+### Parity with the CLI
+
+`start_task` and `finish_task` are the same operation as `taskin start` and
+`taskin finish` — including the side effects the project's `automation.level`
+asks for. When the level auto-commits status changes (`assisted`, `autopilot`,
+or a `commits.taskStatusChanges` override), both doors write the same
+`docs(TASKS): task-… - atualiza status para …` commit; under `manual`, neither
+does. This used to differ: the MCP path changed the status and committed
+nothing, so the project history depended on which door you used (task-066).
+
+This package stays git-agnostic — it only calls an optional `onStatusChange`
+hook after a status-changing tool succeeds. The CLI wires that hook (see
+`createMcpStatusCommitHook`); a plain programmatic embed can wire its own or
+none. `list_tasks` is read-only and never triggers the hook, matching `taskin
+list`, which also commits nothing.
 
 ## MCP Resources
 

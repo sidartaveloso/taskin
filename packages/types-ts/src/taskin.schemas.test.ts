@@ -7,6 +7,9 @@ import {
   DayOfWeekSchema,
   EngagementMetricsSchema,
   GitCommitSchema,
+  GroupSchema,
+  MascotConfigSchema,
+  MascotNoiseReactionConfigSchema,
   NOTIFICATION_EVENTS,
   NotificationConfigSchema,
   NotificationDiscordConfigSchema,
@@ -15,7 +18,11 @@ import {
   NotificationMessageSchema,
   NotificationResultSchema,
   NotificationTelegramConfigSchema,
+  parseGroupId,
+  parseTaskId,
   RefactoringMetricsSchema,
+  resolveMascotNoiseSettings,
+  resolveShhhReactionPlan,
   StatsPeriodSchema,
   StatsQuerySchema,
   TASK_STATUSES,
@@ -32,17 +39,39 @@ import {
   UserSchema,
   UserStatsSchema,
 } from './taskin.schemas.js';
+import type { GroupId } from './taskin.types.js';
 
 describe('Taskin Schemas', () => {
   describe('TaskIdSchema', () => {
-    it('should accept valid UUID', () => {
-      const validUUID = '550e8400-e29b-41d4-a716-446655440000';
-      expect(TaskIdSchema.parse(validUUID)).toBe(validUUID);
+    it.each(['001', '020', '123', '1000'])('should accept the numeric id %j', (id) => {
+      expect(TaskIdSchema.parse(id)).toBe(id);
     });
 
-    it('should reject invalid UUID', () => {
-      expect(() => TaskIdSchema.parse('not-a-uuid')).toThrow();
-      expect(() => TaskIdSchema.parse('123')).toThrow();
+    it('should reject anything that is not a task id', () => {
+      // 'unknown' era o fallback do provider e chegava a virar id de task
+      expect(() => TaskIdSchema.parse('unknown')).toThrow();
+      expect(() => TaskIdSchema.parse('task-020')).toThrow();
+      expect(() => TaskIdSchema.parse('')).toThrow();
+      // O schema antigo exigia isto — e nenhuma task real se parecia com isso
+      expect(() => TaskIdSchema.parse('550e8400-e29b-41d4-a716-446655440000')).toThrow();
+    });
+  });
+
+  describe('parseTaskId / parseGroupId', () => {
+    it('should build a branded TaskId from a real id', () => {
+      expect(parseTaskId('020')).toBe('020');
+    });
+
+    it('should refuse to build a TaskId from garbage', () => {
+      expect(() => parseTaskId('nao-e-id')).toThrow();
+    });
+
+    it('should build a branded GroupId from an opaque short id', () => {
+      expect(parseGroupId('g-4f2a')).toBe('g-4f2a');
+    });
+
+    it('should refuse an empty GroupId', () => {
+      expect(() => parseGroupId('')).toThrow();
     });
   });
 
@@ -71,6 +100,33 @@ describe('Taskin Schemas', () => {
   });
 
   describe('UserSchema', () => {
+    /*
+     * O `.taskin/README.md` documenta campos de perfil ha tempos, e o registro
+     * real deste repo ja guarda `website`, `github` e `linkedin` — mas o schema
+     * nao os tinha, entao eram dados mortos: sobreviviam no arquivo e nenhum
+     * codigo podia le-los com tipo.
+     */
+    it('should keep the profile links a user registry carries', () => {
+      const user = UserSchema.parse({
+        id: 'fernando-gatti',
+        name: 'Fernando Gatti',
+        email: 'contato@fernandogatti.com',
+        website: 'https://fernandogatti.com',
+        github: 'https://github.com/gattifernando',
+        linkedin: 'https://www.linkedin.com/in/gattifernando/',
+      });
+
+      expect(user.github).toBe('https://github.com/gattifernando');
+      expect(user.linkedin).toBe('https://www.linkedin.com/in/gattifernando/');
+      expect(user.website).toBe('https://fernandogatti.com');
+    });
+
+    it('should reject a profile link that is not a url', () => {
+      const notAUrl = { id: 'x', name: 'X', email: 'x@example.com', github: 'gattifernando' };
+
+      expect(() => UserSchema.parse(notAUrl)).toThrow();
+    });
+
     it('should accept valid user', () => {
       const user = {
         id: 'user-123',
@@ -93,7 +149,7 @@ describe('Taskin Schemas', () => {
   describe('TaskSchema', () => {
     it('should accept valid task', () => {
       const task = {
-        id: '550e8400-e29b-41d4-a716-446655440000',
+        id: '020',
         title: 'Implement feature',
         type: 'feat' as const,
         status: 'in-progress' as const,
@@ -105,7 +161,7 @@ describe('Taskin Schemas', () => {
 
     it('should accept task with optional fields', () => {
       const minimalTask = {
-        id: '550e8400-e29b-41d4-a716-446655440000',
+        id: '020',
         title: 'Task',
         type: 'feat' as const,
         status: 'pending' as const,
@@ -463,7 +519,7 @@ describe('Stats & Track Record Schemas', () => {
 
   describe('TaskStatsSchema', () => {
     const validTaskStats = {
-      taskId: '550e8400-e29b-41d4-a716-446655440000',
+      taskId: '020',
       title: 'Refactor authentication',
       type: 'refactor' as const,
       status: 'done' as const,
@@ -580,12 +636,12 @@ describe('Stats & Track Record Schemas', () => {
       },
       topTasks: [
         {
-          taskId: '550e8400-e29b-41d4-a716-446655440000',
+          taskId: '020',
           title: 'Task 1',
           commits: 10,
         },
         {
-          taskId: '550e8400-e29b-41d4-a716-446655440001',
+          taskId: '021',
           title: 'Task 2',
           commits: 8,
         },
@@ -700,7 +756,7 @@ describe('Stats & Track Record Schemas', () => {
       const query = {
         period: 'week' as const,
         user: 'sidarta',
-        taskId: '550e8400-e29b-41d4-a716-446655440000',
+        taskId: '020',
         detailed: true,
         format: 'json' as const,
       };
@@ -729,7 +785,7 @@ describe('Stats & Track Record Schemas', () => {
 
     it('should accept taskId filter for task-specific stats', () => {
       const query = {
-        taskId: '550e8400-e29b-41d4-a716-446655440000',
+        taskId: '020',
         detailed: true,
       };
       expect(StatsQuerySchema.parse(query)).toEqual(query);
@@ -1052,5 +1108,301 @@ describe('TaskinConfigSchema - with notifications', () => {
     };
     const result = TaskinConfigSchema.parse(config);
     expect(result.notifications).toBeUndefined();
+  });
+});
+
+describe('MascotNoiseReactionConfigSchema', () => {
+  it('fills conservative defaults for an empty block, off by default', () => {
+    expect(MascotNoiseReactionConfigSchema.parse({})).toEqual({
+      enabled: false,
+      threshold: 0.06,
+      debounceMs: 1500,
+      sound: false,
+      name: '',
+      phrase: 'Shhhhhh...',
+      volume: 1,
+      sustainMs: 0,
+      sustainRatio: 0.6,
+    });
+  });
+
+  it('keeps values the user set', () => {
+    const config = {
+      enabled: true,
+      threshold: 0.7,
+      debounceMs: 5000,
+      sustainMs: 2000,
+      sustainRatio: 0.4,
+      sound: true,
+      name: 'Bruno',
+      phrase: 'Shhhhhhhhhhhh...',
+      volume: 0.8,
+    };
+    expect(MascotNoiseReactionConfigSchema.parse(config)).toEqual(config);
+  });
+
+  it('rejects a threshold outside the 0..1 amplitude range', () => {
+    expect(MascotNoiseReactionConfigSchema.safeParse({ threshold: 1.5 }).success).toBe(false);
+    expect(MascotNoiseReactionConfigSchema.safeParse({ threshold: -0.1 }).success).toBe(false);
+  });
+
+  it('rejects a negative or fractional debounce', () => {
+    expect(MascotNoiseReactionConfigSchema.safeParse({ debounceMs: -1 }).success).toBe(false);
+    expect(MascotNoiseReactionConfigSchema.safeParse({ debounceMs: 12.5 }).success).toBe(false);
+  });
+});
+
+describe('MascotConfigSchema', () => {
+  it('defaults the reactions block so an empty mascot config is inert', () => {
+    expect(MascotConfigSchema.parse({})).toEqual({
+      reactions: {
+        noise: {
+          enabled: false,
+          threshold: 0.06,
+          debounceMs: 1500,
+          sustainMs: 0,
+          sustainRatio: 0.6,
+          sound: false,
+          name: '',
+          phrase: 'Shhhhhh...',
+          volume: 1,
+        },
+      },
+    });
+  });
+
+  it('reads a partial noise block and fills the rest', () => {
+    const result = MascotConfigSchema.parse({ reactions: { noise: { enabled: true, threshold: 0.5 } } });
+    expect(result.reactions.noise).toEqual({
+      enabled: true,
+      threshold: 0.5,
+      debounceMs: 1500,
+      sound: false,
+      name: '',
+      phrase: 'Shhhhhh...',
+      volume: 1,
+      sustainMs: 0,
+      sustainRatio: 0.6,
+    });
+  });
+});
+
+describe('TaskinConfigSchema - with mascot', () => {
+  it('parses the mascot noise reaction from .taskin.json', () => {
+    const config = {
+      version: '1.0.0',
+      provider: { type: 'fs', config: { tasksDir: 'TASKS' } },
+      mascot: { reactions: { noise: { enabled: true, threshold: 0.7, debounceMs: 5000, sound: false } } },
+    };
+    const result = TaskinConfigSchema.parse(config);
+    expect(result.mascot?.reactions.noise.enabled).toBe(true);
+    expect(result.mascot?.reactions.noise.threshold).toBe(0.7);
+  });
+
+  it('leaves mascot undefined when the block is absent, so the feature is off', () => {
+    const config = {
+      version: '1.0.0',
+      provider: { type: 'fs', config: { tasksDir: 'TASKS' } },
+    };
+    expect(TaskinConfigSchema.parse(config).mascot).toBeUndefined();
+  });
+});
+
+describe('resolveMascotNoiseSettings', () => {
+  it('returns the conservative defaults when no mascot block is given', () => {
+    expect(resolveMascotNoiseSettings()).toEqual({
+      enabled: false,
+      threshold: 0.06,
+      debounceMs: 1500,
+      sound: false,
+      name: '',
+      phrase: 'Shhhhhh...',
+      volume: 1,
+      sustainMs: 0,
+      sustainRatio: 0.6,
+    });
+  });
+
+  it('treats null the same as an absent block', () => {
+    expect(resolveMascotNoiseSettings(null)).toEqual(resolveMascotNoiseSettings());
+  });
+
+  it('flattens a full mascot block into ready-to-pass settings', () => {
+    const settings = resolveMascotNoiseSettings({
+      reactions: {
+        noise: {
+          enabled: true,
+          threshold: 0.7,
+          debounceMs: 5000,
+          sustainMs: 2000,
+          sustainRatio: 0.4,
+          sound: true,
+          name: 'Bruno',
+          phrase: 'Shhhhhhhhhhhh...',
+          volume: 0.5,
+        },
+      },
+    });
+    expect(settings).toEqual({
+      enabled: true,
+      threshold: 0.7,
+      debounceMs: 5000,
+      sustainMs: 2000,
+      sustainRatio: 0.4,
+      sound: true,
+      name: 'Bruno',
+      phrase: 'Shhhhhhhhhhhh...',
+      volume: 0.5,
+    });
+  });
+
+  it('fills the defaults for fields omitted from a partial noise block', () => {
+    expect(resolveMascotNoiseSettings({ reactions: { noise: { enabled: true } } })).toEqual({
+      enabled: true,
+      threshold: 0.06,
+      debounceMs: 1500,
+      sound: false,
+      name: '',
+      phrase: 'Shhhhhh...',
+      volume: 1,
+      sustainMs: 0,
+      sustainRatio: 0.6,
+    });
+  });
+
+  it('carrega a sustentacao, que ate aqui so existia como prop do componente', () => {
+    const settings = resolveMascotNoiseSettings({
+      reactions: { noise: { sustainMs: 2000, sustainRatio: 0.4 } },
+    });
+    expect(settings.sustainMs).toBe(2000);
+    expect(settings.sustainRatio).toBe(0.4);
+  });
+
+  it('nao sustenta nada por padrao: dispara na primeira amostra alta', () => {
+    expect(resolveMascotNoiseSettings().sustainMs).toBe(0);
+    expect(resolveMascotNoiseSettings().sustainRatio).toBe(0.6);
+  });
+
+  it('recusa fracao de sustentacao fora de 0..1', () => {
+    expect(() => resolveMascotNoiseSettings({ reactions: { noise: { sustainRatio: 1.2 } } })).toThrow();
+  });
+
+  it('guarda o nome de quem chamar, separado da frase', () => {
+    const settings = resolveMascotNoiseSettings({ reactions: { noise: { name: 'Bruno' } } });
+    expect(settings.name).toBe('Bruno');
+    expect(settings.phrase).toBe('Shhhhhh...');
+  });
+
+  it('aceita a frase com o nome de quem esta falando alto — e o caso de uso', () => {
+    const settings = resolveMascotNoiseSettings({
+      reactions: { noise: { phrase: 'Bruno, Shhhhhhhhhhhh...' } },
+    });
+    expect(settings.phrase).toBe('Bruno, Shhhhhhhhhhhh...');
+  });
+
+  it('recusa volume fora de 0..1, que so poderia distorcer o som', () => {
+    expect(() => resolveMascotNoiseSettings({ reactions: { noise: { volume: 1.5 } } })).toThrow();
+  });
+
+  it('recusa frase vazia: um balao em branco nao pede silencio a ninguem', () => {
+    expect(() => resolveMascotNoiseSettings({ reactions: { noise: { phrase: '   ' } } })).toThrow();
+  });
+
+  it('throws on an out-of-range threshold, refusing to pass an invalid setting downstream', () => {
+    expect(() => resolveMascotNoiseSettings({ reactions: { noise: { threshold: 2 } } })).toThrow();
+  });
+});
+
+describe('resolveShhhReactionPlan', () => {
+  it('animates and stays silent by default (motion allowed, sound off)', () => {
+    expect(resolveShhhReactionPlan({ sound: false })).toEqual({
+      animate: true,
+      playSound: false,
+      showBadge: false,
+    });
+  });
+
+  it('plays the audio cue only when sound is opted in', () => {
+    expect(resolveShhhReactionPlan({ sound: true })).toEqual({
+      animate: true,
+      playSound: true,
+      showBadge: false,
+    });
+  });
+
+  it('swaps the animation for a static badge under reduced motion', () => {
+    expect(resolveShhhReactionPlan({ sound: false, prefersReducedMotion: true })).toEqual({
+      animate: false,
+      playSound: false,
+      showBadge: true,
+    });
+  });
+
+  it('keeps sound orthogonal to motion: reduced-motion user who opted into sound still hears it', () => {
+    expect(resolveShhhReactionPlan({ sound: true, prefersReducedMotion: true })).toEqual({
+      animate: false,
+      playSound: true,
+      showBadge: true,
+    });
+  });
+});
+
+describe('AutomationConfigSchema - ciSkipTag', () => {
+  it('defaults to [skip ci], the only form GitHub, GitLab and Bitbucket all accept', () => {
+    const result = AutomationConfigSchema.parse({ level: 'assisted' });
+    expect(result.ciSkipTag).toBe('[skip ci]');
+  });
+
+  it('accepts another documented tag', () => {
+    const result = AutomationConfigSchema.parse({ level: 'assisted', ciSkipTag: '[ci skip]' });
+    expect(result.ciSkipTag).toBe('[ci skip]');
+  });
+
+  it('accepts an empty string, which means "do not mark the commit at all"', () => {
+    const result = AutomationConfigSchema.parse({ level: 'assisted', ciSkipTag: '' });
+    expect(result.ciSkipTag).toBe('');
+  });
+
+  it('accepts a tag no platform documents, for a self-hosted or Azure pipeline', () => {
+    const result = AutomationConfigSchema.parse({ level: 'assisted', ciSkipTag: '***NO_CI***' });
+    expect(result.ciSkipTag).toBe('***NO_CI***');
+  });
+
+  it('rejects a non-string tag', () => {
+    const result = AutomationConfigSchema.safeParse({ level: 'assisted', ciSkipTag: 42 });
+    expect(result.success).toBe(false);
+  });
+});
+
+/**
+ * Grupo como entidade.
+ *
+ * A identidade ja existia (`GroupIdSchema`, marcado). O que faltava era o lugar
+ * onde o **nome** mora. Ate aqui ele era um campo solto repetido em cada tarefa
+ * do grupo — e a repeticao nao e teorica: o taskin ja tem essa desnormalizacao
+ * no assignee, que gravou o nome de exibicao em vez do id e custou 52 avisos de
+ * lint num repositorio consumidor.
+ */
+describe('GroupSchema', () => {
+  it('aceita um grupo com id e nome', () => {
+    const grupo = GroupSchema.parse({ id: 'g-abc', name: 'Sprint de outubro' });
+
+    expect(grupo.id).toBe('g-abc');
+    expect(grupo.name).toBe('Sprint de outubro');
+  });
+
+  it('recusa nome vazio — um grupo sem nome nao se distingue dos outros', () => {
+    expect(() => GroupSchema.parse({ id: 'g-abc', name: '' })).toThrow();
+  });
+
+  it('recusa id vazio', () => {
+    expect(() => GroupSchema.parse({ id: '', name: 'Sprint' })).toThrow();
+  });
+
+  it('o id vem marcado, como o das tarefas', () => {
+    const grupo = GroupSchema.parse({ id: 'g-abc', name: 'Sprint' });
+    const aceitaSoGroupId = (id: GroupId) => id;
+
+    expect(aceitaSoGroupId(grupo.id)).toBe('g-abc');
   });
 });

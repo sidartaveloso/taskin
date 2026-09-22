@@ -5,9 +5,9 @@ import type { EyeState, TaskinEyesProps } from './TaskinEyes.types';
 import TaskinEyes from './TaskinEyes.vue';
 
 const meta = {
-  title: 'Atoms/TaskinEyes',
+  title: 'Atoms/Taskin/Eyes',
   component: TaskinEyes,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     state: {
       control: { type: 'select' },
@@ -183,8 +183,8 @@ export const ElementTracking: Story = {
 
       const handleDragStart = (e: MouseEvent | TouchEvent) => {
         isDragging.value = true;
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX;
+        const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? 0) : e.clientY;
         dragOffset.value = {
           x: clientX - buttonPos.value.x,
           y: clientY - buttonPos.value.y,
@@ -194,8 +194,8 @@ export const ElementTracking: Story = {
       const handleDragMove = (e: MouseEvent | TouchEvent) => {
         if (!isDragging.value) return;
         e.preventDefault();
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX;
+        const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? 0) : e.clientY;
         buttonPos.value = {
           x: clientX - dragOffset.value.x,
           y: clientY - dragOffset.value.y,
@@ -482,6 +482,7 @@ export const Wide: Story = {
 
 // Face Tracking Story
 export const FaceTracking: Story = {
+  tags: ['webcam'],
   render: () => ({
     setup() {
       const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
@@ -615,12 +616,11 @@ export const FaceTracking: Story = {
               mirrored: true,
             }),
             h(TrackingControls, {
+              controls: ['webcam', 'eyes'],
               isDetecting: faceLandmarker.state.value.isDetecting,
               error: faceLandmarker.state.value.error,
               showWebcam: showWebcam.value,
               syncEyes: syncEyes.value,
-              syncMouth: false,
-              syncExpressions: false,
               disabled: faceLandmarker.state.value.error !== null,
               'onToggle-tracking': toggleTracking,
               'onUpdate:showWebcam': (value: boolean) => {
@@ -674,7 +674,7 @@ export const FaceTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story: '📹 Eyes track your face using webcam! Click "Iniciar Detecção" to start.',
+        story: '📹 Eyes track your face using webcam! Click "Start Detection" to start.',
       },
     },
   },

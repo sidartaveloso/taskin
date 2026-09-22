@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { h } from 'vue';
-import TaskinEffectFartCloud from './taskin-effect-fart-cloud/taskin-effect-fart-cloud';
-import TaskinEffectHearts from './taskin-effect-hearts/taskin-effect-hearts';
-import TaskinEffectPhone from './taskin-effect-phone/taskin-effect-phone';
-import TaskinEffectTears from './taskin-effect-tears/taskin-effect-tears';
-import TaskinEffectThoughtBubble from './taskin-effect-thought-bubble/taskin-effect-thought-bubble';
-import TaskinEffectVomit from './taskin-effect-vomit/taskin-effect-vomit';
-import TaskinEffectZzz from './taskin-effect-zzz/taskin-effect-zzz';
+import { type Component, h } from 'vue';
+import TaskinEffectFartCloud from './taskin-effect-fart-cloud/TaskinEffectFartCloud';
+import TaskinEffectHearts from './taskin-effect-hearts/TaskinEffectHearts';
+import TaskinEffectPhone from './taskin-effect-phone/TaskinEffectPhone';
+import TaskinEffectTears from './taskin-effect-tears/TaskinEffectTears';
+import TaskinEffectThoughtBubble from './taskin-effect-thought-bubble/TaskinEffectThoughtBubble';
+import TaskinEffectVomit from './taskin-effect-vomit/TaskinEffectVomit';
+import TaskinEffectZzz from './taskin-effect-zzz/TaskinEffectZzz';
 
 const meta = {
-  title: 'Molecules/Effects',
-  tags: ['autodocs'],
+  title: 'Molecules/Taskin/Effects/Overview',
+  tags: ['autodocs', 'design-vue'],
 } satisfies Meta;
 
 export default meta;
@@ -95,7 +95,7 @@ export const Documentation: Story = {
                     },
                   },
                   [
-                    h(effect.component as any, {
+                    h(effect.component as Component, {
                       animationsEnabled: true,
                       ...effect.props,
                     }),

@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import TaskinTentacle from '../../atoms/taskin-tentacle/taskin-tentacle';
+import TaskinTentacle from '../../atoms/taskin-tentacle/TaskinTentacle';
 
 export interface Props {
   tentacleColor?: string;

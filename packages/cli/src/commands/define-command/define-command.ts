@@ -21,7 +21,7 @@ export const defineCommand: DefineCommandFunction = (config) => {
 
     cmd.action(async (...args) => {
       try {
-        await config.handler(...args);
+        await config.handler(...(args as Parameters<typeof config.handler>));
       } catch (err) {
         error(`Failed to execute command: ${err instanceof Error ? err.message : String(err)}`);
         process.exit(1);

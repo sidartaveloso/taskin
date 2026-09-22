@@ -2,13 +2,16 @@
  * New command - Create a new task
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
-import { slugify } from '@opentask/taskin-utils';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { pushAfterCreate, syncBeforeCreate } from '@opentask/taskin-file-system-provider';
+import { GitService, type IGitService } from '@opentask/taskin-git-utils';
+import { TASK_TYPES } from '@opentask/taskin-types';
 import inquirer from 'inquirer';
 import path from 'path';
-import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
+import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
+import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
 interface CreateTaskOptions {
@@ -16,6 +19,8 @@ interface CreateTaskOptions {
   title?: string;
   description?: string;
   user?: string;
+  /** `false` com --no-skip-ci: nao marca o commit de status. */
+  skipCi?: boolean;
 }
 
 export const createCommand = defineCommand({
@@ -39,20 +44,24 @@ export const createCommand = defineCommand({
       flags: '-u, --user <user>',
       description: 'Assignee user',
     },
+    {
+      flags: '--no-skip-ci',
+      description: 'Write the status commit without the CI-skip tag',
+    },
   ],
   handler: async (options: CreateTaskOptions) => {
     await createTask(options);
   },
 });
 
-async function createTask(options: CreateTaskOptions): Promise<void> {
+export async function createTask(options: CreateTaskOptions, gitService?: IGitService): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
   printHeader('Create New Task', '➕');
 
-  // Validate task type values
-  const validTypes = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'];
+  // Derivado do dominio para nao divergir de TaskType
+  const validTypes: readonly string[] = TASK_TYPES;
 
   // If no options provided, enter interactive mode
   if (!options.type && !options.title) {
@@ -123,107 +132,99 @@ async function createTask(options: CreateTaskOptions): Promise<void> {
     return;
   }
 
-  // Validate task type
-  if (!validTypes.includes(options.type)) {
+  // Validate task type. O find estreita para TaskType sem asserção.
+  const taskType = TASK_TYPES.find((candidate) => candidate === options.type);
+  if (!taskType) {
     error(`Invalid task type: ${options.type}. Must be one of: ${validTypes.join(', ')}`);
     return;
   }
 
-  // Find TASKS directory
-  const tasksDir = path.join(process.cwd(), 'TASKS');
-
-  // Create TASKS directory if it doesn't exist
-  if (!existsSync(tasksDir)) {
-    mkdirSync(tasksDir, { recursive: true });
-  }
-
-  // Initialize UserRegistry
-  const monorepoRoot = path.dirname(tasksDir);
-  const taskinDir = path.join(monorepoRoot, '.taskin');
-  const userRegistry = new UserRegistry({ taskinDir });
-  await userRegistry.load();
+  const { provider: taskProvider, userRegistry, projectRoot: monorepoRoot } = await resolveTaskProvider();
+  await taskProvider.initialize();
 
   // Ensure the current user exists in the registry
   await userRegistry.ensureCurrentUser();
 
-  // Initialize task provider to get existing tasks
-  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
-  const allTasks = await taskProvider.getAllTasks();
+  // Load automation config
+  const configManager = new ConfigManager(monorepoRoot);
+  const behavior = configManager.getAutomationBehavior();
+  const ciSkipTag = resolveCiSkipTag(behavior.ciSkipTag, options.skipCi);
+  const autoSyncActive = behavior.autoSync && !!behavior.defaultBranch;
 
-  // Generate next task number
-  const taskNumbers = allTasks
-    .map((task) => {
-      const match = task.id.match(/^(\d+)$/);
-      return match ? parseInt(match[1], 10) : 0;
-    })
-    .filter((num) => !Number.isNaN(num));
+  if (behavior.autoSync && !behavior.defaultBranch) {
+    warning('autoSync is enabled but no defaultBranch is configured. Nothing will be synced.');
+  }
 
-  const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
-  const taskId = String(nextNumber).padStart(3, '0');
+  // Initialize Git service
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
 
-  // Create task file name
-  const titleSlug = slugify(options.title);
+  // Sync with remote before numbering (fetch + rebase) when autoSync is active
+  if (autoSyncActive) {
+    try {
+      await syncBeforeCreate(git, {
+        autoSync: autoSyncActive,
+        defaultBranch: behavior.defaultBranch,
+      });
+      info('Synced with remote before numbering.');
+    } catch (syncError) {
+      error(syncError instanceof Error ? `Sync failed: ${syncError.message}` : 'Sync failed. Aborting task creation.');
+      return;
+    }
+  }
 
-  const fileName = `task-${taskId}-${titleSlug}.md`;
-  const filePath = path.join(tasksDir, fileName);
-
-  // Check if file already exists
-  if (existsSync(filePath)) {
-    error(`Task file already exists: ${fileName}`);
+  /*
+   * Quem decide o id e o provider, nao o comando: `max(ids)+1` sobre os
+   * arquivos e semantica de sistema de arquivos, e num provider remoto o id vem
+   * do proprio store (o numero da issue). O comando so consome o que voltou.
+   */
+  let created: Awaited<ReturnType<typeof taskProvider.createTask>>;
+  try {
+    created = await taskProvider.createTask({
+      title: options.title,
+      type: taskType,
+      ...(options.description && { description: options.description }),
+      ...(options.user && { assignee: options.user }),
+    });
+  } catch (createError) {
+    error(createError instanceof Error ? createError.message : 'Failed to create task');
     return;
   }
 
-  // Create task content
-  const taskContent = generateTaskMarkdown({
-    id: taskId,
-    type: options.type,
-    title: options.title,
-    description: options.description || '',
-    user: options.user || 'A definir',
-  });
+  const taskId = created.task.id;
+  const createdPath = 'filePath' in created && typeof created.filePath === 'string' ? created.filePath : undefined;
 
-  // Write task file
-  writeFileSync(filePath, taskContent, 'utf-8');
+  // Commit and push the new task when autoSync is active
+  if (autoSyncActive && behavior.defaultBranch) {
+    try {
+      await pushAfterCreate(git, {
+        taskId,
+        title: options.title,
+        defaultBranch: behavior.defaultBranch,
+        ciSkipTag,
+      });
+    } catch (pushError) {
+      error(
+        pushError instanceof Error
+          ? `Push failed: ${pushError.message}`
+          : 'Push failed. Task file was created but not pushed.',
+      );
+      return;
+    }
+  }
 
   // Show success message
   console.log();
   success(`Task ${taskId} created successfully!`);
-  console.log(colors.secondary(`📄 File: ${fileName}`));
-  console.log(colors.secondary(`📁 Path: ${filePath}`));
+  console.log(colors.secondary(`📝 Title: ${created.task.title}`));
+  if (createdPath) {
+    console.log(colors.secondary(`📁 Path: ${createdPath}`));
+  }
+  if (autoSyncActive) {
+    success('Task committed and pushed to remote');
+  }
   console.log();
   console.log(colors.info('Next steps:'));
   console.log(colors.normal(`  1. Edit the task file to add more details`));
   console.log(colors.normal(`  2. Run ${colors.highlight(`taskin start ${taskId}`)} to begin working on it`));
   console.log();
-}
-
-interface TaskData {
-  description: string;
-  id: string;
-  title: string;
-  type: string;
-  user: string;
-}
-
-function generateTaskMarkdown(data: TaskData): string {
-  return `# Task ${data.id} — ${data.title}
-
-Status: pending
-Type: ${data.type}
-Assignee: ${data.user}
-
-## Description
-
-${data.description || 'Add task description here...'}
-
-## Tasks
-
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
-
-## Notes
-
-Add any relevant notes or links here.
-`;
 }

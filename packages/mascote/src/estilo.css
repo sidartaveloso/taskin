@@ -1,0 +1,52 @@
+/*
+ * O aparelho fica numa mesa, muitas vezes num escritorio claro e muitas vezes
+ * de noite. O tema acompanha o sistema, e o fundo e sempre explicito: uma tela
+ * cheia sem cor propria herda o branco do navegador e ofusca quem esta a meio
+ * metro dela.
+ */
+:root {
+  --mascote-fundo: #f4f5f7;
+  --mascote-gaveta: #ffffff;
+  --mascote-borda: rgb(0 0 0 / 15%);
+  --mascote-acento: #2f6fed;
+  --mascote-acento-texto: #ffffff;
+  --mascote-erro: #b3261e;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mascote-fundo: #14161a;
+    --mascote-gaveta: #1e2126;
+    --mascote-borda: rgb(255 255 255 / 18%);
+    --mascote-acento: #6c9bff;
+    --mascote-acento-texto: #10131a;
+    --mascote-erro: #ff8a80;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--mascote-fundo);
+  color-scheme: inherit;
+  color: light-dark(#1a1c20, #e7e9ee);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* O aparelho fica apoiado e ninguem quer rolar a pagina sem querer. */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#app {
+  height: 100%;
+}

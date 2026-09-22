@@ -1,0 +1,258 @@
+# Reação "Xiiu" / "Shhh" do mascote
+
+Reação curta e amigável do mascote Taskin ao ruído ambiente. Quando o nível de
+áudio captado pelo microfone ultrapassa um limiar configurável, o Taskin faz um
+"xiiu/shhh" — um balão de pensamento com `shh...` e, quando o movimento é
+permitido, uma mudança de boca/humor — para pedir, sem interromper, que se
+baixe o volume. Pensado para demos em sala de aula, workshops e escritórios
+compartilhados.
+
+O componente que integra tudo é o organismo `TaskinWithShhh`
+(`@opentask/taskin-design-vue`). A medição de ruído vem do utilitário
+`createNoiseWatcher` de `@opentask/ui-sense`, e a decisão de _como_ a reação
+toca é derivada por funções puras de `@opentask/taskin-types`.
+
+## 🎯 Como funciona
+
+1. `createNoiseWatcher()` abre o microfone (Web Audio API) e emite o nível RMS
+   (amplitude, faixa `0..1`).
+2. `onNoiseAbove(threshold, cb, { sustainMs, sustainRatio, debounceMs })` chama
+   `cb` quando o ruído **ocupa** a janela o bastante: dentro dos últimos
+   `sustainMs` milissegundos, pelo menos a fração `sustainRatio` das amostras
+   esteve acima do `threshold`. Depois de disparar, `debounceMs` é o tempo até o
+   próximo. O terceiro argumento também aceita só um número, que continua
+   significando `debounceMs`.
+
+   **Por que fração e não uma sequência ininterrupta.** Uma fala não é um platô:
+   entre sílabas e frases há vales de 100 a 400ms. Exigir barulho contínuo
+   detecta um secador de cabelo e nunca detecta uma conversa. Numa janela de 3s,
+   uma porta batendo ocupa 1 a 4% e uma conversa alta ocupa 60 a 87% — daí o
+   padrão de 0.6. Com `sustainRatio: 1` a exigência volta a ser ininterrupta, e
+   com `sustainMs: 0` — o padrão — a primeira amostra alta dispara, como antes.
+
+   A janela só é avaliada depois de observada por inteiro; sem isso a primeira
+   amostra alta daria 100% e dispararia na hora.
+
+   A configuração persistida (`mascot.reactions.noise` no `.taskin.json`) ainda
+   não carrega `sustainMs` nem `sustainRatio` — hoje são props do componente e
+   controles da story.
+
+3. O painel de debug (`showDebug`) mostra o critério por dentro, alimentado pelo
+   `onProgress` do próprio `onNoiseAbove`: `occupancy` é a ocupação atual contra
+   a exigida, `windowFull` é quanto falta para a janela ficar coberta,
+   `debounce` é quanto falta até poder falar de novo, e `firesIn` é a previsão
+   de quanto falta para disparar **se o barulho continuar no ritmo atual**.
+
+   Não é um relógio regressivo, e a diferença é real: como o disparo depende da
+   ocupação dos últimos segundos, uma pausa longa _aumenta_ o tempo que falta.
+   Por isso a previsão carrega a condição escrita junto, e some (`?`) enquanto
+   não há amostras suficientes nem para estimar o intervalo entre elas.
+
+4. O painel `NoiseTrackingControls` tem um botão **Test Shhh** que dispara a
+   reação como se o ruído tivesse sido detectado — sem passar pelo detector e
+   mesmo com o microfone desligado. É como se ajusta frase, voz e volume sem
+   precisar fazer barulho na sala.
+5. A reação sai em sequência, e não tudo junto: a síntese de voz pronuncia
+   **apenas o nome** (`shhhName`), com vírgula, e o chiado sintetizado entra
+   depois de a fala terminar mais um lapso curto. É o ritmo de "Bruno, shhhhh".
+
+   A `shhhPhrase` não é falada — ela aparece no balão, depois do nome, e define
+   a duração do chiado pelos seus `h`. Mandar o `speechSynthesis` pronunciar
+   "Shhhhhhhhhhhh..." dava um arrastado sem sentido por cima do chiado, que é
+   quem sabe fazer esse som.
+
+   Se o `onend` da síntese não disparar — acontece em alguns navegadores quando
+   a aba perde o foco —, o chiado entra assim mesmo depois de um teto de espera:
+   é a camada que atravessa a sala, e não pode ficar refém disso.
+
+6. A cada disparo o componente resolve o _plano_ da reação com
+   `resolveShhhReactionPlan`, honrando a preferência de movimento reduzido do
+   sistema (`prefers-reduced-motion`) e a opção de som.
+
+Nenhum áudio é persistido: apenas a amplitude efêmera é lida. O microfone só é
+solicitado quando a reação está habilitada.
+
+## 🚀 Como usar
+
+### Passando o bloco de config direto (recomendado)
+
+Repasse o bloco `mascot` como está no `.taskin.json`. O componente aplica os
+_defaults_ do schema e usa essas configurações de ruído com precedência sobre as
+props `noise*` individuais.
+
+```vue
+<template>
+  <TaskinWithShhh :mascot="mascotConfig" :mascot-size="300" />
+</template>
+
+<script setup lang="ts">
+import { TaskinWithShhh } from '@opentask/taskin-design-vue';
+import type { MascotConfigInput } from '@opentask/taskin-types';
+
+// Normalmente lido do `.taskin.json`. `MascotConfigInput` e o bloco como se
+// escreve — todo campo opcional, porque o schema preenche o resto.
+const mascotConfig: MascotConfigInput = {
+  reactions: {
+    noise: { enabled: true, threshold: 0.7, sound: true, phrase: 'Bruno, Shhhhhhhhhhhh...' },
+  },
+};
+</script>
+```
+
+### Passando props individuais
+
+Sem o bloco `mascot`, use as props diretas (todas com defaults conservadores):
+
+```vue
+<template>
+  <TaskinWithShhh
+    :enable-noise-reactions="true"
+    :noise-threshold="0.06"
+    :noise-debounce-ms="1500"
+    :noise-sound="true"
+    shhh-phrase="Bruno, Shhhhhhhhhhhh..."
+    :shhh-volume="1"
+  />
+</template>
+```
+
+## ⚙️ Configuração no `.taskin.json`
+
+O bloco `mascot.reactions.noise` é validado por `MascotConfigSchema`
+(`@opentask/taskin-types`). Todos os campos são opcionais; um bloco ausente
+equivale a todos os defaults — o mascote fica em silêncio até ser habilitado.
+
+```json
+{
+  "mascot": {
+    "reactions": {
+      "noise": {
+        "enabled": true,
+        "threshold": 0.7,
+        "debounceMs": 5000,
+        "sound": true,
+        "phrase": "Bruno, Shhhhhhhhhhhh...",
+        "volume": 1
+      }
+    }
+  }
+}
+```
+
+| Campo        | Tipo    | Default | Descrição                                                                                  |
+| ------------ | ------- | ------- | ------------------------------------------------------------------------------------------ |
+| `enabled`    | boolean | `false` | Liga a reação. Desligada por padrão para nunca pedir o microfone sem intenção do usuário.   |
+| `threshold`  | number  | `0.06`  | Amplitude RMS (`0..1`) que o nível ambiente precisa atingir para disparar. Conservador.     |
+| `debounceMs` | number  | `1500`  | Intervalo mínimo, em ms, entre duas reações.                                                |
+| `sound`      | boolean | `false` | Faz o mascote pedir silêncio em voz alta, junto da reação visual.                           |
+| `phrase`     | string  | `"Shhhhhh..."` | O que ele fala e mostra no balão. Pode ter nome: `"Bruno, Shhhhhhhhhhhh..."`.        |
+| `volume`     | number  | `1`     | Altura do som, `0..1`. Alto por padrão: a sala precisa ouvir.                               |
+
+### Por que o som importa
+
+O caso de uso é concreto: o Taskin fica no celular, tela ligada, virado para
+quem programa. Quando alguém fala alto na sala, é ele quem pede silêncio — em
+vez de a pessoa precisar interromper o próprio trabalho para fazer isso. Um
+balão na tela não resolve, porque quem está falando não está olhando para a
+tela; por isso `sound` precisa sair som de verdade.
+
+São duas camadas, e a segunda nunca falta:
+
+- **a fala**, pelo `speechSynthesis` do próprio navegador, que diz a frase
+  inteira — é daí que vem a possibilidade de dirigir o pedido a alguém;
+- **o chiado**, sintetizado com Web Audio: ruído branco por um filtro de banda
+  alta, que é literalmente o que uma sibilante é. Não há arquivo de áudio para
+  baixar, licenciar ou versionar, funciona sem rede, e a duração acompanha os
+  `h` da frase — quem escreve `Shhhhhhhhhhhh...` está pedindo mais silêncio que
+  quem escreve `Shh`.
+
+O navegador só libera áudio depois de um gesto do usuário na página. Antes
+disso o balão aparece e o som não — não é defeito, é política do navegador.
+
+## 🧩 Props do `TaskinWithShhh`
+
+```typescript
+interface Props {
+  mascotSize?: number; // Padrão: 300
+  showWebcam?: boolean; // Padrão: false
+  showDebug?: boolean; // Padrão: false
+
+  /**
+   * Bloco `mascot` do `.taskin.json`. Quando presente, suas configurações de
+   * `reactions.noise` têm precedência sobre as props `noise*` abaixo.
+   */
+  mascot?: MascotConfig;
+
+  // Usadas quando `mascot` não é informado:
+  enableNoiseReactions?: boolean; // Padrão: false
+  noiseThreshold?: number; // Padrão: 0.06 (RMS 0..1)
+  noiseDebounceMs?: number; // Padrão: 1500
+  noiseSound?: boolean; // Padrão: false
+}
+```
+
+## 🔩 Helpers puros (`@opentask/taskin-types`)
+
+A lógica testável fora do browser vive em funções puras, para que os critérios
+de aceitação tenham um único lugar coberto por testes (rodam em Node).
+
+### `resolveMascotNoiseSettings(mascot?)`
+
+Lê o bloco `mascot` (parcial, ausente ou `null`) e devolve as configurações de
+ruído já com os defaults do schema aplicados.
+
+```ts
+import { resolveMascotNoiseSettings } from '@opentask/taskin-types';
+
+resolveMascotNoiseSettings({ reactions: { noise: { enabled: true } } });
+// → { enabled: true, threshold: 0.06, debounceMs: 1500, sound: false }
+
+resolveMascotNoiseSettings(undefined);
+// → { enabled: false, threshold: 0.06, debounceMs: 1500, sound: false }
+```
+
+### `resolveShhhReactionPlan({ sound, prefersReducedMotion? })`
+
+Decide como uma reação toca, cruzando som e movimento reduzido.
+
+```ts
+import { resolveShhhReactionPlan } from '@opentask/taskin-types';
+
+resolveShhhReactionPlan({ sound: false });
+// → { animate: true, playSound: false, showBadge: false }
+
+resolveShhhReactionPlan({ sound: true, prefersReducedMotion: true });
+// → { animate: false, playSound: true, showBadge: true }
+```
+
+## ♿ Acessibilidade
+
+- **`prefers-reduced-motion`**: sob movimento reduzido a reação troca a animação
+  por um badge estático (balão `shh...` sem mexer boca/humor). O componente lê a
+  preferência via `matchMedia` no momento da reação.
+- **Som opcional e curto**: desligado por padrão; a pista é ortogonal ao
+  movimento — quem optou por som e usa movimento reduzido ainda ouve.
+- **Silêncio por padrão**: sem `enabled: true` explícito, o microfone nunca é
+  solicitado.
+
+## 🔒 Privacidade
+
+- Nenhum dado de áudio é gravado ou persistido; apenas métricas de amplitude
+  efêmeras são usadas.
+- O `NoiseWatcher` é encerrado quando o componente é desmontado
+  (`onUnmounted` → `stop()`), liberando o microfone.
+
+## 🧪 Testes
+
+- `@opentask/taskin-types`: parsing do schema, `resolveMascotNoiseSettings` e
+  `resolveShhhReactionPlan` (Node, `taskin.schemas.test.ts`).
+- `@opentask/ui-sense`: núcleo de limiar/debounce do `NoiseWatcher`
+  (`noise-watcher.spec.ts`).
+- `@opentask/taskin-design-vue`: `TaskinWithShhh.spec.ts` monta o componente com
+  o `@opentask/ui-sense` mockado (roda no browser via Playwright).
+
+## 📚 Relacionados
+
+- [`FACE_TRACKING.md`](./FACE_TRACKING.md) — detecção facial do mascote (a
+  reação de shhh também tem uma heurística visual de "boca fechada" via face
+  tracking).

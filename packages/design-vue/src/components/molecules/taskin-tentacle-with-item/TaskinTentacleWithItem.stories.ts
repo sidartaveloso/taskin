@@ -6,9 +6,9 @@ import type { TaskinTentacleWithItemProps } from './TaskinTentacleWithItem.types
 import TaskinTentacleWithItem from './TaskinTentacleWithItem.vue';
 
 const meta = {
-  title: 'Molecules/TaskinTentacleWithItem',
+  title: 'Molecules/Taskin/TentacleWithItem',
   component: TaskinTentacleWithItem,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     tentacleColor: {
       control: { type: 'color' },

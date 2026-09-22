@@ -1,6 +1,12 @@
-import type { INotificationProvider, NotificationEvent, NotificationMessage } from '@opentask/taskin-types';
+import type {
+  INotificationProvider,
+  NotificationEvent,
+  NotificationMessage,
+  NotificationProviderName,
+} from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import type { ConfigManager } from '../config-manager.js';
+import { debugWarning, isDebugEnabled } from '../debug.js';
 import { resolveEnvVars } from './env-resolver.js';
 import { NotificationManager } from './notification-manager.js';
 import { NotificationMessageBuilder } from './notification-message-builder.js';
@@ -89,19 +95,35 @@ export async function sendTaskNotification(
       providers.push(new TelegramProvider(botToken, chatId));
     }
 
-    providers.push(new ConsoleProvider());
+    // O console e provider de debug (task-020 o classifica assim). Imprimir a
+    // caixa de notificacao em todo start/finish/review, mesmo com so o Discord
+    // configurado, e ruido — fica atras da mesma flag que mostra as falhas.
+    if (isDebugEnabled()) {
+      providers.push(new ConsoleProvider());
+    }
 
-    const eventFilter: Record<string, NotificationEvent[]> = {};
+    const eventFilter: Partial<Record<NotificationProviderName, NotificationEvent[]>> = {};
     if (config.notifications.discord) {
-      eventFilter.discord = config.notifications.discord.events as NotificationEvent[];
+      eventFilter.discord = config.notifications.discord.events;
     }
     if (config.notifications.telegram) {
-      eventFilter.telegram = config.notifications.telegram.events as NotificationEvent[];
+      eventFilter.telegram = config.notifications.telegram.events;
     }
 
     const manager = new NotificationManager(providers, { eventFilter });
-    await manager.notify(message, { event });
-  } catch {
-    // Silently ignore notification errors in lifecycle hooks
+    const results = await manager.notify(message, { event });
+
+    // Providers report failures in the result instead of throwing, so a dead
+    // webhook is invisible unless we look. Never fatal here: the task command
+    // already succeeded.
+    for (const result of results) {
+      if (!result.success) {
+        debugWarning(`Notification via ${result.provider} failed: ${result.error ?? 'unknown error'}`);
+      }
+    }
+  } catch (err) {
+    // Config, git or provider construction blew up. Still not fatal for the
+    // lifecycle command that triggered us.
+    debugWarning(`Notification for ${event} could not be sent: ${err instanceof Error ? err.message : String(err)}`);
   }
 }

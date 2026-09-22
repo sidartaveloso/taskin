@@ -6,6 +6,7 @@ import TaskinV1 from './TaskinV1';
 const meta = {
   title: 'Organisms/Taskin/V1',
   component: TaskinV1,
+  tags: ['design-vue', 'legacy'],
   argTypes: {
     mood: {
       control: { type: 'select' },
@@ -42,7 +43,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       const onReady = (payload: TaskinReadyPayload) => {
@@ -63,7 +64,7 @@ export const Default: Story = {
 };
 
 export const Happy: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -80,7 +81,7 @@ export const Happy: Story = {
 };
 
 export const AnnoyedNoIdle: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -105,7 +106,7 @@ export const Neutral: Story = {
     animationsEnabled: true,
   },
 
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: {
       TaskinV1,
     },
@@ -123,7 +124,7 @@ export const Neutral: Story = {
 };
 
 export const Crying: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -145,7 +146,7 @@ export const Crying: Story = {
 };
 
 export const Cold: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -167,7 +168,7 @@ export const Cold: Story = {
 };
 
 export const Hot: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -189,7 +190,7 @@ export const Hot: Story = {
 };
 
 export const Dancing: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -211,7 +212,7 @@ export const Dancing: Story = {
 };
 
 export const Furious: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -233,7 +234,7 @@ export const Furious: Story = {
 };
 
 export const Sleeping: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -255,7 +256,7 @@ export const Sleeping: Story = {
 };
 
 export const InLove: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -277,7 +278,7 @@ export const InLove: Story = {
 };
 
 export const Tired: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -299,7 +300,7 @@ export const Tired: Story = {
 };
 
 export const Thoughtful: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -321,7 +322,7 @@ export const Thoughtful: Story = {
 };
 
 export const Vomiting: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -343,7 +344,7 @@ export const Vomiting: Story = {
 };
 
 export const TakingSelfie: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };
@@ -365,7 +366,7 @@ export const TakingSelfie: Story = {
 };
 
 export const Farting: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinV1 },
     setup() {
       return { args };

@@ -1,5 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { expect } from 'storybook/test';
 import TaskinWithFaceTracking from './TaskinWithFaceTracking.vue';
+
+function getWebcam(canvasElement: HTMLElement): HTMLVideoElement | null {
+  return canvasElement.querySelector('video.webcam-video');
+}
 
 const meta = {
   title: 'Organisms/Taskin/Face Tracking',
@@ -9,45 +14,45 @@ const meta = {
     docs: {
       description: {
         component: `
-# Taskin com Detecção Facial (MediaPipe)
+# Taskin with Face Detection (MediaPipe)
 
-Este componente integra o **MediaPipe Face Landmarker** para detectar expressões faciais em tempo real
+This component integrates the **MediaPipe Face Landmarker** to detect facial expressions in real time
 via webcam e reproduzir no mascote Taskin.
 
 ## Funcionalidades
 
-- **Sincronização de Olhos**: Os olhos do Taskin seguem a direção do seu olhar
-- **Sincronização de Boca**: A boca do Taskin abre conforme você abre a sua
-- **Sincronização de Expressões**: O mood do Taskin muda baseado nas suas expressões (sorriso, franzir, etc)
+- **Eye sync**: Taskin's eyes follow where you look
+- **Mouth sync**: Taskin's mouth opens as you open yours
+- **Expression sync**: Taskin's mood changes with your expressions — smiling, frowning and so on
 
 ## Tecnologias
 
 - **MediaPipe Face Landmarker**: Detecta 478 pontos faciais e 52 blendshapes
-- **WebRTC**: Acesso à webcam do usuário
+- **WebRTC**: Access to the webcam
 - **Vue 3 Composition API**: Gerenciamento reativo do estado
 
 ## Requisitos
 
 - Navegador moderno com suporte a WebRTC
-- Permissão de acesso à webcam
-- Conexão com internet (para carregar o modelo do MediaPipe)
+- Permission to use the webcam
+- An internet connection, to download the MediaPipe model
 
 ## Como Usar
 
-1. Clique em "Iniciar Detecção"
-2. Permita o acesso à webcam quando solicitado
-3. Mova os olhos, sorria, abra a boca - veja o Taskin copiar suas expressões!
-4. Use os checkboxes para ativar/desativar cada tipo de sincronização
+1. Click "Start Detection"
+2. Allow webcam access when asked
+3. Move your eyes, smile, open your mouth — watch Taskin copy you
+4. Use the checkboxes to turn each kind of sync on and off
 
 ## Performance
 
-O MediaPipe roda localmente no navegador usando WebAssembly e GPU quando disponível,
-garantindo baixa latência e privacidade (nenhum dado é enviado para servidores).
+MediaPipe runs locally in the browser on WebAssembly, using the GPU when available,
+which keeps latency low and the data private — nothing is sent to a server.
         `,
       },
     },
   },
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue', 'webcam'],
   argTypes: {
     mascotSize: {
       control: { type: 'number', min: 100, max: 500, step: 10 },
@@ -59,7 +64,7 @@ garantindo baixa latência e privacidade (nenhum dado é enviado para servidores
     },
     showDebug: {
       control: 'boolean',
-      description: 'Mostrar informações de debug dos blendshapes',
+      description: 'Show blendshape debug information',
     },
   },
   args: {
@@ -73,8 +78,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Exemplo básico do Taskin com detecção facial.
- * Clique em "Iniciar Detecção" e permita o acesso à webcam.
+ * Basic example of Taskin with face detection.
+ * Click "Start Detection" and allow webcam access.
  */
 export const Default: Story = {
   args: {
@@ -82,10 +87,17 @@ export const Default: Story = {
     showWebcam: false,
     showDebug: false,
   },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('.mascot-container')).not.toBeNull();
+    expect(canvasElement.querySelector('g#body')).not.toBeNull();
+    const video = getWebcam(canvasElement);
+    expect(video).not.toBeNull();
+    expect(video?.classList.contains('visible')).toBe(false);
+  },
 };
 
 /**
- * Visualize a webcam junto com o Taskin para ver a correspondência em tempo real.
+ * Shows the webcam next to Taskin so you can compare them in real time.
  */
 export const WithWebcamVisible: Story = {
   args: {
@@ -93,11 +105,16 @@ export const WithWebcamVisible: Story = {
     showWebcam: true,
     showDebug: false,
   },
+  play: async ({ canvasElement }) => {
+    const video = getWebcam(canvasElement);
+    expect(video).not.toBeNull();
+    expect(video?.classList.contains('visible')).toBe(true);
+  },
 };
 
 /**
  * Modo debug que mostra os valores dos blendshapes detectados.
- * Útil para entender como a detecção está funcionando.
+ * Useful for understanding how the detection behaves.
  */
 export const DebugMode: Story = {
   args: {
@@ -105,15 +122,26 @@ export const DebugMode: Story = {
     showWebcam: true,
     showDebug: true,
   },
+  play: async ({ canvasElement }) => {
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
+    const buttons = canvasElement.querySelectorAll('button.control-button');
+    expect(buttons.length).toBeGreaterThan(0);
+    expect(buttons[0]?.textContent).toContain('Start');
+  },
 };
 
 /**
- * Taskin em tamanho grande para melhor visualização das expressões.
+ * Taskin at a large size, so the expressions are easier to read.
  */
 export const LargeMascot: Story = {
   args: {
     mascotSize: 400,
     showWebcam: true,
     showDebug: false,
+  },
+  play: async ({ canvasElement }) => {
+    expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
+    const svg = canvasElement.querySelector('.mascot-container svg');
+    expect(svg?.getAttribute('width')).toBe('400');
   },
 };

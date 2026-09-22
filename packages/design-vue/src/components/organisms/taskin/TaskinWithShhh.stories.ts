@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { expect } from 'storybook/test';
 import { defaultTaskinProps } from './Taskin.mock';
 import TaskinWithShhh from './TaskinWithShhh.vue';
 
 const meta = {
-  title: 'Organisms/TaskinWithShhh',
+  title: 'Organisms/Taskin/Shhh',
   component: TaskinWithShhh,
+  tags: ['design-vue', 'webcam', 'microphone'],
   argTypes: {
     mascotSize: { control: { type: 'number' } },
     showWebcam: { control: { type: 'boolean' } },
@@ -12,7 +14,12 @@ const meta = {
     enableNoiseReactions: { control: { type: 'boolean' } },
     noiseThreshold: { control: { type: 'number' } },
     noiseDebounceMs: { control: { type: 'number' } },
+    noiseSustainMs: { control: { type: 'number' } },
+    noiseSustainRatio: { control: { type: 'range', min: 0.1, max: 1, step: 0.05 } },
     noiseSound: { control: { type: 'boolean' } },
+    shhhName: { control: { type: 'text' } },
+    shhhPhrase: { control: { type: 'text' } },
+    shhhVolume: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
   },
   args: {
     mascotSize: 300,
@@ -21,7 +28,12 @@ const meta = {
     enableNoiseReactions: false,
     noiseThreshold: 0.06,
     noiseDebounceMs: 1500,
+    noiseSustainMs: 0,
+    noiseSustainRatio: 0.6,
     noiseSound: false,
+    shhhName: '',
+    shhhPhrase: 'Shhhhhh...',
+    shhhVolume: 1,
     ...defaultTaskinProps,
   },
 } satisfies Meta<typeof TaskinWithShhh>;
@@ -30,7 +42,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinWithShhh },
     setup() {
       return { args };
@@ -41,10 +53,15 @@ export const Default: Story = {
       </div>
     `,
   }),
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('.mascot-container')).not.toBeNull();
+    expect(canvasElement.querySelector('g#body')).not.toBeNull();
+    expect(canvasElement.querySelector('video.webcam-video')?.classList.contains('visible')).toBe(false);
+  },
 };
 
 export const WithWebcam: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinWithShhh },
     setup() {
       return { args };
@@ -59,10 +76,14 @@ export const WithWebcam: Story = {
     showWebcam: true,
     showDebug: true,
   },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('video.webcam-video')?.classList.contains('visible')).toBe(true);
+    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Start');
+  },
 };
 
 export const NoiseOnly: Story = {
-  render: (args: any) => ({
+  render: (args: Story['args']) => ({
     components: { TaskinWithShhh },
     setup() {
       return { args };
@@ -79,5 +100,80 @@ export const NoiseOnly: Story = {
     enableNoiseReactions: true,
     noiseThreshold: 0.05,
     noiseDebounceMs: 1000,
+  },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('.mascot-container')).not.toBeNull();
+    expect(canvasElement.querySelector('button.control-button')?.textContent).toContain('Start');
+  },
+};
+
+export const BrunoShhh: Story = {
+  render: (args: Story['args']) => ({
+    components: { TaskinWithShhh },
+    setup() {
+      return { args };
+    },
+    template: `
+      <div style="padding: 2rem;">
+        <TaskinWithShhh v-bind="args" />
+      </div>
+    `,
+  }),
+  args: {
+    showWebcam: false,
+    showDebug: true,
+    enableNoiseReactions: true,
+    noiseThreshold: 0.05,
+    // Tres segundos de janela com 60% dela acima do limiar antes do primeiro
+    // pedido, e dez segundos de silencio do mascote antes do proximo. Uma porta
+    // batendo ocupa 1 a 4% da janela; uma conversa alta ocupa 60 a 87%.
+    noiseSustainMs: 3000,
+    noiseSustainRatio: 0.6,
+    noiseDebounceMs: 10000,
+    noiseSound: true,
+    shhhName: 'Bruno',
+    shhhPhrase: 'Shhhhhhhhhhhh...',
+    shhhVolume: 1,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: [
+          'O caso de uso para o qual isto existe: o celular fica na mesa, tela ligada, virado para quem programa.',
+          'Quando o nivel de ruido da sala passa do limiar, o Taskin chama a pessoa pelo nome — pelo',
+          '`speechSynthesis` do proprio navegador —, faz uma pausa curta e so entao chia, com um ruido de banda alta',
+          'sintetizado na hora. E o ritmo de "Bruno, shhhhh": as duas camadas juntas viravam ruido, e o pedido',
+          'perdia o endereco. Ninguem precisa interromper o proprio trabalho para pedir silencio.',
+          '',
+          'O nome e a prop `shhhName`, editavel no painel de controles: trocar por "Ana" ou deixar vazio muda a quem',
+          'o pedido e dirigido. So ele e pronunciado — a `shhhPhrase` aparece no balao e define o tamanho do chiado.',
+          '',
+          'Os tempos respondem a perguntas diferentes, e aqui estao configurados para o caso real: `noiseSustainMs`',
+          '(3000ms) e a janela em que o ruido e medido, `noiseSustainRatio` (60%) e quanto dela precisa estar acima',
+          'do limiar, e `noiseDebounceMs` (10000ms) e quanto tempo o mascote fica calado depois de pedir, para nao',
+          'virar ele proprio o barulho da sala.',
+          '',
+          'A fracao existe porque uma fala nao e um plato: entre silabas e frases ha vales de 100 a 400ms, e exigir',
+          'barulho ininterrupto detecta um secador de cabelo mas nunca uma conversa. Numa janela de 3s, uma porta',
+          'batendo ocupa 1 a 4% e uma conversa alta ocupa 60 a 87% — 60% cai no vao entre os dois. Com o `Ratio` em',
+          '100% a exigencia volta a ser ininterrupta.',
+          '',
+          'O botao **Test Shhh** dispara a reacao como se o ruido tivesse sido detectado, sem passar pelo detector e',
+          'mesmo com o microfone desligado: e assim que se ajusta frase, voz e volume sem gritar na sala.',
+          '',
+          'O painel de debug (`showDebug`) mostra o criterio por dentro: `occupancy` e a ocupacao atual contra a',
+          'exigida, `windowFull` e quanto falta para a janela ficar coberta, `debounce` e quanto falta para o mascote',
+          'poder falar de novo, e `firesIn` e a previsao de quanto falta para disparar **se o barulho continuar**. Nao',
+          'e um relogio regressivo: nesse criterio uma pausa longa aumenta o tempo que falta, e por isso a previsao',
+          'vem com a condicao escrita junto.',
+          '',
+          'Ligar `noiseSound` e o que faz sair som. O navegador so libera audio depois de um clique na pagina, entao',
+          'interaja com a story uma vez antes de esperar a voz.',
+        ].join(' '),
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('.mascot-container')).not.toBeNull();
   },
 };

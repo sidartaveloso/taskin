@@ -87,6 +87,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 2. **List all tasks:**
    \`\`\`bash
    taskin list
+   taskin list --json   # JSON array, for another tool to consume
    \`\`\`
 
 3. **Start working on a task:**
@@ -97,15 +98,22 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 ## Commands
 
 - `taskin init` - Initialize Taskin in your project with interactive setup
-- `taskin list [options]` - List all tasks
+- `taskin list [filter] [options]` - List all tasks (`filter` is free text over id, title, status and assignee)
   - `--open` - Show only open tasks (pending, in-progress, blocked)
   - `--closed` - Show only closed tasks (done, canceled)
+  - `--active` - Show only tasks started and not finished (in-progress, paused, in-review)
+  - `--sort <mode>` - `manual` (priority, the default), `diff-asc` or `diff-desc`
   - `--status <status>` - Filter by specific status
   - `--type <type>` - Filter by task type
+  - `-u, --assignee <assignee>` - Filter by assignee id or name, whole or in part
 - `taskin new` - Create a new task (alias: `create`)
 - `taskin start <id>` - Start working on a task (suggests commits)
 - `taskin pause <id>` - Pause work on a task (auto-commits work in progress)
+- `taskin review <id>` - Mark a task as ready for review
 - `taskin finish <id>` - Complete a task (suggests commits)
+
+`new`, `start`, `review` and `finish` each accept `--no-skip-ci`. See
+[The CI-skip tag](#the-ci-skip-tag).
 - `taskin stats [options]` - Show statistics
   - `--user` - User statistics
   - `--team` - Team statistics
@@ -113,11 +121,59 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin config [options]` - Configure automation level
   - `--level <manual|assisted|autopilot>` - Set commit automation level
 - `taskin lint` - Validate task files
-- `taskin dashboard [options]` - Start the web dashboard
+- `taskin group` - Manage task groups (alias: `groups`)
+  - `list` - List the groups
+  - `add <name> [--id <id>]` - Create a group
+  - `rename <id> <name>` - Rename it; no task file is touched
+  - `remove <id> [--reassign-to <id>]` - Delete it, saying where its tasks go
+- `taskin prioritize` - Number every task's priority, once and on purpose
+  - `--dry-run` - Report how many would be numbered, without writing
+- `taskin dashboard [options]` - Start the web dashboard (see [Avatars](#avatars))
+  - `--open` / `--closed` / `--active` - Open the board on one of the three filters
   - `--filter-open` - Show only open tasks
   - `--filter-closed` - Show only closed tasks
 - `taskin mcp-server` - Start MCP server for Claude Desktop integration (alias: `mcp`)
+- `taskin mcp-install` - Register the MCP server in this project's `.mcp.json`
+  - `-f, --force` - Replace an existing `taskin` entry that differs
+  - `--no-probe` - Skip starting the server to verify the entry works
 - `taskin help` - Show help information
+
+### Avatars
+
+The dashboard never sends your browser to a third party for an avatar image. The
+domain stores the **identity** — `avatarHash`, the md5 of the normalised email —
+and the dashboard server proxies the image at `/avatar/<hash>`, same-origin. The
+page therefore only ever asks its own server, which is what lets a strict
+`img-src 'self'` policy work and keeps each viewer's IP and referrer away from
+the avatar provider.
+
+**Without internet**, or when the provider is slow or has no image for that
+address, nothing hangs and nothing breaks: the request is aborted after a short
+timeout, the server answers 404 or 504, and the avatar component falls back to
+the person's initials. Both outcomes are cached — including the negative one, so
+a missing avatar is not re-fetched on every page load.
+
+### The CI-skip tag
+
+The commits Taskin writes on its own carry a tag so a status change does not
+burn a pipeline run — `[skip ci]` by default, configurable per project as
+`automation.ciSkipTag` in `.taskin.json`. An empty string appends nothing, which
+is how a project asks for CI to run on those commits too.
+
+There is one case the project-wide setting cannot get right. GitHub reads
+**only the head commit of a push**. When you commit your work and then run
+`taskin finish`, the status commit lands on top — and its tag skips the whole
+push, including the release of the work you just finished.
+
+For that push, turn the tag off for the one call:
+
+```bash
+taskin finish 042 --no-skip-ci
+```
+
+The flag only turns the tag off. There is no way to force it on in a project
+that configured an empty string: a project that asked for "CI always" has no use
+for skipping case by case.
 
 ### Automation Levels
 
@@ -137,36 +193,37 @@ Taskin includes an MCP server that allows AI assistants like Claude Desktop to i
 taskin mcp-server
 ```
 
+### Registering it in a project
+
+```bash
+taskin mcp-install
+```
+
+Writes `.mcp.json` at the **project root** — not wherever you ran it from, which
+matters in a monorepo, where a subdirectory has no lockfile to detect the
+package manager from. It merges with servers already configured there, leaves a
+differing `taskin` entry alone until you pass `--force`, and refuses a malformed
+file instead of destroying it.
+
+Then it starts the server over stdio and compares the tools it advertises
+against the ones this version offers. Asking only "did it answer?" is not
+enough: the command can resolve to a *different* taskin — an older global
+install answers happily, with the wrong set of tools. Skip the check with
+`--no-probe`.
+
 ### Integration with Claude Desktop
-
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
-
-```json
-{
-  "mcpServers": {
-    "taskin": {
-      "args": ["taskin@beta", "mcp-server"],
-      "command": "npx"
-    }
-  }
-}
-```
-
-Or if installed globally:
-
-```json
-{
-  "mcpServers": {
-    "taskin": {
-      "args": ["mcp-server"],
-      "command": "taskin"
-    }
-  }
-}
-```
 
 **Available MCP Tools:**
 
+- `list_tasks` - List tasks, with optional filters
+- `prioritize_tasks` - Give every task a priority number, once and on purpose
+- `list_groups` - List the task groups, each with its id and name
+
+The listing tools take the same `sort` vocabulary the prioritization board uses:
+`manual` (by priority), `diff-asc` and `diff-desc`. `taskin list --json` emits
+groups as groups — a group node carries its id, its name, the members that
+matched, and how many the filter left out — so a consumer never has to
+reimplement the grouping rule to get it back.
 - `start_task` - Start working on a task
 - `finish_task` - Mark a task as finished
 

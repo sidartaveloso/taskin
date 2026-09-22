@@ -2,19 +2,43 @@
  * MCP Server command - Start Model Context Protocol server
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
-import type { MCPTransportType } from '@opentask/taskin-task-server-mcp';
 import { TaskMCPServer } from '@opentask/taskin-task-server-mcp';
 import chalk from 'chalk';
 import path from 'path';
-import { error, info, printHeader, success } from '../lib/colors.js';
+import { colors } from '../lib/colors.js';
+import { createMcpStatusCommitHook } from '../lib/mcp-status-hook/index.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
 interface MCPServerOptions {
-  transport?: MCPTransportType;
   debug?: boolean;
+}
+
+/*
+ * Este comando **nao** usa os `info`/`success` de `lib/colors`, e e o unico
+ * assim.
+ *
+ * No transporte stdio o stdout e o canal do protocolo: tudo que sai por ali e
+ * mensagem JSON-RPC, e nada mais. Os helpers escrevem com `console.log`, que
+ * cairia no meio das mensagens. Funcionava por tolerancia dos clientes, que
+ * descartam a linha que nao parseia — inclusive a sonda do `mcp-install`, que
+ * faz isso de proposito. Tolerancia nao e correcao.
+ *
+ * O que a pessoa le vai pelo stderr, que nao carrega protocolo nenhum.
+ */
+const linha = (texto = '') => process.stderr.write(`${texto}\n`);
+const aviso = (mensagem: string) => linha(colors.info(`\u2139 ${mensagem}`));
+const feito = (mensagem: string) => linha(colors.success(`\u2713 ${mensagem}`));
+const falha = (mensagem: string) => linha(colors.error(`\u2717 ${mensagem}`));
+
+function cabecalho(titulo: string, icone: string): void {
+  linha();
+  linha(colors.highlight('='.repeat(60)));
+  linha(colors.highlight(`${icone}  ${titulo}`));
+  linha(colors.highlight('='.repeat(60)));
+  linha();
 }
 
 export const mcpServerCommand = defineCommand({
@@ -22,11 +46,6 @@ export const mcpServerCommand = defineCommand({
   description: '🤖 Start Model Context Protocol server for LLM integration',
   alias: 'mcp',
   options: [
-    {
-      flags: '-t, --transport <type>',
-      description: 'Transport type (stdio or sse)',
-      defaultValue: 'stdio',
-    },
     {
       flags: '-d, --debug',
       description: 'Enable debug logging',
@@ -38,81 +57,76 @@ export const mcpServerCommand = defineCommand({
 });
 
 async function startMCPServer(options: MCPServerOptions): Promise<void> {
-  // Check if project is initialized
   requireTaskinProject();
 
-  const transport = (options.transport || 'stdio') as MCPTransportType;
   const debug = options.debug || false;
 
-  printHeader('Starting MCP Server', '🤖');
+  cabecalho('Starting MCP Server', '\u{1F916}');
 
   try {
-    // Initialize task provider and manager
-    info('Initializing task manager...');
-    const tasksDir = path.join(process.cwd(), 'TASKS');
-
-    // Initialize UserRegistry
-    const monorepoRoot = path.dirname(tasksDir);
-    const taskinDir = path.join(monorepoRoot, '.taskin');
-    const userRegistry = new UserRegistry({ taskinDir });
-    await userRegistry.load();
-
-    const provider = new FileSystemTaskProvider(tasksDir, userRegistry);
+    aviso('Initializing task manager...');
+    const { provider, projectRoot: monorepoRoot } = await resolveTaskProvider();
     const manager = new TaskManager(provider);
 
-    // Create MCP server
-    info(`Creating MCP server with ${transport} transport...`);
+    // Same status-change commit `taskin start`/`finish` make, so the two doors
+    // to the operation leave the same history when `automation.level` asks for
+    // it (task-066). Undefined when the project does not auto-commit — then the
+    // MCP path is a pure status change, exactly like the CLI in that project.
+    const onStatusChange = createMcpStatusCommitHook({ monorepoRoot });
+
     const mcpServer = new TaskMCPServer({
       taskManager: manager,
       name: 'taskin-mcp-server',
       version: '1.0.0',
       debug,
+      onStatusChange,
     });
 
-    // Connect and start
-    info('Starting MCP server...');
-    await mcpServer.connect({ transport });
+    aviso('Starting MCP server over stdio...');
+    await mcpServer.connect({ transport: 'stdio' });
 
-    success('✓ MCP server started successfully');
-    info('');
-    info(chalk.bold('Server Information:'));
-    info(`  • Transport: ${chalk.cyan(transport)}`);
-    info(`  • Debug: ${chalk.cyan(debug ? 'enabled' : 'disabled')}`);
-    info('');
-    info(chalk.bold('Available Tools:'));
-    info(`  • ${chalk.green('start_task')} - Start working on a task`);
-    info(`  • ${chalk.green('finish_task')} - Mark a task as finished`);
-    info('');
-    info(chalk.bold('Available Prompts:'));
-    info(`  • ${chalk.green('start-task-workflow')} - Guide for starting tasks`);
-    info(`  • ${chalk.green('finish-task-workflow')} - Guide for finishing tasks`);
-    info(`  • ${chalk.green('task-summary')} - Get task summary and insights`);
-    info('');
-    info(chalk.bold('Available Resources:'));
-    info(`  • ${chalk.green('taskin://tasks')} - Access all tasks`);
-    info('');
-    info(`Press ${chalk.bold('Ctrl+C')} to stop the server`);
-    info('');
+    feito('MCP server started successfully');
+    linha();
+    aviso(`  ${chalk.bold('Debug')}: ${chalk.cyan(debug ? 'enabled' : 'disabled')}`);
+    linha();
 
-    // Handle process termination
-    const cleanup = async () => {
-      info('\nShutting down MCP server...');
-      // MCP server will close automatically when process exits
-      success('✓ Server stopped');
+    /*
+     * Perguntado ao servidor, e nao escrito aqui. A lista a mao ja tinha ficado
+     * para tras uma vez: anunciava `start_task` e `finish_task` e esquecia
+     * `list_tasks`, o mesmo defeito que a documentacao tinha.
+     */
+    aviso(chalk.bold('Available Tools:'));
+    for (const ferramenta of mcpServer.listTools().tools) {
+      aviso(`  \u2022 ${chalk.green(ferramenta.name)} - ${ferramenta.description}`);
+    }
+    linha();
+
+    aviso(chalk.bold('Available Prompts:'));
+    for (const prompt of mcpServer.listPrompts().prompts) {
+      aviso(`  \u2022 ${chalk.green(prompt.name)} - ${prompt.description}`);
+    }
+    linha();
+
+    aviso(`Press ${chalk.bold('Ctrl+C')} to stop the server`);
+    linha();
+
+    const cleanup = () => {
+      linha();
+      aviso('Shutting down MCP server...');
+      feito('Server stopped');
       process.exit(0);
     };
 
     process.on('SIGINT', cleanup);
     process.on('SIGTERM', cleanup);
 
-    // Keep process alive
     await new Promise(() => {
-      // Wait indefinitely
+      // O servidor vive enquanto o cliente mantiver o processo aberto.
     });
   } catch (err) {
-    error('Failed to start MCP server');
+    falha('Failed to start MCP server');
     if (err instanceof Error) {
-      error(err.message);
+      falha(err.message);
       if (debug) {
         console.error(err.stack);
       }

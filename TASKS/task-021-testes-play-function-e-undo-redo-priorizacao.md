@@ -1,8 +1,9 @@
 # 🧪 Task 021 — Testes de interação (Storybook play function) e undo/redo no board de priorização
 
-Status: done
-Type: feat
-Assignee: A definir
+- Status: done
+- Type: feat
+- Assignee: A definir
+- Priority: 8851
 
 ## Description
 

@@ -40,7 +40,7 @@ O Taskin é uma plataforma modular de gerenciamento de tarefas com suporte a mú
 │                   Communication Layer                       │
 ├─────────────────────────────────────────────────────────────┤
 │  TaskWebSocketServer        TaskMCPServer                   │
-│  ├─ Port: 3001              ├─ Transport: stdio/sse        │
+│  ├─ Port: 3001              ├─ Transport: stdio            │
 │  ├─ Multi-client            ├─ Tools: start_task/finish    │
 │  ├─ Broadcast updates       ├─ Prompts: workflows          │
 │  ├─ Heartbeat: 30s          └─ Resources: taskin://tasks   │
@@ -210,21 +210,78 @@ LLM continues conversation
 #### @opentask/taskin-cli
 
 - **Comandos**:
-  - `taskin dashboard`: Inicia WebSocket server + Vite dev server
+  - `taskin dashboard` (serve `/avatar/<hash>` como proxy: o navegador nunca
+    fala com o provedor de avatar, e sem internet cai para as iniciais): Inicia WebSocket server + Vite dev server
     - `--port <number>`: Porta do Vite (padrão: 5173)
     - `--ws-port <number>`: Porta do WebSocket (padrão: 3001)
     - `--host <string>`: Host do servidor (padrão: localhost)
     - `--open`: Abre navegador automaticamente
-  - `taskin mcp-server`: Inicia MCP server
-    - `--transport <stdio|sse>`: Tipo de transporte (padrão: stdio)
+  - `taskin mcp-server`: Inicia MCP server (transporte stdio; sem porta)
     - `--debug`: Ativa logs de debug
-  - `taskin start/finish/pause <task-id>`: Comandos de task management
+  - `taskin mcp-install`: Registra o MCP server no `.mcp.json` do projeto
+    - `-f, --force`: Substitui uma entrada `taskin` divergente
+    - `--no-probe`: Pula a subida do servidor para verificar a entrada
+  - `taskin start/finish/pause/review <task-id>`: Comandos de task management
+    - `--no-skip-ci`: Escreve o commit de status sem a marca de pular CI, para o
+      push que carrega trabalho junto (o GitHub lê só o commit de topo)
 - **Features**:
   - Colored terminal output (chalk)
   - Graceful shutdown (SIGINT/SIGTERM)
   - Process management (spawn Vite, manage WebSocket)
 
 ## Configuração
+
+### Mascote — reação a ruído ("xiiu/shhh")
+
+O bloco opcional `mascot` do `.taskin.json` configura a reação do mascote ao
+ruído ambiente, validado por `MascotConfigSchema` em `@opentask/taskin-types`:
+
+```json
+{
+  "mascot": {
+    "reactions": {
+      "noise": {
+        "enabled": true,
+        "threshold": 0.7,
+        "debounceMs": 5000,
+        "sound": true,
+        "phrase": "Bruno, Shhhhhhhhhhhh...",
+        "volume": 1
+      }
+    }
+  }
+}
+```
+
+Os campos têm defaults conservadores (`enabled: false`, `threshold: 0.06`,
+`debounceMs: 1500`, `sound: false`) — sem `enabled: true` explícito o microfone
+nunca é solicitado. `phrase` (default `"Shhhhhh..."`) é o que o mascote fala em
+voz alta e mostra no balão, e `volume` (default `1`) é a altura desse som.
+Dirigir o pedido a alguém — `"Bruno, Shhhhhhhhhhhh..."` — é o ponto: quem está
+falando alto não está olhando para a tela, e é o mascote quem pede silêncio no
+lugar da pessoa que precisa se concentrar.
+
+Com `sound: true` saem duas camadas, e a segunda nunca falta: a **fala**, pelo
+`speechSynthesis` do próprio navegador, e o **chiado**, sintetizado com Web
+Audio (ruído branco por um filtro de banda alta, que é literalmente o que uma
+sibilante é). Não há arquivo de áudio para baixar, licenciar ou versionar, e a
+duração do chiado acompanha os `h` da frase. O navegador só libera áudio depois
+de um gesto do usuário na página — antes disso o balão aparece e o som não. As funções puras `resolveMascotNoiseSettings` e
+`resolveShhhReactionPlan` (mesmo pacote) derivam, respectivamente, as
+configurações com defaults aplicados e o plano da reação (honrando
+`prefers-reduced-motion`). O organismo `TaskinWithShhh`
+(`@opentask/taskin-design-vue`) consome esse bloco.
+
+Consulte `packages/design-vue/docs/MASCOT_NOISE_REACTION.md` para o guia
+completo (props, acessibilidade, privacidade e testes).
+
+O pacote `@opentask/taskin-mascote` é esse organismo empacotado como aplicação
+instalável: o Taskin em tela cheia num celular apoiado abaixo do monitor,
+publicado junto do site em `/taskin/mascote/`. Ele não lê `.taskin.json` — não
+há arquivo num aparelho —, mas grava no `localStorage` um bloco `mascot` no
+**mesmo formato**, lido pela mesma `resolveMascotNoiseSettings`, de modo que o
+que se ajusta no celular pode ser colado no arquivo de um projeto. Ver
+`packages/mascote/README.md`.
 
 ## Métricas e Analytics
 

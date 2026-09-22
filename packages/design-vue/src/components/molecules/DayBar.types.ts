@@ -4,8 +4,8 @@ export interface DayBarType {
   emits: DayBarEmits;
 }
 
-export type DayBarModels = {};
+export type DayBarModels = Record<string, never>;
 
-export type DayBarProps = {};
+export type DayBarProps = Record<string, never>;
 
-export type DayBarEmits = {};
+export type DayBarEmits = Record<string, never>;

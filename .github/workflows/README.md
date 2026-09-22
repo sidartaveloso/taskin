@@ -42,7 +42,11 @@ Automatically builds and deploys the `@opentask/taskin-design-vue` Storybook to 
 Test the Storybook build locally before pushing:
 
 ```bash
-cd packages/design-vue
 pnpm run build:storybook
 pnpm dlx serve storybook-static
 ```
+
+The gallery published at `/components/` is the **root** Storybook, which covers
+`design-vue` and `ui-sense` in a single tree. Building only one package
+(`pnpm --filter @opentask/taskin-design-vue run build:storybook`) still works and
+is useful when iterating on that package alone, but it is not what ships.

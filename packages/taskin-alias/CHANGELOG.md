@@ -1,5 +1,93 @@
 # @opentask/taskin
 
+## 3.0.14
+
+### Patch Changes
+
+- taskin@4.4.2
+
+## 3.0.13
+
+### Patch Changes
+
+- taskin@4.4.1
+
+## 3.0.12
+
+### Patch Changes
+
+- Updated dependencies [d5fafdd]
+- Updated dependencies [f84d9c6]
+- Updated dependencies [dc34dcf]
+- Updated dependencies [9d11a3d]
+- Updated dependencies [6e1c7fa]
+- Updated dependencies [93a60fe]
+- Updated dependencies [0aa99db]
+- Updated dependencies [1d44ea5]
+  - taskin@4.4.0
+
+## 3.0.11
+
+### Patch Changes
+
+- Updated dependencies [3aab76e]
+- Updated dependencies [adf9cd0]
+- Updated dependencies [37191d4]
+  - taskin@4.3.0
+
+## 3.0.10
+
+### Patch Changes
+
+- Updated dependencies [8c06be6]
+- Updated dependencies [79ef2f5]
+- Updated dependencies [6bebe35]
+  - taskin@4.2.0
+
+## 3.0.9
+
+### Patch Changes
+
+- Updated dependencies [58a8b23]
+  - taskin@4.1.4
+
+## 3.0.8
+
+### Patch Changes
+
+- taskin@4.1.3
+
+## 3.0.7
+
+### Patch Changes
+
+- Updated dependencies [8cd28f3]
+  - taskin@4.1.2
+
+## 3.0.6
+
+### Patch Changes
+
+- Updated dependencies [2c402e9]
+  - taskin@4.1.1
+
+## 3.0.5
+
+### Patch Changes
+
+- Updated dependencies [346f1d4]
+  - taskin@4.1.0
+
+## 3.0.4
+
+### Patch Changes
+
+- Updated dependencies [b4b259e]
+- Updated dependencies [30b3e4a]
+- Updated dependencies [2240253]
+- Updated dependencies [714d2cd]
+  - taskin@4.0.0
+
 ## 3.0.3
 
 ### Patch Changes

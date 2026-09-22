@@ -4,8 +4,8 @@ export interface PrioritizationPageType {
   emits: PrioritizationPageEmits;
 }
 
-export type PrioritizationPageModels = {};
+export type PrioritizationPageModels = Record<string, never>;
 
-export type PrioritizationPageProps = {};
+export type PrioritizationPageProps = Record<string, never>;
 
-export type PrioritizationPageEmits = {};
+export type PrioritizationPageEmits = Record<string, never>;

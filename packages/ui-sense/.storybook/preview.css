@@ -1,0 +1,11 @@
+/*
+ * Os tokens do pacote. Sem este import as stories renderizam com `var(--...)`
+ * sem valor: o componente usava hex fixo justamente porque nada carregava o
+ * `variables.css`, entao o problema so aparece quando ele passa a usar tokens.
+ */
+@import "../src/styles/variables.css";
+
+body {
+  font-family: var(--font-family);
+  color: var(--text-secondary);
+}

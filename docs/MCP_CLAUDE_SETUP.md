@@ -2,7 +2,29 @@
 
 O servidor MCP do Taskin permite que o Claude Desktop interaja diretamente com suas tasks.
 
-## Configuração
+## No seu projeto: um comando
+
+Para agentes que leem o `.mcp.json` do repositório — Claude Code, por exemplo —
+não é preciso escrever nada à mão:
+
+```bash
+taskin mcp-install
+```
+
+Ele escreve o arquivo na **raiz do projeto**, detecta o gerenciador de pacotes,
+funde com os servidores já configurados e depois sobe o servidor para conferir
+que a entrada funciona de verdade. Essa última parte importa: um comando pode
+alcançar **outro** taskin — uma instalação global mais antiga responde
+normalmente, com o conjunto errado de ferramentas — e só comparar as ferramentas
+anunciadas distingue os dois casos.
+
+Use `--force` para substituir uma entrada `taskin` divergente e `--no-probe`
+para pular a verificação.
+
+O Claude **Desktop** não lê o `.mcp.json` do repositório: ele tem configuração
+própria, que é o que o resto deste documento descreve.
+
+## Configuração do Claude Desktop
 
 ### 1. Localize o arquivo de configuração do Claude Desktop
 
@@ -51,11 +73,26 @@ Feche e abra o Claude Desktop para que as mudanças tenham efeito.
 
 ## Ferramentas Disponíveis
 
-Após a configuração, você poderá usar os seguintes comandos no Claude:
+O servidor expõe **três** ferramentas. Esta lista é verificada por teste contra
+o que o servidor anuncia — se divergir, a suíte quebra.
+
+### `list_tasks`
+
+Lista as tarefas do projeto. Devolve um JSON com o que identifica cada uma —
+id, título, status, tipo, responsável — **sem o corpo do markdown**, que é
+buscado depois pelo id.
+
+Aceita filtros, todos opcionais e cumulativos: `status`, `type`, `assignee`
+(id ou nome, inteiro ou em parte), `open`, `closed` e `text` (busca livre).
+
+```
+Liste as tasks em andamento
+Quais tasks são da Ana?
+```
 
 ### `start_task`
 
-Inicia uma task
+Inicia uma task, mudando o status para `in-progress`.
 
 ```
 Por favor, inicie a task 001
@@ -63,50 +100,30 @@ Por favor, inicie a task 001
 
 ### `finish_task`
 
-Finaliza uma task
+Finaliza uma task, mudando o status para `done`.
 
 ```
 Finalize a task 001
 ```
 
-### `pause_task`
+### O que ainda não existe
 
-Pausa uma task em andamento
+Três ferramentas já foram documentadas aqui **antes de existirem**, e continuam
+não existindo. Nenhuma delas é oferecida pelo servidor:
 
-```
-Pause a task 001
-```
-
-### `list_tasks`
-
-Lista todas as tasks
-
-```
-Liste todas as minhas tasks
-```
-
-### `get_task`
-
-Obtém detalhes de uma task específica
-
-```
-Mostre os detalhes da task 001
-```
-
-### `lint_tasks`
-
-Valida os arquivos de task
-
-```
-Valide todas as tasks
-```
+- **get_task** — use `list_tasks` e leia o arquivo da task pelo id.
+- **pause_task** — use `taskin pause` no terminal.
+- **lint_tasks** — use `taskin lint` no terminal.
 
 ## Recursos Disponíveis
 
-O servidor também expõe recursos que o Claude pode acessar:
+O servidor expõe um recurso:
 
-- `task://{taskId}` - Contexto completo de uma task
-- `tasks://status/{status}` - Tasks filtradas por status
+- `taskin://tasks` — todas as tarefas, em JSON, no mesmo formato do
+  `list_tasks` sem filtro.
+
+`task://{taskId}` e `tasks://status/{status}` já apareceram nesta lista e não
+existem.
 
 ## Prompts Disponíveis
 

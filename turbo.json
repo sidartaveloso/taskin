@@ -1,27 +1,30 @@
 {
-  "$schema": "https://v2-10-7.turborepo.dev/schema.json",
+  "$schema": "https://v2-10-12.turborepo.dev/schema.json",
   "globalDependencies": [".env", ".env.local"],
   "globalEnv": ["NODE_ENV", "PORT"],
   "tasks": {
     "@opentask/taskin#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
-    "@opentask/taskin-file-system-provider#build": {
-      "dependsOn": ["@opentask/taskin-git-utils#build", "@opentask/taskin-task-manager#build"]
-    },
     "@taskin/chatbot#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
     "@taskin/directus-extension#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
     "@taskin/docs#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": ["content/.vitepress/dist/**"]
     },
     "@taskin/n8n-plugin#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
     "@taskin/py-sdk#build": {
+      "dependsOn": ["install", "^build"],
       "outputs": []
     },
     "@taskin/types-py#publish:pypi": {
@@ -30,8 +33,16 @@
     },
     "build": {
       "dependsOn": ["install", "^build"],
-      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "package.json", "tsconfig.json"],
-      "outputs": ["dist/**", "build/**", "generated/**", "content/.vitepress/dist/**"]
+      "inputs": [
+        "src/**/*.{ts,js,tsx,jsx,vue}",
+        "content/**",
+        "package.json",
+        "tsconfig.json",
+        "index.html",
+        "vite.config.ts",
+        "public/**"
+      ],
+      "outputs": ["dist/**", "build/**", "generated/**", "content/.vitepress/dist/**", "dashboard-dist/**"]
     },
     "clean": {
       "cache": false
@@ -92,7 +103,7 @@
       "outputs": ["coverage/**"]
     },
     "typecheck": {
-      "dependsOn": ["install"],
+      "dependsOn": ["install", "^build"],
       "inputs": ["src/**/*.{ts,tsx}", "package.json", "tsconfig.json"],
       "outputs": []
     }

@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import Avatar from './Avatar.vue';
 
 const meta: Meta<typeof Avatar> = {
-  title: 'Atoms/Avatar',
+  title: 'Atoms/Base/Avatar',
   component: Avatar,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     size: {
       control: 'select',

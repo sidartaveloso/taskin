@@ -1,0 +1,111 @@
+name: Verificar
+
+# Roda em todo push para `main` e `develop`, e em todo pull request. Nao
+# publica nada — publicar e o `release.yml`.
+#
+# Por que existe: ate aqui os unicos workflows eram o de publicar e o do site,
+# e nenhum dos dois rodava teste. `pnpm build` nao roda `test` nem `typecheck`
+# (o turbo nao declara essa dependencia), entao o `changeset publish` mandava
+# pacote para o npm com o build como unico portao. Vitest, biome e tsc so
+# rodavam quando alguem lembrava, na propria maquina.
+#
+# Sem filtro de caminho, de proposito: o `pnpm lint` da raiz inclui
+# `lint:tasks`, que valida os arquivos de `TASKS/`. Um commit que so mexe em
+# task pode quebrar a verificacao — e o autopilot commita task sozinho.
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+  workflow_dispatch:
+
+# Um push novo no mesmo ref cancela a verificacao do anterior: o resultado que
+# importa e o do commit que esta na ponta.
+concurrency:
+  group: verificar-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read tool versions
+        id: tool-versions
+        run: |
+          NODE_VERSION=$(grep 'nodejs' .tool-versions | awk '{print $2}')
+          PNPM_VERSION=$(grep 'pnpm' .tool-versions | awk '{print $2}')
+          echo "node-version=$NODE_VERSION" >> $GITHUB_OUTPUT
+          echo "pnpm-version=$PNPM_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.tool-versions.outputs.node-version }}
+
+      # O `pnpm install` dispara o script `install` do `packages/types-py`, que
+      # e um `uv sync`. Sem o uv no PATH o install inteiro morre com
+      # `sh: 1: uv: not found`.
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.11"
+          cache-dependency-glob: |
+            .tool-versions
+            pyproject.toml
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ steps.tool-versions.outputs.pnpm-version }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Na ordem do mais barato para o mais caro. Passos separados, e nao o
+      # script `pnpm ci` da raiz, para que a aba de Actions diga qual dos tres
+      # caiu sem precisar abrir o log.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Chromium ANTES de `pnpm test`, nao antes do build: o `test` do
+      # design-vue e `vitest run && vitest run --config vitest.storybook.config.ts`,
+      # e o segundo roda as play functions em navegador de verdade
+      # (`@vitest/browser-playwright`, instancia chromium). Sem isto o
+      # `pnpm test` cai com "Executable doesn't exist" num passo que nem parece
+      # precisar de navegador. `--with-deps` instala as bibliotecas de sistema.
+      - name: Install Chromium for the browser tests
+        run: pnpm --filter @opentask/taskin-design-vue exec playwright install --with-deps chromium
+
+      - name: Test
+        run: pnpm test
+
+      # O `test` do turbo ja depende de `build`, entao aqui o grosso vem do
+      # cache. Vale o passo mesmo assim: pacote sem teste (docs, dashboard) so
+      # e exercitado pelo build, e foi ai que a ordenacao quebrada do turbo
+      # passou despercebida por dois releases.
+      #
+      # Sem `VITE_POSTHOG_KEY` o analytics nao inicializa e o build segue —
+      # verificacao nao precisa de credencial de producao.
+      - name: Build
+        run: pnpm build

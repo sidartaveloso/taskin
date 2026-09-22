@@ -1,26 +1,69 @@
-import type { CreateTaskOptions, ITaskProvider, LintResult } from '@opentask/taskin-task-manager';
-import type { TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
+import type {
+  CreateTaskOptions,
+  CriterioEmAberto,
+  ITaskProvider,
+  IUserRegistry,
+  LintResult,
+  ValidationIssue,
+} from '@opentask/taskin-task-manager';
+import type { GroupId, TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
+import { parseGroupId, parseTaskId } from '@opentask/taskin-types';
 import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
+import { criteriosEmAberto, validarConclusao } from './criterios-de-conclusao/index.js';
+import { FileSystemGroupRegistry } from './group-registry.js';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
+import {
+  DEFAULT_METADATA_STYLE_ID,
+  getMetadataStyle,
+  type MetadataStyleId,
+  readMetadataField,
+  resolveMetadataStyle,
+} from './metadata-style/index.js';
 import type { CreateTaskFileResult, TaskFile } from './task-file.types.js';
 import { createLintResult, fixTaskFile, validateTaskFile } from './task-validator.js';
-import type { ILogger, UserRegistry } from './user-registry.js';
+import type { ILogger } from './user-registry.js';
 import { NullLogger } from './user-registry.js';
+import {
+  fixUsersFileLocation,
+  resolveUsersFilePaths,
+  TASKIN_DIR_NAME,
+  USERS_FILE_NAME,
+  validateUsersFileLocation,
+} from './users-file-location.js';
+import { validarPrioridadesDuplicadas, validarPriorizacao } from './validar-priorizacao/index.js';
+
+/**
+ * Matches the H1 heading `# [🧩] Task NNN — Title`. The separator is anchored
+ * right after the task id so a "Task"/"task" inside the title doesn't get
+ * matched greedily (e.g. `# Task 031 — revisar se task-manager deveria...`).
+ */
+const TITLE_PATTERN = /^#\s+(?:🧩\s+)?Task\s+\d+\s*[—-]\s*(.+)$/im;
+
+/**
+ * Extracts the numeric task id from a task file name.
+ * Accepts both `task-004-my-task.md` and `task-004.md`. Returns `undefined`
+ * for anything that is not a numeric task file (e.g. README.md, task-foo.md).
+ */
+function extractTaskIdFromFileName(fileName: string): string | undefined {
+  const match = fileName.match(/^task-(\d+)(?:-.+)?\.md$/);
+  return match ? match[1] : undefined;
+}
 
 /**
  * Parses the raw inline matches for the prioritization fields (Priority/Group/
  * GroupName/Difficulty) into the typed shape expected on TaskFile.
  */
 function parsePrioritizationFields(
-  priorityMatch: string | null,
-  groupMatch: string | null,
-  groupNameMatch: string | null,
-  difficultyMatch: string | null,
+  priorityMatch: string | undefined,
+  groupMatch: string | undefined,
+  groupNameMatch: string | undefined,
+  difficultyMatch: string | undefined,
 ): {
   order?: number;
-  groupId?: string;
+  groupId?: GroupId;
   groupName?: string;
   difficulty?: number;
 } {
@@ -29,60 +72,161 @@ function parsePrioritizationFields(
 
   return {
     ...(order !== undefined && !Number.isNaN(order) && { order }),
-    ...(groupMatch && { groupId: groupMatch.trim() }),
+    ...(groupMatch && { groupId: parseGroupId(groupMatch.trim()) }),
     ...(groupNameMatch && { groupName: groupNameMatch.trim() }),
     ...(difficulty !== undefined && !Number.isNaN(difficulty) && { difficulty }),
   };
 }
 
 /**
- * Upserts or removes a single `Field: value` inline metadata line in the
- * task markdown content, following the same convention used for `Status`.
+ * Upserts or removes a single `Field: value` line in the metadata block,
+ * keeping whatever marking style the file is already written in.
+ *
  * Passing `value === undefined` removes the line if present.
  */
-function setInlineField(content: string, fieldName: string, value: string | undefined): string {
-  const linePattern = new RegExp(`^${fieldName}:\\s*.+$\\n?`, 'im');
+function setInlineField(
+  content: string,
+  fieldName: string,
+  value: string | undefined,
+  fallbackStyle: MetadataStyleId,
+): string {
+  return resolveMetadataStyle(content, fallbackStyle).write(content, fieldName, value);
+}
 
-  if (value === undefined) {
-    return linePattern.test(content) ? content.replace(linePattern, '') : content;
-  }
+/**
+ * Options that are not part of the provider contract but change how this
+ * provider writes.
+ *
+ * @public
+ */
+export interface FileSystemTaskProviderOptions {
+  /**
+   * Marking style for files this provider creates.
+   *
+   * Only for creation: an edit follows the style of the file being edited, so
+   * a project that switches the setting does not end up with files half in one
+   * style and half in another.
+   */
+  readonly metadataStyle?: MetadataStyleId;
 
-  if (new RegExp(`^${fieldName}:\\s*.+$`, 'im').test(content)) {
-    return content.replace(new RegExp(`^${fieldName}:\\s*.+$`, 'im'), `${fieldName}: ${value}`);
-  }
+  /**
+   * Onde o registro de grupos mora. Ausente, ao lado do diretorio de tarefas —
+   * o mesmo `.taskin/` que ja guarda o registro de usuarios.
+   */
+  readonly taskinDir?: string;
 
-  return content.replace(/(^#.*\n)/, `$1${fieldName}: ${value}\n`);
+  /**
+   * When set, `lint(fix)` rewrites every file's metadata block into this
+   * style. Left unset — the default — `lint(fix)` normalizes each file within
+   * the style it already uses.
+   */
+  readonly convertMetadataStyleTo?: MetadataStyleId;
 }
 
 export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   private locale: Locale;
   private logger: ILogger;
+  private metadataStyle: MetadataStyleId;
+  private convertMetadataStyleTo: MetadataStyleId | undefined;
+
+  /**
+   * Os grupos deste projeto, como entidades.
+   *
+   * Exposto porque nem toda fonte tem o conceito: quem consome descobre pela
+   * presenca desta propriedade, em vez de chamar uma operacao que falha.
+   *
+   * @public
+   */
+  readonly groupRegistry: FileSystemGroupRegistry;
 
   constructor(
     private tasksDirectory: string,
-    private userRegistry: UserRegistry,
+    private userRegistry: IUserRegistry,
     locale: Locale = 'en-US',
     logger?: ILogger,
+    options: FileSystemTaskProviderOptions = {},
   ) {
     this.locale = locale;
     this.logger = logger ?? NullLogger;
+    this.metadataStyle = options.metadataStyle ?? DEFAULT_METADATA_STYLE_ID;
+    this.convertMetadataStyleTo = options.convertMetadataStyleTo;
+
+    /*
+     * O registro recebe daqui a unica coisa que ele nao sabe fazer: mexer nas
+     * tarefas. Apagar um grupo tem que dizer para onde os membros vao, como
+     * Redmine (`reassign_to_id`) e Jira (`moveIssuesTo`) ja fazem.
+     */
+    this.groupRegistry = new FileSystemGroupRegistry(
+      options.taskinDir ?? path.join(tasksDirectory, '..', '.taskin'),
+      (de, para) => this.reassignGroup(de, para),
+    );
+  }
+
+  /**
+   * Reads the metadata a task file carries, whatever style it is written in
+   * and whichever of the two locales named the fields.
+   */
+  private readInlineMetadata(content: string): {
+    status?: string;
+    type?: string;
+    assignee?: string;
+    priority?: string;
+    group?: string;
+    groupName?: string;
+    difficulty?: string;
+  } {
+    const i18n = getI18n(detectLocale(content));
+    const read = (english: string, localized: string) => readMetadataField(content, localized, english);
+
+    return {
+      status: read('Status', i18n.status),
+      type: read('Type', i18n.type),
+      assignee: read('Assignee', i18n.assignee),
+      priority: read('Priority', i18n.priority),
+      group: read('Group', i18n.group),
+      groupName: read('GroupName', i18n.groupName),
+      difficulty: read('Difficulty', i18n.difficulty),
+    };
+  }
+
+  /**
+   * The label to write a field under: the one the file already uses, or the
+   * English name.
+   *
+   * Without this, writing `Prioridade` into a file that already says
+   * `Priority` appends a second line instead of updating the first.
+   */
+  private labelFor(content: string, english: string, localized: string): string {
+    if (readMetadataField(content, localized) !== undefined) return localized;
+    return english;
+  }
+
+  /**
+   * A raiz do projeto: o diretório que contém `TASKS/` e `.taskin/`.
+   *
+   * Derivada do diretório de tasks injetado, e não de `process.cwd()`: o
+   * provider é construído com um caminho explícito e usar o cwd fazia o
+   * `initialize()` semear arquivos em outro lugar quando os dois divergiam.
+   */
+  private get projectRoot(): string {
+    return path.dirname(path.resolve(this.tasksDirectory));
   }
 
   async initialize(): Promise<void> {
-    const fs = await import('fs');
-    const path = await import('path');
-    const projectRoot = process.cwd();
-    const tasksDir = path.join(projectRoot, 'TASKS');
-    const usersFile = path.join(projectRoot, '.taskin-users.json');
-
-    // Cria TASKS/ se não existir
-    if (!fs.existsSync(tasksDir)) {
-      fs.mkdirSync(tasksDir, { recursive: true });
-      this.logger.info(`✓ Created TASKS/ directory`);
+    // Projeto vindo de uma versão que escrevia o registro na raiz: promove o
+    // arquivo antes de decidir se falta semear um.
+    const migration = await fixUsersFileLocation(this.projectRoot);
+    if (migration.action === 'moved') {
+      this.logger.info(`✓ Moved ${USERS_FILE_NAME} into ${TASKIN_DIR_NAME}/${migration.viaGit ? ' (git mv)' : ''}`);
     }
 
-    // Cria .taskin-users.json se não existir
-    if (!fs.existsSync(usersFile)) {
+    if (!(await this.pathExists(this.tasksDirectory))) {
+      await fs.mkdir(this.tasksDirectory, { recursive: true });
+      this.logger.info(`✓ Created ${path.basename(this.tasksDirectory)}/ directory`);
+    }
+
+    const { canonical: usersFile } = resolveUsersFilePaths(this.projectRoot);
+    if (!(await this.pathExists(usersFile))) {
       const username = process.env.USER || 'developer';
       const usersData = {
         users: {
@@ -93,14 +237,66 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
           },
         },
       };
-      fs.writeFileSync(usersFile, JSON.stringify(usersData, null, 2), 'utf-8');
-      this.logger.info(`✓ Created .taskin-users.json with default user`);
+      await fs.mkdir(path.dirname(usersFile), { recursive: true });
+      await fs.writeFile(usersFile, JSON.stringify(usersData, null, 2), 'utf-8');
+      this.logger.info(`✓ Created ${TASKIN_DIR_NAME}/${USERS_FILE_NAME} with default user`);
     }
   }
 
-  async findTask(taskId: string): Promise<TaskFile | undefined> {
+  /**
+   * Reads the `Assignee:` line as written, before the registry gets a say.
+   *
+   * `getAllTasks` already replaces an unresolvable assignee with a fabricated
+   * temporary user, which is exactly what the lint has to see through.
+   */
+  private readAssigneeLine(content: string): string | undefined {
+    const i18n = getI18n(detectLocale(content));
+    return readMetadataField(content, 'Assignee', i18n.assignee);
+  }
+
+  /**
+   * Move as tarefas de um grupo para outro — ou para nenhum.
+   *
+   * `para` ausente significa "sem grupo": a linha `Group:` sai do arquivo. E o
+   * unico lugar que mexe em tarefa quando um grupo e apagado, e devolve quantas
+   * foram afetadas para a operacao nunca ser invisivel.
+   */
+  /**
+   * Os itens do `## Tasks` que ainda bloqueiam, lidos pelo **mesmo** leitor que
+   * o lint usa (task-073).
+   *
+   * Um segundo parser divergiria, e divergir aqui significa o lint recusar o que
+   * o `finish` acabou de aceitar — pior que nao ter portao.
+   */
+  async getCompletionBlockers(task: TaskFile): Promise<CriterioEmAberto[]> {
+    const conteudo = task.content || (await fs.readFile(task.filePath, 'utf-8'));
+
+    return criteriosEmAberto(conteudo).map((c) => ({ texto: c.texto, linha: c.linha }));
+  }
+
+  private async reassignGroup(de: GroupId, para: GroupId | undefined): Promise<number> {
+    const tarefas = await this.getAllTasks();
+    const membros = tarefas.filter((t) => t.groupId === de);
+
+    for (const tarefa of membros) {
+      await this.updateTask({ ...tarefa, groupId: para });
+    }
+
+    return membros.length;
+  }
+
+  private async pathExists(target: string): Promise<boolean> {
+    try {
+      await fs.access(target);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async findTask(taskId: TaskId): Promise<TaskFile | undefined> {
     const files = await fs.readdir(this.tasksDirectory);
-    const taskFile = files.find((file) => file.startsWith(`task-${taskId}-`) && file.endsWith('.md'));
+    const taskFile = files.find((file) => extractTaskIdFromFileName(file) === taskId);
 
     if (!taskFile) {
       return undefined;
@@ -110,36 +306,17 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const content = await fs.readFile(filePath, 'utf-8');
 
     // Extract title from first heading
-    const titleMatch = content.match(/^# .*Task.*?[—-]\s*(.+)$/im);
-    const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
+    const title = content.match(TITLE_PATTERN)?.[1]?.trim() ?? 'Untitled';
 
-    // Auto-detect locale from content if possible, fallback to provider's locale
-    const contentLocale = detectLocale(content);
-    const i18n = getI18n(contentLocale);
-
-    // Extract metadata from inline format (Status: value)
-    // Support both English and localized field names
-    const extractInline = (name: string, localizedName?: string): string | null => {
-      // Try localized name first, then English name
-      const names = localizedName && localizedName !== name ? [localizedName, name] : [name];
-
-      for (const n of names) {
-        // Escape special regex characters in field name
-        const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
-        const m = content.match(rx);
-        if (m) return m[1].trim();
-      }
-      return null;
-    };
-
-    const statusMatch = extractInline('Status', i18n.status);
-    const typeMatch = extractInline('Type', i18n.type);
-    const assigneeMatch = extractInline('Assignee', i18n.assignee);
-    const priorityMatch = extractInline('Priority', i18n.priority);
-    const groupMatch = extractInline('Group', i18n.group);
-    const groupNameMatch = extractInline('GroupName', i18n.groupName);
-    const difficultyMatch = extractInline('Difficulty', i18n.difficulty);
+    const {
+      status: statusMatch,
+      type: typeMatch,
+      assignee: assigneeMatch,
+      priority: priorityMatch,
+      group: groupMatch,
+      groupName: groupNameMatch,
+      difficulty: difficultyMatch,
+    } = this.readInlineMetadata(content);
 
     // Resolve assignee from registry
     let assignee: User | undefined;
@@ -152,7 +329,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     }
 
     const task: TaskFile = {
-      id: taskId satisfies string as TaskId,
+      id: parseTaskId(taskId),
       title,
       content,
       // Projects the file body onto the provider-agnostic `description`, so
@@ -177,35 +354,53 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     if (hasSectionMetadata) {
       const { fixTaskFile } = await import('./task-validator.js');
-      await fixTaskFile(task.filePath);
+      await fixTaskFile(task.filePath, { metadataStyle: this.metadataStyle });
     }
 
     // Re-read after potential migration
     const content = await fs.readFile(task.filePath, 'utf-8');
 
-    // Update the Status inline metadata
-    let updatedContent: string;
+    /*
+     * Todas as escritas passam pelo estilo do arquivo, resolvido uma vez. O
+     * `Status` usa o rotulo localizado que o arquivo ja tem: reescrever
+     * `Responsável` como `Assignee` era o jeito rapido de transformar um
+     * arquivo pt-BR num arquivo com dois campos de responsavel.
+     */
+    const i18n = getI18n(detectLocale(content));
+    const style = resolveMetadataStyle(content, this.metadataStyle);
 
-    if (/^Status:\s*.+$/im.test(content)) {
-      // Replace existing Status line
-      updatedContent = content.replace(/^Status:\s*.+$/im, `Status: ${task.status}`);
-    } else {
-      // If no Status field exists, insert it after the H1 title
-      updatedContent = content.replace(/(^#.*\n)/, `$1Status: ${task.status}\n`);
-    }
+    let updatedContent = style.write(content, this.labelFor(content, 'Status', i18n.status), task.status);
 
     // Update prioritization fields (manual order, ad hoc group, difficulty)
     updatedContent = setInlineField(
       updatedContent,
-      'Priority',
+      this.labelFor(updatedContent, 'Priority', i18n.priority),
       task.order !== undefined ? String(task.order) : undefined,
+      this.metadataStyle,
     );
-    updatedContent = setInlineField(updatedContent, 'Group', task.groupId || undefined);
-    updatedContent = setInlineField(updatedContent, 'GroupName', task.groupName || undefined);
     updatedContent = setInlineField(
       updatedContent,
-      'Difficulty',
+      this.labelFor(updatedContent, 'Group', i18n.group),
+      task.groupId || undefined,
+      this.metadataStyle,
+    );
+    /*
+     * O nome do grupo nao mora mais na tarefa (task-079): ele vive no registro
+     * de grupos, e aqui so o id viaja. Passar `undefined` remove a linha
+     * `GroupName:` que arquivos antigos ainda tenham — a migracao acontece
+     * sozinha, na primeira gravacao.
+     */
+    updatedContent = setInlineField(
+      updatedContent,
+      this.labelFor(updatedContent, 'GroupName', i18n.groupName),
+      undefined,
+      this.metadataStyle,
+    );
+    updatedContent = setInlineField(
+      updatedContent,
+      this.labelFor(updatedContent, 'Difficulty', i18n.difficulty),
       task.difficulty !== undefined ? String(task.difficulty) : undefined,
+      this.metadataStyle,
     );
 
     // Write the updated content back to the file
@@ -219,44 +414,26 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const tasks: TaskFile[] = [];
 
     for (const file of taskFiles) {
+      // `task-foo.md` passa pelo filtro acima mas nao tem id: nao e uma task.
+      // Antes virava uma task fantasma de id 'unknown' — e duas delas colidiam.
+      const taskId = extractTaskIdFromFileName(file);
+      if (!taskId) continue;
+
       const filePath = path.join(this.tasksDirectory, file);
       const content = await fs.readFile(filePath, 'utf-8');
 
-      // Extract task ID from filename: task-001-title.md -> 001
-      const idMatch = file.match(/^task-(\d+)-/);
-      const taskId = idMatch ? idMatch[1] : 'unknown';
-
       // Extract title from first heading
-      const titleMatch = content.match(/^# .*Task.*?[—-]\s*(.+)$/im);
-      const title = titleMatch ? titleMatch[1].trim() : 'Untitled';
+      const title = content.match(TITLE_PATTERN)?.[1]?.trim() ?? 'Untitled';
 
-      // Auto-detect locale from content if possible, fallback to provider's locale
-      const contentLocale = detectLocale(content);
-      const i18n = getI18n(contentLocale);
-
-      // Extract metadata from inline format (Status: value)
-      // Support both English and localized field names
-      const extractInline = (name: string, localizedName?: string): string | null => {
-        // Try localized name first, then English name
-        const names = localizedName && localizedName !== name ? [localizedName, name] : [name];
-
-        for (const n of names) {
-          // Escape special regex characters in field name
-          const escapedName = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const rx = new RegExp(`^${escapedName}:\\s*(.+)$`, 'im');
-          const m = content.match(rx);
-          if (m) return m[1].trim();
-        }
-        return null;
-      };
-
-      const statusMatch = extractInline('Status', i18n.status);
-      const typeMatch = extractInline('Type', i18n.type);
-      const assigneeMatch = extractInline('Assignee', i18n.assignee);
-      const priorityMatch = extractInline('Priority', i18n.priority);
-      const groupMatch = extractInline('Group', i18n.group);
-      const groupNameMatch = extractInline('GroupName', i18n.groupName);
-      const difficultyMatch = extractInline('Difficulty', i18n.difficulty);
+      const {
+        status: statusMatch,
+        type: typeMatch,
+        assignee: assigneeMatch,
+        priority: priorityMatch,
+        group: groupMatch,
+        groupName: groupNameMatch,
+        difficulty: difficultyMatch,
+      } = this.readInlineMetadata(content);
 
       // Resolve assignee from registry
       let assignee: User | undefined;
@@ -269,7 +446,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       }
 
       const task: TaskFile = {
-        id: taskId satisfies string as TaskId,
+        id: parseTaskId(taskId),
         title,
         content,
         // See findTask: keeps `description` usable by Task-only consumers.
@@ -294,9 +471,9 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     // Detect locale from existing tasks, fallback to provider's locale
     let detectedLocale = this.locale;
-    if (allTasks.length > 0) {
-      // Get the most recent task (last one in the list)
-      const lastTask = allTasks[allTasks.length - 1];
+    // Get the most recent task (last one in the list)
+    const lastTask = allTasks.at(-1);
+    if (lastTask) {
       detectedLocale = detectLocale(lastTask.content);
     }
 
@@ -304,13 +481,13 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     const taskNumbers = allTasks
       .map((task) => {
-        const match = task.id.match(/^(\d+)$/);
-        return match ? parseInt(match[1], 10) : 0;
+        const digits = task.id.match(/^(\d+)$/)?.[1];
+        return digits ? parseInt(digits, 10) : 0;
       })
       .filter((num) => !Number.isNaN(num));
 
     const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
-    const taskId = String(nextNumber).padStart(3, '0');
+    const taskId = parseTaskId(String(nextNumber).padStart(3, '0'));
 
     // Create task file name with slugified title (removes accents)
     const titleSlug = slugify(options.title);
@@ -358,7 +535,6 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     return {
       task,
-      taskId,
       filePath,
     };
   }
@@ -373,16 +549,21 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   }): string {
     const { id, title, type, description, assignee, i18n } = data;
 
+    const metadata = getMetadataStyle(this.metadataStyle).format([
+      { label: i18n.status, value: 'pending' },
+      { label: i18n.type, value: type },
+      { label: i18n.assignee, value: assignee },
+    ]);
+
     return `# 🧩 Task ${id} — ${title}
 
-${i18n.status}: pending
-${i18n.type}: ${type}
-${i18n.assignee}: ${assignee}
+${metadata}
 
 ## ${i18n.description}
 ${description || i18n.descriptionPlaceholder}
 
 ## ${i18n.tasks}
+<!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
 - [ ] Task 1
 - [ ] Task 2
 - [ ] Task 3
@@ -398,11 +579,41 @@ ${i18n.notesPlaceholder}
       .filter((file) => file.startsWith('task-') && file.endsWith('.md'))
       .map((file) => path.join(this.tasksDirectory, file));
 
+    const allIssues: ValidationIssue[] = [];
+
     // If fix is enabled, try to fix files first
     if (fix) {
+      const migration = await fixUsersFileLocation(this.projectRoot);
+      if (migration.action !== 'none') {
+        const verb = migration.action === 'moved' ? 'Moved' : 'Parked stale';
+        const via = migration.viaGit ? ' (git mv, rename kept in history)' : '';
+        allIssues.push({
+          file: migration.from ?? this.projectRoot,
+          message: `${verb} ${USERS_FILE_NAME} → ${path.relative(this.projectRoot, migration.to ?? '')}${via}`,
+          severity: 'info',
+        });
+        this.logger.info(`✨ ${verb} ${USERS_FILE_NAME} into ${TASKIN_DIR_NAME}/`);
+      }
+
+      const tasksBeforeFix = await this.getAllTasks();
+      const corrected = await fixAssignees(
+        tasksBeforeFix.map((task) => ({ file: task.filePath, assignee: this.readAssigneeLine(task.content) })),
+        this.userRegistry,
+        {
+          readFile: (target) => fs.readFile(target, 'utf-8'),
+          writeFile: (target, content) => fs.writeFile(target, content, 'utf-8'),
+        },
+      );
+      if (corrected.length > 0) {
+        this.logger.info(`✨ Corrected the assignee of ${corrected.length} task file(s)`);
+      }
+
       let fixedCount = 0;
       for (const filePath of taskFiles) {
-        const wasFixed = await fixTaskFile(filePath);
+        const wasFixed = await fixTaskFile(filePath, {
+          metadataStyle: this.metadataStyle,
+          ...(this.convertMetadataStyleTo !== undefined && { convertTo: this.convertMetadataStyleTo }),
+        });
         if (wasFixed) {
           fixedCount++;
         }
@@ -412,12 +623,58 @@ ${i18n.notesPlaceholder}
       }
     }
 
+    // Assignee que nao resolve nao quebra o arquivo, mas vira usuario temporario
+    // fabricado — invisivel na tela e contado como pessoa nas metricas.
+    const tasks = await this.getAllTasks();
+    const assignees = tasks.map((task) => ({ file: task.filePath, assignee: this.readAssigneeLine(task.content) }));
+    allIssues.push(...validateAssignees(assignees, this.userRegistry));
+    allIssues.push(
+      ...validateSeededUsers(
+        assignees.map((entry) => entry.assignee),
+        this.userRegistry,
+      ),
+    );
+
+    // O registro de usuários fora de lugar não quebra nenhum arquivo de task,
+    // mas deixa todo assignee sem resolver — é problema do provider, e é aqui
+    // que o usuário tem chance de ver e corrigir.
+    allIssues.push(...(await validateUsersFileLocation(this.projectRoot)));
+
+    /*
+     * Os ids que o registro conhece, para o lint poder apontar grupo orfao —
+     * tarefa que diz pertencer a algo que nao existe. Sem o registro a
+     * validacao nao opina, em vez de adivinhar.
+     */
+    const gruposConhecidos = await this.groupRegistry
+      .listGroups()
+      .then((gs) => gs.map((g) => String(g.id)))
+      .catch(() => undefined);
+
     // Then validate all files
-    const allIssues = [];
     for (const filePath of taskFiles) {
-      const issues = await validateTaskFile(filePath);
-      allIssues.push(...issues);
+      allIssues.push(...(await validateTaskFile(filePath)));
+
+      const conteudoDoArquivo = await fs.readFile(filePath, 'utf-8');
+
+      allIssues.push(...validarConclusao(filePath, conteudoDoArquivo));
+      allIssues.push(
+        ...validarPriorizacao(filePath, conteudoDoArquivo, {
+          ...(gruposConhecidos !== undefined && { gruposConhecidos }),
+        }),
+      );
     }
+
+    /*
+     * Duplicidade so aparece olhando o conjunto: nenhum arquivo, sozinho, sabe
+     * que outro carrega o mesmo numero. Por isso esta passada vem depois do
+     * laco, e nao dentro dele.
+     */
+    const todas = await this.getAllTasks();
+    allIssues.push(
+      ...validarPrioridadesDuplicadas(
+        todas.map((t) => ({ file: t.filePath, ...(t.order !== undefined && { priority: t.order }) })),
+      ),
+    );
 
     return createLintResult(allIssues);
   }

@@ -75,19 +75,19 @@ const statusCounts = computed(() => ({
         </div>
         <div class="stat stat--in-progress" v-if="statusCounts.inProgress > 0">
           <span class="stat__value">{{ statusCounts.inProgress }}</span>
-          <span class="stat__label">Em Progresso</span>
+          <span class="stat__label">In Progress</span>
         </div>
         <div class="stat stat--blocked" v-if="statusCounts.blocked > 0">
           <span class="stat__value">{{ statusCounts.blocked }}</span>
-          <span class="stat__label">Bloqueadas</span>
+          <span class="stat__label">Blocked</span>
         </div>
         <div class="stat stat--paused" v-if="statusCounts.paused > 0">
           <span class="stat__value">{{ statusCounts.paused }}</span>
-          <span class="stat__label">Pausadas</span>
+          <span class="stat__label">Paused</span>
         </div>
         <div class="stat stat--in-review" v-if="statusCounts.inReview > 0">
           <span class="stat__value">{{ statusCounts.inReview }}</span>
-          <span class="stat__label">Em Revisão</span>
+          <span class="stat__label">In Review</span>
         </div>
       </div>
     </div>

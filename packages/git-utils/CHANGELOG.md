@@ -1,5 +1,122 @@
 # @opentask/taskin-git-utils
 
+## 3.0.6
+
+### Patch Changes
+
+- Updated dependencies [23c11ed]
+  - @opentask/taskin-types@2.5.0
+
+## 3.0.5
+
+### Patch Changes
+
+- Updated dependencies [37a0b34]
+  - @opentask/taskin-types@2.4.0
+
+## 3.0.4
+
+### Patch Changes
+
+- Updated dependencies [f84d9c6]
+- Updated dependencies [0f83ec2]
+  - @opentask/taskin-types@2.3.0
+
+## 3.0.3
+
+### Patch Changes
+
+- Updated dependencies [6bebe35]
+  - @opentask/taskin-types@2.2.0
+
+## 3.0.2
+
+### Patch Changes
+
+- 2c402e9: A tag de skip de CI passa a ser `[skip ci]`, e vira configuravel
+  
+  Os commits que o Taskin escreve sozinho — mudanca de status, arquivo de task —
+  vinham marcados com `[skip-ci]`, com hifen. Nenhuma plataforma reconhece essa
+  forma: o GitHub Actions documenta cinco strings e essa nao esta entre elas, o
+  Bitbucket diz explicitamente que a variante com hifen dispara o pipeline, e o
+  GitLab so pula com `[skip ci]` ou `[ci skip]`. Na pratica cada `taskin start`,
+  `pause`, `finish` e `review` rodava a CI inteira do projeto de quem usa,
+  exatamente o contrario do que a tag prometia.
+  
+  O padrao agora e `[skip ci]`, a unica forma que as tres plataformas aceitam.
+  
+  A tag tambem deixou de ser literal espalhada pelo codigo e virou configuracao:
+  
+  - `taskin init` pergunta qual usar, ou aceita `--ci-skip-tag <tag>`
+  - `taskin config --ci-skip-tag <tag>` muda depois, e a secao interativa lista
+    as formas documentadas
+  - `none` em qualquer um dos dois grava tag vazia, para quem quer que a CI rode
+  - uma tag fora da lista e aceita com aviso, nao recusada: Azure DevOps usa
+    `***NO_CI***` e um pipeline proprio pode casar o que quiser
+  
+  O campo e `automation.ciSkipTag` no `.taskin.json`. Quem nao tem o campo recebe
+  `[skip ci]` pelo default do schema — nao ha migracao a fazer.
+  
+  De quebra, `taskin config --discord-webhook` e `--notification-events` voltaram
+  a funcionar. O commander entrega as opcoes em camelCase e o comando lia as
+  chaves com hifen, entao esses dois flags caiam no modo interativo em vez de no
+  proprio ramo.
+- Updated dependencies [2c402e9]
+  - @opentask/taskin-types@2.1.1
+
+## 3.0.1
+
+### Patch Changes
+
+- Updated dependencies [346f1d4]
+  - @opentask/taskin-types@2.1.0
+
+## 3.0.0
+
+### Major Changes
+
+- b4b259e: Abre as primitivas de sincronização no `IGitService` e corrige o diff de arquivo
+  único.
+  
+  O auto-sync da CLI (push/pull/squash) e o commit em ramo configurado precisavam
+  de operações que o `IGitService` não expunha. Elas existiam soltas, então o
+  provider de arquivos falava com o git por fora do contrato.
+  
+  ## API nova
+  
+  `IGitService` ganhou `fetch`, `rebase`, `push`, `abortRebase` e `checkoutFile`,
+  e `commitTaskStatusChangeOnBranch` ganhou o parâmetro opcional `defaultBranch` —
+  com ele, o commit de status vai para o ramo configurado e volta para o ramo
+  original, preservando as mudanças locais.
+  
+  ## Correção
+  
+  `getSingleFileDiff` devolvia um objeto com `path: undefined` quando a linha de
+  numstat tinha menos de três campos, em vez de `null`. Não era crash: era dado
+  silenciosamente errado descendo para as métricas. Agora retorna `null`, como o
+  caso de arquivo binário já fazia.
+  
+  `parseCommits` e `getBlame` foram reescritos para não indexar às cegas a saída
+  do git. Mesmo comportamento, sem depender de o comando externo devolver sempre a
+  forma esperada.
+  
+  ## Breaking change
+  
+  Quem **implementa** `IGitService` precisa adicionar os cinco métodos novos. Quem
+  apenas usa o `GitService` não muda nada — todas as adições são retrocompatíveis
+  no uso.
+  
+  O `major` segue o mesmo critério do `pauseTask` em `ITaskManager`: o pacote está
+  em 2.x, então quebra de contrato para implementadores é major. Se `IGitService`
+  for considerado interno, isto pode virar `minor`.
+
+### Patch Changes
+
+- Updated dependencies [b4b259e]
+- Updated dependencies [30b3e4a]
+- Updated dependencies [2f6d046]
+  - @opentask/taskin-types@2.0.0
+
 ## 2.1.3
 
 ### Patch Changes

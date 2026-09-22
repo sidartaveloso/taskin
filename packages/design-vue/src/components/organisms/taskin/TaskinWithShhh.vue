@@ -9,6 +9,8 @@
     />
 
     <TrackingControls
+      v-if="showControls"
+      :controls="['webcam', 'eyes', 'mouth', 'expressions']"
       :is-detecting="faceLandmarker.state.value.isDetecting"
       :error="faceLandmarker.state.value.error"
       :show-webcam="showWebcam"
@@ -23,15 +25,21 @@
     />
 
     <NoiseTrackingControls
+      v-if="showControls"
       :is-active="!!noiseWatcher"
       :enable-noise-reactions="enableNoiseReactionsRef"
       :noise-threshold="noiseThresholdRef"
       :noise-debounce-ms="noiseDebounceMsRef"
+      :noise-sustain-ms="noiseSustainMsRef"
+      :noise-sustain-ratio="noiseSustainRatioRef"
       :noise-sound="noiseSoundRef"
       @toggle-noise="toggleNoise"
       @update:enable-noise-reactions="setEnableNoiseReactions"
       @update:noise-threshold="setNoiseThreshold"
       @update:noise-debounce-ms="setNoiseDebounceMs"
+      @update:noise-sustain-ms="setNoiseSustainMs"
+      @update:noise-sustain-ratio="setNoiseSustainRatio"
+      @trigger-shhh="triggerShhhReaction"
       @update:noise-sound="setNoiseSound"
     />
 
@@ -59,13 +67,16 @@
 </template>
 
 <script setup lang="ts">
-import type { WebcamVideo } from '@opentask/ui-sense';
+import { type MascotConfigInput, resolveMascotNoiseSettings, resolveShhhReactionPlan } from '@opentask/taskin-types';
 import {
   createNoiseWatcher,
+  criarVozDoShhhDoNavegador,
   FaceTrackingDebug,
+  type NoiseProgress,
   NoiseTrackingControls,
   TrackingControls,
   useFaceLandmarker,
+  WebcamVideo,
 } from '@opentask/ui-sense';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import Taskin from './Taskin';
@@ -75,24 +86,91 @@ export interface Props {
   mascotSize?: number;
   showWebcam?: boolean;
   showDebug?: boolean;
-  // noise reaction props
+  /**
+   * Mostra os controles de rastreamento e de ruido em volta do mascote. Ligados
+   * por padrao, que e o uso de laboratorio — no Storybook e onde se mexe neles.
+   * Desligados, sobra so o mascote: e assim que ele vive num celular apoiado
+   * abaixo do monitor, onde nao ha nada a ajustar durante o dia.
+   */
+  showControls?: boolean;
+  /**
+   * The `mascot` block from `.taskin.json`. When provided, its
+   * `reactions.noise` settings seed the noise reaction and take precedence over
+   * the individual `noise*` props below, so a consumer can wire config straight
+   * through without unpacking it first.
+   */
+  mascot?: MascotConfigInput;
+  // noise reaction props (used when `mascot` is not provided)
   enableNoiseReactions?: boolean;
   noiseThreshold?: number; // RMS threshold (0..1)
   noiseDebounceMs?: number;
+  /**
+   * Janela em que o ruido e medido antes do primeiro disparo, em ms. Zero — o
+   * padrao — dispara na primeira amostra alta. Um estalo de porta e um minuto
+   * de conversa alta so deixam de valer o mesmo quando isto e maior que zero.
+   */
+  noiseSustainMs?: number;
+  /**
+   * Fracao dessa janela que precisa estar acima do limiar, de 0 a 1. Uma fala
+   * tem vales de 100 a 400ms entre palavras, entao exigir barulho ininterrupto
+   * (fracao 1) nunca dispara numa conversa.
+   */
+  noiseSustainRatio?: number;
   noiseSound?: boolean;
+  /**
+   * Quem o mascote chama. E a unica parte que a sintese de voz pronuncia: sai
+   * "Bruno," — pausa — e so entao o chiado, no ritmo de uma frase falada.
+   * Vazio: o mascote so chia, sem endereco.
+   */
+  shhhName?: string;
+  /**
+   * O que aparece no balao depois do nome, e de onde sai a duracao do chiado.
+   * Quem escreve mais `h` esta pedindo mais silencio.
+   *
+   * Nao e falado: mandar o `speechSynthesis` pronunciar "Shhhhhhhhhhhh..." dava
+   * um arrastado sem sentido por cima do chiado sintetizado, que e quem sabe
+   * fazer esse som.
+   */
+  shhhPhrase?: string;
+  /** Loudness of the spoken reaction, 0..1. Loud by default — the room has to hear it. */
+  shhhVolume?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   mascotSize: 300,
   showWebcam: false,
   showDebug: false,
+  showControls: true,
   enableNoiseReactions: false,
   noiseThreshold: 0.06,
   noiseDebounceMs: 1500,
+  noiseSustainMs: 0,
+  noiseSustainRatio: 0.6,
   noiseSound: false,
+  shhhName: '',
+  shhhPhrase: 'Shhhhhh...',
+  shhhVolume: 1,
 });
 
-const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
+// Resolve the effective noise settings: the `mascot` config block wins when
+// present, otherwise fall back to the individual props (already defaulted).
+const noiseSettings = computed(() =>
+  props.mascot
+    ? resolveMascotNoiseSettings(props.mascot)
+    : {
+        enabled: props.enableNoiseReactions,
+        threshold: props.noiseThreshold,
+        debounceMs: props.noiseDebounceMs,
+        sustainMs: props.noiseSustainMs,
+        sustainRatio: props.noiseSustainRatio,
+        sound: props.noiseSound,
+        name: props.shhhName,
+        phrase: props.shhhPhrase,
+        volume: props.shhhVolume,
+      },
+);
+
+const webcamVideoRef = ref<{ videoElement: HTMLVideoElement | null } | null>(null);
 const mascotContainer = ref<HTMLDivElement | null>(null);
 const showWebcam = ref(props.showWebcam);
 const syncEyes = ref(true);
@@ -124,11 +202,25 @@ const thoughtBubbleText = ref<string>('');
 
 const mascotSize = ref(props.mascotSize);
 
-// local noise config mirrors props and is editable by child control
-const enableNoiseReactionsRef = ref<boolean>(!!props.enableNoiseReactions);
-const noiseThresholdRef = ref<number>(props.noiseThreshold!);
-const noiseDebounceMsRef = ref<number>(props.noiseDebounceMs!);
-const noiseSoundRef = ref<boolean>(!!props.noiseSound);
+// local noise config mirrors the resolved settings and is editable by child control
+const enableNoiseReactionsRef = ref<boolean>(noiseSettings.value.enabled);
+const noiseThresholdRef = ref<number>(noiseSettings.value.threshold);
+const noiseDebounceMsRef = ref<number>(noiseSettings.value.debounceMs);
+const noiseSustainMsRef = ref<number>(noiseSettings.value.sustainMs);
+const noiseSustainRatioRef = ref<number>(noiseSettings.value.sustainRatio);
+const noiseSoundRef = ref<boolean>(noiseSettings.value.sound);
+const shhhPhraseRef = ref<string>(noiseSettings.value.phrase);
+const shhhNameRef = ref<string>(noiseSettings.value.name);
+
+/** O balao mostra a frase inteira; a voz so pronuncia o nome. */
+const shhhFraseCompleta = computed(() =>
+  shhhNameRef.value.trim() ? `${shhhNameRef.value.trim()}, ${shhhPhraseRef.value}` : shhhPhraseRef.value,
+);
+const shhhVolumeRef = ref<number>(noiseSettings.value.volume);
+
+// A voz so existe no navegador, e so e montada uma vez: o contexto de audio
+// dela e caro e o navegador limita quantos podem ser abertos.
+let voz: ReturnType<typeof criarVozDoShhhDoNavegador> = null;
 
 const toggleTracking = () => {
   if (faceLandmarker.state.value.isDetecting) faceLandmarker.stopDetection();
@@ -137,13 +229,48 @@ const toggleTracking = () => {
 
 // Noise watcher
 let noiseWatcher: Awaited<ReturnType<typeof createNoiseWatcher>> | null = null;
+
+/**
+ * Estado do criterio na ultima amostra, para o painel de debug. Fica nulo
+ * quando nao ha inscricao: melhor um campo vazio do que um numero parado que
+ * parece atual.
+ */
+const noiseProgress = ref<NoiseProgress | null>(null);
 let noiseUnsub: (() => void) | null = null;
 
+// Read the OS/browser reduced-motion preference at reaction time so the mascot
+// falls back to a static badge instead of the animation when motion is reduced.
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const triggerShhhReaction = () => {
+  const plan = resolveShhhReactionPlan({
+    sound: noiseSoundRef.value,
+    prefersReducedMotion: prefersReducedMotion(),
+  });
+
+  // Both branches surface the "shh" bubble; only the animated branch moves the
+  // mouth/mood, so the reduced-motion fallback stays a static badge.
   showThoughtBubble.value = true;
-  thoughtBubbleText.value = 'shh...';
-  mouthExpression.value = 'o-shape';
-  currentMood.value = 'thoughtful';
+  thoughtBubbleText.value = shhhFraseCompleta.value;
+
+  // O balao e para quem olha a tela; o som e para quem esta falando alto e nao
+  // esta olhando. E por isso que o `sound` nao pode continuar sendo um
+  // interruptor que nao faz nada.
+  if (plan.playSound) {
+    voz ??= criarVozDoShhhDoNavegador();
+    void voz?.shush({
+      name: shhhNameRef.value,
+      phrase: shhhPhraseRef.value,
+      volume: shhhVolumeRef.value,
+    });
+  }
+  if (plan.animate) {
+    mouthExpression.value = 'o-shape';
+    currentMood.value = 'thoughtful';
+  }
 
   setTimeout(() => {
     showThoughtBubble.value = false;
@@ -168,6 +295,14 @@ function setNoiseThreshold(v: number) {
 
 function setNoiseDebounceMs(v: number) {
   noiseDebounceMsRef.value = v;
+}
+
+function setNoiseSustainMs(v: number) {
+  noiseSustainMsRef.value = v;
+}
+
+function setNoiseSustainRatio(v: number) {
+  noiseSustainRatioRef.value = v;
 }
 
 function setNoiseSound(v: boolean) {
@@ -226,20 +361,34 @@ watch(
   },
 );
 
+/**
+ * (Re)inscreve a reacao com os tempos atuais. Existe em um lugar so de proposito:
+ * os controles editam limiar, debounce e sustentacao ao vivo, e quando cada um
+ * tinha o seu proprio watcher repetindo a chamada, bastava um parametro novo
+ * para um deles ficar para tras.
+ */
+const subscribeToNoise = () => {
+  if (!noiseWatcher) return;
+  if (noiseUnsub) {
+    try {
+      noiseUnsub();
+    } catch {}
+  }
+  noiseUnsub = noiseWatcher.onNoiseAbove(noiseThresholdRef.value, () => triggerShhhReaction(), {
+    debounceMs: noiseDebounceMsRef.value,
+    sustainMs: noiseSustainMsRef.value,
+    sustainRatio: noiseSustainRatioRef.value,
+    onProgress: (p) => {
+      noiseProgress.value = p;
+    },
+  });
+};
+
 onMounted(async () => {
   if (enableNoiseReactionsRef.value) {
     try {
       noiseWatcher = await createNoiseWatcher();
-      noiseUnsub = noiseWatcher.onNoiseAbove(
-        noiseThresholdRef.value,
-        () => {
-          triggerShhhReaction();
-          if (noiseSoundRef.value) {
-            // no sound asset presently
-          }
-        },
-        noiseDebounceMsRef.value,
-      );
+      subscribeToNoise();
       // also subscribe to level updates
       noiseLevelUnsubLocal = noiseWatcher.subscribeLevel((rms: number) => {
         noiseLevel.value = rms;
@@ -256,6 +405,7 @@ onUnmounted(async () => {
       noiseUnsub();
     } catch {}
     noiseUnsub = null;
+    noiseProgress.value = null;
   }
   if (noiseWatcher) {
     try {
@@ -271,11 +421,7 @@ watch(enableNoiseReactionsRef, async (v) => {
     if (!noiseWatcher) {
       try {
         noiseWatcher = await createNoiseWatcher();
-        noiseUnsub = noiseWatcher.onNoiseAbove(
-          noiseThresholdRef.value,
-          () => triggerShhhReaction(),
-          noiseDebounceMsRef.value,
-        );
+        subscribeToNoise();
         noiseLevelUnsubLocal = noiseWatcher.subscribeLevel((rms: number) => (noiseLevel.value = rms));
       } catch {}
     }
@@ -285,6 +431,8 @@ watch(enableNoiseReactionsRef, async (v) => {
         noiseUnsub();
       } catch {}
       noiseUnsub = null;
+      noiseProgress.value = null;
+      noiseProgress.value = null;
     }
     if (noiseWatcher) {
       try {
@@ -295,26 +443,34 @@ watch(enableNoiseReactionsRef, async (v) => {
   }
 });
 
-watch(noiseThresholdRef, (v) => {
-  if (noiseUnsub && noiseWatcher) {
-    try {
-      noiseUnsub();
-    } catch {}
-    noiseUnsub = noiseWatcher.onNoiseAbove(v, () => triggerShhhReaction(), noiseDebounceMsRef.value);
-  }
-});
-
-watch(noiseDebounceMsRef, (v) => {
-  if (noiseUnsub && noiseWatcher) {
-    try {
-      noiseUnsub();
-    } catch {}
-    noiseUnsub = noiseWatcher.onNoiseAbove(noiseThresholdRef.value, () => triggerShhhReaction(), v);
-  }
+watch([noiseThresholdRef, noiseDebounceMsRef, noiseSustainMsRef, noiseSustainRatioRef], () => {
+  if (noiseUnsub && noiseWatcher) subscribeToNoise();
 });
 
 const noiseLevel = ref<number | null>(null);
 let noiseLevelUnsubLocal: (() => void) | null = null;
+
+/** Segundos com uma casa: no painel o numero muda a cada 40ms e precisa parar quieto. */
+const emSegundos = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
+
+/**
+ * O pedido era um relogio regressivo desde o inicio do barulho. Ele nao existe
+ * neste criterio: o disparo depende da ocupacao dos ultimos segundos, entao uma
+ * pausa longa AUMENTA o tempo que falta. O que da para mostrar sem mentir e o
+ * estado do criterio — e uma previsao dita como previsao.
+ */
+const noiseCountdown = computed(() => {
+  const p = noiseProgress.value;
+  if (!p) return { occupancy: null, windowFull: null, debounce: null, firesIn: null };
+
+  return {
+    occupancy: `${Math.round(p.ratio * 100)}% / ${Math.round(p.requiredRatio * 100)}%`,
+    windowFull: p.msUntilWindowFull > 0 ? emSegundos(p.msUntilWindowFull) : 'ok',
+    debounce: p.msUntilDebounceOver > 0 ? emSegundos(p.msUntilDebounceOver) : 'livre',
+    firesIn:
+      p.msUntilFire === null ? '?' : p.msUntilFire === 0 ? 'agora' : `${emSegundos(p.msUntilFire)} (se continuar)`,
+  };
+});
 
 const debugInfo = computed(() => {
   const bs = faceLandmarker.state.value.blendShapes;
@@ -343,7 +499,10 @@ const debugInfo = computed(() => {
       level: noiseLevel.value !== null ? noiseLevel.value.toFixed(4) : null,
       threshold: noiseThresholdRef.value,
       debounceMs: noiseDebounceMsRef.value,
+      sustainMs: noiseSustainMsRef.value,
+      sustainRatio: noiseSustainRatioRef.value,
       microphoneAvailable: !!noiseWatcher,
+      ...noiseCountdown.value,
     },
   };
 });

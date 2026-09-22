@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-server-mcp",
-  "version": "0.1.9",
+  "version": "0.5.2",
   "description": "Model Context Protocol (MCP) server for task management integration with LLMs",
   "motivation": "Enable LLMs to interact with task management systems",
   "solve": "Provides MCP server implementation for task operations",
@@ -25,7 +25,7 @@
     "lint": "biome check --write ."
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@opentask/taskin-file-system-provider": "workspace:*",
     "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-types": "workspace:*"

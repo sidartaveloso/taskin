@@ -2,11 +2,19 @@
  * Lint command - Validate task markdown files
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import type { LintTasksOptions } from '@opentask/taskin-types';
 import chalk from 'chalk';
-import { join } from 'path';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
+
+/**
+ * Marking styles the file provider understands.
+ *
+ * Duplicated as a literal instead of imported so the CLI's help text does not
+ * pull the file provider into the startup path — it is loaded lazily, by the
+ * factory, only when `provider.type` is `fs`.
+ */
+const METADATA_STYLES = ['list', 'hard-break', 'plain'] as const;
 
 export const lintCommand = defineCommand({
   name: 'lint',
@@ -21,6 +29,10 @@ export const lintCommand = defineCommand({
       flags: '-f, --fix',
       description: 'Automatically fix task file format issues',
     },
+    {
+      flags: '-m, --metadata-style <style>',
+      description: `Rewrite the metadata block in this style with --fix (${METADATA_STYLES.join(' | ')})`,
+    },
   ],
   handler: async (options: LintTasksOptions) => {
     await executeLint(options);
@@ -28,32 +40,79 @@ export const lintCommand = defineCommand({
 });
 
 async function executeLint(options: LintTasksOptions): Promise<void> {
-  const tasksDir = options.path || join(process.cwd(), 'TASKS');
+  const style = options.metadataStyle;
 
-  if (options.fix) {
-    console.log(`🔧 Fixing task files in: ${tasksDir}\n`);
-  } else {
-    console.log(`📋 Linting task files in: ${tasksDir}\n`);
+  if (style !== undefined && !(METADATA_STYLES as readonly string[]).includes(style)) {
+    console.error(chalk.red(`Unknown metadata style "${style}". Use one of: ${METADATA_STYLES.join(', ')}.`));
+    process.exit(1);
   }
 
-  // Initialize UserRegistry and FileSystemTaskProvider
-  const userRegistry = new UserRegistry({
-    taskinDir: join(process.cwd(), '.taskin'),
-  });
-  await userRegistry.load();
+  // Converter e escrever: pedir o estilo sem `--fix` nao faria nada, e um
+  // comando que aceita a flag e a ignora e pior do que um que recusa.
+  if (style !== undefined && !options.fix) {
+    console.error(chalk.red('--metadata-style rewrites files, so it requires --fix.'));
+    process.exit(1);
+  }
 
-  const provider = new FileSystemTaskProvider(tasksDir, userRegistry);
+  const { provider, providerType } = await resolveTaskProvider({
+    ...(options.path ? { tasksDir: options.path } : {}),
+    ...(style !== undefined && { configOverrides: { metadataStyle: style, convertMetadataStyleTo: style } }),
+  });
+
+  if (options.fix) {
+    console.log(`🔧 Fixing tasks (provider: ${providerType})\n`);
+  } else {
+    console.log(`📋 Linting tasks (provider: ${providerType})\n`);
+  }
+
   const result = await provider.lint(options.fix);
 
-  // Print results
-  if (result.valid) {
-    console.log(chalk.green(`✅ All task files are valid!\n`));
-  } else {
-    console.log(chalk.red(`\n❌ Found ${result.issues.length} issue(s):\n`));
-    for (const issue of result.issues) {
+  // Print results. Warnings and infos are printed even when the run is valid:
+  // a stale user registry is reported as a warning, and swallowing it was how
+  // the misplaced .taskin-users.json went unnoticed for so long.
+  const errors = result.issues.filter((issue) => issue.severity === 'error');
+  const notices = result.issues.filter((issue) => issue.severity !== 'error');
+
+  if (errors.length > 0) {
+    console.log(chalk.red(`\n❌ Found ${errors.length} error(s):\n`));
+    for (const issue of errors) {
       console.log(chalk.yellow(`  ${issue.file}: ${issue.message}`));
+      if (issue.suggestion) {
+        console.log(chalk.dim(`    ↳ ${issue.suggestion}`));
+      }
     }
     console.log();
+  }
+
+  for (const issue of notices) {
+    const label = issue.severity === 'warning' ? chalk.yellow('⚠') : chalk.blue('ℹ');
+    console.log(`${label} ${issue.file}: ${issue.message}`);
+    if (issue.suggestion) {
+      console.log(chalk.dim(`    ↳ ${issue.suggestion}`));
+    }
+  }
+  if (notices.length > 0) {
+    console.log();
+  }
+
+  /*
+   * "Valid" aqui quer dizer **zero erros** — aviso nao invalida arquivo. Mas a
+   * frase sozinha contradizia o que estava impresso logo acima: cinco avisos e
+   * um info, e em seguida "All task files are valid!". Quem le nao tem como
+   * saber que as duas coisas convivem por definicao.
+   *
+   * Com pendencia, a linha passa a diz-la em vez de esconde-la atras do verde.
+   */
+  if (result.valid) {
+    if (notices.length === 0) {
+      console.log(chalk.green(`✅ All task files are valid!\n`));
+    } else {
+      const partes = [
+        result.warningCount > 0 ? `${result.warningCount} warning(s)` : '',
+        result.infoCount > 0 ? `${result.infoCount} info` : '',
+      ].filter(Boolean);
+      console.log(chalk.green(`✅ No errors — ${partes.join(' and ')} above, listed for a human to decide.\n`));
+    }
   }
 
   if (!result.valid && !options.fix) {

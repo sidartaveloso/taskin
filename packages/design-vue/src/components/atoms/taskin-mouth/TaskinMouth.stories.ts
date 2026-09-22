@@ -5,9 +5,9 @@ import type { MouthExpression, TaskinMouthProps } from './TaskinMouth.types';
 import TaskinMouth from './TaskinMouth.vue';
 
 const meta = {
-  title: 'Atoms/TaskinMouth',
+  title: 'Atoms/Taskin/Mouth',
   component: TaskinMouth,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     expression: {
       control: { type: 'select' },
@@ -165,6 +165,7 @@ export const Surprised: Story = {
 
 // Face Tracking Story
 export const FaceTracking: Story = {
+  tags: ['webcam'],
   render: () => ({
     setup() {
       const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
@@ -282,12 +283,11 @@ export const FaceTracking: Story = {
               mirrored: true,
             }),
             h(TrackingControls, {
+              controls: ['webcam', 'mouth'],
               isDetecting: faceLandmarker.state.value.isDetecting,
               error: faceLandmarker.state.value.error,
               showWebcam: showWebcam.value,
-              syncEyes: false,
               syncMouth: syncMouth.value,
-              syncExpressions: false,
               disabled: faceLandmarker.state.value.error !== null,
               'onToggle-tracking': toggleTracking,
               'onUpdate:showWebcam': (value: boolean) => {
@@ -338,7 +338,7 @@ export const FaceTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story: '📹 Mouth tracks your face expressions using webcam! Click "Iniciar Detecção" to start.',
+        story: '📹 Mouth tracks your face expressions using webcam! Click "Start Detection" to start.',
       },
     },
   },

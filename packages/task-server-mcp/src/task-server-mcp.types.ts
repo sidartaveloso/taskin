@@ -1,4 +1,27 @@
 import type { ITaskManager } from '@opentask/taskin-task-manager';
+import type { TaskId, TaskStatus } from '@opentask/taskin-types';
+
+/**
+ * A task status transition the MCP server just performed, handed to the
+ * `onStatusChange` hook so the host can mirror whatever side effect the CLI
+ * does for the same operation (e.g. the auto-commit of the status change).
+ */
+export interface TaskStatusChange {
+  taskId: TaskId;
+  status: TaskStatus;
+}
+
+/**
+ * Called after `start_task`/`finish_task` change a task's status.
+ *
+ * The MCP package speaks only to `ITaskManager` and must stay agnostic of git
+ * and of the project's automation config — so the effect that the CLI performs
+ * (committing the status change when `automation.level` asks for it) is injected
+ * here by whoever wires the server, not implemented in this package. Kept
+ * best-effort by the server: a failing hook is logged, never turned into a
+ * failed tool call, because the status change itself already succeeded.
+ */
+export type TaskStatusChangeHook = (change: TaskStatusChange) => Promise<void> | void;
 
 /**
  * MCP Server configuration
@@ -8,6 +31,14 @@ export interface MCPServerConfig {
    * TaskManager instance to expose via MCP
    */
   taskManager: ITaskManager;
+
+  /**
+   * Optional hook invoked after a status-changing tool (`start_task`,
+   * `finish_task`) succeeds. This is the seam that lets the MCP path honor the
+   * project's `automation.level` without this package depending on git: the CLI
+   * wires a hook that commits the status change exactly as `taskin start` does.
+   */
+  onStatusChange?: TaskStatusChangeHook;
 
   /**
    * Server name
@@ -272,8 +303,16 @@ export interface ITaskMCPServer {
 
 /**
  * MCP Transport type
+ *
+ * Um so, e de proposito. O tipo dizia `'stdio' | 'sse'`, a CLI anunciava as
+ * duas, e `connect` respondia `Transport sse not yet implemented` — depois de
+ * ja ter inicializado o provider. Opcao exposta sem implementacao e defeito,
+ * nao detalhe: o tipo volta a modelar o que existe.
+ *
+ * Quando houver um segundo transporte, ele entra aqui **junto** com a sua
+ * implementacao, e nao antes.
  */
-export type MCPTransportType = 'stdio' | 'sse';
+export type MCPTransportType = 'stdio';
 
 /**
  * MCP Connection options

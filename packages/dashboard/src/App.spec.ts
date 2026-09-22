@@ -1,11 +1,13 @@
+import type { PiniaTaskStore } from '@opentask/taskin-task-provider-pinia';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 import App from './App.vue';
 
-function createMockTask(overrides: Record<string, unknown> = {}) {
-  // biome-ignore lint/suspicious/noExplicitAny: test helper
+type StoreTask = PiniaTaskStore['tasks'][number];
+
+function createMockTask(overrides: Record<string, unknown> = {}): StoreTask {
   return {
     id: 'task-001',
     title: 'Test task',
@@ -15,7 +17,7 @@ function createMockTask(overrides: Record<string, unknown> = {}) {
     content: '# task',
     filePath: '/tasks/task-001.md',
     ...overrides,
-  } as any;
+  } as unknown as StoreTask;
 }
 
 async function mountApp() {

@@ -4,8 +4,8 @@ export interface TaskinWithFaceTrackingType {
   emits: TaskinWithFaceTrackingEmits;
 }
 
-export type TaskinWithFaceTrackingModels = {};
+export type TaskinWithFaceTrackingModels = Record<string, never>;
 
-export type TaskinWithFaceTrackingProps = {};
+export type TaskinWithFaceTrackingProps = Record<string, never>;
 
-export type TaskinWithFaceTrackingEmits = {};
+export type TaskinWithFaceTrackingEmits = Record<string, never>;

@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-task-manager",
-  "version": "2.0.1",
+  "version": "3.2.2",
   "description": "Task lifecycle management for Taskin",
   "type": "module",
   "motivation": "To manage the lifecycle of tasks, including creation, status updates, and retrieval.",
@@ -31,10 +31,16 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js",
+      "require": "./dist/testing.js",
+      "default": "./dist/testing.js"
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node ../../scripts/fix-esm-extensions.mjs dist",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",
     "format": "biome check --write .",
@@ -46,7 +52,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opentask/taskin-types": "workspace:*"
+    "@opentask/taskin-types": "workspace:*",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "typescript": "^6.0.0"

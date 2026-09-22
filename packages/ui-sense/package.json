@@ -1,7 +1,7 @@
 {
   "name": "@opentask/ui-sense",
-  "version": "0.1.0",
-  "description": "Vue 3 sensor and gesture components for adaptive UIs — face tracking, pose tracking, gesture recognition, and user sensitivity detection",
+  "version": "0.6.0",
+  "description": "Vue 3 sensor and gesture components for adaptive UIs \u2014 face tracking, pose tracking, gesture recognition, and user sensitivity detection",
   "motivation": "To provide sensor and gesture-based Vue 3 components for adaptive, context-aware UIs.",
   "solve": "Wraps MediaPipe and other sensor APIs into declarative Vue components for face tracking, pose tracking, and gesture recognition.",
   "scope": "ui-component",
@@ -16,23 +16,30 @@
       "types": "./dist/src/index.d.ts"
     },
     "./dist/index.css": "./dist/index.css",
-    "./style.css": "./dist/index.css"
+    "./style.css": "./dist/index.css",
+    "./mocks": {
+      "types": "./dist/src/mocks/index.d.ts",
+      "import": "./dist/mocks.js"
+    }
   },
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
-    "dev": "vite",
     "build": "vite build && vue-tsc --emitDeclarationOnly",
-    "preview": "vite preview",
+    "build:storybook": "storybook build",
+    "dev": "vite",
     "format": "biome format --write src/",
     "format:check": "biome format src/",
-    "test": "vitest run",
-    "typecheck": "vue-tsc --noEmit",
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
-    "test:coverage": "vitest run --coverage"
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6108",
+    "test": "vitest run && vitest run --config vitest.storybook.config.ts",
+    "test:coverage": "vitest run --coverage",
+    "test:storybook": "vitest run --config vitest.storybook.config.ts",
+    "typecheck": "vue-tsc --noEmit"
   },
   "keywords": [
     "ui-sense",
@@ -45,11 +52,26 @@
     "adaptive-ui"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sidartaveloso/taskin.git",
+    "directory": "packages/ui-sense"
+  },
   "peerDependencies": {
     "vue": "^3.5.0"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-vitest": "^10.6.0",
+    "@storybook/vue3-vite": "^10.6.0",
     "@vitejs/plugin-vue": "^5.2.4",
+    "@vitest/browser": "^4.0.16",
+    "@vitest/browser-playwright": "^4.0.16",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^25.0.1",
+    "playwright": "^1.57.0",
+    "storybook": "^10.6.0",
     "typescript": "^6.0.0",
     "vite": "^6.4.1",
     "vite-svg-loader": "^5.1.0",
