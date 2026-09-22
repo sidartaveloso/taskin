@@ -91,7 +91,7 @@ Duas saídas possíveis, e a escolha é de design:
 ### 1. Decidir a paleta
 
 - [ ] Escolher entre A (escurecer tokens) e B (texto escuro), com quem responde
-      pelo visual. Registrar a decisão em `decisoes/` — a escolha vale para o
+      pelo visual. Registrar a decisão em `docs/RDT/` — a escolha vale para o
       design system todo, não por componente
 - [ ] Conferir se os tokens `--status-*-text` que já existem (`Badge.vue` usa
       `--status-paused-text`, `--status-warning-text`) não resolvem metade do

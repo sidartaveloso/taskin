@@ -56,7 +56,7 @@ usa — interface genérica, provider enriquece:
 > capacidade no `finishTask`. Um provider que não conhece o conceito não
 > implementa o método, e o `finishTask` segue sem portão — degradação graciosa,
 > igual à que a decisão de grupo de tasks já adota (ver
-> `decisoes/identidade-de-grupo-de-tasks.md`). O provider de arquivos implementa
+> `docs/RDT/identidade-de-grupo-de-tasks.md`). O provider de arquivos implementa
 > lendo o `## Tasks`.
 
 Isso mantém o conceito no domínio sem inventar no domínio uma estrutura que

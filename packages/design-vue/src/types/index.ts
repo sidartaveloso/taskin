@@ -104,7 +104,7 @@ export interface Task {
   /**
    * TEMPORARIO — o nome do grupo repetido em cada membro, espelhando o dominio,
    * que hoje tambem guarda `groupName` por task. Some quando a RDT
-   * `decisoes/identidade-de-grupo-de-tasks.md` decidir onde a identidade do
+   * `docs/RDT/identidade-de-grupo-de-tasks.md` decidir onde a identidade do
    * grupo mora. Nao construa nada novo em cima deste campo.
    */
   groupName?: string;

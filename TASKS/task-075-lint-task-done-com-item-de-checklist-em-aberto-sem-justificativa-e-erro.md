@@ -6,7 +6,7 @@
 - Priority: 6651
 
 ## Description
-Deriva da decisão em `decisoes/portao-de-conclusao-e-evidencia.md` (task-069),
+Deriva da decisão em `docs/RDT/portao-de-conclusao-e-evidencia.md` (task-069),
 pergunta 3. Reusa o leitor único de T-073 dentro do `task-validator.ts`. É a
 checagem dura, que roda em CI e pega a falha auditada (`done` com zero itens
 marcados) como build vermelho, sem tornar o `finish` frágil.

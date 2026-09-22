@@ -55,6 +55,14 @@ a task-084 ja trouxe — inclusive a garantia de nao reescrever a lista inteira.
 **Provider sem grupos.** A capacidade e opcional (task-079): quem nao a tem nao
 a expoe. A CLI precisa dizer isso em uma frase, e nao estourar.
 
+### Onde isto se encaixa
+
+Esta task e o **primeiro passo** da decisao registrada em
+`docs/RDT/superficies-derivam-do-mesmo-contrato.md`: ela entrega os comandos que
+faltam, e a task-106 leva as operacoes para o `ITaskManager`, de onde as tres
+superficies passam a deriva-las. Qualquer ordem serve — feita antes, o codigo
+daqui migra para as operacoes nomeadas; feita depois, esta vira quase de graca.
+
 ### Por que junto das tres superficies
 
 Vale a regra de sempre: uma capacidade nova chega a CLI, ao servidor MCP e ao

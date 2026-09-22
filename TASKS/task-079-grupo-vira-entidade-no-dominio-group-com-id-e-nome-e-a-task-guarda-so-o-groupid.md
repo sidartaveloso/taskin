@@ -38,7 +38,7 @@ quantos foram afetados. E o que Redmine (`reassign_to_id`) e Jira
 para grupo inexistente em silencio — nao e alcancavel.
 
 ## Notes
-Decorre de `decisoes/identidade-de-grupo-de-tasks.md`, **decidido — opcao A**.
+Decorre de `docs/RDT/identidade-de-grupo-de-tasks.md`, **decidido — opcao A**.
 O desenho ja esta fechado; esta task o executa no dominio.
 
 **Por que entidade, em uma frase.** O taskin ja tem uma desnormalizacao igual a

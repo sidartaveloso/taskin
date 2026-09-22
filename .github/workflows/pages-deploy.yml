@@ -46,7 +46,6 @@ on:
       - "TASKS/**"
       # Registros internos e documentacao que vive no GitHub, nao no site.
       # `packages/docs/**` e o site e NAO esta aqui.
-      - "decisoes/**"
       - "padroes/**"
       - "docs/**"
       - ".changeset/**"
@@ -59,7 +58,6 @@ on:
       - "TASKS/**"
       # Registros internos e documentacao que vive no GitHub, nao no site.
       # `packages/docs/**` e o site e NAO esta aqui.
-      - "decisoes/**"
       - "padroes/**"
       - "docs/**"
       - ".changeset/**"

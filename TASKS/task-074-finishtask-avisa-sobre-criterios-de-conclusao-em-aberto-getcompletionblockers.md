@@ -6,7 +6,7 @@
 - Priority: 6451
 
 ## Description
-Deriva da decisão em `decisoes/portao-de-conclusao-e-evidencia.md` (task-069),
+Deriva da decisão em `docs/RDT/portao-de-conclusao-e-evidencia.md` (task-069),
 perguntas 1 e 3. Depende de T-073 (leitor único). O conceito é de domínio, a
 representação é de provider: o `finishTask` consulta uma capacidade opcional do
 provider e avisa, não recusa (bloqueio fica atrás de config opt-in).
