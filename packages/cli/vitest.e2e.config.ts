@@ -7,10 +7,8 @@ export default defineConfig({
     hookTimeout: 30000,
     globals: true,
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    // vitest 5 removeu poolOptions; estes dois equivalem ao antigo singleFork
+    fileParallelism: false,
+    maxWorkers: 1,
   },
 });

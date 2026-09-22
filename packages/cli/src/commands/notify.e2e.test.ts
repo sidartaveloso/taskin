@@ -9,7 +9,7 @@ const execAsync = promisify(exec);
 const TEST_DIR = join(process.cwd(), 'test-temp-notify-e2e');
 const CLI_PATH = join(process.cwd(), 'dist/index.js');
 
-describe.sequential('notify command E2E', () => {
+describe('notify command E2E', { concurrent: false }, () => {
   beforeEach(async () => {
     if (existsSync(TEST_DIR)) {
       rmSync(TEST_DIR, { recursive: true, force: true });
