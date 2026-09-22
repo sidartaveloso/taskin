@@ -27,10 +27,10 @@ vi.mock('@opentask/taskin-task-manager', () => ({
 }));
 
 vi.mock('@opentask/taskin-task-server-ws', () => ({
-  TaskWebSocketServer: vi.fn().mockImplementation(() => ({
-    start: vi.fn().mockResolvedValue(undefined),
-    stop: vi.fn().mockResolvedValue(undefined),
-  })),
+  TaskWebSocketServer: class {
+    start = vi.fn().mockResolvedValue(undefined);
+    stop = vi.fn().mockResolvedValue(undefined);
+  },
 }));
 
 vi.mock('fs', async (importOriginal) => {

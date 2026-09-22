@@ -5,17 +5,17 @@ vi.mock('../lib/project-check.js', () => ({
 }));
 
 vi.mock('../lib/config-manager.js', () => ({
-  ConfigManager: vi.fn().mockImplementation(() => ({
-    getAutomationBehavior: vi.fn().mockReturnValue({ autoSync: false }),
-    loadConfig: vi.fn().mockReturnValue({
+  ConfigManager: class {
+    getAutomationBehavior = vi.fn().mockReturnValue({ autoSync: false });
+    loadConfig = vi.fn().mockReturnValue({
       notifications: {
         discord: {
           webhookUrl: 'https://discord.com/api/webhooks/123/abc',
           events: ['task:done', 'task:start', 'task:review'],
         },
       },
-    }),
-  })),
+    });
+  },
 }));
 
 vi.mock('../lib/hook-runner.js', () => ({

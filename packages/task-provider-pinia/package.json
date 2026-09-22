@@ -32,9 +32,9 @@
   },
   "devDependencies": {
     "@types/ws": "^8.5.13",
-    "@vitest/ui": "^2.1.8",
+    "@vitest/ui": "^5.0.1",
     "typescript": "^6.0.0",
-    "vitest": "^2.1.8",
+    "vitest": "^5.0.1",
     "vue": "^3.5.13"
   },
   "peerDependencies": {

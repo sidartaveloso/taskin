@@ -73,7 +73,7 @@ function runCliWithAnswers(
   });
 }
 
-describe.sequential('Taskin CLI E2E Tests', () => {
+describe('Taskin CLI E2E Tests', { concurrent: false }, () => {
   beforeEach(async () => {
     // Create clean test directory
     if (existsSync(TEST_DIR)) {
@@ -94,7 +94,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }
   }, 60000);
 
-  describe.sequential('taskin init', () => {
+  describe('taskin init', { concurrent: false }, () => {
     it('should initialize taskin project structure', async () => {
       const { stdout } = await execAsync(`node ${CLI_PATH} init`, {
         cwd: TEST_DIR,
@@ -212,7 +212,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
   });
 
-  describe.sequential('the CI skip tag in the commands', () => {
+  describe('the CI skip tag in the commands', { concurrent: false }, () => {
     const setCiSkipTag = (tag: string): void => {
       const configPath = join(TEST_DIR, '.taskin.json');
       const config = JSON.parse(readFileSync(configPath, 'utf-8'));
@@ -280,7 +280,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
   });
 
-  describe.sequential('taskin list', () => {
+  describe('taskin list', { concurrent: false }, () => {
     beforeEach(async () => {
       await execAsync(`node ${CLI_PATH} init`, {
         cwd: TEST_DIR,
@@ -308,7 +308,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
   });
 
-  describe.sequential('taskin lint', () => {
+  describe('taskin lint', { concurrent: false }, () => {
     beforeEach(async () => {
       await execAsync(`node ${CLI_PATH} init`, {
         cwd: TEST_DIR,
@@ -351,7 +351,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
   });
 
-  describe.sequential('taskin start', () => {
+  describe('taskin start', { concurrent: false }, () => {
     beforeEach(async () => {
       await execAsync(`node ${CLI_PATH} init`, {
         cwd: TEST_DIR,
@@ -427,7 +427,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
   });
 
-  describe.sequential('taskin pause', () => {
+  describe('taskin pause', { concurrent: false }, () => {
     beforeEach(async () => {
       await execAsync(`node ${CLI_PATH} init`, {
         cwd: TEST_DIR,
@@ -471,7 +471,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
   });
 
-  describe.sequential('taskin finish', () => {
+  describe('taskin finish', { concurrent: false }, () => {
     beforeEach(async () => {
       await execAsync(`node ${CLI_PATH} init`, {
         cwd: TEST_DIR,
@@ -523,7 +523,7 @@ describe.sequential('Taskin CLI E2E Tests', () => {
     }, 60000);
   });
 
-  describe.sequential('workflow integration', () => {
+  describe('workflow integration', { concurrent: false }, () => {
     beforeEach(async () => {
       await execAsync(`node ${CLI_PATH} init`, {
         cwd: TEST_DIR,
@@ -585,7 +585,7 @@ Another task`;
     }, 60000);
   });
 
-  describe.sequential('taskin new', () => {
+  describe('taskin new', { concurrent: false }, () => {
     beforeEach(async () => {
       await execAsync(`node ${CLI_PATH} init`, {
         cwd: TEST_DIR,
@@ -646,7 +646,7 @@ Another task`;
     }, 60000);
   });
 
-  describe.sequential('error handling', () => {
+  describe('error handling', { concurrent: false }, () => {
     it('should show helpful error when not in a taskin project', async () => {
       try {
         await execAsync(`node ${CLI_PATH} list`, { cwd: TEST_DIR });
