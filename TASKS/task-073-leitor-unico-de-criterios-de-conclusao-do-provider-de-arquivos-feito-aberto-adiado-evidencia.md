@@ -6,7 +6,7 @@
 - Priority: 251
 
 ## Description
-Deriva da decisão em `decisoes/portao-de-conclusao-e-evidencia.md` (task-069),
+Deriva da decisão em `docs/RDT/portao-de-conclusao-e-evidencia.md` (task-069),
 pergunta 3 ("uma definição só, consumida por três superfícies"). Este é o módulo
 base que T-074 e T-075 consomem — evita dois parsers de checklist que divergem.
 

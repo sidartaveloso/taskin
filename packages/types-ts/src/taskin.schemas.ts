@@ -64,7 +64,7 @@ export const parseGroupId = (value: string) => GroupIdSchema.parse(value);
  *
  * Redmine (`issue_categories`), GitHub (milestones) e Jira (components) modelam
  * agrupamento assim — entidade com id, nome e operacoes proprias. Ver
- * `decisoes/identidade-de-grupo-de-tasks.md`.
+ * `docs/RDT/identidade-de-grupo-de-tasks.md`.
  *
  * @public
  */

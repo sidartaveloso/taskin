@@ -6,7 +6,7 @@
 - Priority: 6751
 
 ## Description
-Deriva da decisão em `decisoes/portao-de-conclusao-e-evidencia.md` (task-069),
+Deriva da decisão em `docs/RDT/portao-de-conclusao-e-evidencia.md` (task-069),
 perguntas 2 e 4. Sem o vocabulário documentado, o portão de T-074/T-075 recusa
 casos legítimos e as pessoas não sabem como adiar um item.
 
