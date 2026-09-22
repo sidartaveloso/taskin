@@ -3,6 +3,8 @@
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso
+- Priority: 52
+- Group: notificacoes
 
 ## Description
 A notificacao cita o numero da task e nao leva a ela. Cada provider sabe onde a task vive: no file system ela e um arquivo versionado, e o endereco e o blob no forge na branch corrente; no Redmine, no Jira e no GitHub Issues ela ja tem URL propria. Entao isto e uma capacidade do ITaskProvider, opcional como o IGroupRegistry: quem sabe produzir o endereco implementa, e quem nao sabe simplesmente nao expoe, e o chamador descobre pela ausencia em vez de por uma chamada que devolve vazio.
