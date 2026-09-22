@@ -3,6 +3,8 @@
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso
+- Priority: 50
+- Group: notificacoes
 
 ## Description
 A mensagem publicada no Discord e no Telegram e uma grade de campos que repete o que ja esta no titulo: Event aparece na descricao e num campo, Task aparece no titulo e num campo. Nao diz de que projeto e, o que torna um canal com varios projetos ilegivel, e nao leva a lugar nenhum: o hash do commit e texto, nao link. O campo Commits mostra 125 porque conta a historia inteira do repositorio com git rev-list --count HEAD, embora o comentario logo abaixo diga que conta so os commits da branch da task. Reescrever a mensagem como uma frase, com o projeto e o link do commit derivado do remoto.
