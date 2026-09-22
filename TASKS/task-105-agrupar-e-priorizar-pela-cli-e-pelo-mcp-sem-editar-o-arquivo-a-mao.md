@@ -3,7 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso
-- Priority: 40
+- Priority: 41
 
 ## Description
 O taskin group cria, lista, renomeia e remove grupos, mas nao coloca uma task num grupo, e nao ha nenhum comando que defina prioridade. Hoje as duas coisas so acontecem no dashboard ou editando o bloco de metadados do arquivo — foi o que precisei fazer para agrupar as tasks 103, 068 e 104. O MCP tambem nao expoe: ele tem list_groups e prioritize_tasks, que numera tudo de uma vez, mas nada que mova uma task para um grupo ou lhe de uma prioridade. Fechar a lacuna nas tres superficies, no molde dos comandos que ja existem.
