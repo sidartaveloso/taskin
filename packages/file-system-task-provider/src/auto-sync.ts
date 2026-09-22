@@ -1,4 +1,4 @@
-import type { IGitService } from '@opentask/taskin-git-utils';
+import { appendCiSkipTag, type IGitService } from '@opentask/taskin-git-utils';
 
 // ============================================================================
 // Types
@@ -7,12 +7,16 @@ import type { IGitService } from '@opentask/taskin-git-utils';
 export interface SyncConfig {
   autoSync: boolean;
   defaultBranch?: string;
+  /** Tag appended to the commits this module writes. Defaults to `[skip ci]`; empty means none. */
+  ciSkipTag?: string;
 }
 
 export interface PushAfterCreateOptions {
   taskId: string;
   title: string;
   defaultBranch: string;
+  /** Tag appended to the commit. Defaults to `[skip ci]`; empty means none. */
+  ciSkipTag?: string;
 }
 
 export interface GetNextTaskNumberOptions {
@@ -25,6 +29,8 @@ export interface SquashTaskFileOnDoneOptions {
   taskId: string;
   defaultBranch: string;
   originBranch?: string;
+  /** Tag appended to the squash commit. Defaults to `[skip ci]`; empty means none. */
+  ciSkipTag?: string;
 }
 
 export interface CreateTaskWithSyncResult {
@@ -126,7 +132,7 @@ async function attemptPushWithRetry(
 
 export async function pushAfterCreate(git: IGitService, options: PushAfterCreateOptions): Promise<boolean> {
   const pattern = `TASKS/task-${options.taskId}-*.md`;
-  const message = `docs(TASKS): task-${options.taskId} - ${options.title} [skip-ci]`;
+  const message = appendCiSkipTag(`docs(TASKS): task-${options.taskId} - ${options.title}`, options.ciSkipTag);
 
   await attemptPushWithRetry(git, pattern, message, options.defaultBranch, MAX_RETRY_ATTEMPTS);
 
@@ -173,6 +179,7 @@ export async function createTaskWithSync(
       taskId,
       title: taskOptions.title,
       defaultBranch: config.defaultBranch,
+      ciSkipTag: config.ciSkipTag,
     });
   }
 
@@ -224,7 +231,7 @@ export async function squashTaskFileOnDone(git: IGitService, options: SquashTask
       return false;
     }
 
-    const message = `docs(TASKS): task-${options.taskId} - done [skip-ci]`;
+    const message = appendCiSkipTag(`docs(TASKS): task-${options.taskId} - done`, options.ciSkipTag);
     const commitOk = await git.commit(message);
     if (!commitOk) {
       await git.checkoutBranch(currentBranch);

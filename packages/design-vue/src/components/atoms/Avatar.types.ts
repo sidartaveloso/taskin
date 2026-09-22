@@ -4,7 +4,7 @@ export type AvatarType = {
   emits: AvatarEmits;
 };
 
-export type AvatarModels = {};
+export type AvatarModels = Record<string, never>;
 
 export type AvatarProps = {
   name: string;
@@ -12,4 +12,4 @@ export type AvatarProps = {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 };
 
-export type AvatarEmits = {};
+export type AvatarEmits = Record<string, never>;

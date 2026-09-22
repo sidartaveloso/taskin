@@ -18,6 +18,10 @@ export const AVAILABLE_PROVIDERS: ProviderInfo[] = [
           type: 'string',
           description: 'Directory to store task files',
         },
+        metadataStyle: {
+          type: 'string',
+          description: 'Marking of the metadata block for new files (list | hard-break | plain)',
+        },
       },
     },
     status: 'stable',

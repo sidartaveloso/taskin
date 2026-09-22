@@ -9,6 +9,7 @@
     "lib": ["ES2022"],
     "module": "commonjs",
     "moduleResolution": "node",
+    "noUncheckedIndexedAccess": true,
     "paths": {
       "@opentask/taskin-core": ["packages/core/src"],
       "@opentask/taskin-file-system-provider": ["packages/file-system-task-provider/src"],

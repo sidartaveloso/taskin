@@ -2,7 +2,6 @@
  * Dashboard command - Start WebSocket server and HTTP server for dashboard
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { TaskWebSocketServer } from '@opentask/taskin-task-server-ws';
 import { escapeHtml, isValidHost, isValidPort } from '@opentask/taskin-utils';
@@ -11,8 +10,10 @@ import express from 'express';
 import { createServer, type Server } from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createAvatarHandler } from '../lib/avatar-proxy.js';
 import { error, info, printHeader, success, warning } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +26,155 @@ interface DashboardOptions {
   host?: string;
   open?: boolean;
   closed?: boolean;
+  active?: boolean;
+}
+
+export interface DashboardAppOptions {
+  /** Directory holding the built dashboard (index.html + static assets). */
+  dashboardDist: string;
+  /** Host advertised to the browser inside the injected `VITE_WS_URL`. */
+  host: string;
+  /** WebSocket port advertised to the browser inside the injected `VITE_WS_URL`. */
+  wsPort: number;
+  /** Como perguntar os grupos do projeto. Ausente quando o provider nao tem o conceito. */
+  readonly groups?: () => Promise<{ id: string; name: string }[]>;
+  /** Numeracao inicial de prioridade. Ausente quando nao ha manager disponivel. */
+  readonly prioritize?: (options: {
+    dryRun?: boolean;
+  }) => Promise<{ total: number; withoutPriority: number; changed: number }>;
+}
+
+/**
+ * Assemble the dashboard's Express app: security headers, `VITE_WS_URL`
+ * injection into `index.html`, the avatar proxy, static serving and the 404
+ * catch-all.
+ *
+ * Pure on purpose — no `listen`, no WebSocket, no browser, no signal handlers.
+ * The command wires those around it; tests mount it on port 0 and hit the
+ * routes. See task-058: mocking the layer under change (express, the static
+ * server) is ceremony, not a test.
+ */
+export function createDashboardApp({
+  dashboardDist,
+  host,
+  wsPort,
+  groups,
+  prioritize,
+}: DashboardAppOptions): express.Express {
+  const app = express();
+
+  // Security: Disable X-Powered-By header
+  app.disable('x-powered-by');
+
+  // Security: Set security headers
+  app.use((_req, res, next) => {
+    // Prevent clickjacking
+    res.setHeader('X-Frame-Options', 'DENY');
+    // Prevent MIME sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // Enable XSS protection
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    // Content Security Policy - only allow same origin
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:;",
+    );
+    next();
+  });
+
+  // Inject WebSocket URL into HTML
+  app.use((req, res, next) => {
+    if (req.path === '/' || req.path === '/index.html') {
+      import('fs')
+        .then((fs) => fs.promises.readFile(path.join(dashboardDist, 'index.html'), 'utf-8'))
+        .then((html) => {
+          // Security: Escape values before injecting into HTML to prevent XSS
+          const safeHost = escapeHtml(host);
+          const safeWsPort = escapeHtml(String(wsPort));
+
+          // Inject WebSocket URL as environment variable
+          const injectedHtml = html.replace(
+            '</head>',
+            `<script>window.VITE_WS_URL = 'ws://${safeHost}:${safeWsPort}';</script></head>`,
+          );
+          res.send(injectedHtml);
+        })
+        .catch((err) => {
+          console.error('Failed to read index.html:', err);
+          res.status(500).send('Internal Server Error');
+        });
+    } else {
+      next();
+    }
+  });
+
+  // Avatar proxy: the browser asks this server for /avatar/<hash> instead of
+  // talking to a third party. Keeps IP/referrer in-house, works offline, and
+  // stays inside the `img-src 'self'` CSP above. See task-067.
+  const avatarHandler = createAvatarHandler();
+  app.get('/avatar/:hash', (req, res) => {
+    void avatarHandler(req, res);
+  });
+
+  /*
+   * Os grupos, para o dashboard resolver o nome pelo id.
+   *
+   * O nome nao viaja mais dentro de cada tarefa (task-079): a tarefa carrega
+   * `groupId`, e quem desenha a tela pergunta os nomes aqui. Um provider sem o
+   * conceito devolve lista vazia, e a tela simplesmente nao mostra nome.
+   */
+  app.get('/api/groups', (_req, res) => {
+    void (async () => {
+      try {
+        res.json({ groups: (await groups?.()) ?? [] });
+      } catch {
+        res.json({ groups: [] });
+      }
+    })();
+  });
+
+  /*
+   * Priorizacao inicial, pela tela.
+   *
+   * Num projeto meio numerado o primeiro arrastar reescreve dezenas de arquivos
+   * — 124 num projeto de 500, medido. O `GET` diz o tamanho do problema para a
+   * tela poder avisar antes; o `POST` executa, uma vez, de proposito.
+   */
+  app.get('/api/prioritize', (_req, res) => {
+    void (async () => {
+      try {
+        res.json(await prioritize?.({ dryRun: true }));
+      } catch {
+        res.json(undefined);
+      }
+    })();
+  });
+
+  app.post('/api/prioritize', (_req, res) => {
+    void (async () => {
+      try {
+        res.json(await prioritize?.({}));
+      } catch (erro) {
+        res.status(500).json({ error: erro instanceof Error ? erro.message : 'failed' });
+      }
+    })();
+  });
+
+  // Security: Serve static files with options to prevent path traversal
+  app.use(
+    express.static(dashboardDist, {
+      dotfiles: 'deny', // Deny access to dotfiles
+      index: false, // Don't serve index.html here (handled above)
+      redirect: false, // Don't redirect to trailing slash
+    }),
+  );
+
+  // Security: Catch-all for undefined routes (prevent information disclosure)
+  app.use((_req, res) => {
+    res.status(404).send('Not Found');
+  });
+
+  return app;
 }
 
 async function startHttpServer(
@@ -88,6 +238,10 @@ export const dashboardCommand = defineCommand({
     {
       flags: '--closed',
       description: 'Show only closed tasks (done, canceled)',
+    },
+    {
+      flags: '--active',
+      description: 'Show only tasks started and not finished (in-progress, paused, in-review)',
     },
   ],
   handler: async (options: DashboardOptions) => {
@@ -165,14 +319,9 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
 
     info(`Using tasks directory: ${tasksDir}`);
 
-    // Initialize UserRegistry and load users
+    // A descoberta acima achou a raiz do projeto; o provider vem de la
     const monorepoRoot = path.dirname(tasksDir);
-    const taskinDir = path.join(monorepoRoot, '.taskin');
-    const userRegistry = new UserRegistry({ taskinDir });
-    await userRegistry.load();
-
-    // Create provider with injected UserRegistry
-    const provider = new FileSystemTaskProvider(tasksDir, userRegistry);
+    const { provider } = await resolveTaskProvider({ cwd: monorepoRoot });
     const manager = new TaskManager(provider);
 
     // Start WebSocket server
@@ -187,7 +336,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
     });
 
     await wsServer.start();
-    success(`✓ WebSocket server running on ws://${host}:${wsPort}`);
+    success(`WebSocket server running on ws://${host}:${wsPort}`);
 
     // Start HTTP server for dashboard
     info(`Starting dashboard server on http://${host}:${port}...`);
@@ -200,65 +349,16 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       ? path.join(__dirname, '..', '..', 'dashboard-dist')
       : path.join(__dirname, '..', 'dashboard-dist');
 
-    const app = express();
+    const registroDeGrupos = (
+      provider as { groupRegistry?: { listGroups: () => Promise<{ id: string; name: string }[]> } }
+    ).groupRegistry;
 
-    // Security: Disable X-Powered-By header
-    app.disable('x-powered-by');
-
-    // Security: Set security headers
-    app.use((_req, res, next) => {
-      // Prevent clickjacking
-      res.setHeader('X-Frame-Options', 'DENY');
-      // Prevent MIME sniffing
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      // Enable XSS protection
-      res.setHeader('X-XSS-Protection', '1; mode=block');
-      // Content Security Policy - only allow same origin
-      res.setHeader(
-        'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:;",
-      );
-      next();
-    });
-
-    // Inject WebSocket URL into HTML
-    app.use((req, res, next) => {
-      if (req.path === '/' || req.path === '/index.html') {
-        import('fs')
-          .then((fs) => fs.promises.readFile(path.join(dashboardDist, 'index.html'), 'utf-8'))
-          .then((html) => {
-            // Security: Escape values before injecting into HTML to prevent XSS
-            const safeHost = escapeHtml(host);
-            const safeWsPort = escapeHtml(String(wsPort));
-
-            // Inject WebSocket URL as environment variable
-            const injectedHtml = html.replace(
-              '</head>',
-              `<script>window.VITE_WS_URL = 'ws://${safeHost}:${safeWsPort}';</script></head>`,
-            );
-            res.send(injectedHtml);
-          })
-          .catch((err) => {
-            console.error('Failed to read index.html:', err);
-            res.status(500).send('Internal Server Error');
-          });
-      } else {
-        next();
-      }
-    });
-
-    // Security: Serve static files with options to prevent path traversal
-    app.use(
-      express.static(dashboardDist, {
-        dotfiles: 'deny', // Deny access to dotfiles
-        index: false, // Don't serve index.html here (handled above)
-        redirect: false, // Don't redirect to trailing slash
-      }),
-    );
-
-    // Security: Catch-all for undefined routes (prevent information disclosure)
-    app.use((_req, res) => {
-      res.status(404).send('Not Found');
+    const app = createDashboardApp({
+      dashboardDist,
+      host,
+      wsPort,
+      groups: registroDeGrupos ? () => registroDeGrupos.listGroups() : undefined,
+      prioritize: (opcoes) => new TaskManager(provider).prioritizeAll(opcoes),
     });
 
     const { server: httpServer, port: actualPort } = await startHttpServer(app, port, host);
@@ -267,7 +367,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       warning(`Port ${port} was in use. Dashboard started on port ${actualPort}.`);
     }
 
-    success(`✓ Dashboard available at http://${host}:${actualPort}`);
+    success(`Dashboard available at http://${host}:${actualPort}`);
 
     // Build filter query params
     const filterParams = new URLSearchParams();
@@ -275,6 +375,8 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       filterParams.set('filter', 'open');
     } else if (options.closed) {
       filterParams.set('filter', 'closed');
+    } else if (options.active) {
+      filterParams.set('filter', 'active');
     }
     const filterQuery = filterParams.toString() ? `?${filterParams.toString()}` : '';
 
@@ -295,6 +397,8 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       info(`  • Filter: ${chalk.yellow('Open tasks only')}`);
     } else if (options.closed) {
       info(`  • Filter: ${chalk.yellow('Closed tasks only')}`);
+    } else if (options.active) {
+      info(`  • Filter: ${chalk.yellow('Active tasks only')}`);
     }
     info(`  • Press ${chalk.bold('Ctrl+C')} to stop both servers`);
     info('');
@@ -306,7 +410,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
         httpServer.close(() => resolve());
       });
       await wsServer.stop();
-      success('✓ Servers stopped');
+      success('Servers stopped');
       process.exit(0);
     };
 

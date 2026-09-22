@@ -1,11 +1,13 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import type { Task } from '../../types';
+import { MOCK_DASHBOARD_TASKS } from './Dashboard.mock';
 import Dashboard from './Dashboard.vue';
 
 const meta: Meta<typeof Dashboard> = {
   title: 'Templates/Dashboard',
   component: Dashboard,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     title: { control: 'text', description: 'Dashboard title' },
     connectionStatus: {
@@ -22,7 +24,7 @@ const meta: Meta<typeof Dashboard> = {
   args: {
     title: 'Taskin Dashboard',
     connectionStatus: 'connected',
-    statusText: 'Conectado',
+    statusText: 'Connected',
     isLoading: false,
   },
 };
@@ -31,12 +33,12 @@ export default meta;
 type Story = StoryObj<typeof Dashboard>;
 
 const createMockTask = (id: number, overrides: Partial<Task> = {}): Task => ({
-  id: String(id),
+  id: parseTaskId(String(id)),
   number: 100 + id,
   title: `Tarefa ${id}: Exemplo`,
   status: 'in-progress',
   assignee: {
-    id: String(id),
+    id: parseTaskId(String(id)),
     name: `Dev ${id}`,
     email: `dev${id}@example.com`,
   },
@@ -68,11 +70,38 @@ export const Default: Story = {
   }),
 };
 
+/**
+ * Estado usado para gerar a imagem do dashboard na landing page do site
+ * (`packages/docs/content/public/dashboard.png`).
+ *
+ * Fica versionada aqui, e nao como fixture solta no pacote de docs, para a
+ * imagem poder ser regerada quando o dashboard mudar — foi assim que o mascote
+ * antigo acabou publicado no site: um asset estatico sem origem reproduzivel.
+ *
+ * O elenco vem do `Dashboard.mock.ts`, para outras stories poderem usar as
+ * mesmas pessoas.
+ */
+export const LandingShowcase: Story = {
+  args: {
+    title: 'Taskin Dashboard',
+    connectionStatus: 'connected',
+    statusText: 'Conectado',
+    isLoading: false,
+  },
+  render: (args) => ({
+    components: { Dashboard },
+    setup() {
+      return { args, tasks: MOCK_DASHBOARD_TASKS };
+    },
+    template: `<Dashboard v-bind="args" :tasks="tasks" />`,
+  }),
+};
+
 export const WithError: Story = {
   args: {
     connectionStatus: 'error',
     statusText: 'Erro',
-    errorMessage: 'Não foi possível conectar ao servidor WebSocket',
+    errorMessage: 'Could not connect to the WebSocket server',
     showRetry: true,
     tasks: [],
   },
@@ -88,7 +117,7 @@ export const WithError: Story = {
 export const Connecting: Story = {
   args: {
     connectionStatus: 'connecting',
-    statusText: 'Conectando... ',
+    statusText: 'Connecting... ',
     isLoading: true,
     tasks: [],
   },

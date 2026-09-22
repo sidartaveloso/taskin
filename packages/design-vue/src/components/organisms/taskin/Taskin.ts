@@ -1,4 +1,4 @@
-import { computed, h, onMounted, onUnmounted, type PropType, ref } from 'vue';
+import { computed, defineComponent, h, onMounted, onUnmounted, type PropType, ref } from 'vue';
 import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
 import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
 import type { EyeState } from '../../atoms/taskin-eyes/TaskinEyes.types';
@@ -6,12 +6,12 @@ import TaskinEyes from '../../atoms/taskin-eyes/TaskinEyes.vue';
 import type { MouthExpression } from '../../atoms/taskin-mouth/TaskinMouth.types';
 import TaskinMouth from '../../atoms/taskin-mouth/TaskinMouth.vue';
 import TaskinArmWithPhone from '../../molecules/taskin-arm-with-phone/TaskinArmWithPhone.vue';
-import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/taskin-effect-fart-cloud';
-import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/taskin-effect-hearts';
-import TaskinEffectTears from '../../molecules/taskin-effect-tears/taskin-effect-tears';
-import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/taskin-effect-thought-bubble';
-import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/taskin-effect-vomit';
-import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/taskin-effect-zzz';
+import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/TaskinEffectFartCloud';
+import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/TaskinEffectHearts';
+import TaskinEffectTears from '../../molecules/taskin-effect-tears/TaskinEffectTears';
+import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/TaskinEffectThoughtBubble';
+import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/TaskinEffectVomit';
+import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/TaskinEffectZzz';
 import TaskinTentacleWithItem from '../../molecules/taskin-tentacle-with-item/TaskinTentacleWithItem.vue';
 import type { TaskinMood } from './Taskin.types';
 
@@ -293,7 +293,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
   },
 };
 
-export default {
+export default defineComponent({
   name: 'Taskin',
   props: {
     size: {
@@ -340,21 +340,36 @@ export default {
       type: String as PropType<MouthExpression>,
       default: undefined,
     },
+    /**
+     * Mostra o balao de pensamento independentemente do humor. Sem isto so o
+     * humor `thoughtful` tinha balao, e sempre com o mesmo `?`.
+     */
+    showThoughtBubble: {
+      type: Boolean,
+      default: undefined,
+    },
+    /** O que vai escrito no balao. */
+    thoughtBubbleText: {
+      type: String,
+      default: undefined,
+    },
   },
-  setup(props: {
-    mood: TaskinMood;
-    size: number;
-    idleAnimation: boolean;
-    animationsEnabled: boolean;
-    eyeTrackingMode?: 'none' | 'mouse' | 'element' | 'custom';
-    eyeTrackingBounds?: number;
-    eyeLookDirection?: 'center' | 'left' | 'right' | 'up' | 'down';
-    eyeTargetElement?: HTMLElement | string;
-    eyeCustomPosition?: { x: number; y: number };
-    eyeState?: 'normal' | 'closed' | 'squint' | 'wide';
-    mouthExpression?: MouthExpression;
-  }) {
-    const config = computed(() => MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral);
+  setup(props) {
+    /**
+     * O humor traz a configuracao base; as props de balao, quando vem, mandam
+     * nela. E o que permite o mascote dizer "Bruno, Shhhhhhhhhhhh..." em vez do
+     * `?` fixo que o humor `thoughtful` carrega.
+     */
+    const config = computed(() => {
+      const doHumor = MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral;
+      if (props.showThoughtBubble === undefined && props.thoughtBubbleText === undefined) return doHumor;
+
+      return {
+        ...doHumor,
+        showThoughtBubble: props.showThoughtBubble ?? doHumor.showThoughtBubble,
+        thoughtBubbleText: props.thoughtBubbleText ?? doHumor.thoughtBubbleText,
+      };
+    });
     const idleTimer = ref<number | null>(null);
     const blinkEyes = ref(false);
     const wiggleTentacles = ref(false);
@@ -529,4 +544,4 @@ export default {
       );
     };
   },
-};
+});

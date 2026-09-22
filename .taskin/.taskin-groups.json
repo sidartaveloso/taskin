@@ -1,0 +1,8 @@
+{
+  "groups": {
+    "notificacoes": {
+      "id": "notificacoes",
+      "name": "Notificações que dizem algo"
+    }
+  }
+}

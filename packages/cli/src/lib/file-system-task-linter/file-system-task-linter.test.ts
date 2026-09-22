@@ -2,9 +2,22 @@
  * FileSystemTaskLinter tests
  */
 
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileSystemTaskLinter } from './file-system-task-linter.js';
 import type { FileLintResult } from './file-system-task-linter.types.js';
+
+const TAREFA_VALIDA = `# 🧩 Task 001 — Uma tarefa bem formada
+
+- Status: pending
+- Type: feat
+- Assignee: john@example.com
+
+## Description
+Existe para o linter ter o que aprovar.
+`;
 
 describe('FileSystemTaskLinter', () => {
   let linter: FileSystemTaskLinter;
@@ -40,9 +53,9 @@ describe('FileSystemTaskLinter', () => {
       const errors = linter.validateMetadata(metadata, 'task-001.md');
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].message).toContain('Invalid status');
-      expect(errors[0].severity).toBe('error');
-      expect(errors[0].file).toBe('task-001.md');
+      expect(errors[0]?.message).toContain('Invalid status');
+      expect(errors[0]?.severity).toBe('error');
+      expect(errors[0]?.file).toBe('task-001.md');
     });
 
     it('should return error for invalid type', () => {
@@ -55,8 +68,8 @@ describe('FileSystemTaskLinter', () => {
       const errors = linter.validateMetadata(metadata, 'task-001.md');
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].message).toContain('Invalid type');
-      expect(errors[0].severity).toBe('error');
+      expect(errors[0]?.message).toContain('Invalid type');
+      expect(errors[0]?.severity).toBe('error');
     });
 
     it('should return multiple errors for multiple invalid fields', () => {
@@ -83,42 +96,90 @@ describe('FileSystemTaskLinter', () => {
       const errors = linter.validateMetadata(metadata, 'task-001.md');
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].message).toContain('Assignee');
-      expect(errors[0].severity).toBe('warning');
+      expect(errors[0]?.message).toContain('Assignee');
+      expect(errors[0]?.severity).toBe('warning');
     });
   });
 
   describe('lintFile', () => {
+    let dir: string;
+
+    beforeEach(() => {
+      dir = mkdtempSync(join(tmpdir(), 'taskin-lint-file-'));
+    });
+
+    afterEach(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
     it('should validate a well-formed task file', async () => {
-      // Test will be implemented when we have file mocking utilities
-      expect(true).toBe(true);
+      const filePath = join(dir, 'task-001-uma-tarefa-bem-formada.md');
+      writeFileSync(filePath, TAREFA_VALIDA, 'utf-8');
+
+      const errors = await linter.lintFile(filePath);
+
+      expect(errors).toHaveLength(0);
     });
 
     it('should detect missing required metadata', async () => {
-      // Test will be implemented when we have file mocking utilities
-      expect(true).toBe(true);
+      const filePath = join(dir, 'task-002-sem-metadados.md');
+      writeFileSync(filePath, '# 🧩 Task 002 — Sem metadados\n\n## Description\nNada.\n', 'utf-8');
+
+      const errors = await linter.lintFile(filePath);
+
+      const messages = errors.map((e) => e.message);
+      expect(messages).toContain('Missing required metadata: Status');
+      expect(messages).toContain('Missing required metadata: Type');
+      expect(errors.filter((e) => e.severity === 'error').length).toBeGreaterThanOrEqual(2);
     });
 
     it('should validate task filename format', async () => {
-      // Test will be implemented when we have file mocking utilities
-      expect(true).toBe(true);
+      const filePath = join(dir, 'not-a-task.md');
+      writeFileSync(filePath, TAREFA_VALIDA, 'utf-8');
+
+      const errors = await linter.lintFile(filePath);
+
+      expect(errors.some((e) => e.message.includes('Invalid filename'))).toBe(true);
     });
   });
 
   describe('lintDirectory', () => {
+    let dir: string;
+
+    beforeEach(() => {
+      dir = mkdtempSync(join(tmpdir(), 'taskin-lint-dir-'));
+    });
+
+    afterEach(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
     it('should return valid result for directory with no tasks', async () => {
-      // Test will be implemented when we have directory mocking utilities
-      expect(true).toBe(true);
+      const result = await linter.lintDirectory(dir);
+
+      expect(result.valid).toBe(true);
+      expect(result.filesChecked).toBe(0);
+      expect(result.errors).toHaveLength(0);
     });
 
     it('should collect all errors from multiple files', async () => {
-      // Test will be implemented when we have directory mocking utilities
-      expect(true).toBe(true);
+      writeFileSync(join(dir, 'task-001-status-invalido.md'), TAREFA_VALIDA.replace('pending', 'bogus'), 'utf-8');
+      writeFileSync(join(dir, 'task-002-tipo-invalido.md'), TAREFA_VALIDA.replace('feat', 'bogus'), 'utf-8');
+
+      const result = await linter.lintDirectory(dir);
+
+      expect(result.filesChecked).toBe(2);
+      expect(result.errors.some((e) => e.file === 'task-001-status-invalido.md')).toBe(true);
+      expect(result.errors.some((e) => e.file === 'task-002-tipo-invalido.md')).toBe(true);
     });
 
     it('should mark result as invalid when errors are found', async () => {
-      // Test will be implemented when we have directory mocking utilities
-      expect(true).toBe(true);
+      writeFileSync(join(dir, 'task-001-status-invalido.md'), TAREFA_VALIDA.replace('pending', 'bogus'), 'utf-8');
+
+      const result = await linter.lintDirectory(dir);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
   });
 

@@ -2,9 +2,20 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import TaskHeader from './TaskHeader.vue';
 
 const meta = {
-  title: 'Molecules/TaskHeader',
+  title: 'Molecules/Task/TaskHeader',
   component: TaskHeader,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
+  /*
+   * Prop obrigatoria fornecida no meta: as stories que so definem um `render`
+   * proprio herdam daqui em vez de repetir a fixture.
+   */
+  args: {
+    assignee: {
+      id: '1',
+      name: 'Sidarta Veloso',
+      email: 'sidarta@example.com',
+    },
+  },
   argTypes: {
     size: {
       control: 'select',
@@ -50,7 +61,6 @@ export const WithAvatar: Story = {
 };
 
 export const Interactive: Story = {
-  args: {},
   render: () => ({
     components: { TaskHeader },
     template: `

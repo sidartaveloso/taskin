@@ -1,2 +1,2 @@
-export { default as TaskinEffectFartCloud } from './taskin-effect-fart-cloud';
-export * from './taskin-effect-fart-cloud.types';
+export { default as TaskinEffectFartCloud } from './TaskinEffectFartCloud';
+export * from './TaskinEffectFartCloud.types';

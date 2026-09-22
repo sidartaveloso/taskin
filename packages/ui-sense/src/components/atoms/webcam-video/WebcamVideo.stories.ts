@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import WebcamVideo from './WebcamVideo.vue';
 
 const meta = {
-  title: 'Atoms/WebcamVideo',
+  title: 'Atoms/Sense/WebcamVideo',
   component: WebcamVideo,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'ui-sense', 'webcam'],
   argTypes: {
     visible: {
       control: 'boolean',

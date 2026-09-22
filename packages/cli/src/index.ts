@@ -10,16 +10,20 @@ import { configCommand } from './commands/config.js';
 import { dashboardCommand } from './commands/dashboard.js';
 import { registerExportCommand } from './commands/export.js';
 import { finishCommand } from './commands/finish.js';
+import { registerGroupCommand } from './commands/group.js';
 import { initCommand } from './commands/init.js';
 import { lintCommand } from './commands/lint.js';
 import { listCommand } from './commands/list.js';
+import { mcpInstallCommand } from './commands/mcp-install.js';
 import { mcpServerCommand } from './commands/mcp-server.js';
 import { createCommand } from './commands/new.js';
 import { notifyCommand } from './commands/notify.js';
 import { pauseCommand } from './commands/pause.js';
+import { prioritizeCommand } from './commands/prioritize.js';
 import { reviewCommand } from './commands/review.js';
 import { startCommand } from './commands/start.js';
 import { statsCommand } from './commands/stats.js';
+import { registerUserCommand } from './commands/user.js';
 import { showCustomHelp } from './lib/help.js';
 import { loadDotEnv } from './lib/notification/env-resolver.js';
 import { getVersion } from './version.js';
@@ -39,7 +43,7 @@ program
   .command('help')
   .description('Show help information')
   .action(() => {
-    showCustomHelp();
+    showCustomHelp(program);
   });
 
 // Register commands
@@ -54,25 +58,29 @@ statsCommand(program);
 configCommand(program);
 registerExportCommand(program);
 lintCommand(program);
+prioritizeCommand(program);
+registerGroupCommand(program);
 dashboardCommand(program);
+mcpInstallCommand(program);
 mcpServerCommand(program);
 notifyCommand(program);
+registerUserCommand(program);
 
 // Intercept --help at root level
 program.on('option:help', () => {
-  showCustomHelp();
+  showCustomHelp(program);
   process.exit(0);
 });
 
 // Show custom help if no command provided
 if (process.argv.length <= 2) {
-  showCustomHelp();
+  showCustomHelp(program);
   process.exit(0);
 }
 
 // Show custom help if only --help is provided
 if (process.argv.length === 3 && (process.argv[2] === '--help' || process.argv[2] === '-h')) {
-  showCustomHelp();
+  showCustomHelp(program);
   process.exit(0);
 }
 

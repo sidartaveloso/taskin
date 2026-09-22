@@ -11,6 +11,7 @@
 
     <!-- Controles -->
     <TrackingControls
+      :controls="['webcam', 'eyes', 'mouth', 'expressions']"
       :is-detecting="faceLandmarker.state.value.isDetecting"
       :error="faceLandmarker.state.value.error"
       :show-webcam="showWebcam"
@@ -49,8 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import type { WebcamVideo } from '@opentask/ui-sense';
-import { FaceTrackingDebug, TrackingControls, useFaceLandmarker } from '@opentask/ui-sense';
+import { FaceTrackingDebug, TrackingControls, useFaceLandmarker, WebcamVideo } from '@opentask/ui-sense';
 import { computed, onMounted, ref, watch } from 'vue';
 import Taskin from './Taskin';
 import type { TaskinMood } from './Taskin.types';
@@ -68,7 +68,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 // Refs
-const webcamVideoRef = ref<InstanceType<typeof WebcamVideo> | null>(null);
+const webcamVideoRef = ref<{ videoElement: HTMLVideoElement | null } | null>(null);
 const mascotContainer = ref<HTMLDivElement | null>(null);
 const showWebcam = ref(props.showWebcam);
 const syncEyes = ref(true);

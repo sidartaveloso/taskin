@@ -1,15 +1,17 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import { defaultFunctions, WebcamVideo } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { h, ref, toRef } from 'vue';
 import { buildPriorityTree, usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
+import { groupId } from '../../types';
 import PrioritizationScreen from './PrioritizationScreen.vue';
 
 const meta: Meta<typeof PrioritizationScreen> = {
   title: 'Templates/PrioritizationScreen',
   component: PrioritizationScreen,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   parameters: {
     docs: {
       description: {
@@ -25,9 +27,9 @@ export default meta;
 type Story = StoryObj<typeof PrioritizationScreen>;
 
 const createTask = (id: string, overrides: Partial<Task> = {}): Task => ({
-  id,
+  id: parseTaskId(id),
   number: Number(id),
-  title: `Task ${id}: exemplo de título de tarefa`,
+  title: `Task ${id}: example task title`,
   status: 'pending',
   type: 'feat',
   dates: { created: new Date('2026-07-01') },
@@ -39,14 +41,14 @@ const defaultTasks: Task[] = [
   createTask('002', {
     order: 20,
     type: 'fix',
-    groupId: 'g1',
+    parent: { type: 'group', id: groupId('g1') },
     groupName: 'Backend',
     difficulty: 4,
   }),
   createTask('003', {
     order: 30,
     type: 'refactor',
-    groupId: 'g1',
+    parent: { type: 'group', id: groupId('g1') },
     groupName: 'Backend',
   }),
   createTask('004', { order: 40, type: 'docs' }),
@@ -148,6 +150,7 @@ export const Empty: Story = {
 };
 
 export const WithGesture: Story = {
+  tags: ['webcam'],
   render: () => ({
     components: { PrioritizationScreen, WebcamVideo },
     setup() {
@@ -184,8 +187,8 @@ export const WithGesture: Story = {
               },
             }),
             cameraActive.value
-              ? h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#4caf50' } }, '📷 Câmera ativa')
-              : h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#999' } }, '⏳ Aguardando câmera...'),
+              ? h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#4caf50' } }, '📷 Camera on')
+              : h('div', { style: { marginTop: '8px', fontSize: '13px', color: '#999' } }, '⏳ Waiting for camera...'),
           ],
         );
     },
@@ -208,7 +211,7 @@ export const WithGesture: Story = {
     expect(fixed).not.toBeNull();
 
     // Tracking controls are always visible (start/stop detection)
-    const trackingBtn = within(fixed!).getByText('Iniciar Detecção');
+    const trackingBtn = within(fixed!).getByText('Start Detection');
     expect(trackingBtn).not.toBeNull();
 
     // GestureSystem is always mounted (needs to be to detect detecting changes)
@@ -223,19 +226,19 @@ export const WithGesture: Story = {
     const statusBefore = canvasElement.querySelector<HTMLElement>('.prioritization-screen__camera-status');
     expect(statusBefore).toBeNull();
 
-    // ── User clicks "Iniciar Detecção" ──
+    // ── User clicks "Start Detection" ──
     await fireEvent.click(trackingBtn);
 
     // Camera-status indicator appears while camera initializes (detecting=true, cameraActive=false)
     await waitFor(() => {
       const status = canvasElement.querySelector<HTMLElement>('.prioritization-screen__camera-status');
       expect(status).not.toBeNull();
-      expect(status!.textContent).toContain('Ativando câmera');
+      expect(status!.textContent).toContain('Starting camera');
     });
 
-    // Button still shows "Iniciar Detecção" because cameraActive is still false
+    // Button still shows "Start Detection" because cameraActive is still false
     // (no real camera stream in test environment)
-    expect(() => within(fixed!).getByText('Iniciar Detecção')).not.toThrow();
+    expect(() => within(fixed!).getByText('Start Detection')).not.toThrow();
 
     // GestureLegend still not rendered (camera never actually streams in test)
     const legendAfter = gestureSystem!.querySelector<HTMLElement>('.gesture-system__legend');

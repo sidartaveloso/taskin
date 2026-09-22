@@ -3,17 +3,20 @@
  * Executes quality checks and transitions task to 'in-review' status
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
+import { appendCiSkipTag } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { HookContext, HookOptions } from '@opentask/taskin-types';
 import { execSync } from 'child_process';
 import path from 'path';
+import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { HookRunner } from '../lib/hook-runner.js';
 import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
+import { normalizeTaskId } from '../lib/task-id.js';
 import { defineCommand } from './define-command/index.js';
 
 interface ReviewTaskOptions {
@@ -21,6 +24,8 @@ interface ReviewTaskOptions {
   skipMerge?: boolean;
   dryRun?: boolean;
   sound?: boolean;
+  /** `false` com --no-skip-ci: nao marca o commit de status. */
+  skipCi?: boolean;
 }
 
 export const reviewCommand = defineCommand({
@@ -44,6 +49,10 @@ export const reviewCommand = defineCommand({
       flags: '--no-sound',
       description: 'Disable review sound',
     },
+    {
+      flags: '--no-skip-ci',
+      description: 'Write the status commit without the CI-skip tag',
+    },
   ],
   handler: async (taskId: string, options: ReviewTaskOptions) => {
     await reviewTask(taskId, options);
@@ -57,19 +66,13 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
   printHeader(`Reviewing Task ${taskId}`, '🔍');
 
   // Normalize task ID
-  const normalizedId = taskId.replace(/^task-/, '').padStart(3, '0');
+  const normalizedId = normalizeTaskId(taskId);
+  if (!normalizedId) {
+    error(`'${taskId}' is not a task id. Expected something like 020 or task-020.`);
+    process.exit(1);
+  }
 
-  // Find TASKS directory
-  const tasksDir = path.join(process.cwd(), 'TASKS');
-
-  // Initialize UserRegistry
-  const monorepoRoot = path.dirname(tasksDir);
-  const taskinDir = path.join(monorepoRoot, '.taskin');
-  const userRegistry = new UserRegistry({ taskinDir });
-  await userRegistry.load();
-
-  // Initialize task manager
-  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
+  const { provider: taskProvider, projectRoot: monorepoRoot } = await resolveTaskProvider();
   const taskManager = new TaskManager(taskProvider);
 
   // Find task
@@ -94,6 +97,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
   const hookSettings = configManager.getHookSettings();
   const reviewHooks = configManager.getCommandHooks('review');
   const behavior = configManager.getAutomationBehavior();
+  const ciSkipTag = resolveCiSkipTag(behavior.ciSkipTag, options.skipCi);
 
   // Initialize hook runner
   const hookRunner = new HookRunner();
@@ -147,7 +151,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
       console.log();
     }
 
-    info('✓ Dry run complete');
+    info('Dry run complete');
     return;
   }
 
@@ -172,7 +176,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
     const failedPre = preResults.find((r) => !r.success);
     if (failedPre && !hookSettings.continueOnError) {
       console.log();
-      error('✗ Pre-review hooks failed!');
+      error('Pre-review hooks failed!');
       error('Fix the errors above and try again.');
       process.exit(1);
     }
@@ -201,7 +205,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
     const failedCheck = duringResults.find((r) => !r.success);
     if (failedCheck && !hookSettings.continueOnError) {
       console.log();
-      error('✗ Review checks failed!');
+      error('Review checks failed!');
       error('Fix the errors above and try again.');
       console.log();
       info('Tip: Run individual checks to see full error details');
@@ -214,16 +218,17 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
   // Update task status
   info('Marking task as ready for review...');
   const updatedTask = await taskManager.reviewTask(task.id);
-  success(`✓ Task ${updatedTask.id} status changed to: ${updatedTask.status}`);
+  success(`Task ${updatedTask.id} status changed to: ${updatedTask.status}`);
 
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
     try {
-      execSync(
-        `git add TASKS/task-${normalizedId}-*.md && git commit -m "docs(TASKS): task-${normalizedId} - mark as ready for review [skip-ci]"`,
-        { cwd: monorepoRoot, stdio: 'ignore' },
-      );
-      success('✓ Auto-committed status change');
+      const message = appendCiSkipTag(`docs(TASKS): task-${normalizedId} - mark as ready for review`, ciSkipTag);
+      execSync(`git add TASKS/task-${normalizedId}-*.md && git commit -m "${message}"`, {
+        cwd: monorepoRoot,
+        stdio: 'ignore',
+      });
+      success('Auto-committed status change');
     } catch {
       // Ignore if nothing to commit
     }
@@ -257,7 +262,7 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
       ? 'with hooks'
       : '';
 
-  success(`✓ Task ready for review! ${totalDuration}`);
+  success(`Task ready for review! ${totalDuration}`);
 
   // Send notification
   await sendTaskNotification(configManager, 'task:review', normalizedId, task.title);

@@ -8,7 +8,18 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import type { ITaskManager } from '@opentask/taskin-task-manager';
+import {
+  filterCriteriaJsonSchema,
+  filterTasks,
+  type ITaskManager,
+  type ModoDeOrdenacao,
+  numerarPrioridade,
+  ordenarTarefas,
+  parseFilterCriteria,
+  summarizeTask,
+  type TaskFilterCriteria,
+} from '@opentask/taskin-task-manager';
+import { type TaskId, TaskIdSchema, type TaskStatus } from '@opentask/taskin-types';
 import type {
   ITaskMCPServer,
   MCPConnectionOptions,
@@ -21,18 +32,50 @@ import type {
   MCPTool,
   MCPToolCallParams,
   MCPToolCallResult,
+  TaskStatusChangeHook,
 } from './task-server-mcp.types.js';
 
 /**
  * MCP Server for task management integration with LLMs
  */
+/**
+ * Tool arguments arrive as untyped JSON from the MCP client, so the id has to
+ * be validated before it enters the domain — the branded `TaskId` is only
+ * worth something if the boundary that mints it actually checks.
+ */
+function readTaskId(raw: unknown): TaskId | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const parsed = TaskIdSchema.safeParse(raw);
+  return parsed.success ? parsed.data : undefined;
+}
+
+function invalidTaskId(raw: unknown): MCPToolCallResult {
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: `Invalid task id: ${JSON.stringify(raw)}. Expected the numeric id of a task, e.g. "020".`,
+      },
+    ],
+    isError: true,
+  };
+}
+
 export class TaskMCPServer implements ITaskMCPServer {
   private server: Server;
   private taskManager: ITaskManager;
-  private config: Required<MCPServerConfig>;
+  private config: Required<Omit<MCPServerConfig, 'onStatusChange'>>;
+  /**
+   * Injected side effect for status-changing tools. Undefined when the host
+   * wires no automation (e.g. a plain programmatic embed), in which case
+   * `start_task`/`finish_task` change status and nothing else — the pre-hook
+   * behavior.
+   */
+  private onStatusChange?: TaskStatusChangeHook;
 
   constructor(config: MCPServerConfig) {
     this.taskManager = config.taskManager;
+    this.onStatusChange = config.onStatusChange;
     this.config = {
       name: 'taskin-mcp-server',
       version: '1.0.0',
@@ -76,14 +119,17 @@ export class TaskMCPServer implements ITaskMCPServer {
         arguments: request.params.arguments,
       });
 
-      // MCP SDK expects a content array
+      /*
+       * `callTool` ja devolve blocos de conteudo, que e o que o SDK espera.
+       *
+       * Aqui havia `text: result.content` — embrulhar o arranjo dentro de um
+       * bloco de texto, cujo `text` tem que ser string. O SDK recusava a
+       * resposta inteira com `invalid_union`, entao `start_task` e
+       * `finish_task` nunca funcionaram pelo transporte real. Nenhum teste
+       * pegou porque todos chamam `callTool` direto e pulam este involucro.
+       */
       return {
-        content: [
-          {
-            type: 'text' as const,
-            text: result.content,
-          },
-        ],
+        content: result.content,
         isError: result.isError,
       };
     });
@@ -131,15 +177,14 @@ export class TaskMCPServer implements ITaskMCPServer {
 
   /**
    * Connect to MCP transport
+   *
+   * `MCPTransportType` tem um valor so, entao nao ha o que despachar. O ramo
+   * que existia aqui aceitava `'sse'` pelo tipo e recusava em tempo de
+   * execucao, ja com o provider inicializado.
    */
-  async connect(options: MCPConnectionOptions): Promise<void> {
-    if (options.transport === 'stdio') {
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
-      this.log('MCP Server connected via stdio');
-    } else {
-      throw new Error(`Transport ${options.transport} not yet implemented`);
-    }
+  async connect(_options: MCPConnectionOptions): Promise<void> {
+    await this.server.connect(new StdioServerTransport());
+    this.log('MCP Server connected via stdio');
   }
 
   /**
@@ -163,6 +208,48 @@ export class TaskMCPServer implements ITaskMCPServer {
    */
   listTools(): { tools: MCPTool[] } {
     const tools: MCPTool[] = [
+      {
+        name: 'list_groups',
+        description:
+          'List the task groups in this project, each with its id and name. The name lives in one place — a task only carries the group id — so renaming a group touches no task file.',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'prioritize_tasks',
+        description:
+          'Give every task in the project a priority number, once and on purpose. Tasks that already carry one keep it; the gaps around them are filled. Running it again changes nothing. Use it on a project where only some tasks are prioritised — there, moving a task rewrites every file before it, and this ends that state.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            dryRun: { type: 'boolean', description: 'Report how many would be numbered, without writing' },
+          },
+        },
+      },
+      {
+        name: 'list_tasks',
+        description:
+          'List the tasks in the project. Returns a JSON array with what identifies each task — id, title, status, type, assignee — without the markdown body. Fetch a task body by id after choosing one.',
+        /*
+         * O schema JSON dos criterios sai do schema unico em `task-manager`, o
+         * mesmo que valida a chamada e gera as flags da CLI — nao de uma lista
+         * escrita a mao aqui.
+         */
+        inputSchema: {
+          ...filterCriteriaJsonSchema(),
+          properties: {
+            ...filterCriteriaJsonSchema().properties,
+            /*
+             * `sort` nao vem do schema de criterios de proposito: ordenar nao
+             * restringe nada. Fica ao lado, com o mesmo vocabulario do quadro
+             * de priorizacao do dashboard.
+             */
+            sort: {
+              type: 'string',
+              description: 'Order: manual (priority), diff-asc or diff-desc. Defaults to manual.',
+            },
+          },
+        },
+      },
       {
         name: 'start_task',
         description: 'Start working on a task by changing its status to in-progress',
@@ -204,11 +291,24 @@ export class TaskMCPServer implements ITaskMCPServer {
       this.log(`Calling tool: ${params.name}`, params.arguments);
 
       switch (params.name) {
-        case 'start_task':
-          return await this.handleStartTask(params.arguments?.taskId as string);
+        case 'list_groups':
+          return await this.handleListGroups();
 
-        case 'finish_task':
-          return await this.handleFinishTask(params.arguments?.taskId as string);
+        case 'prioritize_tasks':
+          return await this.handlePrioritizeTasks(params.arguments ?? {});
+
+        case 'list_tasks':
+          return await this.handleListTasks(params.arguments ?? {});
+
+        case 'start_task': {
+          const taskId = readTaskId(params.arguments?.taskId);
+          return taskId ? await this.handleStartTask(taskId) : invalidTaskId(params.arguments?.taskId);
+        }
+
+        case 'finish_task': {
+          const taskId = readTaskId(params.arguments?.taskId);
+          return taskId ? await this.handleFinishTask(taskId) : invalidTaskId(params.arguments?.taskId);
+        }
 
         default:
           return {
@@ -238,8 +338,9 @@ export class TaskMCPServer implements ITaskMCPServer {
   /**
    * Handle start_task tool
    */
-  private async handleStartTask(taskId: string): Promise<MCPToolCallResult> {
+  private async handleStartTask(taskId: TaskId): Promise<MCPToolCallResult> {
     const task = await this.taskManager.startTask(taskId);
+    await this.notifyStatusChange(task.id, task.status);
 
     return {
       content: [
@@ -267,8 +368,15 @@ export class TaskMCPServer implements ITaskMCPServer {
   /**
    * Handle finish_task tool
    */
-  private async handleFinishTask(taskId: string): Promise<MCPToolCallResult> {
-    const task = await this.taskManager.finishTask(taskId);
+  private async handleFinishTask(taskId: TaskId): Promise<MCPToolCallResult> {
+    /*
+     * O relato dos criterios em aberto viaja junto: um agente que fecha uma
+     * tarefa precisa ver o que ficou para tras tanto quanto uma pessoa — foi
+     * justamente um agente que fechou quatro tarefas com o checklist inteiro em
+     * aberto.
+     */
+    const { task, blockers } = await this.taskManager.finishTaskComRelato(taskId);
+    await this.notifyStatusChange(task.id, task.status);
 
     return {
       content: [
@@ -284,6 +392,14 @@ export class TaskMCPServer implements ITaskMCPServer {
                 status: task.status,
                 type: task.type,
               },
+              /*
+               * O que ficou em aberto viaja na resposta, e nao so no texto: um
+               * agente precisa poder **reagir** a isso, e nao apenas ler.
+               */
+              openCriteria: blockers,
+              ...(blockers.length > 0 && {
+                hint: 'Tick these in the task file, or say why they were dropped: "— adiado: <reason>".',
+              }),
             },
             null,
             2,
@@ -291,6 +407,25 @@ export class TaskMCPServer implements ITaskMCPServer {
         },
       ],
     };
+  }
+
+  /**
+   * Run the injected status-change hook, if any.
+   *
+   * Best-effort on purpose: the task's status was already persisted by the
+   * manager, so a hook that throws (a git problem, say) must not turn a
+   * successful `start_task`/`finish_task` into a failed tool call. The failure
+   * is logged and the tool still reports success — same posture the CLI takes,
+   * where a failed auto-commit only drops the "Auto-committed" line.
+   */
+  private async notifyStatusChange(taskId: TaskId, status: TaskStatus): Promise<void> {
+    if (!this.onStatusChange) return;
+
+    try {
+      await this.onStatusChange({ taskId, status });
+    } catch (error) {
+      this.log('onStatusChange hook failed:', error);
+    }
   }
 
   /**
@@ -426,11 +561,73 @@ Let me start by marking the task as done using the finish_task tool.`,
   }
 
   /**
+   * Le e seleciona as tarefas, pela mesma seam que o CLI usa.
+   *
+   * `filterTasks` e `summarizeTask` vivem no pacote agnostico justamente para
+   * que a resposta aqui e a de `taskin list --json` nao possam divergir — ja
+   * houve duas filtragens discordando no repositorio.
+   */
+  private async selecionarTarefas(criteria: TaskFilterCriteria, modo: ModoDeOrdenacao = 'manual') {
+    const tasks = await this.taskManager.getAllTasks();
+    /*
+     * Ordenar antes de resumir: o resumo expoe `priority`, e a ordenacao
+     * trabalha com `order` — a traducao acontece depois, e nao no meio.
+     */
+    return ordenarTarefas(filterTasks(tasks, criteria), modo).map(summarizeTask);
+  }
+
+  /**
+   * Numeracao inicial de prioridade.
+   *
+   * Delega a mesma funcao que a CLI usa (`numerarPrioridade`), para as duas
+   * superficies nao divergirem na regra.
+   */
+  /**
+   * Os grupos, quando o provider tem o conceito.
+   *
+   * Um provider sem grupos nao expoe o registro, e a ferramenta diz isso em vez
+   * de falhar — a ausencia e informacao, e nao erro.
+   */
+  private async handleListGroups(): Promise<MCPToolCallResult> {
+    const registro = this.taskManager.groupRegistry;
+
+    if (!registro) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ supported: false, groups: [] }, null, 2) }],
+        isError: false,
+      };
+    }
+
+    const grupos = await registro.listGroups();
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ supported: true, groups: grupos }, null, 2) }],
+      isError: false,
+    };
+  }
+
+  private async handlePrioritizeTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    const resultado = await this.taskManager.prioritizeAll({ dryRun: args.dryRun === true });
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify(resultado, null, 2) }],
+      isError: false,
+    };
+  }
+
+  private async handleListTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    const modo = args.sort === 'diff-asc' || args.sort === 'diff-desc' ? args.sort : 'manual';
+    const tarefas = await this.selecionarTarefas(parseFilterCriteria(args), modo);
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify(tarefas, null, 2) }],
+      isError: false,
+    };
+  }
+
+  /**
    * List available resources
    */
   async listResources(): Promise<MCPResourceListResult> {
-    // In a real implementation, we would list all tasks as resources
-    // For now, returning an example structure
     return {
       resources: [
         {
@@ -453,16 +650,13 @@ Let me start by marking the task as done using the finish_task tool.`,
     const uri = params.uri;
 
     if (uri === 'taskin://tasks') {
-      // In a real implementation, we would fetch all tasks
+      const tarefas = await this.selecionarTarefas({});
       return {
         contents: [
           {
             uri,
             mimeType: 'application/json',
-            text: JSON.stringify({
-              message: 'Task list would be here',
-              note: 'Requires ITaskProvider integration',
-            }),
+            text: JSON.stringify(tarefas, null, 2),
           },
         ],
       };

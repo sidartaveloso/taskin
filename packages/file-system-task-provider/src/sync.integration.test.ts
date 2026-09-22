@@ -15,20 +15,29 @@ function createBareRepo(dir: string): void {
   execSync('git init --bare', { cwd: dir, stdio: 'ignore' });
 }
 
+/**
+ * Identidade de autor no proprio repositorio.
+ *
+ * Precisa valer tambem para o clone: `git clone` nao herda a config **local**
+ * da origem, so o conteudo. Sem isto, commitar num clone depende de haver
+ * identidade global na maquina — na de quem desenvolve ha, no runner do
+ * GitHub nao, e la os commits morriam com status 128 e stderr vazio.
+ */
+function configureIdentity(dir: string): void {
+  execSync('git config user.email "test@taskin.dev"', { cwd: dir, stdio: 'ignore' });
+  execSync('git config user.name "Taskin Test"', { cwd: dir, stdio: 'ignore' });
+}
+
 function cloneRepo(bareDir: string, targetDir: string): void {
   execSync(`git clone ${bareDir} ${targetDir}`, { stdio: 'ignore' });
+  configureIdentity(targetDir);
 }
 
 function initRepo(dir: string): void {
+  // `-b tasks` nao: este repo cria a branch depois. O nome do branch inicial
+  // nao importa aqui, mas a identidade sim.
   execSync('git init', { cwd: dir, stdio: 'ignore' });
-  execSync('git config user.email "test@taskin.dev"', {
-    cwd: dir,
-    stdio: 'ignore',
-  });
-  execSync('git config user.name "Taskin Test"', {
-    cwd: dir,
-    stdio: 'ignore',
-  });
+  configureIdentity(dir);
 }
 
 function initialCommit(dir: string): void {
@@ -158,7 +167,7 @@ describe('AutoSync Integration', () => {
     // Verify task file exists in bare repo
     const bareClone = mkdtempSync(join(tmpdir(), 'taskin-sync-verify-'));
     cleanupDirs.push(bareClone);
-    execSync(`git clone ${bareDir} ${bareClone}`, { stdio: 'ignore' });
+    cloneRepo(bareDir, bareClone);
     execSync('git checkout tasks', { cwd: bareClone, stdio: 'ignore' });
 
     const taskFile = join(bareClone, 'TASKS', 'task-001-my-feature.md');
@@ -200,7 +209,7 @@ describe('AutoSync Integration', () => {
     // Verify both tasks exist in remote
     const bareClone = mkdtempSync(join(tmpdir(), 'taskin-sync-verify-'));
     cleanupDirs.push(bareClone);
-    execSync(`git clone ${bareDir} ${bareClone}`, { stdio: 'ignore' });
+    cloneRepo(bareDir, bareClone);
     execSync('git checkout tasks', { cwd: bareClone, stdio: 'ignore' });
 
     expect(existsSync(join(bareClone, 'TASKS', 'task-001-feat-a.md'))).toBe(true);
@@ -298,7 +307,7 @@ describe('AutoSync Integration', () => {
     // Verify: remote has both blocker and A's task
     const bareClone = mkdtempSync(join(tmpdir(), 'taskin-sync-verify-'));
     cleanupDirs.push(bareClone);
-    execSync(`git clone ${bareDir} ${bareClone}`, { stdio: 'ignore' });
+    cloneRepo(bareDir, bareClone);
     execSync('git checkout tasks', { cwd: bareClone, stdio: 'ignore' });
 
     expect(existsSync(join(bareClone, 'TASKS', 'blocker.md'))).toBe(true);
@@ -333,7 +342,7 @@ describe('AutoSync Integration', () => {
     // Create develop branch in bare (simulate originBranch)
     const tempDir = mkdtempSync(join(tmpdir(), 'taskin-sync-dev-'));
     cleanupDirs.push(tempDir);
-    execSync(`git clone ${bareDir} ${tempDir}`, { stdio: 'ignore' });
+    cloneRepo(bareDir, tempDir);
     execSync('git checkout --orphan develop', { cwd: tempDir, stdio: 'ignore' });
     writeFileSync(join(tempDir, 'README.md'), '# Develop');
     execSync('git add .', { cwd: tempDir, stdio: 'ignore' });

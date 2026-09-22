@@ -2,11 +2,80 @@ import { z } from 'zod';
 
 /**
  * Task identifier schema.
- * Represents a unique identifier for a task (UUID format).
+ *
+ * O id de uma task e a parte numerica do nome do arquivo: `task-020-foo.md`
+ * produz `020`. Nao e UUID — a versao anterior deste schema exigia `.uuid()`,
+ * o que rejeitava 100% das tasks reais e transformava a marca `TaskId` em
+ * promessa vazia, ja que o unico jeito de obter uma era com `as`.
  *
  * @public
  */
-export const TaskIdSchema = z.string().uuid().brand('TaskId');
+export const TaskIdSchema = z
+  .string()
+  .regex(/^\d+$/, 'Task id must be the numeric part of the file name (e.g. "020")')
+  .brand('TaskId');
+
+/**
+ * Group identifier schema.
+ * Represents a unique identifier for a task group.
+ *
+ * Deliberately not `.uuid()`: os ids de grupo em uso sao opacos e curtos
+ * (`g1`, `g-...`), nao UUIDs. Ver task-034 para a decisao de dominio sobre a
+ * forma dos ids.
+ *
+ * @public
+ */
+export const GroupIdSchema = z.string().min(1).brand('GroupId');
+
+/**
+ * Builds a validated {@link TaskId}.
+ *
+ * This is the only supported way to produce one: the brand is meaningless if
+ * callers can reach it with a cast.
+ *
+ * @throws ZodError when `value` is not a task id
+ * @public
+ * @example
+ * ```ts
+ * const id = parseTaskId('020');
+ * ```
+ */
+export const parseTaskId = (value: string) => TaskIdSchema.parse(value);
+
+/**
+ * Builds a validated {@link GroupId}. Same contract as {@link parseTaskId}.
+ *
+ * @throws ZodError when `value` is empty
+ * @public
+ */
+export const parseGroupId = (value: string) => GroupIdSchema.parse(value);
+
+/**
+ * Grupo de tarefas, como entidade.
+ *
+ * A identidade ja existia em {@link GroupIdSchema}; o que faltava era onde o
+ * **nome** mora. Ate a task-079 ele era um campo repetido em cada tarefa do
+ * grupo — quatro tarefas, quatro copias, e nada garantindo que concordassem.
+ *
+ * A duplicacao nao e hipotetica: o taskin ja tem uma igual no assignee, que
+ * grava o nome de exibicao dentro da tarefa em vez do id. Num repositorio
+ * consumidor isso produziu 52 avisos de lint, pessoas contadas duas vezes por
+ * diferencas de grafia, e um comando de CLI inteiro so para limpar.
+ *
+ * Redmine (`issue_categories`), GitHub (milestones) e Jira (components) modelam
+ * agrupamento assim — entidade com id, nome e operacoes proprias. Ver
+ * `docs/RDT/identidade-de-grupo-de-tasks.md`.
+ *
+ * @public
+ */
+export const GroupSchema = z.object({
+  id: GroupIdSchema,
+  /** Vazio nao serve: um grupo sem nome nao se distingue dos outros na tela. */
+  name: z.string().min(1),
+});
+
+/** @public */
+export type Group = z.infer<typeof GroupSchema>;
 
 /**
  * All possible task status values.
@@ -60,10 +129,31 @@ export const TaskTypeSchema = z.enum(TASK_TYPES);
  * @public
  */
 export const UserSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   id: z.string(),
   name: z.string(),
-  avatar: z.string().optional(),
+  /**
+   * Identidade do avatar — o md5 (hex, minusculo) do email normalizado — e nao
+   * a URL de um provedor.
+   *
+   * O dominio guarda quem a pessoa e, nao onde a imagem mora: gravar
+   * `https://www.gravatar.com/avatar/<hash>` aqui acoplava o nucleo a um
+   * provedor e fazia o navegador de quem abre o dashboard buscar a imagem em
+   * terceiro. Cada superficie decide como renderizar esta identidade — o
+   * dashboard pede `/avatar/<hash>` ao proprio servidor (ver task-067).
+   */
+  avatarHash: z.string().optional(),
+  /**
+   * Links de perfil que o registro de usuarios ja carregava sem tipo.
+   *
+   * O `.taskin/README.md` documentava campos assim ha tempos e o registro deste
+   * repo os guardava, mas o schema nao os tinha: sobreviviam no arquivo e
+   * nenhum codigo conseguia le-los. `github` interessa em especial ao provider
+   * da task-041, que precisa casar assignee de issue com usuario.
+   */
+  website: z.url().optional(),
+  github: z.url().optional(),
+  linkedin: z.url().optional(),
 });
 
 /**
@@ -84,7 +174,7 @@ export const UserSchema = z.object({
  * ```
  */
 export const TaskSchema = z.object({
-  createdAt: z.string().datetime(),
+  createdAt: z.iso.datetime(),
   id: TaskIdSchema,
   status: TaskStatusSchema,
   title: z.string(),
@@ -95,12 +185,38 @@ export const TaskSchema = z.object({
   userId: z.string().optional(),
   /** Manual priority rank (lower = higher priority); set via the prioritization board */
   order: z.number().optional(),
-  /** Opaque id of the ad hoc prioritization group this task belongs to, if any */
-  groupId: z.string().optional(),
-  /** Display label of the prioritization group, if the user named it */
-  groupName: z.string().optional(),
+  /**
+   * Id do grupo a que a tarefa pertence, se houver.
+   *
+   * So o id. O **nome** vive em {@link GroupSchema}, num registro proprio — ate
+   * a task-079 ele era um `groupName` repetido aqui, uma copia por membro, sem
+   * nada garantindo que as copias concordassem. Pior: o caminho de escrita
+   * removia a linha quando o valor chegava vazio, e foi assim que um projeto
+   * real ficou com quatro tarefas agrupadas e nenhum nome.
+   */
+  groupId: GroupIdSchema.optional(),
   /** Perceived difficulty from 1 (trivial) to 5 (very hard) */
   difficulty: z.number().int().min(1).max(5).optional(),
+});
+
+/**
+ * The fields a client may change through a task update.
+ *
+ * Derived from {@link TaskSchema} so it cannot drift: everything NOT listed
+ * here — `id`, `status`, `title`, and whatever provider-specific fields the
+ * backing store carries (`filePath`, `content`) — belongs to the server and is
+ * never taken from an incoming payload.
+ *
+ * Absent means cleared, not unchanged: the prioritization block is replaced as
+ * a whole, because `JSON.stringify` drops `undefined` keys and "ungroup this
+ * task" has to survive the trip.
+ *
+ * @public
+ */
+export const TaskPrioritizationUpdateSchema = TaskSchema.pick({
+  order: true,
+  groupId: true,
+  difficulty: true,
 });
 
 // ============================================================================
@@ -141,7 +257,7 @@ export const GitCommitSchema = z.object({
   date: z.preprocess((val) => {
     if (val instanceof Date) return val.toISOString();
     return String(val);
-  }, z.string().datetime()),
+  }, z.iso.datetime()),
   message: z.string(),
   filesChanged: z.number().int().nonnegative(),
   // Using z.coerce for git output (strings like "123") -> numbers
@@ -228,11 +344,11 @@ export const TaskStatsSchema = z.object({
   status: TaskStatusSchema,
   assignee: z.string().optional(),
   duration: z.coerce.number().nonnegative(), // in days
-  created: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
-  firstCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()).optional(),
-  lastCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()).optional(),
+  created: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
+  firstCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()).optional(),
+  lastCommit: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()).optional(),
   statusChangedToDone: z
-    .preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime())
+    .preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime())
     .optional(),
   contributors: z.array(
     z.object({
@@ -270,8 +386,8 @@ export const TaskStatsSchema = z.object({
 export const UserStatsSchema = z.object({
   username: z.string(),
   period: StatsPeriodSchema,
-  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
-  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
+  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
+  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
   codeMetrics: CodeMetricsSchema,
   temporalMetrics: TemporalMetricsSchema,
   contributionMetrics: ContributionMetricsSchema,
@@ -294,8 +410,8 @@ export const UserStatsSchema = z.object({
  */
 export const TeamStatsSchema = z.object({
   period: StatsPeriodSchema,
-  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
-  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.string().datetime()),
+  periodStart: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
+  periodEnd: z.preprocess((v) => (v instanceof Date ? v.toISOString() : String(v)), z.iso.datetime()),
   totalContributors: z.number().int().nonnegative(),
   totalCommits: z.number().int().nonnegative(),
   totalTasksCompleted: z.number().int().nonnegative(),
@@ -374,6 +490,19 @@ export const AutomationConfigSchema = z.object({
   autoSync: z.boolean().default(true),
   /** Target branch for squash commits when a task is marked as done (e.g., 'main', 'develop'). Optional. */
   originBranch: z.string().optional(),
+  /**
+   * Tag appended to the commits Taskin writes on its own, so a status change
+   * does not trigger the project's pipeline.
+   *
+   * Defaults to `[skip ci]` — the only spelling GitHub Actions, GitLab and
+   * Bitbucket Pipelines all recognize. An empty string appends nothing, which
+   * is how a project asks for CI to run on those commits.
+   *
+   * Deliberately an open `string` and not an enum of the documented tags:
+   * Azure DevOps uses `***NO_CI***` and a self-hosted pipeline can match
+   * anything. The CLI warns about an unrecognized value instead of refusing it.
+   */
+  ciSkipTag: z.string().default('[skip ci]'),
 });
 
 /**
@@ -384,7 +513,7 @@ export const AutomationConfigSchema = z.object({
  */
 export const ProviderConfigSchema = z.object({
   type: z.string(),
-  config: z.record(z.unknown()),
+  config: z.record(z.string(), z.unknown()),
 });
 
 /**
@@ -543,6 +672,24 @@ export const NOTIFICATION_EVENTS = ['task:start', 'task:done', 'task:review'] as
 export const NotificationEventSchema = z.enum(NOTIFICATION_EVENTS);
 
 /**
+ * Every notification channel the CLI knows how to talk to.
+ *
+ * A closed set on purpose: the provider name is the key used to look up which
+ * events a channel wants, and `Record<string, …>` let a typo like
+ * `eventFilter.discrod` compile and silently filter nothing.
+ *
+ * @public
+ */
+export const NOTIFICATION_PROVIDERS = ['discord', 'telegram', 'console'] as const;
+
+/**
+ * Runtime validator for notification provider names.
+ *
+ * @public
+ */
+export const NotificationProviderNameSchema = z.enum(NOTIFICATION_PROVIDERS);
+
+/**
  * Schema for a single field in a notification message.
  * Supports rich formatting with name, value, and inline display.
  *
@@ -614,6 +761,170 @@ export const NotificationConfigSchema = z.object({
 });
 
 /**
+ * Ambient-noise reaction of the Taskin mascot.
+ *
+ * When enabled, the mascot performs a short "xiiu/shhh" reaction whenever the
+ * measured microphone level (RMS amplitude, 0..1) reaches `threshold`.
+ * `debounceMs` keeps a burst of noise from firing the reaction repeatedly, and
+ * `sound` toggles the optional short audio cue layered on the visual reaction.
+ *
+ * @public
+ */
+export const MascotNoiseReactionConfigSchema = z.object({
+  /** Turn the noise reaction on. Off by default so Taskin never asks for the microphone unprompted. */
+  enabled: z.boolean().default(false),
+  /** RMS amplitude (0..1) the ambient level must reach to trigger the reaction. Conservative by default to avoid false positives. */
+  threshold: z.number().min(0).max(1).default(0.06),
+  /** Minimum gap between two reactions, in milliseconds. */
+  debounceMs: z.number().int().nonnegative().default(1500),
+  /**
+   * Janela em que o ruído é medido antes do primeiro disparo, em ms. Zero — o
+   * padrão — dispara na primeira amostra alta, e então um estalo de porta vale
+   * o mesmo que um minuto de conversa.
+   */
+  sustainMs: z.number().int().nonnegative().default(0),
+  /**
+   * Fração dessa janela que precisa estar acima do limiar, de 0 a 1. A fala tem
+   * vales de 100 a 400ms entre palavras, então exigir barulho ininterrupto
+   * (fração 1) nunca dispararia numa conversa.
+   */
+  sustainRatio: z.number().min(0).max(1).default(0.6),
+  /** Play the optional short audio cue alongside the visual reaction. */
+  sound: z.boolean().default(false),
+  /**
+   * What the mascot says, and shows in the bubble. Naming the person is the
+   * point — "Bruno, Shhhhhhhhhhhh..." asks for silence far better than a
+   * generic hiss, and it is the mascot doing the asking instead of you.
+   */
+  /**
+   * Quem chamar. Fica separado da frase porque é a única parte que a síntese de
+   * voz pronuncia antes da pausa — "Bruno," e só então o chiado.
+   */
+  name: z.string().trim().default(''),
+  phrase: z.string().trim().min(1).default('Shhhhhh...'),
+  /**
+   * Loudness of the audio cue, 0..1. Defaults to the top of the range: the
+   * reaction only works if the room hears it from where the phone is sitting.
+   */
+  volume: z.number().min(0).max(1).default(1),
+});
+
+/**
+ * Reactions block of the mascot configuration.
+ *
+ * @public
+ */
+export const MascotReactionsConfigSchema = z.object({
+  /** Reaction to ambient noise above a threshold. `prefault` so an omitted block still runs through the noise defaults. */
+  noise: MascotNoiseReactionConfigSchema.prefault({}),
+});
+
+/**
+ * Mascot configuration block in .taskin.json.
+ *
+ * @public
+ */
+export const MascotConfigSchema = z.object({
+  reactions: MascotReactionsConfigSchema.prefault({}),
+});
+
+/**
+ * Flat, defaults-applied ambient-noise reaction settings, ready to hand to a
+ * consumer (e.g. the `TaskinWithShhh` mascot component). This is the shape the
+ * dashboard passes down after reading the `mascot` block from `.taskin.json`.
+ *
+ * @public
+ */
+export interface MascotNoiseSettings {
+  /** Whether the ambient-noise reaction is active. */
+  enabled: boolean;
+  /** RMS amplitude (0..1) the ambient level must reach to trigger the reaction. */
+  threshold: number;
+  /** Minimum gap between two reactions, in milliseconds. */
+  debounceMs: number;
+  /** Whether to play the optional short audio cue alongside the visual reaction. */
+  sound: boolean;
+  /** Janela de medição antes do primeiro disparo, em ms. Zero dispara na primeira amostra. */
+  sustainMs: number;
+  /** Fração da janela que precisa estar acima do limiar, 0..1. */
+  sustainRatio: number;
+  /** Quem chamar, pronunciado antes da pausa. Vazio quando o pedido não tem destinatário. */
+  name: string;
+  /** What the mascot says and shows in the bubble. */
+  phrase: string;
+  /** Loudness of the audio cue, 0..1. */
+  volume: number;
+}
+
+/**
+ * Reads a (possibly partial or absent) `mascot` config block as written in
+ * `.taskin.json` and resolves it into flat noise settings with every schema
+ * default applied. Passing `undefined`/`null` yields the conservative defaults,
+ * so a project with no `mascot` block behaves exactly like one that opted every
+ * field into its default — the mascot stays silent until explicitly enabled.
+ *
+ * @throws ZodError when the provided block violates {@link MascotConfigSchema}
+ * @public
+ * @example
+ * ```ts
+ * resolveMascotNoiseSettings({ reactions: { noise: { enabled: true } } });
+ * // → { enabled: true, threshold: 0.06, debounceMs: 1500, sound: false,
+ * //     phrase: 'Shhhhhh...', volume: 1 }
+ * ```
+ */
+export const resolveMascotNoiseSettings = (mascot?: z.input<typeof MascotConfigSchema> | null): MascotNoiseSettings => {
+  const { enabled, threshold, debounceMs, sustainMs, sustainRatio, sound, name, phrase, volume } =
+    MascotConfigSchema.parse(mascot ?? {}).reactions.noise;
+  return { enabled, threshold, debounceMs, sustainMs, sustainRatio, sound, name, phrase, volume };
+};
+
+/**
+ * The concrete steps of a single "xiiu/shhh" reaction, already reconciled with
+ * the user's accessibility and sound preferences. A consumer (e.g. the
+ * `TaskinWithShhh` mascot component) reads this instead of re-deriving the
+ * branches inline, so the acceptance criteria live in one tested place.
+ *
+ * @public
+ */
+export interface ShhhReactionPlan {
+  /** Play the full animated reaction (moving mouth/mood, timed thought bubble). */
+  animate: boolean;
+  /** Play the optional short audio cue layered on the reaction. */
+  playSound: boolean;
+  /** Show the static "shh" badge instead of the animation — the reduced-motion fallback. */
+  showBadge: boolean;
+}
+
+/**
+ * Resolves how a single shhh reaction should play, honouring two independent
+ * user preferences:
+ *
+ * - `prefersReducedMotion` swaps the animation for a static badge, so the mascot
+ *   still gives feedback without motion (matching `prefers-reduced-motion:
+ *   reduce`).
+ * - `sound` gates the optional audio cue; when it is `false` only the visual
+ *   reaction runs. Sound is orthogonal to motion — a reduced-motion user who
+ *   opted into sound still hears the cue.
+ *
+ * @public
+ * @example
+ * ```ts
+ * resolveShhhReactionPlan({ sound: false });
+ * // → { animate: true, playSound: false, showBadge: false }
+ * resolveShhhReactionPlan({ sound: true, prefersReducedMotion: true });
+ * // → { animate: false, playSound: true, showBadge: true }
+ * ```
+ */
+export const resolveShhhReactionPlan = (opts: { sound: boolean; prefersReducedMotion?: boolean }): ShhhReactionPlan => {
+  const prefersReducedMotion = opts.prefersReducedMotion ?? false;
+  return {
+    animate: !prefersReducedMotion,
+    playSound: opts.sound,
+    showBadge: prefersReducedMotion,
+  };
+};
+
+/**
  * Taskin configuration file schema (.taskin.json).
  * Root configuration for a Taskin project.
  *
@@ -629,4 +940,6 @@ export const TaskinConfigSchema = z.object({
   hookConfig: HookSettingsSchema.optional(),
   /** Notification system configuration */
   notifications: NotificationConfigSchema.optional(),
+  /** Mascot behavior, including its reaction to ambient noise */
+  mascot: MascotConfigSchema.optional(),
 });

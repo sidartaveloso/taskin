@@ -41,8 +41,8 @@ describe('ConsoleProvider', () => {
     const result = await jsonProvider.send(message);
     expect(result.success).toBe(true);
 
-    const lastCall = consoleLog.mock.calls[0][0];
-    const parsed = JSON.parse(lastCall);
+    const lastCall = consoleLog.mock.calls[0]?.[0];
+    const parsed = JSON.parse(String(lastCall));
     expect(parsed.title).toBe('Task #020');
     expect(parsed.description).toBe('Task completed');
   });

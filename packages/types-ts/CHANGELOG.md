@@ -1,5 +1,399 @@
 # @opentask/taskin-types
 
+## 2.5.0
+
+### Minor Changes
+
+- 23c11ed: O bloco `mascot.reactions.noise` passa a carregar `sustainMs`, `sustainRatio` e
+  `name`, e o `TaskinWithShhh` ganha `showControls`.
+  
+  A sustentação do ruído e o nome de quem chamar existiam como prop do componente
+  e não no `.taskin.json` — o próprio código dizia isso num comentário, e
+  contornava lendo da prop mesmo quando recebia o bloco de configuração. Agora as
+  duas fontes carregam os mesmos campos, e o contorno saiu.
+  
+  `showControls` desliga os controles de rastreamento e de ruído em volta do
+  mascote. Ligados seguem sendo o padrão, que é o uso de laboratório; desligados,
+  sobra só o mascote — que é como ele vive num celular apoiado abaixo do monitor,
+  onde não há nada a ajustar durante o dia.
+
+## 2.4.0
+
+### Minor Changes
+
+- 37a0b34: O "shhh" do Taskin agora sai som, e a frase pode ter nome.
+  
+  O caso de uso é concreto: o mascote fica no celular, tela ligada, virado para
+  quem programa. Quando alguém fala alto na sala, é ele quem pede silêncio, em vez
+  de a pessoa ter de interromper o próprio trabalho. Um balão na tela não resolve
+  — quem está falando não está olhando para a tela.
+  
+  Até aqui `sound` era um interruptor inerte: o código tinha um comentário dizendo
+  que não havia áudio. Agora `sound: true` produz duas camadas, e a segunda nunca
+  falta:
+  
+  - **a fala**, pelo `speechSynthesis` do próprio navegador, que diz a frase
+    inteira — é daí que vem poder dirigir o pedido a alguém;
+  - **o chiado**, sintetizado com Web Audio: ruído branco por um filtro de banda
+    alta, que é literalmente o que uma sibilante é. Nenhum arquivo de áudio para
+    baixar, licenciar ou versionar, funciona sem rede, e a duração acompanha os
+    `h` da frase.
+  
+  `phrase` e `volume` entram no bloco `mascot.reactions.noise` do `.taskin.json` e
+  como props `shhhPhrase`/`shhhVolume` do `TaskinWithShhh`.
+  
+  Junto vieram duas correções que o caso revelou. O `Taskin` recebia
+  `showThoughtBubble` e `thoughtBubbleText` e **ignorava os dois** — o balão só
+  existia no humor `thoughtful`, sempre com o mesmo `?`; agora as props mandam na
+  configuração do humor. E a prop `mascot` pedia `MascotConfig`, o tipo com os
+  defaults já aplicados, o que obrigava quem só queria ligar o som a escrever
+  também limiar, debounce e volume; passou a pedir o novo `MascotConfigInput`, que
+  é o bloco como se escreve.
+  
+  `TASKIN_MOODS` passa a ser exportado: a lista de humores existe como valor, e o
+  tipo `TaskinMood` deriva dela.
+
+## 2.3.0
+
+### Minor Changes
+
+- f84d9c6: Task groups are an entity now: the name lives in one place, and a task carries only the group id.
+  
+  Until now every member of a group carried its own copy of the name. Renaming meant writing N files with no transaction, so a failure halfway left the group answering to two names — and the write path deleted the name whenever it arrived empty, which is how a real project ended up with four grouped tasks and no name at all.
+  
+  - **`Group { id, name }`** in `@opentask/taskin-types`, and `groupName` is gone from `Task`.
+  - **`IGroupRegistry`** with a contract suite any provider proves itself against. Deleting a group says where its tasks go — `deleteGroup(id, { reassignTo })`, the same shape Redmine and Jira offer — so nothing is ever left pointing at a group that no longer exists.
+  - **A provider without groups simply does not expose the registry**, and callers find out by its absence rather than by an operation that fails.
+  - **`taskin group`** — `list`, `add`, `rename`, `remove` — plus `list_groups` over MCP, and the dashboard resolving names from the server instead of from each task.
+  
+  Renaming a three-member group used to be three writes. It is one, and no task file is touched.
+
+### Patch Changes
+
+- 0f83ec2: The schemas use zod 4's own spellings: `z.email()`, `z.url()` and `z.iso.datetime()` replace the deprecated `z.string().email()`, `z.string().url()` and `z.string().datetime()`.
+  
+  Behaviour is unchanged — the package's 116 schema tests, which exercise valid and invalid input alike, pass untouched, and JSON Schema generation still emits the same two documents. This is the cleanup that was deliberately left out of the zod 3 → 4 migration so the two concerns would not share a commit.
+
+## 2.2.0
+
+### Minor Changes
+
+- 6bebe35: O taskin passa a entregar a lista de tarefas de forma que outra ferramenta
+  consuma — `taskin list --json` e `list_tasks` no servidor MCP.
+  
+  ## O que havia
+  
+  O `list` só imprimia tabela colorida. O servidor MCP não tinha ferramenta de
+  listagem, e o recurso `taskin://tasks` **anunciava** a capacidade e respondia
+  com um espaço reservado:
+  
+  ```json
+  {"message": "Task list would be here", "note": "Requires ITaskProvider integration"}
+  ```
+  
+  Pior que não oferecer: quem consome recebe algo com cara de dado.
+  
+  ## Uma seleção, não três
+  
+  Havia duas implementações da mesma pergunta, já discordando — o comando `list`
+  casava o responsável por substring em nome ou id, e a classe `Taskin` casava
+  `userId` exato, além de projetar a task derrubando o `assignee`. A saída em
+  JSON e o MCP seriam a terceira e a quarta.
+  
+  `filterTasks` e `summarizeTask` vivem no pacote agnóstico, e os três caminhos
+  perguntam ao mesmo lugar.
+  
+  ## Detalhes que importam para quem consome
+  
+  `list --json` sai **sem cabeçalho, moldura ou aviso** — a saída inteira é JSON
+  válido, e lista vazia é `[]`. Não carrega `content` nem `description`: o
+  provider de arquivos guarda o markdown inteiro neles, e a listagem deste
+  repositório passaria de vinte mil linhas. O corpo se busca pelo id.
+  
+  `getAllTasks` entrou no `ITaskManager`, delegando ao provider como `lint` já
+  fazia — era o que faltava para um consumidor que só tem o manager responder
+  "que trabalho existe?".
+  
+  `ListTasksOptions.status` e `.type` passam a usar os tipos do domínio em vez de
+  `string`. Um valor fora do conjunto nunca casaria, e falhava em silêncio.
+  
+  ## Um defeito de transporte, corrigido junto
+  
+  Exercitando o servidor por stdio, o SDK recusava a resposta com
+  `invalid_union: expected string, received array`. O invólucro fazia
+  `text: result.content`, embrulhando o arranjo de blocos dentro de um bloco cujo
+  `text` precisa ser string — então **`start_task` e `finish_task` nunca
+  funcionaram pelo transporte real**. Nenhum teste pegava porque todos chamavam
+  `callTool` direto, pulando o invólucro.
+
+## 2.1.1
+
+### Patch Changes
+
+- 2c402e9: A tag de skip de CI passa a ser `[skip ci]`, e vira configuravel
+  
+  Os commits que o Taskin escreve sozinho — mudanca de status, arquivo de task —
+  vinham marcados com `[skip-ci]`, com hifen. Nenhuma plataforma reconhece essa
+  forma: o GitHub Actions documenta cinco strings e essa nao esta entre elas, o
+  Bitbucket diz explicitamente que a variante com hifen dispara o pipeline, e o
+  GitLab so pula com `[skip ci]` ou `[ci skip]`. Na pratica cada `taskin start`,
+  `pause`, `finish` e `review` rodava a CI inteira do projeto de quem usa,
+  exatamente o contrario do que a tag prometia.
+  
+  O padrao agora e `[skip ci]`, a unica forma que as tres plataformas aceitam.
+  
+  A tag tambem deixou de ser literal espalhada pelo codigo e virou configuracao:
+  
+  - `taskin init` pergunta qual usar, ou aceita `--ci-skip-tag <tag>`
+  - `taskin config --ci-skip-tag <tag>` muda depois, e a secao interativa lista
+    as formas documentadas
+  - `none` em qualquer um dos dois grava tag vazia, para quem quer que a CI rode
+  - uma tag fora da lista e aceita com aviso, nao recusada: Azure DevOps usa
+    `***NO_CI***` e um pipeline proprio pode casar o que quiser
+  
+  O campo e `automation.ciSkipTag` no `.taskin.json`. Quem nao tem o campo recebe
+  `[skip ci]` pelo default do schema — nao ha migracao a fazer.
+  
+  De quebra, `taskin config --discord-webhook` e `--notification-events` voltaram
+  a funcionar. O commander entrega as opcoes em camelCase e o comando lia as
+  chaves com hifen, entao esses dois flags caiam no modo interativo em vez de no
+  proprio ramo.
+
+## 2.1.0
+
+### Minor Changes
+
+- 346f1d4: Três estilos de marcação para o bloco de metadados: leitura tolerante aos três,
+  escrita em um só, e conversão explícita entre eles.
+  
+  ## O defeito que originou
+  
+  O `4.0.0` escreve a quebra forte do CommonMark (`\`) no fim de **todas** as
+  linhas de metadado — a última inclusive. Ali ela não é quebra: não há linha
+  seguinte para quebrar, então o renderizador a imprime literal.
+  
+  ```html
+  <p>Status: pending<br> Type: chore<br> Assignee: sidarta-veloso\</p>
+  ```
+  
+  Sempre a linha `Assignee:`. Cosmético — os leitores já faziam `stripHardBreak`,
+  então nenhum valor chegava sujo ao domínio — mas visível em qualquer lugar que
+  renderize o arquivo.
+  
+  ## Os três estilos
+  
+  | id | raw | renderizado |
+  | --- | --- | --- |
+  | `list` | `- Status: pending` | três linhas |
+  | `hard-break` | `Status: pending\` (menos na última) | três linhas |
+  | `plain` | `Status: pending` | colapsa numa linha só |
+  
+  `list` é o novo default: é o único que fica bom no raw e no renderizado ao mesmo
+  tempo. Rótulo em negrito com linhas simples foi medido e **não** quebra — colapsa
+  igual ao `plain`, o que descarta a alternativa mais óbvia.
+  
+  ## As três regras
+  
+  - **Ler é tolerante aos três, sempre.** Isso não é template, é parsing: existem
+    arquivos com `\` gravados pelo `4.0.0`, e gente que edita à mão sem marcação
+    nenhuma. Vale para o provider, o adaptador de métricas e o linter do CLI.
+  - **Escrever preserva o estilo do arquivo que está sendo editado.** Sem isso,
+    um `taskin start` num arquivo em `list` com config em `hard-break` deixaria as
+    três linhas em estilos diferentes.
+  - **A configuração decide só o estilo de arquivo novo**, em
+    `provider.config.metadataStyle`. O `taskin init` passa a gravá-lo
+    explicitamente, para um upgrade não trocar a marcação de um projeto que nunca
+    escolheu.
+  
+  ## Converter
+  
+  ```bash
+  taskin lint --fix --metadata-style=list
+  ```
+  
+  Sem a flag, `--fix` normaliza cada arquivo **dentro** do estilo que ele já usa —
+  o que, para os arquivos gravados pelo `4.0.0`, significa tirar a barra sobrando
+  da última linha. A flag exige `--fix`: converter é escrever.
+  
+  ## O contrato
+  
+  `MetadataStyle` mora em `metadata-style/`, com as três implementações provando-se
+  contra o mesmo `runMetadataStyleContractTests` — inclusive a propriedade que
+  teria pego o defeito: ler um bloco em qualquer um dos três estilos devolve o
+  mesmo valor, e `format` nunca deixa marcação pendurada na última linha.
+  
+  O `ITaskProvider` não mudou. Estilo de marcação não significa nada para um
+  provider de Jira, então a opção viaja como configuração do provider e não como
+  parâmetro de `lint`.
+  
+  `stripHardBreak` continua exportado e funcionando, para quem já o chama de fora.
+
+## 2.0.0
+
+### Major Changes
+
+- b4b259e: Faz a marca `TaskId` valer algo e passa a validar id na borda.
+  
+  `TaskIdSchema` exigia `.uuid()`, mas id de task é a parte numérica do nome do
+  arquivo — `task-020-foo.md` produz `020`. Nenhuma task real passava no schema:
+  `TaskSchema.safeParse({ id: '020' })` falhava com "Invalid uuid", e o único
+  caminho até um `TaskId` era `satisfies string as TaskId`, um cast. Uma marca que
+  só se alcança por cast não carrega informação: custa cast em toda fronteira e
+  não previne nada.
+  
+  ## Ids
+  
+  - `TaskIdSchema` passa a exigir `/^\d+$/`, a forma que o provider produz.
+  - `parseTaskId` e `parseGroupId` são o único caminho suportado até as marcas —
+    eles validam e lançam. Os casts saíram do provider.
+  - `groupId` no `TaskSchema` passa a ser `GroupId`, marca que já existia e não era
+    usada no domínio.
+  
+  Ao trocar a regex, **11 testes do `types-ts` quebraram de uma vez** — todos por
+  fixture de UUID. As fixtures agora usam ids de verdade e o UUID entra como caso
+  rejeitado.
+  
+  ## Contrato
+  
+  `findTask`, `startTask`, `pauseTask`, `finishTask` e `reviewTask` passam a
+  receber `TaskId` em vez de `string`, em `ITaskProvider`, `ITaskManager`, na
+  classe `TaskManager` e no `FileSystemTaskProvider`. Na CLI, `normalizeTaskId` é a
+  fronteira: aceita o que a pessoa digita (`20`, `020`, `task-020`), normaliza e
+  valida. Substitui o `replace(/^task-/, '').padStart(3, '0')` que estava copiado
+  em quatro comandos.
+  
+  Os membros de `ITaskProvider` e `ITaskManager` passaram a ser propriedades de
+  função em vez de métodos. TypeScript trata método como bivariante mesmo sob
+  `strictFunctionTypes`, e isso deixava `ITaskProvider<TaskFile>` ser atribuído a
+  `ITaskProvider<Task>` — compila e depois quebra em `updateTask`, que abre com
+  `fs.readFile(task.filePath)`.
+  
+  ## Fronteiras que validam
+  
+  - **WebSocket**: `handleUpdateRequest` fazia `message.payload as TTask` e
+    entregava JSON não confiável ao provider. Agora relê a task armazenada e aplica
+    só o bloco de priorização, via `applyTaskUpdate` (módulo novo, com teste). Os
+    campos são substituídos em bloco de propósito: `JSON.stringify` descarta
+    `undefined`, então "desagrupar" chega como chave ausente, não como `null`.
+  - **WebSocket e MCP**: id vindo do cliente passa por `safeParse` e devolve erro
+    claro, em vez de deixar `ZodError` vazar pelo catch genérico.
+  - `getAllTasks` ignora `task-*.md` sem id numérico. Antes viravam task fantasma
+    de id `'unknown'` — e duas delas colidiam no mesmo id.
+  
+  ## Breaking changes
+  
+  **`@opentask/taskin-types`**
+  
+  - `TaskIdSchema` rejeita UUID e aceita `/^\d+$/`. Quem persistiu id em outro
+    formato não passa mais em `TaskSchema`.
+  - `TaskSchema.groupId` é `GroupId`, não `string`.
+  
+  **`@opentask/taskin-task-manager`**
+  
+  - Os parâmetros de id são `TaskId`. Um `string` solto não compila mais — use
+    `parseTaskId`.
+  - `CreateTaskResult.taskId` foi removido: duplicava `task.id` com tipo mais
+    fraco. O provider de arquivos segue devolvendo `filePath` em
+    `CreateTaskFileResult`.
+  - `ITaskProvider` e `ITaskManager` declaram propriedades de função. Classes que
+    os implementam continuam compilando; o que deixa de compilar é atribuir um
+    provider específico onde se espera o genérico — que era exatamente o bug.
+  
+  **`@opentask/taskin-design-vue`**
+  
+  - `TaskId` e `GroupId` são reexportados de `@opentask/taskin-types` em vez de
+    redeclarados. Duas marcas para o mesmo conceito obrigavam um cast em toda
+    fronteira, e foi um desses casts que engoliu campos calado.
+  
+  ## API nova
+  
+  `@opentask/taskin-types` exporta `parseTaskId`, `parseGroupId`,
+  `TaskPrioritizationUpdateSchema` (a fatia mutável de uma task, derivada de
+  `TaskSchema` para não poder divergir) e `NOTIFICATION_PROVIDERS` /
+  `NotificationProviderNameSchema`.
+- 30b3e4a: Torna o provider e o manager genéricos sobre a forma da task, e promove `paused`
+  a status de primeira classe.
+  
+  ## Provider agnóstico
+  
+  `TaskFile` era declarado no pacote agnóstico e o `ITaskProvider` inteiro era
+  tipado nele, obrigando qualquer provider não-arquivo (GitHub, Redmine) a inventar
+  `content` e `filePath`. Agora `ITaskProvider` e `ITaskManager` são genéricos sobre
+  `TTask extends Task`, com default `Task`, e `TaskFile` mora no
+  `file-system-task-provider`.
+  
+  Os call sites não mudam — `new TaskManager(provider)` infere a forma sozinho.
+  
+  Junto disso:
+  
+  - o strip em runtime (`toTask`) saiu do manager; campos específicos do provider
+    agora sobrevivem às transições de status
+  - corrigido broadcast do WebSocket que podia emitir `payload: undefined` após
+    start/finish, deixando os clientes dessincronizados sem erro nenhum
+  - `pinia` e dashboard passam a falar `Task`; o provider de arquivos projeta
+    `content` em `description` na fronteira
+  
+  ## Status `paused`
+  
+  O comando `pause` gravava `pending`, apagando a diferença entre "nunca começou" e
+  "começou e parou". Agora `paused` existe no domínio, com `ITaskManager.pauseTask`
+  e retomada via `startTask`.
+  
+  As quatro listas de status que eram mantidas à mão (schema, linter da CLI,
+  `task-validator`, metrics adapter) agora derivam de `TASK_STATUSES`. A divergência
+  entre elas já era bug: `in-review`, que o próprio `reviewTask` grava, era
+  rejeitado pelo linter, ignorado pelo metrics adapter e sumia tanto de
+  `taskin list --open` quanto de `--closed`.
+  
+  ## Breaking changes
+  
+  **`@opentask/taskin-task-manager`**
+  
+  - `ITaskProvider` e `ITaskManager` ganharam parâmetro de tipo. O default mantém o
+    uso comum compilando, mas quem *implementa* `ITaskManager` precisa adicionar
+    `pauseTask`.
+  - `TaskFile` saiu daqui. Importe de `@opentask/taskin-file-system-provider`.
+  - `CreateTaskResult` não tem mais `filePath`. O provider de arquivos devolve
+    `CreateTaskFileResult`, que o mantém.
+  
+  **`@opentask/taskin-types`**
+  
+  - `TaskStatus` e `TASK_STATUSES` ganharam `'paused'`. Consumidores exaustivos
+    (`Record<TaskStatus, T>`, `switch` sem `default`) precisam tratar o caso novo.
+  
+  **`@opentask/taskin-design-vue`**
+  
+  - `TaskStatus` ganhou `'in-review'` e `'canceled'` para alinhar com o domínio,
+    com o mesmo efeito sobre consumidores exaustivos.
+  
+  **`@opentask/taskin-task-provider-pinia`**
+  
+  - O store guarda `Task` em vez de `TaskFile`: `tasks`, `findTask`, `getAllTasks` e
+    `updateTask` não expõem mais `content` nem `filePath`. Use `description`.
+  
+  **`@opentask/taskin-task-server-ws`**
+  
+  - `TaskWebSocketServer` e `TaskServerConfig` ganharam parâmetro de tipo (com
+    default). `MockTaskProvider` recebe `Task[]` em vez de `TaskFile[]`.
+  
+  **`@opentask/taskin-task-server-mcp`**
+  
+  - `MockMCPTaskManager.getAllTasks()` e `getTask()` devolvem `Task`, sem `filePath`
+    nem `content`.
+
+### Minor Changes
+
+- 2f6d046: `UserSchema` ganha `website`, `github` e `linkedin`, todos opcionais e validados
+  como URL.
+  
+  O `.taskin/README.md` documentava campos de perfil ha tempos e o registro real
+  ja os guardava, mas o schema nao os tinha: sobreviviam no arquivo e nenhum codigo
+  conseguia le-los com tipo. O `github` interessa em especial ao provider da
+  task-041, que precisa casar assignee de issue com usuario do registro.
+  
+  O README foi alinhado ao schema no mesmo passo: ele listava `discord`, `phone`,
+  `role` e `active`, que nunca existiram.
+
 ## 1.1.1
 
 ### Patch Changes

@@ -1,11 +1,12 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import type { Task } from '../../types';
 import TaskCard from './TaskCard.vue';
 
 const meta: Meta<typeof TaskCard> = {
-  title: 'Organisms/TaskCard',
+  title: 'Organisms/Task/TaskCard',
   component: TaskCard,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     // Individual props for Storybook controls
     id: {
@@ -51,12 +52,12 @@ type Story = StoryObj<typeof TaskCard>;
 
 // Mock data
 const mockTask: Task = {
-  id: '1',
+  id: parseTaskId('1'),
   number: 42,
   title: 'Implement task visualization panel on TV',
   status: 'in-progress',
   assignee: {
-    id: '1',
+    id: parseTaskId('1'),
     name: 'Sidarta Veloso',
     email: 'sidarta@example.com',
     avatar: 'https://i.pravatar.cc/150?img=12',
@@ -80,17 +81,17 @@ const mockTask: Task = {
       {
         date: new Date('2025-11-10'),
         hours: 6,
-        description: 'Implementação de atoms',
+        description: 'Atoms implementation',
       },
       {
         date: new Date('2025-11-11'),
         hours: 7,
-        description: 'Implementação de molecules',
+        description: 'Molecules implementation',
       },
       {
         date: new Date('2025-11-12'),
         hours: 5,
-        description: 'Implementação de organisms',
+        description: 'Organisms implementation',
       },
     ],
   },
@@ -116,14 +117,14 @@ export const Blocked: Story = {
   args: {
     task: {
       ...mockTask,
-      id: '2',
+      id: parseTaskId('2'),
       number: 43,
-      title: 'Integração com API do Redmine - Bloqueada',
+      title: 'Redmine API integration - Blocked',
       status: 'blocked',
       progress: {
         percentage: 30,
       },
-      warnings: ['External dependency not available', 'Aguardando aprovação do time de infra'],
+      warnings: ['External dependency not available', 'Waiting on approval from the infra team'],
     },
     variant: 'default',
   },
@@ -140,7 +141,7 @@ export const Done: Story = {
   args: {
     task: {
       ...mockTask,
-      id: '3',
+      id: parseTaskId('3'),
       number: 41,
       title: 'Configure monorepo project structure',
       status: 'done',
@@ -167,9 +168,9 @@ export const Paused: Story = {
   args: {
     task: {
       ...mockTask,
-      id: '4',
+      id: parseTaskId('4'),
       number: 44,
-      title: 'Implementar sistema de notificações',
+      title: 'Build the notification system',
       status: 'paused',
       progress: {
         percentage: 40,
@@ -190,12 +191,12 @@ export const Paused: Story = {
 export const WithoutEstimates: Story = {
   args: {
     task: {
-      id: '5',
+      id: parseTaskId('5'),
       number: 45,
       title: 'Task without time estimates',
       status: 'pending',
       assignee: {
-        id: '2',
+        id: parseTaskId('2'),
         name: 'João Silva',
       },
       project: {
@@ -239,7 +240,7 @@ export const AllStatuses: Story = {
       const tasks: Task[] = [
         {
           ...mockTask,
-          id: '1',
+          id: parseTaskId('1'),
           number: 41,
           title: 'Pending Task',
           status: 'pending',
@@ -247,7 +248,7 @@ export const AllStatuses: Story = {
         },
         {
           ...mockTask,
-          id: '2',
+          id: parseTaskId('2'),
           number: 42,
           title: 'In Progress Task',
           status: 'in-progress',
@@ -255,7 +256,7 @@ export const AllStatuses: Story = {
         },
         {
           ...mockTask,
-          id: '3',
+          id: parseTaskId('3'),
           number: 43,
           title: 'Paused Task',
           status: 'paused',
@@ -263,16 +264,16 @@ export const AllStatuses: Story = {
         },
         {
           ...mockTask,
-          id: '4',
+          id: parseTaskId('4'),
           number: 44,
           title: 'Blocked Task',
           status: 'blocked',
           progress: { percentage: 20 },
-          warnings: ['Bloqueio crítico'],
+          warnings: ['Critical blocker'],
         },
         {
           ...mockTask,
-          id: '5',
+          id: parseTaskId('5'),
           number: 45,
           title: 'Completed Task',
           status: 'done',
@@ -305,12 +306,12 @@ export const AllStatuses: Story = {
 // Hybrid approach: Using individual props (great for Storybook controls!)
 export const WithIndividualProps: Story = {
   args: {
-    id: '999',
+    id: parseTaskId('999'),
     number: 999,
     title: 'Task created with individual props',
     status: 'in-progress',
     assignee: {
-      id: '10',
+      id: parseTaskId('10'),
       name: 'Maria Santos',
       email: 'maria@example.com',
     },
@@ -353,7 +354,7 @@ export const ResponsiveViewports: Story = {
           <div>
             <h3 style="margin-bottom: 0.5rem;">⌚ Smartwatch (&lt; 240px)</h3>
             <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
-              Ultra compacto - apenas informações essenciais
+              Ultra compact - essentials only
             </p>
             <div style="max-width: 220px; border: 2px dashed #ccc; padding: 0.5rem;">
               <TaskCard :task="mockTask" />
@@ -364,7 +365,7 @@ export const ResponsiveViewports: Story = {
           <div>
             <h3 style="margin-bottom: 0.5rem;">📱 Small Mobile (240px - 374px)</h3>
             <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
-              Muito compacto - informações principais visíveis
+              Very compact - key information visible
             </p>
             <div style="max-width: 320px; border: 2px dashed #ccc; padding: 0.5rem;">
               <TaskCard :task="mockTask" />
@@ -375,7 +376,7 @@ export const ResponsiveViewports: Story = {
           <div>
             <h3 style="margin-bottom: 0.5rem;">📱 Mobile (375px - 767px)</h3>
             <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
-              Mobile padrão - todas as informações importantes
+              Standard mobile - all the important information
             </p>
             <div style="max-width: 390px; border: 2px dashed #ccc; padding: 0.5rem;">
               <TaskCard :task="mockTask" />
@@ -386,7 +387,7 @@ export const ResponsiveViewports: Story = {
           <div>
             <h3 style="margin-bottom: 0.5rem;">📱 Tablet (768px - 1023px)</h3>
             <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
-              Tablet - espaçamento confortável
+              Tablet - comfortable spacing
             </p>
             <div style="max-width: 768px; border: 2px dashed #ccc; padding: 0.5rem;">
               <TaskCard :task="mockTask" />
@@ -410,11 +411,11 @@ export const ResponsiveViewports: Story = {
           <ul style="margin: 0; padding-left: 1.5rem; line-height: 1.8;">
             <li><strong>Smartwatch:</strong> &lt; 240px - Ultra compacto</li>
             <li><strong>Small Mobile:</strong> 240px - 374px - Muito compacto</li>
-            <li><strong>Mobile:</strong> 375px - 767px - Mobile padrão</li>
-            <li><strong>Tablet Portrait:</strong> 768px - 1023px - Espaçamento médio</li>
+            <li><strong>Mobile:</strong> 375px - 767px - standard mobile</li>
+            <li><strong>Tablet Portrait:</strong> 768px - 1023px - medium spacing</li>
             <li><strong>Tablet Landscape/Desktop:</strong> 1024px+ - Completo</li>
-            <li><strong>Large Desktop:</strong> 1440px+ - Espaçamento aumentado</li>
-            <li><strong>Ultra-wide:</strong> 1920px+ - Máximo conforto</li>
+            <li><strong>Large Desktop:</strong> 1440px+ - increased spacing</li>
+            <li><strong>Ultra-wide:</strong> 1920px+ - maximum comfort</li>
           </ul>
         </div>
       </div>
@@ -424,7 +425,7 @@ export const ResponsiveViewports: Story = {
     docs: {
       description: {
         story:
-          '📱 **Design Responsivo Completo**: O TaskCard foi projetado para funcionar perfeitamente em todos os dispositivos, desde smartwatches até monitores ultra-wide. Use o seletor de viewport do Storybook ou redimensione o navegador para ver a adaptação em tempo real.',
+          '📱 **Fully responsive**: TaskCard is built to work on everything from a smartwatch to an ultra-wide monitor. Use the Storybook viewport selector or resize the browser to watch it adapt in real time.',
       },
     },
     controls: { disable: true },

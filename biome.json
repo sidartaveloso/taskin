@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.11/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -82,6 +82,22 @@
           }
         }
       }
+    },
+    {
+      "includes": [
+        "packages/api/**",
+        "packages/task-provider-pinia/**",
+        "packages/task-server-ws/**",
+        "packages/types-ts/scripts/**",
+        "packages/dashboard/src/App.vue"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
     }
   ],
   "assist": {
@@ -91,5 +107,8 @@
         "organizeImports": "on"
       }
     }
+  },
+  "files": {
+    "includes": ["**", "!**/.sandcastle/worktrees", "!**/.sandcastle/logs"]
   }
 }

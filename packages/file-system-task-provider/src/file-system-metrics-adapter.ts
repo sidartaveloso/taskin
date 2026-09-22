@@ -1,5 +1,5 @@
 import type { IGitAnalyzer } from '@opentask/taskin-git-utils';
-import type { IMetricsManager } from '@opentask/taskin-task-manager';
+import type { IMetricsManager, IUserRegistry } from '@opentask/taskin-task-manager';
 import {
   type GitCommit,
   type StatsQuery,
@@ -12,9 +12,20 @@ import {
   type UserStats,
   UserStatsSchema,
 } from '@opentask/taskin-types';
+import { classifyAssignee, foldAssignee } from './assignee-identity.js';
+import { readMetadataField } from './metadata-style/index.js';
+
+/**
+ * As sete chaves de `byDayOfWeek`, na forma que `Date.getDay()` produz.
+ *
+ * Fechar o registro nelas em vez de `Record<string, number>` e o que permite
+ * `byDayOfWeek[k]++`: com indice `string` o lookup e `number | undefined` e o
+ * incremento nao compila. O registro largo escondia que a chave e conhecida.
+ */
+type DayOfWeekKey = '0' | '1' | '2' | '3' | '4' | '5' | '6';
+
 import { promises as fs } from 'fs';
 import path from 'path';
-import type { UserRegistry } from './user-registry';
 
 /**
  * Time constants for date calculations
@@ -31,7 +42,7 @@ const MILLISECONDS_PER_DAY = HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINU
  * Task file parsing patterns
  * Extracted as constants for maintainability and testing
  */
-const TASK_FILENAME_PATTERN = /^task-(\d+)-/;
+const TASK_FILENAME_PATTERN = /^task-(\d+)(?:-.+)?\.md$/;
 const TASK_TITLE_PATTERNS = {
   withDash: /^# .*?[—-]\s*(.+)$/im,
   withNumber: /^# .*?\s+(\d+)\s*-\s*(.+)$/im,
@@ -224,7 +235,7 @@ async function calculateTemporalMetrics(
   since: Date,
   until: Date,
 ): Promise<{
-  byDayOfWeek: Record<string, number>;
+  byDayOfWeek: Record<DayOfWeekKey, number>;
   byTimeOfDay: {
     morning: number;
     afternoon: number;
@@ -246,7 +257,7 @@ async function calculateTemporalMetrics(
     });
 
     // Calculate byDayOfWeek
-    const byDayOfWeek: Record<string, number> = {
+    const byDayOfWeek: Record<DayOfWeekKey, number> = {
       '0': 0,
       '1': 0,
       '2': 0,
@@ -263,14 +274,14 @@ async function calculateTemporalMetrics(
       const day = date.getDay();
       const hour = date.getHours();
 
-      byDayOfWeek[day.toString()]++;
+      byDayOfWeek[day.toString() as DayOfWeekKey]++;
 
       if (hour >= 6 && hour < 12) byTimeOfDay.morning++;
       else if (hour >= 12 && hour < 18) byTimeOfDay.afternoon++;
       else if (hour >= 18 && hour < 24) byTimeOfDay.evening++;
       else byTimeOfDay.night++;
 
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = date.toISOString().slice(0, 10);
       commitsByDate.set(dateKey, (commitsByDate.get(dateKey) || 0) + 1);
     }
 
@@ -279,12 +290,13 @@ async function calculateTemporalMetrics(
     let currentStreak = 0;
     let maxStreak = 0;
 
-    for (let i = 0; i < sortedDates.length; i++) {
-      if (i === 0) {
+    for (const [i, current] of sortedDates.entries()) {
+      const previous = sortedDates[i - 1];
+      if (previous === undefined) {
         currentStreak = 1;
       } else {
-        const prevDate = new Date(sortedDates[i - 1]);
-        const currDate = new Date(sortedDates[i]);
+        const prevDate = new Date(previous);
+        const currDate = new Date(current);
         const daysDiff = (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
 
         if (daysDiff === 1) {
@@ -336,10 +348,28 @@ async function calculateTemporalMetrics(
  * - Streaks and trends
  * - Task completion tracking
  */
+/**
+ * How one contributor is addressed while team metrics are assembled: `key` is
+ * the identity (registry id, or a folded spelling for someone unregistered) and
+ * `username` is what the report shows.
+ */
+interface ContributorIdentity {
+  key: string;
+  username: string;
+}
+
+/** Running totals for one contributor. */
+interface ContributorTally {
+  username: string;
+  commits: number;
+  tasksCompleted: number;
+  codeMetrics: ReturnType<typeof emptyCodeMetrics>;
+}
+
 export class FileSystemMetricsAdapter implements IMetricsManager {
   constructor(
     private tasksDirectory: string,
-    private userRegistry: UserRegistry,
+    private userRegistry: IUserRegistry,
     private gitAnalyzer?: IGitAnalyzer,
   ) {}
 
@@ -376,19 +406,15 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
         continue;
       }
 
-      const idMatch = file.match(TASK_FILENAME_PATTERN);
-      const id = idMatch ? idMatch[1] : file;
-      const titleMatch = content.match(TASK_TITLE_PATTERNS.withDash) || content.match(TASK_TITLE_PATTERNS.withNumber);
-      const title = titleMatch ? titleMatch[1] : file.replace(/\.md$/, '');
+      const id = file.match(TASK_FILENAME_PATTERN)?.[1] ?? file;
+      const titleMatch = content.match(TASK_TITLE_PATTERNS.withDash) ?? content.match(TASK_TITLE_PATTERNS.withNumber);
+      const title = titleMatch?.[1] ?? file.replace(/\.md$/, '');
 
       // Remove code blocks before extracting metadata to avoid parsing examples
       const contentWithoutCodeBlocks = removeCodeBlocks(content);
 
-      const extract = (name: string) => {
-        const rx = new RegExp(`^${name}:\\s*(.+)$`, 'im');
-        const m = contentWithoutCodeBlocks.match(rx);
-        return m ? m[1].trim() : undefined;
-      };
+      // Le em qualquer um dos tres estilos de marcacao (ver ./metadata-style).
+      const extract = (name: string) => readMetadataField(contentWithoutCodeBlocks, name);
 
       const statusValue = extract('Status');
       const assigneeValue = extract('Assignee');
@@ -468,48 +494,74 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
     const weekAgo = since;
     const tasks = await this.readTaskFiles();
 
-    const contributors = new Map<
-      string,
-      {
-        username: string;
-        commits: number;
-        tasksCompleted: number;
-        codeMetrics: ReturnType<typeof emptyCodeMetrics>;
-      }
-    >();
+    const contributors = new Map<string, ContributorTally>();
 
-    // Helper to normalize keys so we consistently merge task assignees, registry
-    // users and git authors (case-insensitive)
-    const normalizeKey = (name: string) => name.toLowerCase();
+    /*
+     * Uma pessoa e uma chave. Antes o agrupamento era `assignee.toLowerCase()`
+     * da string crua do arquivo, entao `Sidarta Veloso`, `sidarta-veloso` e
+     * `sidartaveloso` viravam tres contribuidores — e `A definir` virava um
+     * quarto. Passa pelo registro para que a identidade decida, nao a grafia.
+     */
+    const identify = (raw: string): ContributorIdentity | undefined => {
+      const identity = classifyAssignee(raw, this.userRegistry);
+
+      switch (identity.kind) {
+        case 'resolved':
+        case 'correctable':
+          return { key: identity.user.id, username: identity.user.name };
+        case 'unassigned':
+          // Nao e pessoa: e "ninguem ainda".
+          return undefined;
+        case 'unknown':
+          // O trabalho aconteceu mesmo sem cadastro; conta, com a grafia dele.
+          return { key: `unregistered:${foldAssignee(identity.raw)}`, username: identity.raw.trim() };
+        default:
+          identity satisfies never;
+          return undefined;
+      }
+    };
+
+    const upsert = ({
+      key,
+      username,
+    }: {
+      key: string;
+      username: string;
+    }): typeof contributors extends Map<string, infer TValue> ? TValue : never => {
+      const existing = contributors.get(key);
+      if (existing) return existing;
+
+      const created = { username, commits: 0, tasksCompleted: 0, codeMetrics: emptyCodeMetrics() };
+      contributors.set(key, created);
+      return created;
+    };
+
+    /*
+     * Trabalho concluido sem dono continua sendo trabalho concluido. Contado
+     * aqui, fora do mapa de contribuidores, para nao inventar pessoa nem
+     * apagar a entrega.
+     */
+    let unattributedTasksCompleted = 0;
 
     // Collect task completion data
     for (const t of tasks) {
-      const assignee = t.assignee || 'unknown';
-      const key = normalizeKey(assignee);
-      const prev = contributors.get(key) || {
-        username: assignee,
-        commits: 0,
-        tasksCompleted: 0,
-        codeMetrics: emptyCodeMetrics(),
-      };
-      if (t.status === 'done') prev.tasksCompleted += 1;
-      contributors.set(key, prev);
+      const identified = t.assignee === undefined ? undefined : identify(t.assignee);
+
+      if (!identified) {
+        if (t.status === 'done') unattributedTasksCompleted += 1;
+        continue;
+      }
+
+      const entry = upsert(identified);
+      if (t.status === 'done') entry.tasksCompleted += 1;
     }
 
     // Include all registered Taskin users even if they have no tasks
     try {
       const allUsers = this.userRegistry.getAllUsers?.() || [];
       for (const u of allUsers) {
-        const username = u.name || u.id;
-        const key = normalizeKey(username);
-        if (!contributors.has(key)) {
-          contributors.set(key, {
-            username,
-            commits: 0,
-            tasksCompleted: 0,
-            codeMetrics: emptyCodeMetrics(),
-          });
-        }
+        // Mesma chave que os assignees resolvidos usam: o id do registro
+        upsert({ key: u.id, username: u.name || u.id });
       }
     } catch (error) {
       // If registry is unavailable, continue with existing contributors
@@ -526,15 +578,10 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
 
         for (const a of authors) {
           const name = a.name || a.email || 'unknown';
-          const key = normalizeKey(name);
-          if (!contributors.has(key)) {
-            contributors.set(key, {
-              username: name,
-              commits: 0,
-              tasksCompleted: 0,
-              codeMetrics: emptyCodeMetrics(),
-            });
-          }
+          // Autor de commit passa pelo mesmo registro, para o commit cair na
+          // mesma pessoa que a task — antes so casava se a grafia coincidisse
+          const identified = identify(name);
+          if (identified) upsert(identified);
         }
       } catch (error) {
         console.warn('Failed to fetch git authors for team metrics:', error);
@@ -554,7 +601,8 @@ export class FileSystemMetricsAdapter implements IMetricsManager {
 
     // Aggregate team totals
     const totalCommits = Array.from(contributors.values()).reduce((sum, c) => sum + c.commits, 0);
-    const totalTasksCompleted = Array.from(contributors.values()).reduce((sum, c) => sum + c.tasksCompleted, 0);
+    const totalTasksCompleted =
+      Array.from(contributors.values()).reduce((sum, c) => sum + c.tasksCompleted, 0) + unattributedTasksCompleted;
     const aggregatedCodeMetrics = Array.from(contributors.values()).reduce(
       (acc, c) => ({
         linesAdded: acc.linesAdded + c.codeMetrics.linesAdded,

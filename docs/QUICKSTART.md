@@ -107,15 +107,16 @@ Claude: "You have 2 tasks in progress: ..."
 #### Iniciar servidor MCP diretamente
 
 ```bash
-# Modo stdio (padrão)
+# O transporte é stdio: o cliente sobe o processo e conversa por stdin/stdout.
 taskin mcp-server
 
 # Com debug habilitado
 taskin mcp-server --debug
-
-# Modo SSE (planejado)
-taskin mcp-server --transport sse
 ```
+
+> Não há porta envolvida. Cada cliente sobe o seu próprio processo, então dois
+> clientes ao mesmo tempo não disputam nada — e não existe `--transport` para
+> escolher, porque só existe um.
 
 #### Tools Disponíveis
 

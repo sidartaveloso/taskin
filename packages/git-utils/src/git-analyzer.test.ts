@@ -134,7 +134,7 @@ def456|Jane Smith|2026-01-07T15:30:00Z|fix: bug fix\0
 
       const commits = await analyzer.getCommits();
 
-      expect(commits[0].coAuthors).toEqual(['Jane Smith', 'Bob Johnson']);
+      expect(commits[0]?.coAuthors).toEqual(['Jane Smith', 'Bob Johnson']);
     });
   });
 

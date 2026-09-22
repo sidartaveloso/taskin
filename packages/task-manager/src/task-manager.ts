@@ -1,7 +1,10 @@
-import type { Task, TaskStatus } from '@opentask/taskin-types';
+import type { Task, TaskId, TaskStatus } from '@opentask/taskin-types';
+import type { IGroupRegistry } from './group-registry.types';
+import { numerarPrioridade } from './numerar-prioridade/index';
 import type {
   CreateTaskOptions,
   CreateTaskResult,
+  CriterioEmAberto,
   ITaskManager,
   ITaskProvider,
   LintResult,
@@ -27,7 +30,7 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return { ...task, status } as TTask;
   }
 
-  async startTask(taskId: string): Promise<TTask> {
+  async startTask(taskId: TaskId): Promise<TTask> {
     const task = await this.taskProvider.findTask(taskId);
 
     if (!task) {
@@ -48,7 +51,7 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return updatedTask;
   }
 
-  async pauseTask(taskId: string): Promise<TTask> {
+  async pauseTask(taskId: TaskId): Promise<TTask> {
     const task = await this.taskProvider.findTask(taskId);
 
     if (!task) {
@@ -65,7 +68,74 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return updatedTask;
   }
 
-  async finishTask(taskId: string): Promise<TTask> {
+  /**
+   * Every task the configured provider knows about.
+   *
+   * Pass-through on purpose: the manager owns the state transitions, not the
+   * storage. Having it here is what lets a consumer holding only the manager —
+   * the MCP server — answer "what work exists?".
+   */
+  async getAllTasks(): Promise<TTask[]> {
+    return await this.taskProvider.getAllTasks();
+  }
+
+  /** Repassa o registro do provider, quando ele tem um. */
+  get groupRegistry(): IGroupRegistry | undefined {
+    return (this.taskProvider as { groupRegistry?: IGroupRegistry }).groupRegistry;
+  }
+
+  async prioritizeAll(options: { dryRun?: boolean } = {}): Promise<{
+    total: number;
+    withoutPriority: number;
+    changed: number;
+  }> {
+    const tarefas = await this.taskProvider.getAllTasks();
+
+    /*
+     * Quem ja tem numero define a ordem; quem nao tem entra depois, na sequencia
+     * em que o provider devolveu.
+     */
+    const ordenadas = [...tarefas].sort((a, b) => {
+      if (a.order === undefined && b.order === undefined) return 0;
+      if (a.order === undefined) return 1;
+      if (b.order === undefined) return -1;
+      return a.order - b.order;
+    });
+
+    const mudancas = numerarPrioridade(ordenadas);
+    const semNumero = tarefas.filter((t) => t.order === undefined).length;
+
+    if (!options.dryRun) {
+      for (const tarefa of mudancas) {
+        await this.taskProvider.updateTask(tarefa as TTask);
+      }
+    }
+
+    return { total: tarefas.length, withoutPriority: semNumero, changed: mudancas.length };
+  }
+
+  /**
+   * Conclui a tarefa e **relata** o que ficou em aberto.
+   *
+   * Avisa, e nao recusa. Fechar uma tarefa e um gesto que acontece uma vez,
+   * muitas vezes com pressa; recusar ali torna o comando fragil e ensina a
+   * contornar. O portao duro vive no `lint`, que roda em CI e quebra o build —
+   * aqui o papel e dizer, no momento em que a pessoa ainda esta olhando, o que
+   * ficou para tras.
+   *
+   * Um provider sem a capacidade conclui sem portao nenhum.
+   */
+  async finishTaskComRelato(taskId: TaskId): Promise<{ task: TTask; blockers: CriterioEmAberto[] }> {
+    const task = await this.taskProvider.findTask(taskId);
+    if (!task) throw new Error(`Task with ID '${taskId}' not found.`);
+
+    const blockers = (await this.taskProvider.getCompletionBlockers?.(task)) ?? [];
+    const atualizada = await this.finishTask(taskId);
+
+    return { task: atualizada, blockers };
+  }
+
+  async finishTask(taskId: TaskId): Promise<TTask> {
     const task = await this.taskProvider.findTask(taskId);
 
     if (!task) {
@@ -78,7 +148,7 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return updatedTask;
   }
 
-  async reviewTask(taskId: string): Promise<TTask> {
+  async reviewTask(taskId: TaskId): Promise<TTask> {
     const task = await this.taskProvider.findTask(taskId);
 
     if (!task) {

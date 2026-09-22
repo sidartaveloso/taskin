@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fakeTaskinController } from './Taskin.mock';
+import type { TaskinMood } from './Taskin.types';
 
 describe('TaskinV1', () => {
   it('should export TaskinV1 component', async () => {
@@ -29,9 +30,9 @@ describe('TaskinV1', () => {
   });
 
   it('should support all moods', () => {
-    const moods = ['neutral', 'smirk', 'happy', 'annoyed', 'sarcastic', 'crying'];
+    const moods: TaskinMood[] = ['neutral', 'smirk', 'happy', 'annoyed', 'sarcastic', 'crying'];
     moods.forEach((mood) => {
-      const result = fakeTaskinController.setMood(mood as any);
+      const result = fakeTaskinController.setMood(mood);
       expect(result).toBe(fakeTaskinController);
     });
   });

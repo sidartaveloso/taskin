@@ -1,6 +1,6 @@
 export type {
   TentacleAnimationKeyframes,
   TentaclePathGenerator,
-} from './taskin-tentacle';
-export { default as TaskinTentacle } from './taskin-tentacle';
-export * from './taskin-tentacle.types';
+} from './TaskinTentacle';
+export { default as TaskinTentacle } from './TaskinTentacle';
+export * from './TaskinTentacle.types';

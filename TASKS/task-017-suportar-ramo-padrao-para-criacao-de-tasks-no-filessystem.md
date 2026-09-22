@@ -1,8 +1,9 @@
 # Task 017 — suportar ramo padrão para criação de tasks no filesSystem
 
-Status: done
-Type: feat
-Assignee: Sidarta Veloso
+- Status: done
+- Type: feat
+- Assignee: Sidarta Veloso
+- Priority: 8451
 
 ## Description
 

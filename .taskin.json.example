@@ -2,7 +2,8 @@
   "version": "1.0.0",
   "automation": {
     "level": "assisted",
-    "autoSync": true
+    "autoSync": true,
+    "ciSkipTag": "[skip ci]"
   },
   "provider": {
     "type": "fs",

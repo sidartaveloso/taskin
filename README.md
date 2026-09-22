@@ -24,7 +24,7 @@
 - 📊 **Smart Filtering**: Semantic task filtering (open/closed) across CLI and dashboard
 - 📈 **Team Metrics**: Comprehensive stats with configurable time periods (day/week/month/year)
 - ⚙️ **Configurable Automation**: Three automation levels (manual/assisted/autopilot) for git commits
-- 💬 **Smart Suggestions**: Contextual commit message suggestions with [skip-ci] support
+- 💬 **Smart Suggestions**: Contextual commit message suggestions, with a configurable CI-skip tag (`[skip ci]` by default)
 
 ## 🔒 Security Features
 
@@ -108,6 +108,10 @@ taskin list --open              # Only open tasks
 taskin list --closed            # Only closed tasks
 taskin list --status pending    # Specific status
 
+# Machine-readable output, for another tool to consume
+taskin list --json              # JSON array, no header and no framing
+taskin list --json --open       # The same filters apply
+
 # View statistics
 taskin stats --user             # User stats
 taskin stats --team --period year  # Team yearly stats
@@ -140,23 +144,35 @@ taskin dashboard --filter-closed  # Show only closed tasks
 ```bash
 # Start MCP server
 taskin mcp-server
-
-# Configure in Claude Desktop (claude_desktop_config.json):
-{
-  "mcpServers": {
-    "taskin": {
-      "command": "taskin",
-      "args": ["mcp-server"]
-    }
-  }
-}
 ```
 
-## 🔀 Git Flow: Automatic Sync (Roadmap)
+The server exposes three tools — `list_tasks`, `start_task` and `finish_task` —
+and the `taskin://tasks` resource. See
+[docs/MCP_CLAUDE_SETUP.md](./docs/MCP_CLAUDE_SETUP.md).
 
-> 🚧 **Planned feature** — described here as the target workflow for [TASKS/task-019](./TASKS/task-019-fazer-push-automatico-e-pull-automatico.md). Not implemented yet; `automation.autoSync` and `automation.originBranch` don't exist in the codebase until that task ships.
+To register it in your own project:
 
-Example configuration once implemented, using `tasks` as the shared `defaultBranch` and `develop` as the `originBranch`:
+```bash
+taskin mcp-install
+```
+
+It writes the `.mcp.json` at the **project root** (not wherever you ran it
+from), detects your package manager, merges with any servers already
+configured, and then starts the server to check the entry actually works —
+because a command can resolve to a *different* taskin, and an older one will
+answer happily with the wrong set of tools.
+
+Use `--force` to replace an existing `taskin` entry that differs, and
+`--no-probe` to skip the check.
+
+`taskin init` does not write that file: registering an MCP server is a
+deliberate step, not a side effect of setting up a project.
+
+## 🔀 Git Flow: Automatic Sync
+
+Implemented in [TASKS/task-019](./TASKS/task-019-fazer-push-automatico-e-pull-automatico.md): `automation.autoSync` and `automation.originBranch` control remote sync of task bookkeeping commits. `autoSync` defaults to `true` but is only active when `automation.defaultBranch` is configured.
+
+Example configuration, using `tasks` as the shared `defaultBranch` and `develop` as the `originBranch`:
 
 ```json
 {
@@ -171,10 +187,10 @@ Example configuration once implemented, using `tasks` as the shared `defaultBran
 
 With this config:
 
-1. `tasks` is a long-lived shared branch (branched once from `develop`) where every `taskin new` and `taskin update --status` commit lands — regardless of which local branch the user is on.
+1. `tasks` is a long-lived shared branch (branched once from `develop`) where every `taskin new` and status-change commit lands — regardless of which local branch the user is on.
 2. **`taskin new`**: before computing the next task number, `autoSync` does `fetch` + `rebase` on `tasks`, then commits the new task file and pushes. If the push is rejected (another user pushed first), it retries the whole cycle (fetch → rebase → renumber → commit → push) up to 3 times.
-3. **`taskin update <id> --status ...`**: same `autoSync` cycle — status changes are committed and pushed to `tasks` automatically.
-4. **When a task's status becomes `done`**: taskin takes the final content of *that task's file only* from `tasks` and creates a single squash commit directly on `develop` (`originBranch`) — without dragging in other tasks still open on `tasks`.
+3. **Status changes (`taskin start`/`taskin pause`/`taskin finish`)**: committed to `tasks` automatically (`commitTaskStatusChangeOnBranch`).
+4. **When a task's status becomes `done`** (`taskin finish`): taskin takes the final content of *that task's file only* from `tasks` and creates a single squash commit directly on `develop` (`originBranch`) — without dragging in other tasks still open on `tasks`.
 5. `tasks` keeps accumulating many small bookkeeping commits; `develop` only ever receives one clean commit per finished task.
 
 ```mermaid

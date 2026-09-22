@@ -3,8 +3,7 @@
  * Main class that implements task management with dependency injection
  */
 
-import type { FileSystemTaskProvider } from '@opentask/taskin-file-system-provider';
-import type { TaskManager } from '@opentask/taskin-task-manager';
+import type { ITaskManager, ITaskProvider } from '@opentask/taskin-task-manager';
 import type {
   FinishTaskOptions,
   ITaskin,
@@ -17,21 +16,21 @@ import type {
   TaskId,
 } from '@opentask/taskin-types';
 import type { FileSystemTaskLinter } from './lib/file-system-task-linter/file-system-task-linter.js';
+import type { OpaqueTask } from './lib/provider-factory/index.js';
 
 export class Taskin implements ITaskin {
   constructor(
-    private readonly taskProvider: FileSystemTaskProvider,
-    private readonly taskManager: TaskManager,
+    private readonly taskProvider: ITaskProvider<OpaqueTask>,
+    private readonly taskManager: ITaskManager<OpaqueTask>,
     private readonly linter: FileSystemTaskLinter,
   ) {}
 
   async list(options?: ListTasksOptions): Promise<Task[]> {
     const tasks = await this.taskProvider.getAllTasks();
 
-    // Convert TaskFile to Task and apply filters
+    // Project the provider's shape down to Task and apply filters
     return tasks
       .map((taskFile) => {
-        // Map TaskFile to Task
         const task: Task = {
           createdAt: taskFile.createdAt,
           id: taskFile.id as TaskId,

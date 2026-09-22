@@ -28,7 +28,7 @@ describe('withRetry', () => {
 
   it('should not retry on 4xx client errors', async () => {
     const clientError = new Error('Bad Request');
-    (clientError as any).status = 400;
+    (clientError as Error & { status?: number }).status = 400;
     const fn = vi.fn().mockRejectedValue(clientError);
     await expect(withRetry(fn, { maxRetries: 3, baseDelay: 10 })).rejects.toThrow('Bad Request');
     expect(fn).toHaveBeenCalledTimes(1);
@@ -36,7 +36,7 @@ describe('withRetry', () => {
 
   it('should retry on 5xx server errors', async () => {
     const serverError = new Error('Internal Server Error');
-    (serverError as any).status = 500;
+    (serverError as Error & { status?: number }).status = 500;
     const fn = vi.fn().mockRejectedValueOnce(serverError).mockResolvedValue('ok');
     const result = await withRetry(fn, { maxRetries: 2, baseDelay: 10 });
     expect(result).toBe('ok');

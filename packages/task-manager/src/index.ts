@@ -1,5 +1,10 @@
 // Re-export commonly used types from @opentask/taskin-types for convenience
 export type { Task, TaskStatus, TaskType, User } from '@opentask/taskin-types';
+export * from './filter-tasks/index';
+export * from './group-registry.types';
 export * from './metrics.types';
+export * from './numerar-prioridade/index';
+export * from './ordenar-tarefas/index';
 export * from './task-manager';
 export * from './task-manager.types';
+export * from './user-registry.types';

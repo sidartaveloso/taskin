@@ -14,7 +14,7 @@
         🖐️
       </div>
       <p class="hint">
-        Mantenha a mão aberta para configurar atalhos por gestos
+        Hold your hand open to set up gesture shortcuts
       </p>
     </div>
 
@@ -23,7 +23,7 @@
         🖐️
       </div>
       <p class="title">
-        Modo de configuração
+        Setup mode
       </p>
       <div class="progress-track">
         <div
@@ -34,12 +34,12 @@
         />
       </div>
       <p class="hint">
-        Mantenha a mão aberta para iniciar ({{
+        Hold your hand open to start ({{
           Math.max(0, Math.ceil((5000 - readyProgress) / 1000))
         }}s)
       </p>
       <p class="hint-cancel">
-        Solte a mão para cancelar
+        Lower your hand to cancel
       </p>
     </div>
 
@@ -48,10 +48,10 @@
         ✋
       </div>
       <p class="title">
-        Passo 1: Escolha o gesto
+        Step 1: Pick the gesture
       </p>
       <p class="hint">
-        Faça o gesto que será o atalho e mantenha por 1 segundo
+        Make the gesture you want as the shortcut and hold it for 1 second
       </p>
       <div class="gesture-preview" v-if="recordingCandidate">
         <span class="preview-emoji">{{ gestureEmoji[recordingCandidate] }}</span>
@@ -64,7 +64,7 @@
         ⚙️
       </div>
       <p class="title">
-        Passo 2: Escolha a ação
+        Step 2: Pick the action
       </p>
       <div class="action-list">
         <div
@@ -79,7 +79,7 @@
         </div>
       </div>
       <div class="wizard-legend">
-        <span>👍 próx.</span>
+        <span>👍 next</span>
         <span>👎 ant.</span>
         <span>✊ selec.</span>
         <span>🖐️ canc.</span>
@@ -91,7 +91,7 @@
         ✅
       </div>
       <p class="title">
-        Passo 3: Confirmar
+        Step 3: Confirm
       </p>
       <div class="confirm-pair">
         <div class="confirm-item">
@@ -106,8 +106,8 @@
         </div>
       </div>
       <div class="wizard-legend">
-        <span>✊ confirmar</span>
-        <span>🖐️ cancelar</span>
+        <span>✊ confirm</span>
+        <span>🖐️ cancel</span>
       </div>
     </div>
 
@@ -116,7 +116,7 @@
         ✨
       </div>
       <p class="title">
-        Atalho salvo!
+        Shortcut saved!
       </p>
       <div class="confirm-pair">
         <div class="confirm-item">

@@ -1,3 +1,4 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import type { Task } from '../../types';
 import TaskGrid from './TaskGrid.vue';
@@ -5,7 +6,7 @@ import TaskGrid from './TaskGrid.vue';
 const meta: Meta<typeof TaskGrid> = {
   title: 'Templates/TaskGrid',
   component: TaskGrid,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     columns: {
       control: 'select',
@@ -55,12 +56,12 @@ type Story = StoryObj<typeof TaskGrid>;
 
 // Mock tasks data
 const createMockTask = (id: number, overrides: Partial<Task> = {}): Task => ({
-  id: String(id),
+  id: parseTaskId(String(id)),
   number: 40 + id,
   title: `Task ${id}: Implement feature`,
   status: 'in-progress',
   assignee: {
-    id: String(id),
+    id: parseTaskId(String(id)),
     name: `Developer ${id}`,
     email: `dev${id}@example.com`,
     avatar: `https://i.pravatar.cc/150?img=${id}`,
@@ -84,12 +85,12 @@ const createMockTask = (id: number, overrides: Partial<Task> = {}): Task => ({
       {
         date: new Date('2025-11-10'),
         hours: 6,
-        description: 'Implementação inicial',
+        description: 'Initial implementation',
       },
       {
         date: new Date('2025-11-11'),
         hours: 7,
-        description: 'Desenvolvimento contínuo',
+        description: 'Ongoing development',
       },
       { date: new Date('2025-11-12'), hours: 5, description: 'Refinamentos' },
     ],
@@ -244,7 +245,7 @@ export const WithFooter: Story = {
       <TaskGrid v-bind="args" :tasks="tasks">
         <template #footer>
           <div style="text-align: center; color: #666;">
-            <p>Atualizado em tempo real • Última atualização: {{ new Date().toLocaleTimeString('pt-BR') }}</p>
+            <p>Updated in real time • Last update: {{ new Date().toLocaleTimeString('en-US') }}</p>
           </div>
         </template>
       </TaskGrid>

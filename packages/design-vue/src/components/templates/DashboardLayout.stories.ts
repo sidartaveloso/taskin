@@ -4,7 +4,7 @@ import DashboardLayout from './DashboardLayout.vue';
 const meta: Meta<typeof DashboardLayout> = {
   title: 'Templates/DashboardLayout',
   component: DashboardLayout,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
   argTypes: {
     title: {
       control: 'text',
@@ -35,7 +35,7 @@ const meta: Meta<typeof DashboardLayout> = {
   args: {
     title: 'Taskin Dashboard',
     connectionStatus: 'connected',
-    statusText: 'Conectado',
+    statusText: 'Connected',
   },
 };
 
@@ -62,8 +62,8 @@ export const Default: Story = {
 export const WithError: Story = {
   args: {
     connectionStatus: 'error',
-    statusText: 'Erro de conexão',
-    errorMessage: 'Não foi possível conectar ao servidor WebSocket',
+    statusText: 'Connection error',
+    errorMessage: 'Could not connect to the WebSocket server',
     showRetry: true,
   },
   render: (args) => ({
@@ -84,7 +84,7 @@ export const WithError: Story = {
 export const Connecting: Story = {
   args: {
     connectionStatus: 'connecting',
-    statusText: 'Conectando...',
+    statusText: 'Connecting...',
   },
   render: (args) => ({
     components: { DashboardLayout },

@@ -19,3 +19,9 @@ export { default as GestureSystem } from './components/organisms/gesture-system'
 
 // Composables
 export * from './composables';
+
+// Utils
+export * from './utils/arm-angle';
+export * from './utils/camera';
+export * from './utils/shhh-voice';
+export { createShhhVoice, criarVozDoShhhDoNavegador, planejarShhh } from './utils/shhh-voice';

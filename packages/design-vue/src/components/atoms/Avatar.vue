@@ -1,12 +1,12 @@
 <template>
   <div :class="['avatar', `avatar--${size}`]" :title="name">
-    <img class="avatar__image" v-if="src" :src="src" :alt="name" />
+    <img class="avatar__image" v-if="src && !failed" :src="src" :alt="name" @error="failed = true" />
     <span class="avatar__initials" v-else>{{ initials }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { AvatarProps } from './Avatar.types';
 
 const props = withDefaults(defineProps<AvatarProps>(), {
@@ -14,10 +14,24 @@ const props = withDefaults(defineProps<AvatarProps>(), {
   src: undefined,
 });
 
+// A imagem pode existir e ainda assim falhar ao carregar — offline, provedor
+// fora do ar, 404. Sem isso, `<img>` mostraria o icone de imagem quebrada em
+// vez de cair para as iniciais. Ver task-067.
+const failed = ref(false);
+watch(
+  () => props.src,
+  () => {
+    failed.value = false;
+  },
+);
+
 const initials = computed(() => {
   const parts = props.name.trim().split(' ');
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  const first = parts.at(0);
+  const last = parts.at(-1);
+  if (parts.length >= 2 && first && last) {
+    // `charAt` devolve '' em vez de undefined para o nome vazio
+    return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
   }
   return props.name.slice(0, 2).toUpperCase();
 });

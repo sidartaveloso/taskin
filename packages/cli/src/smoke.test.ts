@@ -32,7 +32,14 @@ Assignee: developer
 Test task`;
 
     writeFileSync(join(tasksDir, 'task-001-test.md'), taskContent);
-    writeFileSync(join(TEST_DIR, '.taskin.json'), JSON.stringify({ provider: 'fs' }));
+    // A forma que o `init` grava: `version` obrigatorio e `provider` como
+    // objeto `{ type, config }`. O fixture antigo era `{ provider: 'fs' }` e
+    // vinha de antes do `TaskinConfigSchema` ficar estrito — passava porque o
+    // `dist/` da CLI estava velho, e quebrou no primeiro rebuild limpo.
+    writeFileSync(
+      join(TEST_DIR, '.taskin.json'),
+      JSON.stringify({ version: '1.0.0', provider: { type: 'fs', config: { tasksDir: 'TASKS' } } }),
+    );
 
     // Init git
     execSync('git init', { cwd: TEST_DIR });

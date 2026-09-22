@@ -3,7 +3,7 @@
  * Tests the complete workflow including file persistence
  */
 
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
@@ -13,6 +13,65 @@ const execAsync = promisify(exec);
 
 const TEST_DIR = join(process.cwd(), 'test-temp-e2e');
 const CLI_PATH = join(process.cwd(), 'dist/index.js');
+
+/**
+ * Roda o CLI respondendo a cada prompt quando ele aparece.
+ *
+ * O jeito anterior era um pipe com `sleep` entre as respostas, e ele dependia
+ * de o CLI alcancar cada prompt dentro da janela do `sleep`. Quando o `stdin`
+ * nao e um TTY e os dados ja estao no buffer, o readline entrega o pedaco
+ * inteiro de uma vez: o prompt de confirmacao engolia as tres linhas, e o
+ * seguinte (`Full name:`) abria vazio e morria com
+ * `User force closed the prompt`.
+ *
+ * Na maquina local o CLI chegava ao primeiro prompt antes da segunda linha ser
+ * escrita e passava; no runner do GitHub, frio, nao chegava — falhava toda
+ * vez, e so la. Aumentar os `sleep` nao resolve, so move a aposta.
+ *
+ * Aqui cada resposta so e escrita quando o texto do prompt correspondente
+ * aparece no stdout, e o `stdin` fica aberto ate o processo sair. Sem
+ * temporizacao nenhuma.
+ */
+function runCliWithAnswers(
+  args: readonly string[],
+  answers: ReadonlyArray<{ prompt: RegExp; answer: string }>,
+  options: { cwd: string; env?: NodeJS.ProcessEnv },
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('node', [CLI_PATH, ...args], {
+      cwd: options.cwd,
+      env: options.env ?? process.env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let next = 0;
+
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString();
+      // Um `while`, e nao um `if`: dois prompts podem chegar no mesmo chunk.
+      while (next < answers.length && answers[next]?.prompt.test(stdout)) {
+        child.stdin.write(answers[next]?.answer ?? '');
+        next++;
+      }
+    });
+
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
+
+    child.on('error', reject);
+    child.on('close', (code) => {
+      child.stdin.end();
+      if (code === 0) {
+        resolve({ stdout, stderr });
+        return;
+      }
+      reject(new Error(`CLI exited with ${code}\n--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`));
+    });
+  });
+}
 
 describe.sequential('Taskin CLI E2E Tests', () => {
   beforeEach(async () => {
@@ -72,6 +131,153 @@ describe.sequential('Taskin CLI E2E Tests', () => {
       expect(stdout).toContain('initialized successfully');
       expect(existsSync(join(TEST_DIR, '.taskin.json'))).toBe(true);
     }, 60000);
+
+    it('should default the CI skip tag to the form every platform accepts', async () => {
+      await execAsync(`node ${CLI_PATH} init`, {
+        cwd: TEST_DIR,
+        env: { ...process.env, CI: 'true' },
+      });
+
+      const config = JSON.parse(readFileSync(join(TEST_DIR, '.taskin.json'), 'utf-8'));
+      expect(config.automation.ciSkipTag).toBe('[skip ci]');
+    }, 60000);
+
+    it('should never write the hyphenated tag, which no platform recognizes', async () => {
+      await execAsync(`node ${CLI_PATH} init`, {
+        cwd: TEST_DIR,
+        env: { ...process.env, CI: 'true' },
+      });
+
+      expect(readFileSync(join(TEST_DIR, '.taskin.json'), 'utf-8')).not.toContain('[skip-ci]');
+    }, 60000);
+
+    it('should honour --ci-skip-tag', async () => {
+      await execAsync(`node ${CLI_PATH} init --ci-skip-tag "[ci skip]"`, {
+        cwd: TEST_DIR,
+        env: { ...process.env, CI: 'true' },
+      });
+
+      const config = JSON.parse(readFileSync(join(TEST_DIR, '.taskin.json'), 'utf-8'));
+      expect(config.automation.ciSkipTag).toBe('[ci skip]');
+    }, 60000);
+
+    it('should store an empty tag when --ci-skip-tag is none', async () => {
+      await execAsync(`node ${CLI_PATH} init --ci-skip-tag none`, {
+        cwd: TEST_DIR,
+        env: { ...process.env, CI: 'true' },
+      });
+
+      const config = JSON.parse(readFileSync(join(TEST_DIR, '.taskin.json'), 'utf-8'));
+      expect(config.automation.ciSkipTag).toBe('');
+    }, 60000);
+
+    it('should ask for the CI skip tag when running interactively', async () => {
+      const { stdout } = await runCliWithAnswers(
+        ['init', '-p', 'fs'],
+        [
+          { prompt: /Tag for Taskin commits:/, answer: '\n' },
+          { prompt: /Create the first user now\?/, answer: 'n\n' },
+        ],
+        { cwd: TEST_DIR, env: { ...process.env, CI: 'false' } },
+      );
+
+      expect(stdout).toContain('Tag for Taskin commits:');
+
+      const config = JSON.parse(readFileSync(join(TEST_DIR, '.taskin.json'), 'utf-8'));
+      expect(config.automation.ciSkipTag).toBe('[skip ci]');
+    }, 60000);
+
+    it('should create and persist first user when prompted interactively', async () => {
+      const { stdout } = await runCliWithAnswers(
+        ['init', '-p', 'fs', '--ci-skip-tag', '[skip ci]'],
+        [
+          { prompt: /Create the first user now\?/, answer: 'y\n' },
+          { prompt: /Full name:/, answer: 'Test User\n' },
+          { prompt: /Email:/, answer: 'test@test.com\n' },
+        ],
+        { cwd: TEST_DIR, env: { ...process.env, CI: 'false' } },
+      );
+
+      expect(stdout).toContain('User "Test User" (test@test.com) created successfully');
+
+      const usersPath = join(TEST_DIR, '.taskin', '.taskin-users.json');
+      expect(existsSync(usersPath)).toBe(true);
+
+      const data = JSON.parse(readFileSync(usersPath, 'utf-8'));
+      expect(data.users['test-user']).toEqual({
+        id: 'test-user',
+        name: 'Test User',
+        email: 'test@test.com',
+      });
+    }, 60000);
+  });
+
+  describe.sequential('the CI skip tag in the commands', () => {
+    const setCiSkipTag = (tag: string): void => {
+      const configPath = join(TEST_DIR, '.taskin.json');
+      const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+      config.automation = { ...config.automation, level: 'manual', ciSkipTag: tag };
+      writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    };
+
+    beforeEach(async () => {
+      await execAsync(`node ${CLI_PATH} init`, {
+        cwd: TEST_DIR,
+        env: { ...process.env, CI: 'true' },
+      });
+    }, 60000);
+
+    it('should suggest [skip ci] in the start dry run', async () => {
+      const { stdout } = await execAsync(`node ${CLI_PATH} start 001 --dry-run`, { cwd: TEST_DIR });
+
+      expect(stdout).toContain('[skip ci]');
+      expect(stdout).not.toContain('[skip-ci]');
+    }, 60000);
+
+    it('should suggest the configured tag in the start dry run', async () => {
+      setCiSkipTag('[ci skip]');
+
+      const { stdout } = await execAsync(`node ${CLI_PATH} start 001 --dry-run`, { cwd: TEST_DIR });
+
+      expect(stdout).toContain('[ci skip]');
+    }, 60000);
+
+    it('should suggest no tag at all when the project configured none', async () => {
+      setCiSkipTag('');
+
+      const { stdout } = await execAsync(`node ${CLI_PATH} start 001 --dry-run`, { cwd: TEST_DIR });
+
+      expect(stdout).toContain('atualiza status para in-progress"');
+    }, 60000);
+
+    it('should suggest [skip ci] in the finish dry run', async () => {
+      const { stdout } = await execAsync(`node ${CLI_PATH} finish 001 --dry-run`, { cwd: TEST_DIR });
+
+      expect(stdout).toContain('[skip ci]');
+      expect(stdout).not.toContain('[skip-ci]');
+    }, 60000);
+
+    it('should mark the auto-committed status change with [skip ci]', async () => {
+      await execAsync(`node ${CLI_PATH} start 001`, { cwd: TEST_DIR });
+
+      const { stdout } = await execAsync('git log -1 --pretty=%s', { cwd: TEST_DIR });
+
+      expect(stdout.trim()).toBe('docs(TASKS): task-001 - atualiza status para in-progress [skip ci]');
+    }, 60000);
+
+    it('should mark the auto-committed status change with the configured tag', async () => {
+      setCiSkipTag('[no ci]');
+      const configPath = join(TEST_DIR, '.taskin.json');
+      const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+      config.automation.level = 'assisted';
+      writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+
+      await execAsync(`node ${CLI_PATH} start 001`, { cwd: TEST_DIR });
+
+      const { stdout } = await execAsync('git log -1 --pretty=%s', { cwd: TEST_DIR });
+
+      expect(stdout.trim()).toBe('docs(TASKS): task-001 - atualiza status para in-progress [no ci]');
+    }, 60000);
   });
 
   describe.sequential('taskin list', () => {
@@ -115,21 +321,33 @@ describe.sequential('Taskin CLI E2E Tests', () => {
         cwd: TEST_DIR,
       });
 
-      expect(stdout).toContain('valid');
+      /*
+       * Afirma a ausencia de erro, e nao a palavra "valid".
+       *
+       * A assercao antiga era `toContain('valid')`, que passava por acidente:
+       * casava tanto com `All task files are valid!` quanto com a palavra
+       * dentro de qualquer outra frase. O que importa aqui e o comando nao ter
+       * encontrado erro — e `execAsync` ja garante isso, porque o lint sai com
+       * codigo != 0 quando encontra.
+       */
+      expect(stdout).not.toContain('error(s)');
+      expect(stdout).toMatch(/All task files are valid!|No errors/);
     }, 60000);
 
     it('should detect invalid task files', async () => {
       const invalidTaskPath = join(TEST_DIR, 'TASKS', 'task-002-invalid.md');
       writeFileSync(invalidTaskPath, '# Invalid Task\n\nNo metadata here');
 
-      try {
-        await execAsync(`node ${CLI_PATH} lint`, {
-          cwd: TEST_DIR,
-        });
-      } catch (error: unknown) {
-        const err = error as { stderr?: string; stdout?: string };
-        expect(err.stdout || err.stderr).toMatch(/Found \d+ issue/);
-      }
+      // O lint sai com codigo != 0 quando encontra erro. Antes a assercao vivia
+      // dentro de um `catch`, entao o teste passava sem verificar nada se o
+      // lint saisse com 0 — o oposto do que o nome dele promete.
+      type LintOutcome = { stdout?: string; stderr?: string; code?: number };
+      const result: LintOutcome = await execAsync(`node ${CLI_PATH} lint`, { cwd: TEST_DIR }).catch(
+        (error: unknown) => error as LintOutcome,
+      );
+
+      expect(result.code ?? 0).not.toBe(0);
+      expect(result.stdout || result.stderr).toMatch(/Found \d+ error/);
     }, 60000);
   });
 
@@ -433,19 +651,28 @@ Another task`;
       try {
         await execAsync(`node ${CLI_PATH} list`, { cwd: TEST_DIR });
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.stderr || error.stdout).toContain('not initialized');
+      } catch (error) {
+        const err = error as { stderr?: string; stdout?: string };
+        expect(err.stderr || err.stdout).toContain('not initialized');
       }
     }, 60000);
 
     it('should show helpful error when TASKS directory is missing', async () => {
-      writeFileSync(join(TEST_DIR, '.taskin.json'), '{"provider": "fs"}');
+      // Config valida de proposito: o que este teste exercita e a ausencia do
+      // diretorio TASKS. Com a forma antiga (`{"provider": "fs"}`) a CLI
+      // parava antes, na validacao do config, e a mensagem nem mencionava
+      // TASKS — o teste passava por outro motivo.
+      writeFileSync(
+        join(TEST_DIR, '.taskin.json'),
+        JSON.stringify({ version: '1.0.0', provider: { type: 'fs', config: { tasksDir: 'TASKS' } } }),
+      );
 
       try {
         await execAsync(`node ${CLI_PATH} list`, { cwd: TEST_DIR });
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.stderr || error.stdout).toContain('TASKS');
+      } catch (error) {
+        const err = error as { stderr?: string; stdout?: string };
+        expect(err.stderr || err.stdout).toContain('TASKS');
       }
     }, 60000);
   });

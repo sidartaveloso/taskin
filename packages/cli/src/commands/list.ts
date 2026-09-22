@@ -2,37 +2,41 @@
  * list command - List all tasks in the project
  */
 
-import { FileSystemTaskProvider, UserRegistry } from '@opentask/taskin-file-system-provider';
-import type { ListTasksOptions, TaskStatus, TaskType } from '@opentask/taskin-types';
+import {
+  agruparTarefas,
+  filterCriteriaCliOptions,
+  filterTasks,
+  ordenarTarefas,
+  parseFilterCriteria,
+  summarizeTask,
+} from '@opentask/taskin-task-manager';
+import type { ListTasksOptions, Task, TaskStatus, TaskType } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, printHeader } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
 export const listCommand = defineCommand({
   name: 'list [filter]',
   description: '📊 List all tasks in the project',
   alias: 'ls',
+  /*
+   * As opcoes de filtro saem do schema unico em `filterCriteriaCliOptions`, nao
+   * de uma lista escrita a mao aqui — a mesma definicao alimenta o schema JSON
+   * do MCP. O `--json` fica manual de proposito: e formato de saida, nao
+   * criterio.
+   */
   options: [
     {
-      flags: '-s, --status <status>',
-      description: 'Filter by status (pending, in-progress, done, blocked)',
+      flags: '--sort <mode>',
+      description: 'Order: manual (priority), diff-asc or diff-desc',
+      defaultValue: 'manual',
     },
+    ...filterCriteriaCliOptions(),
     {
-      flags: '-t, --type <type>',
-      description: 'Filter by type (feat, fix, refactor, docs, test, chore)',
-    },
-    {
-      flags: '-u, --user <user>',
-      description: 'Filter by user',
-    },
-    {
-      flags: '--open',
-      description: 'Show only open tasks (pending, in-progress, blocked)',
-    },
-    {
-      flags: '--closed',
-      description: 'Show only closed tasks (done, canceled)',
+      flags: '--json',
+      description: 'Print the tasks as JSON, for other tools to consume',
     },
   ],
   handler: async (filter: string | undefined, options: ListTasksOptions) => {
@@ -40,69 +44,87 @@ export const listCommand = defineCommand({
   },
 });
 
+/**
+ * Os nomes dos grupos, quando o provider tem o conceito.
+ *
+ * Um provider sem grupos nao expoe o registro, e a saida sai com `name`
+ * indefinido — o id ainda identifica o grupo.
+ */
+async function nomesDeGrupo(provider: unknown): Promise<Record<string, string>> {
+  const registro = (provider as { groupRegistry?: { listGroups: () => Promise<{ id: string; name: string }[]> } })
+    .groupRegistry;
+  if (!registro) return {};
+
+  try {
+    return Object.fromEntries((await registro.listGroups()).map((g) => [g.id, g.name]));
+  } catch {
+    return {};
+  }
+}
+
 async function listTasks(filter: string | undefined, options: ListTasksOptions): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
-  printHeader('Task List', '📊');
+  /*
+   * Com `--json` nada de decoracao vai para o stdout — nem cabecalho, nem
+   * aviso de lista vazia. Quem consome faz `JSON.parse` na saida inteira, e
+   * uma linha a mais quebra isso.
+   */
+  const comoJson = options.json === true;
+
+  if (!comoJson) {
+    printHeader('Task List', '📊');
+  }
 
   // Find TASKS directory
-  const tasksDir = path.join(process.cwd(), 'TASKS');
-
-  // Initialize UserRegistry
-  const monorepoRoot = path.dirname(tasksDir);
-
-  const userRegistry = new UserRegistry({ taskinDir: monorepoRoot });
-  await userRegistry.load();
-
-  // Initialize task provider
-  const taskProvider = new FileSystemTaskProvider(tasksDir, userRegistry);
+  const { provider: taskProvider } = await resolveTaskProvider();
 
   // Get all tasks
   const tasks = await taskProvider.getAllTasks();
 
-  if (tasks.length === 0) {
+  if (tasks.length === 0 && !comoJson) {
     console.log(colors.warning('No tasks found in TASKS/ directory'));
     return;
   }
 
-  // Define status categories
-  const openStatuses: TaskStatus[] = ['pending', 'in-progress', 'paused', 'in-review', 'blocked'];
-  const closedStatuses: TaskStatus[] = ['done', 'canceled'];
+  /*
+   * A selecao vive em `filterTasks`, no pacote agnostico, e nao aqui.
+   *
+   * O criterio sai do `parse` do schema unico: nada de mapeamento a mao. O
+   * argumento posicional `filter` e o criterio `text`; o `--json` e as demais
+   * chaves que nao sao criterio o `parse` descarta.
+   */
+  const criteria = parseFilterCriteria({ ...options, ...(filter && { text: filter }) });
 
-  // Apply filters
-  let filteredTasks = tasks;
+  const filteredTasks = ordenarTarefas(filterTasks(tasks, criteria), options.sort);
 
-  if (options.status) {
-    filteredTasks = filteredTasks.filter((t) => t.status === options.status);
-  } else if (options.open) {
-    filteredTasks = filteredTasks.filter((t) => t.status && openStatuses.includes(t.status));
-  } else if (options.closed) {
-    filteredTasks = filteredTasks.filter((t) => t.status && closedStatuses.includes(t.status));
-  }
+  if (comoJson) {
+    /*
+     * A saida de maquina leva os grupos, e nao tarefas planas.
+     *
+     * `--json` nao e a interface do agente: e a interface de maquina do produto,
+     * e serve script, painel de terceiro e passo de CI. Emitir plano empurraria
+     * a regra de agrupamento para cada consumidor reimplementar. Quem quiser
+     * plano achata em uma linha; quem recebe plano nao reagrupa sem copiar a
+     * regra.
+     *
+     * Vai a estrutura semantica — grupo, id, membros, e quantos o filtro
+     * escondeu — e nao a decoracao de apresentacao.
+     */
+    const totais = tasks.reduce<Record<string, number>>((acc, t) => {
+      if (t.groupId !== undefined) acc[String(t.groupId)] = (acc[String(t.groupId)] ?? 0) + 1;
+      return acc;
+    }, {});
 
-  if (options.type) {
-    filteredTasks = filteredTasks.filter((t) => t.type === options.type);
-  }
-
-  if (options.assignee) {
-    filteredTasks = filteredTasks.filter(
-      (t) =>
-        t.assignee?.name.toLowerCase().includes(options.assignee!.toLowerCase()) ||
-        t.assignee?.id.toLowerCase().includes(options.assignee!.toLowerCase()),
+    const nos = agruparTarefas(filteredTasks, await nomesDeGrupo(taskProvider), totais).map((no) =>
+      no.kind === 'task'
+        ? summarizeTask(no.task)
+        : { group: { id: no.groupId, name: no.groupName, hidden: no.hidden }, tasks: no.tasks.map(summarizeTask) },
     );
-  }
 
-  if (filter) {
-    const lowerFilter = filter.toLowerCase();
-    filteredTasks = filteredTasks.filter(
-      (t) =>
-        t.id.includes(lowerFilter) ||
-        t.title.toLowerCase().includes(lowerFilter) ||
-        t.status.toLowerCase().includes(lowerFilter) ||
-        t.assignee?.name.toLowerCase().includes(lowerFilter) ||
-        t.assignee?.id.toLowerCase().includes(lowerFilter),
-    );
+    console.log(JSON.stringify(nos, null, 2));
+    return;
   }
 
   if (filteredTasks.length === 0) {

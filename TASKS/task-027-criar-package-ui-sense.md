@@ -1,8 +1,9 @@
 # Task 027 — criar package ui-sense
 
-Status: done
-Type: refactor
-Assignee: sidartaveloso
+- Status: done
+- Type: refactor
+- Assignee: sidartaveloso
+- Priority: 9051
 
 ## Description
 

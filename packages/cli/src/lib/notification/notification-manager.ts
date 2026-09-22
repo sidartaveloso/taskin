@@ -2,6 +2,7 @@ import type {
   INotificationProvider,
   NotificationEvent,
   NotificationMessage,
+  NotificationProviderName,
   NotificationResult,
 } from '@opentask/taskin-types';
 
@@ -10,7 +11,12 @@ export interface NotificationOptions {
 }
 
 export interface NotificationManagerConfig {
-  eventFilter?: Record<string, NotificationEvent[]>;
+  /**
+   * Which events each channel wants. A channel with no entry gets everything —
+   * that is how the console provider stays a firehose. `Partial` is the point:
+   * the lookup below really can miss, and the type has to say so.
+   */
+  eventFilter?: Partial<Record<NotificationProviderName, NotificationEvent[]>>;
 }
 
 export class NotificationManager {

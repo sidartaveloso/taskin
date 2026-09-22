@@ -2,13 +2,14 @@
  * stats command - Show user and team metrics/statistics
  */
 
-import { FileSystemMetricsAdapter, UserRegistry } from '@opentask/taskin-file-system-provider';
+import { FileSystemMetricsAdapter } from '@opentask/taskin-file-system-provider';
 import { GitAnalyzer } from '@opentask/taskin-git-utils';
 import type { StatsQuery, TaskStats, TeamStats, UserStats } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import path from 'path';
 import { printHeader } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
 
 interface StatsOptions {
@@ -54,11 +55,8 @@ async function showStats(options: StatsOptions): Promise<void> {
 
   const tasksDir = path.join(process.cwd(), 'TASKS');
 
-  // Initialize services
-  const userRegistry = new UserRegistry({
-    taskinDir: path.join(process.cwd(), '.taskin'),
-  });
-  await userRegistry.load();
+  // O registry vem da factory; o adapter de metricas ainda e fs-especifico
+  const { userRegistry } = await resolveTaskProvider();
 
   const gitAnalyzer = new GitAnalyzer(process.cwd());
   const metricsAdapter = new FileSystemMetricsAdapter(tasksDir, userRegistry, gitAnalyzer);

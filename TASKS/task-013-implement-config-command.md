@@ -1,8 +1,9 @@
 # Task 013 — Implement config command
 
-Status: done  
-Type: feat  
-Assignee: Sidarta Veloso
+- Status: done
+- Type: feat
+- Assignee: Sidarta Veloso
+- Priority: 8151
 
 ## Description
 

@@ -105,7 +105,7 @@ describe('defineCommand', () => {
     const program = new Command();
     const error = new Error('Test error');
     const handler = vi.fn().mockRejectedValue(error);
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as unknown as typeof process.exit);
 
     const commandReg = defineCommand({
       name: 'test',
@@ -127,7 +127,7 @@ describe('defineCommand', () => {
     const handler = vi.fn().mockImplementation(() => {
       throw error;
     });
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as unknown as typeof process.exit);
 
     const commandReg = defineCommand({
       name: 'test',

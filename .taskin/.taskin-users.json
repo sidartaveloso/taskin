@@ -1,9 +1,22 @@
 {
   "users": {
-    "sidarta-veloso": {
-      "id": "sidarta-veloso",
+    "sidartaveloso": {
+      "email": "sidartaveloso@gmail.com",
+      "id": "sidartaveloso",
       "name": "Sidarta Veloso",
-      "email": "sidartaveloso@gmail.com"
+      "website": "https://sidartaveloso.com"
+    },
+    "jorisveloso": {
+      "email": "jorisveloso@gmail.com",
+      "id": "jorisveloso",
+      "name": "Joris Veloso"
+    },
+    "fernando-gatti": {
+      "email": "contato@fernandogatti.com",
+      "id": "fernando-gatti",
+      "name": "Fernando Gatti",
+      "github": "https://github.com/gattifernando",
+      "linkedin": "https://www.linkedin.com/in/gattifernando/"
     }
   }
 }

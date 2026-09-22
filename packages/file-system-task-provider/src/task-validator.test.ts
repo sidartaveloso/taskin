@@ -14,6 +14,53 @@ describe('task-validator', () => {
   });
 
   describe('validateTaskFile', () => {
+    /*
+     * O discriminador e o texto exato do cabecalho, nao o nivel: `### Status`
+     * tambem e acusado, porque e o que o `fixTaskFile` migra — o padrao de
+     * migracao casa `##` dentro de `###`. O que sai da regra e cabecalho com
+     * palavra a mais, que e secao de corpo.
+     */
+    it.each(['## Status atual', '## Status do deploy', '### Status do ambiente'])(
+      'nao confunde %j no corpo com metadado em secao',
+      async (cabecalho) => {
+        const content = `# Task 001 — Alvo
+
+- Status: done
+- Type: feat
+- Assignee: ana
+
+## Description
+x
+
+${cabecalho}
+
+O site esta em producao.
+`;
+        (fsp.readFile as Mock).mockResolvedValue(content);
+
+        const issues = await validateTaskFile('/tasks/task-001-alvo.md');
+
+        expect(issues.filter((i) => i.message.includes('Section-based metadata'))).toEqual([]);
+      },
+    );
+
+    it.each(['## Status', '### Status'])('continua acusando %j, que e metadado em secao', async (cabecalho) => {
+      const content = `# Task 001 — Alvo
+
+${cabecalho}
+
+done
+
+## Description
+x
+`;
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      const issues = await validateTaskFile('/tasks/task-001-alvo.md');
+
+      expect(issues.some((i) => i.message.includes('Section-based metadata'))).toBe(true);
+    });
+
     it('should accept valid inline format with valid status', async () => {
       const content = `# Task 001 — Valid Task
 Status: todo
@@ -152,11 +199,11 @@ Test description`;
       expect(writtenContent).not.toMatch(/## Assignee\n/);
     });
 
-    it('should return false if no section metadata found and inline has trailing spaces', async () => {
+    it('drops the dangling break from the last line of a hard-break block', async () => {
       const content = `# Task 001 — Already Fixed
-Status: done  
-Type: feat  
-Assignee: John Doe  
+Status: done\\
+Type: feat\\
+Assignee: John Doe\\
 
 ## Description
 Already in inline format.`;
@@ -165,39 +212,67 @@ Already in inline format.`;
 
       const result = await fixTaskFile('/tasks/task-001.md');
 
-      expect(result).toBe(false);
+      /*
+       * A barra na ultima linha nao e quebra forte: nao ha linha seguinte para
+       * quebrar, entao o CommonMark a renderiza literal. Este era o defeito.
+       */
+      expect(result).toBe(true);
+      const written = (fsp.writeFile as Mock).mock.calls[0]?.[1] as string;
+      expect(written).toContain('Status: done\\\n');
+      expect(written).toContain('Type: feat\\\n');
+      expect(written).toMatch(/^Assignee: John Doe$/m);
+    });
+
+    it('returns false when the block is already well formed', async () => {
+      const content = `# Task 001 — Already Fixed
+Status: done\\
+Type: feat\\
+Assignee: John Doe
+
+## Description
+Already in inline format.`;
+
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      expect(await fixTaskFile('/tasks/task-001.md')).toBe(false);
       expect(fsp.writeFile).not.toHaveBeenCalled();
     });
 
-    it('should add trailing spaces to inline metadata if missing', async () => {
-      const content = `# Task 001 — Needs Spaces
+    it('leaves a plain block plain instead of marking it', async () => {
+      const content = `# Task 001 — Sem marcacao
 Status: done
 Type: feat
 Assignee: John Doe
 
 ## Description
-Missing trailing spaces.`;
+Nenhuma marcacao, de proposito.`;
 
       (fsp.readFile as Mock).mockResolvedValue(content);
 
-      const result = await fixTaskFile('/tasks/task-001.md');
+      /*
+       * O contrario do que esta funcao fazia: ela exigia a quebra forte nas
+       * tres linhas e a recolocava. Agora o estilo do arquivo manda, e `plain`
+       * e um dos tres estilos legitimos.
+       */
+      expect(await fixTaskFile('/tasks/task-001.md')).toBe(false);
+      expect(fsp.writeFile).not.toHaveBeenCalled();
+    });
 
-      expect(result).toBe(true);
-      expect(fsp.writeFile).toHaveBeenCalledWith(
-        '/tasks/task-001.md',
-        expect.stringContaining('Status: done  '),
-        'utf-8',
-      );
-      expect(fsp.writeFile).toHaveBeenCalledWith(
-        '/tasks/task-001.md',
-        expect.stringContaining('Type: feat  '),
-        'utf-8',
-      );
-      expect(fsp.writeFile).toHaveBeenCalledWith(
-        '/tasks/task-001.md',
-        expect.stringContaining('Assignee: John Doe  '),
-        'utf-8',
-      );
+    it('converts the block when asked to', async () => {
+      const content = `# Task 001 — Converter
+Status: done\\
+Type: feat\\
+Assignee: John Doe\\
+
+## Description
+x`;
+
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      expect(await fixTaskFile('/tasks/task-001.md', { convertTo: 'list' })).toBe(true);
+      const written = (fsp.writeFile as Mock).mock.calls[0]?.[1] as string;
+      expect(written).toContain('- Status: done\n- Type: feat\n- Assignee: John Doe');
+      expect(written).not.toContain('\\');
     });
 
     it('should handle partial section metadata', async () => {
@@ -375,6 +450,43 @@ Tarefa sem metadados`;
 
       // Should suggest Portuguese field name since content is in Portuguese
       expect(statusIssue?.suggestion).toContain('Status:');
+    });
+  });
+
+  describe('estilo do bloco de metadados', () => {
+    /*
+     * Dois espacos no fim eram invisiveis, o git os acusa como
+     * `trailing whitespace` e o .editorconfig precisou de uma excecao para
+     * *.md por causa deles. Nenhum dos tres estilos depende deles.
+     */
+    it('drops the legacy two-space break, keeping the block plain', async () => {
+      const content = '# Task 002 — Alvo\n\nStatus: pending  \nType: feat  \nAssignee: ana  \n\n## Description\n\nx\n';
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      await fixTaskFile('/tasks/task-002-alvo.md');
+
+      const written = (fsp.writeFile as Mock).mock.calls[0]?.[1] as string;
+      expect(written).toMatch(/^Status: pending$/m);
+      expect(written).not.toMatch(/[ \t]+$/m);
+    });
+
+    it('keeps a list block a list', async () => {
+      const content = '# Task 003 — Alvo\n\n- Status: pending\n- Type: feat\n- Assignee: ana\n\n## Description\n\nx\n';
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      expect(await fixTaskFile('/tasks/task-003-alvo.md')).toBe(false);
+      expect(fsp.writeFile).not.toHaveBeenCalled();
+    });
+
+    it('writes a migrated file in the default style', async () => {
+      const content =
+        '# Task 004 — Alvo\n\n## Status\npending\n\n## Type\nfeat\n\n## Assignee\nana\n\n## Description\n\nx\n';
+      (fsp.readFile as Mock).mockResolvedValue(content);
+
+      await fixTaskFile('/tasks/task-004-alvo.md');
+
+      const written = (fsp.writeFile as Mock).mock.calls[0]?.[1] as string;
+      expect(written).toContain('- Status: pending\n- Type: feat\n- Assignee: ana');
     });
   });
 });

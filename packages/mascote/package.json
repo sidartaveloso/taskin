@@ -1,0 +1,34 @@
+{
+  "name": "@opentask/taskin-mascote",
+  "version": "0.0.0",
+  "description": "O Taskin em tela cheia: um celular apoiado abaixo do monitor, olhando para quem programa e pedindo silencio quando a sala fica alta.",
+  "motivation": "Pedir silencio custa a concentracao de quem pede: e preciso parar o que se faz, chamar atencao e interromper a sala.",
+  "solve": "Uma aplicacao instalavel que poe o Taskin em tela cheia num celular apoiado abaixo do monitor: ele acompanha o rosto pela camera e pede silencio em voz alta quando a sala fica alta.",
+  "scope": "app",
+  "status": "active",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit --skipLibCheck",
+    "lint": "biome check ."
+  },
+  "dependencies": {
+    "@opentask/taskin-design-vue": "workspace:*",
+    "@opentask/taskin-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^25.0.1",
+    "typescript": "^6.0.0",
+    "vite": "^6.0.7",
+    "vite-plugin-pwa": "^0.21.1",
+    "vitest": "^1.6.1",
+    "vue": "^3.5.13",
+    "vue-tsc": "^2.2.0"
+  }
+}

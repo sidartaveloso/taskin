@@ -2,9 +2,18 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import ProjectBreadcrumb from './ProjectBreadcrumb.vue';
 
 const meta = {
-  title: 'Molecules/ProjectBreadcrumb',
+  title: 'Molecules/Task/ProjectBreadcrumb',
   component: ProjectBreadcrumb,
-  tags: ['autodocs'],
+  tags: ['autodocs', 'design-vue'],
+  /*
+   * Prop obrigatoria fornecida no meta: as stories que so definem um `render`
+   * proprio herdam daqui em vez de repetir a fixture.
+   */
+  args: {
+    project: {
+      segments: ['Projects', 'Dashboard'],
+    },
+  },
   argTypes: {
     maxSegments: {
       control: { type: 'number', min: 1, max: 10 },
@@ -53,7 +62,6 @@ export const CustomSeparator: Story = {
 };
 
 export const Interactive: Story = {
-  args: {},
   render: () => ({
     components: { ProjectBreadcrumb },
     template: `

@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-file-system-provider",
-  "version": "3.0.2",
+  "version": "3.3.2",
   "description": "File system task provider for Taskin",
   "type": "module",
   "motivation": "To provide a file-system-based implementation for task storage.",
@@ -50,7 +50,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node ../../scripts/fix-esm-extensions.mjs dist",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",
     "format": "biome check --write .",

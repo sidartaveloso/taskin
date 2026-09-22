@@ -2,6 +2,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 import type { LintResult, ValidationIssue } from '@opentask/taskin-task-manager';
 import { TASK_STATUSES } from '@opentask/taskin-types';
 import { detectLocale, getI18n } from './i18n.js';
+import {
+  convertMetadataStyle,
+  DEFAULT_METADATA_STYLE_ID,
+  getMetadataStyle,
+  type MetadataStyleId,
+  readMetadataField,
+  resolveMetadataStyle,
+} from './metadata-style/index.js';
 
 /**
  * Status values accepted in a task file.
@@ -16,9 +24,31 @@ const ACCEPTED_STATUSES: readonly string[] = [...TASK_STATUSES, 'todo'];
 const ACCEPTED_STATUSES_LABEL = ACCEPTED_STATUSES.join(', ');
 
 /**
- * Fixes section-based metadata by converting to inline format
+ * How `fixTaskFile` should mark the metadata block it writes.
+ *
+ * @public
  */
-export async function fixTaskFile(filePath: string): Promise<boolean> {
+export interface FixTaskFileOptions {
+  /** Style for a file that has no block to detect one from. */
+  readonly metadataStyle?: MetadataStyleId;
+  /**
+   * When set, the block is rewritten in this style whatever the file used.
+   * Unset, the file keeps its own style and is only normalized within it.
+   */
+  readonly convertTo?: MetadataStyleId;
+}
+
+/**
+ * Migrates section-based metadata to the inline block, then normalizes the
+ * block's marking.
+ *
+ * Normalizing used to mean "make sure every line ends with a backslash", which
+ * put the break back on the last line — the very thing that renders as a stray
+ * `\`. It now means "re-emit the block in one style", and which style is
+ * decided by the file itself unless {@link FixTaskFileOptions.convertTo} says
+ * otherwise.
+ */
+export async function fixTaskFile(filePath: string, options: FixTaskFileOptions = {}): Promise<boolean> {
   try {
     const content = await readFile(filePath, 'utf-8');
 
@@ -31,105 +61,53 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     const typePattern = new RegExp(`##\\s*(?:Type|${i18n.type})\\s*\\n\\s*([^\\n\\r]+)`, 'i');
     const assigneePattern = new RegExp(`##\\s*(?:Assignee|${i18n.assignee})\\s*\\n\\s*([^\\n\\r]+)`, 'i');
 
-    // Check if file has section-based metadata
-    const hasSectionStatus = statusPattern.test(content);
-    const hasSectionType = typePattern.test(content);
-    const hasSectionAssignee = assigneePattern.test(content);
-
-    // Check if inline metadata is missing trailing spaces (for markdown line breaks)
-    const inlineStatusPattern = /^(Status|Tipo):\s*/i;
-    const inlineTypePattern = /^(Type|Tipo):\s*/i;
-    const inlineAssigneePattern = /^(Assignee|Responsável):\s*/i;
-
-    const lines = content.split(/\r?\n/);
-    const inlineStatusLine = lines.find((l) => inlineStatusPattern.test(l));
-    const inlineTypeLine = lines.find((l) => inlineTypePattern.test(l));
-    const inlineAssigneeLine = lines.find((l) => inlineAssigneePattern.test(l));
-
-    const hasInlineStatus = !!inlineStatusLine;
-    const hasInlineType = !!inlineTypeLine;
-    const hasInlineAssignee = !!inlineAssigneeLine;
-
-    const endsWithTwoSpaces = (line?: string) => !!line && /\s{2}$/.test(line);
-
-    const needsSpaceFix =
-      (hasInlineStatus && !endsWithTwoSpaces(inlineStatusLine)) ||
-      (hasInlineType && !endsWithTwoSpaces(inlineTypeLine)) ||
-      (hasInlineAssignee && !endsWithTwoSpaces(inlineAssigneeLine));
-
-    // temporary debugging removed
-
-    if (!hasSectionStatus && !hasSectionType && !hasSectionAssignee && !needsSpaceFix) {
-      return false; // Nothing to fix
-    }
+    const statusMatch = content.match(statusPattern);
+    const typeMatch = content.match(typePattern);
+    const assigneeMatch = content.match(assigneePattern);
+    const hasSectionMetadata = !!(statusMatch || typeMatch || assigneeMatch);
 
     let newContent = content;
 
     // Fix section-based metadata if present
-    if (hasSectionStatus || hasSectionType || hasSectionAssignee) {
-      // Extract section-based metadata
-      const statusMatch = content.match(statusPattern);
-      const typeMatch = content.match(typePattern);
-      const assigneeMatch = content.match(assigneePattern);
-
-      // Remove section-based metadata
-      if (statusMatch) {
-        newContent = newContent.replace(statusPattern, '');
+    if (hasSectionMetadata) {
+      for (const pattern of [statusPattern, typePattern, assigneePattern]) {
+        newContent = newContent.replace(pattern, '');
       }
-      if (typeMatch) {
-        newContent = newContent.replace(typePattern, '');
-      }
-      if (assigneeMatch) {
-        newContent = newContent.replace(assigneePattern, '');
-      }
-
-      // Clean up extra blank lines
       newContent = newContent.replace(/\n{3,}/g, '\n\n');
 
-      // Find the title line (first # heading)
-      const titleLineIdx = newContent.split('\n').findIndex((line) => line.trim().startsWith('# '));
-      if (titleLineIdx === -1) {
+      if (!newContent.split('\n').some((line) => line.trim().startsWith('# '))) {
         return false; // No title found, can't fix
       }
-
-      const contentLines = newContent.split('\n');
-      const beforeTitle = contentLines.slice(0, titleLineIdx + 1);
-      const afterTitle = contentLines.slice(titleLineIdx + 1);
-
-      // Build inline metadata to insert after title
-      const inlineMetadata: string[] = [];
-
-      if (statusMatch) {
-        inlineMetadata.push(`Status: ${statusMatch[1].trim()}  `);
-      }
-
-      if (typeMatch) {
-        inlineMetadata.push(`Type: ${typeMatch[1].trim()}  `);
-      }
-
-      if (assigneeMatch) {
-        inlineMetadata.push(`Assignee: ${assigneeMatch[1].trim()}  `);
-      }
-
-      // Reconstruct file
-      newContent = [...beforeTitle, '', ...inlineMetadata, '', ...afterTitle].join('\n');
     }
 
-    // Fix inline metadata missing trailing spaces
-    if (needsSpaceFix) {
-      newContent = newContent.replace(
-        /^(Status|Tipo):\s*(.+?)([ \t]*)$/im,
-        (_, key, value) => `${key}: ${value.trim()}  `,
-      );
-      newContent = newContent.replace(
-        /^(Type|Tipo):\s*(.+?)([ \t]*)$/im,
-        (_, key, value) => `${key}: ${value.trim()}  `,
-      );
-      newContent = newContent.replace(
-        /^(Assignee|Responsável):\s*(.+?)([ \t]*)$/im,
-        (_, key, value) => `${key}: ${value.trim()}  `,
-      );
+    /*
+     * O estilo alvo: o pedido, ou o que o proprio arquivo ja usa. Resolvido
+     * depois de remover as secoes e antes de reescrever, para que um arquivo
+     * que so tinha `## Status` caia no default em vez de num estilo detectado
+     * a partir de nada.
+     */
+    const style = options.convertTo
+      ? getMetadataStyle(options.convertTo)
+      : resolveMetadataStyle(newContent, options.metadataStyle ?? DEFAULT_METADATA_STYLE_ID);
+
+    if (hasSectionMetadata) {
+      const migrated: ReadonlyArray<readonly [string, string | undefined]> = [
+        ['Status', statusMatch?.[1]?.trim()],
+        ['Type', typeMatch?.[1]?.trim()],
+        ['Assignee', assigneeMatch?.[1]?.trim()],
+      ];
+
+      for (const [label, value] of migrated) {
+        if (value) newContent = style.write(newContent, label, value);
+      }
     }
+
+    /*
+     * Reemite o bloco no estilo alvo. E aqui que a barra sai da ultima linha:
+     * a versao anterior deste trecho exigia a quebra forte nas tres linhas e
+     * portanto a recolocava.
+     */
+    newContent = convertMetadataStyle(newContent, style.id);
 
     // Clean up extra blank lines again
     const finalContentRaw = `${newContent.replace(/\n{3,}/g, '\n\n').trim()}\n`;
@@ -143,6 +121,41 @@ export async function fixTaskFile(filePath: string): Promise<boolean> {
     const normalizedOriginal = normalizeForCompare(originalContentRaw);
 
     if (finalContent !== normalizedOriginal) {
+      /*
+       * Rede de seguranca: um `--fix` que so remove nao grava.
+       *
+       * A migracao de metadados reescreve o cabecalho — as secoes `## Status`,
+       * `## Type` e `## Assignee` viram linhas. Tudo o mais no corpo tem que
+       * sobreviver, e o titulo tambem.
+       *
+       * Existe por causa da task-078: um `lint --fix` no geohub apagou 93 linhas
+       * de conteudo em duas tarefas — titulo, `## Description` inteira, `##
+       * Tasks` e subitens —, e o gatilho nao reproduz, nem contra as 361
+       * tarefas reais com o mesmo binario. Sem poder consertar a causa, fecha-se
+       * a classe: se o resultado perdeu secao ou titulo, o arquivo fica como
+       * estava e o problema aparece como arquivo nao corrigido, e nao como
+       * conteudo perdido.
+       */
+      const secoesDoCorpo = (texto: string) =>
+        (texto.match(/^##[ \t]+(.+)$/gm) ?? []).filter(
+          (cabecalho) =>
+            !new RegExp(
+              `^##[ \\t]+(?:Status|Type|Assignee|${i18n.status}|${i18n.type}|${i18n.assignee})\\s*$`,
+              'i',
+            ).test(cabecalho),
+        ).length;
+
+      const perdeuSecao = secoesDoCorpo(finalContent) < secoesDoCorpo(content);
+      const perdeuTitulo = /^# /m.test(content) && !/^# /m.test(finalContent);
+
+      if (perdeuSecao || perdeuTitulo) {
+        console.error(
+          `Refusing to fix ${filePath}: the result would lose ${perdeuTitulo ? 'the title' : 'a body section'}. ` +
+            'The file was left untouched — please report this with the file contents.',
+        );
+        return false;
+      }
+
       await writeFile(filePath, finalContent, 'utf-8');
       return true;
     }
@@ -171,12 +184,27 @@ export async function validateTaskFile(filePath: string): Promise<ValidationIssu
     // Check for required sections
     const hasTitleSection = lines.some((line) => line.trim().startsWith('# '));
 
-    // Build regex patterns for both English and localized names
-    const inlineStatusPattern = new RegExp(`^(?:Status|${i18n.status}):\\s*.+$`, 'im');
-    const sectionStatusPattern = new RegExp(`##\\s*(?:Status|${i18n.status})`, 'i');
+    /*
+     * Ancorado no fim da linha, e sem `i` no que importa: a regra e sobre um
+     * cabecalho que **e** o metadado, e nao sobre qualquer secao cujo titulo
+     * comece com a palavra. `## Status atual`, `## Status do deploy` e
+     * `## Status atual do projeto` sao secoes legitimas de corpo, e o padrao
+     * anterior (`##\s*Status`, sem ancora, contra o arquivo inteiro) marcava as
+     * tres como metadado em secao.
+     */
+    const sectionStatusPattern = new RegExp(`^#{2,}\\s*(?:Status|${i18n.status})\\s*$`, 'im');
+
+    /*
+     * Lido pelo modulo de estilos, e nao por regex: `- Status: pending` e
+     * `Status: pending\\` sao o mesmo campo, e ancorar em `^Status:` rejeitava
+     * o primeiro com "Task file must have a Status field".
+     */
+    const inlineStatus = readMetadataField(content, i18n.status, 'Status');
+    const isMetadataLine = (line: string) =>
+      new RegExp(`^(?:-\\s+)?(?:Status|${i18n.status})\\s*:`, 'i').test(line.trim());
 
     // Enforce inline metadata only (no section-based '## Status')
-    const hasInlineStatus = inlineStatusPattern.test(content);
+    const hasInlineStatus = inlineStatus !== undefined;
     const hasSectionStatus = sectionStatusPattern.test(content);
     const hasDescriptionSection = content.includes('## Description') || content.includes('## Descrição');
 
@@ -211,11 +239,9 @@ export async function validateTaskFile(filePath: string): Promise<ValidationIssu
         suggestion: `Add inline metadata after title:\n${i18n.status}: <todo|in-progress|done>`,
       });
     } else {
-      const statusMatch = content.match(inlineStatusPattern);
-      // Extract value after colon
-      const statusValue = statusMatch ? statusMatch[0].split(':')[1]?.trim().toLowerCase() || '' : '';
+      const statusValue = (inlineStatus ?? '').toLowerCase();
       if (!ACCEPTED_STATUSES.includes(statusValue)) {
-        const statusLineIdx = lines.findIndex((line) => inlineStatusPattern.test(line.trim()));
+        const statusLineIdx = lines.findIndex(isMetadataLine);
         issues.push({
           file: filePath,
           line: statusLineIdx >= 0 ? statusLineIdx + 1 : undefined,
@@ -237,10 +263,11 @@ export async function validateTaskFile(filePath: string): Promise<ValidationIssu
 
     // Check for proper task ID format in filename
     const fileName = filePath.split('/').pop() || '';
-    if (!fileName.match(/^task-\d{3}-.*\.md$/)) {
+    if (!fileName.match(/^task-\d{3}(?:-.*)?\.md$/)) {
       issues.push({
         file: filePath,
-        message: 'Task filename should follow pattern: task-NNN-description.md (e.g., task-001-my-task.md)',
+        message:
+          'Task filename should follow pattern: task-NNN-description.md (e.g., task-001-my-task.md or task-001.md)',
         severity: 'warning',
         suggestion: 'Rename the file to match the pattern task-001-description.md',
       });
@@ -248,7 +275,7 @@ export async function validateTaskFile(filePath: string): Promise<ValidationIssu
 
     // Check for empty sections
     const titleLine = lines.findIndex((line) => line.trim().startsWith('# '));
-    if (titleLine >= 0 && lines[titleLine].trim() === '#') {
+    if (lines[titleLine]?.trim() === '#') {
       issues.push({
         file: filePath,
         line: titleLine + 1,

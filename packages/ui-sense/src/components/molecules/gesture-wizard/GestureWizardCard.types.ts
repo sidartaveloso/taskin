@@ -4,8 +4,8 @@ export interface GestureWizardCardType {
   emits: GestureWizardCardEmits;
 }
 
-export type GestureWizardCardModels = {};
+export type GestureWizardCardModels = Record<string, never>;
 
-export type GestureWizardCardProps = {};
+export type GestureWizardCardProps = Record<string, never>;
 
-export type GestureWizardCardEmits = {};
+export type GestureWizardCardEmits = Record<string, never>;

@@ -1,4 +1,14 @@
 <template>
+  <div v-if="semPrioridade > 0" class="aviso-prioridade">
+    <span>
+      <strong>{{ semPrioridade }}</strong> tarefa(s) ainda sem prioridade. Enquanto o projeto
+      estiver meio numerado, mover uma tarefa reescreve todos os arquivos antes dela.
+    </span>
+    <button type="button" :disabled="numerando" @click="numerarTudo">
+      {{ numerando ? 'Numerando…' : 'Numerar agora' }}
+    </button>
+  </div>
+
   <div class="mode-toggle">
     <button
       type="button"
@@ -12,7 +22,7 @@
       :class="{ active: mode === 'prioritization' }"
       @click="mode = 'prioritization'"
     >
-      Priorização
+      Prioritization
     </button>
   </div>
 
@@ -33,7 +43,8 @@
 
 <script setup lang="ts">
 import type { Task, TaskStatus } from '@opentask/taskin-design-vue';
-import { Dashboard, PrioritizationPage } from '@opentask/taskin-design-vue';
+import { Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
+import { filterTasks } from '@opentask/taskin-task-manager';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
@@ -73,15 +84,72 @@ const connectionError = computed(() => connectionStatus.value.error);
 
 // Map the store's provider-agnostic tasks onto the dashboard's Task view model.
 // The shape comes from the store, so there is no structural type to restate here.
+/*
+ * Os nomes dos grupos, buscados do proprio servidor.
+ *
+ * A tarefa carrega so o `groupId` desde a task-079 — o nome vive num registro.
+ * Uma busca, e o mapa serve todas as tarefas; antes o nome vinha repetido em
+ * cada uma, e sumia quando o caminho de escrita o apagava.
+ */
+const gruposPorId = ref<Record<string, string>>({});
+
+/*
+ * Quantas tarefas ainda nao tem prioridade.
+ *
+ * Num projeto meio numerado, o primeiro arrastar reescreve todos os
+ * antecessores — 124 arquivos num projeto de 500, medido. O aviso existe para a
+ * pessoa saber disso **antes** de descobrir pelo `git status`.
+ */
+const semPrioridade = ref(0);
+const numerando = ref(false);
+
+async function consultarPrioridade() {
+  try {
+    const r = await fetch('/api/prioritize');
+    const previa = (await r.json()) as { withoutPriority?: number } | undefined;
+    semPrioridade.value = previa?.withoutPriority ?? 0;
+  } catch {
+    semPrioridade.value = 0;
+  }
+}
+
+async function numerarTudo() {
+  numerando.value = true;
+  try {
+    await fetch('/api/prioritize', { method: 'POST' });
+    await consultarPrioridade();
+  } finally {
+    numerando.value = false;
+  }
+}
+
+onMounted(async () => {
+  void consultarPrioridade();
+
+  try {
+    const resposta = await fetch('/api/groups');
+    const { groups } = (await resposta.json()) as { groups: { id: string; name: string }[] };
+    gruposPorId.value = Object.fromEntries(groups.map((g) => [g.id, g.name]));
+  } catch {
+    // Sem grupos: a tela mostra as tarefas sem o rotulo, e nada quebra.
+  }
+});
+
 const tasks = computed<Task[]>(() => {
   const filter = new URLSearchParams(window.location.search).get('filter');
 
-  let filtered = taskStore.tasks;
-  if (filter === 'open') {
-    filtered = taskStore.tasks.filter((t) => t.status !== 'done' && t.status !== 'canceled');
-  } else if (filter === 'closed') {
-    filtered = taskStore.tasks.filter((t) => t.status === 'done' || t.status === 'canceled');
-  }
+  /*
+   * A regra de filtro vem do dominio, e nao daqui.
+   *
+   * Ate a task-064 esta tela reimplementava `open` e `closed` a mao, e por isso
+   * nao conhecia `active` — a mesma duplicacao que a task-071 matou entre a CLI
+   * e o servidor MCP, sobrevivendo na terceira superficie.
+   *
+   * O que destravou foi `disableSourceOfProjectReferenceRedirect` no tsconfig:
+   * sem ele o compilador seguia o `.d.ts` do pacote ate o `src`, e o `rootDir`
+   * recusava.
+   */
+  const filtered = filter ? filterTasks(taskStore.tasks, { [filter]: true }) : taskStore.tasks;
 
   const mapped = filtered.map((source) => {
     const progressPercentage = PROGRESS_BY_STATUS[source.status];
@@ -97,7 +165,11 @@ const tasks = computed<Task[]>(() => {
             id: source.assignee.id,
             name: source.assignee.name,
             email: source.assignee.email,
-            avatar: source.assignee.avatar,
+            // O dominio guarda a identidade (o hash), nao a URL. O dashboard
+            // pede a imagem ao proprio servidor por caminho relativo, para nao
+            // vazar IP/referrer a terceiro e para funcionar sob CSP 'self'.
+            // Ver task-067.
+            avatar: source.assignee.avatarHash ? `/avatar/${source.assignee.avatarHash}` : undefined,
           }
         : undefined,
       dates: {
@@ -109,12 +181,11 @@ const tasks = computed<Task[]>(() => {
       },
       type: source.type,
       order: source.order,
-      groupId: source.groupId,
-      groupName: source.groupName,
+      parent: source.groupId ? { type: 'group', id: groupId(source.groupId) } : undefined,
+      groupName: source.groupId ? gruposPorId.value[source.groupId] : undefined,
       difficulty: source.difficulty,
     };
 
-    // biome-ignore lint/suspicious/noConsole: debug log
     console.log('Mapped task:', task.id, 'assignee:', task.assignee);
 
     return task;
@@ -152,8 +223,7 @@ const handleUpdateTask = (task: Task) => {
   taskStore.updateTask({
     ...original,
     order: task.order,
-    groupId: task.groupId,
-    groupName: task.groupName,
+    groupId: task.parent?.type === 'group' ? task.parent.id : undefined,
     difficulty: task.difficulty,
   });
 };
@@ -167,9 +237,9 @@ const connectionStatusType = computed<'connected' | 'disconnected' | 'connecting
 
 // Connection status text
 const statusText = computed(() => {
-  if (isConnected.value) return 'Conectado';
-  if (connectionError.value) return 'Erro de conexão';
-  return 'Conectando...';
+  if (isConnected.value) return 'Connected';
+  if (connectionError.value) return 'Connection error';
+  return 'Connecting...';
 });
 </script>
 
@@ -191,6 +261,50 @@ body {
 </style>
 
 <style scoped>
+.aviso-prioridade {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 8px;
+  border-left: 3px solid #b7791f;
+  background: #fffaf0;
+  color: #744210;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.aviso-prioridade button {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border: 1px solid #b7791f;
+  border-radius: 4px;
+  background: transparent;
+  color: #744210;
+  font: inherit;
+  cursor: pointer;
+}
+
+.aviso-prioridade button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+  .aviso-prioridade {
+    background: #2a2015;
+    color: #f0d9a8;
+    border-left-color: #d69e2e;
+  }
+
+  .aviso-prioridade button {
+    border-color: #d69e2e;
+    color: #f0d9a8;
+  }
+}
+
 .mode-toggle {
   display: flex;
   gap: 0.5rem;
