@@ -1,6 +1,6 @@
 # 🧩 Task 107 — Autocommit nao pode levar dados sensiveis nem arquivos alheios
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
 
