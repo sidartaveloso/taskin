@@ -232,7 +232,8 @@ export async function squashTaskFileOnDone(git: IGitService, options: SquashTask
     }
 
     const message = appendCiSkipTag(`docs(TASKS): task-${options.taskId} - done`, options.ciSkipTag);
-    const commitOk = await git.commit(message);
+    // So os caminhos da task: o checkout trouxe junto o que estava staged.
+    const commitOk = await git.commit(message, patternsToAdd);
     if (!commitOk) {
       await git.checkoutBranch(currentBranch);
       return false;
