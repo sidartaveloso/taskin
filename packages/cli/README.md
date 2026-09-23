@@ -185,6 +185,17 @@ Taskin supports three automation levels for git commits:
 
 Configure with: `taskin config --level <level>`
 
+What the auto-commits never take:
+
+- A status commit contains only the task file. Anything you had staged stays
+  staged and out of it.
+- A work commit (`pause`, and `finish` in autopilot) is refused when a change
+  looks sensitive: an `.env` file (templates like `.env.example` are fine), a
+  private key or certificate store, a credentials file, or an added line with a
+  token. Nothing is staged; Taskin prints the file, line and reason, and the
+  command to commit yourself once you've dealt with it.
+- The work commit's body lists every file it took.
+
 ## 🤖 MCP Server (Model Context Protocol)
 
 Taskin includes an MCP server that allows AI assistants like Claude Desktop to interact with your tasks:

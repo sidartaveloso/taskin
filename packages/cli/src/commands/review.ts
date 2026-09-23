@@ -3,10 +3,9 @@
  * Executes quality checks and transitions task to 'in-review' status
  */
 
-import { appendCiSkipTag } from '@opentask/taskin-git-utils';
+import { appendCiSkipTag, GitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { HookContext, HookOptions } from '@opentask/taskin-types';
-import { execSync } from 'child_process';
 import path from 'path';
 import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
@@ -222,15 +221,10 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
 
   // Auto-commit status change if enabled
   if (behavior.autoCommitStatusChange) {
-    try {
-      const message = appendCiSkipTag(`docs(TASKS): task-${normalizedId} - mark as ready for review`, ciSkipTag);
-      execSync(`git add TASKS/task-${normalizedId}-*.md && git commit -m "${message}"`, {
-        cwd: monorepoRoot,
-        stdio: 'ignore',
-      });
+    // Pelo GitService, que comita so o arquivo da task e nao o resto do index.
+    const message = appendCiSkipTag(`docs(TASKS): task-${normalizedId} - mark as ready for review`, ciSkipTag);
+    if (await new GitService(monorepoRoot).addAndCommit(`TASKS/task-${normalizedId}-*.md`, message)) {
       success('Auto-committed status change');
-    } catch {
-      // Ignore if nothing to commit
     }
   }
 

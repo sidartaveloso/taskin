@@ -16,6 +16,7 @@ import {
 const createMockGitService = (): IGitService => ({
   addFiles: vi.fn().mockResolvedValue(true),
   commit: vi.fn().mockResolvedValue(true),
+  commitWork: vi.fn().mockResolvedValue({ status: 'nothing-to-commit' }),
   addAndCommit: vi.fn().mockResolvedValue(true),
   commitTaskStatusChange: vi.fn().mockResolvedValue(true),
   commitTaskStatusChangeOnBranch: vi.fn().mockResolvedValue(true),
@@ -301,6 +302,17 @@ describe('squashTaskFileOnDone', () => {
     expect(mockGit.addFiles).toHaveBeenCalled();
     expect(mockGit.commit).toHaveBeenCalled();
     expect(mockGit.push).toHaveBeenCalledWith('develop');
+  });
+
+  it('should commit only the task paths, never whatever else is staged', async () => {
+    await squashTaskFileOnDone(mockGit, {
+      taskId: '042',
+      defaultBranch: 'tasks',
+      originBranch: 'develop',
+    });
+
+    // O checkout carrega o que esta staged; sem caminhos, o commit levaria junto.
+    expect(mockGit.commit).toHaveBeenCalledWith(expect.any(String), ['TASKS/task-042-*.md', 'TASKS/assets/task-042/']);
   });
 
   it('should include only the task file TASKS/task-042-*.md (not other tasks)', async () => {

@@ -52,7 +52,8 @@ features:
     details: >
       Três níveis de automação — manual, assistido e autopilot. O commit de
       status, o push e o squash acontecem no ramo que você configurar, ou não
-      acontecem.
+      acontecem. O commit de status leva só o arquivo da task, e o commit
+      automático que levaria um .env ou um token é recusado.
   - icon: 📈
     title: Métricas que saem do histórico
     details: >

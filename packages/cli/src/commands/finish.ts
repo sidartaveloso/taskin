@@ -5,7 +5,6 @@
 import { squashTaskFileOnDone } from '@opentask/taskin-file-system-provider';
 import { buildTaskStatusCommitMessage, GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
-import { execSync } from 'child_process';
 import path from 'path';
 import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
@@ -15,6 +14,7 @@ import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
 import { normalizeTaskId } from '../lib/task-id.js';
+import { reportWorkCommit } from '../lib/work-commit/index.js';
 import { defineCommand } from './define-command/index.js';
 
 interface FinishTaskOptions {
@@ -133,6 +133,9 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
   // Initialize Git service
   const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
 
+  // So afirma "tudo comitado" quando o commit de trabalho nao foi recusado.
+  let workCommitBlocked = false;
+
   if (!options.skipUpdate) {
     info('Marking task as done...');
     const { task: updatedTask, blockers } = await taskManager.finishTaskComRelato(task.id);
@@ -186,16 +189,10 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     // Auto-commit work if autopilot is enabled
     if (behavior.autoCommitFinish) {
       const commitType = task.type || 'feat';
-      try {
-        execSync('git add .', { cwd: process.cwd(), stdio: 'ignore' });
-        execSync(`git commit -m "${commitType}(task-${normalizedId}): ${task.title}"`, {
-          cwd: process.cwd(),
-          stdio: 'ignore',
-        });
-        success('Auto-committed completed work');
-      } catch {
-        // Ignore if nothing to commit
-      }
+      const message = `${commitType}(task-${normalizedId}): ${task.title}`;
+      const result = await git.commitWork(message);
+      workCommitBlocked = result.status === 'blocked' || result.status === 'failed';
+      reportWorkCommit(result, 'Auto-committed completed work', message);
     }
   } else {
     info('Skipping status update (--skip-update flag)');
@@ -238,7 +235,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
       console.log(colors.secondary(`  ${index + 1}. ${step}`));
     });
     console.log();
-  } else {
+  } else if (!workCommitBlocked) {
     info('All commits done automatically (autopilot mode)');
     info('Next steps:');
     console.log(colors.secondary('  1. Create a Pull Request'));

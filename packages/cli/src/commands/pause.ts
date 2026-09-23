@@ -2,9 +2,9 @@
  * pause command - Pause an in-progress task
  */
 
+import { GitService, type IGitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { PauseTaskOptions } from '@opentask/taskin-types';
-import { execSync } from 'child_process';
 import path from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
@@ -12,6 +12,7 @@ import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
 import { normalizeTaskId } from '../lib/task-id.js';
+import { reportWorkCommit } from '../lib/work-commit/index.js';
 import { defineCommand } from './define-command/index.js';
 
 export const pauseCommand = defineCommand({
@@ -41,7 +42,7 @@ export const pauseCommand = defineCommand({
   },
 });
 
-async function pauseTask(taskId: string, options: PauseTaskOptions): Promise<void> {
+export async function pauseTask(taskId: string, options: PauseTaskOptions, gitService?: IGitService): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -117,22 +118,14 @@ async function pauseTask(taskId: string, options: PauseTaskOptions): Promise<voi
     console.log(colors.secondary(`  Message: "${commitMessage}"`));
     console.log();
 
-    // Create git commit
-    try {
-      execSync('git add -A', { cwd: process.cwd(), stdio: 'ignore' });
-      execSync(`git commit -m "${commitMessage}"`, {
-        cwd: process.cwd(),
-        stdio: 'ignore',
-      });
-    } catch {
-      // Ignore errors - might be nothing to commit
-    }
+    // Create git commit — refused, not forced, when something looks sensitive
+    const git = gitService ?? new GitService(process.cwd());
+    reportWorkCommit(await git.commitWork(commitMessage), 'Auto-committed work in progress', commitMessage);
 
     // Pause via the manager so the transition and its guard live in one place
     await taskManager.pauseTask(normalizedId);
 
     success('Task paused successfully!');
-    success('Auto-committed work in progress');
     info('Status updated to paused');
     console.log();
     info('Next steps:');

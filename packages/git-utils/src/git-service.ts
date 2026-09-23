@@ -1,7 +1,24 @@
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { buildTaskStatusCommitMessage, DEFAULT_CI_SKIP_TAG } from './commit-message';
 import { createBranch as createBranchUtil, isGitRepository as isGitRepositoryUtil } from './git';
-import type { IGitService } from './git-service.types';
+import type { IGitService, WorkCommitResult } from './git-service.types';
+import { addedLinesFromDiff, findSecretsInLine, type SensitiveFinding, sensitivePathReason } from './sensitive-changes';
+
+/** Acima disso o arquivo e gerado ou binario; nao vale ler linha a linha. */
+const MAX_SCANNED_BYTES = 1024 * 1024;
+
+interface WorkingTreeChange {
+  path: string;
+  untracked: boolean;
+  deleted: boolean;
+}
+
+/** `addFiles` recebe varios caminhos separados por espaco (`a b`). */
+function splitPathspecs(pattern: string): string[] {
+  return pattern.split(/\s+/).filter(Boolean);
+}
 
 /**
  * Construction options for {@link GitService}.
@@ -39,22 +56,19 @@ export class GitService implements IGitService {
 
   async addFiles(pattern: string): Promise<boolean> {
     try {
-      execSync(`git add ${pattern}`, {
-        cwd: this.cwd,
-        stdio: 'ignore',
-      });
+      this.git(['add', '--', ...splitPathspecs(pattern)]);
       return true;
     } catch {
       return false;
     }
   }
 
-  async commit(message: string): Promise<boolean> {
+  async commit(message: string, paths?: string[]): Promise<boolean> {
     try {
-      execSync(`git commit -m "${message}"`, {
-        cwd: this.cwd,
-        stdio: 'ignore',
-      });
+      // Com caminhos, o commit grava so eles, e o resto do index fica como
+      // estava. Sem caminhos, grava o index inteiro — e o que a pessoa
+      // deixou staged vai junto (task-107).
+      this.git(['commit', '-m', message, ...(paths?.length ? ['--', ...paths] : [])]);
       return true;
     } catch {
       return false;
@@ -65,7 +79,84 @@ export class GitService implements IGitService {
     const added = await this.addFiles(pattern);
     if (!added) return false;
 
-    return this.commit(message);
+    return this.commit(message, splitPathspecs(pattern));
+  }
+
+  async commitWork(message: string): Promise<WorkCommitResult> {
+    let changes: WorkingTreeChange[];
+    try {
+      changes = this.workingTreeChanges();
+    } catch {
+      return { status: 'failed' };
+    }
+    if (changes.length === 0) return { status: 'nothing-to-commit' };
+
+    // Olha antes de adicionar: recusar nao pode deixar nada staged para tras.
+    const findings = changes.flatMap((change) => this.inspect(change));
+    if (findings.length > 0) return { status: 'blocked', findings };
+
+    const files = changes.map((change) => change.path).sort();
+    try {
+      this.git(['add', '-A']);
+      this.git(['commit', '-m', message, '-m', ['Files:', ...files.map((file) => `- ${file}`)].join('\n')]);
+      return { status: 'committed', files };
+    } catch {
+      return { status: 'failed' };
+    }
+  }
+
+  /** Roda o git sem shell: nada na mensagem ou no caminho e interpretado. */
+  private git(args: string[]): string {
+    return execFileSync('git', args, { cwd: this.cwd, encoding: 'utf8', stdio: 'pipe', maxBuffer: 64 * 1024 * 1024 });
+  }
+
+  private workingTreeChanges(): WorkingTreeChange[] {
+    const output = this.git(['status', '--porcelain=v1', '-z', '--untracked-files=all', '--no-renames']);
+    return output
+      .split('\0')
+      .filter((entry) => entry.length > 3)
+      .map((entry) => {
+        const code = entry.slice(0, 2);
+        return {
+          path: entry.slice(3),
+          untracked: code === '??',
+          deleted: code.includes('D'),
+        };
+      });
+  }
+
+  private inspect(change: WorkingTreeChange): SensitiveFinding[] {
+    // Apagar um arquivo sensivel e o que se quer; nao ha o que recusar.
+    if (change.deleted) return [];
+
+    const reason = sensitivePathReason(change.path);
+    if (reason) return [{ path: change.path, reason }];
+
+    const added = this.addedLines(change);
+    for (const { line, text } of added) {
+      const secret = findSecretsInLine(text);
+      if (secret) return [{ path: change.path, reason: secret, line }];
+    }
+    return [];
+  }
+
+  private addedLines(change: WorkingTreeChange): { line: number; text: string }[] {
+    try {
+      if (change.untracked) {
+        const content = readFileSync(join(this.cwd, change.path));
+        if (content.length > MAX_SCANNED_BYTES || content.includes(0)) return [];
+        return content
+          .toString('utf8')
+          .split('\n')
+          .map((text, index) => ({ line: index + 1, text }));
+      }
+      // Contra o HEAD: cobre o que esta staged e o que nao esta.
+      const diff = this.git(['diff', 'HEAD', '--no-color', '--no-ext-diff', '-U0', '--', change.path]);
+      if (diff.length > MAX_SCANNED_BYTES || diff.includes('Binary files')) return [];
+      return addedLinesFromDiff(diff);
+    } catch {
+      return [];
+    }
   }
 
   async commitTaskStatusChange(taskId: string, status: string): Promise<boolean> {
@@ -106,7 +197,6 @@ export class GitService implements IGitService {
         }).trim();
         if (files) {
           taskFilePath = files.split('\n')[0] ?? null;
-          const { readFileSync } = await import('fs');
           taskFileContent = readFileSync(`${this.cwd}/${taskFilePath}`, 'utf-8');
         }
       } catch {

@@ -52,7 +52,8 @@ features:
     details: >
       Three automation levels — manual, assisted and autopilot. The status
       commit, the push and the squash happen on the branch you configure, or
-      they don't happen at all.
+      they don't happen at all. A status commit takes only the task file, and
+      an auto-commit that would carry an .env or a token is refused.
   - icon: 📈
     title: Metrics that come from history
     details: >
