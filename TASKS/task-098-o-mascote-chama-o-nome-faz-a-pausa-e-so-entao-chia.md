@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
+- Priority: 12551
 
 ## Description
 Hoje o chiado comeca junto com a fala e o speechSynthesis ainda tenta pronunciar Shhhhhhhhhhhh..., entao sai tudo embolado. O nome vira prop propria, e falado sozinho, e o chiado so entra depois de a fala terminar mais um lapso curto — o ritmo de Bruno, shhhhh.

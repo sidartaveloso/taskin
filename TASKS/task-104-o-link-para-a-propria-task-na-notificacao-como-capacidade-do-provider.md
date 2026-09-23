@@ -3,7 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso
-- Priority: 52
+- Priority: 1054
 - Group: notificacoes
 
 ## Description

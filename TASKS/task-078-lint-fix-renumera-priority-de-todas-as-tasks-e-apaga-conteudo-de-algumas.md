@@ -1,6 +1,6 @@
 # 🧩 Task 078 — lint --fix renumera Priority de todas as tasks e apaga conteudo de algumas
 
-- Priority: 900
+- Priority: 1378
 - Status: in-progress
 - Type: fix
 - Assignee: Sidarta Veloso

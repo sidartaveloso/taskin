@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
+- Priority: 12351
 
 ## Description
 O balao e uma elipse de rx 35 com um text de 24px, e text em SVG nao quebra linha: Bruno, Shhhhhhhhhhhh... vaza por fora. O layout passa a ser calculado a partir da frase — quebra em linhas, ajuste de fonte e elipse dimensionada pelo conteudo, sem sair do viewBox nem cobrir a cabeca do mascote.

@@ -3,7 +3,7 @@
 - Status: pending
 - Type: refactor
 - Assignee: Sidarta Veloso
-- Priority: 42
+- Priority: 1021
 
 ## Description
 Hoje o dashboard escreve pelo update generico do ITaskProvider, enquanto a CLI e o MCP passam pelo ITaskManager. Priorizar e agrupar existem so no primeiro caminho, e por isso existem so no dashboard: nunca foram nomeadas como operacoes, sao efeito colateral de um update. Nomear assignToGroup, removeFromGroup, setPriority, moveBefore e moveAfter no ITaskManager e fazer o dashboard usa-las, de modo que a CLI e o MCP ganhem as operacoes sem trabalho proprio e o update generico deixe de ser a porta dos fundos. Em seguida generalizar o portao de compilacao que o FilterCriteriaSchema ja tem para os criterios, agora para as operacoes. Ver docs/RDT/superficies-derivam-do-mesmo-contrato.md.

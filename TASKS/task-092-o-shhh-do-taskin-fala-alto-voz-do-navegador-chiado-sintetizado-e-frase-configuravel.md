@@ -3,6 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
+- Priority: 11951
 
 ## Description
 O TaskinWithShhh reage a barulho com um balao escrito shh mas nao emite som nenhum: a opcao sound existe e o codigo tem um comentario dizendo que nao ha asset de audio, ou seja, um interruptor inerte. O caso de uso e concreto: o Taskin roda no celular com a tela ligada na frente do programador e, quando alguem fala alto na sala, ele pede silencio no lugar da pessoa. Para isso precisa sair som que a sala inteira ouca. Implementar a voz com o SpeechSynthesis do navegador para a frase, o chiado shhhh em si com Web Audio, e tornar a frase configuravel por prop e por .taskin.json, de modo que de para deixar uma story com Bruno, Shhhhhhhhhhhh...

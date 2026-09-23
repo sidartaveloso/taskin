@@ -3,6 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
+- Priority: 12151
 
 ## Description
 A sustentacao continua da task-093 nao detecta gente conversando: entre silabas e frases ha vales de 100 a 400ms, e cada vale zera a contagem. Trocar o criterio por fracao de uma janela deslizante (sustainRatio), corrigir o buraco de amostragem (leitura cobre 43ms a cada 100ms, menos da metade da linha do tempo) e dar um botao nos controles que dispara a reacao como se tivesse detectado, para ajustar frase, voz e volume sem gritar na sala.

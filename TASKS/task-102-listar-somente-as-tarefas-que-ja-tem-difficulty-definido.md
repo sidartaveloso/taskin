@@ -3,6 +3,9 @@
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso
+- Priority: 177
+- Group: g-n1xf2yf7
+- Difficulty: 2
 
 ## Description
 Um criterio novo para restringir a listagem as tarefas que ja receberam dificuldade. O campo difficulty e opcional, de 1 a 5, e numa base em andamento convivem tarefas pontuadas e nao pontuadas; quem vai priorizar quer ver so as pontuadas, e quem vai pontuar quer justamente o contrario. O criterio entra no FilterCriteriaSchema do task-manager, que e a definicao unica: a flag da CLI, o schema JSON do list_tasks do MCP e a validacao saem dele, e o satisfies Record<keyof TaskFilterCriteria> impede esquecer alguma superficie. Na tela de priorizacao do dashboard entra como controle proprio, porque o filtro de la e de texto.

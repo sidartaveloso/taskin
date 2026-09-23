@@ -1,6 +1,6 @@
 # 🧩 Task 077 — autoSync configuravel: escolher o remoto e a estrategia de sincronizacao
 
-- Priority: 20
+- Priority: 986
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso

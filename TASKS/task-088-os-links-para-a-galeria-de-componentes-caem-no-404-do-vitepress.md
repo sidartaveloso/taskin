@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
+- Priority: 11551
 
 ## Description
 Clicar em Components no menu ou em galeria de componentes no corpo da landing leva ao 404 do proprio VitePress, embora a URL direta responda 200 com o Storybook. O roteador do VitePress intercepta o clique em qualquer ancora interna sem atributo target e tenta resolver /components/ como rota de markdown, que nao existe: a galeria e montada pelo workflow do Pages, nao pelo vitepress. Corrigir os seis pontos de link e deixar um teste que impeca a regressao.

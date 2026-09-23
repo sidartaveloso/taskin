@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: Sidarta Veloso
+- Priority: 11751
 
 ## Description
 Na galeria, a story do FaceTrackingDebug aparece cortada: o painel de debug fica pela metade dentro do canvas. O componente e position absolute, pensado para ficar sobre a imagem da camera; renderizado solto, ele sai do fluxo, o container colapsa e o conteudo transborda. A story precisa dar a ele a superficie posicionada que ele espera. Aproveitar para expor a lista de humores do Taskin em tempo de execucao, hoje copiada a mao na story AllMoods.

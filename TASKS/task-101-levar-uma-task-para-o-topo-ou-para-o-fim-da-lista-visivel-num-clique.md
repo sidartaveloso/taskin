@@ -3,6 +3,9 @@
 - Status: pending
 - Type: feat
 - Assignee: Sidarta Veloso
+- Priority: 175
+- Group: g-n1xf2yf7
+- Difficulty: 3
 
 ## Description
 Na tela de priorizacao so existe mover uma posicao por vez: moveUp e moveDown. Levar uma task do meio para o topo e trabalho rotineiro e hoje custa um clique por posicao, ou um arrasto longo. Dois botoes por task resolvem. O topo e o fim sao os da lista visivel, ou seja, depois do filtro e dentro do modo de ordenacao atual, e nao os da lista inteira. Vale tambem para grupos, que ja tem variantes proprias de moveBefore e moveAfter.
