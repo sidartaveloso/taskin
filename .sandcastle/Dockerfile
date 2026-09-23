@@ -1,4 +1,8 @@
-FROM node:22-bookworm
+# A versao do Node acompanha o `.tool-versions` da raiz, que e o que o
+# repositorio usa no host. Manter as duas iguais evita a classe de erro em que o
+# agente conserta no container algo que so quebra fora dele — ou o contrario.
+# Ao mexer no `.tool-versions`, mexa aqui junto.
+FROM node:24.9.0-bookworm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \

@@ -1,6 +1,55 @@
 import { claudeCode, run } from '@ai-hero/sandcastle';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 
+// ---------------------------------------------------------------------------
+// Perfil de ambiente
+//
+// Este arquivo roda em duas maquinas com custos de E/S muito diferentes, e a
+// unica coisa que muda entre elas sao os prazos:
+//
+//   * Linux com Docker nativo — a worktree e um bind mount do proprio sistema
+//     de arquivos do host. Install e build custam o que custariam fora do
+//     container.
+//   * macOS com Colima — a worktree atravessa a camada de compartilhamento da
+//     VM (sshfs ou virtiofs), e na configuracao x86_64 emulada em Apple Silicon
+//     o mesmo trabalho chega a uma ordem de grandeza mais caro. E o formato de
+//     um node_modules de monorepo — muitos arquivos pequenos — que e o pior
+//     caso dessa camada.
+//
+// O padrao vem da plataforma, e nao de um numero fixo, porque um prazo
+// dimensionado para o Colima transforma um agente travado no Linux em meia hora
+// de espera silenciosa. Qualquer das duas pontas pode ser sobrescrita por
+// variavel de ambiente quando a maquina fugir do perfil — uma VM Linux
+// carregada, um mac ja aquecido:
+//
+//   SANDCASTLE_SETUP_TIMEOUT_MIN=45 npx tsx .sandcastle/main.ts
+//
+// O que **nao** varia por ambiente esta nos comentarios de `onSandboxReady`: o
+// store do pnpm e o cache do turbo fora da montagem sao corretos nos dois
+// lugares, e la se explica por que.
+const IS_LINUX_NATIVE = process.platform === 'linux';
+
+const minutes = (envVar: string, fallback: number): number => {
+  const raw = process.env[envVar];
+  if (raw === undefined || raw === '') return fallback;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`${envVar} deve ser um numero de minutos maior que zero; veio ${JSON.stringify(raw)}`);
+  }
+  return parsed;
+};
+
+// Teto do `pnpm install && pnpm build`. Medido: ~1m50 de install (inclui o
+// `uv sync` do types-py) e ~9min de build frio nos 22 pacotes sob Colima
+// emulado. O padrao do sandcastle e 60s, que estoura ainda no install.
+const SETUP_TIMEOUT_MIN = minutes('SANDCASTLE_SETUP_TIMEOUT_MIN', IS_LINUX_NATIVE ? 15 : 30);
+
+// Silencio tolerado do agente. Existe para pegar agente de fato travado, com
+// folga para o silencio legitimo de um comando longo — um `pnpm test` deste
+// monorepo passa minutos sem imprimir nada. O padrao do sandcastle e 600s, e
+// ele ja matou uma rodada no meio da task-071.
+const IDLE_TIMEOUT_MIN = minutes('SANDCASTLE_IDLE_TIMEOUT_MIN', IS_LINUX_NATIVE ? 15 : 30);
+
 // Simple loop: an agent that picks open issues one by one and closes them.
 // Run this with: npx tsx .sandcastle/main.ts
 // Or add to package.json scripts: "sandcastle": "npx tsx .sandcastle/main.ts"
@@ -26,14 +75,8 @@ await run({
   // per run, or set it to 1 for a single-shot mode.
   maxIterations: 3,
 
-  // O padrao e 600s, e ele mata a rodada no meio do trabalho: um `pnpm install`
-  // ou um `pnpm test` deste monorepo passa de dez minutos sem imprimir nada
-  // quando a VM esta carregada, e o sandcastle interpreta o silencio como agente
-  // travado. Ja aconteceu com o agente no meio da task-071.
-  //
-  // O limite continua existindo para pegar agente de fato travado — so que agora
-  // com folga para o silencio legitimo de um comando longo.
-  idleTimeoutSeconds: 30 * 60,
+  // Dimensionado pelo perfil de ambiente no topo do arquivo.
+  idleTimeoutSeconds: IDLE_TIMEOUT_MIN * 60,
 
   // Branch strategy — merge-to-head creates a temporary branch for the agent
   // to work on, then merges the result back to HEAD when the run completes.
@@ -56,13 +99,8 @@ await run({
       // depois de compilar. Sem isso o agente comanda uma versao antiga de si
       // mesmo.
       //
-      // Os tempos sao medidos, e nao chutados: neste monorepo, dentro desta
-      // imagem, o install leva ~1m50 (inclui o `uv sync` do types-py) e o build
-      // frio ~9min nos 22 pacotes. O padrao do sandcastle e 60s, que estoura no
-      // install antes de chegar ao build. A folga aqui e maior que a medicao
-      // porque no sandcastle a worktree vem montada do host, e a montagem custa
-      // caro para muitos arquivos pequenos — que e exatamente o formato de um
-      // node_modules de monorepo.
+      // O prazo vem de SETUP_TIMEOUT_MIN, no topo do arquivo, onde estao a
+      // medicao e a diferenca entre os dois ambientes.
       //
       // O `store-dir` fora da montagem e o que faz o resto funcionar, e custou
       // duas tentativas erradas antes de aparecer.
@@ -77,10 +115,6 @@ await run({
       // que origem e destino estao em dispositivos diferentes, escolhe copiar
       // por conta propria, e as permissoes chegam certas.
       //
-      // Quanto custa depende do runtime, entao os numeros aqui sao teto e nao
-      // previsao. Nesta maquina o Colima roda uma VM **x86_64 emulada** em
-      // Apple Silicon, com `mountType: sshfs` — a combinacao mais lenta
-      // disponivel. Num runtime arm64 nativo com virtiofs sobra folga.
       // Um comando so, encadeado com `&&`, e nao duas entradas no array: o
       // install precisa **terminar** antes de o build comecar, e duas entradas
       // nao garantem isso. O sintoma de deixar solto e traicoeiro — o build
@@ -99,7 +133,7 @@ await run({
           command:
             'pnpm install --config.store-dir=/home/agent/.pnpm-store && ' +
             'TURBO_CACHE_DIR=/home/agent/.turbo-cache TURBO_TELEMETRY_DISABLED=1 pnpm build',
-          timeoutMs: 30 * 60_000,
+          timeoutMs: SETUP_TIMEOUT_MIN * 60_000,
         },
       ],
     },
