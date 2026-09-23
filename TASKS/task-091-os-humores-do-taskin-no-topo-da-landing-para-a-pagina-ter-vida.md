@@ -3,6 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: Sidarta Veloso
+- Priority: 11851
 
 ## Description
 A landing tem um mascote so, no hero. Colocar no topo, logo abaixo do hero, a fileira com todos os humores do Taskin, que hoje so aparece na galeria de componentes. Vale para os dois idiomas e deve sair do slot home-hero-after do layout, nao de cada index.md. A lista de humores tem que vir do design system em tempo de execucao, nunca copiada a mao.

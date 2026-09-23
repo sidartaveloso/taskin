@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: sidartaveloso
+- Priority: 11351
 
 ## Description
 No release de 17/09 o passo 'Sync markers' falhou: a tag existia localmente (criada pelo changeset publish) mas nao no remoto. O bloco try envolvia 'git tag' e 'git push' juntos, entao o erro 'already exists' do 'git tag' pulava o push e ainda logava 'already on remote'. O 'gh release create' seguinte recusou com 'tag exists locally but has not been pushed'. Separar as tres operacoes, cada uma com sua propria tolerancia, e cobrir com teste.
