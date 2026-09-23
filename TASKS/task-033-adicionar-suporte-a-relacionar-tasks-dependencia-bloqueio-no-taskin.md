@@ -1,6 +1,6 @@
 # Task 033 — adicionar suporte a relacionar tasks (dependencia/bloqueio) no taskin
 
-Status: draft
+Status: pending
 Type: feat
 Assignee: A definir
 Priority: 11151
