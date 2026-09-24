@@ -1,6 +1,6 @@
 # As três superfícies derivam do mesmo contrato
 
-- Status: proposta
+- Status: aceita (implementada na task-106, em 2026-09-24)
 - Data: 2026-09-22
 - Tasks: 105 (primeiro passo), 106 (a refatoração)
 
@@ -91,3 +91,39 @@ que não pode é a ausência acontecer por omissão.
 Também não diz que o protocolo WebSocket desaparece. Ele continua sendo o
 transporte do dashboard; o que muda é que as mensagens passam a carregar
 operações nomeadas em vez de uma task inteira para gravar.
+
+## Como ficou
+
+- **As operações.** `assignToGroup`, `removeFromGroup`, `setPriority`,
+  `moveBefore` e `moveAfter` nasceram na task-105; a 106 acrescentou
+  `setDifficulty`, porque pontuar também só existia pelo `update` genérico.
+- **O dashboard.** O quadro de priorização continua calculando a mudança, com
+  desfazer e refazer; `operacoesDaMudanca` (`packages/dashboard/src/`) a traduz
+  em operações nomeadas, e o store Pinia as manda por `operar()`. O
+  `updateTask` do store recusa sempre.
+- **O protocolo WebSocket.** Não existe mais `update`. As mensagens são
+  `set-priority`, `set-difficulty`, `assign-to-group`, `remove-from-group`,
+  `move-before`, `move-after` — mais `create-group`, porque o quadro inventa o
+  id ao agrupar duas tarefas e `assign-to-group` recusa grupo inexistente, como
+  na CLI e no MCP. As mensagens passaram a ser atendidas uma de cada vez, na
+  ordem de chegada; em paralelo, o `assign-to-group` procurava o grupo antes de
+  o `create-group` terminar.
+- **O portão.** `SUPERFICIES_DAS_OPERACOES` (`packages/task-manager/src/
+  superficies-das-operacoes/`) declara, para cada operação do `ITaskManager`,
+  como cada superfície a expõe — pelo nome, ou ausente com o motivo. O
+  `satisfies Record<OperacaoDoManager, …>` faz operação nova sem as três
+  decisões não compilar. O servidor WebSocket tipa os handlers por
+  `NomeNaSuperficie<'ws'>`: esquecer um não compila. A CLI e o MCP são
+  conferidos em teste (`register.superficies.test.ts`, `superficies.test.ts`),
+  porque comando do `commander` e ferramenta anunciada só existem rodando.
+- **O contrato.** `runTaskManagerContractTests`, em
+  `@opentask/taskin-task-manager/testing`, para quem implementar o
+  `ITaskManager`.
+
+### O que ficou de fora, declarado
+
+- `setDifficulty` não tem CLI nem MCP — ausência escrita na tabela, com o
+  motivo. Se alguém pedir, é acrescentar o nome e o teste de superfície cobra.
+- Renomear um grupo no quadro ainda não chega ao registro: o grupo nasce como
+  "Novo grupo", e o nome se troca por `taskin group rename`. O registro de
+  grupos (`IGroupRegistry`) é um sub-contrato e fica fora do portão.

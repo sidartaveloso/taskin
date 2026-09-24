@@ -52,7 +52,7 @@ O Taskin é uma plataforma modular de gerenciamento de tarefas com suporte a mú
 │                     Business Logic Layer                    │
 ├─────────────────────────────────────────────────────────────┤
 │  TaskManager                                                │
-│  ├─ ITaskManager (write): updateTask, pauseTask, etc.      │
+│  ├─ ITaskManager (write): startTask, setPriority, etc.     │
 │  ├─ ITaskProvider (read): findTask, getAllTasks            │
 │  └─ Validation: state transitions, required fields         │
 └─────────────────────────────────────────────────────────────┘
@@ -78,13 +78,13 @@ User Action (Dashboard)
     ↓
 Vue Component (TaskCard.vue)
     ↓
-usePiniaTaskProvider().send({ type: 'update', task })
+usePiniaTaskProvider().operar({ type: 'set-priority', payload: { taskId, priority } })
     ↓
 WebSocket Client (ws://localhost:3001)
     ↓
-TaskWebSocketServer.handleMessage()
+TaskWebSocketServer.handleMessage()   (uma mensagem por vez, na ordem)
     ↓
-TaskManager.updateTask()
+TaskManager.setPriority()             (a mesma operacao da CLI e do MCP)
     ↓
 FileSystemTaskProvider.updateTask()
     ↓
@@ -106,7 +106,7 @@ MCP Client (stdio)
     ↓
 TaskMCPServer.handleToolCall('start_task')
     ↓
-TaskManager.updateTask({ status: 'in-progress' })
+TaskManager.startTask(taskId)
     ↓
 FileSystemTaskProvider.updateTask()
     ↓
@@ -123,7 +123,8 @@ LLM continues conversation
 
 - **Interface**: `ITaskManager` (write), `ITaskProvider` (read)
 - **Responsabilidade**: Validação de transições de estado, lógica de negócio
-- **Principais métodos**: `updateTask()`, `pauseTask()`, `startTask()`, `finishTask()`
+- **Principais métodos**: `startTask()`, `pauseTask()`, `finishTask()`, `assignToGroup()`, `setPriority()`, `moveBefore()`, `setDifficulty()`
+- **Portão**: `SUPERFICIES_DAS_OPERACOES` declara onde cada operação aparece (CLI, MCP, WebSocket); operação sem as três decididas não compila
 
 #### @opentask/taskin-file-system-provider
 
@@ -339,22 +340,26 @@ taskin dashboard
 ### Provider Pattern
 
 - **ITaskProvider**: Interface de leitura (findTask, getAllTasks)
-- **ITaskManager**: Interface de escrita (updateTask, pauseTask, etc.)
+- **ITaskManager**: Operações de domínio nomeadas (startTask, setPriority, assignToGroup, etc.)
 - **Implementações**: FileSystemTaskProvider, PiniaTaskProvider
 
 ### WebSocket Protocol
 
 ```typescript
-// Client → Server
+// Client → Server: consultas e operacoes nomeadas (nao ha `update` generico)
 { type: 'list' }
-{ type: 'find', taskId: 'task-01' }
-{ type: 'update', task: { id: 'task-01', status: 'in-progress' } }
+{ type: 'find', payload: { taskId: '001' } }
+{ type: 'start', payload: { taskId: '001' } }
+{ type: 'set-priority', payload: { taskId: '001', priority: 30 } }
+{ type: 'assign-to-group', payload: { taskId: '001', groupId: 'g-sprint' } }
+{ type: 'move-before', payload: { taskId: '001', targetId: '002' } }
+// ... ver a tabela completa em packages/task-server-ws/README.md
 
 // Server → Client
-{ type: 'tasks', tasks: [...] }
-{ type: 'task:found', task: {...} }
-{ type: 'task:updated', task: {...} }
-{ type: 'error', error: 'message' }
+{ type: 'tasks', payload: [...] }
+{ type: 'task:found', payload: {...} }
+{ type: 'task:updated', payload: {...} }
+{ type: 'error', payload: { message: '...' } }
 ```
 
 ### MCP Protocol

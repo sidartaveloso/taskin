@@ -1,7 +1,7 @@
 import type { PiniaTaskStore } from '@opentask/taskin-task-provider-pinia';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import App from './App.vue';
 
@@ -38,6 +38,8 @@ async function mountApp() {
           ],
         },
         PrioritizationPage: {
+          name: 'PrioritizationPage',
+          emits: ['update-task'],
           template: '<div data-testid="prioritization"><div data-testid="tasks-count">{{ tasks.length }}</div></div>',
           props: ['tasks'],
         },
@@ -128,5 +130,52 @@ describe('App --open/--closed filter', () => {
 
     const tasksCount = wrapper.find('[data-testid="tasks-count"]');
     expect(tasksCount.text()).toBe('2');
+  });
+});
+
+/*
+ * O quadro nao manda mais a tarefa inteira num `update` generico: o que ele
+ * mudou vai como operacao nomeada, a mesma do `ITaskManager` (task-106).
+ */
+describe('App — o quadro de priorizacao grava por operacoes nomeadas', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    window.history.replaceState({}, '', '/');
+  });
+
+  it('uma mudanca de prioridade e de dificuldade vira set-priority e set-difficulty', async () => {
+    const wrapper = await mountApp();
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    store.tasks = [createMockTask({ id: '001', order: 10, difficulty: 2 })];
+    const operar = vi.spyOn(store, 'operar').mockImplementation(() => {});
+    const updateTask = vi.spyOn(store, 'updateTask');
+
+    await wrapper.findAll('.mode-toggle button')[1]?.trigger('click');
+    wrapper
+      .findComponent({ name: 'PrioritizationPage' })
+      .vm.$emit('update-task', { id: '001', order: 5, difficulty: 4, parent: undefined });
+
+    expect(operar.mock.calls.map(([op]) => op)).toEqual([
+      { type: 'set-priority', payload: { taskId: '001', priority: 5 } },
+      { type: 'set-difficulty', payload: { taskId: '001', difficulty: 4 } },
+    ]);
+    expect(updateTask).not.toHaveBeenCalled();
+  });
+
+  it('dois membros de um grupo novo criam o grupo uma vez so', async () => {
+    const wrapper = await mountApp();
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    store.tasks = [createMockTask({ id: '001' }), createMockTask({ id: '002' })];
+    const operar = vi.spyOn(store, 'operar').mockImplementation(() => {});
+
+    await wrapper.findAll('.mode-toggle button')[1]?.trigger('click');
+    const pagina = wrapper.findComponent({ name: 'PrioritizationPage' });
+    const novo = { type: 'group', id: 'g-novo' };
+    pagina.vm.$emit('update-task', { id: '001', parent: novo });
+    pagina.vm.$emit('update-task', { id: '002', parent: novo });
+
+    expect(operar.mock.calls.map(([op]) => op.type)).toEqual(['create-group', 'assign-to-group', 'assign-to-group']);
   });
 });

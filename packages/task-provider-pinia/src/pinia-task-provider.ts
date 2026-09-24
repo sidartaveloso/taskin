@@ -1,7 +1,12 @@
 import type { ITaskProvider } from '@opentask/taskin-task-manager';
 import type { Task } from '@opentask/taskin-types';
 import { defineStore } from 'pinia';
-import type { PiniaTaskProviderConfig, PiniaTaskStoreState, WebSocketMessage } from './pinia-task-provider.types.js';
+import type {
+  OperacaoDoQuadro,
+  PiniaTaskProviderConfig,
+  PiniaTaskStoreState,
+  WebSocketMessage,
+} from './pinia-task-provider.types.js';
 
 /**
  * WebSocket timing constants (in milliseconds)
@@ -38,6 +43,26 @@ interface PiniaStoreContext extends PiniaTaskStoreState {
   findTask(taskId: string): Promise<Task | undefined>;
   getAllTasks(): Promise<Task[]>;
   updateTask(task: Task): Promise<void>;
+  operar(operacao: OperacaoDoQuadro): void;
+}
+
+/**
+ * O efeito de uma operacao na tarefa, para o cache mudar antes da resposta.
+ * Mover fica de fora: pode renumerar a vizinhanca, e o servidor manda a lista.
+ */
+function efeitoNoCache(operacao: OperacaoDoQuadro): { taskId: string; campos: Partial<Task> } | undefined {
+  switch (operacao.type) {
+    case 'set-priority':
+      return { taskId: operacao.payload.taskId, campos: { order: operacao.payload.priority } };
+    case 'set-difficulty':
+      return { taskId: operacao.payload.taskId, campos: { difficulty: operacao.payload.difficulty } };
+    case 'assign-to-group':
+      return { taskId: operacao.payload.taskId, campos: { groupId: operacao.payload.groupId as Task['groupId'] } };
+    case 'remove-from-group':
+      return { taskId: operacao.payload.taskId, campos: { groupId: undefined } };
+    default:
+      return undefined;
+  }
 }
 
 /**
@@ -268,6 +293,10 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           this._log('Server error:', this.error);
           break;
 
+        case 'group:created':
+          // O nome do grupo e buscado pelo app em /api/groups; nada a guardar aqui.
+          break;
+
         case 'pong':
           // Heartbeat response
           lastPongs.set(this.$id, Date.now());
@@ -437,21 +466,32 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
     },
 
     /**
-     * Update a task
+     * Recusa sempre. O servidor nao aceita mais uma tarefa inteira para gravar
+     * — era por esse `update` generico que agrupar, priorizar e pontuar
+     * existiam so no dashboard. Use {@link operar}.
      */
-    async updateTask(this: PiniaStoreContext, task: Task): Promise<void> {
+    async updateTask(this: PiniaStoreContext, _task: Task): Promise<void> {
+      throw new Error(
+        'updateTask is not supported: the server only takes named operations (set-priority, assign-to-group, ...). Use operar().',
+      );
+    },
+
+    /**
+     * Manda uma operacao nomeada e ja a reflete no cache.
+     */
+    operar(this: PiniaStoreContext, operacao: OperacaoDoQuadro): void {
       if (!this.connected) {
         throw new Error('Not connected to server');
       }
 
-      // Optimistically update cache
-      const idx = this.tasks.findIndex((t: Task) => t.id === task.id);
-      if (idx >= 0) {
-        this.tasks[idx] = task;
+      const efeito = efeitoNoCache(operacao);
+      const idx = efeito ? this.tasks.findIndex((t: Task) => t.id === efeito.taskId) : -1;
+      const atual = this.tasks[idx];
+      if (efeito && atual) {
+        this.tasks[idx] = { ...atual, ...efeito.campos };
       }
 
-      // Send update to server
-      this.send({ type: 'update', payload: task });
+      this.send(operacao);
     },
   },
 });

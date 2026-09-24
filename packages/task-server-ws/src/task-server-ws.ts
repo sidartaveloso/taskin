@@ -1,6 +1,12 @@
-import type { ITaskManager, ITaskProvider } from '@opentask/taskin-task-manager';
-import { type Task, type TaskId, TaskIdSchema } from '@opentask/taskin-types';
+import {
+  GROUPS_NOT_SUPPORTED,
+  type ITaskManager,
+  type ITaskProvider,
+  type NomeNaSuperficie,
+} from '@opentask/taskin-task-manager';
+import { type GroupId, GroupIdSchema, type Task, type TaskId, TaskIdSchema } from '@opentask/taskin-types';
 import { randomUUID } from 'crypto';
+import type { AddressInfo } from 'net';
 import { WebSocket, WebSocketServer } from 'ws';
 import type {
   ClientConnection,
@@ -9,7 +15,9 @@ import type {
   WebSocketServerOptions,
   WSMessage,
 } from './task-server-ws.types.js';
-import { applyTaskUpdate } from './task-update/index.js';
+
+/** O que atende uma mensagem. Responde ao cliente, ou avisa todos. */
+type Atendimento = (client: ClientConnection, message: WSMessage) => Promise<void>;
 
 /**
  * WebSocket server for real-time task management
@@ -22,6 +30,53 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
   private taskProvider: ITaskProvider<TTask>;
   private options: Required<WebSocketServerOptions>;
   private isRunning = false;
+
+  /*
+   * As mensagens sao atendidas uma de cada vez, na ordem em que chegaram — de
+   * todos os clientes. O dashboard manda `create-group` e logo depois
+   * `assign-to-group`; atendidas em paralelo, o segundo procurava o grupo
+   * antes de o primeiro termina-lo.
+   */
+  private fila: Promise<void> = Promise.resolve();
+
+  /*
+   * Uma mensagem por operacao do `ITaskManager` que o WebSocket expoe, tipado
+   * pelos nomes de `SUPERFICIES_DAS_OPERACOES`: declarar uma operacao ali para
+   * o `ws` e esquecer o handler aqui nao compila. Ver
+   * `docs/RDT/superficies-derivam-do-mesmo-contrato.md`.
+   */
+  private readonly operacoes: Record<NomeNaSuperficie<'ws'>, Atendimento> = {
+    list: (client, message) => this.handleListRequest(client, message),
+    start: (client, message) => this.comTarefa(client, message, (id) => this.taskManager.startTask(id)),
+    pause: (client, message) => this.comTarefa(client, message, (id) => this.taskManager.pauseTask(id)),
+    finish: (client, message) => this.comTarefa(client, message, (id) => this.taskManager.finishTask(id)),
+    'assign-to-group': (client, message) =>
+      this.comTarefa(client, message, async (id) => {
+        const groupId = this.readGroupId(client, message);
+        return groupId && this.taskManager.assignToGroup(id, groupId);
+      }),
+    'remove-from-group': (client, message) =>
+      this.comTarefa(client, message, (id) => this.taskManager.removeFromGroup(id)),
+    'set-priority': (client, message) =>
+      this.comTarefa(client, message, async (id) => {
+        const priority = this.readNumber(client, message, 'priority');
+        return priority === undefined ? undefined : this.taskManager.setPriority(id, priority);
+      }),
+    'set-difficulty': (client, message) =>
+      this.comTarefa(client, message, async (id) => {
+        const difficulty = this.readNumber(client, message, 'difficulty');
+        return difficulty === undefined ? undefined : this.taskManager.setDifficulty(id, difficulty);
+      }),
+    'move-before': (client, message) => this.mover(client, message, 'before'),
+    'move-after': (client, message) => this.mover(client, message, 'after'),
+  };
+
+  /** O que o protocolo atende e nao e operacao do `ITaskManager`. */
+  private readonly consultas: Record<'find' | 'create-group' | 'ping', Atendimento> = {
+    find: (client, message) => this.handleFindRequest(client, message),
+    'create-group': (client, message) => this.handleCreateGroup(client, message),
+    ping: async (client) => this.sendToClient(client.id, { type: 'pong' }),
+  };
 
   constructor(config: TaskServerConfig<TTask>) {
     this.taskManager = config.taskManager;
@@ -153,10 +208,13 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
    * Get server status
    */
   getStatus() {
+    // Com `port: 0` o sistema escolhe a porta; a que vale e a que foi aberta.
+    const address = this.wss?.address() as AddressInfo | null | undefined;
+
     return {
       running: this.isRunning,
       clients: this.clients.size,
-      port: this.options.port,
+      port: address?.port ?? this.options.port,
       host: this.options.host,
     };
   }
@@ -186,7 +244,7 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
 
     // Handle messages from client
     ws.on('message', (data: Buffer) => {
-      this.handleMessage(client, data);
+      this.fila = this.fila.then(() => this.handleMessage(client, data));
     });
 
     // Handle client disconnect
@@ -240,41 +298,20 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
       const message: WSMessage = JSON.parse(data.toString());
       this.log(`Message from ${client.id}:`, message.type);
 
-      switch (message.type) {
-        case 'list':
-          await this.handleListRequest(client, message);
-          break;
+      const atender =
+        this.operacoes[message.type as keyof typeof this.operacoes] ??
+        this.consultas[message.type as keyof typeof this.consultas];
 
-        case 'find':
-          await this.handleFindRequest(client, message);
-          break;
-
-        case 'update':
-          await this.handleUpdateRequest(client, message);
-          break;
-
-        case 'start':
-          await this.handleStartRequest(client, message);
-          break;
-
-        case 'finish':
-          await this.handleFinishRequest(client, message);
-          break;
-
-        case 'pause':
-          await this.handlePauseRequest(client, message);
-          break;
-
-        case 'ping':
-          this.sendToClient(client.id, { type: 'pong' });
-          break;
-
-        default:
-          this.sendToClient(client.id, {
-            type: 'error',
-            payload: { message: `Unknown message type: ${message.type}` },
-          });
+      if (!atender) {
+        this.sendToClient(client.id, {
+          type: 'error',
+          payload: { message: `Unknown message type: ${message.type}` },
+          requestId: message.requestId,
+        });
+        return;
       }
+
+      await atender(client, message);
     } catch (error) {
       this.log('Error handling message:', error);
       this.sendToClient(client.id, {
@@ -294,20 +331,25 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
    * client with a clear error instead of letting a ZodError leak out of the
    * generic catch.
    */
-  private readTaskId(
-    client: ClientConnection,
-    message: WSMessage,
-    field: 'taskId' | 'id' = 'taskId',
-  ): TaskId | undefined {
-    const raw = (message.payload as Record<string, unknown> | undefined)?.[field];
+  private readTaskId(client: ClientConnection, message: WSMessage, field = 'taskId'): TaskId | undefined {
+    const raw = this.campo(message, field);
     const parsed = typeof raw === 'string' ? TaskIdSchema.safeParse(raw) : undefined;
 
     if (!parsed?.success) {
-      this.sendToClient(client.id, {
-        type: 'error',
-        payload: { message: `Invalid task id in '${message.type}' request` },
-        requestId: message.requestId,
-      });
+      this.recusar(client, message, `Invalid task id in '${message.type}' request`);
+      return undefined;
+    }
+
+    return parsed.data;
+  }
+
+  /** Como {@link readTaskId}, para o id de um grupo. */
+  private readGroupId(client: ClientConnection, message: WSMessage, field = 'groupId'): GroupId | undefined {
+    const raw = this.campo(message, field);
+    const parsed = typeof raw === 'string' ? GroupIdSchema.safeParse(raw) : undefined;
+
+    if (!parsed?.success) {
+      this.recusar(client, message, `Invalid group id in '${message.type}' request`);
       return undefined;
     }
 
@@ -315,10 +357,96 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
   }
 
   /**
+   * Um numero do payload. So confere que e numero: a faixa e regra da
+   * operacao, e o `ITaskManager` recusa com a propria frase.
+   */
+  private readNumber(client: ClientConnection, message: WSMessage, field: string): number | undefined {
+    const raw = this.campo(message, field);
+
+    if (typeof raw !== 'number') {
+      this.recusar(client, message, `Missing or invalid '${field}' in '${message.type}' request`);
+      return undefined;
+    }
+
+    return raw;
+  }
+
+  private campo(message: WSMessage, field: string): unknown {
+    return (message.payload as Record<string, unknown> | undefined)?.[field];
+  }
+
+  private recusar(client: ClientConnection, message: WSMessage, texto: string): void {
+    this.sendToClient(client.id, {
+      type: 'error',
+      payload: { message: texto },
+      requestId: message.requestId,
+    });
+  }
+
+  /**
+   * Le o `taskId`, roda a operacao e avisa todos os clientes da tarefa como
+   * ficou. A operacao devolve `undefined` quando ja recusou o payload.
+   */
+  private async comTarefa(
+    client: ClientConnection,
+    message: WSMessage,
+    operacao: (taskId: TaskId) => Promise<TTask | undefined>,
+  ): Promise<void> {
+    const taskId = this.readTaskId(client, message);
+    if (!taskId) return;
+
+    const task = await operacao(taskId);
+    if (!task) return;
+
+    this.broadcast({ type: 'task:updated', payload: task });
+  }
+
+  /**
+   * Mover pode renumerar a vizinhanca quando nao ha espaco entre os numeros, e
+   * a operacao so devolve a tarefa movida — entao todos recebem a lista inteira.
+   */
+  private async mover(client: ClientConnection, message: WSMessage, lado: 'before' | 'after'): Promise<void> {
+    const taskId = this.readTaskId(client, message);
+    if (!taskId) return;
+    const targetId = this.readTaskId(client, message, 'targetId');
+    if (!targetId) return;
+
+    await (lado === 'before'
+      ? this.taskManager.moveBefore(taskId, targetId)
+      : this.taskManager.moveAfter(taskId, targetId));
+
+    this.broadcast({ type: 'tasks', payload: await this.taskManager.getAllTasks() });
+  }
+
+  /**
+   * Cria um grupo no registro. O dashboard gera o id ao agrupar duas tarefas
+   * no quadro, e precisa que o grupo exista antes de `assign-to-group` — que
+   * recusa grupo inexistente, como na CLI e no MCP.
+   */
+  private async handleCreateGroup(client: ClientConnection, message: WSMessage): Promise<void> {
+    const registry = this.taskManager.groupRegistry;
+    if (!registry) {
+      this.recusar(client, message, GROUPS_NOT_SUPPORTED);
+      return;
+    }
+
+    const id = this.readGroupId(client, message, 'id');
+    if (!id) return;
+    const name = this.campo(message, 'name');
+    if (typeof name !== 'string' || name.trim() === '') {
+      this.recusar(client, message, `Missing or invalid 'name' in '${message.type}' request`);
+      return;
+    }
+
+    await registry.createGroup({ id, name });
+    this.broadcast({ type: 'group:created', payload: { id, name } });
+  }
+
+  /**
    * Handle list request
    */
   private async handleListRequest(client: ClientConnection, message: WSMessage): Promise<void> {
-    const tasks = await this.taskProvider.getAllTasks();
+    const tasks = await this.taskManager.getAllTasks();
 
     const [first] = tasks;
     if (first) {
@@ -346,92 +474,6 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
       type: 'task:found',
       payload: task,
       requestId: message.requestId,
-    });
-  }
-
-  /**
-   * Handle update request
-   */
-  private async handleUpdateRequest(client: ClientConnection, message: WSMessage): Promise<void> {
-    const taskId = this.readTaskId(client, message, 'id');
-    if (!taskId) return;
-
-    // O payload nao e a task: o servidor releu a dele e aplica so o que o
-    // cliente tem direito de mudar. Ver applyTaskUpdate.
-    const stored = await this.taskProvider.findTask(taskId);
-    if (!stored) {
-      this.sendToClient(client.id, {
-        type: 'error',
-        payload: { message: `Task ${taskId} not found` },
-        requestId: message.requestId,
-      });
-      return;
-    }
-
-    const outcome = applyTaskUpdate(stored, message.payload);
-    if (!outcome.ok) {
-      this.sendToClient(client.id, {
-        type: 'error',
-        payload: { message: outcome.message },
-        requestId: message.requestId,
-      });
-      return;
-    }
-
-    await this.taskProvider.updateTask(outcome.task);
-
-    // Broadcast update to all clients
-    this.broadcast({
-      type: 'task:updated',
-      payload: outcome.task,
-    });
-  }
-
-  /**
-   * Handle start task request
-   */
-  private async handleStartRequest(client: ClientConnection, message: WSMessage): Promise<void> {
-    const taskId = this.readTaskId(client, message);
-    if (!taskId) return;
-
-    const task = await this.taskManager.startTask(taskId);
-
-    // Broadcast update to all clients
-    this.broadcast({
-      type: 'task:updated',
-      payload: task,
-    });
-  }
-
-  /**
-   * Handle finish task request
-   */
-  private async handleFinishRequest(client: ClientConnection, message: WSMessage): Promise<void> {
-    const taskId = this.readTaskId(client, message);
-    if (!taskId) return;
-
-    const task = await this.taskManager.finishTask(taskId);
-
-    // Broadcast update to all clients
-    this.broadcast({
-      type: 'task:updated',
-      payload: task,
-    });
-  }
-
-  /**
-   * Handle pause task request
-   */
-  private async handlePauseRequest(client: ClientConnection, message: WSMessage): Promise<void> {
-    const taskId = this.readTaskId(client, message);
-    if (!taskId) return;
-
-    const task = await this.taskManager.pauseTask(taskId);
-
-    // Broadcast update to all clients
-    this.broadcast({
-      type: 'task:updated',
-      payload: task,
     });
   }
 

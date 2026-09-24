@@ -34,7 +34,16 @@ taskStore.connect('ws://localhost:3001');
 
 // Use as ITaskProvider
 const tasks = await taskStore.getAllTasks();
+
+// Change a task through a named operation — reflected in the cache right away
+taskStore.operar({ type: 'set-priority', payload: { taskId: '042', priority: 30 } });
+taskStore.operar({ type: 'assign-to-group', payload: { taskId: '042', groupId: 'g-sprint' } });
 ```
+
+`updateTask` always rejects: the server only takes named operations
+(`set-priority`, `set-difficulty`, `assign-to-group`, `remove-from-group`,
+`move-before`, `move-after`, `create-group`). See the protocol in
+`@opentask/taskin-task-server-ws`.
 
 ## API
 

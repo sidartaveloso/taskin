@@ -6,25 +6,7 @@
  */
 
 import { Command } from 'commander';
-import { configCommand } from './commands/config.js';
-import { dashboardCommand } from './commands/dashboard.js';
-import { registerExportCommand } from './commands/export.js';
-import { finishCommand } from './commands/finish.js';
-import { registerGroupCommand } from './commands/group.js';
-import { initCommand } from './commands/init.js';
-import { lintCommand } from './commands/lint.js';
-import { listCommand } from './commands/list.js';
-import { mcpInstallCommand } from './commands/mcp-install.js';
-import { mcpServerCommand } from './commands/mcp-server.js';
-import { createCommand } from './commands/new.js';
-import { notifyCommand } from './commands/notify.js';
-import { pauseCommand } from './commands/pause.js';
-import { prioritizeCommand } from './commands/prioritize.js';
-import { priorityCommand } from './commands/priority.js';
-import { reviewCommand } from './commands/review.js';
-import { startCommand } from './commands/start.js';
-import { statsCommand } from './commands/stats.js';
-import { registerUserCommand } from './commands/user.js';
+import { registerCommands } from './commands/register.js';
 import { showCustomHelp } from './lib/help.js';
 import { loadDotEnv } from './lib/notification/env-resolver.js';
 import { getVersion } from './version.js';
@@ -48,25 +30,7 @@ program
   });
 
 // Register commands
-initCommand(program);
-listCommand(program);
-createCommand(program);
-startCommand(program);
-pauseCommand(program);
-reviewCommand(program);
-finishCommand(program);
-statsCommand(program);
-configCommand(program);
-registerExportCommand(program);
-lintCommand(program);
-prioritizeCommand(program);
-priorityCommand(program);
-registerGroupCommand(program);
-dashboardCommand(program);
-mcpInstallCommand(program);
-mcpServerCommand(program);
-notifyCommand(program);
-registerUserCommand(program);
+registerCommands(program);
 
 // Intercept --help at root level
 program.on('option:help', () => {

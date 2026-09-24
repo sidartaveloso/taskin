@@ -316,12 +316,15 @@ const tasks = computed(() => taskStore.tasks);
 // Buscar tarefas por status
 const inProgress = computed(() => taskStore.tasksByStatus('in-progress'));
 
-// Atualizar uma tarefa
+// Iniciar uma tarefa: o servidor aceita operacoes nomeadas, nao uma tarefa
+// inteira para gravar (ver o protocolo em @opentask/taskin-task-server-ws)
 const startTask = (taskId: string) => {
-  taskStore.send({
-    type: 'update',
-    task: { id: taskId, status: 'in-progress' },
-  });
+  taskStore.send({ type: 'start', payload: { taskId } });
+};
+
+// Priorizar, agrupar e pontuar vao pelo operar(), que ja atualiza o cache
+const priorizar = (taskId: string, priority: number) => {
+  taskStore.operar({ type: 'set-priority', payload: { taskId, priority } });
 };
 </script>
 

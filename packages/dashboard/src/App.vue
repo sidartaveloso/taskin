@@ -47,6 +47,7 @@ import { Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-
 import { filterTasks } from '@opentask/taskin-task-manager';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { operacoesDaMudanca } from './operacoes-da-mudanca';
 
 // Progress bar filled per status.
 //
@@ -215,17 +216,32 @@ const handleRefresh = () => {
   taskStore.getAllTasks();
 };
 
-// Persist a prioritization change (order/group/difficulty) coming from PrioritizationPage
+/*
+ * Grava o que o quadro de priorizacao mudou numa tarefa, pelas operacoes
+ * nomeadas — as mesmas do `ITaskManager` que a CLI e o MCP chamam — e nao mais
+ * mandando a tarefa inteira num `update` generico (task-106).
+ */
 const handleUpdateTask = (task: Task) => {
   const original = taskStore.tasks.find((t) => t.id === task.id);
   if (!original) return;
 
-  taskStore.updateTask({
-    ...original,
-    order: task.order,
-    groupId: task.parent?.type === 'group' ? task.parent.id : undefined,
-    difficulty: task.difficulty,
-  });
+  const operacoes = operacoesDaMudanca(
+    original,
+    {
+      order: task.order,
+      groupId: task.parent?.type === 'group' ? task.parent.id : undefined,
+      difficulty: task.difficulty,
+    },
+    gruposPorId.value,
+  );
+
+  for (const operacao of operacoes) {
+    // O segundo membro de um grupo recem-criado nao pode cria-lo de novo.
+    if (operacao.type === 'create-group') {
+      gruposPorId.value = { ...gruposPorId.value, [operacao.payload.id]: operacao.payload.name };
+    }
+    taskStore.operar(operacao);
+  }
 };
 
 // Connection status type for header component
