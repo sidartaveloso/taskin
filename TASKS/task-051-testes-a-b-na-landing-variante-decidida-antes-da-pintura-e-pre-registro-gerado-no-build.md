@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: feat
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Priority: 210
 - Difficulty: 2
 

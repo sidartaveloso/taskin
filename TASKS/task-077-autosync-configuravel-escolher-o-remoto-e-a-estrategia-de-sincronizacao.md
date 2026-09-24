@@ -3,7 +3,7 @@
 - Priority: 20
 - Status: pending
 - Type: feat
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Difficulty: 3
 
 ## Description

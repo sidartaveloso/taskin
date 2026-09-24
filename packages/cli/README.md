@@ -324,10 +324,10 @@ Or provide all options directly:
 
 ```bash
 # Create a new feature task
-taskin new -t feat -T "Add user authentication" -d "Implement JWT-based auth" -u "John Doe"
+taskin new -t feat -T "Add user authentication" -d "Implement JWT-based auth" -u ana-souza
 
 # Create a bug fix task
-taskin new --type fix --title "Fix login error" --user "Developer"
+taskin new --type fix --title "Fix login error" --user ana-souza
 
 # Using the 'create' alias
 taskin create -t docs -T "Update README"
@@ -338,7 +338,7 @@ taskin create -t docs -T "Update README"
 - `-t, --type <type>` - Task type: feat, fix, refactor, docs, test, chore
 - `-T, --title <title>` - Task title (required in command-line mode)
 - `-d, --description <description>` - Task description
-- `-u, --user <user>` - Assigned user
+- `-u, --user <user>` - Assigned user: the id from `.taskin/.taskin-users.json` (the display name is accepted too). The file always records the id; someone not in the registry is written as typed, and `taskin lint` warns about it
 
 The command will:
 

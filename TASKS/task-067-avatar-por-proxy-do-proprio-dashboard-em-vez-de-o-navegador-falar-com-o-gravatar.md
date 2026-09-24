@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Priority: 6051
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 Hoje a URL absoluta do gravatar e gravada no dado de dominio e o navegador de quem abre o dashboard busca a imagem em gravatar.com. Isso vaza IP e referrer para terceiro, quebra sem internet e impede CSP restritiva.

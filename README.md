@@ -90,7 +90,7 @@ npx taskin list
 taskin --help
 
 # Create a new task
-taskin new -t feat -T "Add login feature" -u "Developer"
+taskin new -t feat -T "Add login feature" -u ana-souza
 ```
 
 **🔍 Task Linter** - Validate your task markdown files (language-agnostic):
@@ -354,6 +354,7 @@ Token expiration: 24h.
 #### Metadata Format
 
 - **Inline metadata** (Status, Type, Assignee) uses two trailing spaces for line breaks
+- **Assignee** holds the user's **id** from `.taskin/.taskin-users.json`, not the display name: the name changes, the id is the key. `taskin new -u` accepts either and writes the id; `taskin lint` warns about a display name and `taskin lint --fix` rewrites it to the id
 - **Blank lines** after title and before description improve readability
 - **Section headers** (Description, Tasks, Notes) can be localized
 - **Multi-language support**: English and Portuguese (automatically detected)

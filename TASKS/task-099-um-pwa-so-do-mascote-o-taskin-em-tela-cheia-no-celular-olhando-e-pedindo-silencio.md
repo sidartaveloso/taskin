@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: feat
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 Um pacote novo, aplicacao instalavel, com o Taskin ocupando a tela inteira do celular. O celular fica apoiado abaixo do monitor, virado para quem programa: o mascote acompanha os olhos e o rosto pela camera frontal e, quando alguem na sala fala alto, dispara o shhh com voz e chiado. E a story BrunoShhh sem os controles de laboratorio em volta, empacotada para viver o dia inteiro num aparelho. Precisa resolver o que a story nao resolve: tela que nao apaga, permissao de camera e microfone fora do localhost, audio depois do gesto do usuario, configuracao sem .taskin.json, e custo de bateria.

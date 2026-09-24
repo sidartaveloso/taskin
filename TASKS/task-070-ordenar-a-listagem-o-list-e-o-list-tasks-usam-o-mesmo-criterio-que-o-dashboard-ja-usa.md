@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Priority: 6951
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 O taskin list devolve as tarefas na ordem em que o provider as encontra — por id — e nao oferece nenhuma forma de ordenar. O dashboard ja tem os modos manual, diff-asc e diff-desc, mas a logica mora num pacote Vue que o CLI nao alcanca.

@@ -153,7 +153,7 @@ code, the File System provider keeps each one as markdown in your repository:
 
 Status: in-progress
 Type: chore
-Assignee: sidarta-veloso
+Assignee: sidartaveloso
 
 ## Description
 
@@ -164,6 +164,9 @@ The `--status-*-bg` tokens with white text fail WCAG AA.
 - [x] Measure the contrast of each colour/text pair
 - [ ] Decide between darkening the token or changing the text colour
 ```
+
+The `Assignee` line holds the user's id from `.taskin/.taskin-users.json`, not
+the display name; `taskin lint --fix` rewrites a display name into the id.
 
 Being a file in the repository, some things come for free: a change of scope
 shows up in the PR diff, the task follows the branch where the work is, conflicts

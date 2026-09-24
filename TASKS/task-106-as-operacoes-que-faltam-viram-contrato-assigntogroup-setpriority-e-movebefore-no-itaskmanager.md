@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: refactor
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Priority: 42
 
 ## Description
