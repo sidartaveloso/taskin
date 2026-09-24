@@ -20,6 +20,10 @@ interface DragContext {
   onCopyGroup: (groupId: string) => void;
   onMoveUp: (id: string) => void;
   onMoveDown: (id: string) => void;
+  onMoveToTop: (taskId: string) => void;
+  onMoveToBottom: (taskId: string) => void;
+  onMoveGroupToTop: (groupId: string) => void;
+  onMoveGroupToBottom: (groupId: string) => void;
   onUngroup: (groupId: string) => void;
   focusedId: import('vue').Ref<string | null>;
   onFocusNode: (id: string) => void;
@@ -114,6 +118,28 @@ function onRenameGroup(node: PriorityGroupNode) {
           ▼
         </button>
         <button
+          class="move-btn move-btn--edge"
+          v-if="ctx.dragEnabled"
+          type="button"
+          title="Move group to top"
+          aria-label="Move group to top"
+          :data-testid="`move-group-to-top-${node.groupId}`"
+          @click="ctx.onMoveGroupToTop(node.groupId)"
+        >
+          ⤒
+        </button>
+        <button
+          class="move-btn move-btn--edge"
+          v-if="ctx.dragEnabled"
+          type="button"
+          title="Move group to bottom"
+          aria-label="Move group to bottom"
+          :data-testid="`move-group-to-bottom-${node.groupId}`"
+          @click="ctx.onMoveGroupToBottom(node.groupId)"
+        >
+          ⤓
+        </button>
+        <button
           class="move-btn"
           v-if="ctx.dragEnabled"
           type="button"
@@ -167,6 +193,26 @@ function onRenameGroup(node: PriorityGroupNode) {
           @click="ctx.onMoveDown(node.task.id)"
         >
           ▼
+        </button>
+        <button
+          class="move-btn move-btn--edge"
+          type="button"
+          title="Move to top"
+          aria-label="Move to top"
+          :data-testid="`move-to-top-${node.task.id}`"
+          @click="ctx.onMoveToTop(node.task.id)"
+        >
+          ⤒
+        </button>
+        <button
+          class="move-btn move-btn--edge"
+          type="button"
+          title="Move to bottom"
+          aria-label="Move to bottom"
+          :data-testid="`move-to-bottom-${node.task.id}`"
+          @click="ctx.onMoveToBottom(node.task.id)"
+        >
+          ⤓
         </button>
       </div>
       <div class="tico">

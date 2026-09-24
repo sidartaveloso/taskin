@@ -223,6 +223,10 @@ const emit = defineEmits<{
   'group-with-group': [draggedGroupId: string, targetGroupId: string];
   'move-up': [id: string];
   'move-down': [id: string];
+  'move-to-top': [taskId: string];
+  'move-to-bottom': [taskId: string];
+  'move-group-to-top': [groupId: string];
+  'move-group-to-bottom': [groupId: string];
   ungroup: [groupId: string];
   'export-json': [];
   'copy-card': [taskId: string];
@@ -384,6 +388,10 @@ provide('dragContext', {
   onCopyGroup: (groupId: string) => emit('copy-group', groupId),
   onMoveUp: (id: string) => emit('move-up', id),
   onMoveDown: (id: string) => emit('move-down', id),
+  onMoveToTop: (taskId: string) => emit('move-to-top', taskId),
+  onMoveToBottom: (taskId: string) => emit('move-to-bottom', taskId),
+  onMoveGroupToTop: (groupId: string) => emit('move-group-to-top', groupId),
+  onMoveGroupToBottom: (groupId: string) => emit('move-group-to-bottom', groupId),
   onUngroup: (groupId: string) => emit('ungroup', groupId),
   focusedId: toRef(props, 'focusedId'),
   onFocusNode: (id: string) => emit('update:focusedId', id),
@@ -627,8 +635,10 @@ button.ghost:disabled {
 }
 
 .move-col {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto;
+  grid-auto-flow: column;
+  align-items: center;
   gap: 1px;
 }
 
@@ -641,6 +651,12 @@ button.ghost:disabled {
   font-size: var(--font-size-xs);
   line-height: 1.2;
   opacity: 0.4;
+}
+
+/* Topo e fim sao cliques de rotina: alvo de toque de 24px (WCAG 2.5.8) */
+.move-btn--edge {
+  min-width: 24px;
+  min-height: 24px;
 }
 
 .move-btn:hover {

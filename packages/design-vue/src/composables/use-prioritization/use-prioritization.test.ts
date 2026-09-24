@@ -1246,3 +1246,193 @@ describe('custo de um movimento', () => {
     expect(board.changedTasks.value.length).toBeLessThanOrEqual(2);
   });
 });
+
+/** Ids da arvore visivel, com grupos como `[ids dos membros]`. */
+function shape(nodes: readonly PriorityNode[]): unknown[] {
+  return nodes.map((n) => (n.kind === 'task' ? n.task.id : shape(n.items)));
+}
+
+describe('moveToTop / moveToBottom', () => {
+  function board(extra: Task[] = []) {
+    const tasks = ref([
+      makeTask({ id: '001', order: 10, difficulty: 1 }),
+      makeTask({ id: '002', order: 20, difficulty: 3 }),
+      makeTask({ id: '003', order: 30, title: 'alvo', difficulty: 2 }),
+      makeTask({ id: '004', order: 40, title: 'alvo' }),
+      makeTask({ id: '005', order: 50, title: 'alvo', difficulty: 5 }),
+      ...extra,
+    ]);
+    return usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
+  }
+
+  it('leva a tarefa para o topo e grava so ela', () => {
+    const b = board();
+    b.moveToTop('004');
+    expect(shape(b.tree.value)).toEqual(['004', '001', '002', '003', '005']);
+    expect(b.changedTasks.value.map((t) => t.id)).toEqual(['004']);
+  });
+
+  it('leva a tarefa para o fim e grava so ela', () => {
+    const b = board();
+    b.moveToBottom('002');
+    expect(shape(b.tree.value)).toEqual(['001', '003', '004', '005', '002']);
+    expect(b.changedTasks.value.map((t) => t.id)).toEqual(['002']);
+  });
+
+  it('com filtro, o topo e o da lista visivel e a tarefa continua a vista', () => {
+    const b = board();
+    b.setFilter('alvo');
+    b.moveToTop('005');
+    expect(shape(b.tree.value)).toEqual(['005', '003', '004']);
+    b.setFilter('');
+    expect(shape(b.tree.value)).toEqual(['001', '002', '005', '003', '004']);
+    expect(b.changedTasks.value.map((t) => t.id)).toEqual(['005']);
+  });
+
+  it('com filtro, o fim e o da lista visivel', () => {
+    const b = board();
+    b.setScoreFilter('scored');
+    b.moveToBottom('001');
+    expect(shape(b.tree.value)).toEqual(['002', '003', '005', '001']);
+    b.setScoreFilter('all');
+    expect(shape(b.tree.value)).toEqual(['002', '003', '004', '005', '001']);
+  });
+
+  it('fora do modo manual nao faz nada, porque a exibicao nao segue a prioridade', () => {
+    const b = board();
+    b.setSortMode('diff-desc');
+    const antes = shape(b.tree.value);
+    b.moveToTop('001');
+    b.moveToBottom('005');
+    expect(shape(b.tree.value)).toEqual(antes);
+    expect(b.changedTasks.value).toEqual([]);
+    expect(b.canUndo.value).toBe(false);
+  });
+
+  it('quem ja esta no topo ou no fim nao gera historico nem mudanca', () => {
+    const b = board();
+    b.moveToTop('001');
+    b.moveToBottom('005');
+    expect(b.canUndo.value).toBe(false);
+    expect(b.changedTasks.value).toEqual([]);
+  });
+
+  it('entra no historico de undo/redo', () => {
+    const b = board();
+    b.moveToTop('005');
+    expect(b.canUndo.value).toBe(true);
+    b.undo();
+    expect(shape(b.tree.value)).toEqual(['001', '002', '003', '004', '005']);
+    b.redo();
+    expect(shape(b.tree.value)).toEqual(['005', '001', '002', '003', '004']);
+  });
+
+  it('tarefa dentro de grupo vai para o topo do proprio grupo, e nao da lista', () => {
+    const gid = groupId('g-a');
+    const tasks = ref([
+      makeTask({ id: '001', order: 10 }),
+      makeTask({ id: '002', order: 20, parent: { type: 'group', id: gid } }),
+      makeTask({ id: '003', order: 30, parent: { type: 'group', id: gid } }),
+      makeTask({ id: '004', order: 40, parent: { type: 'group', id: gid } }),
+    ]);
+    const b = usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
+    b.moveToTop('004');
+    expect(shape(b.tree.value)).toEqual(['001', ['004', '002', '003']]);
+    b.moveToBottom('004');
+    expect(shape(b.tree.value)).toEqual(['001', ['002', '003', '004']]);
+  });
+
+  it('grupo sobe para o topo e desce para o fim da lista de fora', () => {
+    const gid = groupId('g-a');
+    const tasks = ref([
+      makeTask({ id: '001', order: 10 }),
+      makeTask({ id: '002', order: 20 }),
+      makeTask({ id: '003', order: 30, parent: { type: 'group', id: gid } }),
+      makeTask({ id: '004', order: 40, parent: { type: 'group', id: gid } }),
+      makeTask({ id: '005', order: 50 }),
+    ]);
+    const b = usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
+    b.moveGroupToTop('g-a');
+    expect(shape(b.tree.value)).toEqual([['003', '004'], '001', '002', '005']);
+    expect(b.changedTasks.value.map((t) => t.id).sort()).toEqual(['003', '004']);
+
+    b.moveGroupToBottom('g-a');
+    expect(shape(b.tree.value)).toEqual(['001', '002', '005', ['003', '004']]);
+    expect(b.changedTasks.value.map((t) => t.id).sort()).toEqual(['003', '004']);
+    b.undo();
+    expect(shape(b.tree.value)).toEqual([['003', '004'], '001', '002', '005']);
+  });
+
+  it('grupo respeita o filtro: vai para antes da primeira linha visivel', () => {
+    const gid = groupId('g-a');
+    const tasks = ref([
+      makeTask({ id: '001', order: 10 }),
+      makeTask({ id: '002', order: 20, title: 'alvo' }),
+      makeTask({ id: '003', order: 30, title: 'alvo', parent: { type: 'group', id: gid } }),
+      makeTask({ id: '004', order: 40, parent: { type: 'group', id: gid } }),
+    ]);
+    const b = usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
+    b.setFilter('alvo');
+    b.moveGroupToTop('g-a');
+    b.setFilter('');
+    expect(shape(b.tree.value)).toEqual(['001', ['003', '004'], '002']);
+  });
+
+  /*
+   * O cenario da task-082: 500 tarefas, so as primeiras com prioridade. Mover
+   * para o topo e o movimento de maior alcance, entao e ele que mede se a
+   * numeracao por vizinhos continua valendo.
+   */
+  describe('custo no cenario de 500 tarefas', () => {
+    function quinhentas() {
+      const gid = groupId('g-x');
+      return ref(
+        Array.from({ length: 500 }, (_, i) =>
+          makeTask({
+            id: String(i + 1).padStart(3, '0'),
+            order: i < 20 ? (i + 1) * 10 : undefined,
+            parent: i === 10 || i === 11 ? { type: 'group', id: gid } : undefined,
+          }),
+        ),
+      );
+    }
+
+    it('levar uma tarefa numerada ao topo grava um arquivo', () => {
+      const b = usePrioritization(quinhentas(), { storageKey: `test-top-${Math.random()}` });
+      b.moveToTop('015');
+      expect(b.changedTasks.value.map((t) => t.id)).toEqual(['015']);
+    });
+
+    it('levar uma tarefa sem numero ao topo grava um arquivo', () => {
+      const b = usePrioritization(quinhentas(), { storageKey: `test-top-${Math.random()}` });
+      b.moveToTop('400');
+      expect(b.changedTasks.value.map((t) => t.id)).toEqual(['400']);
+    });
+
+    it('levar uma tarefa ao fim de uma cauda numerada grava um arquivo', () => {
+      const tasks = quinhentas();
+      for (const t of tasks.value) t.order ??= Number(t.id) * 10;
+      const b = usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
+      b.moveToBottom('005');
+      expect(b.changedTasks.value.map((t) => t.id)).toEqual(['005']);
+    });
+
+    /*
+     * O pior caso, medido e nao escondido: a cauda sem `order` sempre ordena por
+     * ultimo, entao a unica forma de expressar "depois da ultima" e dar numero a
+     * cauda inteira — o mesmo custo de prefixo que a task-082 registrou para o
+     * meio da regiao sem numero, aqui no seu maximo.
+     */
+    it('levar uma tarefa ao fim de uma cauda sem numero numera a cauda', () => {
+      const b = usePrioritization(quinhentas(), { storageKey: `test-top-${Math.random()}` });
+      b.moveToBottom('005');
+      expect(b.changedTasks.value.length).toBe(481);
+    });
+
+    it('levar um grupo ao topo grava so os membros dele', () => {
+      const b = usePrioritization(quinhentas(), { storageKey: `test-top-${Math.random()}` });
+      b.moveGroupToTop('g-x');
+      expect(b.changedTasks.value.map((t) => t.id).sort()).toEqual(['011', '012']);
+    });
+  });
+});

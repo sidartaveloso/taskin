@@ -236,14 +236,15 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
    * todas de uma vez — dezenas de arquivos no `git status` por um clique de
    * seta, e um commit gigante com o autopilot ligado.
    *
-   * @param movidoId - A tarefa que acabou de se mover, quando a operacao sabe
-   *   qual foi. Com ela, so essa tarefa recebe numero novo: o valor entra
-   *   **entre** os vizinhos, e o resto da lista fica intacto. Sem ela — nas
-   *   operacoes que remexem varios itens — vale a passagem de reparo abaixo.
+   * @param movidos - As tarefas que acabaram de se mover, quando a operacao
+   *   sabe quais foram: uma so, ou os membros de um grupo que se moveu inteiro,
+   *   contiguos na lista. Com elas, so elas recebem numero novo: os valores
+   *   entram **entre** os vizinhos, e o resto da lista fica intacto. Sem elas —
+   *   nas operacoes que remexem varios itens — vale a passagem de reparo abaixo.
    */
-  function commit(movidoId?: string): void {
+  function commit(...movidos: string[]): void {
     const itens = itensDaArvore();
-    if (movidoId !== undefined && numerarMovido(itens, movidoId)) return;
+    if (movidos.length > 0 && numerarMovidos(itens, movidos)) return;
 
     /*
      * Passagem de reparo: mantem o numero de quem ja expressa a propria posicao
@@ -275,20 +276,22 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   }
 
   /**
-   * Poe a tarefa movida entre os vizinhos, alterando so ela quando da.
+   * Poe o bloco movido entre os vizinhos, alterando so ele quando da.
    *
-   * Devolve `false` quando nao ha como expressar a posicao mexendo em uma so —
-   * porque falta espaco entre os vizinhos, ou porque os vizinhos anteriores nem
-   * numero tem. Nesse caso quem chama cai na passagem de reparo.
+   * O bloco e uma tarefa, ou os membros de um grupo que se moveu inteiro — que
+   * na lista plana ficam contiguos. Devolve `false` quando nao ha como expressar
+   * a posicao mexendo so no bloco — porque falta espaco entre os vizinhos, ou
+   * porque os vizinhos anteriores nem numero tem. Nesse caso quem chama cai na
+   * passagem de reparo.
    */
-  function numerarMovido(itens: Task[], movidoId: string): boolean {
-    const i = itens.findIndex((t) => t.id === movidoId);
+  function numerarMovidos(itens: Task[], movidos: readonly string[]): boolean {
+    const i = itens.findIndex((t) => t.id === movidos[0]);
     if (i < 0) return false;
-    const movido = itens[i];
-    if (!movido) return false;
+    const fim = i + movidos.length - 1;
+    if (!movidos.every((id, k) => itens[i + k]?.id === id)) return false;
 
     const antes = itens[i - 1];
-    const depois = itens[i + 1];
+    const depois = itens[fim + 1];
 
     /*
      * Um item sem numero a frente nao atrapalha: sem `order` ele ja vai para o
@@ -301,7 +304,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
      */
     if (i > 0 && (antes === undefined || antes.order === undefined)) {
       let valor = 0;
-      for (let j = 0; j <= i; j++) {
+      for (let j = 0; j <= fim; j++) {
         const item = itens[j];
         if (!item) continue;
         if (item.order !== undefined && item.order > valor) {
@@ -316,11 +319,17 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
     const piso = antes?.order ?? 0;
     const teto = depois?.order;
+    const total = movidos.length;
 
-    const valor = teto === undefined ? piso + orderStep : Math.floor((piso + teto) / 2);
-    if (!(valor > piso) || (teto !== undefined && valor >= teto)) return false;
+    // Cada movido precisa de um inteiro proprio estritamente entre os vizinhos
+    if (teto !== undefined && teto - piso < total + 1) return false;
 
-    movido.order = valor;
+    for (let k = 0; k < total; k++) {
+      const item = itens[i + k];
+      if (!item) return false;
+      item.order =
+        teto === undefined ? piso + orderStep * (k + 1) : piso + Math.floor(((teto - piso) * (k + 1)) / (total + 1));
+    }
     return true;
   }
 
@@ -859,6 +868,69 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     commit(id);
   }
 
+  /** Ids das tarefas de um no, na ordem em que aparecem na lista plana. */
+  function idsDoNo(node: PriorityNode): string[] {
+    if (node.kind === 'task') return [node.task.id];
+    return node.items.flatMap(idsDoNo);
+  }
+
+  function idDoNo(node: PriorityNode): string {
+    return node.kind === 'task' ? node.task.id : node.groupId;
+  }
+
+  /**
+   * Leva um no para o topo ou para o fim da lista **visivel** em que ele esta.
+   *
+   * "Visivel" e o `tree` ja filtrado: o destino e antes da primeira (ou depois
+   * da ultima) linha irma que a pessoa esta vendo, e nao o extremo da lista
+   * inteira — senao a tarefa sumiria de vista ao se mover. "Irma" quer dizer do
+   * mesmo contêiner: uma tarefa agrupada vai ao topo do **proprio grupo**, e um
+   * grupo aninhado ao topo do grupo que o contem; para subir na lista de fora,
+   * o grupo inteiro tem os proprios botoes.
+   *
+   * Fora do modo `manual` nao faz nada: a exibicao segue a dificuldade, entao
+   * mexer na prioridade nao levaria a linha a lugar nenhum que se veja.
+   */
+  function moverParaExtremo(id: string, kind: PriorityNode['kind'], extremo: 'topo' | 'fim'): void {
+    if (sortMode.value !== 'manual') return;
+
+    const visivel = findNodeLocation(tree.value, id);
+    if (!visivel || visivel.container[visivel.index]?.kind !== kind) return;
+    const alvo = extremo === 'topo' ? visivel.container[0] : visivel.container.at(-1);
+    if (!alvo || idDoNo(alvo) === id) return;
+
+    const preSnapshot = cloneTree(treeInternal.value);
+    const nodes = cloneTree(treeInternal.value);
+
+    const origem = findNodeLocation(nodes, id);
+    if (!origem) return;
+    const [movido] = origem.container.splice(origem.index, 1);
+    if (!movido) return;
+    const destino = findNodeLocation(nodes, idDoNo(alvo));
+    if (!destino) return;
+    destino.container.splice(extremo === 'topo' ? destino.index : destino.index + 1, 0, movido);
+
+    pushHistory(preSnapshot);
+    treeInternal.value = nodes;
+    commit(...idsDoNo(movido));
+  }
+
+  function moveToTop(id: string): void {
+    moverParaExtremo(id, 'task', 'topo');
+  }
+
+  function moveToBottom(id: string): void {
+    moverParaExtremo(id, 'task', 'fim');
+  }
+
+  function moveGroupToTop(groupId: string): void {
+    moverParaExtremo(groupId, 'group', 'topo');
+  }
+
+  function moveGroupToBottom(groupId: string): void {
+    moverParaExtremo(groupId, 'group', 'fim');
+  }
+
   /** Dissolve a group: remove the group wrapper and promote its items in-place. */
   function ungroup(groupId: string): void {
     const group = findGroupById(treeInternal.value, groupId);
@@ -1003,6 +1075,10 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     groupWithGroup,
     moveUp,
     moveDown,
+    moveToTop,
+    moveToBottom,
+    moveGroupToTop,
+    moveGroupToBottom,
     ungroup,
     exportJson,
     exportTreeJson,
