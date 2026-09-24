@@ -6,6 +6,7 @@ export * from './metrics.types';
 export * from './numerar-prioridade/index';
 export * from './ordenar-tarefas/index';
 export * from './posicionar-prioridade/index';
+export * from './superficies-das-operacoes/index';
 export * from './task-manager';
 export * from './task-manager.types';
 export * from './user-registry.types';

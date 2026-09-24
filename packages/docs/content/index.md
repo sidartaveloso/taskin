@@ -140,8 +140,13 @@ adds `content` and `filePath` to a task, a Redmine one would add the `issueId`
 and the note history, and none of that shows up in the agnostic package. Anyone
 consuming plain `Task` keeps working with any provider.
 
-`ITaskManager` sits on top with the state transitions — and is generic over the
-same shape.
+`ITaskManager` sits on top with the state transitions and the named operations —
+`startTask`, `finishTask`, `assignToGroup`, `setPriority`, `moveBefore`,
+`setDifficulty` and the rest — and is generic over the same shape. The CLI, the
+MCP server and the dashboard all go through it: the dashboard's WebSocket sends
+`set-priority` or `assign-to-group`, never a whole task to overwrite. A table,
+`SUPERFICIES_DAS_OPERACOES`, says where each operation is exposed — and adding
+an operation without deciding the three surfaces does not compile.
 
 ## The file provider, which is the default
 

@@ -82,3 +82,29 @@ Tell me which and I’ll implement it.
 # @taskin/task-manager
 
 This package is responsible for the core logic of managing tasks.
+
+## Named operations, and where each one is exposed
+
+Grouping, prioritizing and scoring are named operations of `ITaskManager` —
+`assignToGroup`, `removeFromGroup`, `setPriority`, `moveBefore`, `moveAfter`,
+`setDifficulty` — and not a side effect of a generic `updateTask`. The CLI, the
+MCP server and the dashboard (through the WebSocket server) all call them.
+
+`SUPERFICIES_DAS_OPERACOES` says, for every operation, how each surface exposes
+it: by name (`{ nome: 'set_priority' }`) or absent with the reason written
+(`{ ausente: '...' }`). It `satisfies Record<OperacaoDoManager, ...>`, so
+adding an operation to `ITaskManager` without deciding the three surfaces does
+not compile. `NomeNaSuperficie<'ws'>` types the WebSocket handlers from the
+same table, and `nomesNaSuperficie('cli' | 'mcp')` lets the CLI and the MCP
+server check at test time that every declared name exists.
+
+Anyone implementing `ITaskManager` can prove the named operations against
+themselves with the contract suite:
+
+```ts
+import { runTaskManagerContractTests } from '@opentask/taskin-task-manager/testing';
+
+runTaskManagerContractTests(async (tasks, groups) => ({ manager, ler: (id) => ... }));
+```
+
+See `docs/RDT/superficies-derivam-do-mesmo-contrato.md`.

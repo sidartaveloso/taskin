@@ -131,8 +131,13 @@ acrescenta `content` e `filePath` à tarefa, um de Redmine acrescentaria o
 `issueId` e o histórico de notas, e nada disso aparece no pacote agnóstico. Quem
 consome apenas `Task` continua funcionando com qualquer provider.
 
-O `ITaskManager` fica em cima, com as transições de estado — e é genérico sobre
-a mesma forma.
+O `ITaskManager` fica em cima, com as transições de estado e as operações
+nomeadas — `startTask`, `finishTask`, `assignToGroup`, `setPriority`,
+`moveBefore`, `setDifficulty` e as demais — e é genérico sobre a mesma forma. A
+CLI, o servidor MCP e o dashboard passam todos por ele: o WebSocket do dashboard
+manda `set-priority` ou `assign-to-group`, nunca uma tarefa inteira para
+sobrescrever. Uma tabela, `SUPERFICIES_DAS_OPERACOES`, diz onde cada operação
+aparece — e acrescentar uma operação sem decidir as três superfícies não compila.
 
 ## O provider de arquivos, que é o padrão
 

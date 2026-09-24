@@ -153,6 +153,10 @@ export class MockMCPTaskManager implements ITaskManager {
     return { task: this.gravar(taskId, {}), changed: 1 };
   }
 
+  async setDifficulty(taskId: TaskId, difficulty: number): Promise<Task> {
+    return this.gravar(taskId, { difficulty });
+  }
+
   private gravar(taskId: TaskId, campos: Partial<Task>): Task {
     const task = this.tasks.get(taskId);
     if (!task) throw new Error(`Task ${taskId} not found`);

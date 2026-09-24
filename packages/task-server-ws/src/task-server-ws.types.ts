@@ -1,4 +1,4 @@
-import type { ITaskManager, ITaskProvider } from '@opentask/taskin-task-manager';
+import type { ITaskManager, ITaskProvider, NomeNaSuperficie } from '@opentask/taskin-task-manager';
 import type { Task } from '@opentask/taskin-types';
 import type { WebSocket as WSType } from 'ws';
 
@@ -98,15 +98,18 @@ export interface ClientConnection {
 }
 
 /**
- * WebSocket message types (server-side)
+ * WebSocket message types (server-side).
+ *
+ * Os pedidos que sao operacoes do `ITaskManager` vem da tabela
+ * `SUPERFICIES_DAS_OPERACOES`, e nao de uma lista escrita aqui. Nao ha mais
+ * `update`: gravar uma task inteira era a porta dos fundos por onde agrupar,
+ * priorizar e pontuar existiam so no dashboard (task-106).
  */
 export type WSMessageType =
-  | 'list'
+  | NomeNaSuperficie<'ws'>
   | 'find'
-  | 'update'
-  | 'start'
-  | 'finish'
-  | 'pause'
+  | 'create-group'
+  | 'group:created'
   | 'tasks'
   | 'task:found'
   | 'task:updated'

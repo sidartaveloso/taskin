@@ -279,6 +279,16 @@ export interface ITaskManager<TTask extends Task = Task> {
   moveAfter: (taskId: TaskId, targetId: TaskId) => Promise<{ task: TTask; changed: number }>;
 
   /**
+   * Da a tarefa uma dificuldade percebida, de 1 (trivial) a 5 (muito dificil).
+   *
+   * Nomeada pelo mesmo motivo das de agrupar e priorizar: ate a task-106 so o
+   * dashboard pontuava, e pontuava pelo `update` generico do servidor WebSocket.
+   *
+   * @throws Error quando a dificuldade nao e inteira entre 1 e 5, ou a tarefa nao existe
+   */
+  setDifficulty: (taskId: TaskId, difficulty: number) => Promise<TTask>;
+
+  /**
    * Mark a task as ready for review.
    * Transitions the task from 'in-progress' to 'in-review' status.
    * @param taskId - The unique identifier of the task

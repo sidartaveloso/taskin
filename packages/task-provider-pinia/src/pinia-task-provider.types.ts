@@ -41,7 +41,8 @@ export interface PiniaTaskProviderConfig {
 export type WebSocketMessageType =
   | 'list'
   | 'find'
-  | 'update'
+  | OperacaoDoQuadro['type']
+  | 'group:created'
   | 'tasks'
   | 'task:found'
   | 'task:updated'
@@ -50,6 +51,29 @@ export type WebSocketMessageType =
   | 'error'
   | 'ping'
   | 'pong';
+
+/**
+ * O que cada operacao do quadro leva ao servidor.
+ *
+ * Os nomes sao os que `SUPERFICIES_DAS_OPERACOES` declara para o `ws`, mais o
+ * `create-group` do registro de grupos. O servidor nao aceita mais `update`:
+ * agrupar, priorizar e pontuar passam pelas mesmas operacoes do `ITaskManager`
+ * que a CLI e o MCP usam (task-106).
+ */
+export interface PayloadsDasOperacoes {
+  'set-priority': { taskId: string; priority: number };
+  'set-difficulty': { taskId: string; difficulty: number };
+  'assign-to-group': { taskId: string; groupId: string };
+  'remove-from-group': { taskId: string };
+  'move-before': { taskId: string; targetId: string };
+  'move-after': { taskId: string; targetId: string };
+  'create-group': { id: string; name: string };
+}
+
+/** Uma operacao do quadro, como vai pelo fio. */
+export type OperacaoDoQuadro = {
+  [K in keyof PayloadsDasOperacoes]: { type: K; payload: PayloadsDasOperacoes[K] };
+}[keyof PayloadsDasOperacoes];
 
 /**
  * WebSocket message structure
@@ -138,8 +162,14 @@ export interface PiniaTaskStoreActions {
   /** Get all tasks */
   getAllTasks(): Promise<Task[]>;
 
-  /** Update task */
+  /**
+   * Sempre recusa: o servidor so aceita operacoes nomeadas. Existe porque o
+   * store tambem se apresenta como `ITaskProvider`. Use {@link operar}.
+   */
   updateTask(task: Task): Promise<void>;
+
+  /** Manda uma operacao nomeada ao servidor, e ja a reflete no cache. */
+  operar(operacao: OperacaoDoQuadro): void;
 }
 
 /**
