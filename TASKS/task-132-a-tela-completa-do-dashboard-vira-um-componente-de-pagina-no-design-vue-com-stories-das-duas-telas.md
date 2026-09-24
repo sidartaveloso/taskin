@@ -1,6 +1,6 @@
 # 🧩 Task 132 — A tela completa do dashboard vira um componente de pagina no design-vue, com stories das duas telas
 
-- Status: pending
+- Status: in-progress
 - Type: refactor
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
