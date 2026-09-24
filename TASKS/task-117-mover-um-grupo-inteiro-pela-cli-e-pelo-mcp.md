@@ -1,6 +1,6 @@
 # 🧩 Task 117 — Mover um grupo inteiro pela CLI e pelo MCP
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
