@@ -6,6 +6,7 @@ export {
   usePrioritization,
 } from './use-prioritization';
 export type {
+  PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
   PriorityGroupNode,

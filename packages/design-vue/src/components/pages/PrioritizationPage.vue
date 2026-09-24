@@ -22,6 +22,7 @@ const {
   filter,
   viewMode,
   sortMode,
+  scoreFilter,
   dragEnabled,
   changedTasks,
   canUndo,
@@ -29,6 +30,7 @@ const {
   setFilter,
   setViewMode,
   setSortMode,
+  setScoreFilter,
   toggleGroupCollapsed,
   setDifficulty,
   moveBefore,
@@ -162,6 +164,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
     :filter="filter"
     :view-mode="viewMode"
     :sort-mode="sortMode"
+    :score-filter="scoreFilter"
     :drag-enabled="dragEnabled"
     :can-undo="canUndo"
     :can-redo="canRedo"
@@ -176,6 +179,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
     @update:filter="setFilter"
     @update:view-mode="setViewMode"
     @update:sort-mode="setSortMode"
+    @update:score-filter="setScoreFilter"
     @toggle-collapse="toggleGroupCollapsed"
     @set-all-collapsed="setAllCollapsed"
     @set-difficulty="setDifficulty"

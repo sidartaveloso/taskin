@@ -517,6 +517,52 @@ describe('usePrioritization', () => {
     expect(ids).toEqual(['a']);
   });
 
+  it('scoreFilter scored shows only the tasks that already have a difficulty', () => {
+    const { composable } = setup([
+      makeTask({ id: 'a', order: 10, difficulty: 2 }),
+      makeTask({ id: 'b', order: 20 }),
+      makeTask({ id: 'c', order: 30, difficulty: 4 }),
+    ]);
+
+    composable.setScoreFilter('scored');
+
+    const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
+    expect(ids).toEqual(['a', 'c']);
+  });
+
+  it('scoreFilter unscored shows the queue still waiting for a difficulty, groups included', () => {
+    const { composable } = setup([
+      makeTask({ id: 'a', order: 10, difficulty: 2 }),
+      makeTask({ id: 'b', order: 20, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'c', order: 30, difficulty: 3, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'd', order: 40, difficulty: 5, parent: { type: 'group', id: groupId('g2') } }),
+    ]);
+
+    composable.setScoreFilter('unscored');
+
+    const tree = composable.tree.value;
+    expect(tree).toHaveLength(1);
+    const group = nodeAt(tree, 0);
+    expect(group.kind === 'group' && group.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['b']);
+  });
+
+  it('scoreFilter combines with the text filter and defaults to all', () => {
+    const { composable } = setup([
+      makeTask({ id: 'a', order: 10, difficulty: 2, title: 'Fix login' }),
+      makeTask({ id: 'b', order: 20, title: 'Fix crash' }),
+      makeTask({ id: 'c', order: 30, difficulty: 1, title: 'Add export' }),
+    ]);
+
+    expect(composable.scoreFilter.value).toBe('all');
+    expect(composable.tree.value).toHaveLength(3);
+
+    composable.setScoreFilter('scored');
+    composable.setFilter('fix');
+
+    const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
+    expect(ids).toEqual(['a']);
+  });
+
   it('sortMode diff-desc reorders the visible tree by difficulty without touching manual order', () => {
     const { composable } = setup([
       makeTask({ id: 'a', order: 10, difficulty: 1 }),

@@ -3,6 +3,12 @@ import type { GroupId, Task } from '../../types';
 
 export type PrioritizationViewMode = 'cards' | 'icons' | 'grid';
 export type PrioritizationSortMode = 'manual' | 'diff-asc' | 'diff-desc';
+/**
+ * Restricts the visible tree by whether a task already has a difficulty.
+ * `scored` is for prioritising (and makes the diff sort modes honest);
+ * `unscored` is the queue of what is still waiting to be rated.
+ */
+export type PrioritizationScoreFilter = 'all' | 'scored' | 'unscored';
 
 export interface PriorityTaskNode {
   kind: 'task';
@@ -31,6 +37,7 @@ export interface UsePrioritization {
   filter: Ref<string>;
   viewMode: Ref<PrioritizationViewMode>;
   sortMode: Ref<PrioritizationSortMode>;
+  scoreFilter: Ref<PrioritizationScoreFilter>;
   dragEnabled: Ref<boolean>;
   changedTasks: Ref<Task[]>;
   canUndo: Ref<boolean>;
@@ -38,6 +45,7 @@ export interface UsePrioritization {
   setFilter(value: string): void;
   setViewMode(value: PrioritizationViewMode): void;
   setSortMode(value: PrioritizationSortMode): void;
+  setScoreFilter(value: PrioritizationScoreFilter): void;
   toggleGroupCollapsed(groupId: string): void;
   setDifficulty(taskId: string, difficulty: 1 | 2 | 3 | 4 | 5): void;
   moveBefore(draggedId: string, targetId: string): void;

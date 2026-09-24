@@ -43,6 +43,24 @@
         <option value="diff-asc">Difficulty ↑ (low→high)</option>
       </select>
 
+      <select
+        class="sort-select"
+        data-testid="score-filter-select"
+        aria-label="Difficulty filter"
+        :value="scoreFilter"
+        @change="
+          emit(
+            'update:scoreFilter',
+            ($event.target as HTMLSelectElement)
+              .value as PrioritizationScoreFilter,
+          )
+        "
+      >
+        <option value="all">All tasks</option>
+        <option value="scored">Scored only</option>
+        <option value="unscored">Unscored only</option>
+      </select>
+
       <button
         class="ghost"
         type="button"
@@ -148,6 +166,7 @@
 import { type ConfigurableFunction, GestureSystem, TrackingControls } from '@opentask/ui-sense';
 import { provide, ref, toRef } from 'vue';
 import type {
+  PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
   PriorityNode,
@@ -159,6 +178,7 @@ export interface PrioritizationScreenProps {
   filter?: string;
   viewMode?: PrioritizationViewMode;
   sortMode?: PrioritizationSortMode;
+  scoreFilter?: PrioritizationScoreFilter;
   dragEnabled?: boolean;
   canUndo?: boolean;
   canRedo?: boolean;
@@ -178,6 +198,7 @@ const props = withDefaults(defineProps<PrioritizationScreenProps>(), {
   filter: '',
   viewMode: 'cards',
   sortMode: 'manual',
+  scoreFilter: 'all',
   dragEnabled: true,
   canUndo: false,
   canRedo: false,
@@ -188,6 +209,7 @@ const emit = defineEmits<{
   'update:filter': [value: string];
   'update:viewMode': [value: PrioritizationViewMode];
   'update:sortMode': [value: PrioritizationSortMode];
+  'update:scoreFilter': [value: PrioritizationScoreFilter];
   'toggle-collapse': [groupId: string];
   'set-all-collapsed': [collapsed: boolean];
   'set-difficulty': [taskId: string, difficulty: 1 | 2 | 3 | 4 | 5];

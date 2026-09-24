@@ -127,3 +127,33 @@ describe('filtro active', () => {
     expect(ativas).toBeGreaterThan(emProgresso);
   });
 });
+
+/**
+ * Pontuada e a tarefa que ja recebeu `difficulty`. Sao dois momentos opostos:
+ * **priorizar** quer ver so as pontuadas; **pontuar** quer a fila do que ainda
+ * falta avaliar. Por isso o criterio tem par, como `open`/`closed`.
+ */
+describe('filtros scored e unscored', () => {
+  const tarefas = [
+    tarefa({ id: '001', difficulty: 3 }),
+    tarefa({ id: '002' }),
+    tarefa({ id: '003', difficulty: 1 }),
+    tarefa({ id: '004', status: 'done' }),
+  ];
+
+  it('`scored` traz so as tarefas com dificuldade', () => {
+    expect(filterTasks(tarefas, { scored: true }).map((t) => String(t.id))).toEqual(['001', '003']);
+  });
+
+  it('`unscored` traz so as tarefas sem dificuldade', () => {
+    expect(filterTasks(tarefas, { unscored: true }).map((t) => String(t.id))).toEqual(['002', '004']);
+  });
+
+  it('ausente, nao restringe nada', () => {
+    expect(filterTasks(tarefas, {}).map((t) => String(t.id))).toEqual(['001', '002', '003', '004']);
+  });
+
+  it('soma com os demais criterios', () => {
+    expect(filterTasks(tarefas, { unscored: true, open: true }).map((t) => String(t.id))).toEqual(['002']);
+  });
+});

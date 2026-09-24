@@ -41,6 +41,8 @@ export const FilterCriteriaSchema = z.object({
   open: z.boolean().optional(),
   closed: z.boolean().optional(),
   active: z.boolean().optional(),
+  scored: z.boolean().optional(),
+  unscored: z.boolean().optional(),
   text: z.string().optional(),
 });
 
@@ -85,6 +87,8 @@ export const FILTER_CRITERIA_SURFACES = {
     description: 'Only tasks started and not finished (in-progress, paused, in-review)',
     cli: { kind: 'flag' },
   },
+  scored: { description: 'Only tasks that already have a difficulty', cli: { kind: 'flag' } },
+  unscored: { description: 'Only tasks still without a difficulty', cli: { kind: 'flag' } },
   text: { description: 'Free text over id, title, status and assignee', cli: { kind: 'positional' } },
 } satisfies Record<keyof TaskFilterCriteria, CriterionSurface>;
 

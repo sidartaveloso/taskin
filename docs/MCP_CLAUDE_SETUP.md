@@ -83,7 +83,8 @@ id, título, status, tipo, responsável — **sem o corpo do markdown**, que é
 buscado depois pelo id.
 
 Aceita filtros, todos opcionais e cumulativos: `status`, `type`, `assignee`
-(id ou nome, inteiro ou em parte), `open`, `closed` e `text` (busca livre).
+(id ou nome, inteiro ou em parte), `open`, `closed`, `active`, `scored` (já tem
+dificuldade), `unscored` (ainda sem dificuldade) e `text` (busca livre).
 
 ```
 Liste as tasks em andamento
