@@ -61,7 +61,8 @@ export function numerarPrioridade(tarefas: readonly Task[], passo = PASSO_DE_PRI
        * no primeiro que ja estiver alem. A renumeracao fica na vizinhanca.
        */
       let corrido = anterior;
-      for (let j = i; j < tarefas.length; j++) {
+      let j = i;
+      for (; j < tarefas.length; j++) {
         const item = tarefas[j];
         if (!item) continue;
         if (j > i && item.order !== undefined && item.order > corrido) break;
@@ -69,6 +70,8 @@ export function numerarPrioridade(tarefas: readonly Task[], passo = PASSO_DE_PRI
         mudancas.push({ ...item, order: corrido });
       }
       anterior = corrido;
+      // Quem a caminhada ja renumerou nao passa pelo laco de novo.
+      i = j - 1;
       continue;
     }
 

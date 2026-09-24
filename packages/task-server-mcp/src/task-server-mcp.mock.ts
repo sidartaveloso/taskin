@@ -1,5 +1,5 @@
 import type { CreateTaskOptions, CreateTaskResult, ITaskManager, LintResult } from '@opentask/taskin-task-manager';
-import { parseTaskId, type Task, type TaskId } from '@opentask/taskin-types';
+import { type GroupId, parseTaskId, type Task, type TaskId } from '@opentask/taskin-types';
 import type { MCPServerConfig } from './task-server-mcp.types.js';
 
 /**
@@ -131,6 +131,34 @@ export class MockMCPTaskManager implements ITaskManager {
 
   async prioritizeAll(): Promise<{ total: number; withoutPriority: number; changed: number }> {
     return { total: this.tasks.size, withoutPriority: 0, changed: 0 };
+  }
+
+  async assignToGroup(taskId: TaskId, groupId: GroupId): Promise<Task> {
+    return this.gravar(taskId, { groupId });
+  }
+
+  async removeFromGroup(taskId: TaskId): Promise<Task> {
+    return this.gravar(taskId, { groupId: undefined });
+  }
+
+  async setPriority(taskId: TaskId, priority: number): Promise<Task> {
+    return this.gravar(taskId, { order: priority });
+  }
+
+  async moveBefore(taskId: TaskId): Promise<{ task: Task; changed: number }> {
+    return { task: this.gravar(taskId, {}), changed: 1 };
+  }
+
+  async moveAfter(taskId: TaskId): Promise<{ task: Task; changed: number }> {
+    return { task: this.gravar(taskId, {}), changed: 1 };
+  }
+
+  private gravar(taskId: TaskId, campos: Partial<Task>): Task {
+    const task = this.tasks.get(taskId);
+    if (!task) throw new Error(`Task ${taskId} not found`);
+    const atualizada = { ...task, ...campos };
+    this.tasks.set(taskId, atualizada);
+    return atualizada;
   }
 
   /**

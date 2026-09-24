@@ -11,6 +11,7 @@ import {
 import {
   filterCriteriaJsonSchema,
   filterTasks,
+  GROUPS_NOT_SUPPORTED,
   type ITaskManager,
   type ModoDeOrdenacao,
   numerarPrioridade,
@@ -19,7 +20,7 @@ import {
   summarizeTask,
   type TaskFilterCriteria,
 } from '@opentask/taskin-task-manager';
-import { type TaskId, TaskIdSchema, type TaskStatus } from '@opentask/taskin-types';
+import { type GroupId, GroupIdSchema, type TaskId, TaskIdSchema, type TaskStatus } from '@opentask/taskin-types';
 import type {
   ITaskMCPServer,
   MCPConnectionOptions,
@@ -48,6 +49,39 @@ function readTaskId(raw: unknown): TaskId | undefined {
   const parsed = TaskIdSchema.safeParse(raw);
   return parsed.success ? parsed.data : undefined;
 }
+
+function readGroupId(raw: unknown): GroupId | undefined {
+  const parsed = GroupIdSchema.safeParse(raw);
+  return parsed.success ? parsed.data : undefined;
+}
+
+/** Uma recusa em uma frase, no formato que o cliente MCP mostra. */
+function recusa(text: string): MCPToolCallResult {
+  return { content: [{ type: 'text' as const, text }], isError: true };
+}
+
+/** Resposta de sucesso com a tarefa como o `start_task` ja a descreve. */
+function tarefaAlterada(
+  task: { id: TaskId; title: string; status: TaskStatus; type: string; groupId?: GroupId; order?: number },
+  extra: Record<string, unknown> = {},
+): MCPToolCallResult {
+  const { id, title, status, type, groupId, order } = task;
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: JSON.stringify(
+          { success: true, task: { id, title, status, type, groupId, priority: order }, ...extra },
+          null,
+          2,
+        ),
+      },
+    ],
+    isError: false,
+  };
+}
+
+const TASK_ID_PROPERTY = { type: 'string', description: 'The id of the task, e.g. "020"' } as const;
 
 function invalidTaskId(raw: unknown): MCPToolCallResult {
   return {
@@ -225,6 +259,27 @@ export class TaskMCPServer implements ITaskMCPServer {
           },
         },
       },
+      /*
+       * Agrupar so e anunciado quando a fonte tem grupos (task-079): um
+       * provider sem o conceito nao oferece a operacao, em vez de oferecer uma
+       * que sempre falha.
+       */
+      ...(this.taskManager.groupRegistry ? this.ferramentasDeGrupo() : []),
+      {
+        name: 'set_priority',
+        description:
+          'Give one task a place in the queue. Pass exactly one of: `priority` (an absolute number, lower comes first), `before` (the id of the task it should come right before) or `after`. Relative moves write only what changes — usually one file.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: TASK_ID_PROPERTY,
+            priority: { type: 'integer', minimum: 1, description: 'Absolute priority number; lower comes first' },
+            before: { type: 'string', description: 'Place the task right before this task id' },
+            after: { type: 'string', description: 'Place the task right after this task id' },
+          },
+          required: ['taskId'],
+        },
+      },
       {
         name: 'list_tasks',
         description:
@@ -283,6 +338,29 @@ export class TaskMCPServer implements ITaskMCPServer {
     return { tools };
   }
 
+  private ferramentasDeGrupo(): MCPTool[] {
+    return [
+      {
+        name: 'join_group',
+        description:
+          'Put a task in an existing group. The group must already exist — see list_groups. A task belongs to at most one group, so this moves it out of any other.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: TASK_ID_PROPERTY,
+            groupId: { type: 'string', description: 'The id of the group, as list_groups returns it' },
+          },
+          required: ['taskId', 'groupId'],
+        },
+      },
+      {
+        name: 'leave_group',
+        description: 'Take a task out of its group. A task without a group is left as it is.',
+        inputSchema: { type: 'object', properties: { taskId: TASK_ID_PROPERTY }, required: ['taskId'] },
+      },
+    ];
+  }
+
   /**
    * Call a tool
    */
@@ -299,6 +377,15 @@ export class TaskMCPServer implements ITaskMCPServer {
 
         case 'list_tasks':
           return await this.handleListTasks(params.arguments ?? {});
+
+        case 'join_group':
+          return await this.handleJoinGroup(params.arguments ?? {});
+
+        case 'leave_group':
+          return await this.handleLeaveGroup(params.arguments ?? {});
+
+        case 'set_priority':
+          return await this.handleSetPriority(params.arguments ?? {});
 
         case 'start_task': {
           const taskId = readTaskId(params.arguments?.taskId);
@@ -612,6 +699,58 @@ Let me start by marking the task as done using the finish_task tool.`,
       content: [{ type: 'text', text: JSON.stringify(resultado, null, 2) }],
       isError: false,
     };
+  }
+
+  private async handleJoinGroup(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    if (!this.taskManager.groupRegistry) return recusa(GROUPS_NOT_SUPPORTED);
+
+    const taskId = readTaskId(args.taskId);
+    if (!taskId) return invalidTaskId(args.taskId);
+    const groupId = readGroupId(args.groupId);
+    if (!groupId) return recusa(`Invalid group id: ${JSON.stringify(args.groupId)}. See list_groups.`);
+
+    return tarefaAlterada(await this.taskManager.assignToGroup(taskId, groupId));
+  }
+
+  private async handleLeaveGroup(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    if (!this.taskManager.groupRegistry) return recusa(GROUPS_NOT_SUPPORTED);
+
+    const taskId = readTaskId(args.taskId);
+    if (!taskId) return invalidTaskId(args.taskId);
+
+    return tarefaAlterada(await this.taskManager.removeFromGroup(taskId));
+  }
+
+  /**
+   * Uma ferramenta so para as tres formas, como o `taskin priority` da CLI.
+   * Mais de uma forma na mesma chamada e ambiguo, e se recusa em vez de
+   * escolher uma em silencio.
+   */
+  private async handleSetPriority(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    const taskId = readTaskId(args.taskId);
+    if (!taskId) return invalidTaskId(args.taskId);
+
+    const formas = (['priority', 'before', 'after'] as const).filter((k) => args[k] !== undefined);
+    if (formas.length !== 1) {
+      return recusa('Pass exactly one of `priority`, `before` or `after`.');
+    }
+
+    if (args.priority !== undefined) {
+      if (typeof args.priority !== 'number')
+        return recusa(`Priority must be a number; got ${JSON.stringify(args.priority)}.`);
+      return tarefaAlterada(await this.taskManager.setPriority(taskId, args.priority), { changed: 1 });
+    }
+
+    const referencia = args.before ?? args.after;
+    const targetId = readTaskId(referencia);
+    if (!targetId) return invalidTaskId(referencia);
+
+    const { task, changed } =
+      args.before !== undefined
+        ? await this.taskManager.moveBefore(taskId, targetId)
+        : await this.taskManager.moveAfter(taskId, targetId);
+
+    return tarefaAlterada(task, { changed });
   }
 
   private async handleListTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {

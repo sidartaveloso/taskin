@@ -192,6 +192,12 @@ agent:  → finish_task(taskId: "042")
 The agent doesn't know — and doesn't need to know — whether that became an edited
 file or a REST call. The provider settles that.
 
+The agent can also arrange the queue it works through. `set_priority` places a
+task by number, or right `before` or `after` another one, and `join_group` /
+`leave_group` move it between groups. The terminal has the same operations —
+`taskin priority 042 --before 017`, `taskin group join 042 g-cli` — so nobody has
+to edit the metadata block by hand.
+
 Registering the server takes one command:
 
 ```bash
@@ -207,7 +213,7 @@ set of tools, so answering is not the same as answering correctly.
 
 | package | what it does |
 | --- | --- |
-| `taskin` | The CLI: `init`, `new`, `start`, `finish`, `lint`, `prioritize`, `dashboard`, `mcp-install`, `mcp-server` |
+| `taskin` | The CLI: `init`, `new`, `start`, `finish`, `lint`, `prioritize`, `priority`, `group`, `dashboard`, `mcp-install`, `mcp-server` |
 | `@opentask/taskin-types` | Zod schemas and the domain types |
 | `@opentask/taskin-task-manager` | The state transitions and the `ITaskProvider` contract |
 | `@opentask/taskin-file-system-provider` | The default provider, in markdown |

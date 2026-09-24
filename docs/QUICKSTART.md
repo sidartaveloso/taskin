@@ -46,6 +46,12 @@ taskin finish task-01
 
 # Validar arquivos de tasks
 taskin lint
+
+# Agrupar e priorizar, sem editar o arquivo a mão
+taskin group join 042 g-cli        # Põe a task num grupo que já existe
+taskin group leave 042             # Tira do grupo
+taskin priority 042 150            # Número absoluto; menor vem antes
+taskin priority 042 --before 017   # Ou relativo: logo antes (ou --after) de outra
 ```
 
 ### 2. Dashboard Web com Sincronização Real-Time
@@ -120,6 +126,11 @@ taskin mcp-server --debug
 
 #### Tools Disponíveis
 
+- `list_tasks`: Lista as tarefas, com filtros opcionais
+- `list_groups`: Lista os grupos
+- `join_group` / `leave_group`: Põe uma tarefa num grupo, ou tira (só quando o provider tem grupos)
+- `set_priority`: Dá o lugar da tarefa na fila — `priority`, `before` ou `after`
+- `prioritize_tasks`: Numera todas de uma vez
 - `start_task`: Inicia uma tarefa (muda status para in-progress)
 - `finish_task`: Finaliza uma tarefa (muda status para done)
 

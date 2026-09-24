@@ -57,6 +57,20 @@ describe('numerarPrioridade', () => {
     expect(segunda).toEqual([]);
   });
 
+  /*
+   * Sem espaco entre dois vizinhos, a passada anda para a frente renumerando.
+   * Quem ela ja renumerou nao pode voltar de novo na lista: seriam duas
+   * gravacoes do mesmo arquivo, e a primeira desperdicada.
+   */
+  it('sem espaco, cada tarefa volta uma vez so', () => {
+    const tarefas = [tarefa('001', 100), tarefa('002'), tarefa('003', 101), tarefa('004', 500)];
+
+    const mudancas = numerarPrioridade(tarefas);
+
+    expect(ids(mudancas)).toEqual(['002', '003']);
+    expect(mudancas.map((t) => t.order)).toEqual([200, 300]);
+  });
+
   it('nao devolve nada quando todas ja estao numeradas e em ordem', () => {
     expect(numerarPrioridade([tarefa('001', 100), tarefa('002', 200)])).toEqual([]);
   });

@@ -4,7 +4,8 @@
 
 import { pushAfterCreate, syncBeforeCreate } from '@opentask/taskin-file-system-provider';
 import { GitService, type IGitService } from '@opentask/taskin-git-utils';
-import { TASK_TYPES } from '@opentask/taskin-types';
+import { GROUPS_NOT_SUPPORTED, type IGroupRegistry, TaskManager } from '@opentask/taskin-task-manager';
+import { parseGroupId, TASK_TYPES } from '@opentask/taskin-types';
 import inquirer from 'inquirer';
 import path from 'path';
 import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
@@ -13,6 +14,7 @@ import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
+import { lerPrioridade } from './priority.js';
 
 interface CreateTaskOptions {
   type?: string;
@@ -21,6 +23,10 @@ interface CreateTaskOptions {
   user?: string;
   /** `false` com --no-skip-ci: nao marca o commit de status. */
   skipCi?: boolean;
+  /** Id de um grupo que ja existe. */
+  group?: string;
+  /** Numero de prioridade, como digitado. */
+  priority?: string;
 }
 
 export const createCommand = defineCommand({
@@ -43,6 +49,14 @@ export const createCommand = defineCommand({
     {
       flags: '-u, --user <user>',
       description: 'Assignee user',
+    },
+    {
+      flags: '-g, --group <group-id>',
+      description: 'Put the new task in this existing group',
+    },
+    {
+      flags: '-p, --priority <n>',
+      description: 'Give the new task this priority number (lower comes first)',
     },
     {
       flags: '--no-skip-ci',
@@ -139,8 +153,39 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
     return;
   }
 
+  // Prioridade vem digitada; conferir antes de haver arquivo para desfazer.
+  let priority: number | undefined;
+  if (options.priority !== undefined) {
+    try {
+      priority = lerPrioridade(options.priority);
+    } catch (invalida) {
+      error(invalida instanceof Error ? invalida.message : String(invalida));
+      process.exitCode = 1;
+      return;
+    }
+  }
+
   const { provider: taskProvider, userRegistry, projectRoot: monorepoRoot } = await resolveTaskProvider();
   await taskProvider.initialize();
+
+  /*
+   * O grupo tambem e conferido antes de criar: uma tarefa que nasce e depois
+   * falha ao entrar no grupo deixa um arquivo que ninguem pediu daquele jeito.
+   */
+  const groupId = options.group !== undefined ? parseGroupId(options.group) : undefined;
+  if (groupId) {
+    const registro = (taskProvider as { groupRegistry?: IGroupRegistry }).groupRegistry;
+    if (!registro) {
+      error(GROUPS_NOT_SUPPORTED);
+      process.exitCode = 1;
+      return;
+    }
+    if (!(await registro.findGroup(groupId))) {
+      error(`Group '${groupId}' does not exist. See "taskin group list".`);
+      process.exitCode = 1;
+      return;
+    }
+  }
 
   // Ensure the current user exists in the registry
   await userRegistry.ensureCurrentUser();
@@ -191,6 +236,12 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   }
 
   const taskId = created.task.id;
+
+  // Antes do push: o commit do autoSync ja leva a tarefa no lugar.
+  const manager = new TaskManager(taskProvider);
+  if (groupId) await manager.assignToGroup(taskId, groupId);
+  if (priority !== undefined) await manager.setPriority(taskId, priority);
+
   const createdPath = 'filePath' in created && typeof created.filePath === 'string' ? created.filePath : undefined;
 
   // Commit and push the new task when autoSync is active
@@ -218,6 +269,12 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   console.log(colors.secondary(`📝 Title: ${created.task.title}`));
   if (createdPath) {
     console.log(colors.secondary(`📁 Path: ${createdPath}`));
+  }
+  if (groupId) {
+    console.log(colors.secondary(`🗂️  Group: ${groupId}`));
+  }
+  if (priority !== undefined) {
+    console.log(colors.secondary(`🔢 Priority: ${priority}`));
   }
   if (autoSyncActive) {
     success('Task committed and pushed to remote');
