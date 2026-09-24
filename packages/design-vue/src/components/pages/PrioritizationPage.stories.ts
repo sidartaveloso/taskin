@@ -1,7 +1,9 @@
+import { posicionarGrupo, posicionarPrioridade } from '@opentask/taskin-task-manager';
 import { parseTaskId } from '@opentask/taskin-types';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
-import { h } from 'vue';
+import { defineComponent, h, type PropType, ref } from 'vue';
+import type { MovimentoDoQuadro } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
 import { groupId } from '../../types';
 import PrioritizationPage from './PrioritizationPage.vue';
@@ -82,6 +84,62 @@ export const Unprioritized: Story = {
 };
 
 // ---------------------------------------------------------------------------
+// Hospedeiro
+//
+// Desde a task-118 a pagina nao numera: ela emite `move`, quem a hospeda manda o
+// movimento ao dominio, e a lista que volta traz a nova ordem. No dashboard
+// quem faz isso e o servidor WebSocket; aqui, este hospedeiro, com as mesmas
+// regras puras do dominio (`posicionarPrioridade` e `posicionarGrupo`). Sem
+// ele, arrastar numa story nao reordenaria nada.
+// ---------------------------------------------------------------------------
+
+type TarefaDoDominio = Parameters<typeof posicionarPrioridade>[0][number];
+
+const grupoDe = (t: Task) => (t.parent?.type === 'group' ? t.parent.id : undefined);
+
+/** Aplica um movimento como o servidor aplica: pela regra do dominio, devolvendo a lista inteira. */
+function aplicarMovimento(tarefas: Task[], movimento: MovimentoDoQuadro): Task[] {
+  const dominio = tarefas.map((t) => ({
+    id: t.id,
+    order: t.order,
+    groupId: grupoDe(t),
+  })) as unknown as TarefaDoDominio[];
+  const alvoEGrupo = tarefas.some((t) => grupoDe(t) === movimento.targetId);
+
+  const mudadas =
+    movimento.kind === 'task'
+      ? posicionarPrioridade(dominio, movimento.id as never, movimento.targetId as never, movimento.lado)
+      : posicionarGrupo(dominio, movimento.id as never, {
+          lado: movimento.lado,
+          alvo: alvoEGrupo ? { groupId: movimento.targetId as never } : { taskId: movimento.targetId as never },
+        });
+
+  const novaOrdem = new Map(mudadas.map((t) => [String(t.id), t.order]));
+  return tarefas.map((t) => (novaOrdem.has(String(t.id)) ? { ...t, order: novaOrdem.get(String(t.id)) } : t));
+}
+
+/** A pagina com um hospedeiro que grava o que ela emite, como o `App.vue` do dashboard. */
+const PaginaHospedada = defineComponent({
+  props: { tasks: { type: Array as PropType<Task[]>, required: true } },
+  setup(props) {
+    const tarefas = ref<Task[]>([...props.tasks]);
+    const gravar = (task: Task) => {
+      tarefas.value = tarefas.value.map((t) => (t.id === task.id ? task : t));
+    };
+    const mover = (movimento: MovimentoDoQuadro) => {
+      tarefas.value = aplicarMovimento(tarefas.value, movimento);
+    };
+    return () => h(PrioritizationPage, { tasks: tarefas.value, onUpdateTask: gravar, onMove: mover });
+  },
+});
+
+const hospedada = (args: { tasks?: Task[] }) => ({
+  components: { PaginaHospedada },
+  setup: () => ({ tasks: args.tasks ?? [] }),
+  template: '<PaginaHospedada :tasks="tasks" />',
+});
+
+// ---------------------------------------------------------------------------
 // Drag-and-drop interaction tests (play function)
 //
 // PrioritizationScreen's drag handlers read `event.clientY` relative to the
@@ -136,6 +194,7 @@ export const DragAndDropInteractions: Story = {
   args: {
     tasks: dragTasks,
   },
+  render: hospedada,
   parameters: {
     docs: {
       description: {
@@ -264,6 +323,7 @@ export const GroupDragInteractions: Story = {
   args: {
     tasks: groupedTasks,
   },
+  render: hospedada,
   parameters: {
     docs: {
       description: {
