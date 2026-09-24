@@ -2,7 +2,7 @@
 
 ## Open issues
 
-!`node packages/cli/dist/index.js list --json --open`
+!`node packages/cli/dist/index.js list --json --open | jq --arg g '{{GROUP}}' 'if $g == "" then . else map(select(.group.id == $g)) end'`
 
 The list above has already been filtered to issues ready for work and is the sole source of truth for what work exists. Do not run your own unfiltered query to find more issues — if the list is empty, there is nothing to do.
 

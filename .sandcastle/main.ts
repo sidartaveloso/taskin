@@ -50,6 +50,27 @@ const SETUP_TIMEOUT_MIN = minutes('SANDCASTLE_SETUP_TIMEOUT_MIN', IS_LINUX_NATIV
 // ele ja matou uma rodada no meio da task-071.
 const IDLE_TIMEOUT_MIN = minutes('SANDCASTLE_IDLE_TIMEOUT_MIN', IS_LINUX_NATIVE ? 15 : 30);
 
+// Recorte da rodada. Sem ele, a fila e toda tarefa aberta do projeto; com ele,
+// so as de um grupo — o caso de "implemente o pacote X":
+//
+//   SANDCASTLE_GROUP=g-n1xf2yf7 SANDCASTLE_MAX_ITERATIONS=5 npx tsx .sandcastle/main.ts
+//
+// O recorte e feito no prompt, sobre o `list --json`, porque a CLI ainda nao
+// filtra por grupo. Vazio quer dizer "sem recorte".
+const envVar = (name: string): string => process.env[name] ?? '';
+const GROUP = envVar('SANDCASTLE_GROUP');
+
+// Uma iteracao fecha no maximo uma tarefa; o numero e o teto da rodada.
+const MAX_ITERATIONS = (() => {
+  const raw = envVar('SANDCASTLE_MAX_ITERATIONS');
+  if (raw === '') return 3;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`SANDCASTLE_MAX_ITERATIONS deve ser um inteiro maior que zero; veio ${JSON.stringify(raw)}`);
+  }
+  return parsed;
+})();
+
 // Simple loop: an agent that picks open issues one by one and closes them.
 // Run this with: npx tsx .sandcastle/main.ts
 // Or add to package.json scripts: "sandcastle": "npx tsx .sandcastle/main.ts"
@@ -62,18 +83,21 @@ await run({
   sandbox: docker(),
 
   // The agent provider. Pass a model string to claudeCode() — sonnet balances
-  // capability and speed for most tasks. Switch to claude-opus-4-8 for harder
+  // capability and speed for most tasks. Switch to claude-opus-5-5 for harder
   // problems, or claude-haiku-4-5-20251001 for speed.
-  agent: claudeCode('claude-opus-4-8'),
+  agent: claudeCode('claude-opus-5-5'),
 
   // Path to the prompt file. Shell expressions inside are evaluated inside the
   // sandbox at the start of each iteration, so the agent always sees fresh data.
   promptFile: './.sandcastle/prompt.md',
 
+  // Substituido no prompt antes de expandir os blocos de shell.
+  promptArgs: { GROUP },
+
   // Maximum number of iterations (agent invocations) to run in a session.
   // Each iteration works on a single issue. Increase this to process more issues
   // per run, or set it to 1 for a single-shot mode.
-  maxIterations: 3,
+  maxIterations: MAX_ITERATIONS,
 
   // Dimensionado pelo perfil de ambiente no topo do arquivo.
   idleTimeoutSeconds: IDLE_TIMEOUT_MIN * 60,
