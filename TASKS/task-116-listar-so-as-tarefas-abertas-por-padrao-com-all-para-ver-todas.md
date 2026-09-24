@@ -1,6 +1,6 @@
 # 🧩 Task 116 — Listar so as tarefas abertas por padrao, com --all para ver todas
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
