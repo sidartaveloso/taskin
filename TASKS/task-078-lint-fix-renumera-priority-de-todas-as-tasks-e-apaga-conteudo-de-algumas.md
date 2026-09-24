@@ -1,6 +1,6 @@
 # 🧩 Task 078 — lint --fix renumera Priority de todas as tasks e apaga conteudo de algumas
 
-- Priority: 1378
+- Priority: 50
 - Status: paused
 - Type: fix
 - Assignee: sidartaveloso

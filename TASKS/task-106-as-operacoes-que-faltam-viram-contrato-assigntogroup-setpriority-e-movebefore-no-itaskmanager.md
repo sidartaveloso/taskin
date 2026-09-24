@@ -3,7 +3,7 @@
 - Status: done
 - Type: refactor
 - Assignee: sidartaveloso
-- Priority: 1021
+- Priority: 2900
 - Group: g-n1xf2yf7
 
 ## Description

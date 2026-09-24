@@ -4,7 +4,7 @@
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
-- Priority: 1140
+- Priority: 4200
 
 ## Description
 O dashboard deixa criar um subgrupo (soltar uma task sobre outra do mesmo grupo) e aninhar um grupo em outro (soltar um grupo sobre outro), mas o dominio nao sabe guardar isso: o Group so tem id e name, e a task guarda um grupo so. O aninhamento vive apenas na arvore da tela e se desfaz quando a lista volta do servidor ou a pagina recarrega. A task-118 expos isso ao levar o quadro a mover pelo dominio: o passo 5 da story Drag And Drop Interactions passou a falhar. Levar o aninhamento ao dominio (grupo pai no Group e no registro de grupos), as operacoes nomeadas no ITaskManager e as tres superficies.

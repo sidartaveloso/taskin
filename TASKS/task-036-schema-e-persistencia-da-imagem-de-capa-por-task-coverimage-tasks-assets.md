@@ -3,7 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: sidartaveloso
-- Priority: 1288
+- Priority: 4600
 - Difficulty: 2
 
 ## Description

@@ -4,7 +4,7 @@
 - Type: feat
 - Assignee: fernando-gatti
 - Depends on: task-024
-- Priority: 1268
+- Priority: 4400
 - Difficulty: 2
 
 ## Description

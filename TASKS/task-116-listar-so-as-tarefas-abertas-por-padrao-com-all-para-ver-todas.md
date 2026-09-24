@@ -4,7 +4,7 @@
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
-- Priority: 1110
+- Priority: 3900
 
 ## Description
 A pergunta de quem abre a lista e o que falta fazer, e as tarefas fechadas so crescem. O padrao passa a ser as abertas na CLI, no list_tasks do MCP e no dashboard, e um criterio all mostra todas. O padrao vale so quando nao ha criterio de status: --status, --closed e --active continuam como hoje. O padrao e o criterio all moram no dominio (FilterCriteriaSchema e filterTasks), de onde as tres superficies derivam; --open continua aceito.

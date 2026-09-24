@@ -3,7 +3,7 @@
 - Status: done
 - Type: test
 - Assignee: sidartaveloso
-- Priority: 250
+- Priority: 2100
 
 ## Description
 Quatro arquivos somam 30 corpos de teste que so afirmam expect(true).toBe(true). Eles contam como verdes no pnpm test e dao impressao de cobertura que nao existe — tres deles cobrem justamente o --dry-run de finish, start e pause.

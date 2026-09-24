@@ -3,7 +3,7 @@
 - Status: paused
 - Type: refactor
 - Assignee: sidartaveloso
-- Priority: 1012
+- Priority: 2800
 - Difficulty: 5
 
 ## Description

@@ -3,7 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: sidartaveloso
-- Priority: 1040
+- Priority: 1050
 - Group: notificacoes
 
 ## Description

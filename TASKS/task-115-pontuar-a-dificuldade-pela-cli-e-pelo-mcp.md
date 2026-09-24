@@ -4,7 +4,7 @@
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
-- Priority: 1100
+- Priority: 3800
 
 ## Description
 A task-102 deu a CLI e ao MCP o filtro --unscored, a fila do que falta pontuar, mas nenhuma das duas consegue pontuar: setDifficulty existe no ITaskManager desde a task-106 e so o dashboard o expoe, declarado assim na tabela do portao. Expor nas tres superficies: taskin difficulty <task> <1-5>, --difficulty no taskin new e set_difficulty no MCP.

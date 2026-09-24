@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: sidartaveloso
-- Priority: 175
+- Priority: 1300
 - Group: g-n1xf2yf7
 - Difficulty: 3
 

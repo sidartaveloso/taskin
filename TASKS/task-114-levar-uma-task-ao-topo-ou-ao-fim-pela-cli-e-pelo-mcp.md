@@ -4,7 +4,7 @@
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
-- Priority: 1030
+- Priority: 3000
 
 ## Description
 O dashboard ganhou os botoes de topo e fim na task-101, mas a CLI e o MCP so tem numero absoluto e --before/--after, que pedem um alvo. Levar uma task ao topo ou ao fim e a operacao mais rotineira de priorizacao e precisa de atalho nas tres superficies: moveToTop e moveToBottom como operacoes nomeadas do ITaskManager, --top/--bottom no taskin priority, e o mesmo no set_priority do MCP. O dashboard passa a usar as mesmas operacoes.

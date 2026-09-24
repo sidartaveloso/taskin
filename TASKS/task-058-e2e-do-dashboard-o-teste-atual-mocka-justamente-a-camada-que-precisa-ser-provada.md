@@ -3,7 +3,7 @@
 - Status: done
 - Type: test
 - Assignee: sidartaveloso
-- Priority: 240
+- Priority: 1800
 
 ## Description
 

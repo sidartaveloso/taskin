@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: fix
-- Priority: 238
+- Priority: 1700
 - Assignee: sidartaveloso
 
 ## Description

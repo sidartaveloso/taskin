@@ -1,6 +1,6 @@
 # 🧩 Task 077 — autoSync configuravel: escolher o remoto e a estrategia de sincronizacao
 
-- Priority: 986
+- Priority: 1000
 - Status: pending
 - Type: feat
 - Assignee: sidartaveloso
