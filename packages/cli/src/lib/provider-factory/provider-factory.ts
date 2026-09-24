@@ -28,6 +28,15 @@ function expandProviderConfig(config: Record<string, unknown>): Record<string, u
   return expanded;
 }
 
+function readMaxAttachmentKb(providerConfig: Record<string, unknown>): number | undefined {
+  if (!('maxAttachmentKb' in providerConfig)) return undefined;
+  const value = providerConfig.maxAttachmentKb;
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
+  throw new Error(
+    `provider.config.maxAttachmentKb in .taskin.json must be a positive number of KB (e.g. 300), got ${JSON.stringify(value)}.`,
+  );
+}
+
 /**
  * Builds the file system provider and the registry it reads from.
  *
@@ -56,6 +65,8 @@ const buildFileSystemProvider: ProviderBuilder = async ({ projectRoot, providerC
     ? providerConfig.convertMetadataStyleTo
     : undefined;
 
+  const maxAttachmentKb = readMaxAttachmentKb(providerConfig);
+
   /*
    * O unico ponto que sabe a forma concreta da task. A assercao e o que fecha o
    * tipo existencial de `OpaqueTask`: daqui para fora ninguem consegue fabricar
@@ -65,6 +76,7 @@ const buildFileSystemProvider: ProviderBuilder = async ({ projectRoot, providerC
   const provider = new FileSystemTaskProvider(tasksDir, userRegistry, undefined, undefined, {
     ...(metadataStyle !== undefined && { metadataStyle }),
     ...(convertMetadataStyleTo !== undefined && { convertMetadataStyleTo }),
+    ...(maxAttachmentKb !== undefined && { maxAttachmentKb }),
   }) as unknown as ITaskProvider<OpaqueTask>;
 
   return { provider, userRegistry };

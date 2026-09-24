@@ -1,4 +1,5 @@
 export * from './assignee-identity';
+export * from './attachment-validator/index.js';
 export * from './auto-sync';
 export * from './file-system-metrics-adapter';
 export * from './file-system-task-provider';
@@ -6,6 +7,7 @@ export * from './group-registry.js';
 export * from './i18n';
 export * from './inline-metadata';
 export * from './metadata-style/index';
+export * from './size-reduction-hint/index.js';
 export * from './task-file.types';
 export * from './user-registry';
 export * from './users-file-location';
