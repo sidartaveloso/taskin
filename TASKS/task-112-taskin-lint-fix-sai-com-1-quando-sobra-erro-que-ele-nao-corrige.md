@@ -1,6 +1,6 @@
 # 🧩 Task 112 — taskin lint --fix sai com 1 quando sobra erro que ele nao corrige
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 
