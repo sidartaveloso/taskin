@@ -1,6 +1,6 @@
 # 🧩 Task 106 — As operacoes que faltam viram contrato: assignToGroup, setPriority e moveBefore no ITaskManager
 
-- Status: in-progress
+- Status: done
 - Type: refactor
 - Assignee: sidartaveloso
 - Priority: 1021
