@@ -171,6 +171,14 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
     shows the open tasks; a control on the screen switches between Open, Active, Closed and All
   - `--filter-open` - Show only open tasks
   - `--filter-closed` - Show only closed tasks
+
+  On the prioritization board, moving a task or a group — arrows, top, bottom,
+  dragging — goes over the WebSocket as `move-before` / `move-after` (or
+  `move-group-before` / `move-group-after`), with the first, last or
+  neighbouring visible row as the reference. The numbers come from the same
+  rule as `taskin priority --before` and `taskin group move`, so the board
+  writes what they write. Undo re-sends the previous values of only the tasks
+  the move changed.
 - `taskin mcp-server` - Start MCP server for Claude Desktop integration (alias: `mcp`)
 - `taskin mcp-install` - Register the MCP server in this project's `.mcp.json`
   - `-f, --force` - Replace an existing `taskin` entry that differs

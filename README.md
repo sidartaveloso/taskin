@@ -164,6 +164,13 @@ taskin dashboard --filter-closed  # Show only closed tasks
 # WebSocket: ws://localhost:3001
 ```
 
+On the prioritization board, the arrows, top, bottom and dragging don't compute
+numbers in the browser: they send `move-before` / `move-after` (or the group
+versions) with the first, last or neighbouring **visible** row as the reference,
+and the domain numbers it — the same rule as `taskin priority --before`. A move
+to the top writes one file; a group of three writes three. Undo re-sends the
+previous values of only the tasks the move changed.
+
 #### 3. LLM Integration (Claude, GPT-4)
 
 ```bash

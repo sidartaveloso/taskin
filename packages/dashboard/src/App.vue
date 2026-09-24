@@ -55,16 +55,16 @@
     :tasks="tasks"
     @retry="handleRefresh"
   />
-  <PrioritizationPage v-else :tasks="tasks" @update-task="handleUpdateTask" />
+  <PrioritizationPage v-else :tasks="tasks" @update-task="handleUpdateTask" @move="handleMove" />
 </template>
 
 <script setup lang="ts">
-import type { Task, TaskStatus } from '@opentask/taskin-design-vue';
+import type { MovimentoDoQuadro, Task, TaskStatus } from '@opentask/taskin-design-vue';
 import { Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
 import { effectiveFilterCriteria, filterTasks, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { operacoesDaMudanca } from './operacoes-da-mudanca';
+import { operacaoDoMovimento, operacoesDaMudanca } from './operacoes-da-mudanca';
 
 // Progress bar filled per status.
 //
@@ -296,6 +296,15 @@ const handleUpdateTask = (task: Task) => {
     }
     taskStore.operar(operacao);
   }
+};
+
+/*
+ * Mover — setas, topo, fim, arrastar — vai ao dominio como `move-before`,
+ * `move-group-after`, ... com a linha visivel de referencia (task-118). O
+ * servidor responde com a lista inteira, e a nova ordem chega por ela.
+ */
+const handleMove = (movimento: MovimentoDoQuadro) => {
+  taskStore.operar(operacaoDoMovimento(movimento));
 };
 
 // Connection status type for header component
