@@ -1,6 +1,6 @@
 # 🧩 Task 102 — Listar somente as tarefas que ja tem Difficulty definido
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 177
