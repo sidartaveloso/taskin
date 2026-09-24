@@ -4,6 +4,7 @@
 - Type: fix
 - Assignee: sidartaveloso
 - Priority: 300
+- Difficulty: 2
 
 ## Description
 Um push de 31 commits para origin/develop nao disparou nenhum workflow, porque o commit do topo era o de status que o taskin finish grava com [skip ci], e o GitHub le so o commit do topo. Foi preciso disparar a verificacao e o build do Pages a mao com gh workflow run. Toda rodada do sandcastle termina com um commit de status no topo, e o docs/SANDCASTLE_LICOES.md ja descreve o risco. Decidir como o taskin evita isso: nao marcar o commit de status quando ha commits de trabalho ainda nao enviados abaixo dele, avisar no push, ou outra saida.

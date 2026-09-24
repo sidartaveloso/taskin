@@ -4,6 +4,7 @@
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 800
+- Difficulty: 2
 
 ## Description
 O dashboard se chama Taskin Dashboard no cabecalho e na aba, qualquer que seja o projeto, e nao mostra versao. Com dois dashboards abertos, as abas sao iguais; e quem reporta um defeito nao tem de onde tirar a versao. Mostrar o nome do projeto (por padrao o do repositorio) e a versao do taskin no cabecalho, e o nome do projeto no titulo da aba. Na mesma linha, o servidor MCP anuncia a versao 1.0.0 fixa no codigo (packages/cli/src/commands/mcp-server.ts e o padrao em packages/task-server-mcp/src/task-server-mcp.ts), e nao a do taskin.
