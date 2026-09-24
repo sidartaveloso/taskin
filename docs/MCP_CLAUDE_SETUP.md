@@ -73,7 +73,7 @@ Feche e abra o Claude Desktop para que as mudanças tenham efeito.
 
 ## Ferramentas Disponíveis
 
-O servidor expõe as ferramentas abaixo, e mais `list_groups` e `prioritize_tasks`. Esta lista é verificada por teste contra
+O servidor expõe as ferramentas abaixo, e mais `list_groups` (que traz o `parentId` dos grupos que estão dentro de outro) e `prioritize_tasks`. Esta lista é verificada por teste contra
 o que o servidor anuncia — se divergir, a suíte quebra.
 
 ### `list_tasks`
@@ -128,6 +128,42 @@ não existem são recusados dizendo qual.
 
 ```
 Coloque a task 042 no grupo g-cli
+```
+
+### `create_group`
+
+Cria um grupo, na raiz ou já dentro de outro (`parentId`). Recebe o `name` e,
+opcionalmente, o `id` — sem ele o id é gerado (`g-...`) — e devolve o grupo. Um
+`parentId` que não existe é recusado, e os grupos se aninham até **quatro
+níveis**. Só é anunciada quando o provider tem o conceito de grupo; com grupos
+mas sem grupo dentro de grupo, o `parentId` é recusado com
+`NESTING_NOT_SUPPORTED`.
+
+```
+Crie o grupo "Login" dentro do grupo g-cli
+```
+
+### `nest_group`
+
+Põe um grupo dentro de outro: recebe o `groupId` e o `parentId`. Os subgrupos
+vão junto e as tasks ficam onde estão — cada uma guarda o grupo mais interno, e
+estar no pai passa a incluir estar num subgrupo dele. Pai inexistente, o grupo
+dentro de si mesmo, um ciclo (o pai é um subgrupo do próprio grupo) e passar de
+quatro níveis são recusados dizendo qual. Grava só o arquivo de grupos, nenhuma
+task. Só é anunciada quando o provider tem grupo dentro de grupo — ver
+[RDT/grupos-aninhados.md](RDT/grupos-aninhados.md).
+
+```
+Coloque o grupo g-auth dentro do g-cli
+```
+
+### `unnest_group`
+
+Tira um grupo do pai dele e o devolve à raiz; recebe o `groupId`. Um grupo que
+já está na raiz fica como está. Anunciada junto com `nest_group`.
+
+```
+Tire o grupo g-auth de dentro do g-cli
 ```
 
 ### `move_group`

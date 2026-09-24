@@ -72,6 +72,13 @@ export const GroupSchema = z.object({
   id: GroupIdSchema,
   /** Vazio nao serve: um grupo sem nome nao se distingue dos outros na tela. */
   name: z.string().min(1),
+  /**
+   * O grupo em que este esta, quando aninhado (task-119). Ausente num grupo da
+   * raiz. A tarefa continua guardando um grupo so — o mais interno —, e estar
+   * num grupo passa a querer dizer estar nele ou num subgrupo dele. Ver
+   * `docs/RDT/grupos-aninhados.md`.
+   */
+  parentId: GroupIdSchema.optional(),
 });
 
 /** @public */

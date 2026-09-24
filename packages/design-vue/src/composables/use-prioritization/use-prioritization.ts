@@ -2,8 +2,10 @@ import { ordenarTarefas } from '@opentask/taskin-task-manager';
 import { computed, type Ref, ref, shallowRef, watch } from 'vue';
 import type { GroupId, Task } from '../../types';
 import type {
+  GrupoDoQuadro,
   LadoDoMovimento,
   MovimentoDoQuadro,
+  MudancaDeGrupo,
   PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
@@ -70,8 +72,17 @@ function savePrefs(storageKey: string, prefs: PersistedPrefs): void {
  * is pre-sorted, the group node is inserted where its first member is encountered,
  * i.e. where its most-prioritized member would have sat. Members keep their sorted
  * order inside the group. Standalone tasks stay at their own sorted position.
+ *
+ * Aninhamento (task-119): um grupo com `parentId` em `grupos` entra dentro do
+ * pai, e o pai ocupa o lugar do primeiro membro da subarvore inteira — a mesma
+ * regra do `agruparTarefas` do dominio. Um pai sem membro direto aparece mesmo
+ * assim, porque e ele que contem o subgrupo.
  */
-export function buildPriorityTree(tasks: Task[], collapsedGroups: Record<string, boolean> = {}): PriorityNode[] {
+export function buildPriorityTree(
+  tasks: Task[],
+  collapsedGroups: Record<string, boolean> = {},
+  grupos: readonly GrupoDoQuadro[] = [],
+): PriorityNode[] {
   /*
    * A ordenacao manual vem do dominio, e nao daqui.
    *
@@ -81,33 +92,63 @@ export function buildPriorityTree(tasks: Task[], collapsedGroups: Record<string,
    * destravou foi declarar a referencia de projeto no `tsconfig`, que faltava.
    */
   const sorted = ordenarTarefas(tasks, 'manual');
+  const pais = new Map(grupos.flatMap((g) => (g.parentId ? [[g.id, g.parentId] as const] : [])));
+  const nomes = new Map(grupos.map((g) => [g.id, g.name]));
 
   const nodes: PriorityNode[] = [];
   const groupsById = new Map<string, PriorityGroupNode>();
 
+  /* Um ciclo gravado nao deve sumir com o grupo: ele fica na raiz. */
+  const emCiclo = (id: string): boolean => {
+    let atual = pais.get(id);
+    for (let passos = 0; atual !== undefined && passos <= pais.size; passos++) {
+      if (atual === id) return true;
+      atual = pais.get(atual);
+    }
+    return false;
+  };
+
+  const grupo = (id: string, nomeNaTarefa: string | undefined): PriorityGroupNode => {
+    const existing = groupsById.get(id);
+    if (existing) {
+      existing.groupName ??= nomeNaTarefa ?? null;
+      return existing;
+    }
+    const group: PriorityGroupNode = {
+      kind: 'group',
+      groupId: id as GroupId,
+      groupName: nomes.get(id) ?? nomeNaTarefa ?? null,
+      collapsed: !!collapsedGroups[id],
+      items: [],
+    };
+    groupsById.set(id, group);
+    const pai = emCiclo(id) ? undefined : pais.get(id);
+    if (pai === undefined) nodes.push(group);
+    else grupo(pai, undefined).items.push(group);
+    return group;
+  };
+
   for (const task of sorted) {
     const parentId = task.parent?.type === 'group' ? task.parent.id : undefined;
-    if (parentId) {
-      const existing = groupsById.get(parentId);
-      if (existing) {
-        existing.items.push({ kind: 'task', task });
-        continue;
-      }
-      const group: PriorityGroupNode = {
-        kind: 'group',
-        groupId: parentId,
-        groupName: task.groupName ?? null,
-        collapsed: !!collapsedGroups[parentId],
-        items: [{ kind: 'task', task }],
-      };
-      groupsById.set(parentId, group);
-      nodes.push(group);
-    } else {
-      nodes.push({ kind: 'task', task });
-    }
+    if (parentId) grupo(parentId, task.groupName).items.push({ kind: 'task', task });
+    else nodes.push({ kind: 'task', task });
   }
 
   return nodes;
+}
+
+/** O pai e o nome de cada grupo, como a arvore os mostra agora — em pre-ordem, o pai antes dos filhos. */
+function gruposDaArvore(nodes: readonly PriorityNode[]): Map<string, GrupoDoQuadro> {
+  const grupos = new Map<string, GrupoDoQuadro>();
+  const descer = (lista: readonly PriorityNode[], parentId: string | undefined) => {
+    for (const node of lista) {
+      if (node.kind !== 'group') continue;
+      grupos.set(node.groupId, { id: node.groupId, name: node.groupName, ...(parentId && { parentId }) });
+      descer(node.items, node.groupId);
+    }
+  };
+  descer(nodes, undefined);
+  return grupos;
 }
 
 /** Flattens the tree back into an ordered list of tasks (parent info preserved via innermost group). */
@@ -172,6 +213,15 @@ function valoresDe(task: Task): ValoresDaTarefa {
   return { ...snapshotOf(task), groupName: task.groupName };
 }
 
+/**
+ * Uma entrada do desfazer: os valores das tarefas e o pai e o nome de cada
+ * grupo — aninhar e desaninhar se desfazem como mover (task-119).
+ */
+interface Valores {
+  tarefas: Map<string, ValoresDaTarefa>;
+  grupos: Map<string, GrupoDoQuadro>;
+}
+
 /** Returns only the tasks whose prioritization fields differ from the baseline snapshot. */
 export function diffAgainstBaseline(tasks: Task[], baseline: Map<string, PrioritizationSnapshot>): Task[] {
   return tasks.filter((task) => !snapshotsEqual(baseline.get(task.id), snapshotOf(task)));
@@ -194,11 +244,27 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   const filter = ref('');
   const scoreFilter = ref<PrioritizationScoreFilter>('all');
 
-  const treeInternal = ref<PriorityNode[]>(buildPriorityTree(tasks.value, collapsedGroups.value));
+  const gruposDeFora = options.groups ?? ref<GrupoDoQuadro[]>([]);
+  const treeInternal = ref<PriorityNode[]>(buildPriorityTree(tasks.value, collapsedGroups.value, gruposDeFora.value));
 
   const baseline = shallowRef(
     new Map<string, PrioritizationSnapshot>(tasks.value.map((task) => [task.id, snapshotOf(task)])),
   );
+
+  /*
+   * O pai de cada grupo como esta gravado, e quem ja existe. Um grupo que as
+   * tarefas citam conta como existente mesmo fora da lista de grupos — senao
+   * uma lista que nao chegou viraria um `create-group` para cada um.
+   */
+  function paisGravados(): Map<string, string | undefined> {
+    const pais = new Map<string, string | undefined>();
+    for (const task of tasks.value) {
+      if (task.parent?.type === 'group') pais.set(task.parent.id, undefined);
+    }
+    for (const grupo of gruposDeFora.value) pais.set(grupo.id, grupo.parentId);
+    return pais;
+  }
+  const baselineDosGrupos = shallowRef(paisGravados());
 
   /*
    * Desfazer e refazer guardam **valores**, e nao a arvore.
@@ -210,15 +276,18 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
    * so elas — e o app hospedeiro grava so isso.
    * Filtro, modo de exibicao, ordenacao e recolher ficam de fora.
    */
-  const history = shallowRef<Map<string, ValoresDaTarefa>[]>([]);
-  const future = shallowRef<Map<string, ValoresDaTarefa>[]>([]);
+  const history = shallowRef<Valores[]>([]);
+  const future = shallowRef<Valores[]>([]);
 
   // Re-sync the tree whenever the source task list changes externally
   // (e.g. a broadcast from another client, or confirmation of our own update).
   // What arrives is what is stored, so it becomes the new baseline.
-  watch(tasks, (next) => {
-    treeInternal.value = buildPriorityTree(next, collapsedGroups.value);
+  // The groups come back the same way: creating and nesting are recorded by the
+  // domain, and the tree is rebuilt from the parent of each group (task-119).
+  watch([tasks, gruposDeFora], ([next, grupos]) => {
+    treeInternal.value = buildPriorityTree(next, collapsedGroups.value, grupos);
     baseline.value = new Map(next.map((task) => [task.id, snapshotOf(task)]));
+    baselineDosGrupos.value = paisGravados();
   });
 
   function persistPrefs(): void {
@@ -233,13 +302,34 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     diffAgainstBaseline(flattenPriorityTree(treeInternal.value), baseline.value),
   );
 
+  /*
+   * Os grupos que a arvore tem e o registro nao — o quadro os inventou ao
+   * agrupar —, e os que mudaram de pai. Os novos primeiro, e em pre-ordem: o
+   * pai e criado antes de um filho entrar nele.
+   */
+  const changedGroups = computed<MudancaDeGrupo[]>(() => {
+    const gravados = baselineDosGrupos.value;
+    const mudancas: MudancaDeGrupo[] = [];
+    for (const grupo of gruposDaArvore(treeInternal.value).values()) {
+      const novo = !gravados.has(grupo.id);
+      if (novo || gravados.get(grupo.id) !== grupo.parentId) mudancas.push({ ...grupo, novo });
+    }
+    return [...mudancas.filter((m) => m.novo), ...mudancas.filter((m) => !m.novo)];
+  });
+
   function acknowledgeChanges(): void {
     const flat = flattenPriorityTree(treeInternal.value);
     baseline.value = new Map(flat.map((task) => [task.id, snapshotOf(task)]));
+    const pais = new Map(baselineDosGrupos.value);
+    for (const grupo of gruposDaArvore(treeInternal.value).values()) pais.set(grupo.id, grupo.parentId);
+    baselineDosGrupos.value = pais;
   }
 
-  function valoresAtuais(): Map<string, ValoresDaTarefa> {
-    return new Map(flattenPriorityTree(treeInternal.value).map((task) => [task.id, valoresDe(task)]));
+  function valoresAtuais(): Valores {
+    return {
+      tarefas: new Map(flattenPriorityTree(treeInternal.value).map((task) => [task.id, valoresDe(task)])),
+      grupos: gruposDaArvore(treeInternal.value),
+    };
   }
 
   /** Records the values before a mutation for undo, and invalidates any pending redo. */
@@ -248,10 +338,10 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     future.value = [];
   }
 
-  /** Reescreve na arvore os valores guardados das tarefas que eles cobrem. */
-  function aplicarValores(valores: Map<string, ValoresDaTarefa>): void {
+  /** Reescreve na arvore os valores guardados das tarefas e dos grupos que eles cobrem. */
+  function aplicarValores(valores: Valores): void {
     const tarefas = flattenPriorityTree(treeInternal.value).map((task) => {
-      const v = valores.get(task.id);
+      const v = valores.tarefas.get(task.id);
       if (!v) return task;
       return {
         ...task,
@@ -261,7 +351,9 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
         groupName: v.groupName,
       };
     });
-    treeInternal.value = buildPriorityTree(tarefas, collapsedGroups.value);
+    const grupos = new Map([...gruposDaArvore(treeInternal.value), ...valores.grupos]);
+    for (const grupo of gruposDeFora.value) if (!grupos.has(grupo.id)) grupos.set(grupo.id, grupo);
+    treeInternal.value = buildPriorityTree(tarefas, collapsedGroups.value, [...grupos.values()]);
   }
 
   const canUndo = computed(() => history.value.length > 0);
@@ -913,6 +1005,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     scoreFilter,
     dragEnabled,
     changedTasks,
+    changedGroups,
     canUndo,
     canRedo,
     setFilter,

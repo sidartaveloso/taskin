@@ -119,6 +119,15 @@ operações nomeadas em vez de uma task inteira para gravar.
   superfícies (`group move`, `move_group`, `move-group-*`), e o servidor
   WebSocket não compilou até ganhar os quatro handlers — a lacuna que a task-114
   deixou declarada ("fica para quando alguém pedir") fechou pelo mesmo portão.
+- **Grupos aninhados (task-119).** `createGroup`, `nestGroup` e `unnestGroup`
+  entraram pelo portão. `createGroup` era uma consulta do servidor WebSocket e
+  um `group add` que chamava o registro direto, os dois fora do portão; agora a
+  tabela declara as três superfícies de cada uma (`group create`/`create_group`/
+  `create-group`, `group nest`/`nest_group`/`nest-group`, `group unnest`/
+  `unnest_group`/`unnest-group`). Aninhar é capacidade opcional do registro
+  (`setParent?`): sem ela, as três recusam com `NESTING_NOT_SUPPORTED` e o MCP
+  não anuncia `nest_group` nem `unnest_group`. Ver
+  [`grupos-aninhados.md`](grupos-aninhados.md).
 - **Pontuar (task-115).** `setDifficulty` deixou de ser "só dashboard": a
   tabela trocou as duas ausências por `difficulty` na CLI e `set_difficulty` no
   MCP, e os testes que conferem os nomes (`register.superficies.test.ts`,

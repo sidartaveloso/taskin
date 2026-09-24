@@ -55,16 +55,23 @@
     :tasks="tasks"
     @retry="handleRefresh"
   />
-  <PrioritizationPage v-else :tasks="tasks" @update-task="handleUpdateTask" @move="handleMove" />
+  <PrioritizationPage
+    v-else
+    :tasks="tasks"
+    :groups="gruposDoQuadro"
+    @update-task="handleUpdateTask"
+    @update-group="handleUpdateGroup"
+    @move="handleMove"
+  />
 </template>
 
 <script setup lang="ts">
-import type { MovimentoDoQuadro, Task, TaskStatus } from '@opentask/taskin-design-vue';
+import type { GrupoDoQuadro, MovimentoDoQuadro, MudancaDeGrupo, Task, TaskStatus } from '@opentask/taskin-design-vue';
 import { Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
 import { effectiveFilterCriteria, filterTasks, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { operacaoDoMovimento, operacoesDaMudanca } from './operacoes-da-mudanca';
+import { NOME_DE_GRUPO_NOVO, operacaoDoGrupo, operacaoDoMovimento, operacoesDaMudanca } from './operacoes-da-mudanca';
 
 // Progress bar filled per status.
 //
@@ -151,6 +158,13 @@ const connectionError = computed(() => connectionStatus.value.error);
 const gruposPorId = ref<Record<string, string>>({});
 
 /*
+ * Os grupos com o pai de cada um, para o quadro montar a arvore aninhada
+ * (task-119). A tarefa guarda so o grupo mais interno; quem esta dentro de
+ * quem vem daqui, e sem isso um subgrupo se desfazia a cada volta da lista.
+ */
+const gruposDoQuadro = ref<GrupoDoQuadro[]>([]);
+
+/*
  * Quantas tarefas ainda nao tem prioridade.
  *
  * Num projeto meio numerado, o primeiro arrastar reescreve todos os
@@ -185,8 +199,9 @@ onMounted(async () => {
 
   try {
     const resposta = await fetch('/api/groups');
-    const { groups } = (await resposta.json()) as { groups: { id: string; name: string }[] };
+    const { groups } = (await resposta.json()) as { groups: { id: string; name: string; parentId?: string }[] };
     gruposPorId.value = Object.fromEntries(groups.map((g) => [g.id, g.name]));
+    gruposDoQuadro.value = groups.map((g) => ({ id: g.id, name: g.name, ...(g.parentId && { parentId: g.parentId }) }));
   } catch {
     // Sem grupos: a tela mostra as tarefas sem o rotulo, e nada quebra.
   }
@@ -296,6 +311,29 @@ const handleUpdateTask = (task: Task) => {
     }
     taskStore.operar(operacao);
   }
+};
+
+/*
+ * Criar um subgrupo e aninhar um grupo em outro vao ao dominio como
+ * `create-group` (com o pai), `nest-group` e `unnest-group` (task-119). O App
+ * guarda o pai na hora, antes da resposta: a lista de tarefas que volta
+ * reconstroi a arvore, e precisa encontrar o grupo no lugar novo. O quadro
+ * emite os grupos antes das tarefas, entao um grupo novo ja e conhecido quando
+ * os membros entram nele, e nao e criado de novo.
+ */
+const handleUpdateGroup = (mudanca: MudancaDeGrupo) => {
+  const operacao = operacaoDoGrupo(mudanca);
+  const nome =
+    operacao.type === 'create-group' ? operacao.payload.name : (gruposPorId.value[mudanca.id] ?? NOME_DE_GRUPO_NOVO);
+  const gravado: GrupoDoQuadro = {
+    id: mudanca.id,
+    name: nome,
+    ...(mudanca.parentId && { parentId: mudanca.parentId }),
+  };
+
+  gruposPorId.value = { ...gruposPorId.value, [mudanca.id]: nome };
+  gruposDoQuadro.value = [...gruposDoQuadro.value.filter((g) => g.id !== mudanca.id), gravado];
+  taskStore.operar(operacao);
 };
 
 /*

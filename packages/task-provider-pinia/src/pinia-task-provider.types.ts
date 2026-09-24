@@ -43,6 +43,7 @@ export type WebSocketMessageType =
   | 'find'
   | OperacaoDoQuadro['type']
   | 'group:created'
+  | 'group:updated'
   | 'tasks'
   | 'task:found'
   | 'task:updated'
@@ -55,8 +56,7 @@ export type WebSocketMessageType =
 /**
  * O que cada operacao do quadro leva ao servidor.
  *
- * Os nomes sao os que `SUPERFICIES_DAS_OPERACOES` declara para o `ws`, mais o
- * `create-group` do registro de grupos. O servidor nao aceita mais `update`:
+ * Os nomes sao os que `SUPERFICIES_DAS_OPERACOES` declara para o `ws`. O servidor nao aceita mais `update`:
  * agrupar, priorizar e pontuar passam pelas mesmas operacoes do `ITaskManager`
  * que a CLI e o MCP usam (task-106).
  */
@@ -74,7 +74,10 @@ export interface PayloadsDasOperacoes {
   'move-group-after': { groupId: string; targetId: string };
   'move-group-to-top': { groupId: string };
   'move-group-to-bottom': { groupId: string };
-  'create-group': { id: string; name: string };
+  /** `parentId` cria ja dentro de outro grupo (task-119). */
+  'create-group': { id: string; name: string; parentId?: string };
+  'nest-group': { groupId: string; parentId: string };
+  'unnest-group': { groupId: string };
 }
 
 /** Uma operacao do quadro, como vai pelo fio. */

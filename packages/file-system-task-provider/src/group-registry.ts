@@ -1,6 +1,11 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { DeleteGroupOptions, DeleteGroupResult, IGroupRegistry } from '@opentask/taskin-task-manager';
+import {
+  type DeleteGroupOptions,
+  type DeleteGroupResult,
+  type IGroupRegistry,
+  validarAninhamento,
+} from '@opentask/taskin-task-manager';
 import { type Group, type GroupId, GroupSchema } from '@opentask/taskin-types';
 
 /** O que o arquivo guarda. */
@@ -22,7 +27,8 @@ interface Arquivo {
  * comando de CLI inteiro para limpar. A tarefa guarda `Group: <id>`, e so.
  */
 export class FileSystemGroupRegistry implements IGroupRegistry {
-  private readonly caminho: string;
+  /** Onde o registro mora — o `lint` aponta para ele. */
+  readonly caminho: string;
 
   /**
    * @param taskinDir - O diretorio `.taskin` do projeto
@@ -71,6 +77,9 @@ export class FileSystemGroupRegistry implements IGroupRegistry {
     if (arquivo.groups[validado.id]) {
       throw new Error(`Group '${validado.id}' already exists.`);
     }
+    if (validado.parentId !== undefined) {
+      validarAninhamento(Object.values(arquivo.groups), validado.id, validado.parentId);
+    }
 
     arquivo.groups[validado.id] = validado;
     await this.gravar(arquivo);
@@ -92,9 +101,30 @@ export class FileSystemGroupRegistry implements IGroupRegistry {
     await this.gravar(arquivo);
   }
 
+  /**
+   * Grupo dentro de grupo (task-119). O pai mora no proprio grupo, como
+   * `parentId` no `.taskin-groups.json`; nenhuma tarefa e tocada, porque a
+   * tarefa continua guardando so o grupo mais interno.
+   */
+  async setParent(id: GroupId, parentId: GroupId | undefined): Promise<void> {
+    const arquivo = await this.ler();
+    const atual = arquivo.groups[id];
+    if (!atual) throw new Error(`Group '${id}' not found.`);
+
+    const { parentId: _anterior, ...semPai } = atual;
+    if (parentId === undefined) {
+      arquivo.groups[id] = semPai;
+    } else {
+      validarAninhamento(Object.values(arquivo.groups), id, parentId);
+      arquivo.groups[id] = { ...semPai, parentId };
+    }
+    await this.gravar(arquivo);
+  }
+
   async deleteGroup(id: GroupId, options: DeleteGroupOptions = {}): Promise<DeleteGroupResult> {
     const arquivo = await this.ler();
-    if (!arquivo.groups[id]) throw new Error(`Group '${id}' not found.`);
+    const apagado = arquivo.groups[id];
+    if (!apagado) throw new Error(`Group '${id}' not found.`);
 
     if (options.reassignTo !== undefined && !arquivo.groups[options.reassignTo]) {
       throw new Error(`Group '${options.reassignTo}' not found — nothing was deleted.`);
@@ -105,6 +135,16 @@ export class FileSystemGroupRegistry implements IGroupRegistry {
      * continua existindo e ninguem fica apontando para o vazio.
      */
     const reassigned = await this.reatribuir(id, options.reassignTo);
+
+    /*
+     * Os subgrupos sobem para o pai do apagado, ou para a raiz — a mesma regra
+     * de nao deixar ninguem apontando para o vazio.
+     */
+    for (const [filhoId, filho] of Object.entries(arquivo.groups)) {
+      if (filho.parentId !== id) continue;
+      const { parentId: _apagado, ...semPai } = filho;
+      arquivo.groups[filhoId] = apagado.parentId === undefined ? semPai : { ...semPai, parentId: apagado.parentId };
+    }
 
     delete arquivo.groups[id];
     await this.gravar(arquivo);

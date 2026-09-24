@@ -1,5 +1,5 @@
 import type { CreateTaskOptions, CreateTaskResult, ITaskManager, LintResult } from '@opentask/taskin-task-manager';
-import { type GroupId, parseTaskId, type Task, type TaskId } from '@opentask/taskin-types';
+import { type Group, type GroupId, parseTaskId, type Task, type TaskId } from '@opentask/taskin-types';
 import type { MCPServerConfig } from './task-server-mcp.types.js';
 
 /**
@@ -175,6 +175,18 @@ export class MockMCPTaskManager implements ITaskManager {
 
   async moveGroupToBottom(): Promise<{ members: Task[]; changed: number }> {
     return { members: [], changed: 0 };
+  }
+
+  async createGroup(name: string, options: { id?: GroupId; parentId?: GroupId } = {}): Promise<Group> {
+    return { id: options.id ?? ('g-mock' as GroupId), name, ...(options.parentId && { parentId: options.parentId }) };
+  }
+
+  async nestGroup(groupId: GroupId, parentId: GroupId): Promise<Group> {
+    return { id: groupId, name: String(groupId), parentId };
+  }
+
+  async unnestGroup(groupId: GroupId): Promise<Group> {
+    return { id: groupId, name: String(groupId) };
   }
 
   async setDifficulty(taskId: TaskId, difficulty: number): Promise<Task> {

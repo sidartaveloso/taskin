@@ -1,4 +1,5 @@
 import { type IGroupRegistry, type ITaskProvider, TaskManager } from '@opentask/taskin-task-manager';
+import { registroDeGruposEmMemoria } from '@opentask/taskin-task-manager/testing';
 import { type Group, type GroupId, parseGroupId, parseTaskId, type Task } from '@opentask/taskin-types';
 import { afterEach, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
@@ -14,19 +15,17 @@ const tarefa = (id: string, extra: Partial<Task> = {}): Task =>
  */
 function emMemoria(tarefas: Task[], grupos: Group[] = []) {
   const porId = new Map(tarefas.map((t) => [String(t.id), t]));
-  const registrados = [...grupos];
+  const registro = registroDeGruposEmMemoria(grupos);
+  const registrados = registro.grupos;
 
   const groupRegistry: IGroupRegistry = {
-    listGroups: async () => registrados,
-    findGroup: async (id: GroupId) => registrados.find((g) => g.id === id),
+    ...registro,
     createGroup: async (grupo) => {
       // Lento de proposito: se o servidor nao atender em ordem, o assign
       // seguinte procura o grupo antes de ele existir.
       await new Promise((r) => setTimeout(r, 20));
-      registrados.push(grupo);
+      await registro.createGroup(grupo);
     },
-    renameGroup: async () => {},
-    deleteGroup: async () => ({ reassigned: 0 }),
   };
 
   const provider: ITaskProvider & { groupRegistry: IGroupRegistry } = {
@@ -289,5 +288,56 @@ describe('servidor WebSocket — operacoes nomeadas no lugar do update generico'
     enviar('set-priority', { taskId: '001' });
 
     expect(((await esperar((m) => m.type === 'error')).payload as { message: string }).message).toMatch(/set-priority/);
+  });
+
+  /*
+   * Grupo dentro de grupo (task-119): o quadro cria o subgrupo e aninha grupo
+   * em grupo pelas operacoes do dominio, e todos os clientes ficam sabendo.
+   */
+  it('create-group com parentId cria ja aninhado, e avisa com o pai', async () => {
+    const { enviar, esperar, registrados } = await conectar([], [{ id: parseGroupId('g-pai'), name: 'Pai' }]);
+
+    enviar('create-group', { id: 'g-sub', name: 'Sub', parentId: 'g-pai' });
+
+    const aviso = await esperar((m) => m.type === 'group:created');
+    expect(aviso.payload).toEqual({ id: 'g-sub', name: 'Sub', parentId: 'g-pai' });
+    expect(registrados.find((g) => g.id === 'g-sub')?.parentId).toBe('g-pai');
+  });
+
+  it('nest-group e unnest-group mudam o pai e avisam com o grupo', async () => {
+    const { enviar, esperar, recebidas, registrados } = await conectar(
+      [],
+      [
+        { id: parseGroupId('g-pai'), name: 'Pai' },
+        { id: parseGroupId('g-sub'), name: 'Sub' },
+      ],
+    );
+
+    enviar('nest-group', { groupId: 'g-sub', parentId: 'g-pai' });
+    expect((await esperar((m) => m.type === 'group:updated')).payload).toEqual({
+      id: 'g-sub',
+      name: 'Sub',
+      parentId: 'g-pai',
+    });
+    expect(registrados.find((g) => g.id === 'g-sub')?.parentId).toBe('g-pai');
+
+    recebidas.length = 0;
+    enviar('unnest-group', { groupId: 'g-sub' });
+    expect((await esperar((m) => m.type === 'group:updated')).payload).toEqual({ id: 'g-sub', name: 'Sub' });
+  });
+
+  it('nest-group recusa o ciclo, sem gravar', async () => {
+    const { enviar, esperar, registrados } = await conectar(
+      [],
+      [
+        { id: parseGroupId('g-pai'), name: 'Pai' },
+        { id: parseGroupId('g-sub'), name: 'Sub', parentId: parseGroupId('g-pai') },
+      ],
+    );
+
+    enviar('nest-group', { groupId: 'g-pai', parentId: 'g-sub' });
+
+    expect(((await esperar((m) => m.type === 'error')).payload as { message: string }).message).toMatch(/cycle/);
+    expect(registrados.find((g) => g.id === 'g-pai')?.parentId).toBeUndefined();
   });
 });

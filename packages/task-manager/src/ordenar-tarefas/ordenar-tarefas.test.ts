@@ -90,3 +90,49 @@ describe('agruparTarefas', () => {
     expect(nos[0]).toMatchObject({ kind: 'group', groupId: 'g-1', groupName: undefined });
   });
 });
+
+/*
+ * Grupo dentro de grupo (task-119): o subgrupo vira um no dentro do pai, e o
+ * pai ocupa o lugar do primeiro membro da subarvore inteira.
+ */
+describe('agruparTarefas com subgrupos', () => {
+  const pai = parseGroupId('g-pai');
+  const sub = parseGroupId('g-sub');
+  const pais = { 'g-sub': 'g-pai' };
+
+  it('o subgrupo fica dentro do pai, na ordem do seu primeiro membro', () => {
+    const tarefas = [t('001', { groupId: pai }), t('002', { groupId: sub }), t('003', { groupId: pai }), t('004')];
+
+    const nos = agruparTarefas(tarefas, { 'g-pai': 'Pai', 'g-sub': 'Sub' }, {}, pais);
+
+    expect(nos.map((n) => n.kind)).toEqual(['group', 'task']);
+    const [raiz] = nos;
+    if (raiz?.kind !== 'group') throw new Error('esperava o grupo pai');
+    expect(ids(raiz.tasks)).toEqual(['001', '003']);
+    expect(raiz.groups.map((g) => [g.groupId, g.groupName, g.parentId])).toEqual([['g-sub', 'Sub', 'g-pai']]);
+    expect(raiz.items.map((i) => (i.kind === 'task' ? String(i.task.id) : i.groupId))).toEqual(['001', 'g-sub', '003']);
+  });
+
+  it('o pai sem membro direto aparece onde o primeiro membro do subgrupo esta', () => {
+    const tarefas = [t('001'), t('002', { groupId: sub }), t('003')];
+
+    const nos = agruparTarefas(tarefas, {}, {}, pais);
+
+    expect(nos.map((n) => (n.kind === 'task' ? String(n.task.id) : n.groupId))).toEqual(['001', 'g-pai', '003']);
+    const grupo = nos[1];
+    expect(grupo?.kind === 'group' && grupo.tasks).toEqual([]);
+    expect(grupo?.kind === 'group' && grupo.groups[0]?.groupId).toBe('g-sub');
+  });
+
+  it('sem os pais, todo grupo e da raiz, como antes', () => {
+    const nos = agruparTarefas([t('001', { groupId: sub })], {});
+
+    expect(nos[0]).toMatchObject({ kind: 'group', groupId: 'g-sub', groups: [], parentId: undefined });
+  });
+
+  it('um ciclo no registro nao trava a listagem', () => {
+    const nos = agruparTarefas([t('001', { groupId: sub })], {}, {}, { 'g-sub': 'g-pai', 'g-pai': 'g-sub' });
+
+    expect(nos).toHaveLength(1);
+  });
+});

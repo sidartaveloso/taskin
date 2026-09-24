@@ -1,4 +1,4 @@
-import type { GroupId, Task, TaskId, TaskType } from '@opentask/taskin-types';
+import type { Group, GroupId, Task, TaskId, TaskType } from '@opentask/taskin-types';
 import type { IGroupRegistry } from './group-registry.types.js';
 
 /**
@@ -343,6 +343,42 @@ export interface ITaskManager<TTask extends Task = Task> {
    * @throws Error quando o provider nao tem grupos, ou o grupo nao existe
    */
   moveGroupToBottom: (groupId: GroupId) => Promise<{ members: TTask[]; changed: number }>;
+
+  /**
+   * Cria um grupo, na raiz ou ja dentro de outro.
+   *
+   * Ate a task-119 criar grupo era so uma consulta do servidor WebSocket e um
+   * `group add` da CLI chamando o registro direto — fora do contrato, e por
+   * isso fora do portao das tres superficies.
+   *
+   * @param options - `id` para escolher o id (gerado, com `g-`, quando ausente);
+   *   `parentId` para criar ja aninhado
+   * @returns O grupo como ficou gravado
+   * @throws Error quando o provider nao tem grupos, o id ja existe, ou o pai
+   *   nao existe, fecharia um ciclo ou passaria do teto de niveis — ou quando
+   *   ha `parentId` e o provider nao tem aninhamento
+   */
+  createGroup: (name: string, options?: { id?: GroupId; parentId?: GroupId }) => Promise<Group>;
+
+  /**
+   * Poe um grupo dentro de outro (task-119). Os membros continuam onde estao:
+   * a tarefa guarda o grupo mais interno, e estar no pai passa a incluir estar
+   * num subgrupo dele.
+   *
+   * @returns O grupo, com o pai novo
+   * @throws Error quando o provider nao tem aninhamento, algum dos grupos nao
+   *   existe, ou o pai e o proprio grupo, um descendente dele (o ciclo), ou
+   *   passaria do teto de niveis
+   */
+  nestGroup: (groupId: GroupId, parentId: GroupId) => Promise<Group>;
+
+  /**
+   * Leva um grupo de volta a raiz. Sem pai, nao muda nada.
+   *
+   * @returns O grupo, sem pai
+   * @throws Error quando o provider nao tem aninhamento, ou o grupo nao existe
+   */
+  unnestGroup: (groupId: GroupId) => Promise<Group>;
 
   /**
    * Da a tarefa uma dificuldade percebida, de 1 (trivial) a 5 (muito dificil).

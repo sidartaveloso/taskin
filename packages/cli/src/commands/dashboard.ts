@@ -4,6 +4,7 @@
 
 import { TaskManager } from '@opentask/taskin-task-manager';
 import { TaskWebSocketServer } from '@opentask/taskin-task-server-ws';
+import type { Group } from '@opentask/taskin-types';
 import { escapeHtml, isValidHost, isValidPort } from '@opentask/taskin-utils';
 import chalk from 'chalk';
 import express from 'express';
@@ -38,7 +39,7 @@ export interface DashboardAppOptions {
   /** WebSocket port advertised to the browser inside the injected `VITE_WS_URL`. */
   wsPort: number;
   /** Como perguntar os grupos do projeto. Ausente quando o provider nao tem o conceito. */
-  readonly groups?: () => Promise<{ id: string; name: string }[]>;
+  readonly groups?: () => Promise<Group[]>;
   /** Numeracao inicial de prioridade. Ausente quando nao ha manager disponivel. */
   readonly prioritize?: (options: {
     dryRun?: boolean;
@@ -118,7 +119,8 @@ export function createDashboardApp({
   });
 
   /*
-   * Os grupos, para o dashboard resolver o nome pelo id.
+   * Os grupos, para o dashboard resolver o nome pelo id — e, desde a
+   * task-119, montar a arvore pelo `parentId` de cada um.
    *
    * O nome nao viaja mais dentro de cada tarefa (task-079): a tarefa carrega
    * `groupId`, e quem desenha a tela pergunta os nomes aqui. Um provider sem o
@@ -374,9 +376,7 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       ? path.join(__dirname, '..', '..', 'dashboard-dist')
       : path.join(__dirname, '..', 'dashboard-dist');
 
-    const registroDeGrupos = (
-      provider as { groupRegistry?: { listGroups: () => Promise<{ id: string; name: string }[]> } }
-    ).groupRegistry;
+    const registroDeGrupos = (provider as { groupRegistry?: { listGroups: () => Promise<Group[]> } }).groupRegistry;
 
     const app = createDashboardApp({
       dashboardDist,

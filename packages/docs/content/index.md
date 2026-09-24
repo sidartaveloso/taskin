@@ -142,7 +142,7 @@ consuming plain `Task` keeps working with any provider.
 
 `ITaskManager` sits on top with the state transitions and the named operations —
 `startTask`, `finishTask`, `assignToGroup`, `setPriority`, `moveBefore`,
-`moveToTop`, `moveGroupToTop`, `setDifficulty` and the rest — and is generic over the same shape. The CLI, the
+`moveToTop`, `moveGroupToTop`, `nestGroup`, `setDifficulty` and the rest — and is generic over the same shape. The CLI, the
 MCP server and the dashboard all go through it: the dashboard's WebSocket sends
 `set-priority` or `assign-to-group`, never a whole task to overwrite. On the
 prioritization board, the arrows, top, bottom and dragging send `move-before` /
@@ -150,7 +150,10 @@ prioritization board, the arrows, top, bottom and dragging send `move-before` /
 or neighbouring **visible** row as the reference — with a filter on, the top is
 the top of what you see — and the new numbers come back from the domain, the
 same rule `taskin priority --before` uses. Undo re-sends the previous values of
-only the tasks the move changed. A table,
+only the tasks the move changed. Dropping a task on another of the same group
+creates a real subgroup, and dropping a group on another creates a parent with
+both inside — sent as `create-group` and `nest-group`, so the nesting survives a
+reload, up to four levels deep. A table,
 `SUPERFICIES_DAS_OPERACOES`, says where each operation is exposed — and adding
 an operation without deciding the three surfaces does not compile.
 
@@ -210,9 +213,11 @@ file or a REST call. The provider settles that.
 The agent can also arrange the queue it works through. `set_priority` places a
 task by number, right `before` or `after` another one, or at the `top` or
 `bottom` of the queue, `join_group` / `leave_group` move it between groups, and
-`move_group` moves a whole group, its members together. The terminal has the
-same operations — `taskin priority 042 --before 017`, `taskin priority 042 --top`,
-`taskin group join 042 g-cli`, `taskin group move g-cli --top` — so nobody has
+`move_group` moves a whole group, its members together. `create_group`,
+`nest_group` and `unnest_group` put a group inside another one, or take it out.
+The terminal has the same operations — `taskin priority 042 --before 017`,
+`taskin priority 042 --top`, `taskin group join 042 g-cli`,
+`taskin group move g-cli --top`, `taskin group nest g-auth g-cli` — so nobody has
 to edit the metadata block by hand.
 
 Registering the server takes one command:

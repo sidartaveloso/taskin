@@ -105,6 +105,14 @@ servidor devolve. O desfazer guarda os valores anteriores e reenvia
 `set-priority` (e `assign-to-group`/`remove-from-group`) so para as tarefas que
 a operacao alterou.
 
+Soltar uma tarefa sobre outra do mesmo grupo cria um subgrupo de verdade
+(`create-group` com `parentId`, e `assign-to-group` das duas); soltar um grupo
+sobre outro cria um pai com os dois dentro (`create-group` e `nest-group`). O
+quadro recebe os grupos com o pai e monta a arvore a partir deles, e a pagina
+emite `update-group` antes de `update-task` — o grupo existe antes de alguem
+entrar nele. Desfazer um aninhamento sai como `unnest-group`. Ver
+[RDT/grupos-aninhados.md](./RDT/grupos-aninhados.md).
+
 ### 2. MCP Flow (LLM ↔ TaskManager)
 
 ```
@@ -131,7 +139,7 @@ LLM continues conversation
 
 - **Interface**: `ITaskManager` (write), `ITaskProvider` (read)
 - **Responsabilidade**: Validação de transições de estado, lógica de negócio
-- **Principais métodos**: `startTask()`, `pauseTask()`, `finishTask()`, `assignToGroup()`, `setPriority()`, `moveBefore()`, `moveToTop()`, `moveToBottom()`, `moveGroupBefore()`, `moveGroupToTop()`, `setDifficulty()`
+- **Principais métodos**: `startTask()`, `pauseTask()`, `finishTask()`, `assignToGroup()`, `setPriority()`, `moveBefore()`, `moveToTop()`, `moveToBottom()`, `moveGroupBefore()`, `moveGroupToTop()`, `createGroup()`, `nestGroup()`, `unnestGroup()`, `setDifficulty()`
 - **Portão**: `SUPERFICIES_DAS_OPERACOES` declara onde cada operação aparece (CLI, MCP, WebSocket); operação sem as três decididas não compila
 
 #### @opentask/taskin-file-system-provider

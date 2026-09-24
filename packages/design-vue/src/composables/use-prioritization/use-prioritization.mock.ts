@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import type { Task } from '../../types';
 import type {
+  MudancaDeGrupo,
   PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
@@ -19,6 +20,7 @@ export function createPrioritizationMock(): UsePrioritization {
     scoreFilter: ref<PrioritizationScoreFilter>('all'),
     dragEnabled: ref(true),
     changedTasks: ref<Task[]>([]),
+    changedGroups: ref<MudancaDeGrupo[]>([]),
     canUndo: ref(false),
     canRedo: ref(false),
     setFilter: vi.fn(),

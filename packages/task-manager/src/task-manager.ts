@@ -1,4 +1,12 @@
-import type { GroupId, Task, TaskId, TaskStatus } from '@opentask/taskin-types';
+import {
+  type Group,
+  type GroupId,
+  parseGroupId,
+  type Task,
+  type TaskId,
+  type TaskStatus,
+} from '@opentask/taskin-types';
+import { descendentesDoGrupo, validarAninhamento } from './aninhar-grupos/index';
 import type { IGroupRegistry } from './group-registry.types';
 import { numerarPrioridade } from './numerar-prioridade/index';
 import { ordenarTarefas } from './ordenar-tarefas/index';
@@ -28,6 +36,19 @@ import { validarDificuldade } from './validar-dificuldade/index';
  * @public
  */
 export const GROUPS_NOT_SUPPORTED = 'This project’s provider does not support task groups.';
+
+/**
+ * A frase para grupo dentro de grupo num provider que tem grupos e nao tem
+ * aninhamento (task-119) — a milestone do GitHub, por exemplo.
+ *
+ * @public
+ */
+export const NESTING_NOT_SUPPORTED = 'This project’s provider has task groups, but not groups inside groups.';
+
+/** Um id novo de grupo: `g-` e oito caracteres, como o `taskin group add` sempre gerou. @public */
+export function gerarIdDeGrupo(): GroupId {
+  return parseGroupId(`g-${Math.random().toString(36).slice(2, 10).padEnd(8, '0')}`);
+}
 
 /**
  * Orchestrates task state transitions on top of any {@link ITaskProvider}.
@@ -171,6 +192,55 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return atualizada;
   }
 
+  private exigirAninhamento(): IGroupRegistry & Required<Pick<IGroupRegistry, 'setParent'>> {
+    const registro = this.exigirRegistro();
+    if (!registro.setParent) throw new Error(NESTING_NOT_SUPPORTED);
+    return registro as IGroupRegistry & Required<Pick<IGroupRegistry, 'setParent'>>;
+  }
+
+  private async exigirGrupo(registro: IGroupRegistry, groupId: GroupId): Promise<Group> {
+    const grupo = await registro.findGroup(groupId);
+    if (!grupo) throw new Error(`Group '${groupId}' does not exist. See "taskin group list".`);
+    return grupo;
+  }
+
+  /** Os grupos que o registro tem, ou nenhum quando o provider nao tem o conceito. */
+  private async hierarquia(): Promise<Group[]> {
+    return (await this.groupRegistry?.listGroups()) ?? [];
+  }
+
+  async createGroup(name: string, options: { id?: GroupId; parentId?: GroupId } = {}): Promise<Group> {
+    const registro = options.parentId === undefined ? this.exigirRegistro() : this.exigirAninhamento();
+    const id = options.id ?? gerarIdDeGrupo();
+
+    /*
+     * A regra confere antes de o registro gravar — e o registro confere de
+     * novo, porque tambem e chamado sem o manager.
+     */
+    if (options.parentId !== undefined) validarAninhamento(await registro.listGroups(), id, options.parentId);
+
+    const grupo: Group = { id, name, ...(options.parentId !== undefined && { parentId: options.parentId }) };
+    await registro.createGroup(grupo);
+    return grupo;
+  }
+
+  async nestGroup(groupId: GroupId, parentId: GroupId): Promise<Group> {
+    const registro = this.exigirAninhamento();
+    const grupo = await this.exigirGrupo(registro, groupId);
+
+    validarAninhamento(await registro.listGroups(), groupId, parentId);
+    await registro.setParent(groupId, parentId);
+    return { ...grupo, parentId };
+  }
+
+  async unnestGroup(groupId: GroupId): Promise<Group> {
+    const registro = this.exigirAninhamento();
+    const { parentId: _anterior, ...grupo } = await this.exigirGrupo(registro, groupId);
+
+    await registro.setParent(groupId, undefined);
+    return grupo;
+  }
+
   async setPriority(taskId: TaskId, priority: number): Promise<TTask> {
     validarPrioridade(priority);
     const task = await this.exigirTarefa(taskId);
@@ -240,13 +310,16 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     }
 
     const tarefas = await this.taskProvider.getAllTasks();
-    const mudancas = posicionarGrupo(tarefas, groupId, destino);
+    const grupos = await registro.listGroups();
+    const mudancas = posicionarGrupo(tarefas, groupId, destino, grupos);
     for (const tarefa of mudancas) {
       await this.taskProvider.updateTask(tarefa);
     }
 
+    /* Os membros sao os da subarvore: mover o pai move os subgrupos junto. */
+    const bloco = new Set([String(groupId), ...descendentesDoGrupo(grupos, groupId).map(String)]);
     const depois = tarefas.map((t) => mudancas.find((m) => m.id === t.id) ?? t);
-    const members = ordenarTarefas(depois.filter((t) => t.groupId === groupId));
+    const members = ordenarTarefas(depois.filter((t) => t.groupId !== undefined && bloco.has(String(t.groupId))));
     return { members, changed: mudancas.length };
   }
 
@@ -261,7 +334,7 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
 
   private async levarAoExtremo(taskId: TaskId, extremo: ExtremoDaFila): Promise<{ task: TTask; changed: number }> {
     const tarefas = await this.taskProvider.getAllTasks();
-    return this.gravarMudancas(taskId, posicionarNoExtremo(tarefas, taskId, extremo));
+    return this.gravarMudancas(taskId, posicionarNoExtremo(tarefas, taskId, extremo, await this.hierarquia()));
   }
 
   private async gravarMudancas(taskId: TaskId, mudancas: TTask[]): Promise<{ task: TTask; changed: number }> {

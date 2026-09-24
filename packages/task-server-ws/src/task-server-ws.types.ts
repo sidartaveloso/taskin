@@ -108,8 +108,8 @@ export interface ClientConnection {
 export type WSMessageType =
   | NomeNaSuperficie<'ws'>
   | 'find'
-  | 'create-group'
   | 'group:created'
+  | 'group:updated'
   | 'tasks'
   | 'task:found'
   | 'task:updated'

@@ -1,5 +1,6 @@
 // Re-export commonly used types from @opentask/taskin-types for convenience
 export type { Task, TaskStatus, TaskType, User } from '@opentask/taskin-types';
+export * from './aninhar-grupos/index';
 export * from './filter-tasks/index';
 export * from './group-registry.types';
 export * from './metrics.types';

@@ -139,6 +139,9 @@ taskin pause task-01            # Auto-commits work, unless something looks sens
 taskin finish task-01           # Suggests commits
 
 # Group and prioritise, without editing the file by hand
+taskin group create "Login" --parent g-cli  # A group inside another (up to 4 levels)
+taskin group nest g-auth g-cli  # Or put an existing group inside another
+taskin group unnest g-auth      # And back to the top level
 taskin group join 042 g-cli     # Put a task in an existing group
 taskin group leave 042          # Take it out
 taskin priority 042 150         # Absolute number, lower comes first
@@ -170,6 +173,13 @@ versions) with the first, last or neighbouring **visible** row as the reference,
 and the domain numbers it — the same rule as `taskin priority --before`. A move
 to the top writes one file; a group of three writes three. Undo re-sends the
 previous values of only the tasks the move changed.
+
+Dropping a task on another of the same group creates a real subgroup, and
+dropping a group on another creates a parent with both inside: the board sends
+`create-group` (with `parentId`) and `nest-group`, so the nesting is saved in
+`.taskin/.taskin-groups.json` and survives a reload. Undo covers it too — undoing
+a nesting goes out as `unnest-group`. See
+[docs/RDT/grupos-aninhados.md](./docs/RDT/grupos-aninhados.md).
 
 #### 3. LLM Integration (Claude, GPT-4)
 

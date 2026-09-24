@@ -5,5 +5,6 @@
  * entrar no grafo de execucao do pacote.
  */
 export * from './group-registry.contract.js';
+export * from './group-registry.memory.js';
 export * from './task-manager.contract.js';
 export * from './user-registry.contract.js';

@@ -324,6 +324,89 @@ describe('posicionarGrupo', () => {
   });
 });
 
+/**
+ * Grupo dentro de grupo (task-119): o que se move e a subarvore inteira, e o
+ * topo e o fim sao os do grupo que contem, como para uma tarefa agrupada.
+ */
+describe('posicionarGrupo e posicionarNoExtremo com subgrupos', () => {
+  const pai = parseGroupId('g-pai');
+  const sub = parseGroupId('g-sub');
+  const outro = parseGroupId('g-outro');
+  const grupos = [{ id: pai }, { id: sub, parentId: pai }, { id: outro }];
+  const em = (grupo: typeof pai, id: string, order?: number): Task =>
+    ({ ...tarefa(id, order), groupId: grupo }) as Task;
+  const filaDepois = (tarefas: readonly Task[], mudancas: readonly Task[]) =>
+    tarefas
+      .map((t) => mudancas.find((m) => m.id === t.id) ?? t)
+      .sort((a, b) => (a.order ?? Number.POSITIVE_INFINITY) - (b.order ?? Number.POSITIVE_INFINITY))
+      .map((t) => String(t.id));
+
+  it('mover o pai leva junto os membros do subgrupo, e so grava a subarvore', () => {
+    const tarefas = [tarefa('001', 100), em(pai, '002', 200), em(sub, '003', 300), em(sub, '004', 400)];
+
+    const mudancas = posicionarGrupo(tarefas, pai, { extremo: 'top' }, grupos);
+
+    expect(ids(mudancas).sort()).toEqual(['002', '003', '004']);
+    expect(filaDepois(tarefas, mudancas)).toEqual(['002', '003', '004', '001']);
+  });
+
+  it('o subgrupo vai ao topo do pai, e nao da fila inteira', () => {
+    const tarefas = [tarefa('001', 100), em(pai, '002', 200), em(sub, '003', 300)];
+
+    const mudancas = posicionarGrupo(tarefas, sub, { extremo: 'top' }, grupos);
+
+    expect(filaDepois(tarefas, mudancas)).toEqual(['001', '003', '002']);
+  });
+
+  it('o subgrupo vai ao fim do pai, e nao da fila inteira', () => {
+    const tarefas = [em(sub, '001', 100), em(pai, '002', 200), tarefa('003', 300)];
+
+    const mudancas = posicionarGrupo(tarefas, sub, { extremo: 'bottom' }, grupos);
+
+    expect(filaDepois(tarefas, mudancas)).toEqual(['002', '001', '003']);
+  });
+
+  it('o subgrupo se move ao lado de uma tarefa do pai', () => {
+    const tarefas = [em(pai, '001', 100), em(pai, '002', 200), em(sub, '003', 300)];
+
+    const mudancas = posicionarGrupo(tarefas, sub, { lado: 'before', alvo: { taskId: parseTaskId('002') } }, grupos);
+
+    expect(filaDepois(tarefas, mudancas)).toEqual(['001', '003', '002']);
+  });
+
+  it('depois de um grupo com subgrupo e depois da subarvore inteira dele', () => {
+    const tarefas = [em(outro, '001', 100), em(pai, '002', 200), em(sub, '003', 300), tarefa('004', 400)];
+
+    const mudancas = posicionarGrupo(tarefas, outro, { lado: 'after', alvo: { groupId: pai } }, grupos);
+
+    expect(filaDepois(tarefas, mudancas)).toEqual(['002', '003', '001', '004']);
+  });
+
+  it('uma tarefa do subgrupo como alvo aponta o grupo que ocupa a linha', () => {
+    const tarefas = [em(outro, '001', 100), em(sub, '002', 200)];
+
+    expect(() =>
+      posicionarGrupo(tarefas, outro, { lado: 'before', alvo: { taskId: parseTaskId('002') } }, grupos),
+    ).toThrow(/g-pai/);
+  });
+
+  it('recusa um alvo dentro da propria subarvore', () => {
+    const tarefas = [em(pai, '001', 100), em(sub, '002', 200)];
+
+    expect(() => posicionarGrupo(tarefas, pai, { lado: 'before', alvo: { groupId: sub } }, grupos)).toThrow(
+      /inside group 'g-pai'/,
+    );
+  });
+
+  it('uma tarefa do pai vai ao topo da subarvore do pai, passando o subgrupo', () => {
+    const tarefas = [em(sub, '001', 100), em(pai, '002', 200), tarefa('003', 50)];
+
+    const mudancas = posicionarNoExtremo(tarefas, parseTaskId('002'), 'top', grupos);
+
+    expect(filaDepois(tarefas, mudancas)).toEqual(['003', '002', '001']);
+  });
+});
+
 describe('validarPrioridade', () => {
   it.each([1, 100, PRIORIDADE_MAXIMA])('aceita %s', (n) => {
     expect(validarPrioridade(n)).toBe(n);

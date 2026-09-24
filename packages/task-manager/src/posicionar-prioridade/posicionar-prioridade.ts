@@ -1,4 +1,5 @@
-import type { GroupId, Task, TaskId } from '@opentask/taskin-types';
+import type { Group, GroupId, Task, TaskId } from '@opentask/taskin-types';
+import { ancestraisDoGrupo, descendentesDoGrupo } from '../aninhar-grupos/index.js';
 import { numerarPrioridade, PASSO_DE_PRIORIDADE } from '../numerar-prioridade/index.js';
 import { ordenarTarefas } from '../ordenar-tarefas/index.js';
 
@@ -85,14 +86,48 @@ export function posicionarPrioridade<TTask extends Task>(
 export type ExtremoDaFila = 'top' | 'bottom';
 
 /**
+ * O que as regras de posicao precisam saber dos grupos: quem esta dentro de
+ * quem (task-119). Sem isto, todo grupo e da raiz, como antes.
+ *
+ * @public
+ */
+export type HierarquiaDeGrupos = readonly Pick<Group, 'id' | 'parentId'>[];
+
+/** Os grupos da subarvore de `groupId`, ele incluso, como texto. */
+function subarvore(grupos: HierarquiaDeGrupos, groupId: GroupId): Set<string> {
+  return new Set([String(groupId), ...descendentesDoGrupo(grupos, groupId).map(String)]);
+}
+
+/** O caminho da raiz ate o grupo da tarefa, o grupo incluso. */
+function caminhoDe(grupos: HierarquiaDeGrupos, tarefa: Task): string[] {
+  if (tarefa.groupId === undefined) return [];
+  return [...ancestraisDoGrupo(grupos, tarefa.groupId).reverse(), tarefa.groupId].map(String);
+}
+
+/**
+ * O no que a tarefa ocupa na lista de `nivel` — um grupo, ou a raiz quando
+ * `undefined`: ela mesma quando e membro direto, ou o filho de `nivel` em cujo
+ * ramo ela esta. Uma tarefa fora de `nivel` vale pelo no dela na raiz.
+ */
+function chaveNoNivel(grupos: HierarquiaDeGrupos, tarefa: Task, nivel: string | undefined): string {
+  const caminho = caminhoDe(grupos, tarefa);
+  const onde = nivel === undefined ? -1 : caminho.indexOf(nivel);
+  const inicio = nivel !== undefined && onde === -1 ? 0 : onde + 1;
+  const filho = caminho[inicio];
+  return filho === undefined ? `task:${tarefa.id}` : `group:${filho}`;
+}
+
+/**
  * Leva uma tarefa ao topo ou ao fim, e devolve so o que precisa ser gravado.
  *
  * A mesma semantica dos botoes do dashboard (task-101): uma tarefa **agrupada**
- * vai ao extremo do proprio grupo, e uma solta ao extremo da fila inteira. Por
+ * vai ao extremo do proprio grupo — contando os subgrupos dele, que ocupam o
+ * lugar do primeiro membro —, e uma solta ao extremo da fila inteira. Por
  * baixo e {@link posicionarPrioridade} com a referencia calculada — antes da
  * primeira irma, ou depois da ultima —, e herda dela o custo: topo grava um
  * arquivo; fim, depois de uma cauda sem numero, numera a cauda uma vez.
  *
+ * @param grupos - Quem esta dentro de quem; sem ele, o grupo nao tem subgrupos
  * @returns Vazio quando a tarefa ja esta no extremo pedido
  * @throws Error quando a tarefa nao existe
  * @public
@@ -101,6 +136,7 @@ export function posicionarNoExtremo<TTask extends Task>(
   tarefas: readonly TTask[],
   taskId: TaskId,
   extremo: ExtremoDaFila,
+  grupos: HierarquiaDeGrupos = [],
   passo = PASSO_DE_PRIORIDADE,
 ): TTask[] {
   const movida = tarefas.find((t) => t.id === taskId);
@@ -109,10 +145,12 @@ export function posicionarNoExtremo<TTask extends Task>(
   /*
    * Uma solta disputa o extremo com a fila inteira, grupos inclusive: o grupo
    * ocupa o lugar do seu primeiro membro, entao passar do primeiro (ou do
-   * ultimo) numero de todos e passar de todo no de fora.
+   * ultimo) numero de todos e passar de todo no de fora. Uma agrupada, com a
+   * subarvore do proprio grupo.
    */
+  const dentro = movida.groupId === undefined ? undefined : subarvore(grupos, movida.groupId);
   const irmas = ordenarTarefas(
-    movida.groupId === undefined ? tarefas : tarefas.filter((t) => t.groupId === movida.groupId),
+    dentro === undefined ? tarefas : tarefas.filter((t) => t.groupId !== undefined && dentro.has(String(t.groupId))),
   );
   const referencia = extremo === 'top' ? irmas[0] : irmas.at(-1);
   if (!referencia || referencia.id === taskId) return [];
@@ -145,37 +183,50 @@ export type DestinoDoGrupo =
  * grava os tres — a conta que o dashboard ja fazia (task-101) — e a vizinhanca
  * so quando falta espaco.
  *
- * A fila e lida como o quadro a mostra: um grupo ocupa o lugar do seu primeiro
- * membro. "Depois do grupo B" e, portanto, antes do no que vem depois de B —
- * e nao depois do ultimo membro de B, que pode estar mais adiante.
+ * O bloco e a **subarvore** (task-119): os membros do grupo e os dos subgrupos
+ * dele. E so os membros sao gravados — o grupo nao muda de pai ao se mover.
  *
+ * A fila e lida como o quadro a mostra: um grupo ocupa o lugar do primeiro
+ * membro da sua subarvore. "Depois do grupo B" e, portanto, antes do no que
+ * vem depois de B na lista em que B esta — e nao depois do ultimo membro de B,
+ * que pode estar mais adiante. Topo e fim sao os do grupo que contem, como
+ * para uma tarefa agrupada; os da fila inteira quando o grupo e da raiz.
+ *
+ * @param grupos - Quem esta dentro de quem; sem ele, todo grupo e da raiz
  * @returns Vazio quando o grupo nao tem membros, ou ja esta onde se pediu
- * @throws Error quando o alvo nao existe, e o proprio grupo, e membro dele, ou
- *   e uma tarefa de outro grupo — ai o alvo certo e o grupo dela
+ * @throws Error quando o alvo nao existe, e o proprio grupo ou esta dentro
+ *   dele, ou e uma tarefa de outro grupo — ai o alvo certo e o grupo que ocupa
+ *   a linha dela
  * @public
  */
 export function posicionarGrupo<TTask extends Task>(
   tarefas: readonly TTask[],
   groupId: GroupId,
   destino: DestinoDoGrupo,
+  grupos: HierarquiaDeGrupos = [],
   passo = PASSO_DE_PRIORIDADE,
 ): TTask[] {
-  const membros = ordenarTarefas(tarefas.filter((t) => t.groupId === groupId));
-  const resto = ordenarTarefas(tarefas.filter((t) => t.groupId !== groupId));
-
-  /* Onde comeca cada no da fila: a tarefa solta, ou o primeiro membro do grupo. */
-  const inicios = new Map<string, number>();
-  resto.forEach((t, i) => {
-    const chave = t.groupId === undefined ? `task:${t.id}` : `group:${t.groupId}`;
-    if (!inicios.has(chave)) inicios.set(chave, i);
-  });
-  const nos = [...inicios.values()];
+  const bloco = subarvore(grupos, groupId);
+  const noBloco = (t: Task) => t.groupId !== undefined && bloco.has(String(t.groupId));
+  const membros = ordenarTarefas(tarefas.filter(noBloco));
+  const resto = ordenarTarefas(tarefas.filter((t) => !noBloco(t)));
+  const pai = grupos.find((g) => String(g.id) === String(groupId))?.parentId;
+  const nivelDoPai = pai === undefined ? undefined : String(pai);
 
   let indice: number;
   if ('extremo' in destino) {
-    indice = destino.extremo === 'top' ? 0 : resto.length;
+    indice = indiceNoExtremo(grupos, resto, nivelDoPai, destino.extremo);
   } else {
-    const chave = chaveDoAlvo(tarefas, groupId, destino.alvo, destino.lado);
+    const { chave, nivel } = chaveDoAlvo(tarefas, grupos, groupId, bloco, nivelDoPai, destino.alvo, destino.lado);
+
+    /* Onde comeca cada no da lista do alvo: a tarefa, ou o primeiro membro da subarvore. */
+    const inicios = new Map<string, number>();
+    resto.forEach((t, i) => {
+      const k = chaveNoNivel(grupos, t, nivel);
+      if (!inicios.has(k)) inicios.set(k, i);
+    });
+    const nos = [...inicios.values()];
+
     const inicio = inicios.get(chave);
     // Uma tarefa solta sempre tem o seu no; so um grupo sem membros fica sem.
     if (inicio === undefined) throw new Error(`Group '${chave.slice('group:'.length)}' has no tasks to move next to.`);
@@ -190,27 +241,60 @@ export function posicionarGrupo<TTask extends Task>(
 
   const antes = resto.slice(0, indice);
   const depois = resto.slice(indice).filter((t) => t.order !== undefined);
-  const bloco = membros.map((t) => ({ ...t, order: undefined }));
+  const semNumero = membros.map((t) => ({ ...t, order: undefined }));
 
-  return numerarPrioridade([...antes, ...bloco, ...depois], passo) as TTask[];
+  return numerarPrioridade([...antes, ...semNumero, ...depois], passo) as TTask[];
 }
 
-/** Confere o alvo, e devolve a chave do no dele na fila. */
-function chaveDoAlvo(tarefas: readonly Task[], groupId: GroupId, alvo: AlvoDoGrupo, lado: LadoDaReferencia): string {
+/** Onde fica o topo ou o fim da lista do pai: a fila inteira, quando da raiz. */
+function indiceNoExtremo(
+  grupos: HierarquiaDeGrupos,
+  resto: readonly Task[],
+  pai: string | undefined,
+  extremo: ExtremoDaFila,
+): number {
+  if (pai === undefined) return extremo === 'top' ? 0 : resto.length;
+
+  const irmaos = subarvore(grupos, pai as GroupId);
+  const dentro = resto.flatMap((t, i) => (t.groupId !== undefined && irmaos.has(String(t.groupId)) ? [i] : []));
+  if (dentro.length === 0) return extremo === 'top' ? 0 : resto.length;
+  return extremo === 'top' ? (dentro[0] ?? 0) : (dentro.at(-1) ?? 0) + 1;
+}
+
+/**
+ * Confere o alvo, e devolve a chave do no dele e a lista em que ele esta.
+ *
+ * Um grupo vale onde estiver. Uma tarefa, so quando ocupa a propria linha na
+ * lista em que o grupo movido esta — senao a recusa aponta o grupo que ocupa.
+ */
+function chaveDoAlvo(
+  tarefas: readonly Task[],
+  grupos: HierarquiaDeGrupos,
+  groupId: GroupId,
+  bloco: ReadonlySet<string>,
+  nivelDoPai: string | undefined,
+  alvo: AlvoDoGrupo,
+  lado: LadoDaReferencia,
+): { chave: string; nivel: string | undefined } {
   if ('groupId' in alvo) {
     if (alvo.groupId === groupId) throw new Error(`Group '${groupId}' cannot be placed ${lado} itself.`);
-    return `group:${alvo.groupId}`;
+    if (bloco.has(String(alvo.groupId))) {
+      throw new Error(`Group '${alvo.groupId}' is inside group '${groupId}'; pick a target outside the group.`);
+    }
+    const pai = grupos.find((g) => String(g.id) === String(alvo.groupId))?.parentId;
+    return { chave: `group:${alvo.groupId}`, nivel: pai === undefined ? undefined : String(pai) };
   }
 
   const tarefa = tarefas.find((t) => t.id === alvo.taskId);
   if (!tarefa) throw new Error(`Task with ID '${alvo.taskId}' not found.`);
-  if (tarefa.groupId === groupId) {
+  if (tarefa.groupId !== undefined && bloco.has(String(tarefa.groupId))) {
     throw new Error(`Task '${alvo.taskId}' is a member of group '${groupId}' itself; pick a target outside the group.`);
   }
-  if (tarefa.groupId !== undefined) {
-    throw new Error(
-      `Task '${alvo.taskId}' belongs to group '${tarefa.groupId}'; move the group ${lado} '${tarefa.groupId}' instead.`,
-    );
+
+  const chave = chaveNoNivel(grupos, tarefa, nivelDoPai);
+  if (chave !== `task:${alvo.taskId}`) {
+    const ocupa = chave.slice('group:'.length);
+    throw new Error(`Task '${alvo.taskId}' belongs to group '${ocupa}'; move the group ${lado} '${ocupa}' instead.`);
   }
-  return `task:${alvo.taskId}`;
+  return { chave, nivel: nivelDoPai };
 }

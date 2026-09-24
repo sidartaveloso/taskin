@@ -1,4 +1,5 @@
-import type { GroupId, Task } from '@opentask/taskin-types';
+import type { Task } from '@opentask/taskin-types';
+import { registroDeGruposEmMemoria } from './group-registry.memory';
 import type { IGroupRegistry } from './group-registry.types';
 import { TaskManager } from './task-manager';
 import { runTaskManagerContractTests } from './task-manager.contract';
@@ -8,13 +9,7 @@ import type { ITaskProvider } from './task-manager.types';
 runTaskManagerContractTests(async (tarefas, grupos) => {
   const porId = new Map(tarefas.map((t) => [String(t.id), t]));
 
-  const groupRegistry: IGroupRegistry = {
-    listGroups: async () => grupos,
-    findGroup: async (id: GroupId) => grupos.find((g) => g.id === id),
-    createGroup: async () => {},
-    renameGroup: async () => {},
-    deleteGroup: async () => ({ reassigned: 0 }),
-  };
+  const groupRegistry = registroDeGruposEmMemoria(grupos);
 
   const provider: ITaskProvider & { groupRegistry: IGroupRegistry } = {
     initialize: async () => {},

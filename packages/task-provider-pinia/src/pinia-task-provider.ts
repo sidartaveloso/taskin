@@ -294,7 +294,8 @@ const _usePiniaTaskProvider = defineStore('taskin-tasks', {
           break;
 
         case 'group:created':
-          // O nome do grupo e buscado pelo app em /api/groups; nada a guardar aqui.
+        case 'group:updated':
+          // Os grupos — nome e pai — o app busca em /api/groups; nada a guardar aqui.
           break;
 
         case 'pong':
