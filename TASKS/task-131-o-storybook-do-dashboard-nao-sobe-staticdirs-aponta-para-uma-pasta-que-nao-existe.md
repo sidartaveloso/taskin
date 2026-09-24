@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: sidartaveloso
+- Priority: 13551
 
 ## Description
 pnpm storybook em packages/dashboard sai com 'Failed to load static files, no such directory: ./public'. O .storybook/main.ts declara staticDirs: ['../public'], mas a pasta nunca foi versionada: ela existia so localmente, e numa copia limpa o Storybook recusa subir. O dashboard nao serve nenhum arquivo estatico no Storybook, entao a entrada sai.
