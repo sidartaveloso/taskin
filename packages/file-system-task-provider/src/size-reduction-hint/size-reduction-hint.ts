@@ -2,6 +2,8 @@ import path from 'path';
 import type { ISizeReductionHint } from './size-reduction-hint.types.js';
 
 const STILL_IMAGE = new Set(['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff']);
+/** Two-pass palette in one filter graph: builds the palette, then maps the image onto it. */
+const PALETTE = 'split[a][b];[a]palettegen=max_colors=256[p];[b][p]paletteuse';
 const MOVING_IMAGE = new Set(['.gif', '.webm', '.mp4', '.mov', '.mkv', '.avi', '.m4v']);
 
 /** `assets/screen.png` → `assets/screen.jpg`, for the lossy-conversion line. */
@@ -29,20 +31,25 @@ export class SizeReductionHint implements ISizeReductionHint {
   }
 
   private forStillImage(file: string): string {
+    // ffmpeg cannot write over the file it is reading, hence the `.reduced` copy
+    const reduced = withExtension(file, `.reduced${path.extname(file)}`);
     return [
       'Crop it to the part that matters — a full screen rarely is the evidence.',
-      `Downscale: ffmpeg -i ${file} -vf scale=1280:-1 ${file}`,
-      `Reduce the palette to 256 colours (keeps name and format): ffmpeg -i ${file} -vf "split[a][b];[a]palettegen=max_colors=256[p];[b][p]paletteuse" ${file}`,
-      `If the image is merely illustrative and fidelity need not be kept, convert it: ffmpeg -i ${file} -q:v 5 ${withExtension(file, '.jpg')} — this changes the extension, so update the link in the task.`,
+      `Reduce the palette to 256 colours, keeping name and format: ffmpeg -i ${file} -vf "${PALETTE}" ${reduced}`,
+      `If it is still too big, downscale as well: ffmpeg -i ${file} -vf "scale=1280:-1,${PALETTE}" ${reduced}`,
+      `Then put the reduced file in place: mv ${reduced} ${file}`,
+      `If the image is merely illustrative and fidelity need not be kept, convert it — the extension changes, so update the link in the task: ffmpeg -i ${file} -q:v 5 ${withExtension(file, '.jpg')}`,
     ].join('\n');
   }
 
   private forMovingImage(file: string): string {
+    const smaller = withExtension(file, `.small${path.extname(file)}`);
     return [
-      'First consider a strip of still frames instead of motion — a few moments side by side usually prove the change for a fraction of the size:',
+      'First consider a strip of still frames instead of motion — a few moments side by side usually prove the change for a fraction of the size, and the link changes to the .jpg:',
       `  ffmpeg -i ${file} -vf "select='not(mod(n\\,100))',scale=360:-1,tile=4x1" -frames:v 1 ${withExtension(file, '.jpg')}`,
-      `Fewer frames per second and less width: ffmpeg -i ${file} -vf fps=6,scale=560:-1 ${withExtension(file, `.small${path.extname(file)}`)}`,
-      `Trim the start and the end: ffmpeg -ss 3 -t 10 -i ${file} -c copy ${withExtension(file, `.trimmed${path.extname(file)}`)}`,
+      `Or fewer frames per second and less width: ffmpeg -i ${file} -vf fps=6,scale=560:-1 ${smaller}`,
+      `Or trim the start and the end: ffmpeg -ss 3 -t 10 -i ${file} -c copy ${smaller}`,
+      `Then put the smaller file in place: mv ${smaller} ${file}`,
     ].join('\n');
   }
 
