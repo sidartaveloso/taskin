@@ -214,12 +214,19 @@ já estava em andamento: pegou uma tarefa de prioridade **30** em vez de uma de
 
 Se o seu rastreador tem prioridade própria, diga ao prompt que ela decide:
 
-> **O número de prioridade decide. Maior vence.** A ordem por categoria só
-> desempata. Uma tarefa já em andamento **não** vence por estar em andamento —
-> várias passadas sem fechar são motivo de suspeita, não de mais uma.
+> **O número de prioridade decide.** A ordem por categoria só desempata. Uma
+> tarefa já em andamento **não** vence por estar em andamento — várias passadas
+> sem fechar são motivo de suspeita, não de mais uma.
 
 Depois dessa mudança, a rodada seguinte fechou três tarefas na ordem exata de
 prioridade.
+
+**E diga em que direção.** Eu escrevi "maior vence" e estava errado: no Taskin a
+prioridade é uma **posição** na fila, e a ordem manual põe o menor número no
+topo. Uma rodada inteira fechou as tarefas de um grupo na ordem inversa à que o
+dashboard mostrava, sem ninguém perceber — o agente obedeceu ao prompt, e o
+prompt contradizia o produto. Confira a direção contra a ferramenta que exibe a
+fila, e não contra a intuição de que número grande é importante.
 
 ---
 
