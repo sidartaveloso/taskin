@@ -102,6 +102,8 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `--open` - Show only open tasks (pending, in-progress, blocked)
   - `--closed` - Show only closed tasks (done, canceled)
   - `--active` - Show only tasks started and not finished (in-progress, paused, in-review)
+  - `--scored` - Show only tasks that already have a difficulty (for prioritising)
+  - `--unscored` - Show only tasks still without a difficulty (the queue left to rate)
   - `--sort <mode>` - `manual` (priority, the default), `diff-asc` or `diff-desc`
   - `--status <status>` - Filter by specific status
   - `--type <type>` - Filter by task type

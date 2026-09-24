@@ -23,6 +23,7 @@ const ScreenStub = {
     'filter',
     'viewMode',
     'sortMode',
+    'scoreFilter',
     'dragEnabled',
     'canUndo',
     'canRedo',
@@ -39,6 +40,7 @@ const ScreenStub = {
     'update:filter',
     'update:view-mode',
     'update:sort-mode',
+    'update:score-filter',
     'toggle-collapse',
     'set-all-collapsed',
     'set-difficulty',
@@ -105,10 +107,12 @@ describe('PrioritizationPage', () => {
     screen.vm.$emit('undo');
     screen.vm.$emit('set-difficulty', '1', 3);
     screen.vm.$emit('move-up', '2');
+    screen.vm.$emit('update:score-filter', 'unscored');
     await nextTick();
     expect(api.undo).toHaveBeenCalled();
     expect(api.setDifficulty).toHaveBeenCalledWith('1', 3);
     expect(api.moveUp).toHaveBeenCalledWith('2');
+    expect(api.setScoreFilter).toHaveBeenCalledWith('unscored');
   });
 
   it('emits update-task and update-tasks when tasks change', async () => {

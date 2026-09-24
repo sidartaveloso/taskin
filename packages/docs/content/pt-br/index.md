@@ -174,6 +174,8 @@ seu repositório passa a mexer nela:
 
 Três filtros, iguais em todas as superfícies: `open` (tudo que não terminou), `closed`, e `active` — começou e não terminou, que é o que interessa na tela enquanto o trabalho acontece.
 
+Outros dois separam a fila pela dificuldade: `scored` (já pontuada — o que se prioriza) e `unscored` (a fila do que ainda falta pontuar). Na tela de priorização do dashboard eles são um controle próprio, ao lado do modo de ordenação.
+
 
 ```
 você:    "termina a task 042"

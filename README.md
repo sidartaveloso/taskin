@@ -118,6 +118,8 @@ taskin list
 taskin list --open              # Only open tasks
 taskin list --closed            # Only closed tasks
 taskin list --status pending    # Specific status
+taskin list --scored            # Only tasks that already have a difficulty
+taskin list --unscored          # Only tasks still waiting for a difficulty
 
 # Machine-readable output, for another tool to consume
 taskin list --json              # JSON array, no header and no framing

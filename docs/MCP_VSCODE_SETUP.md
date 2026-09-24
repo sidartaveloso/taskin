@@ -116,7 +116,7 @@ Taskin's MCP server exposes the following tools to Copilot:
 
 | Tool          | Description                                                    |
 | ------------- | -------------------------------------------------------------- |
-| `list_tasks`  | Lists tasks as JSON, without the markdown body. Filters: `status`, `type`, `assignee`, `open`, `closed`, `text` |
+| `list_tasks`  | Lists tasks as JSON, without the markdown body. Filters: `status`, `type`, `assignee`, `open`, `closed`, `active`, `scored`, `unscored`, `text` |
 | `set_priority` | Places one task in the queue: exactly one of `priority` (absolute, lower comes first), `before` or `after` another task |
 | `join_group`  | Puts a task in an existing group — only offered when the provider has groups |
 | `leave_group` | Takes a task out of its group — only offered when the provider has groups |

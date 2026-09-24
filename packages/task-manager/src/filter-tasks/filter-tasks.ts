@@ -64,6 +64,9 @@ export function filterTasks(tasks: readonly Task[], criteria: TaskFilterCriteria
       return false;
     }
 
+    if (criteria.scored && task.difficulty === undefined) return false;
+    if (criteria.unscored && task.difficulty !== undefined) return false;
+
     if (criteria.type !== undefined && task.type !== criteria.type) return false;
 
     if (criteria.assignee !== undefined && !casaResponsavel(task, criteria.assignee)) return false;

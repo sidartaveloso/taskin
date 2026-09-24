@@ -12,13 +12,13 @@ Um criterio novo para restringir a listagem as tarefas que ja receberam dificuld
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Decidir o nome do criterio, e se ele tem par — ver a secao abaixo
-- [ ] Acrescentar a propriedade ao `FilterCriteriaSchema` e a entrada em `FILTER_CRITERIA_SURFACES`
-- [ ] Implementar o predicado no `filterTasks`, com teste: pontuada, nao pontuada, e o criterio ausente
-- [ ] Conferir que a CLI e o `list_tasks` do MCP ganharam o criterio **sem edicao propria** — se precisarem, a derivacao esta furada
-- [ ] Controle na tela de priorizacao do dashboard, separado do campo de texto
-- [ ] Documentacao: `README.md` da raiz, `packages/cli/README.md`, `docs/` e o site nos dois idiomas
-- [ ] Verificacao: `pnpm lint`, `pnpm typecheck`, `pnpm format`, `pnpm test`
+- [x] Decidir o nome do criterio, e se ele tem par — `scored` e `unscored`, par como `open`/`closed`: os dois momentos (priorizar / pontuar) estao descritos na nota, e cada um e um dos dois
+- [x] Acrescentar a propriedade ao `FilterCriteriaSchema` e a entrada em `FILTER_CRITERIA_SURFACES` — `packages/task-manager/src/filter-tasks/filter-criteria.ts`
+- [x] Implementar o predicado no `filterTasks`, com teste: pontuada, nao pontuada, e o criterio ausente — `describe('filtros scored e unscored')` em `packages/task-manager/src/filter-tasks/filter-tasks.test.ts` (4 casos, inclusive a soma com `open`)
+- [x] Conferir que a CLI e o `list_tasks` do MCP ganharam o criterio **sem edicao propria** — `git diff packages/cli/src packages/task-server-mcp` vazio; `pnpm taskin list --help` mostra `--scored`/`--unscored`; `pnpm taskin list --scored --open --json` devolve so as pontuadas; `filterCriteriaJsonSchema().properties.scored` e `{type: boolean, description}`. A derivacao nao tem furo.
+- [x] Controle na tela de priorizacao do dashboard, separado do campo de texto — `select[data-testid=score-filter-select]` ao lado do seletor de ordenacao em `PrioritizationScreen.vue`; estado `scoreFilter`/`setScoreFilter` em `use-prioritization.ts` (testes `scoreFilter ...` em `use-prioritization.test.ts`); ligacao na pagina coberta em `PrioritizationPage.spec.ts` ("forwards screen commands"); passos no `play` da story `Default` de `PrioritizationScreen.stories.ts`
+- [x] Documentacao: `README.md` da raiz, `packages/cli/README.md`, `docs/` (`MCP_CLAUDE_SETUP.md`, `MCP_VSCODE_SETUP.md`) e o site nos dois idiomas (`packages/docs/content/index.md`, `packages/docs/content/pt-br/index.md`)
+- [x] Verificacao: `pnpm lint`, `pnpm typecheck`, `pnpm format`, `pnpm test` — lint, typecheck e format verdes. `pnpm test`: todos os pacotes verdes, exceto `design-vue` e `ui-sense`, que rodam no Chromium do Playwright e aqui o host nao tem as bibliotecas do navegador. O `design-vue` passou inteiro em jsdom (265/265, `vitest run --browser.enabled=false --environment jsdom`); o `play` da story nao pode ser executado neste ambiente. A CLI teve e2e com timeout sob o turbo paralelo e passou 405/405 rodada sozinha.
 
 ## Notes
 
@@ -70,3 +70,9 @@ ordenar. Ver so as pontuadas torna esses dois modos honestos.
 **valor** (`--difficulty 3`), que e outra coisa e tambem util um dia. Para nao
 queimar o nome, a proposta e `scored` — e, se houver par, `unscored`. A decisao
 fica aberta.
+
+### Decisoes (task-102)
+
+- **Par `scored`/`unscored`.** Os dois usos estao na propria nota do caso de uso; nenhum dos dois e hipotetico.
+- **No dashboard o controle e um `select` de tres estados** (`all`/`scored`/`unscored`), nao persistido — igual ao filtro de texto, e diferente de modo de visao/ordenacao, que sao preferencia de exibicao.
+- Com `unscored` ligado, dar nota a uma tarefa a tira da tela: e o comportamento de fila que se queria.

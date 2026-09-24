@@ -60,11 +60,10 @@ export const Default: Story = {
     components: { PrioritizationScreen },
     setup() {
       const tasks = ref<Task[]>([...defaultTasks]);
-      const { tree, filter, viewMode, sortMode, dragEnabled, setViewMode, setSortMode } = usePrioritization(
-        toRef(tasks),
-      );
+      const { tree, filter, viewMode, sortMode, scoreFilter, dragEnabled, setViewMode, setSortMode, setScoreFilter } =
+        usePrioritization(toRef(tasks));
 
-      return { tree, filter, viewMode, sortMode, dragEnabled, setViewMode, setSortMode };
+      return { tree, filter, viewMode, sortMode, scoreFilter, dragEnabled, setViewMode, setSortMode, setScoreFilter };
     },
     template: `
       <PrioritizationScreen
@@ -72,9 +71,11 @@ export const Default: Story = {
         :filter="filter"
         :view-mode="viewMode"
         :sort-mode="sortMode"
+        :score-filter="scoreFilter"
         :drag-enabled="dragEnabled"
         @update:view-mode="setViewMode"
         @update:sort-mode="setSortMode"
+        @update:score-filter="setScoreFilter"
       />
     `,
   }),
@@ -139,6 +140,25 @@ export const Default: Story = {
     await waitFor(() => {
       expect(sortSelect.value).toBe('manual');
       expect(cardIds().slice(0, 5)).toEqual(['001', '002', '003', '004', '005']);
+    });
+
+    // ── Difficulty filter, separate from the text filter ──
+    const scoreSelect = canvas.getByTestId('score-filter-select') as HTMLSelectElement;
+    expect(scoreSelect.value).toBe('all');
+
+    await fireEvent.change(scoreSelect, { target: { value: 'scored' } });
+    await waitFor(() => {
+      expect(cardIds()).toEqual(['001', '002', '005']);
+    });
+
+    await fireEvent.change(scoreSelect, { target: { value: 'unscored' } });
+    await waitFor(() => {
+      expect(cardIds()).toEqual(['003', '004']);
+    });
+
+    await fireEvent.change(scoreSelect, { target: { value: 'all' } });
+    await waitFor(() => {
+      expect(cardIds()).toEqual(['001', '002', '003', '004', '005']);
     });
   },
 };

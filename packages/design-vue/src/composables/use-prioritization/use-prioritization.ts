@@ -2,6 +2,7 @@ import { ordenarTarefas } from '@opentask/taskin-task-manager';
 import { computed, type Ref, ref, shallowRef, watch } from 'vue';
 import type { GroupId, Task } from '../../types';
 import type {
+  PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
   PriorityGroupNode,
@@ -183,6 +184,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   const sortMode = ref<PrioritizationSortMode>(prefs.sortMode);
   const collapsedGroups = ref<Record<string, boolean>>(prefs.collapsedGroups);
   const filter = ref('');
+  const scoreFilter = ref<PrioritizationScoreFilter>('all');
 
   const treeInternal = ref<PriorityNode[]>(buildPriorityTree(tasks.value, collapsedGroups.value));
 
@@ -433,6 +435,10 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
   function setFilter(value: string): void {
     filter.value = value;
+  }
+
+  function setScoreFilter(value: PrioritizationScoreFilter): void {
+    scoreFilter.value = value;
   }
 
   function setViewMode(value: PrioritizationViewMode): void {
@@ -949,9 +955,12 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     }
 
     const q = filter.value.trim().toLowerCase();
-    if (!q) return nodes;
+    const score = scoreFilter.value;
+    if (!q && score === 'all') return nodes;
 
-    const matches = (t: Task) => `${t.id} ${t.type ?? ''} ${t.title}`.toLowerCase().includes(q);
+    const matchesScore = (t: Task) => score === 'all' || (t.difficulty !== undefined) === (score === 'scored');
+    const matches = (t: Task) =>
+      matchesScore(t) && (!q || `${t.id} ${t.type ?? ''} ${t.title}`.toLowerCase().includes(q));
 
     function filterRecursive(list: PriorityNode[]): PriorityNode[] {
       return list
@@ -973,6 +982,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     filter,
     viewMode,
     sortMode,
+    scoreFilter,
     dragEnabled,
     changedTasks,
     canUndo,
@@ -980,6 +990,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     setFilter,
     setViewMode,
     setSortMode,
+    setScoreFilter,
     toggleGroupCollapsed,
     setDifficulty,
     moveBefore,

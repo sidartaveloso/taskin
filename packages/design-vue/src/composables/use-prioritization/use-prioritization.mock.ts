@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import type { Task } from '../../types';
 import type {
+  PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
   PriorityNode,
@@ -15,6 +16,7 @@ export function createPrioritizationMock(): UsePrioritization {
     filter: ref(''),
     viewMode: ref<PrioritizationViewMode>('cards'),
     sortMode: ref<PrioritizationSortMode>('manual'),
+    scoreFilter: ref<PrioritizationScoreFilter>('all'),
     dragEnabled: ref(true),
     changedTasks: ref<Task[]>([]),
     canUndo: ref(false),
@@ -22,6 +24,7 @@ export function createPrioritizationMock(): UsePrioritization {
     setFilter: vi.fn(),
     setViewMode: vi.fn(),
     setSortMode: vi.fn(),
+    setScoreFilter: vi.fn(),
     toggleGroupCollapsed: vi.fn(),
     setDifficulty: vi.fn(),
     moveBefore: vi.fn(),
