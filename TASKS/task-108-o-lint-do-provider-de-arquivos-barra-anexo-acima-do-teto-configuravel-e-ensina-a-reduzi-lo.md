@@ -96,17 +96,63 @@ dispensa uma ferramenta por formato.
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] TDD: teste de aceitação no provider — anexo acima do teto reprova o lint,
+- [x] TDD: teste de aceitação no provider — anexo acima do teto reprova o lint,
       abaixo passa, sem `maxAttachmentKb` não há checagem
-- [ ] TDD: `maxAttachmentKb` declarado no `configSchema` do `fs` e repassado
+- [x] TDD: `maxAttachmentKb` declarado no `configSchema` do `fs` e repassado
       pela `buildFileSystemProvider` ao provider
-- [ ] TDD: as exceções — travam o tamanho, reprovam entrada órfã, que já cabe
+- [x] TDD: as exceções — travam o tamanho, reprovam entrada órfã, que já cabe
       ou sem motivo
-- [ ] TDD: a dica por tipo (imagem, vídeo/GIF, outro), com os comandos
-- [ ] TDD: a CLI imprime `suggestion` de várias linhas com recuo em cada linha
-- [ ] Documentar a opção e o arquivo de exceções no README do provider
+- [x] TDD: a dica por tipo (imagem, vídeo/GIF, outro), com os comandos
+- [x] TDD: a CLI imprime `suggestion` de várias linhas com recuo em cada linha
+- [x] Documentar a opção e o arquivo de exceções no README do provider
 - [ ] Adoção: geohub com `maxAttachmentKb: 300` e as 21 exceções; mapgrid com
-      o teto, removendo o `scripts/tamanho-de-evidencia/` que antecipou a regra
+      o teto, removendo o `scripts/tamanho-de-evidencia/` que antecipou a regra.
+      Depende de publicar a versão nova do taskin
+
+## Onde ficou — 2026-09-24
+
+Implementado na branch `feat/task-108`, em inglês, como o resto do código do
+taskin (o `padroes/estrutura-de-modulos.md` dizia "português primeiro" porque
+veio de outro projeto; corrigido no mesmo branch):
+
+- `packages/file-system-task-provider/src/attachment-validator/` —
+  `AttachmentValidator`, o teto e as exceções;
+- `packages/file-system-task-provider/src/size-reduction-hint/` —
+  `SizeReductionHint`, a dica por tipo;
+- `FileSystemTaskProviderOptions.maxAttachmentKb`, lido do `.taskin.json` pela
+  `buildFileSystemProvider`. Valor que não é número positivo é **recusado** —
+  ao contrário do `metadataStyle`, que cai no padrão —, porque ignorar
+  `"300KB"` desligaria o gate em silêncio;
+- a CLI recua todas as linhas de uma `suggestion`, não só a primeira.
+
+Gates: `pnpm format:check`, `pnpm lint`, `pnpm typecheck` e `pnpm test` (44
+tarefas) verdes.
+
+**Rodado contra o geohub real** (cópia de `TASKS/`, `.taskin/` e
+`.taskin.json`, com `maxAttachmentKb: 300`): acusou exatamente os 21 arquivos;
+com as 21 exceções geradas dos tamanhos reais, passou; e um byte a mais num
+arquivo isento reprovou. Essa rodada achou dois defeitos que o unitário não
+via, ambos corrigidos com teste antes:
+
+1. os comandos da dica escreviam no próprio arquivo de entrada
+   (`ffmpeg -i a.png … a.png`), o que o ffmpeg recusa. A saída vai para
+   `<nome>.reduced.<ext>`, e a dica diz o `mv`. Os comandos foram
+   **executados** sobre um PNG do geohub e um `.webm` do mapgrid;
+2. crescimento menor que 1 KB saía como "isento em 536 KB, mas cresceu para
+   536 KB". Nesse caso a mensagem passa a mostrar bytes.
+
+A execução também mediu que, para imagem densa, só a paleta não basta: o
+blueprint da task-148 do geohub (2,1 MB) caiu para 869 KB só com a paleta, e para
+656 KB com a resolução reduzida junto. A dica oferece as duas coisas no mesmo
+comando.
+
+**Pendente**:
+
+- publicar a versão e adotar no geohub e no mapgrid (último item da lista);
+- ainda sem solução: com erro de anexo, o lint termina com "Run with --fix to
+  automatically fix format issues", que não se aplica — o `--fix` não reduz
+  arquivo. A `ValidationIssue` não diz se o problema é corrigível
+  automaticamente, e a CLI não tem como distinguir.
 
 ## Notes
 - O teto de 300 KB é decisão de Sidarta (2026-09-23), depois dos 16 MB da
