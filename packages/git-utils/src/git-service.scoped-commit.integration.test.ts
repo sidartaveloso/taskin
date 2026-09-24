@@ -7,7 +7,7 @@ import { GitService } from './git-service';
 
 /**
  * Os commits que o taskin faz sozinho levam o que ele diz que levam, e nada
- * alem disso (task-107).
+ * alem disso (task-110).
  *
  * O incidente que motivou: um `taskin start` em autopilot fez `git add` do
  * arquivo da task e depois `git commit` sem caminho. O `git commit` sem caminho
