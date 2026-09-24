@@ -505,14 +505,15 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       throw new Error(`Task file already exists: ${fileName}`);
     }
 
-    // Resolve assignee from options
-    let assignee: User | undefined;
-    if (options.assignee) {
-      assignee = this.userRegistry.resolveUser(options.assignee);
-      if (!assignee) {
-        assignee = this.userRegistry.createTemporaryUser(options.assignee);
-      }
-    }
+    /*
+     * O `Assignee:` guarda o id do registro, e nao o nome de exibicao: o nome
+     * muda, e o lint acusa quem o grava. Quem nao esta no registro fica como
+     * foi digitado — o id que `createTemporaryUser` inventaria esconderia do
+     * lint o valor que ele precisa mostrar.
+     */
+    const assignee = options.assignee
+      ? (this.userRegistry.resolveUser(options.assignee)?.id ?? options.assignee)
+      : undefined;
 
     // Generate task content using i18n
     const taskContent = this.generateTaskMarkdown({
@@ -520,7 +521,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       title: options.title,
       type: options.type,
       description: options.description || '',
-      assignee: assignee?.name || i18n.defaultAssignee,
+      assignee: assignee || i18n.defaultAssignee,
       i18n,
     });
 

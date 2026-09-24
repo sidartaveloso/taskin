@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: feat
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 Hoje uma unica amostra acima do limiar dispara a reacao de ruido: um estalo de porta vale o mesmo que um minuto de conversa alta. Falta um tempo de sustentacao configuravel (sustainMs) — o nivel precisa se manter acima do threshold por X ms continuos antes de gerar o evento. O debounceMs (intervalo ate um novo disparo) ja existe e nao muda.

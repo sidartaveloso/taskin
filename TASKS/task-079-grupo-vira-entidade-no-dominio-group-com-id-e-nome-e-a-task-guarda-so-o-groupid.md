@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Priority: 6251
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 Hoje groupId e groupName sao dois campos soltos repetidos em cada task. Criar a entidade em taskin-types, tirar groupName do Task, e definir no ITaskProvider as operacoes de grupo — incluindo o que um provider sem o conceito devolve.

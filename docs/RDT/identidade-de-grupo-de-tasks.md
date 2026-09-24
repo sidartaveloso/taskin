@@ -115,6 +115,9 @@ A lição é direta: o grupo mora num registro ao lado do de usuários, e a task
 referencia **só o `groupId`**. É o oposto do que foi feito com o assignee, e pelo
 motivo que o assignee já demonstrou na prática.
 
+A task-108 corrigiu a escrita: o `createTask` passou a gravar o id, o
+`taskin lint` acusa o nome de exibição e o `--fix` o reescreve.
+
 ## Relação com o canônico
 
 - Aberta a partir da task-034, item 2 ("onipresença dos campos de grupo no

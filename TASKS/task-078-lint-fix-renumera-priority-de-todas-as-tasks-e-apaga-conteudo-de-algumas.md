@@ -3,7 +3,7 @@
 - Priority: 900
 - Status: in-progress
 - Type: fix
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Difficulty: 1
 
 ## Description

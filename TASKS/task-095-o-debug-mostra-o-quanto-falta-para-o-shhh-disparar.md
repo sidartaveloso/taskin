@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: feat
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 No criterio de fracao da janela nao existe um relogio regressivo simples: o disparo depende do que vier a seguir. O debug passa a mostrar o estado real do criterio — quanto falta para a janela ficar coberta, a ocupacao atual contra a exigida, quanto falta do debounce, e uma previsao de quanto falta para disparar SE o barulho continuar no ritmo atual.

@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: test
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 Duas camadas. Estatica, sobre a arvore montada pelo workflow do Pages antes do deploy: toda ancora interna precisa ou apontar para um arquivo que existe na arvore, ou carregar target, que e o que a faz escapar do roteador do vitepress. Smoke pos-deploy, contra a URL publicada devolvida pelo deploy-pages: percorre os links e confere o status, falhando em 4xx interno e apenas avisando em link externo, para o CI nao ficar refem do uptime de terceiros. A camada estatica e a que teria pego a task-088; um crawler de status HTTP nao teria, porque aquele 404 era desenhado no cliente sobre uma resposta 200.

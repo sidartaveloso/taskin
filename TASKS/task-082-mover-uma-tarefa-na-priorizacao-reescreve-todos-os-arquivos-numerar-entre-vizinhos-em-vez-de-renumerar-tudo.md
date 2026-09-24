@@ -3,7 +3,7 @@
 - Status: done
 - Type: fix
 - Priority: 6551
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 O commit() da priorizacao reatribui order = posicao x 10 para toda a arvore, e cada tarefa cujo numero mudou e gravada no seu .md. Com 40 das 82 tarefas sem Priority, o primeiro movimento reescreve todas elas.

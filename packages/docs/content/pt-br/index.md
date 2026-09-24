@@ -145,7 +145,7 @@ repositório:
 
 Status: in-progress
 Type: chore
-Assignee: sidarta-veloso
+Assignee: sidartaveloso
 
 ## Description
 
@@ -156,6 +156,9 @@ Os tokens `--status-*-bg` com texto branco falham WCAG AA.
 - [x] Medir o contraste de cada par cor/texto
 - [ ] Decidir entre escurecer o token ou trocar a cor do texto
 ```
+
+A linha `Assignee` guarda o id do usuário em `.taskin/.taskin-users.json`, e não
+o nome de exibição; `taskin lint --fix` reescreve um nome de exibição para o id.
 
 Sendo arquivo no repositório, algumas coisas vêm de graça: a mudança de escopo
 aparece no diff do PR, a tarefa acompanha o ramo onde o trabalho está, conflito

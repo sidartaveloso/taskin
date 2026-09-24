@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Priority: 351
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 Hoje a numeracao so acontece ao arrastar no dashboard, e num projeto meio numerado o primeiro movimento reescreve dezenas de arquivos. Um comando explicito faz isso uma vez, num commit com nome, e o estado meio numerado deixa de existir.
