@@ -107,7 +107,9 @@ Thumbs.db
 storybook-static
 
 # Anexos que o vitest grava durante a execucao (capturas de tela de falha).
+# O caminho mudou entre versoes: `.vitest-attachments/` e, hoje, `.vitest/attachments/`.
 .vitest-attachments/
+.vitest/
 
 # Projeto de carga para medir o custo de um movimento na priorizacao.
 .bench500/
