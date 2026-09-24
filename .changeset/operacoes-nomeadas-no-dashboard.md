@@ -1,7 +1,7 @@
 ---
 '@opentask/taskin-task-manager': minor
 '@opentask/taskin-task-server-ws': minor
-'@opentask/taskin-task-provider-pinia': minor
+'@opentask/taskin-task-provider-pinia': major
 '@opentask/taskin-dashboard': patch
 '@opentask/taskin-task-server-mcp': patch
 'taskin': patch
@@ -18,4 +18,5 @@ que a CLI e o MCP usam, e o servidor WebSocket deixa de aceitar `update`.
   `remove-from-group`, `move-before`, `move-after` e `create-group`, atendidas
   na ordem de chegada. `update` e `applyTaskUpdate` foram removidos.
 - Store Pinia: `operar(operacao)` manda a operação e já a reflete no cache;
-  `updateTask` passa a recusar.
+  `updateTask` passa a recusar. **Quebra compatibilidade**: quem gravava pelo
+  `updateTask` precisa passar a `operar` com a operação nomeada.
