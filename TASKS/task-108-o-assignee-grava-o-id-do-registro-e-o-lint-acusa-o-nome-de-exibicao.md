@@ -1,6 +1,6 @@
 # 🧩 Task 108 — O Assignee grava o id do registro, e o lint acusa o nome de exibicao
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 
