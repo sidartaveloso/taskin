@@ -1,6 +1,6 @@
 # 🧩 Task 119 — Grupos aninhados de verdade: um grupo pode estar dentro de outro, nas tres superficies
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
