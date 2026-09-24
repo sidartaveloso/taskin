@@ -1,6 +1,6 @@
 # Task 016 — Add "Xiiu" / "Shhh" reaction to Taskin mascot
 
-- Status: in-progress
+- Status: paused
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 1058
