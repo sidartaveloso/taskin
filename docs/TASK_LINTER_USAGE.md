@@ -358,8 +358,8 @@ O schema JSON já está incluído no repositório do Taskin em `.vscode/task-mar
 
 ## 🚦 Exit Codes
 
-- `0` - Todos os arquivos são válidos
-- `1` - Erros de validação encontrados
+- `0` - Nenhum erro (avisos não mudam o código)
+- `1` - Sobrou erro de validação — **também com `--fix`**: ele corrige o que dá e sai com `1` se restar erro que não sabe corrigir, como um anexo acima do teto
 
 Útil para scripts e CI/CD:
 

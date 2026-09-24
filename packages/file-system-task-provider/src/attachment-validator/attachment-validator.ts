@@ -42,6 +42,11 @@ export class AttachmentValidator implements IAttachmentValidator {
   }
 
   async validate(): Promise<ValidationIssue[]> {
+    const issues = await this.collectIssues();
+    return issues.map((issue) => ({ ...issue, fixable: false }));
+  }
+
+  private async collectIssues(): Promise<ValidationIssue[]> {
     const attachments = await this.listAttachments(this.options.tasksDir);
     const exceptions = await this.readExceptions();
     const limit = this.options.maxAttachmentKb * KB;

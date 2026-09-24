@@ -9,16 +9,16 @@ O taskin lint --fix imprime o erro que nao conseguiu corrigir e sai com 0: a con
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Fazer passar `packages/cli/src/commands/lint.exit-code.test.ts` — 4 testes, 2 hoje vermelhos: "exits 1 with --fix when an error survives the fix" e "says that --fix could not correct what is left, instead of staying silent"; os outros dois (sem `--fix` sai 1; com `--fix` e nada sobrando sai 0) sao a rede para nao regredir
-- [ ] `lint.ts`: sair com 1 sempre que `result.valid` for falso, com ou sem `--fix`
-- [ ] Com `--fix` e erro sobrando, dizer isso ("N error(s) left that --fix cannot correct") em vez de terminar calado — hoje nao sai nem o verde, nem a dica, nem nada
-- [ ] Sem `--fix`, so sugerir `--fix` quando algum erro for corrigivel por ele. Precisa de uma costura: o `ValidationIssue` diz se o `--fix` o resolve (ex.: `fixable: boolean`), e o `attachment-validator` marca os seus como nao corrigiveis. Acordar a costura antes de escrever o teste
-- [ ] O `--fix` seguido do `lint` precisa refletir o estado depois da correcao, e nao o de antes — conferir que `provider.lint(true)` revalida o que corrigiu
-- [ ] Alinhar com `dev/scripts/lint-tasks.ts`, que ja sai com 1 em qualquer erro, com ou sem `--fix`: as duas portas de entrada do mesmo lint tem que concordar
-- [ ] MCP e dashboard nao expoem `lint` hoje; declarar aqui
-- [ ] Documentacao: o codigo de saida do `lint` e do `lint --fix` no `packages/cli/README.md`, no README da raiz e em `docs/TASK_LINTER_USAGE.md`
-- [ ] Changeset (`taskin`, patch — ou minor, se alguem depende do 0 do `--fix`)
-- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm format`, `pnpm test`
+- [x] `packages/cli/src/commands/lint.exit-code.test.ts` — 6 testes, verdes. Os 2 que abriram a task estavam vermelhos antes da mudanca ("exits 1 with --fix when an error survives the fix", "says that --fix could not correct what is left, instead of staying silent"); os 2 da costura tambem ("does not suggest --fix when no error is fixable" vermelho, "still suggests --fix when some error may be fixable" de controle)
+- [x] `lint.ts`: sai com 1 sempre que `result.valid` e falso, com ou sem `--fix`
+- [x] Com `--fix` e erro sobrando, imprime `N error(s) left that --fix cannot correct.` e sai com 1
+- [x] Costura: `ValidationIssue.fixable?: boolean` (`packages/task-manager/src/task-manager.types.ts`) — `false` quando o `--fix` nao resolve, ausente quando pode resolver, para nao mudar nada nos validadores que ja existem. O `AttachmentValidator.validate()` marca todos os seus como `fixable: false`, inclusive os do arquivo de excecoes (coberto por "marks every issue as not fixable" em `attachment-validator.test.ts`). O `lint` sem `--fix` so mostra a dica se algum erro nao for `fixable: false`
+- [x] `provider.lint(true)` revalida depois de corrigir: em `FileSystemTaskProvider.lint` o bloco `if (fix)` roda antes da coleta de issues, entao o resultado e o do estado corrigido
+- [x] `dev/scripts/lint-tasks.ts` ja saia com 1 em qualquer erro (`if (errorCount > 0) exit(1)`), com ou sem `--fix`; agora a CLI concorda com ele. O script nao imprime a dica, entao nao ha o que alinhar ali
+- [x] MCP e dashboard nao expoem `lint`; nada a fazer neles
+- [x] Documentacao: `docs/TASK_LINTER_USAGE.md` (secao Exit Codes), `packages/cli/README.md` (linha do `taskin lint`) e `README.md` (bloco do linter, onde tambem saiu o `taskin lint --fix` que aparecia duas vezes). O site (`packages/docs/content`) nao descreve o `lint`
+- [x] Changeset `.changeset/lint-fix-sai-com-erro.md`: `@opentask/taskin-task-manager` minor (campo novo no contrato publico), provider e `taskin` patch
+- [x] `pnpm format`, `pnpm lint` (700 arquivos, lint das tasks valido), `pnpm typecheck` (28/28), `pnpm test` (44/44; `taskin` 388, `file-system-provider` 405, `task-manager` 60, `dev-scripts` 85)
 
 ## Notes
 **Reproducao na CLI real** (projeto temporario, `maxAttachmentKb: 10`, um PNG de 49 KB em `TASKS/assets/task-001/`):
@@ -31,3 +31,10 @@ O taskin lint --fix imprime o erro que nao conseguiu corrigir e sai com 0: a con
 **Causa.** `packages/cli/src/commands/lint.ts`: `if (!result.valid && !options.fix) { ... process.exit(1); }` — a mesma condicao decide a dica e o codigo de saida.
 
 **Relacao com a task-108.** Resolve o pendente registrado la ("com erro de anexo, o lint termina com Run with --fix..."): com `--fix`, o fecho passa a dizer o que sobrou; sem `--fix`, a dica depende do item da costura acima — so o codigo de saida nao basta para ela.
+
+**Depois da correcao, na CLI real** (mesmo projeto temporario, com o `pnpm build` feito — a CLI resolve o provider pelo `dist`, e antes do build a dica ainda aparecia):
+
+- `taskin lint` → `Found 1 error(s)`, sem a dica do `--fix`, **sai com 1**
+- `taskin lint --fix` → `Found 1 error(s)` e `1 error(s) left that --fix cannot correct.`, **sai com 1**
+- sem o anexo, `taskin lint --fix` → `All task files are valid!`, **sai com 0**
+

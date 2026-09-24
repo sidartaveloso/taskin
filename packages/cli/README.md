@@ -120,7 +120,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `--period <day|week|month|year>` - Time period for stats
 - `taskin config [options]` - Configure automation level
   - `--level <manual|assisted|autopilot>` - Set commit automation level
-- `taskin lint` - Validate task files
+- `taskin lint` - Validate task files. Exits `1` when an error is left — with `--fix` too, which corrects what it can and reports what it cannot (an attachment over the size limit, for instance)
 - `taskin group` - Manage task groups (alias: `groups`)
   - `list` - List the groups
   - `add <name> [--id <id>]` - Create a group

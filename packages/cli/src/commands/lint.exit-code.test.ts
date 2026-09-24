@@ -18,6 +18,13 @@ const ATTACHMENT_ERROR = {
   file: 'TASKS/assets/task-001/blueprint.png',
   message: 'Attachment is 2100 KB, above the 300 KB limit.',
   severity: 'error' as const,
+  fixable: false,
+};
+
+const FORMAT_ERROR = {
+  file: 'TASKS/task-002-alvo.md',
+  message: 'Metadata is written as sections.',
+  severity: 'error' as const,
 };
 
 const withErrors = { valid: false, issues: [ATTACHMENT_ERROR], errorCount: 1, warningCount: 0, infoCount: 0 };
@@ -85,5 +92,20 @@ describe('lint — exit code', () => {
 
     expect(text).toMatch(/1 error\(s\) left that --fix cannot correct/);
     expect(text).not.toContain('Run with --fix');
+  });
+
+  it('does not suggest --fix when no error is fixable', async () => {
+    lintMock.mockResolvedValue(withErrors);
+
+    const { exitCode, text } = await run();
+
+    expect(exitCode).toBe(1);
+    expect(text).not.toContain('Run with --fix');
+  });
+
+  it('still suggests --fix when some error may be fixable', async () => {
+    lintMock.mockResolvedValue({ ...withErrors, issues: [ATTACHMENT_ERROR, FORMAT_ERROR], errorCount: 2 });
+
+    expect((await run()).text).toContain('Run with --fix');
   });
 });
