@@ -1,6 +1,6 @@
 # 🧩 Task 101 — Levar uma task para o topo ou para o fim da lista visivel, num clique
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 175
