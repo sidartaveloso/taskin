@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: fix
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Priority: 1428
 
 ## Description

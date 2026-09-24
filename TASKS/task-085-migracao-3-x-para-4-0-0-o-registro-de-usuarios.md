@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: fix
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Difficulty: 2
 - Priority: 1388
 

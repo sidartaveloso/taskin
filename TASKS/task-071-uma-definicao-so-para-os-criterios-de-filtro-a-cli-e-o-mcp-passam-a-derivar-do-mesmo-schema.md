@@ -3,7 +3,7 @@
 - Status: done
 - Type: refactor
 - Priority: 245
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 Cada criterio de filtro existe em cinco lugares escritos a mao: o tipo, a flag da CLI, o mapeamento da CLI, o schema JSON do MCP e o mapeamento do MCP. Acrescentar um criterio exige lembrar dos cinco, e esquecer nao quebra nada — so faz uma superficie ficar para tras.

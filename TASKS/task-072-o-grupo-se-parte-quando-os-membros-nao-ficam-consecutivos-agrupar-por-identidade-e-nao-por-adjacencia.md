@@ -3,7 +3,7 @@
 - Status: done
 - Type: fix
 - Priority: 238
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 buildPriorityTree junta tarefas consecutivas com o mesmo parentId. Quando um filtro ou uma ordenacao separa os membros, o mesmo grupo vira dois nos com o mesmo id e o mesmo nome. Latente hoje porque nenhuma tarefa usa grupo.

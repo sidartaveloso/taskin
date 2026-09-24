@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: fix
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Priority: 11551
 
 ## Description

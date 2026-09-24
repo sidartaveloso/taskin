@@ -56,6 +56,24 @@ describe('classifyAssignee', () => {
     expect(identity).toEqual({ kind: 'correctable', raw: 'anasouza', user: ANA });
   });
 
+  // O `Assignee:` guarda o id. O nome de exibicao ainda identifica a pessoa —
+  // por isso nao e `unknown` —, mas e reescrevivel, e o lint tem que dizer.
+  it('reports the display name as correctable, not as resolved', () => {
+    expect(classifyAssignee('Ana Souza', registryWith(ANA))).toEqual({
+      kind: 'correctable',
+      raw: 'Ana Souza',
+      user: ANA,
+    });
+  });
+
+  it('keeps surrounding space out of the comparison with the id', () => {
+    expect(classifyAssignee('  ana-souza ', registryWith(ANA))).toEqual({
+      kind: 'resolved',
+      raw: '  ana-souza ',
+      user: ANA,
+    });
+  });
+
   // `sidartaeloso` neste repo: falta um `v`. Distancia de edicao seria adivinhacao.
   it('leaves a typo unknown instead of guessing the closest user', () => {
     expect(classifyAssignee('anasoza', registryWith(ANA))).toEqual({ kind: 'unknown', raw: 'anasoza' });

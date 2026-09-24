@@ -72,8 +72,8 @@ describe('FileSystemTaskProvider.lint — assignees', () => {
     expect(issue?.suggestion).toContain('ana-souza');
   });
 
-  it('says nothing about a resolved assignee or a placeholder', async () => {
-    writeTask('003', 'Ana Souza');
+  it('says nothing about an assignee written as the id, or a placeholder', async () => {
+    writeTask('003', 'ana-souza');
     writeTask('004', 'A definir');
 
     const result = await (await makeProvider()).lint();
@@ -138,7 +138,7 @@ describe('FileSystemTaskProvider.lint — assignees', () => {
       'ana-souza': { id: 'ana-souza', name: 'Ana Souza', email: 'ana@example.com' },
       developer: { id: 'developer', name: 'Developer', email: 'developer@example.com' },
     });
-    writeTask('008', 'Ana Souza');
+    writeTask('008', 'ana-souza');
 
     const result = await (await makeProvider()).lint();
 
@@ -214,7 +214,7 @@ describe('FileSystemTaskProvider.lint — assignees', () => {
     expect(created).toMatch(/^Status: pending\\$/m);
     expect(created).toMatch(/^Type: feat\\$/m);
     // A ultima linha do bloco nao leva a barra: ali ela renderiza literal.
-    expect(created).toMatch(/^Assignee: Ana Souza$/m);
+    expect(created).toMatch(/^Assignee: ana-souza$/m);
   });
 
   it.each(['plain', 'list', 'hard-break'] as const)(

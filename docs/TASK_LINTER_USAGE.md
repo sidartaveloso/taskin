@@ -204,7 +204,7 @@ chmod +x .git/hooks/pre-commit
 ```markdown
 Status: pending
 Type: feat
-Assignee: @username
+Assignee: joao-silva
 Priority: high
 Due: 2024-12-31
 Tags: api, backend
@@ -257,8 +257,9 @@ Implementar endpoint REST para gerenciamento de usuários.
 
 **Assignee** (opcional)
 
-- Formato: `@username` ou nome completo
-- Exemplo: `Assignee: @joao` ou `Assignee: João Silva`
+- Formato: o **id** do usuário em `.taskin/.taskin-users.json`, e não o nome de exibição — o nome muda, o id é a chave do registro
+- Exemplo: `Assignee: joao-silva`
+- `Assignee: João Silva` (nome de exibição) gera aviso, e `taskin lint --fix` o reescreve para o id
 
 **Priority** (opcional)
 

@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: docs
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Priority: 6751
 
 ## Description

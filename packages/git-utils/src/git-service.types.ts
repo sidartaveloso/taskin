@@ -1,3 +1,16 @@
+import type { SensitiveFinding } from './sensitive-changes';
+
+/**
+ * Outcome of {@link IGitService.commitWork}.
+ *
+ * @public
+ */
+export type WorkCommitResult =
+  | { status: 'committed'; files: string[] }
+  | { status: 'nothing-to-commit' }
+  | { status: 'blocked'; findings: SensitiveFinding[] }
+  | { status: 'failed' };
+
 /**
  * Git service interface for dependency injection and testing.
  * Provides high-level Git operations for task management.
@@ -15,17 +28,30 @@ export interface IGitService {
   /**
    * Create a Git commit with a message.
    * @param message - Commit message
+   * @param paths - When given, only these paths are committed; everything
+   *   else in the index stays staged and out of the commit. Without them the
+   *   whole index is committed, whatever the user had staged included.
    * @returns True if commit was created successfully
    */
-  commit(message: string): Promise<boolean>;
+  commit(message: string, paths?: string[]): Promise<boolean>;
 
   /**
-   * Add files and commit in a single operation.
-   * @param pattern - File pattern to add
+   * Add files and commit exactly those files, never the rest of the index.
+   * @param pattern - File pattern to add (several separated by spaces)
    * @param message - Commit message
    * @returns True if operation succeeded
    */
   addAndCommit(pattern: string, message: string): Promise<boolean>;
+
+  /**
+   * Commit every change in the working tree (`git add -A`), unless one of
+   * them looks sensitive: an environment file, a private key, a credentials
+   * file, or an added line carrying a token. Then nothing is staged or
+   * committed, and the findings are returned for the user to decide.
+   * The commit body lists the files, so the subject never hides what went in.
+   * @param message - Commit subject
+   */
+  commitWork(message: string): Promise<WorkCommitResult>;
 
   /**
    * Commit task status change with standardized message format.

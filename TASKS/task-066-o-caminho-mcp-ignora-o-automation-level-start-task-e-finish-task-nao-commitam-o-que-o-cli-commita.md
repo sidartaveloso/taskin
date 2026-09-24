@@ -3,7 +3,7 @@
 - Status: done
 - Type: fix
 - Priority: 6351
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 O taskin start do CLI, em autopilot, commita a mudanca de status sozinho. O start_task do MCP chama o taskManager direto e nao encosta no git. Duas portas para a mesma operacao, com efeitos diferentes.
