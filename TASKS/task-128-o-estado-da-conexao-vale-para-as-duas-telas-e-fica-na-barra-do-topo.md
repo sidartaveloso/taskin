@@ -1,6 +1,6 @@
 # 🧩 Task 128 — O estado da conexao vale para as duas telas, e fica na barra do topo
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 775
