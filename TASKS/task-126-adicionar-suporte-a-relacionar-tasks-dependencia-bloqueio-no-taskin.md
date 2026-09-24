@@ -3,7 +3,8 @@
 - Status: pending
 - Type: feat
 - Assignee: A definir
-- Priority: 1100
+- Priority: 950
+- Difficulty: 4
 
 ## Description
 
