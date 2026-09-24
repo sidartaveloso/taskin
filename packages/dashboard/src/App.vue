@@ -9,35 +9,35 @@
     </button>
   </div>
 
-  <div class="mode-toggle">
-    <button
-      type="button"
-      :class="{ active: mode === 'board' }"
-      @click="mode = 'board'"
-    >
-      Board
-    </button>
-    <button
-      type="button"
-      :class="{ active: mode === 'prioritization' }"
-      @click="mode = 'prioritization'"
-    >
-      Prioritization
-    </button>
-  </div>
+  <div class="top-bar" data-testid="top-bar">
+    <div class="mode-toggle" role="group" aria-label="Which screen to show">
+      <button
+        v-for="opcao in TELAS"
+        :key="opcao.valor"
+        type="button"
+        :data-view="opcao.valor"
+        :class="{ active: mode === opcao.valor }"
+        :aria-pressed="mode === opcao.valor"
+        @click="escolherTela(opcao.valor)"
+      >
+        {{ opcao.rotulo }}
+      </button>
+    </div>
 
-  <div class="filter-toggle" role="group" aria-label="Which tasks to show">
-    <button
-      v-for="opcao in FILTROS"
-      :key="opcao.valor"
-      type="button"
-      :data-filter="opcao.valor"
-      :class="{ active: filtroEfetivo === opcao.valor }"
-      :aria-pressed="filtroEfetivo === opcao.valor"
-      @click="escolherFiltro(opcao.valor)"
-    >
-      {{ opcao.rotulo }}
-    </button>
+    <div class="filter-toggle" role="group" aria-label="Which tasks to show">
+      <button
+        v-for="opcao in FILTROS"
+        :key="opcao.valor"
+        type="button"
+        :data-filter="opcao.valor"
+        :class="{ active: filtroEfetivo === opcao.valor }"
+        :aria-pressed="filtroEfetivo === opcao.valor"
+        @click="escolherFiltro(opcao.valor)"
+      >
+        {{ opcao.rotulo }}
+      </button>
+    </div>
+
     <span class="filter-toggle__count" data-testid="filter-count">
       Showing {{ tasks.length }} of {{ taskStore.tasks.length }} tasks
     </span>
@@ -91,7 +91,36 @@ const PROGRESS_BY_STATUS: Record<TaskStatus, number> = {
   canceled: 0,
 };
 
-const mode = ref<'board' | 'prioritization'>('board');
+/*
+ * Qual tela esta aberta. Fica na URL (`?view=`), como o filtro: recarregar a
+ * pagina ou abrir um link leva a mesma tela, e nao de volta ao Board. Sem o
+ * parametro, ou com um valor que nao e tela, abre o Board.
+ */
+type Tela = 'board' | 'prioritization';
+
+const TELAS: readonly { valor: Tela; rotulo: string }[] = [
+  { valor: 'board', rotulo: 'Board' },
+  { valor: 'prioritization', rotulo: 'Prioritization' },
+];
+
+function telaDaUrl(): Tela {
+  const pedida = new URLSearchParams(window.location.search).get('view');
+  return TELAS.find((t) => t.valor === pedida)?.valor ?? 'board';
+}
+
+const mode = ref<Tela>(telaDaUrl());
+
+/** Grava um parametro na URL sem tocar nos outros, e sem criar entrada no historico. */
+function gravarNaUrl(chave: 'view' | 'filter', valor: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(chave, valor);
+  window.history.replaceState({}, '', url);
+}
+
+function escolherTela(valor: Tela) {
+  mode.value = valor;
+  gravarNaUrl('view', valor);
+}
 
 /*
  * Qual recorte a tela mostra. Sem `?filter=` na URL, nenhum criterio — e o
@@ -127,9 +156,7 @@ const filtroEfetivo = computed(() => {
 
 function escolherFiltro(valor: Filtro) {
   filtro.value = valor;
-  const url = new URL(window.location.href);
-  url.searchParams.set('filter', valor);
-  window.history.replaceState({}, '', url);
+  gravarNaUrl('filter', valor);
 }
 
 // WebSocket configuration
@@ -420,40 +447,29 @@ body {
   }
 }
 
-.mode-toggle {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: var(--bg-card, #fff);
-  border-bottom: 1px solid var(--border-muted, #e5e5e5);
-}
-
-.mode-toggle button {
-  background: transparent;
-  border: 1px solid var(--border-muted, #e5e5e5);
-  border-radius: 6px;
-  padding: 0.4rem 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--text-primary, #212529);
-}
-
-.mode-toggle button.active {
-  background: var(--status-progress-bg, #169bd7);
-  color: #fff;
-  border-color: transparent;
-}
-
-.filter-toggle {
+/*
+ * Uma barra so para as telas, o filtro e a contagem: eram duas, e cada uma
+ * gastava uma linha inteira de altura. Em tela estreita, os grupos quebram
+ * para a linha de baixo em vez de espremer os botoes.
+ */
+.top-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1.5rem;
+  gap: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
   background: var(--bg-card, #fff);
   border-bottom: 1px solid var(--border-muted, #e5e5e5);
 }
 
+.mode-toggle,
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.mode-toggle button,
 .filter-toggle button {
   background: transparent;
   border: 1px solid var(--border-muted, #e5e5e5);
@@ -464,10 +480,26 @@ body {
   color: var(--text-primary, #212529);
 }
 
+.mode-toggle button {
+  font-weight: 600;
+}
+
+.mode-toggle button.active {
+  background: var(--status-progress-bg, #169bd7);
+  color: #fff;
+  border-color: transparent;
+}
+
 .filter-toggle button.active {
   background: var(--text-primary, #212529);
   color: var(--bg-card, #fff);
   border-color: transparent;
+}
+
+/* Separa as telas do filtro, que sao escolhas de natureza diferente. */
+.filter-toggle {
+  padding-left: 1rem;
+  border-left: 1px solid var(--border-muted, #e5e5e5);
 }
 
 .filter-toggle__count {

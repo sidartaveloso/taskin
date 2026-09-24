@@ -311,3 +311,66 @@ describe('App — o console fica limpo', () => {
     log.mockRestore();
   });
 });
+
+describe('App — a tela escolhida fica na URL, e o topo numa linha so', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  it('sem `?view=`, abre o Board', async () => {
+    window.history.replaceState({}, '', '/');
+    const wrapper = await mountApp();
+
+    expect(wrapper.find('[data-testid="prioritization"]').exists()).toBe(false);
+    expect(wrapper.find('.mode-toggle button.active').attributes('data-view')).toBe('board');
+  });
+
+  it('`?view=prioritization` abre direto a priorizacao', async () => {
+    window.history.replaceState({}, '', '/?view=prioritization');
+    const wrapper = await mountApp();
+
+    expect(wrapper.find('[data-testid="prioritization"]').exists()).toBe(true);
+    expect(wrapper.find('.mode-toggle button.active').attributes('data-view')).toBe('prioritization');
+  });
+
+  it('um valor desconhecido em `?view=` cai no Board', async () => {
+    window.history.replaceState({}, '', '/?view=xyz');
+    const wrapper = await mountApp();
+
+    expect(wrapper.find('[data-testid="prioritization"]').exists()).toBe(false);
+  });
+
+  it('trocar de tela grava `?view=`, sem perder o `?filter=`', async () => {
+    window.history.replaceState({}, '', '/?filter=closed');
+    const wrapper = await mountApp();
+
+    await wrapper.find('.mode-toggle button[data-view="prioritization"]').trigger('click');
+
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get('view')).toBe('prioritization');
+    expect(params.get('filter')).toBe('closed');
+    expect(wrapper.find('[data-testid="prioritization"]').exists()).toBe(true);
+  });
+
+  it('trocar o filtro nao perde a tela escolhida', async () => {
+    window.history.replaceState({}, '', '/?view=prioritization');
+    const wrapper = await mountApp();
+
+    await wrapper.find('.filter-toggle button[data-filter="all"]').trigger('click');
+
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get('view')).toBe('prioritization');
+    expect(params.get('filter')).toBe('all');
+  });
+
+  it('as telas, o filtro e a contagem ficam na mesma barra', async () => {
+    window.history.replaceState({}, '', '/');
+    const wrapper = await mountApp();
+
+    const barra = wrapper.find('[data-testid="top-bar"]');
+    expect(barra.exists()).toBe(true);
+    expect(barra.find('.mode-toggle').exists()).toBe(true);
+    expect(barra.find('.filter-toggle').exists()).toBe(true);
+    expect(barra.find('[data-testid="filter-count"]').exists()).toBe(true);
+  });
+});
