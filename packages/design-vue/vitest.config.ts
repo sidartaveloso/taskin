@@ -25,9 +25,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
-      '@opentask/ui-sense/mocks': resolve(__dirname, '../ui-sense/src/mocks/index.ts'),
-      '@opentask/ui-sense': resolve(__dirname, '../ui-sense/src/index.ts'),
+      '@': resolve(import.meta.dirname, 'src'),
+      '@opentask/ui-sense/mocks': resolve(import.meta.dirname, '../ui-sense/src/mocks/index.ts'),
+      '@opentask/ui-sense': resolve(import.meta.dirname, '../ui-sense/src/index.ts'),
     },
   },
 });

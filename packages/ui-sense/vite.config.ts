@@ -19,8 +19,8 @@ export default defineConfig({
       // declarando o modulo — e o .gitignore engole todo .d.ts sob src, entao
       // resolvia na maquina de quem escreveu e quebrava no CI.
       entry: {
-        index: resolve(__dirname, 'src/index.ts'),
-        mocks: resolve(__dirname, 'src/mocks/index.ts'),
+        index: resolve(import.meta.dirname, 'src/index.ts'),
+        mocks: resolve(import.meta.dirname, 'src/mocks/index.ts'),
       },
       name: 'UiSense',
       formats: ['es'],
@@ -41,7 +41,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
   },
 });

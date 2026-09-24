@@ -94,12 +94,26 @@
     },
     "test": {
       "dependsOn": ["install", "build"],
-      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "**/*.test.{ts,js}", "package.json"],
+      "inputs": [
+        "src/**/*.{ts,js,tsx,jsx}",
+        "**/*.test.{ts,js}",
+        "package.json",
+        "vite*.config.ts",
+        "vitest*.config.ts",
+        ".storybook/**"
+      ],
       "outputs": ["coverage/**", ".turbo/**"]
     },
     "test:coverage": {
       "dependsOn": ["install", "build"],
-      "inputs": ["src/**/*.{ts,js,tsx,jsx}", "**/*.test.{ts,js}", "package.json"],
+      "inputs": [
+        "src/**/*.{ts,js,tsx,jsx}",
+        "**/*.test.{ts,js}",
+        "package.json",
+        "vite*.config.ts",
+        "vitest*.config.ts",
+        ".storybook/**"
+      ],
       "outputs": ["coverage/**"]
     },
     "typecheck": {

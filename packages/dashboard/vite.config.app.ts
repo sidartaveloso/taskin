@@ -9,12 +9,12 @@ export default defineConfig({
     outDir: 'dist-app',
     emptyOutDir: true,
     rollupOptions: {
-      input: resolve(__dirname, 'index.html'),
+      input: resolve(import.meta.dirname, 'index.html'),
     },
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
   },
 });

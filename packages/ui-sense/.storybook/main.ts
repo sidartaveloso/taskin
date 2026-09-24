@@ -18,7 +18,9 @@ const config: StorybookConfig = {
 
   framework: {
     name: getAbsolutePath('@storybook/vue3-vite'),
-    options: {},
+    // `vue-component-meta` e nao o padrao `vue-docgen-api`, que o Storybook 10
+    // marca como obsoleto e remove no proximo major (task-133).
+    options: { docgen: 'vue-component-meta' },
   },
 
   docs: {
