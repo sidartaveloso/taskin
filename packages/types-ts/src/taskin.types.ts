@@ -63,6 +63,8 @@ export interface ListTasksOptions {
   open?: boolean;
   closed?: boolean;
   active?: boolean;
+  /** Todas, fechadas inclusive: sem criterio de status a listagem traz so as abertas. */
+  all?: boolean;
 
   /**
    * Ordem da listagem, com o mesmo vocabulario do quadro de priorizacao.

@@ -98,8 +98,11 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 ## Commands
 
 - `taskin init` - Initialize Taskin in your project with interactive setup
-- `taskin list [filter] [options]` - List all tasks (`filter` is free text over id, title, status and assignee)
-  - `--open` - Show only open tasks (pending, in-progress, blocked)
+- `taskin list [filter] [options]` - List the open tasks (`filter` is free text over id, title, status and assignee).
+  Without a status criterion only open tasks are listed, in the text output and in `--json` alike;
+  `--status`, `--closed` and `--active` replace that default rather than narrowing it
+  - `--all` - Show every task, closed ones included (refused together with `--open`, `--closed` or `--active`)
+  - `--open` - Show only open tasks (pending, in-progress, paused, in-review, blocked) — already the default, kept for scripts
   - `--closed` - Show only closed tasks (done, canceled)
   - `--active` - Show only tasks started and not finished (in-progress, paused, in-review)
   - `--scored` - Show only tasks that already have a difficulty (for prioritising)
@@ -159,7 +162,8 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin prioritize` - Number every task's priority, once and on purpose
   - `--dry-run` - Report how many would be numbered, without writing
 - `taskin dashboard [options]` - Start the web dashboard (see [Avatars](#avatars))
-  - `--open` / `--closed` / `--active` - Open the board on one of the three filters
+  - `--open` / `--closed` / `--active` / `--all` - Open the board on one of the filters. Without any, the board
+    shows the open tasks; a control on the screen switches between Open, Active, Closed and All
   - `--filter-open` - Show only open tasks
   - `--filter-closed` - Show only closed tasks
 - `taskin mcp-server` - Start MCP server for Claude Desktop integration (alias: `mcp`)
@@ -256,7 +260,7 @@ install answers happily, with the wrong set of tools. Skip the check with
 
 **Available MCP Tools:**
 
-- `list_tasks` - List tasks, with optional filters
+- `list_tasks` - List tasks, with optional filters — only the open ones unless a status criterion or `all: true` is given
 - `prioritize_tasks` - Give every task a priority number, once and on purpose
 - `list_groups` - List the task groups, each with its id and name
 - `join_group` - Put a task in an existing group (only offered when the provider has groups)

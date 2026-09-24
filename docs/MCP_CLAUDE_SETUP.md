@@ -83,8 +83,12 @@ id, título, status, tipo, responsável — **sem o corpo do markdown**, que é
 buscado depois pelo id.
 
 Aceita filtros, todos opcionais e cumulativos: `status`, `type`, `assignee`
-(id ou nome, inteiro ou em parte), `open`, `closed`, `active`, `scored` (já tem
-dificuldade), `unscored` (ainda sem dificuldade) e `text` (busca livre).
+(id ou nome, inteiro ou em parte), `open`, `closed`, `active`, `all`, `scored`
+(já tem dificuldade), `unscored` (ainda sem dificuldade) e `text` (busca livre).
+
+**Sem criterio de status, devolve só as abertas.** `status`, `closed` e `active`
+substituem esse padrão (não se somam a ele); `all: true` traz todas, fechadas
+inclusive, e é recusado junto com `open`, `closed` ou `active`.
 
 ```
 Liste as tasks em andamento
@@ -155,8 +159,8 @@ não existindo. Nenhuma delas é oferecida pelo servidor:
 
 O servidor expõe um recurso:
 
-- `taskin://tasks` — todas as tarefas, em JSON, no mesmo formato do
-  `list_tasks` sem filtro.
+- `taskin://tasks` — todas as tarefas, fechadas inclusive, em JSON, no mesmo
+  formato do `list_tasks` com `all: true`.
 
 `task://{taskId}` e `tasks://status/{status}` já apareceram nesta lista e não
 existem.

@@ -26,6 +26,23 @@
     </button>
   </div>
 
+  <div class="filter-toggle" role="group" aria-label="Which tasks to show">
+    <button
+      v-for="opcao in FILTROS"
+      :key="opcao.valor"
+      type="button"
+      :data-filter="opcao.valor"
+      :class="{ active: filtroEfetivo === opcao.valor }"
+      :aria-pressed="filtroEfetivo === opcao.valor"
+      @click="escolherFiltro(opcao.valor)"
+    >
+      {{ opcao.rotulo }}
+    </button>
+    <span class="filter-toggle__count" data-testid="filter-count">
+      Showing {{ tasks.length }} of {{ taskStore.tasks.length }} tasks
+    </span>
+  </div>
+
   <Dashboard
     v-if="mode === 'board'"
     title="Taskin Dashboard"
@@ -44,7 +61,7 @@
 <script setup lang="ts">
 import type { Task, TaskStatus } from '@opentask/taskin-design-vue';
 import { Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
-import { filterTasks } from '@opentask/taskin-task-manager';
+import { effectiveFilterCriteria, filterTasks, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { operacoesDaMudanca } from './operacoes-da-mudanca';
@@ -68,6 +85,45 @@ const PROGRESS_BY_STATUS: Record<TaskStatus, number> = {
 };
 
 const mode = ref<'board' | 'prioritization'>('board');
+
+/*
+ * Qual recorte a tela mostra. Sem `?filter=` na URL, nenhum criterio — e o
+ * padrao (as abertas) vem do dominio, por `effectiveFilterCriteria`, e nao se
+ * escreve aqui. O botao aceso tambem sai de la.
+ *
+ * O controle existe porque parametro de URL ninguem descobre. Trocar reescreve
+ * a URL, para que recarregar e compartilhar o link mostrem o mesmo recorte.
+ *
+ * Os contadores (este "Showing N of M" e os do quadro) contam o que esta na
+ * tela, e nao o projeto inteiro: o M e o total.
+ */
+type Filtro = 'open' | 'active' | 'closed' | 'all';
+
+const FILTROS: readonly { valor: Filtro; rotulo: string }[] = [
+  { valor: 'open', rotulo: 'Open' },
+  { valor: 'active', rotulo: 'Active' },
+  { valor: 'closed', rotulo: 'Closed' },
+  { valor: 'all', rotulo: 'All' },
+];
+
+function filtroDaUrl(): Filtro | undefined {
+  const pedido = new URLSearchParams(window.location.search).get('filter');
+  return FILTROS.find((f) => f.valor === pedido)?.valor;
+}
+
+const filtro = ref<Filtro | undefined>(filtroDaUrl());
+const criterios = computed<TaskFilterCriteria>(() => (filtro.value ? { [filtro.value]: true } : {}));
+const filtroEfetivo = computed(() => {
+  const efetivos = effectiveFilterCriteria(criterios.value);
+  return FILTROS.find((f) => efetivos[f.valor])?.valor;
+});
+
+function escolherFiltro(valor: Filtro) {
+  filtro.value = valor;
+  const url = new URL(window.location.href);
+  url.searchParams.set('filter', valor);
+  window.history.replaceState({}, '', url);
+}
 
 // WebSocket configuration
 const wsUrl = ref(
@@ -137,8 +193,6 @@ onMounted(async () => {
 });
 
 const tasks = computed<Task[]>(() => {
-  const filter = new URLSearchParams(window.location.search).get('filter');
-
   /*
    * A regra de filtro vem do dominio, e nao daqui.
    *
@@ -150,7 +204,7 @@ const tasks = computed<Task[]>(() => {
    * sem ele o compilador seguia o `.d.ts` do pacote ate o `src`, e o `rootDir`
    * recusava.
    */
-  const filtered = filter ? filterTasks(taskStore.tasks, { [filter]: true }) : taskStore.tasks;
+  const filtered = filterTasks(taskStore.tasks, criterios.value);
 
   const mapped = filtered.map((source) => {
     const progressPercentage = PROGRESS_BY_STATUS[source.status];
@@ -343,6 +397,38 @@ body {
   background: var(--status-progress-bg, #169bd7);
   color: #fff;
   border-color: transparent;
+}
+
+.filter-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  background: var(--bg-card, #fff);
+  border-bottom: 1px solid var(--border-muted, #e5e5e5);
+}
+
+.filter-toggle button {
+  background: transparent;
+  border: 1px solid var(--border-muted, #e5e5e5);
+  border-radius: 6px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--text-primary, #212529);
+}
+
+.filter-toggle button.active {
+  background: var(--text-primary, #212529);
+  color: var(--bg-card, #fff);
+  border-color: transparent;
+}
+
+.filter-toggle__count {
+  margin-left: auto;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #6c757d);
 }
 
 /* Page-specific styles */

@@ -111,11 +111,12 @@ taskin init
 # Create new task
 taskin new "Implement authentication"
 
-# List tasks
+# List tasks — only the open ones by default
 taskin list
+taskin list --all               # Every task, closed ones included
 
 # Filter tasks
-taskin list --open              # Only open tasks
+taskin list --open              # Only open tasks (already the default)
 taskin list --closed            # Only closed tasks
 taskin list --status pending    # Specific status
 taskin list --scored            # Only tasks that already have a difficulty
@@ -123,7 +124,7 @@ taskin list --unscored          # Only tasks still waiting for a difficulty
 
 # Machine-readable output, for another tool to consume
 taskin list --json              # JSON array, no header and no framing
-taskin list --json --open       # The same filters apply
+taskin list --json --all        # The same filters and default apply
 
 # View statistics
 taskin stats --user             # User stats

@@ -505,7 +505,8 @@ describe('Taskin CLI E2E Tests', { concurrent: false }, () => {
     it('should reflect status change in list command', async () => {
       await execAsync(`node ${CLI_PATH} finish 001`, { cwd: TEST_DIR });
 
-      const { stdout } = await execAsync(`node ${CLI_PATH} list`, {
+      // Sem criterio, a lista so traz as abertas; a concluida aparece com --all.
+      const { stdout } = await execAsync(`node ${CLI_PATH} list --all`, {
         cwd: TEST_DIR,
       });
 
@@ -556,7 +557,7 @@ describe('Taskin CLI E2E Tests', { concurrent: false }, () => {
       // Finish
       await execAsync(`node ${CLI_PATH} finish 001`, { cwd: TEST_DIR });
 
-      listOutput = await execAsync(`node ${CLI_PATH} list`, { cwd: TEST_DIR });
+      listOutput = await execAsync(`node ${CLI_PATH} list --all`, { cwd: TEST_DIR });
       expect(listOutput.stdout).toContain('done');
       expect(listOutput.stdout).toMatch(/Done: 1/);
     }, 60000);

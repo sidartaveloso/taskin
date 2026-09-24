@@ -45,7 +45,8 @@ const tasksByStatus = computed(() => {
   };
 });
 
-// Count tasks by status
+// Count tasks by status — the ones received, which are the ones shown: a
+// filtered list counts only what passed the filter, hence "Shown" and not "Total".
 const statusCounts = computed(() => ({
   total: props.tasks.length,
   inProgress: tasksByStatus.value.inProgress.length,
@@ -71,7 +72,7 @@ const statusCounts = computed(() => ({
       <div class="task-grid-stats">
         <div class="stat stat--total">
           <span class="stat__value">{{ statusCounts.total }}</span>
-          <span class="stat__label">Total</span>
+          <span class="stat__label">Shown</span>
         </div>
         <div class="stat stat--in-progress" v-if="statusCounts.inProgress > 0">
           <span class="stat__value">{{ statusCounts.inProgress }}</span>

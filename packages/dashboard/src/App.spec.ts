@@ -54,7 +54,7 @@ describe('App --open/--closed filter', () => {
     setActivePinia(createPinia());
   });
 
-  it('should show all tasks when no filter is set', async () => {
+  it('should show only open tasks when no filter is set', async () => {
     window.history.replaceState({}, '', '/');
 
     const wrapper = await mountApp();
@@ -69,7 +69,48 @@ describe('App --open/--closed filter', () => {
     await nextTick();
 
     const tasksCount = wrapper.find('[data-testid="tasks-count"]');
-    expect(tasksCount.text()).toBe('2');
+    expect(tasksCount.text()).toBe('1');
+    expect(wrapper.find('.filter-toggle button.active').attributes('data-filter')).toBe('open');
+  });
+
+  it('should show every task when filter=all', async () => {
+    window.history.replaceState({}, '', '/?filter=all');
+
+    const wrapper = await mountApp();
+
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    store.tasks = [
+      createMockTask({ id: '1', status: 'done', title: 'Done task' }),
+      createMockTask({ id: '2', status: 'pending', title: 'Pending task' }),
+    ];
+
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="tasks-count"]').text()).toBe('2');
+  });
+
+  it('a visible control switches to all, and says how many of the total are shown', async () => {
+    window.history.replaceState({}, '', '/');
+
+    const wrapper = await mountApp();
+
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    store.tasks = [
+      createMockTask({ id: '1', status: 'done', title: 'Done task' }),
+      createMockTask({ id: '2', status: 'pending', title: 'Pending task' }),
+      createMockTask({ id: '3', status: 'canceled', title: 'Canceled task' }),
+    ];
+
+    await nextTick();
+    expect(wrapper.find('[data-testid="filter-count"]').text()).toBe('Showing 1 of 3 tasks');
+
+    await wrapper.find('.filter-toggle button[data-filter="all"]').trigger('click');
+
+    expect(wrapper.find('[data-testid="tasks-count"]').text()).toBe('3');
+    expect(wrapper.find('[data-testid="filter-count"]').text()).toBe('Showing 3 of 3 tasks');
+    expect(new URLSearchParams(window.location.search).get('filter')).toBe('all');
   });
 
   it('should show only open tasks when filter=open', async () => {

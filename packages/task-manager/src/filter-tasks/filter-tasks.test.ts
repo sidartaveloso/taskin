@@ -1,6 +1,6 @@
 import { parseTaskId, type Task } from '@opentask/taskin-types';
 import { describe, expect, it } from 'vitest';
-import { filterTasks } from './filter-tasks.js';
+import { effectiveFilterCriteria, filterTasks } from './filter-tasks.js';
 
 function tarefa({ id, ...resto }: Omit<Partial<Task>, 'id'> & { id: string }): Task {
   return {
@@ -33,8 +33,8 @@ describe('filterTasks', () => {
     tarefa({ id: '005', status: 'canceled', type: 'docs', assignee: JOAO, title: 'Guia antigo' }),
   ];
 
-  it('sem criterio, devolve tudo na ordem recebida', () => {
-    expect(filterTasks(TAREFAS, {}).map((t) => t.id)).toEqual(['001', '002', '003', '004', '005']);
+  it('`all` devolve tudo na ordem recebida', () => {
+    expect(filterTasks(TAREFAS, { all: true }).map((t) => t.id)).toEqual(['001', '002', '003', '004', '005']);
   });
 
   it('filtra por status', () => {
@@ -64,10 +64,10 @@ describe('filterTasks', () => {
   });
 
   it('o texto livre procura em id, titulo, status e responsavel', () => {
-    expect(filterTasks(TAREFAS, { text: 'crash' }).map((t) => t.id)).toEqual(['002']);
-    expect(filterTasks(TAREFAS, { text: '003' }).map((t) => t.id)).toEqual(['003']);
-    expect(filterTasks(TAREFAS, { text: 'blocked' }).map((t) => t.id)).toEqual(['004']);
-    expect(filterTasks(TAREFAS, { text: 'joão' }).map((t) => t.id)).toEqual(['002', '005']);
+    expect(filterTasks(TAREFAS, { text: 'crash', all: true }).map((t) => t.id)).toEqual(['002']);
+    expect(filterTasks(TAREFAS, { text: '003', all: true }).map((t) => t.id)).toEqual(['003']);
+    expect(filterTasks(TAREFAS, { text: 'blocked', all: true }).map((t) => t.id)).toEqual(['004']);
+    expect(filterTasks(TAREFAS, { text: 'joão', all: true }).map((t) => t.id)).toEqual(['002', '005']);
   });
 
   it('combina criterios, exigindo todos', () => {
@@ -142,18 +142,75 @@ describe('filtros scored e unscored', () => {
   ];
 
   it('`scored` traz so as tarefas com dificuldade', () => {
-    expect(filterTasks(tarefas, { scored: true }).map((t) => String(t.id))).toEqual(['001', '003']);
+    expect(filterTasks(tarefas, { scored: true, all: true }).map((t) => String(t.id))).toEqual(['001', '003']);
   });
 
   it('`unscored` traz so as tarefas sem dificuldade', () => {
-    expect(filterTasks(tarefas, { unscored: true }).map((t) => String(t.id))).toEqual(['002', '004']);
+    expect(filterTasks(tarefas, { unscored: true, all: true }).map((t) => String(t.id))).toEqual(['002', '004']);
   });
 
   it('ausente, nao restringe nada', () => {
-    expect(filterTasks(tarefas, {}).map((t) => String(t.id))).toEqual(['001', '002', '003', '004']);
+    expect(filterTasks(tarefas, { all: true }).map((t) => String(t.id))).toEqual(['001', '002', '003', '004']);
   });
 
   it('soma com os demais criterios', () => {
     expect(filterTasks(tarefas, { unscored: true, open: true }).map((t) => String(t.id))).toEqual(['002']);
+  });
+});
+
+/**
+ * Quem abre a lista quer saber o que falta fazer: sem criterio de status, so as
+ * abertas. O padrao mora no dominio, e nao em cada superficie.
+ *
+ * O erro facil e o padrao intersectar com um criterio explicito e dar lista
+ * vazia — `status: 'done'` com "abertas" nao casa nada. Por isso um teste para
+ * cada criterio de status.
+ */
+describe('o padrao e so as abertas', () => {
+  const tarefas = [
+    tarefa({ id: '001', status: 'pending' }),
+    tarefa({ id: '002', status: 'in-progress' }),
+    tarefa({ id: '003', status: 'done' }),
+    tarefa({ id: '004', status: 'canceled' }),
+    tarefa({ id: '005', status: 'blocked' }),
+    tarefa({ id: '006', status: 'paused' }),
+  ];
+  const ids = (criteria: Parameters<typeof filterTasks>[1]) => filterTasks(tarefas, criteria).map((t) => String(t.id));
+
+  it('sem criterio nenhum, devolve so as abertas', () => {
+    expect(ids({})).toEqual(['001', '002', '005', '006']);
+  });
+
+  it('um criterio que nao e de status nao desliga o padrao', () => {
+    expect(ids({ type: 'feat' })).toEqual(['001', '002', '005', '006']);
+    expect(ids({ text: 'Tarefa 00' })).toEqual(['001', '002', '005', '006']);
+  });
+
+  it('`all` devolve todas, fechadas inclusive', () => {
+    expect(ids({ all: true })).toEqual(['001', '002', '003', '004', '005', '006']);
+  });
+
+  it('`status` explicito desliga o padrao — `done` nao vira lista vazia', () => {
+    expect(ids({ status: 'done' })).toEqual(['003']);
+    expect(ids({ status: 'canceled' })).toEqual(['004']);
+  });
+
+  it('`closed` desliga o padrao', () => {
+    expect(ids({ closed: true })).toEqual(['003', '004']);
+  });
+
+  it('`active` desliga o padrao e devolve o mesmo que antes', () => {
+    expect(ids({ active: true })).toEqual(['002', '006']);
+  });
+
+  it('`open` continua aceito, e da o mesmo que o padrao', () => {
+    expect(ids({ open: true })).toEqual(ids({}));
+  });
+
+  it('`effectiveFilterCriteria` so acrescenta `open` quando falta criterio de status', () => {
+    expect(effectiveFilterCriteria({})).toEqual({ open: true });
+    expect(effectiveFilterCriteria({ type: 'fix' })).toEqual({ type: 'fix', open: true });
+    expect(effectiveFilterCriteria({ status: 'done' })).toEqual({ status: 'done' });
+    expect(effectiveFilterCriteria({ all: true })).toEqual({ all: true });
   });
 });

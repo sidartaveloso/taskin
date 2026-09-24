@@ -61,11 +61,38 @@ describe('listar tarefas por MCP', () => {
   });
 
   it('devolve as tarefas como JSON, e nao um espaco reservado', async () => {
-    const resultado = await servidor().callTool({ name: 'list_tasks', arguments: {} });
+    const resultado = await servidor().callTool({ name: 'list_tasks', arguments: { all: true } });
 
     const tarefas = JSON.parse(texto(resultado));
     expect(tarefas.map((t: { id: string }) => t.id)).toEqual(['001', '002', '003']);
     expect(resultado.isError).toBeFalsy();
+  });
+
+  /*
+   * O padrao vem de `filterTasks`, no dominio: o servidor nao escreve regra
+   * propria, e por isso nao pode discordar do `taskin list`.
+   */
+  it('sem criterio, devolve so as abertas; `all` devolve todas', async () => {
+    const padrao = await servidor().callTool({ name: 'list_tasks', arguments: {} });
+    expect(JSON.parse(texto(padrao)).map((t: { id: string }) => t.id)).toEqual(['001', '003']);
+
+    const todas = await servidor().callTool({ name: 'list_tasks', arguments: { all: true } });
+    expect(JSON.parse(texto(todas)).map((t: { id: string }) => t.id)).toEqual(['001', '002', '003']);
+  });
+
+  it('anuncia `all` no schema da ferramenta, derivado do dominio', () => {
+    const listTasks = servidor()
+      .listTools()
+      .tools.find((t) => t.name === 'list_tasks');
+
+    expect(listTasks?.inputSchema.properties).toHaveProperty('all');
+  });
+
+  it('recusa `all` combinado com `closed`', async () => {
+    const resultado = await servidor().callTool({ name: 'list_tasks', arguments: { all: true, closed: true } });
+
+    expect(resultado.isError).toBe(true);
+    expect(texto(resultado)).toMatch(/`all` cannot be combined with `closed`/);
   });
 
   it('aceita os mesmos criterios da listagem do CLI', async () => {
