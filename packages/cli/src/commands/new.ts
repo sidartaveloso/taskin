@@ -14,6 +14,7 @@ import { ConfigManager } from '../lib/config-manager.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
+import { lerDificuldade } from './difficulty.js';
 import { lerPrioridade } from './priority.js';
 
 interface CreateTaskOptions {
@@ -27,6 +28,8 @@ interface CreateTaskOptions {
   group?: string;
   /** Numero de prioridade, como digitado. */
   priority?: string;
+  /** Dificuldade de 1 a 5, como digitada. */
+  difficulty?: string;
 }
 
 export const createCommand = defineCommand({
@@ -57,6 +60,10 @@ export const createCommand = defineCommand({
     {
       flags: '-p, --priority <n>',
       description: 'Give the new task this priority number (lower comes first)',
+    },
+    {
+      flags: '--difficulty <1-5>',
+      description: 'Score the new task, from 1 (trivial) to 5 (very hard)',
     },
     {
       flags: '--no-skip-ci',
@@ -153,16 +160,16 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
     return;
   }
 
-  // Prioridade vem digitada; conferir antes de haver arquivo para desfazer.
+  // Prioridade e dificuldade vem digitadas; conferir antes de haver arquivo para desfazer.
   let priority: number | undefined;
-  if (options.priority !== undefined) {
-    try {
-      priority = lerPrioridade(options.priority);
-    } catch (invalida) {
-      error(invalida instanceof Error ? invalida.message : String(invalida));
-      process.exitCode = 1;
-      return;
-    }
+  let difficulty: number | undefined;
+  try {
+    if (options.priority !== undefined) priority = lerPrioridade(options.priority);
+    if (options.difficulty !== undefined) difficulty = lerDificuldade(options.difficulty);
+  } catch (invalida) {
+    error(invalida instanceof Error ? invalida.message : String(invalida));
+    process.exitCode = 1;
+    return;
   }
 
   const { provider: taskProvider, userRegistry, projectRoot: monorepoRoot } = await resolveTaskProvider();
@@ -241,6 +248,7 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   const manager = new TaskManager(taskProvider);
   if (groupId) await manager.assignToGroup(taskId, groupId);
   if (priority !== undefined) await manager.setPriority(taskId, priority);
+  if (difficulty !== undefined) await manager.setDifficulty(taskId, difficulty);
 
   const createdPath = 'filePath' in created && typeof created.filePath === 'string' ? created.filePath : undefined;
 
@@ -275,6 +283,9 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   }
   if (priority !== undefined) {
     console.log(colors.secondary(`🔢 Priority: ${priority}`));
+  }
+  if (difficulty !== undefined) {
+    console.log(colors.secondary(`🎯 Difficulty: ${difficulty}`));
   }
   if (autoSyncActive) {
     success('Task committed and pushed to remote');

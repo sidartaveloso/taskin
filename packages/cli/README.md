@@ -111,6 +111,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin new` - Create a new task (alias: `create`)
   - `-g, --group <group-id>` - Born in this existing group
   - `-p, --priority <n>` - Born with this priority number
+  - `--difficulty <1-5>` - Born scored; an invalid value is refused before any file is created
 - `taskin start <id>` - Start working on a task (suggests commits)
 - `taskin pause <id>` - Pause work on a task (auto-commits work in progress)
 - `taskin review <id>` - Mark a task as ready for review
@@ -147,6 +148,11 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   with no `Priority` numbers that tail once — with 480 unnumbered tasks, 481
   files — and every later move costs one. Each form prints how many task files
   it wrote.
+
+- `taskin difficulty <task-id> <1-5>` - Score how hard a task is, from 1
+  (trivial) to 5 (very hard) — the command for the queue `taskin list --unscored`
+  shows. Anything else is refused without writing. There is no way to clear a
+  score: a wrong one is corrected by scoring again, as on the dashboard.
 
   A provider without groups does not offer `join` and `leave`, and the CLI says
   so in one line instead of failing.
@@ -256,6 +262,7 @@ install answers happily, with the wrong set of tools. Skip the check with
 - `join_group` - Put a task in an existing group (only offered when the provider has groups)
 - `leave_group` - Take a task out of its group (only offered when the provider has groups)
 - `set_priority` - Place one task: an absolute `priority`, or `before`/`after` another task
+- `set_difficulty` - Score one task, a whole `difficulty` from 1 to 5
 
 The listing tools take the same `sort` vocabulary the prioritization board uses:
 `manual` (by priority), `diff-asc` and `diff-desc`. `taskin list --json` emits

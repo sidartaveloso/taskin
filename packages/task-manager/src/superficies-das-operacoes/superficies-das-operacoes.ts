@@ -93,11 +93,7 @@ export const SUPERFICIES_DAS_OPERACOES = {
   moveAfter: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-after' } },
   moveToTop: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-to-top' } },
   moveToBottom: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-to-bottom' } },
-  setDifficulty: {
-    cli: { ausente: 'pontuar nasceu no quadro de priorizacao; nenhuma task pediu pela CLI ainda' },
-    mcp: { ausente: 'pontuar nasceu no quadro de priorizacao; nenhuma task pediu pelo MCP ainda' },
-    ws: { nome: 'set-difficulty' },
-  },
+  setDifficulty: { cli: { nome: 'difficulty' }, mcp: { nome: 'set_difficulty' }, ws: { nome: 'set-difficulty' } },
 } as const satisfies Record<OperacaoDoManager, SuperficiesDaOperacao>;
 
 type Tabela = typeof SUPERFICIES_DAS_OPERACOES;

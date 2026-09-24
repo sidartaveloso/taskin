@@ -53,6 +53,7 @@ taskin group leave 042             # Tira do grupo
 taskin priority 042 150            # Número absoluto; menor vem antes
 taskin priority 042 --before 017   # Ou relativo: logo antes (ou --after) de outra
 taskin priority 042 --top          # Ou ao topo (ou --bottom) — do próprio grupo, se agrupada
+taskin difficulty 042 3            # Pontua de 1 (trivial) a 5 (muito difícil) — a fila do --unscored
 ```
 
 ### 2. Dashboard Web com Sincronização Real-Time
@@ -131,6 +132,7 @@ taskin mcp-server --debug
 - `list_groups`: Lista os grupos
 - `join_group` / `leave_group`: Põe uma tarefa num grupo, ou tira (só quando o provider tem grupos)
 - `set_priority`: Dá o lugar da tarefa na fila — `priority`, `before`, `after`, `top` ou `bottom`
+- `set_difficulty`: Pontua a tarefa, de 1 (trivial) a 5 (muito difícil)
 - `prioritize_tasks`: Numera todas de uma vez
 - `start_task`: Inicia uma tarefa (muda status para in-progress)
 - `finish_task`: Finaliza uma tarefa (muda status para done)

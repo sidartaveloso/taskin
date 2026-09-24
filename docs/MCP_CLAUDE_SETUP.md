@@ -105,6 +105,17 @@ Coloque a task 042 antes da 017
 Leve a task 042 para o topo da fila
 ```
 
+### `set_difficulty`
+
+Pontua uma task: recebe o `taskId` e a `difficulty`, um inteiro de 1 (trivial) a
+5 (muito difícil). É a ferramenta para a fila que `list_tasks` com
+`unscored: true` devolve. Valor fora da faixa é recusado sem gravar. Não há como
+tirar a dificuldade — pontuação errada se corrige pontuando de novo.
+
+```
+Pontue a task 042 com dificuldade 3
+```
+
 ### `join_group` e `leave_group`
 
 Põe uma task num grupo que já existe, ou tira do grupo em que estiver. Só são

@@ -187,7 +187,7 @@ your repository starts acting on it:
 
 Three filters, the same on every surface: `open` (anything not finished), `closed`, and `active` — started and not finished, which is what you want on screen while work is happening.
 
-Two more split the queue by difficulty: `scored` (already rated — what you prioritise) and `unscored` (the queue still waiting to be rated). On the dashboard's prioritization screen they are a control of their own, next to the sort mode.
+Two more split the queue by difficulty: `scored` (already rated — what you prioritise) and `unscored` (the queue still waiting to be rated). On the dashboard's prioritization screen they are a control of their own, next to the sort mode. The `unscored` queue is worked from anywhere: `taskin difficulty 042 3` in the terminal, `set_difficulty` for an agent, or the board itself — from 1 (trivial) to 5 (very hard).
 
 
 ```

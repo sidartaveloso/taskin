@@ -10,3 +10,4 @@ export * from './superficies-das-operacoes/index';
 export * from './task-manager';
 export * from './task-manager.types';
 export * from './user-registry.types';
+export * from './validar-dificuldade/index';
