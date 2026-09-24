@@ -103,6 +103,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@opentask/taskin-dashboard": "workspace:*",
     "@types/node": "^26.6.2",
     "tsup": "^8.5.1",
     "typescript": "^6.0.0",
