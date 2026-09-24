@@ -108,6 +108,11 @@ operações nomeadas em vez de uma task inteira para gravar.
   na CLI e no MCP. As mensagens passaram a ser atendidas uma de cada vez, na
   ordem de chegada; em paralelo, o `assign-to-group` procurava o grupo antes de
   o `create-group` terminar.
+- **Topo e fim (task-114).** `moveToTop` e `moveToBottom` entraram pelo
+  portão: acrescentá-las ao `ITaskManager` não compilou até a tabela declarar as
+  três superfícies (`priority --top`/`--bottom`, `set_priority` com `top`/
+  `bottom`, `move-to-top`/`move-to-bottom`), e o servidor WebSocket não compilou
+  até ganhar os handlers.
 - **O portão.** `SUPERFICIES_DAS_OPERACOES` (`packages/task-manager/src/
   superficies-das-operacoes/`) declara, para cada operação do `ITaskManager`,
   como cada superfície a expõe — pelo nome, ou ausente com o motivo. O

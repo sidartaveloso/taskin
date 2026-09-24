@@ -153,6 +153,14 @@ export class MockMCPTaskManager implements ITaskManager {
     return { task: this.gravar(taskId, {}), changed: 1 };
   }
 
+  async moveToTop(taskId: TaskId): Promise<{ task: Task; changed: number }> {
+    return { task: this.gravar(taskId, {}), changed: 1 };
+  }
+
+  async moveToBottom(taskId: TaskId): Promise<{ task: Task; changed: number }> {
+    return { task: this.gravar(taskId, {}), changed: 1 };
+  }
+
   async setDifficulty(taskId: TaskId, difficulty: number): Promise<Task> {
     return this.gravar(taskId, { difficulty });
   }

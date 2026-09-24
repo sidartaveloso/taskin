@@ -153,6 +153,52 @@ describe('taskin priority', LENTO, () => {
     expect(duas.code).toBe(1);
     expect(duas.saida).toContain('exactly one');
   });
+
+  it('com --top, leva a tarefa a frente da fila e muda um arquivo so', async () => {
+    const antes = { '001': arquivo('001'), '002': arquivo('002') };
+
+    const { code, saida } = await rodar('priority', '003', '--top');
+
+    expect(code).toBe(0);
+    expect(Number(campo('003', 'Priority'))).toBeLessThan(100);
+    expect(arquivo('001')).toBe(antes['001']);
+    expect(arquivo('002')).toBe(antes['002']);
+    expect(saida).toContain('top');
+    expect(saida).toContain('1 task file');
+  });
+
+  it('com --bottom, numera a cauda sem numero e diz quantos arquivos gravou', async () => {
+    writeFileSync(join(raiz, 'TASKS', 'task-004-tarefa-004.md'), tarefa('004'), 'utf-8');
+
+    const { code, saida } = await rodar('priority', '001', '--bottom');
+
+    expect(code).toBe(0);
+    expect(campo('004', 'Priority')).toBeDefined();
+    expect(Number(campo('001', 'Priority'))).toBeGreaterThan(Number(campo('004', 'Priority')));
+    expect(saida).toContain('2 task file');
+  });
+
+  it('--top ja no topo nao grava nada, e diz', async () => {
+    const antes = arquivo('001');
+
+    const { code, saida } = await rodar('priority', '001', '--top');
+
+    expect(code).toBe(0);
+    expect(arquivo('001')).toBe(antes);
+    expect(saida).toContain('already');
+  });
+
+  it('--top e --bottom sao formas: nao combinam com outra', async () => {
+    const comNumero = await rodar('priority', '001', '5', '--top');
+    const asDuas = await rodar('priority', '001', '--top', '--bottom');
+    const comAfter = await rodar('priority', '001', '--bottom', '--after', '002');
+
+    for (const r of [comNumero, asDuas, comAfter]) {
+      expect(r.code).toBe(1);
+      expect(r.saida).toContain('exactly one');
+    }
+    expect(campo('001', 'Priority')).toBe('100');
+  });
 });
 
 describe('taskin new --group --priority', LENTO, () => {

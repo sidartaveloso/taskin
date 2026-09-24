@@ -136,11 +136,17 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `<n>` - An absolute number, a whole number from 1
   - `--before <task-id>` - Right before that task
   - `--after <task-id>` - Right after it
+  - `--top` / `--bottom` - To the top or the bottom of the queue. A grouped task
+    goes to the top or bottom of **its own group**, as the dashboard buttons do;
+    to move a whole group, use the dashboard
 
   The relative forms are for when you know *what goes before what* and not which
   number you want. They write only what changes — normally one file; the
   neighbourhood when the numbers leave no room; never the unnumbered tasks past
-  the insertion point.
+  the insertion point. `--top` writes one file. `--bottom` after a tail of tasks
+  with no `Priority` numbers that tail once — with 480 unnumbered tasks, 481
+  files — and every later move costs one. Each form prints how many task files
+  it wrote.
 
   A provider without groups does not offer `join` and `leave`, and the CLI says
   so in one line instead of failing.

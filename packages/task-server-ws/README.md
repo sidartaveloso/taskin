@@ -56,6 +56,7 @@ was how grouping, prioritizing and scoring used to exist only in the dashboard
 | `set-priority` | `{ taskId, priority }` — whole number, 1 or more | `task:updated` |
 | `set-difficulty` | `{ taskId, difficulty }` — whole number, 1 to 5 | `task:updated` |
 | `move-before` / `move-after` | `{ taskId, targetId }` | `tasks` (neighbours may be renumbered) |
+| `move-to-top` / `move-to-bottom` | `{ taskId }` — a grouped task stays inside its group | `tasks` (an unnumbered tail is numbered once) |
 | `create-group` | `{ id, name }` | `group:created` |
 | `ping` | — | `pong` (to the sender) |
 

@@ -133,7 +133,7 @@ consome apenas `Task` continua funcionando com qualquer provider.
 
 O `ITaskManager` fica em cima, com as transições de estado e as operações
 nomeadas — `startTask`, `finishTask`, `assignToGroup`, `setPriority`,
-`moveBefore`, `setDifficulty` e as demais — e é genérico sobre a mesma forma. A
+`moveBefore`, `moveToTop`, `setDifficulty` e as demais — e é genérico sobre a mesma forma. A
 CLI, o servidor MCP e o dashboard passam todos por ele: o WebSocket do dashboard
 manda `set-priority` ou `assign-to-group`, nunca uma tarefa inteira para
 sobrescrever. Uma tabela, `SUPERFICIES_DAS_OPERACOES`, diz onde cada operação
@@ -192,9 +192,10 @@ O agente não sabe — nem precisa saber — se aquilo virou um arquivo alterado
 uma chamada REST. Quem resolve isso é o provider.
 
 O agente também organiza a fila que ele mesmo executa. `set_priority` coloca uma
-tarefa por número, ou logo `before` ou `after` de outra, e `join_group` /
-`leave_group` a movem entre grupos. O terminal tem as mesmas operações —
-`taskin priority 042 --before 017`, `taskin group join 042 g-cli` — e ninguém
+tarefa por número, logo `before` ou `after` de outra, ou no `top` ou no
+`bottom` da fila, e `join_group` / `leave_group` a movem entre grupos. O terminal
+tem as mesmas operações — `taskin priority 042 --before 017`,
+`taskin priority 042 --top`, `taskin group join 042 g-cli` — e ninguém
 precisa editar o bloco de metadados à mão.
 
 Registrar o servidor é um comando:

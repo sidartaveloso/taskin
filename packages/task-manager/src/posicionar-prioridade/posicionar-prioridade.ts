@@ -80,3 +80,42 @@ export function posicionarPrioridade<TTask extends Task>(
 
   return numerarPrioridade([...antes, semNumero, ...depois], passo) as TTask[];
 }
+
+/** Qual ponta da fila. @public */
+export type ExtremoDaFila = 'top' | 'bottom';
+
+/**
+ * Leva uma tarefa ao topo ou ao fim, e devolve so o que precisa ser gravado.
+ *
+ * A mesma semantica dos botoes do dashboard (task-101): uma tarefa **agrupada**
+ * vai ao extremo do proprio grupo, e uma solta ao extremo da fila inteira. Por
+ * baixo e {@link posicionarPrioridade} com a referencia calculada — antes da
+ * primeira irma, ou depois da ultima —, e herda dela o custo: topo grava um
+ * arquivo; fim, depois de uma cauda sem numero, numera a cauda uma vez.
+ *
+ * @returns Vazio quando a tarefa ja esta no extremo pedido
+ * @throws Error quando a tarefa nao existe
+ * @public
+ */
+export function posicionarNoExtremo<TTask extends Task>(
+  tarefas: readonly TTask[],
+  taskId: TaskId,
+  extremo: ExtremoDaFila,
+  passo = PASSO_DE_PRIORIDADE,
+): TTask[] {
+  const movida = tarefas.find((t) => t.id === taskId);
+  if (!movida) throw new Error(`Task with ID '${taskId}' not found.`);
+
+  /*
+   * Uma solta disputa o extremo com a fila inteira, grupos inclusive: o grupo
+   * ocupa o lugar do seu primeiro membro, entao passar do primeiro (ou do
+   * ultimo) numero de todos e passar de todo no de fora.
+   */
+  const irmas = ordenarTarefas(
+    movida.groupId === undefined ? tarefas : tarefas.filter((t) => t.groupId === movida.groupId),
+  );
+  const referencia = extremo === 'top' ? irmas[0] : irmas.at(-1);
+  if (!referencia || referencia.id === taskId) return [];
+
+  return posicionarPrioridade(tarefas, taskId, referencia.id, extremo === 'top' ? 'before' : 'after', passo);
+}

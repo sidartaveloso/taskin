@@ -134,3 +134,72 @@ describe('TaskManager — priorizar', () => {
     await expect(manager.moveAfter(parseTaskId('001'), parseTaskId('999'))).rejects.toThrow(/999/);
   });
 });
+
+/**
+ * Topo e fim como operacoes nomeadas (task-114): o atalho mais rotineiro da
+ * priorizacao, sem precisar descobrir antes qual e a primeira da fila.
+ */
+describe('TaskManager — topo e fim', () => {
+  it('moveToTop poe a tarefa a frente de todas, e grava um arquivo', async () => {
+    const { manager, porId, gravadas } = emMemoria([
+      tarefa('001', { order: 100 }),
+      tarefa('002', { order: 200 }),
+      tarefa('003', { order: 300 }),
+    ]);
+
+    const { task, changed } = await manager.moveToTop(parseTaskId('003'));
+
+    expect(changed).toBe(1);
+    expect(gravadas).toEqual(['003']);
+    expect(task.order).toBe(porId.get('003')?.order);
+    expect(task.order).toBeLessThan(100);
+  });
+
+  it('moveToBottom numera a cauda sem numero uma vez, e diz quantas gravou', async () => {
+    const { manager, porId, gravadas } = emMemoria([
+      tarefa('001', { order: 100 }),
+      tarefa('002', { order: 200 }),
+      tarefa('003'),
+      tarefa('004'),
+    ]);
+
+    const { changed } = await manager.moveToBottom(parseTaskId('001'));
+
+    expect(changed).toBe(3);
+    expect([...gravadas].sort()).toEqual(['001', '003', '004']);
+    expect(porId.get('001')?.order).toBeGreaterThan(porId.get('004')?.order ?? Number.POSITIVE_INFINITY);
+
+    gravadas.length = 0;
+    expect((await manager.moveToBottom(parseTaskId('002'))).changed).toBe(1);
+  });
+
+  it('agrupada vai ao extremo do proprio grupo', async () => {
+    const { manager, porId } = emMemoria([
+      tarefa('001', { order: 100, groupId: g }),
+      tarefa('002', { order: 200, groupId: g }),
+      tarefa('003', { order: 300 }),
+    ]);
+
+    await manager.moveToBottom(parseTaskId('001'));
+
+    expect(porId.get('001')?.order).toBeGreaterThan(200);
+    expect(porId.get('001')?.order).toBeLessThan(300);
+  });
+
+  it('quem ja esta no extremo nao grava nada', async () => {
+    const { manager, gravadas } = emMemoria([tarefa('001', { order: 100 }), tarefa('002', { order: 200 })]);
+
+    const { task, changed } = await manager.moveToTop(parseTaskId('001'));
+
+    expect(changed).toBe(0);
+    expect(gravadas).toEqual([]);
+    expect(task.order).toBe(100);
+  });
+
+  it('recusa uma tarefa que nao existe', async () => {
+    const { manager } = emMemoria([tarefa('001', { order: 100 })]);
+
+    await expect(manager.moveToTop(parseTaskId('999'))).rejects.toThrow(/999/);
+    await expect(manager.moveToBottom(parseTaskId('999'))).rejects.toThrow(/999/);
+  });
+});

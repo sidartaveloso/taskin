@@ -13,6 +13,8 @@ import { defineCommand } from './define-command/index.js';
 interface PriorityOptions {
   before?: string;
   after?: string;
+  top?: boolean;
+  bottom?: boolean;
 }
 
 /**
@@ -44,14 +46,18 @@ export function exigirTaskId(texto: string): TaskId {
 
 /**
  * Uma forma so por chamada. `--before` e `--after` existem porque, na pratica,
- * ninguem sabe que numero quer — sabe que quer isto antes daquilo.
+ * ninguem sabe que numero quer — sabe que quer isto antes daquilo. `--top` e
+ * `--bottom`, porque levar ao extremo e o movimento mais comum, e com
+ * `--before` era preciso descobrir antes qual e a primeira da fila.
  */
 export const priorityCommand = defineCommand({
   name: 'priority <task-id> [priority]',
-  description: '🔝 Set where a task sits in the queue: a number, or before/after another task',
+  description: '🔝 Set where a task sits in the queue: a number, before/after another task, or top/bottom',
   options: [
     { flags: '--before <task-id>', description: 'Place the task right before this one' },
     { flags: '--after <task-id>', description: 'Place the task right after this one' },
+    { flags: '--top', description: 'Move the task to the top of the queue (of its own group, when grouped)' },
+    { flags: '--bottom', description: 'Move the task to the bottom of the queue (of its own group, when grouped)' },
   ],
   handler: async (taskId: string, priority: string | undefined, options: PriorityOptions) => {
     await definirPrioridade(taskId, priority, options);
@@ -65,9 +71,11 @@ async function definirPrioridade(
 ): Promise<void> {
   requireTaskinProject();
 
-  const formas = [prioridadeTexto, options.before, options.after].filter((f) => f !== undefined);
+  const formas = [prioridadeTexto, options.before, options.after, options.top, options.bottom].filter(
+    (f) => f !== undefined,
+  );
   if (formas.length !== 1) {
-    error('Pass exactly one of: a priority number, --before <task-id> or --after <task-id>.');
+    error('Pass exactly one of: a priority number, --before <task-id>, --after <task-id>, --top or --bottom.');
     process.exit(1);
   }
 
@@ -79,6 +87,17 @@ async function definirPrioridade(
     if (prioridadeTexto !== undefined) {
       const task = await manager.setPriority(taskId, lerPrioridade(prioridadeTexto));
       success(`Task ${taskId} now has priority ${task.order}.`);
+      return;
+    }
+
+    if (options.top || options.bottom) {
+      const { task, changed } = options.top ? await manager.moveToTop(taskId) : await manager.moveToBottom(taskId);
+      const extremo = `${options.top ? 'top' : 'bottom'}${task.groupId ? ` of group ${task.groupId}` : ''}`;
+      success(
+        changed === 0
+          ? `Task ${taskId} is already at the ${extremo} (priority ${task.order ?? 'none'}) — no task file written.`
+          : `Task ${taskId} is now at the ${extremo} (priority ${task.order}) — ${changed} task file(s) written.`,
+      );
       return;
     }
 

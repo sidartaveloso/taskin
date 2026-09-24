@@ -142,6 +142,7 @@ taskin group join 042 g-cli     # Put a task in an existing group
 taskin group leave 042          # Take it out
 taskin priority 042 150         # Absolute number, lower comes first
 taskin priority 042 --before 017  # Or relative: right before (or --after) another
+taskin priority 042 --top         # Or to the top (or --bottom) — of its group, when grouped
 taskin new -t feat -T "Login" --group g-cli --priority 150  # Born in place
 ```
 

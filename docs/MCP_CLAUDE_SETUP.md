@@ -93,13 +93,16 @@ Quais tasks são da Ana?
 
 ### `set_priority`
 
-Dá a uma task o seu lugar na fila. Recebe o `taskId` e **exatamente uma** de três
+Dá a uma task o seu lugar na fila. Recebe o `taskId` e **exatamente uma** de cinco
 formas: `priority` (um número absoluto, inteiro a partir de 1 — menor vem antes),
-`before` ou `after` (o id de outra task). As formas relativas gravam só o que
-muda: normalmente um arquivo.
+`before` ou `after` (o id de outra task), `top: true` ou `bottom: true`. Uma task
+agrupada vai ao topo ou ao fim do **próprio grupo**. As formas relativas gravam só
+o que muda — normalmente um arquivo — e a resposta diz quantos (`changed`): levar
+ao fim depois de uma cauda sem `Priority` numera a cauda, uma vez só.
 
 ```
 Coloque a task 042 antes da 017
+Leve a task 042 para o topo da fila
 ```
 
 ### `join_group` e `leave_group`
