@@ -124,14 +124,9 @@ export interface FileSystemTaskProviderOptions {
   readonly convertMetadataStyleTo?: MetadataStyleId;
 
   /**
-   * Size limit, in KB, for each attachment — every file under the tasks
-   * directory that is not markdown. When set, `lint` fails on any attachment
-   * over it that `.taskin/.taskin-attachment-exceptions.json` does not exempt.
+   * Size limit, in KB, for each non-markdown file under the tasks directory.
+   * Files listed in `.taskin/.taskin-attachment-exceptions.json` are exempt.
    * Unset, there is no limit.
-   *
-   * The limit belongs to this provider, not to taskin: only a provider that
-   * keeps attachments as files in the repository makes the repository — and a
-   * history git never forgets — grow with them.
    */
   readonly maxAttachmentKb?: number;
 }

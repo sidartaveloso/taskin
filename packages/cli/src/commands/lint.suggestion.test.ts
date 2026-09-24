@@ -12,14 +12,8 @@ vi.mock('../lib/provider-factory/index.js', () => ({
   })),
 }));
 
-/** Strips chalk colouring without writing the escape character in the source. */
 const NO_COLOUR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
 
-/*
- * A suggestion can span several lines — the attachment-size hint (task-108)
- * is one action per line, each with its command. Only the first line used to
- * be indented, so the rest read as if it were a new issue.
- */
 describe('lint — multi-line suggestion', () => {
   let output: string[];
 

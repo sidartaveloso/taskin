@@ -39,11 +39,6 @@ export const lintCommand = defineCommand({
   },
 });
 
-/**
- * A suggestion may span several lines — the attachment-size hint is one action
- * per line, each with its command — so every line is indented under the `↳`,
- * not just the first.
- */
 function formatSuggestion(suggestion: string): string {
   return suggestion
     .split('\n')

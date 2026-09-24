@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SizeReductionHint } from './index';
 
-/*
- * The hint that comes with an attachment-over-the-limit error (task-108): what
- * to try, in order, with the command ready to run on the offending file.
- */
 const hint = new SizeReductionHint();
 
 describe('image', () => {
@@ -63,11 +59,6 @@ describe('everything else', () => {
   );
 });
 
-/*
- * ffmpeg cannot write over the file it is reading: `ffmpeg -i a.png … a.png`
- * refuses, or with `-y` truncates the input mid-read. Seen running the hint
- * against a real repository.
- */
 it.each(['assets/screen.png', 'assets/flight.webm', 'assets/flight.gif'])(
   'no command in the hint for %s writes over its own input',
   (file) => {
