@@ -102,6 +102,7 @@ console.log('MCP server running');
 - `list_groups` - List the task groups, each with its id and name
 - `join_group` - Put a task in an existing group. Only offered when the provider has groups
 - `leave_group` - Take a task out of its group. Only offered when the provider has groups
+- `move_group` - Move a whole group, its members together: exactly one of `before` / `after` (a task not in a group, or another group id), `top: true` or `bottom: true`. Only the members are written, and the result carries `changed`. Only offered when the provider has groups
 - `set_difficulty` - Score how hard one task is: a whole `difficulty` from 1 (trivial) to 5 (very hard). Anything else is refused without writing; there is no way to clear a score, a wrong one is corrected by scoring again
 - `set_priority` - Place one task: exactly one of `priority` (absolute, lower comes first), `before` or `after` another task id, `top: true` or `bottom: true` (a grouped task goes to the top or bottom of its own group). The result carries `changed`, the number of task files written
   `status`, `type`, `assignee`, `open`, `closed`, `text`

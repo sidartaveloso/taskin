@@ -257,3 +257,116 @@ describe('pontuar por MCP', () => {
     expect(nomes(montar([]).servidor)).toContain('set_difficulty');
   });
 });
+
+/**
+ * Mover um grupo inteiro pelo MCP (task-117): uma ferramenta propria, e nao
+ * uma forma nova do `set_priority` — ali o sujeito e uma tarefa, aqui e um
+ * grupo, e misturar os dois num argumento so tornaria as duas ambiguas.
+ */
+describe('mover um grupo por MCP', () => {
+  const OUTRO: Group = { id: parseGroupId('g-outro'), name: 'Outro' };
+  const fila = (porId: Map<string, Task>) =>
+    [...porId.values()]
+      .sort((a, b) => (a.order ?? Number.POSITIVE_INFINITY) - (b.order ?? Number.POSITIVE_INFINITY))
+      .map((t) => String(t.id));
+
+  it('move_group com top leva o bloco a frente, e diz quantas gravou', async () => {
+    const { servidor, porId } = montar(
+      [
+        tarefa('001', { order: 100 }),
+        tarefa('002', { order: 200, groupId: CLI.id }),
+        tarefa('003', { order: 300, groupId: CLI.id }),
+        tarefa('004', { order: 400, groupId: CLI.id }),
+      ],
+      [CLI],
+    );
+
+    const r = await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-cli', top: true } });
+
+    expect(r.isError).toBeFalsy();
+    expect(fila(porId)).toEqual(['002', '003', '004', '001']);
+    const resposta = JSON.parse(texto(r));
+    expect(resposta.changed).toBe(3);
+    expect(resposta.members.map((m: { id: string }) => m.id)).toEqual(['002', '003', '004']);
+  });
+
+  it('move_group com before e after aceita tarefa ou grupo como alvo', async () => {
+    const { servidor, porId } = montar(
+      [
+        tarefa('001', { order: 100, groupId: OUTRO.id }),
+        tarefa('002', { order: 200 }),
+        tarefa('003', { order: 300, groupId: CLI.id }),
+      ],
+      [CLI, OUTRO],
+    );
+
+    await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-cli', before: 'g-outro' } });
+    expect(fila(porId)).toEqual(['003', '001', '002']);
+
+    await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-cli', after: '002' } });
+    expect(fila(porId)).toEqual(['001', '002', '003']);
+  });
+
+  it('move_group com bottom leva o bloco ao fim', async () => {
+    const { servidor, porId } = montar(
+      [tarefa('001', { order: 100, groupId: CLI.id }), tarefa('002', { order: 200 })],
+      [CLI],
+    );
+
+    await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-cli', bottom: true } });
+
+    expect(fila(porId)).toEqual(['002', '001']);
+  });
+
+  it('exige exatamente uma forma', async () => {
+    const { servidor, porId } = montar(
+      [tarefa('001', { order: 100, groupId: CLI.id }), tarefa('002', { order: 200 })],
+      [CLI],
+    );
+
+    const nenhuma = await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-cli' } });
+    const duas = await servidor.callTool({
+      name: 'move_group',
+      arguments: { groupId: 'g-cli', top: true, after: '002' },
+    });
+    const naoBooleano = await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-cli', bottom: 'yes' } });
+
+    for (const r of [nenhuma, duas]) {
+      expect(r.isError).toBe(true);
+      expect(texto(r)).toContain('exactly one');
+    }
+    expect(naoBooleano.isError).toBe(true);
+    expect(texto(naoBooleano)).toContain('`bottom`');
+    expect(porId.get('001')?.order).toBe(100);
+  });
+
+  it('recusa grupo inexistente, alvo inexistente e alvo membro do proprio grupo', async () => {
+    const { servidor } = montar(
+      [tarefa('001', { order: 100, groupId: CLI.id }), tarefa('002', { order: 200, groupId: CLI.id })],
+      [CLI],
+    );
+
+    const semGrupo = await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-sumiu', top: true } });
+    const semAlvo = await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-cli', before: '999' } });
+    const membro = await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-cli', after: '002' } });
+
+    expect(texto(semGrupo)).toContain('g-sumiu');
+    expect(texto(semAlvo)).toContain('999');
+    expect(texto(membro)).toContain('member');
+    for (const r of [semGrupo, semAlvo, membro]) expect(r.isError).toBe(true);
+  });
+
+  it('um provider sem grupos nao anuncia move_group, e recusa em uma frase', async () => {
+    const { servidor } = montar([tarefa('001')]);
+
+    expect(nomes(servidor)).not.toContain('move_group');
+
+    const r = await servidor.callTool({ name: 'move_group', arguments: { groupId: 'g-cli', top: true } });
+    expect(r.isError).toBe(true);
+    expect(texto(r)).toContain('does not support task groups');
+  });
+
+  it('com grupos, move_group e anunciado', () => {
+    expect(nomes(montar([], [CLI]).servidor)).toContain('move_group');
+  });
+});

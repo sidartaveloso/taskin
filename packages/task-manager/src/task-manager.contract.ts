@@ -112,6 +112,59 @@ export function runTaskManagerContractTests(
       expect(await ordem('003')).toBeLessThan(await ordem('004'));
     });
 
+    it('moveGroupBefore, moveGroupAfter, moveGroupToTop e moveGroupToBottom movem o grupo inteiro', async () => {
+      const outro = parseGroupId('g-outro');
+      const { manager, ler } = await createSubject(
+        [
+          tarefa('001', { order: 10 }),
+          tarefa('002', { order: 20, groupId: g }),
+          tarefa('003', { order: 30, groupId: g }),
+          tarefa('004', { order: 40, groupId: outro }),
+        ],
+        [
+          { id: g, name: 'Sprint' },
+          { id: outro, name: 'Outro' },
+        ],
+      );
+      const ordem = async (valor: string) => (await ler(valor))?.order ?? Number.POSITIVE_INFINITY;
+      const fila = async () => {
+        const ordens = await Promise.all(['001', '002', '003', '004'].map(async (v) => [v, await ordem(v)] as const));
+        return ordens.sort((a, b) => a[1] - b[1]).map(([v]) => v);
+      };
+
+      expect((await manager.moveGroupToTop(g)).changed).toBe(2);
+      expect(await fila()).toEqual(['002', '003', '001', '004']);
+
+      await manager.moveGroupToBottom(g);
+      expect(await fila()).toEqual(['001', '004', '002', '003']);
+
+      await manager.moveGroupBefore(g, outro);
+      expect(await fila()).toEqual(['001', '002', '003', '004']);
+
+      await manager.moveGroupAfter(g, id('001'));
+      expect(await fila()).toEqual(['001', '002', '003', '004']);
+
+      await manager.moveGroupBefore(g, id('001'));
+      expect(await fila()).toEqual(['002', '003', '001', '004']);
+    });
+
+    it('mover um grupo recusa grupo inexistente, alvo inexistente e alvo membro dele', async () => {
+      const { manager, ler } = await createSubject(
+        [
+          tarefa('001', { order: 10, groupId: g }),
+          tarefa('002', { order: 20, groupId: g }),
+          tarefa('003', { order: 30 }),
+        ],
+        [{ id: g, name: 'Sprint' }],
+      );
+
+      await expect(manager.moveGroupToTop(parseGroupId('g-fantasma'))).rejects.toThrow(/g-fantasma/);
+      await expect(manager.moveGroupBefore(g, id('999'))).rejects.toThrow(/999/);
+      await expect(manager.moveGroupAfter(g, id('002'))).rejects.toThrow(/member/);
+      expect((await ler('001'))?.order).toBe(10);
+      expect((await ler('002'))?.order).toBe(20);
+    });
+
     it('setDifficulty grava de 1 a 5, e recusa o resto sem gravar', async () => {
       const { manager, ler } = await createSubject([tarefa('001')], []);
 

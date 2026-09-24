@@ -108,6 +108,80 @@ describe('taskin group join / leave', LENTO, () => {
   });
 });
 
+/**
+ * Mover um grupo inteiro pela CLI (task-117), o que antes so o dashboard fazia.
+ */
+describe('taskin group move', LENTO, () => {
+  /* 001 solta, 002 e 003 no g-cli, 004 no g-outro. */
+  beforeEach(async () => {
+    writeFileSync(join(raiz, 'TASKS', 'task-004-tarefa-004.md'), tarefa('004', '\n- Priority: 400'), 'utf-8');
+    await rodar('group', 'add', 'CLI', '--id', 'g-cli');
+    await rodar('group', 'add', 'Outro', '--id', 'g-outro');
+    await rodar('group', 'join', '002', 'g-cli');
+    await rodar('group', 'join', '003', 'g-cli');
+    await rodar('group', 'join', '004', 'g-outro');
+  });
+
+  const fila = () =>
+    ['001', '002', '003', '004'].sort((a, b) => Number(campo(a, 'Priority')) - Number(campo(b, 'Priority')));
+
+  it('--top leva o grupo inteiro a frente, e grava so os membros', async () => {
+    const antes = { '001': arquivo('001'), '004': arquivo('004') };
+
+    const { code, saida } = await rodar('group', 'move', 'g-cli', '--top');
+
+    expect(code).toBe(0);
+    expect(fila()).toEqual(['002', '003', '001', '004']);
+    expect(arquivo('001')).toBe(antes['001']);
+    expect(arquivo('004')).toBe(antes['004']);
+    expect(saida).toContain('2 task file');
+  });
+
+  it('--bottom, --before e --after, com tarefa ou grupo como alvo', async () => {
+    expect((await rodar('group', 'move', 'g-cli', '--bottom')).code).toBe(0);
+    expect(fila()).toEqual(['001', '004', '002', '003']);
+
+    expect((await rodar('group', 'move', 'g-cli', '--before', 'g-outro')).code).toBe(0);
+    expect(fila()).toEqual(['001', '002', '003', '004']);
+
+    expect((await rodar('group', 'move', 'g-cli', '--before', '001')).code).toBe(0);
+    expect(fila()).toEqual(['002', '003', '001', '004']);
+
+    expect((await rodar('group', 'move', 'g-outro', '--after', '001')).code).toBe(0);
+    expect(fila()).toEqual(['002', '003', '001', '004']);
+  });
+
+  it('ja no lugar nao grava nada, e diz', async () => {
+    const { code, saida } = await rodar('group', 'move', 'g-cli', '--after', '001');
+
+    expect(code).toBe(0);
+    expect(saida).toContain('already');
+  });
+
+  it('exige exatamente uma forma', async () => {
+    const nenhuma = await rodar('group', 'move', 'g-cli');
+    const duas = await rodar('group', 'move', 'g-cli', '--top', '--after', '001');
+
+    for (const r of [nenhuma, duas]) {
+      expect(r.code).toBe(1);
+      expect(r.saida).toContain('exactly one');
+    }
+    expect(fila()).toEqual(['001', '002', '003', '004']);
+  });
+
+  it('recusa grupo inexistente, alvo inexistente e alvo membro do proprio grupo', async () => {
+    const semGrupo = await rodar('group', 'move', 'g-sumiu', '--top');
+    const semAlvo = await rodar('group', 'move', 'g-cli', '--before', '999');
+    const membro = await rodar('group', 'move', 'g-cli', '--after', '003');
+
+    expect(semGrupo.saida).toContain('g-sumiu');
+    expect(semAlvo.saida).toContain('999');
+    expect(membro.saida).toContain('member');
+    for (const r of [semGrupo, semAlvo, membro]) expect(r.code).toBe(1);
+    expect(fila()).toEqual(['001', '002', '003', '004']);
+  });
+});
+
 describe('taskin priority', LENTO, () => {
   it('com numero, grava o numero naquela tarefa', async () => {
     const { code } = await rodar('priority', '003', '50');

@@ -142,7 +142,7 @@ consuming plain `Task` keeps working with any provider.
 
 `ITaskManager` sits on top with the state transitions and the named operations —
 `startTask`, `finishTask`, `assignToGroup`, `setPriority`, `moveBefore`,
-`moveToTop`, `setDifficulty` and the rest — and is generic over the same shape. The CLI, the
+`moveToTop`, `moveGroupToTop`, `setDifficulty` and the rest — and is generic over the same shape. The CLI, the
 MCP server and the dashboard all go through it: the dashboard's WebSocket sends
 `set-priority` or `assign-to-group`, never a whole task to overwrite. A table,
 `SUPERFICIES_DAS_OPERACOES`, says where each operation is exposed — and adding
@@ -203,9 +203,10 @@ file or a REST call. The provider settles that.
 
 The agent can also arrange the queue it works through. `set_priority` places a
 task by number, right `before` or `after` another one, or at the `top` or
-`bottom` of the queue, and `join_group` / `leave_group` move it between groups.
-The terminal has the same operations — `taskin priority 042 --before 017`,
-`taskin priority 042 --top`, `taskin group join 042 g-cli` — so nobody has
+`bottom` of the queue, `join_group` / `leave_group` move it between groups, and
+`move_group` moves a whole group, its members together. The terminal has the
+same operations — `taskin priority 042 --before 017`, `taskin priority 042 --top`,
+`taskin group join 042 g-cli`, `taskin group move g-cli --top` — so nobody has
 to edit the metadata block by hand.
 
 Registering the server takes one command:

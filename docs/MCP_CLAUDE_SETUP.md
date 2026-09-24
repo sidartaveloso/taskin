@@ -130,6 +130,20 @@ não existem são recusados dizendo qual.
 Coloque a task 042 no grupo g-cli
 ```
 
+### `move_group`
+
+Move um grupo **inteiro** na fila, com os membros juntos e na ordem em que já
+estavam. Recebe o `groupId` e **exatamente uma** de quatro formas: `before` ou
+`after` (uma task solta ou o id de outro grupo), `top: true` ou `bottom: true`.
+Grava só os membros — um grupo de três grava três arquivos — e a resposta diz
+quantos (`changed`). Grupo ou alvo que não existem, e alvo que é membro do
+próprio grupo, são recusados dizendo qual. Só é anunciada quando o provider tem
+o conceito de grupo.
+
+```
+Leve o grupo g-cli para o topo da fila
+```
+
 ### `start_task`
 
 Inicia uma task, mudando o status para `in-progress`.

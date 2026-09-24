@@ -69,6 +69,11 @@ export interface PayloadsDasOperacoes {
   'move-after': { taskId: string; targetId: string };
   'move-to-top': { taskId: string };
   'move-to-bottom': { taskId: string };
+  /** `targetId` e uma tarefa solta ou outro grupo (task-117). */
+  'move-group-before': { groupId: string; targetId: string };
+  'move-group-after': { groupId: string; targetId: string };
+  'move-group-to-top': { groupId: string };
+  'move-group-to-bottom': { groupId: string };
   'create-group': { id: string; name: string };
 }
 

@@ -3,6 +3,7 @@ import { parseGroupId, parseTaskId } from '@opentask/taskin-types';
 import { describe, expect, it } from 'vitest';
 import {
   PRIORIDADE_MAXIMA,
+  posicionarGrupo,
   posicionarNoExtremo,
   posicionarPrioridade,
   validarPrioridade,
@@ -187,6 +188,139 @@ describe('posicionarNoExtremo', () => {
 
   it('recusa uma tarefa que nao existe', () => {
     expect(() => posicionarNoExtremo([tarefa('001', 100)], parseTaskId('999'), 'top')).toThrow(/999/);
+  });
+});
+
+/**
+ * Mover um grupo inteiro (task-117): o bloco de membros vai junto, e so ele e
+ * gravado — a mesma conta do dashboard, medida na task-101 (grupo de 3 grava 3).
+ */
+describe('posicionarGrupo', () => {
+  const ga = parseGroupId('g-a');
+  const gb = parseGroupId('g-b');
+  const em = (grupo: typeof ga, id: string, order?: number): Task => ({ ...tarefa(id, order), groupId: grupo }) as Task;
+
+  /** A fila depois de aplicar as mudancas, como ids. */
+  const filaDepois = (tarefas: readonly Task[], mudancas: readonly Task[]) =>
+    tarefas
+      .map((t) => mudancas.find((m) => m.id === t.id) ?? t)
+      .sort((a, b) => (a.order ?? Number.POSITIVE_INFINITY) - (b.order ?? Number.POSITIVE_INFINITY))
+      .map((t) => String(t.id));
+
+  it('antes de uma tarefa solta: o bloco inteiro vai, e so os membros sao gravados', () => {
+    const tarefas = [
+      tarefa('001', 100),
+      tarefa('002', 200),
+      em(ga, '003', 300),
+      em(ga, '004', 400),
+      em(ga, '005', 500),
+    ];
+
+    const mudancas = posicionarGrupo(tarefas, ga, { lado: 'before', alvo: { taskId: parseTaskId('002') } });
+
+    expect(ids(mudancas).sort()).toEqual(['003', '004', '005']);
+    expect(filaDepois(tarefas, mudancas)).toEqual(['001', '003', '004', '005', '002']);
+  });
+
+  it('depois de uma tarefa solta', () => {
+    const tarefas = [em(ga, '001', 100), em(ga, '002', 200), tarefa('003', 300), tarefa('004', 400)];
+
+    const mudancas = posicionarGrupo(tarefas, ga, { lado: 'after', alvo: { taskId: parseTaskId('003') } });
+
+    expect(ids(mudancas).sort()).toEqual(['001', '002']);
+    expect(filaDepois(tarefas, mudancas)).toEqual(['003', '001', '002', '004']);
+  });
+
+  it('antes de outro grupo: passa a frente do primeiro membro dele', () => {
+    const tarefas = [em(gb, '001', 100), em(gb, '002', 200), em(ga, '003', 300)];
+
+    const mudancas = posicionarGrupo(tarefas, ga, { lado: 'before', alvo: { groupId: gb } });
+
+    expect(ids(mudancas)).toEqual(['003']);
+    expect(filaDepois(tarefas, mudancas)).toEqual(['003', '001', '002']);
+  });
+
+  it('depois de outro grupo: fica depois do grupo inteiro, e antes do no seguinte', () => {
+    const tarefas = [em(ga, '001', 100), em(gb, '002', 200), em(gb, '003', 300), tarefa('004', 400)];
+
+    const mudancas = posicionarGrupo(tarefas, ga, { lado: 'after', alvo: { groupId: gb } });
+
+    expect(ids(mudancas)).toEqual(['001']);
+    expect(filaDepois(tarefas, mudancas)).toEqual(['002', '003', '001', '004']);
+  });
+
+  it('topo e fim da fila', () => {
+    const tarefas = [tarefa('001', 100), em(ga, '002', 200), em(ga, '003', 300), tarefa('004', 400)];
+
+    const topo = posicionarGrupo(tarefas, ga, { extremo: 'top' });
+    expect(ids(topo).sort()).toEqual(['002', '003']);
+    expect(filaDepois(tarefas, topo)).toEqual(['002', '003', '001', '004']);
+
+    const fim = posicionarGrupo(tarefas, ga, { extremo: 'bottom' });
+    expect(filaDepois(tarefas, fim)).toEqual(['001', '004', '002', '003']);
+  });
+
+  it('fim depois de uma cauda sem numero numera a cauda, como moveToBottom', () => {
+    const tarefas = [em(ga, '001', 100), tarefa('002', 200), tarefa('003'), tarefa('004')];
+
+    const mudancas = posicionarGrupo(tarefas, ga, { extremo: 'bottom' });
+
+    expect(ids(mudancas).sort()).toEqual(['001', '003', '004']);
+    expect(filaDepois(tarefas, mudancas)).toEqual(['002', '003', '004', '001']);
+  });
+
+  it('as tarefas sem numero depois do ponto ficam de fora', () => {
+    const tarefas = [tarefa('001', 100), em(ga, '002', 200), tarefa('003'), tarefa('004')];
+
+    const mudancas = posicionarGrupo(tarefas, ga, { lado: 'before', alvo: { taskId: parseTaskId('001') } });
+
+    expect(ids(mudancas)).toEqual(['002']);
+  });
+
+  it('ja no lugar pedido, nao grava nada', () => {
+    const tarefas = [em(ga, '001', 100), em(ga, '002', 200), tarefa('003', 300)];
+
+    expect(posicionarGrupo(tarefas, ga, { extremo: 'top' })).toEqual([]);
+    expect(posicionarGrupo(tarefas, ga, { lado: 'before', alvo: { taskId: parseTaskId('003') } })).toEqual([]);
+  });
+
+  it('um grupo sem membros nao tem o que mover', () => {
+    expect(posicionarGrupo([tarefa('001', 100)], ga, { extremo: 'top' })).toEqual([]);
+  });
+
+  it('sem espaco entre os vizinhos, abre espaco na vizinhanca', () => {
+    const tarefas = [tarefa('001', 1), tarefa('002', 2), em(ga, '003', 300), em(ga, '004', 400)];
+
+    const mudancas = posicionarGrupo(tarefas, ga, { lado: 'before', alvo: { taskId: parseTaskId('002') } });
+
+    expect(filaDepois(tarefas, mudancas)).toEqual(['001', '003', '004', '002']);
+  });
+
+  it('recusa um alvo que e membro do proprio grupo', () => {
+    const tarefas = [em(ga, '001', 100), em(ga, '002', 200)];
+
+    expect(() => posicionarGrupo(tarefas, ga, { lado: 'before', alvo: { taskId: parseTaskId('002') } })).toThrow(
+      /member of group 'g-a'/,
+    );
+  });
+
+  it('recusa o proprio grupo como alvo', () => {
+    const tarefas = [em(ga, '001', 100)];
+
+    expect(() => posicionarGrupo(tarefas, ga, { lado: 'after', alvo: { groupId: ga } })).toThrow(/itself/);
+  });
+
+  it('recusa uma tarefa de outro grupo como alvo, apontando o grupo', () => {
+    const tarefas = [em(ga, '001', 100), em(gb, '002', 200)];
+
+    expect(() => posicionarGrupo(tarefas, ga, { lado: 'before', alvo: { taskId: parseTaskId('002') } })).toThrow(/g-b/);
+  });
+
+  it('recusa alvo inexistente: tarefa, ou grupo sem membros', () => {
+    const tarefas = [em(ga, '001', 100)];
+
+    expect(() => posicionarGrupo(tarefas, ga, { lado: 'before', alvo: { taskId: parseTaskId('999') } })).toThrow(/999/);
+    expect(() => posicionarGrupo(tarefas, ga, { lado: 'before', alvo: { groupId: gb } })).toThrow(/g-b/);
   });
 });
 

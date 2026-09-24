@@ -144,6 +144,7 @@ taskin group leave 042          # Take it out
 taskin priority 042 150         # Absolute number, lower comes first
 taskin priority 042 --before 017  # Or relative: right before (or --after) another
 taskin priority 042 --top         # Or to the top (or --bottom) — of its group, when grouped
+taskin group move g-cli --top     # A whole group: --top, --bottom, --before/--after a task or group
 taskin new -t feat -T "Login" --group g-cli --priority 150  # Born in place
 taskin difficulty 042 3           # Score it, 1 (trivial) to 5 (very hard) — works the --unscored queue
 taskin new -t feat -T "Login" --difficulty 2                 # Born scored

@@ -71,6 +71,12 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
     'move-after': (client, message) => this.mover(client, message, 'after'),
     'move-to-top': (client, message) => this.levarAoExtremo(client, message, 'top'),
     'move-to-bottom': (client, message) => this.levarAoExtremo(client, message, 'bottom'),
+    'move-group-before': (client, message) => this.moverGrupoAoLado(client, message, 'before'),
+    'move-group-after': (client, message) => this.moverGrupoAoLado(client, message, 'after'),
+    'move-group-to-top': (client, message) =>
+      this.moverGrupo(client, message, (id) => this.taskManager.moveGroupToTop(id)),
+    'move-group-to-bottom': (client, message) =>
+      this.moverGrupo(client, message, (id) => this.taskManager.moveGroupToBottom(id)),
   };
 
   /** O que o protocolo atende e nao e operacao do `ITaskManager`. */
@@ -431,6 +437,46 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
     await (extremo === 'top' ? this.taskManager.moveToTop(taskId) : this.taskManager.moveToBottom(taskId));
 
     this.broadcast({ type: 'tasks', payload: await this.taskManager.getAllTasks() });
+  }
+
+  /**
+   * Um grupo inteiro se move (task-117). Como em
+   * {@link TaskWebSocketServer.mover}, todos recebem a lista inteira.
+   */
+  private async moverGrupo(
+    client: ClientConnection,
+    message: WSMessage,
+    operacao: (groupId: GroupId) => Promise<unknown>,
+  ): Promise<void> {
+    const groupId = this.readGroupId(client, message);
+    if (!groupId) return;
+
+    await operacao(groupId);
+    this.broadcast({ type: 'tasks', payload: await this.taskManager.getAllTasks() });
+  }
+
+  /**
+   * O alvo vem em `targetId` e pode ser uma tarefa ou outro grupo; quem decide
+   * qual e o manager, entao aqui so se confere que e um texto nao vazio — o
+   * que o schema do id de grupo ja exige.
+   */
+  private async moverGrupoAoLado(
+    client: ClientConnection,
+    message: WSMessage,
+    lado: 'before' | 'after',
+  ): Promise<void> {
+    const alvo = GroupIdSchema.safeParse(this.campo(message, 'targetId'));
+    if (!alvo.success) {
+      this.recusar(client, message, `Missing or invalid 'targetId' in '${message.type}' request`);
+      return;
+    }
+    const target = alvo.data;
+
+    await this.moverGrupo(client, message, (groupId) =>
+      lado === 'before'
+        ? this.taskManager.moveGroupBefore(groupId, target)
+        : this.taskManager.moveGroupAfter(groupId, target),
+    );
   }
 
   /**

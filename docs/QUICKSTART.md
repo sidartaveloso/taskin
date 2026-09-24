@@ -56,6 +56,7 @@ taskin group leave 042             # Tira do grupo
 taskin priority 042 150            # Número absoluto; menor vem antes
 taskin priority 042 --before 017   # Ou relativo: logo antes (ou --after) de outra
 taskin priority 042 --top          # Ou ao topo (ou --bottom) — do próprio grupo, se agrupada
+taskin group move g-cli --top      # O grupo inteiro: --top, --bottom, --before/--after de task ou grupo
 taskin difficulty 042 3            # Pontua de 1 (trivial) a 5 (muito difícil) — a fila do --unscored
 ```
 
@@ -134,6 +135,7 @@ taskin mcp-server --debug
 - `list_tasks`: Lista as tarefas, com filtros opcionais
 - `list_groups`: Lista os grupos
 - `join_group` / `leave_group`: Põe uma tarefa num grupo, ou tira (só quando o provider tem grupos)
+- `move_group`: Move um grupo inteiro — `before`, `after`, `top` ou `bottom` (só quando o provider tem grupos)
 - `set_priority`: Dá o lugar da tarefa na fila — `priority`, `before`, `after`, `top` ou `bottom`
 - `set_difficulty`: Pontua a tarefa, de 1 (trivial) a 5 (muito difícil)
 - `prioritize_tasks`: Numera todas de uma vez

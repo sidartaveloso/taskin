@@ -87,7 +87,8 @@ This package is responsible for the core logic of managing tasks.
 
 Grouping, prioritizing and scoring are named operations of `ITaskManager` —
 `assignToGroup`, `removeFromGroup`, `setPriority`, `moveBefore`, `moveAfter`,
-`moveToTop`, `moveToBottom`, `setDifficulty` — and not a side effect of a generic `updateTask`. The CLI, the
+`moveToTop`, `moveToBottom`, `moveGroupBefore`, `moveGroupAfter`, `moveGroupToTop`,
+`moveGroupToBottom`, `setDifficulty` — and not a side effect of a generic `updateTask`. The CLI, the
 MCP server and the dashboard (through the WebSocket server) all call them.
 
 `SUPERFICIES_DAS_OPERACOES` says, for every operation, how each surface exposes
