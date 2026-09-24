@@ -144,7 +144,13 @@ consuming plain `Task` keeps working with any provider.
 `startTask`, `finishTask`, `assignToGroup`, `setPriority`, `moveBefore`,
 `moveToTop`, `moveGroupToTop`, `setDifficulty` and the rest — and is generic over the same shape. The CLI, the
 MCP server and the dashboard all go through it: the dashboard's WebSocket sends
-`set-priority` or `assign-to-group`, never a whole task to overwrite. A table,
+`set-priority` or `assign-to-group`, never a whole task to overwrite. On the
+prioritization board, the arrows, top, bottom and dragging send `move-before` /
+`move-after` (or `move-group-before` / `move-group-after`) with the first, last
+or neighbouring **visible** row as the reference — with a filter on, the top is
+the top of what you see — and the new numbers come back from the domain, the
+same rule `taskin priority --before` uses. Undo re-sends the previous values of
+only the tasks the move changed. A table,
 `SUPERFICIES_DAS_OPERACOES`, says where each operation is exposed — and adding
 an operation without deciding the three surfaces does not compile.
 

@@ -97,6 +97,14 @@ Vue Reactivity (Pinia state update)
 UI Update (TaskCard.vue re-renders)
 ```
 
+No quadro de priorizacao, mover (setas, topo, fim, arrastar) nao calcula numero
+no navegador: o `usePrioritization` emite um movimento com a linha visivel de
+referencia, o `App.vue` o traduz em `move-before`/`move-after` ou
+`move-group-before`/`move-group-after`, e a ordem nova chega na lista que o
+servidor devolve. O desfazer guarda os valores anteriores e reenvia
+`set-priority` (e `assign-to-group`/`remove-from-group`) so para as tarefas que
+a operacao alterou.
+
 ### 2. MCP Flow (LLM ↔ TaskManager)
 
 ```

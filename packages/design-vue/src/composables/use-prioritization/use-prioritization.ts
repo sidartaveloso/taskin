@@ -2,6 +2,8 @@ import { ordenarTarefas } from '@opentask/taskin-task-manager';
 import { computed, type Ref, ref, shallowRef, watch } from 'vue';
 import type { GroupId, Task } from '../../types';
 import type {
+  LadoDoMovimento,
+  MovimentoDoQuadro,
   PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
@@ -19,7 +21,6 @@ interface PrioritizationSnapshot {
 }
 
 const DEFAULT_STORAGE_KEY = 'taskin-prioritization-prefs';
-const DEFAULT_ORDER_STEP = 10;
 const MAX_HISTORY_SIZE = 50;
 
 interface PersistedPrefs {
@@ -137,14 +138,9 @@ export function flattenPriorityTree(nodes: PriorityNode[]): Task[] {
   return flat;
 }
 
-/** Renumbers `order` for a flattened list using multiples of `step`. */
-export function renumber(tasks: Task[], step = DEFAULT_ORDER_STEP): Task[] {
-  return tasks.map((task, index) => ({ ...task, order: (index + 1) * step }));
-}
-
 /**
- * Deep-clones a tree snapshot for the undo/redo history. Uses JSON round-tripping
- * rather than `structuredClone` because `treeInternal` is a Vue reactive proxy, and
+ * Deep-clones a tree before a structural edit. Uses JSON round-tripping rather
+ * than `structuredClone` because `treeInternal` is a Vue reactive proxy, and
  * `structuredClone` throws `DataCloneError` on reactive Proxy instances.
  */
 function cloneTree(nodes: PriorityNode[]): PriorityNode[] {
@@ -164,6 +160,18 @@ function snapshotsEqual(a: PrioritizationSnapshot | undefined, b: Prioritization
   return a.order === b.order && a.parentId === b.parentId && a.difficulty === b.difficulty;
 }
 
+/**
+ * O que o desfazer guarda de uma tarefa: os campos de priorizacao e o rotulo
+ * do grupo, que so o quadro conhece e que renomear muda.
+ */
+interface ValoresDaTarefa extends PrioritizationSnapshot {
+  groupName?: string;
+}
+
+function valoresDe(task: Task): ValoresDaTarefa {
+  return { ...snapshotOf(task), groupName: task.groupName };
+}
+
 /** Returns only the tasks whose prioritization fields differ from the baseline snapshot. */
 export function diffAgainstBaseline(tasks: Task[], baseline: Map<string, PrioritizationSnapshot>): Task[] {
   return tasks.filter((task) => !snapshotsEqual(baseline.get(task.id), snapshotOf(task)));
@@ -171,13 +179,13 @@ export function diffAgainstBaseline(tasks: Task[], baseline: Map<string, Priorit
 
 /**
  * Owns the client-side state and mutations for the task prioritization board:
- * manual ordering (drag reorder), ad hoc grouping (drag to group), difficulty
- * rating, filtering, view/sort preferences, and change tracking so the host
- * app only has to persist the tasks that actually changed.
+ * ad hoc grouping (drag to group), difficulty rating, filtering, view/sort
+ * preferences, and change tracking so the host app only has to persist the
+ * tasks that actually changed. Manual ordering is not computed here: moves go
+ * out through `onMove`, and the domain numbers them (task-118).
  */
 export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritizationOptions = {}): UsePrioritization {
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY;
-  const orderStep = options.orderStep ?? DEFAULT_ORDER_STEP;
 
   const prefs = loadPrefs(storageKey);
   const viewMode = ref<PrioritizationViewMode>(prefs.viewMode);
@@ -192,16 +200,25 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     new Map<string, PrioritizationSnapshot>(tasks.value.map((task) => [task.id, snapshotOf(task)])),
   );
 
-  // Undo/redo history: snapshots of the tree taken *before* each domain
-  // mutation (reorder/group/ungroup/rename/difficulty). View-only prefs
-  // (filter/viewMode/sortMode/collapse) are intentionally not part of it.
-  const history = shallowRef<PriorityNode[][]>([]);
-  const future = shallowRef<PriorityNode[][]>([]);
+  /*
+   * Desfazer e refazer guardam **valores**, e nao a arvore.
+   *
+   * Mover nao muda a arvore aqui: o quadro manda a operacao ao dominio, e os
+   * numeros novos voltam na lista de tarefas. Por isso cada entrada e o valor
+   * de antes das tarefas, e desfazer os reaplica. So as tarefas que a operacao
+   * alterou diferem do que esta gravado, entao o `changedTasks` que sai dai tem
+   * so elas — e o app hospedeiro grava so isso.
+   * Filtro, modo de exibicao, ordenacao e recolher ficam de fora.
+   */
+  const history = shallowRef<Map<string, ValoresDaTarefa>[]>([]);
+  const future = shallowRef<Map<string, ValoresDaTarefa>[]>([]);
 
   // Re-sync the tree whenever the source task list changes externally
   // (e.g. a broadcast from another client, or confirmation of our own update).
+  // What arrives is what is stored, so it becomes the new baseline.
   watch(tasks, (next) => {
     treeInternal.value = buildPriorityTree(next, collapsedGroups.value);
+    baseline.value = new Map(next.map((task) => [task.id, snapshotOf(task)]));
   });
 
   function persistPrefs(): void {
@@ -210,127 +227,6 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
       sortMode: sortMode.value,
       collapsedGroups: collapsedGroups.value,
     });
-  }
-
-  /** Lista plana das tarefas na ordem em que a arvore as apresenta. */
-  function itensDaArvore(): Task[] {
-    const itens: Task[] = [];
-    function walk(nodes: PriorityNode[]): void {
-      for (const node of nodes) {
-        if (node.kind === 'task') itens.push(node.task);
-        else walk(node.items);
-      }
-    }
-    walk(treeInternal.value);
-    return itens;
-  }
-
-  /**
-   * Da numero apenas a quem precisa, preservando a estrutura da arvore.
-   *
-   * A versao anterior renumerava tudo por posicao (`posicao * passo`). A ordem
-   * saia certa e o custo saia errado: **as tarefas sao arquivos versionados**, e
-   * o app hospedeiro grava cada tarefa que aparece em `changedTasks`. Mover um
-   * item do fim para o topo reescrevia a lista inteira, e num projeto onde
-   * metade das tarefas ainda nao tinha `order` o primeiro movimento numerava
-   * todas de uma vez — dezenas de arquivos no `git status` por um clique de
-   * seta, e um commit gigante com o autopilot ligado.
-   *
-   * @param movidos - As tarefas que acabaram de se mover, quando a operacao
-   *   sabe quais foram: uma so, ou os membros de um grupo que se moveu inteiro,
-   *   contiguos na lista. Com elas, so elas recebem numero novo: os valores
-   *   entram **entre** os vizinhos, e o resto da lista fica intacto. Sem elas —
-   *   nas operacoes que remexem varios itens — vale a passagem de reparo abaixo.
-   */
-  function commit(...movidos: string[]): void {
-    const itens = itensDaArvore();
-    if (movidos.length > 0 && numerarMovidos(itens, movidos)) return;
-
-    /*
-     * Passagem de reparo: mantem o numero de quem ja expressa a propria posicao
-     * e so numera quem ficou fora de ordem.
-     */
-    let anterior = 0;
-    for (let i = 0; i < itens.length; i++) {
-      const atual = itens[i];
-      if (!atual) continue;
-      if (atual.order !== undefined && atual.order > anterior) {
-        anterior = atual.order;
-        continue;
-      }
-      const teto = itens.slice(i + 1).find((t) => t.order !== undefined && t.order > anterior)?.order;
-      const meio = teto === undefined ? anterior + orderStep : Math.floor((anterior + teto) / 2);
-      if (meio > anterior && (teto === undefined || meio < teto)) {
-        atual.order = meio;
-        anterior = meio;
-        continue;
-      }
-      for (let j = i; j < itens.length; j++) {
-        const item = itens[j];
-        if (!item) continue;
-        if (j > i && item.order !== undefined && item.order > anterior) break;
-        anterior += orderStep;
-        item.order = anterior;
-      }
-    }
-  }
-
-  /**
-   * Poe o bloco movido entre os vizinhos, alterando so ele quando da.
-   *
-   * O bloco e uma tarefa, ou os membros de um grupo que se moveu inteiro — que
-   * na lista plana ficam contiguos. Devolve `false` quando nao ha como expressar
-   * a posicao mexendo so no bloco — porque falta espaco entre os vizinhos, ou
-   * porque os vizinhos anteriores nem numero tem. Nesse caso quem chama cai na
-   * passagem de reparo.
-   */
-  function numerarMovidos(itens: Task[], movidos: readonly string[]): boolean {
-    const i = itens.findIndex((t) => t.id === movidos[0]);
-    if (i < 0) return false;
-    const fim = i + movidos.length - 1;
-    if (!movidos.every((id, k) => itens[i + k]?.id === id)) return false;
-
-    const antes = itens[i - 1];
-    const depois = itens[fim + 1];
-
-    /*
-     * Um item sem numero a frente nao atrapalha: sem `order` ele ja vai para o
-     * fim. Mas um item sem numero **atras** atrapalha, porque numerar o movido
-     * o jogaria na frente de quem nao tem numero.
-     *
-     * Quando isso acontece — o caso de um projeto onde ninguem priorizou ainda —
-     * a saida e numerar o **prefixo** ate o movido, e nao a lista inteira. Quem
-     * vem depois continua sem numero, indo para o fim na ordem em que ja estava.
-     */
-    if (i > 0 && (antes === undefined || antes.order === undefined)) {
-      let valor = 0;
-      for (let j = 0; j <= fim; j++) {
-        const item = itens[j];
-        if (!item) continue;
-        if (item.order !== undefined && item.order > valor) {
-          valor = item.order;
-          continue;
-        }
-        valor += orderStep;
-        item.order = valor;
-      }
-      return true;
-    }
-
-    const piso = antes?.order ?? 0;
-    const teto = depois?.order;
-    const total = movidos.length;
-
-    // Cada movido precisa de um inteiro proprio estritamente entre os vizinhos
-    if (teto !== undefined && teto - piso < total + 1) return false;
-
-    for (let k = 0; k < total; k++) {
-      const item = itens[i + k];
-      if (!item) return false;
-      item.order =
-        teto === undefined ? piso + orderStep * (k + 1) : piso + Math.floor(((teto - piso) * (k + 1)) / (total + 1));
-    }
-    return true;
   }
 
   const changedTasks = computed<Task[]>(() =>
@@ -342,10 +238,30 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     baseline.value = new Map(flat.map((task) => [task.id, snapshotOf(task)]));
   }
 
-  /** Records a pre-mutation snapshot for undo, and invalidates any pending redo. */
-  function pushHistory(snapshot: PriorityNode[]): void {
-    history.value = [...history.value, snapshot].slice(-MAX_HISTORY_SIZE);
+  function valoresAtuais(): Map<string, ValoresDaTarefa> {
+    return new Map(flattenPriorityTree(treeInternal.value).map((task) => [task.id, valoresDe(task)]));
+  }
+
+  /** Records the values before a mutation for undo, and invalidates any pending redo. */
+  function pushHistory(): void {
+    history.value = [...history.value, valoresAtuais()].slice(-MAX_HISTORY_SIZE);
     future.value = [];
+  }
+
+  /** Reescreve na arvore os valores guardados das tarefas que eles cobrem. */
+  function aplicarValores(valores: Map<string, ValoresDaTarefa>): void {
+    const tarefas = flattenPriorityTree(treeInternal.value).map((task) => {
+      const v = valores.get(task.id);
+      if (!v) return task;
+      return {
+        ...task,
+        order: v.order,
+        difficulty: v.difficulty,
+        parent: v.parentId ? { type: 'group' as const, id: v.parentId as GroupId } : undefined,
+        groupName: v.groupName,
+      };
+    });
+    treeInternal.value = buildPriorityTree(tarefas, collapsedGroups.value);
   }
 
   const canUndo = computed(() => history.value.length > 0);
@@ -354,17 +270,26 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   function undo(): void {
     const previous = history.value.at(-1);
     if (!previous) return;
-    future.value = [...future.value, cloneTree(treeInternal.value)].slice(-MAX_HISTORY_SIZE);
+    future.value = [...future.value, valoresAtuais()].slice(-MAX_HISTORY_SIZE);
     history.value = history.value.slice(0, -1);
-    treeInternal.value = previous;
+    aplicarValores(previous);
   }
 
   function redo(): void {
     const next = future.value.at(-1);
     if (!next) return;
-    history.value = [...history.value, cloneTree(treeInternal.value)].slice(-MAX_HISTORY_SIZE);
+    history.value = [...history.value, valoresAtuais()].slice(-MAX_HISTORY_SIZE);
     future.value = future.value.slice(0, -1);
-    treeInternal.value = next;
+    aplicarValores(next);
+  }
+
+  /**
+   * Manda um movimento ao dominio. A arvore nao se mexe aqui: os numeros vem
+   * da operacao, na lista de tarefas que volta.
+   */
+  function mover(movimento: MovimentoDoQuadro): void {
+    pushHistory();
+    options.onMove?.(movimento);
   }
 
   /** Recursively finds a task within the tree, returning its container array, index, and parent group. */
@@ -473,58 +398,50 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   function setDifficulty(taskId: string, difficulty: 1 | 2 | 3 | 4 | 5): void {
     const loc = findTaskLocation(treeInternal.value, taskId);
     if (!loc) return;
-    pushHistory(cloneTree(treeInternal.value));
+    pushHistory();
     const node = loc.container[loc.index];
     if (node?.kind !== 'task') return;
     node.task = { ...node.task, difficulty };
   }
 
-  function moveBefore(draggedId: string, targetId: string): void {
+  /**
+   * Arrastar uma tarefa para antes ou depois de outra.
+   *
+   * O numero vem do dominio (`move-before`/`move-after`). Aqui so muda o que o
+   * dominio nao move: cair ao lado de uma tarefa de outro grupo — ou solta —
+   * leva a arrastada para o grupo dela.
+   */
+  function moverTarefaAoLado(draggedId: string, targetId: string, lado: LadoDoMovimento): void {
     if (draggedId === targetId) return;
-    const preSnapshot = cloneTree(treeInternal.value);
+    const origem = findTaskLocation(treeInternal.value, draggedId);
+    const alvo = findTaskLocation(treeInternal.value, targetId);
+    if (!origem || !alvo) return;
+
+    const grupoDoAlvo = alvo.parentGroup?.groupId;
+    if (origem.parentGroup?.groupId === grupoDoAlvo) {
+      mover({ kind: 'task', id: draggedId, lado, targetId });
+      return;
+    }
+
     const nodes = cloneTree(treeInternal.value);
     const task = removeTaskById(nodes, draggedId);
     if (!task) return;
     const loc = findTaskLocation(nodes, targetId);
-    if (!loc) {
-      nodes.push({ kind: 'task', task });
-    } else {
-      const parentGroup = loc.parentGroup;
-      loc.container.splice(loc.index, 0, {
-        kind: 'task',
-        task: {
-          ...task,
-          parent: parentGroup ? { type: 'group', id: parentGroup.groupId } : undefined,
-        },
-      });
-    }
-    pushHistory(preSnapshot);
+    if (!loc) return;
+    loc.container.splice(lado === 'before' ? loc.index : loc.index + 1, 0, {
+      kind: 'task',
+      task: { ...task, parent: grupoDoAlvo ? { type: 'group', id: grupoDoAlvo } : undefined },
+    });
+    mover({ kind: 'task', id: draggedId, lado, targetId });
     treeInternal.value = nodes;
-    commit(draggedId);
+  }
+
+  function moveBefore(draggedId: string, targetId: string): void {
+    moverTarefaAoLado(draggedId, targetId, 'before');
   }
 
   function moveAfter(draggedId: string, targetId: string): void {
-    if (draggedId === targetId) return;
-    const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = cloneTree(treeInternal.value);
-    const task = removeTaskById(nodes, draggedId);
-    if (!task) return;
-    const loc = findTaskLocation(nodes, targetId);
-    if (!loc) {
-      nodes.push({ kind: 'task', task });
-    } else {
-      const parentGroup = loc.parentGroup;
-      loc.container.splice(loc.index + 1, 0, {
-        kind: 'task',
-        task: {
-          ...task,
-          parent: parentGroup ? { type: 'group', id: parentGroup.groupId } : undefined,
-        },
-      });
-    }
-    pushHistory(preSnapshot);
-    treeInternal.value = nodes;
-    commit();
+    moverTarefaAoLado(draggedId, targetId, 'after');
   }
 
   /** Finds the array (top-level or group.items) that contains a group node — used to locate sibling groups. */
@@ -562,7 +479,6 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   function groupWith(draggedId: string, targetId: string): void {
     if (draggedId === targetId) return;
 
-    const preSnapshot = cloneTree(treeInternal.value);
     const nodes = cloneTree(treeInternal.value);
 
     // 1. Locate both tasks before any mutation.
@@ -599,9 +515,8 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
       const maxIdx = Math.max(draggedIdx, targetIdx);
       container.splice(minIdx, maxIdx - minIdx + 1, newParent);
 
-      pushHistory(preSnapshot);
+      pushHistory();
       treeInternal.value = nodes;
-      commit();
       return;
     }
 
@@ -636,9 +551,8 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
       // Replace the two tasks with the subgroup
       draggedLoc.container.splice(minIdx, maxIdx - minIdx + 1, subgroup);
 
-      pushHistory(preSnapshot);
+      pushHistory();
       treeInternal.value = nodes;
-      commit();
       return;
     }
 
@@ -650,18 +564,16 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const loc = findTaskLocation(nodes, targetId);
     if (!loc) {
       nodes.push({ kind: 'task', task });
-      pushHistory(preSnapshot);
+      pushHistory();
       treeInternal.value = nodes;
-      commit();
       return;
     }
 
     const targetNodeAfter = loc.container[loc.index];
     if (targetNodeAfter?.kind !== 'task') {
       nodes.push({ kind: 'task', task });
-      pushHistory(preSnapshot);
+      pushHistory();
       treeInternal.value = nodes;
-      commit();
       return;
     }
 
@@ -692,9 +604,8 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
       });
     }
 
-    pushHistory(preSnapshot);
+    pushHistory();
     treeInternal.value = nodes;
-    commit();
   }
 
   /** Drag a card directly onto an existing group (its container, or any of its members) to join it. */
@@ -703,7 +614,6 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     if (!targetGroup) return;
     if (targetGroup.items.some((n) => n.kind === 'task' && n.task.id === taskId)) return;
 
-    const preSnapshot = cloneTree(treeInternal.value);
     const nodes = cloneTree(treeInternal.value);
     const task = removeTaskById(nodes, taskId);
     if (!task) return;
@@ -721,65 +631,36 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
       });
     }
 
-    pushHistory(preSnapshot);
+    pushHistory();
     treeInternal.value = nodes;
-    commit();
   }
 
-  /** Move an entire group (all its items) to before a target task or group. */
+  /**
+   * Arrastar um grupo inteiro para antes ou depois de uma tarefa ou de outro
+   * grupo (`move-group-before`/`move-group-after`, task-117).
+   *
+   * Cair sobre um membro de outro grupo e cair sobre aquele grupo: o dominio
+   * recusa uma tarefa agrupada como alvo, e e o grupo dela que ocupa a linha.
+   */
+  function moverGrupoAoLado(movedGroupId: string, targetId: string, lado: LadoDoMovimento): void {
+    if (movedGroupId === targetId) return;
+    if (!findGroupById(treeInternal.value, movedGroupId)) return;
+
+    const alvo = findGroupById(treeInternal.value, targetId)
+      ? targetId
+      : (findTaskLocation(treeInternal.value, targetId)?.parentGroup?.groupId ?? targetId);
+    if (alvo === movedGroupId) return;
+    if (!findNodeLocation(treeInternal.value, alvo)) return;
+
+    mover({ kind: 'group', id: movedGroupId, lado, targetId: alvo });
+  }
+
   function moveGroupBefore(movedGroupId: string, targetId: string): void {
-    const group = findGroupById(treeInternal.value, movedGroupId);
-    if (!group) return;
-    if (movedGroupId === targetId) return;
-
-    const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = cloneTree(treeInternal.value);
-
-    const container = findGroupContainer(nodes, movedGroupId);
-    if (!container) return;
-    const groupIdx = container.findIndex((n) => n.kind === 'group' && n.groupId === movedGroupId);
-    if (groupIdx === -1) return;
-    const [movedGroup] = container.splice(groupIdx, 1);
-    if (!movedGroup) return;
-
-    const targetLoc = findNodeLocation(nodes, targetId);
-    if (!targetLoc) {
-      container.push(movedGroup);
-    } else {
-      targetLoc.container.splice(targetLoc.index, 0, movedGroup);
-    }
-
-    pushHistory(preSnapshot);
-    treeInternal.value = nodes;
-    commit();
+    moverGrupoAoLado(movedGroupId, targetId, 'before');
   }
 
-  /** Move an entire group to after a target task or group. */
   function moveGroupAfter(movedGroupId: string, targetId: string): void {
-    const group = findGroupById(treeInternal.value, movedGroupId);
-    if (!group) return;
-    if (movedGroupId === targetId) return;
-
-    const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = cloneTree(treeInternal.value);
-
-    const container = findGroupContainer(nodes, movedGroupId);
-    if (!container) return;
-    const groupIdx = container.findIndex((n) => n.kind === 'group' && n.groupId === movedGroupId);
-    if (groupIdx === -1) return;
-    const [movedGroup] = container.splice(groupIdx, 1);
-    if (!movedGroup) return;
-
-    const targetLoc = findNodeLocation(nodes, targetId);
-    if (!targetLoc) {
-      container.push(movedGroup);
-    } else {
-      targetLoc.container.splice(targetLoc.index + 1, 0, movedGroup);
-    }
-
-    pushHistory(preSnapshot);
-    treeInternal.value = nodes;
-    commit();
+    moverGrupoAoLado(movedGroupId, targetId, 'after');
   }
 
   /** Nest two groups at the same level under a new parent group. */
@@ -790,7 +671,6 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const targetGroup = findGroupById(treeInternal.value, targetGroupId);
     if (!draggedGroup || !targetGroup) return;
 
-    const preSnapshot = cloneTree(treeInternal.value);
     const nodes = cloneTree(treeInternal.value);
 
     const container = findGroupContainer(nodes, targetGroupId);
@@ -817,55 +697,8 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     container.splice(second, 1);
     container.splice(first, 1, newParent);
 
-    pushHistory(preSnapshot);
+    pushHistory();
     treeInternal.value = nodes;
-    commit();
-  }
-
-  /** Swap a node (task or group) with its previous sibling — decreases order / moves up. */
-  function moveUp(id: string): void {
-    const loc = findNodeLocation(treeInternal.value, id);
-    if (!loc || loc.index === 0) return;
-
-    const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = cloneTree(treeInternal.value);
-
-    const loc2 = findNodeLocation(nodes, id);
-    if (!loc2 || loc2.index === 0) return;
-
-    const prev = loc2.container[loc2.index - 1];
-    const current = loc2.container[loc2.index];
-    if (!prev || !current) return;
-
-    loc2.container[loc2.index - 1] = current;
-    loc2.container[loc2.index] = prev;
-
-    pushHistory(preSnapshot);
-    treeInternal.value = nodes;
-    commit(id);
-  }
-
-  /** Swap a node (task or group) with its next sibling — increases order / moves down. */
-  function moveDown(id: string): void {
-    const loc = findNodeLocation(treeInternal.value, id);
-    if (!loc || loc.index >= loc.container.length - 1) return;
-
-    const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = cloneTree(treeInternal.value);
-
-    const loc2 = findNodeLocation(nodes, id);
-    if (!loc2 || loc2.index >= loc2.container.length - 1) return;
-
-    const next = loc2.container[loc2.index + 1];
-    const current = loc2.container[loc2.index];
-    if (!next || !current) return;
-
-    loc2.container[loc2.index + 1] = current;
-    loc2.container[loc2.index] = next;
-
-    pushHistory(preSnapshot);
-    treeInternal.value = nodes;
-    commit(id);
   }
 
   /** Ids das tarefas de um no, na ordem em que aparecem na lista plana. */
@@ -879,56 +712,82 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   }
 
   /**
-   * Leva um no para o topo ou para o fim da lista **visivel** em que ele esta.
+   * A tarefa que serve de referencia para um `move-before`/`move-after` que
+   * cai ao lado de `alvo`. Um grupo vale pelo primeiro membro (antes) ou pelo
+   * ultimo (depois) — contando os que o filtro esconde, para a tarefa nao
+   * parar no meio do grupo.
+   */
+  function tarefaDeReferencia(alvo: PriorityNode, lado: LadoDoMovimento): string | undefined {
+    if (alvo.kind === 'task') return alvo.task.id;
+    const ids = idsDoNo(findGroupById(treeInternal.value, alvo.groupId) ?? alvo);
+    return lado === 'before' ? ids[0] : ids.at(-1);
+  }
+
+  /**
+   * Leva um no para cima, para baixo, para o topo ou para o fim da lista
+   * **visivel** em que ele esta — mandando ao dominio um `move-before` ou
+   * `move-after` que tem como referencia a linha vizinha, a primeira ou a
+   * ultima que a pessoa esta vendo.
    *
-   * "Visivel" e o `tree` ja filtrado: o destino e antes da primeira (ou depois
-   * da ultima) linha irma que a pessoa esta vendo, e nao o extremo da lista
-   * inteira — senao a tarefa sumiria de vista ao se mover. "Irma" quer dizer do
-   * mesmo contêiner: uma tarefa agrupada vai ao topo do **proprio grupo**, e um
-   * grupo aninhado ao topo do grupo que o contem; para subir na lista de fora,
-   * o grupo inteiro tem os proprios botoes.
+   * "Visivel" e o `tree` ja filtrado: com filtro, o topo e antes da primeira
+   * linha que se ve, e nao o extremo da lista inteira — senao a tarefa sumiria
+   * de vista ao se mover (task-101). Sem filtro, antes da primeira linha e o
+   * `move-to-top` do dominio. "Irma" quer dizer do mesmo contêiner: uma tarefa
+   * agrupada se move dentro do **proprio grupo**; para sair dele, o grupo
+   * inteiro tem os proprios botoes.
    *
    * Fora do modo `manual` nao faz nada: a exibicao segue a dificuldade, entao
    * mexer na prioridade nao levaria a linha a lugar nenhum que se veja.
    */
-  function moverParaExtremo(id: string, kind: PriorityNode['kind'], extremo: 'topo' | 'fim'): void {
+  function moverNaListaVisivel(
+    id: string,
+    destino: 'acima' | 'abaixo' | 'topo' | 'fim',
+    kind?: PriorityNode['kind'],
+  ): void {
     if (sortMode.value !== 'manual') return;
 
     const visivel = findNodeLocation(tree.value, id);
-    if (!visivel || visivel.container[visivel.index]?.kind !== kind) return;
-    const alvo = extremo === 'topo' ? visivel.container[0] : visivel.container.at(-1);
-    if (!alvo || idDoNo(alvo) === id) return;
+    const no = visivel?.container[visivel.index];
+    if (!visivel || !no || (kind && no.kind !== kind)) return;
 
-    const preSnapshot = cloneTree(treeInternal.value);
-    const nodes = cloneTree(treeInternal.value);
+    const { container, index } = visivel;
+    const vizinho = {
+      acima: container[index - 1],
+      abaixo: container[index + 1],
+      topo: container[0],
+      fim: container.at(-1),
+    }[destino];
+    if (!vizinho || idDoNo(vizinho) === id) return;
 
-    const origem = findNodeLocation(nodes, id);
-    if (!origem) return;
-    const [movido] = origem.container.splice(origem.index, 1);
-    if (!movido) return;
-    const destino = findNodeLocation(nodes, idDoNo(alvo));
-    if (!destino) return;
-    destino.container.splice(extremo === 'topo' ? destino.index : destino.index + 1, 0, movido);
+    const lado: LadoDoMovimento = destino === 'acima' || destino === 'topo' ? 'before' : 'after';
+    const targetId = no.kind === 'group' ? idDoNo(vizinho) : tarefaDeReferencia(vizinho, lado);
+    if (!targetId) return;
 
-    pushHistory(preSnapshot);
-    treeInternal.value = nodes;
-    commit(...idsDoNo(movido));
+    mover({ kind: no.kind, id, lado, targetId });
+  }
+
+  function moveUp(id: string): void {
+    moverNaListaVisivel(id, 'acima');
+  }
+
+  function moveDown(id: string): void {
+    moverNaListaVisivel(id, 'abaixo');
   }
 
   function moveToTop(id: string): void {
-    moverParaExtremo(id, 'task', 'topo');
+    moverNaListaVisivel(id, 'topo', 'task');
   }
 
   function moveToBottom(id: string): void {
-    moverParaExtremo(id, 'task', 'fim');
+    moverNaListaVisivel(id, 'fim', 'task');
   }
 
   function moveGroupToTop(groupId: string): void {
-    moverParaExtremo(groupId, 'group', 'topo');
+    moverNaListaVisivel(groupId, 'topo', 'group');
   }
 
   function moveGroupToBottom(groupId: string): void {
-    moverParaExtremo(groupId, 'group', 'fim');
+    moverNaListaVisivel(groupId, 'fim', 'group');
   }
 
   /** Dissolve a group: remove the group wrapper and promote its items in-place. */
@@ -936,7 +795,6 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     const group = findGroupById(treeInternal.value, groupId);
     if (!group) return;
 
-    const preSnapshot = cloneTree(treeInternal.value);
     const nodes = cloneTree(treeInternal.value);
 
     const container = findGroupContainer(nodes, groupId);
@@ -947,17 +805,15 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
     container.splice(idx, 1, ...groupNode.items);
 
-    pushHistory(preSnapshot);
+    pushHistory();
     treeInternal.value = nodes;
-    commit();
   }
 
   function renameGroup(groupId: string, name: string | null): void {
     const node = findGroupById(treeInternal.value, groupId);
     if (!node) return;
-    pushHistory(cloneTree(treeInternal.value));
+    pushHistory();
     node.groupName = name;
-    commit();
   }
 
   function exportJson(): string {
