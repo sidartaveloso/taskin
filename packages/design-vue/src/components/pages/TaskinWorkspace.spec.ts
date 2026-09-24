@@ -1,6 +1,7 @@
 import { parseTaskId } from '@opentask/taskin-types';
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { defineComponent, h } from 'vue';
 import type { Task } from '../../types';
 import TaskinWorkspace from './TaskinWorkspace.vue';
 
@@ -13,19 +14,24 @@ const tarefa = (id: string): Task => ({
   dates: { created: new Date('2026-09-24') },
 });
 
-const DashboardStub = {
+/*
+ * Os substitutos desenham por `h`, e nao por `template` em texto: o `design-vue`
+ * roda estes testes no Chromium, com o Vue sem compilador em tempo de execucao,
+ * e ali um `template` em texto nao renderiza nada.
+ */
+const DashboardStub = defineComponent({
   name: 'Dashboard',
   props: ['tasks', 'title', 'isLoading', 'showConnection', 'gridTitle'],
   emits: ['retry'],
-  template: '<div data-testid="board">{{ tasks.length }}</div>',
-};
+  setup: (props) => () => h('div', { 'data-testid': 'board' }, String(props.tasks.length)),
+});
 
-const PrioritizationPageStub = {
+const PrioritizationPageStub = defineComponent({
   name: 'PrioritizationPage',
   props: ['tasks', 'groups', 'sortMode'],
   emits: ['update-task', 'update-group', 'move'],
-  template: '<div data-testid="prioritization">{{ tasks.length }}</div>',
-};
+  setup: (props) => () => h('div', { 'data-testid': 'prioritization' }, String(props.tasks.length)),
+});
 
 function montar(props: Partial<InstanceType<typeof TaskinWorkspace>['$props']> = {}) {
   return mount(TaskinWorkspace, {
