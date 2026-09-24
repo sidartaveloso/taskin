@@ -177,6 +177,17 @@ export function createDashboardApp({
   return app;
 }
 
+class PortsExhaustedError extends Error {}
+
+function isAddressInUse(err: unknown): boolean {
+  return (err as { code?: string } | null)?.code === 'EADDRINUSE';
+}
+
+/** Tells the user which flag picks another port, with a ready-to-run example. */
+function printPortHint(flag: '--port' | '--ws-port', suggestedPort: number): void {
+  info(`Use ${flag} <port> to choose another port, e.g. taskin dashboard ${flag} ${suggestedPort}`);
+}
+
 async function startHttpServer(
   app: express.Express,
   startPort: number,
@@ -193,8 +204,7 @@ async function startHttpServer(
       });
       return { server, port: tryPort };
     } catch (err) {
-      const nodeErr = err as { code?: string };
-      if (nodeErr.code !== 'EADDRINUSE') {
+      if (!isAddressInUse(err)) {
         throw err;
       }
       if (attempt < maxAttempts - 1) {
@@ -202,7 +212,7 @@ async function startHttpServer(
       }
     }
   }
-  throw new Error(
+  throw new PortsExhaustedError(
     `Could not find an available port after ${maxAttempts} attempts (tried ${startPort}-${startPort + maxAttempts - 1})`,
   );
 }
@@ -335,7 +345,17 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       },
     });
 
-    await wsServer.start();
+    try {
+      await wsServer.start();
+    } catch (err) {
+      if (!isAddressInUse(err)) {
+        throw err;
+      }
+      error(`WebSocket port ${wsPort} is already in use`);
+      printPortHint('--ws-port', wsPort + 1);
+      process.exit(1);
+      return;
+    }
     success(`WebSocket server running on ws://${host}:${wsPort}`);
 
     // Start HTTP server for dashboard
@@ -361,7 +381,21 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       prioritize: (opcoes) => new TaskManager(provider).prioritizeAll(opcoes),
     });
 
-    const { server: httpServer, port: actualPort } = await startHttpServer(app, port, host);
+    const maxHttpAttempts = 10;
+    let started: { server: Server; port: number };
+    try {
+      started = await startHttpServer(app, port, host, maxHttpAttempts);
+    } catch (err) {
+      if (!(err instanceof PortsExhaustedError)) {
+        throw err;
+      }
+      error(err.message);
+      printPortHint('--port', port + maxHttpAttempts);
+      await wsServer.stop();
+      process.exit(1);
+      return;
+    }
+    const { server: httpServer, port: actualPort } = started;
 
     if (actualPort !== port) {
       warning(`Port ${port} was in use. Dashboard started on port ${actualPort}.`);
