@@ -1,6 +1,6 @@
 # 🧩 Task 133 — Os avisos do Vite e do Storybook ao subir e compilar: __dirname e vue-docgen-api
 
-- Status: pending
+- Status: in-progress
 - Type: chore
 - Assignee: sidartaveloso
 
