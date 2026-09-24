@@ -91,6 +91,17 @@ describe('the exceptions', () => {
     expect(issue?.suggestion).toContain('palettegen');
   });
 
+  it('growth smaller than a KB still reads as growth — the message falls back to bytes', async () => {
+    // seen on a real repository: "exempt at 536 KB, but grew to 536 KB"
+    attachment('assets/old.png', 2_000 * KB + 1);
+    exceptions({ exceptions: { 'assets/old.png': { bytes: 2_000 * KB, reason: REASON } } });
+
+    const [issue] = await validator().validate();
+
+    expect(issue?.message).toContain(`${2_000 * KB} bytes`);
+    expect(issue?.message).toContain(`${2_000 * KB + 1} bytes`);
+  });
+
   it('an entry whose file is gone fails, asking for the entry to be removed', async () => {
     exceptions({ exceptions: { 'assets/deleted.png': { bytes: 2_000 * KB, reason: REASON } } });
 
