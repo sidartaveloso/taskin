@@ -9,9 +9,16 @@ pnpm storybook em packages/dashboard sai com 'Failed to load static files, no su
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [x] Reproduzido: `pnpm storybook` em `packages/dashboard` saia com `Failed to load static files, no such directory: ./public`. A pasta nunca esteve no git (`git log --all -- 'packages/dashboard/public/*'` vazio)
+- [x] Removido o `staticDirs` de `packages/dashboard/.storybook/main.ts`, com o motivo no comentario
+- [x] Conferido: `pnpm storybook --ci --port 6199` chegou a `Storybook ready!`, o `index.json` listou 13 entradas, e a story `example-button--primary` renderizou sem erro (a faixa de erro do Storybook com `display: none`, console sem erros)
 
 ## Notes
-Add any relevant notes or links here.
+
+### O que o Storybook do pacote tem
+
+So as stories de exemplo que o `storybook init` gera (`src/stories/Button`,
+`Header`, `Page` e `Configure.mdx`) e o `src/Introduction.mdx`: nenhuma e do
+dashboard. As stories de verdade dos componentes vivem no `design-vue` e no
+Storybook da raiz. Se este Storybook do pacote deve continuar existindo e uma
+decisao a tomar a parte — esta task so o faz subir.
