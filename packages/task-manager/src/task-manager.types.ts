@@ -1,4 +1,4 @@
-import type { Task, TaskId, TaskType } from '@opentask/taskin-types';
+import type { GroupId, Task, TaskId, TaskType } from '@opentask/taskin-types';
 import type { IGroupRegistry } from './group-registry.types.js';
 
 /**
@@ -239,6 +239,44 @@ export interface ITaskManager<TTask extends Task = Task> {
     withoutPriority: number;
     changed: number;
   }>;
+
+  /**
+   * Poe a tarefa num grupo que ja existe.
+   *
+   * Operacao nomeada, e nao um `updateTask` com outro `groupId`, pelo motivo
+   * registrado em `docs/RDT/superficies-derivam-do-mesmo-contrato.md`: o que so
+   * existe como escrita generica chega a uma superficie e nao as outras.
+   *
+   * @throws Error quando o provider nao tem grupos, ou a tarefa ou o grupo nao existem
+   */
+  assignToGroup: (taskId: TaskId, groupId: GroupId) => Promise<TTask>;
+
+  /**
+   * Tira a tarefa do grupo em que estiver. Sem grupo, nao muda nada.
+   *
+   * @throws Error quando o provider nao tem grupos, ou a tarefa nao existe
+   */
+  removeFromGroup: (taskId: TaskId) => Promise<TTask>;
+
+  /**
+   * Da a tarefa um numero de prioridade absoluto — menor vem antes.
+   *
+   * @throws Error quando o numero nao e inteiro entre 1 e o maior inteiro seguro
+   */
+  setPriority: (taskId: TaskId, priority: number) => Promise<TTask>;
+
+  /**
+   * Poe a tarefa imediatamente antes da referencia na fila.
+   *
+   * Grava so o que muda: normalmente um arquivo, a vizinhanca quando nao ha
+   * espaco entre os numeros, e nunca as tarefas sem numero depois do ponto.
+   *
+   * @returns A tarefa movida, e quantas tarefas foram gravadas
+   */
+  moveBefore: (taskId: TaskId, targetId: TaskId) => Promise<{ task: TTask; changed: number }>;
+
+  /** Como {@link ITaskManager.moveBefore}, do outro lado da referencia. */
+  moveAfter: (taskId: TaskId, targetId: TaskId) => Promise<{ task: TTask; changed: number }>;
 
   /**
    * Mark a task as ready for review.

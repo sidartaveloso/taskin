@@ -107,6 +107,8 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `--type <type>` - Filter by task type
   - `-u, --assignee <assignee>` - Filter by assignee id or name, whole or in part
 - `taskin new` - Create a new task (alias: `create`)
+  - `-g, --group <group-id>` - Born in this existing group
+  - `-p, --priority <n>` - Born with this priority number
 - `taskin start <id>` - Start working on a task (suggests commits)
 - `taskin pause <id>` - Pause work on a task (auto-commits work in progress)
 - `taskin review <id>` - Mark a task as ready for review
@@ -126,6 +128,20 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `add <name> [--id <id>]` - Create a group
   - `rename <id> <name>` - Rename it; no task file is touched
   - `remove <id> [--reassign-to <id>]` - Delete it, saying where its tasks go
+  - `join <task-id> <group-id>` - Put a task in an existing group
+  - `leave <task-id>` - Take a task out of its group
+- `taskin priority <task-id> [n]` - Give one task its place in the queue; lower comes first. Exactly one of:
+  - `<n>` - An absolute number, a whole number from 1
+  - `--before <task-id>` - Right before that task
+  - `--after <task-id>` - Right after it
+
+  The relative forms are for when you know *what goes before what* and not which
+  number you want. They write only what changes — normally one file; the
+  neighbourhood when the numbers leave no room; never the unnumbered tasks past
+  the insertion point.
+
+  A provider without groups does not offer `join` and `leave`, and the CLI says
+  so in one line instead of failing.
 - `taskin prioritize` - Number every task's priority, once and on purpose
   - `--dry-run` - Report how many would be numbered, without writing
 - `taskin dashboard [options]` - Start the web dashboard (see [Avatars](#avatars))
@@ -229,6 +245,9 @@ install answers happily, with the wrong set of tools. Skip the check with
 - `list_tasks` - List tasks, with optional filters
 - `prioritize_tasks` - Give every task a priority number, once and on purpose
 - `list_groups` - List the task groups, each with its id and name
+- `join_group` - Put a task in an existing group (only offered when the provider has groups)
+- `leave_group` - Take a task out of its group (only offered when the provider has groups)
+- `set_priority` - Place one task: an absolute `priority`, or `before`/`after` another task
 
 The listing tools take the same `sort` vocabulary the prioritization board uses:
 `manual` (by priority), `diff-asc` and `diff-desc`. `taskin list --json` emits

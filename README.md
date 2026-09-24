@@ -134,6 +134,13 @@ taskin config --level assisted  # manual | assisted | autopilot
 taskin start task-01            # Suggests commits
 taskin pause task-01            # Auto-commits work, unless something looks sensitive
 taskin finish task-01           # Suggests commits
+
+# Group and prioritise, without editing the file by hand
+taskin group join 042 g-cli     # Put a task in an existing group
+taskin group leave 042          # Take it out
+taskin priority 042 150         # Absolute number, lower comes first
+taskin priority 042 --before 017  # Or relative: right before (or --after) another
+taskin new -t feat -T "Login" --group g-cli --priority 150  # Born in place
 ```
 
 #### 2. Dashboard with WebSocket

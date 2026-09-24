@@ -5,7 +5,7 @@ import type {
   ITaskProvider,
   LintResult,
 } from '@opentask/taskin-task-manager';
-import { parseTaskId, type Task, type TaskId } from '@opentask/taskin-types';
+import { type GroupId, parseTaskId, type Task, type TaskId } from '@opentask/taskin-types';
 import type { TaskServerConfig, WebSocketServerOptions } from './task-server-ws.types.js';
 
 const buildTask = (taskId: TaskId, overrides: Partial<Task> = {}): Task => ({
@@ -47,6 +47,26 @@ export class MockTaskManager implements ITaskManager {
 
   async prioritizeAll(): Promise<{ total: number; withoutPriority: number; changed: number }> {
     return { total: 0, withoutPriority: 0, changed: 0 };
+  }
+
+  async assignToGroup(taskId: TaskId, groupId: GroupId): Promise<Task> {
+    return buildTask(taskId, { groupId });
+  }
+
+  async removeFromGroup(taskId: TaskId): Promise<Task> {
+    return buildTask(taskId);
+  }
+
+  async setPriority(taskId: TaskId, priority: number): Promise<Task> {
+    return buildTask(taskId, { order: priority });
+  }
+
+  async moveBefore(taskId: TaskId): Promise<{ task: Task; changed: number }> {
+    return { task: buildTask(taskId), changed: 1 };
+  }
+
+  async moveAfter(taskId: TaskId): Promise<{ task: Task; changed: number }> {
+    return { task: buildTask(taskId), changed: 1 };
   }
 
   async reviewTask(taskId: TaskId): Promise<Task> {

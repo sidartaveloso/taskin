@@ -54,7 +54,11 @@ function ferramentasAnunciadas(markdown: string): Set<string> {
 
 describe('ferramentas documentadas', () => {
   const servidor = new TaskMCPServer({
-    taskManager: { getAllTasks: vi.fn(async () => []) } as unknown as ITaskManager,
+    /*
+     * Com registro de grupos: as ferramentas de grupo so sao anunciadas quando a
+     * fonte tem o conceito, e sem ele a guarda ficaria cega para elas.
+     */
+    taskManager: { getAllTasks: vi.fn(async () => []), groupRegistry: {} } as unknown as ITaskManager,
   });
   const implementadas = new Set(servidor.listTools().tools.map((t) => t.name));
 

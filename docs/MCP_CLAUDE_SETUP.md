@@ -73,7 +73,7 @@ Feche e abra o Claude Desktop para que as mudanças tenham efeito.
 
 ## Ferramentas Disponíveis
 
-O servidor expõe **três** ferramentas. Esta lista é verificada por teste contra
+O servidor expõe as ferramentas abaixo, e mais `list_groups` e `prioritize_tasks`. Esta lista é verificada por teste contra
 o que o servidor anuncia — se divergir, a suíte quebra.
 
 ### `list_tasks`
@@ -88,6 +88,27 @@ Aceita filtros, todos opcionais e cumulativos: `status`, `type`, `assignee`
 ```
 Liste as tasks em andamento
 Quais tasks são da Ana?
+```
+
+### `set_priority`
+
+Dá a uma task o seu lugar na fila. Recebe o `taskId` e **exatamente uma** de três
+formas: `priority` (um número absoluto, inteiro a partir de 1 — menor vem antes),
+`before` ou `after` (o id de outra task). As formas relativas gravam só o que
+muda: normalmente um arquivo.
+
+```
+Coloque a task 042 antes da 017
+```
+
+### `join_group` e `leave_group`
+
+Põe uma task num grupo que já existe, ou tira do grupo em que estiver. Só são
+anunciadas quando o provider tem o conceito de grupo; um grupo ou uma task que
+não existem são recusados dizendo qual.
+
+```
+Coloque a task 042 no grupo g-cli
 ```
 
 ### `start_task`

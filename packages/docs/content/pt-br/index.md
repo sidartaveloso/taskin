@@ -184,6 +184,12 @@ agente:  → finish_task(taskId: "042")
 O agente não sabe — nem precisa saber — se aquilo virou um arquivo alterado ou
 uma chamada REST. Quem resolve isso é o provider.
 
+O agente também organiza a fila que ele mesmo executa. `set_priority` coloca uma
+tarefa por número, ou logo `before` ou `after` de outra, e `join_group` /
+`leave_group` a movem entre grupos. O terminal tem as mesmas operações —
+`taskin priority 042 --before 017`, `taskin group join 042 g-cli` — e ninguém
+precisa editar o bloco de metadados à mão.
+
 Registrar o servidor é um comando:
 
 ```bash
@@ -199,7 +205,7 @@ errado de ferramentas, e responder não é o mesmo que responder certo.
 
 | pacote | o que faz |
 | --- | --- |
-| `taskin` | A CLI: `init`, `new`, `start`, `finish`, `lint`, `prioritize`, `dashboard`, `mcp-install`, `mcp-server` |
+| `taskin` | A CLI: `init`, `new`, `start`, `finish`, `lint`, `prioritize`, `priority`, `group`, `dashboard`, `mcp-install`, `mcp-server` |
 | `@opentask/taskin-types` | Schemas Zod e tipos do domínio |
 | `@opentask/taskin-task-manager` | As transições de estado e o contrato `ITaskProvider` |
 | `@opentask/taskin-file-system-provider` | O provider padrão, em markdown |

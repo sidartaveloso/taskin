@@ -2,12 +2,13 @@
  * `taskin group` — criar, listar, renomear e apagar grupos de tarefas.
  */
 
-import type { IGroupRegistry } from '@opentask/taskin-task-manager';
+import { GROUPS_NOT_SUPPORTED, type IGroupRegistry, TaskManager } from '@opentask/taskin-task-manager';
 import { parseGroupId } from '@opentask/taskin-types';
 import type { Command } from 'commander';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
+import { exigirTaskId } from './priority.js';
 
 /**
  * Nem toda fonte tem o conceito de grupo.
@@ -23,11 +24,39 @@ async function registro(): Promise<IGroupRegistry> {
   const candidato = (provider as { groupRegistry?: IGroupRegistry }).groupRegistry;
 
   if (!candidato) {
-    error('This project’s provider does not support task groups.');
+    error(GROUPS_NOT_SUPPORTED);
     process.exit(1);
   }
 
   return candidato;
+}
+
+/**
+ * Para as operacoes que tocam uma tarefa: o manager, depois da mesma checagem
+ * de capacidade do {@link registro}. A regra — grupo existe, tarefa existe —
+ * mora no dominio, e o servidor MCP a usa igual.
+ */
+async function gerente(): Promise<TaskManager> {
+  requireTaskinProject();
+  const { provider } = await resolveTaskProvider();
+  const manager = new TaskManager(provider);
+
+  if (!manager.groupRegistry) {
+    error(GROUPS_NOT_SUPPORTED);
+    process.exit(1);
+  }
+
+  return manager;
+}
+
+/** Uma recusa do dominio vira uma linha de erro e saida 1, e nao uma pilha. */
+async function ouSair<T>(operacao: Promise<T>): Promise<T> {
+  try {
+    return await operacao;
+  } catch (falha) {
+    error(falha instanceof Error ? falha.message : String(falha));
+    process.exit(1);
+  }
 }
 
 /**
@@ -80,6 +109,26 @@ export function registerGroupCommand(program: Command): void {
        */
       await (await registro()).renameGroup(parseGroupId(id), name);
       success(`Renamed ${id} to "${name}" \u2014 no task file was touched.`);
+    });
+
+  cmd
+    .command('join <task-id> <group-id>')
+    .description('Put a task in an existing group')
+    .action(async (taskId: string, groupId: string) => {
+      const id = exigirTaskId(taskId);
+      const manager = await gerente();
+      await ouSair(manager.assignToGroup(id, parseGroupId(groupId)));
+      success(`Task ${id} is now in group ${groupId}.`);
+    });
+
+  cmd
+    .command('leave <task-id>')
+    .description('Take a task out of its group')
+    .action(async (taskId: string) => {
+      const id = exigirTaskId(taskId);
+      const manager = await gerente();
+      await ouSair(manager.removeFromGroup(id));
+      success(`Task ${id} is no longer in a group.`);
     });
 
   cmd

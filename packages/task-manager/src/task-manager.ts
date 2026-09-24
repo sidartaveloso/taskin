@@ -1,6 +1,7 @@
-import type { Task, TaskId, TaskStatus } from '@opentask/taskin-types';
+import type { GroupId, Task, TaskId, TaskStatus } from '@opentask/taskin-types';
 import type { IGroupRegistry } from './group-registry.types';
 import { numerarPrioridade } from './numerar-prioridade/index';
+import { type LadoDaReferencia, posicionarPrioridade, validarPrioridade } from './posicionar-prioridade/index';
 import type {
   CreateTaskOptions,
   CreateTaskResult,
@@ -9,6 +10,14 @@ import type {
   ITaskProvider,
   LintResult,
 } from './task-manager.types';
+
+/**
+ * A frase com que toda superficie recusa uma operacao de grupo num provider sem
+ * o conceito. Uma so, para a CLI e o MCP dizerem a mesma coisa.
+ *
+ * @public
+ */
+export const GROUPS_NOT_SUPPORTED = 'This project’s provider does not support task groups.';
 
 /**
  * Orchestrates task state transitions on top of any {@link ITaskProvider}.
@@ -112,6 +121,77 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     }
 
     return { total: tarefas.length, withoutPriority: semNumero, changed: mudancas.length };
+  }
+
+  private async exigirTarefa(taskId: TaskId): Promise<TTask> {
+    const task = await this.taskProvider.findTask(taskId);
+    if (!task) throw new Error(`Task with ID '${taskId}' not found.`);
+    return task;
+  }
+
+  private exigirRegistro(): IGroupRegistry {
+    const registro = this.groupRegistry;
+    if (!registro) throw new Error(GROUPS_NOT_SUPPORTED);
+    return registro;
+  }
+
+  async assignToGroup(taskId: TaskId, groupId: GroupId): Promise<TTask> {
+    const registro = this.exigirRegistro();
+    const task = await this.exigirTarefa(taskId);
+
+    /*
+     * Conferir antes de gravar: tarefa apontando para um grupo que nao existe
+     * e o estado que o `lint` avisa depois, e aqui da para nao cria-lo.
+     */
+    if (!(await registro.findGroup(groupId))) {
+      throw new Error(`Group '${groupId}' does not exist. See "taskin group list".`);
+    }
+
+    const atualizada = { ...task, groupId } as TTask;
+    await this.taskProvider.updateTask(atualizada);
+    return atualizada;
+  }
+
+  async removeFromGroup(taskId: TaskId): Promise<TTask> {
+    this.exigirRegistro();
+    const task = await this.exigirTarefa(taskId);
+
+    const atualizada = { ...task, groupId: undefined } as TTask;
+    await this.taskProvider.updateTask(atualizada);
+    return atualizada;
+  }
+
+  async setPriority(taskId: TaskId, priority: number): Promise<TTask> {
+    validarPrioridade(priority);
+    const task = await this.exigirTarefa(taskId);
+
+    const atualizada = { ...task, order: priority } as TTask;
+    await this.taskProvider.updateTask(atualizada);
+    return atualizada;
+  }
+
+  async moveBefore(taskId: TaskId, targetId: TaskId): Promise<{ task: TTask; changed: number }> {
+    return this.mover(taskId, targetId, 'before');
+  }
+
+  async moveAfter(taskId: TaskId, targetId: TaskId): Promise<{ task: TTask; changed: number }> {
+    return this.mover(taskId, targetId, 'after');
+  }
+
+  private async mover(
+    taskId: TaskId,
+    targetId: TaskId,
+    lado: LadoDaReferencia,
+  ): Promise<{ task: TTask; changed: number }> {
+    const tarefas = await this.taskProvider.getAllTasks();
+    const mudancas = posicionarPrioridade(tarefas, taskId, targetId, lado);
+
+    for (const tarefa of mudancas) {
+      await this.taskProvider.updateTask(tarefa);
+    }
+
+    const movida = mudancas.find((t) => t.id === taskId) ?? (await this.exigirTarefa(taskId));
+    return { task: movida, changed: mudancas.length };
   }
 
   /**
