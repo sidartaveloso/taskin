@@ -35,8 +35,9 @@ const config: StorybookConfig = {
     disableTelemetry: true, // Disable telemetry for better performance
   },
 
-  // Static dirs for assets
-  staticDirs: ['../public'],
+  // Sem `staticDirs`: o dashboard nao serve arquivo estatico no Storybook, e a
+  // entrada antiga apontava para um `public/` que nunca foi versionado — numa
+  // copia limpa o Storybook recusava subir (task-131).
 };
 
 export default config;
