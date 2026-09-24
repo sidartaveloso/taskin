@@ -1,6 +1,6 @@
 # 🧩 Task 108 — o lint do provider de arquivos barra anexo acima do teto configurável e ensina a reduzi-lo
 
-- Status: in-progress
+- Status: paused
 - Type: feat
 - Assignee: sidartaveloso
 - Difficulty: 2

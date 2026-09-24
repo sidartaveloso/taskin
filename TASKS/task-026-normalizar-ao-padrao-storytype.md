@@ -1,6 +1,6 @@
 # Task 026 — Normalizar ao padrão storytype
 
-- Status: in-progress
+- Status: paused
 - Type: refactor
 - Assignee: sidartaveloso
 - Priority: 1012
