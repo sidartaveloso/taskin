@@ -5,23 +5,20 @@
         {{ title }}
       </h1>
 
-      <div class="connection-status">
-        <span class="status-indicator" :class="`status-indicator--${status}`" />
-        <span class="status-text">{{ statusText }}</span>
-
-        <button
-          class="retry-button"
-          v-if="showRetry"
-          :disabled="isRetrying"
-          @click="$emit('retry')"
-        >
-          {{ isRetrying ? retryingText : retryText }}
-        </button>
-      </div>
+      <ConnectionStatus
+        v-if="showConnection"
+        :status="status"
+        :status-text="statusText"
+        :show-retry="showRetry"
+        :is-retrying="isRetrying"
+        :retry-text="retryText"
+        :retrying-text="retryingText"
+        @retry="$emit('retry')"
+      />
     </div>
 
     <!-- Error message -->
-    <div class="error-banner" v-if="errorMessage">
+    <div class="error-banner" v-if="showConnection && errorMessage">
       <span class="error-icon">⚠️</span>
       <span class="error-message">{{ errorMessage }}</span>
     </div>
@@ -29,6 +26,8 @@
 </template>
 
 <script setup lang="ts">
+import ConnectionStatus from '../molecules/ConnectionStatus.vue';
+
 export interface DashboardHeaderProps {
   title?: string;
   status?: 'connected' | 'disconnected' | 'connecting' | 'error';
@@ -38,6 +37,11 @@ export interface DashboardHeaderProps {
   isRetrying?: boolean;
   retryText?: string;
   retryingText?: string;
+  /**
+   * Mostra a conexao (o estado e a faixa de erro) no proprio cabecalho. O
+   * dashboard desliga, porque a mostra na barra do topo, comum as duas telas.
+   */
+  showConnection?: boolean;
 }
 
 withDefaults(defineProps<DashboardHeaderProps>(), {
@@ -49,6 +53,7 @@ withDefaults(defineProps<DashboardHeaderProps>(), {
   isRetrying: false,
   retryText: 'Tentar novamente',
   retryingText: 'Reconectando...',
+  showConnection: true,
 });
 
 defineEmits<{
@@ -85,72 +90,6 @@ defineEmits<{
   font-family: var(--font-family);
 }
 
-.connection-status {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md, 0.75rem);
-}
-
-.status-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radius-full, 50%);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.status-indicator--connected {
-  background-color: var(--status-success-bg, #10b981);
-}
-
-.status-indicator--disconnected,
-.status-indicator--connecting {
-  background-color: var(--text-warning, #f59e0b);
-}
-
-.status-indicator--error {
-  background-color: var(--status-warning-bg, #ef4444);
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.status-text {
-  font-size: var(--font-size-sm, 0.875rem);
-  font-weight: var(--font-weight-medium, 500);
-  color: var(--text-muted, #495057);
-  font-family: var(--font-family);
-}
-
-.retry-button {
-  padding: var(--spacing-sm, 0.5rem) var(--spacing-lg, 1rem);
-  font-size: var(--font-size-sm, 0.875rem);
-  font-weight: var(--font-weight-medium, 500);
-  color: var(--status-progress-text, white);
-  background: var(--status-progress-bg, #169bd7);
-  border: none;
-  border-radius: var(--radius-md, 6px);
-  cursor: pointer;
-  transition: all var(--transition-fast, 0.2s);
-  font-family: var(--font-family);
-}
-
-.retry-button:hover:not(:disabled) {
-  background: var(--bg-header, #0d7eb9);
-  transform: translateY(-1px);
-}
-
-.retry-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .error-banner {
   background: var(--bg-section-error, #fff5f5);
   border-top: 1px solid var(--status-warning-bg, #feb2b2);
@@ -177,11 +116,6 @@ defineEmits<{
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-md, 1rem);
-  }
-
-  .connection-status {
-    width: 100%;
-    justify-content: space-between;
   }
 }
 </style>

@@ -1,4 +1,5 @@
 // Dashboard molecules
+export { default as ConnectionStatus } from './ConnectionStatus.vue';
 export { default as DayBar } from './DayBar.vue';
 export { default as ProjectBreadcrumb } from './ProjectBreadcrumb.vue';
 export { default as TaskHeader } from './TaskHeader.vue';

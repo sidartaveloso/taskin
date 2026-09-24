@@ -24,6 +24,7 @@ import '@opentask/ui-sense/style.css';
 export * from './components/atoms';
 // Export molecules manually to handle TimeEstimate conflict
 export {
+  ConnectionStatus,
   DayBar,
   ProjectBreadcrumb,
   TaskHeader,

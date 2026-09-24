@@ -44,4 +44,18 @@ describe('DashboardHeader', () => {
     expect(wrapper.find('.error-banner').exists()).toBe(true);
     expect(wrapper.find('.error-message').text()).toBe('Connection lost');
   });
+
+  /*
+   * Quem hospeda o cabecalho pode mostrar a conexao num lugar comum a varias
+   * telas — o dashboard a leva para a barra do topo (task-128). Desligada, some
+   * o indicador e a faixa de erro, e fica o titulo.
+   */
+  it('hides the connection status and the error banner when showConnection is false', () => {
+    const wrapper = mount(DashboardHeader, {
+      props: { title: 'My Board', showConnection: false, errorMessage: 'Caiu', showRetry: true },
+    });
+    expect(wrapper.find('h1.header-title').text()).toBe('My Board');
+    expect(wrapper.find('.connection-status').exists()).toBe(false);
+    expect(wrapper.find('.error-banner').exists()).toBe(false);
+  });
 });
