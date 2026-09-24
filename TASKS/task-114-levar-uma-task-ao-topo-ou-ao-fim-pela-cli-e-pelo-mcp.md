@@ -1,6 +1,6 @@
 # 🧩 Task 114 — Levar uma task ao topo ou ao fim pela CLI e pelo MCP
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
