@@ -150,4 +150,40 @@ describe('PROVIDER_BUILDERS.fs', () => {
 
     expect(tasks.map((task) => task.id)).toEqual(['007']);
   });
+
+  describe('maxAttachmentKb (task-108)', () => {
+    function oversizedAttachment(): void {
+      mkdirSync(join(projectRoot, 'TASKS', 'assets'), { recursive: true });
+      writeFileSync(join(projectRoot, 'TASKS', 'assets', 'flight.webm'), Buffer.alloc(400 * 1024, 1));
+    }
+
+    it('reaches the provider lint from .taskin.json', async () => {
+      oversizedAttachment();
+      writeConfig({ type: 'fs', config: { maxAttachmentKb: 300, tasksDir: 'TASKS' } });
+
+      const { provider } = await resolveTaskProvider({ cwd: projectRoot }, PROVIDER_BUILDERS);
+      const result = await provider.lint?.();
+
+      expect(result?.issues.some((issue) => issue.file.endsWith('flight.webm'))).toBe(true);
+    });
+
+    it('absent, there is no limit', async () => {
+      oversizedAttachment();
+      writeConfig({ type: 'fs', config: { tasksDir: 'TASKS' } });
+
+      const { provider } = await resolveTaskProvider({ cwd: projectRoot }, PROVIDER_BUILDERS);
+      const result = await provider.lint?.();
+
+      expect(result?.issues.some((issue) => issue.file.endsWith('flight.webm'))).toBe(false);
+    });
+
+    it.each([['300KB'], [0], [-1], [Number.NaN]])(
+      'refuses %s instead of silently dropping the limit',
+      async (value) => {
+        writeConfig({ type: 'fs', config: { maxAttachmentKb: value, tasksDir: 'TASKS' } });
+
+        await expect(resolveTaskProvider({ cwd: projectRoot }, PROVIDER_BUILDERS)).rejects.toThrow(/maxAttachmentKb/);
+      },
+    );
+  });
 });

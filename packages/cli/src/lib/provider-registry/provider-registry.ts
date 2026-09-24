@@ -22,6 +22,11 @@ export const AVAILABLE_PROVIDERS: ProviderInfo[] = [
           type: 'string',
           description: 'Marking of the metadata block for new files (list | hard-break | plain)',
         },
+        maxAttachmentKb: {
+          type: 'number',
+          description:
+            'Size limit, in KB, for each attachment under the tasks directory; exceptions in .taskin/.taskin-attachment-exceptions.json',
+        },
       },
     },
     status: 'stable',
