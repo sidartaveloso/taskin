@@ -7,13 +7,6 @@ import { FileSystemTaskProvider } from './file-system-task-provider';
 import { UserRegistry } from './user-registry';
 import { TASKIN_DIR_NAME } from './users-file-location';
 
-/*
- * The per-attachment size limit (task-108). Attachments — the evidence under
- * `TASKS/assets/` — go into git, which keeps forever whatever enters the
- * history: in one project a single video evidence added 16 MB, eight times the
- * whole repository.
- */
-
 const KB = 1024;
 
 let projectRoot: string;

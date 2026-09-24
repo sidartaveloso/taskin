@@ -92,7 +92,6 @@ describe('the exceptions', () => {
   });
 
   it('growth smaller than a KB still reads as growth — the message falls back to bytes', async () => {
-    // seen on a real repository: "exempt at 536 KB, but grew to 536 KB"
     attachment('assets/old.png', 2_000 * KB + 1);
     exceptions({ exceptions: { 'assets/old.png': { bytes: 2_000 * KB, reason: REASON } } });
 

@@ -15,7 +15,7 @@ export interface AttachmentValidatorOptions {
   readonly tasksDir: string;
   /** Where `.taskin-attachment-exceptions.json` lives. */
   readonly taskinDir: string;
-  /** The limit, per attachment file. */
+  /** Limit per attachment, in KB. */
   readonly maxAttachmentKb: number;
 }
 

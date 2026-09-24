@@ -28,7 +28,6 @@ function expandProviderConfig(config: Record<string, unknown>): Record<string, u
   return expanded;
 }
 
-/** `provider.config.maxAttachmentKb`: absent means no limit; anything but a positive number is an error. */
 function readMaxAttachmentKb(providerConfig: Record<string, unknown>): number | undefined {
   if (!('maxAttachmentKb' in providerConfig)) return undefined;
   const value = providerConfig.maxAttachmentKb;
@@ -66,10 +65,6 @@ const buildFileSystemProvider: ProviderBuilder = async ({ projectRoot, providerC
     ? providerConfig.convertMetadataStyleTo
     : undefined;
 
-  /*
-   * Unlike `metadataStyle`, an invalid limit is refused rather than ignored:
-   * ignoring `"300KB"` would switch the gate off without a word.
-   */
   const maxAttachmentKb = readMaxAttachmentKb(providerConfig);
 
   /*

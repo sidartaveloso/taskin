@@ -2,26 +2,15 @@ import path from 'path';
 import type { ISizeReductionHint } from './size-reduction-hint.types.js';
 
 const STILL_IMAGE = new Set(['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff']);
-/** Two-pass palette in one filter graph: builds the palette, then maps the image onto it. */
-const PALETTE = 'split[a][b];[a]palettegen=max_colors=256[p];[b][p]paletteuse';
+const PALETTE_FILTER = 'split[a][b];[a]palettegen=max_colors=256[p];[b][p]paletteuse';
 const MOVING_IMAGE = new Set(['.gif', '.webm', '.mp4', '.mov', '.mkv', '.avi', '.m4v']);
 
-/** `assets/screen.png` → `assets/screen.jpg`, for the lossy-conversion line. */
 function withExtension(file: string, extension: string): string {
   const parsed = path.parse(file);
   return path.join(parsed.dir, `${parsed.name}${extension}`);
 }
 
-/**
- * The hint the lint prints under an attachment over the limit.
- *
- * Every command uses `ffmpeg`: it covers still images and video alike, runs on
- * macOS and Linux, and spares the reader one tool per format. The order is the
- * order to try things in — what keeps the file faithful first, what trades
- * fidelity for size last.
- *
- * @public
- */
+/** @public */
 export class SizeReductionHint implements ISizeReductionHint {
   for(file: string): string {
     const extension = path.extname(file).toLowerCase();
@@ -31,12 +20,12 @@ export class SizeReductionHint implements ISizeReductionHint {
   }
 
   private forStillImage(file: string): string {
-    // ffmpeg cannot write over the file it is reading, hence the `.reduced` copy
+    // ffmpeg cannot write over the file it is reading
     const reduced = withExtension(file, `.reduced${path.extname(file)}`);
     return [
       'Crop it to the part that matters — a full screen rarely is the evidence.',
-      `Reduce the palette to 256 colours, keeping name and format: ffmpeg -i ${file} -vf "${PALETTE}" ${reduced}`,
-      `If it is still too big, downscale as well: ffmpeg -i ${file} -vf "scale=1280:-1,${PALETTE}" ${reduced}`,
+      `Reduce the palette to 256 colours, keeping name and format: ffmpeg -i ${file} -vf "${PALETTE_FILTER}" ${reduced}`,
+      `If it is still too big, downscale as well: ffmpeg -i ${file} -vf "scale=1280:-1,${PALETTE_FILTER}" ${reduced}`,
       `Then put the reduced file in place: mv ${reduced} ${file}`,
       `If the image is merely illustrative and fidelity need not be kept, convert it — the extension changes, so update the link in the task: ffmpeg -i ${file} -q:v 5 ${withExtension(file, '.jpg')}`,
     ].join('\n');

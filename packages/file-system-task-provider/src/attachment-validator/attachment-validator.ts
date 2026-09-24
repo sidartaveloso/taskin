@@ -15,12 +15,10 @@ const KB = 1024;
 
 const kb = (bytes: number): string => `${Math.round(bytes / KB)} KB`;
 
-/** Two sizes, in KB unless rounding would make them read the same. */
-const sizes = (before: number, after: number): [string, string] =>
+const distinctSizes = (before: number, after: number): [string, string] =>
   kb(before) === kb(after) ? [`${before} bytes`, `${after} bytes`] : [kb(before), kb(after)];
 
-/** Keys are relative to the tasks directory and always use `/`. */
-const toKey = (relative: string): string => relative.split(path.sep).join('/');
+const toPosixKey = (relative: string): string => relative.split(path.sep).join('/');
 
 interface Attachment {
   readonly absolute: string;
@@ -33,18 +31,7 @@ interface ExceptionsFile {
   readonly issues: ValidationIssue[];
 }
 
-/**
- * The size limit for attachments — every file under the tasks directory that
- * is not markdown.
- *
- * The limit exists because this provider keeps attachments as files in the
- * repository, and git keeps forever whatever enters the history. The
- * exceptions file is how files that predate the limit stay; each entry pins
- * the size it had, and an entry that no longer exempts anything fails, so a
- * forgotten exception cannot cover the next heavy file.
- *
- * @public
- */
+/** @public */
 export class AttachmentValidator implements IAttachmentValidator {
   private readonly options: AttachmentValidatorOptions;
   private readonly hint: ISizeReductionHint;
@@ -73,7 +60,7 @@ export class AttachmentValidator implements IAttachmentValidator {
           suggestion: this.suggestionFor(attachment.key),
         });
       } else if (attachment.bytes > pinned) {
-        const [was, now] = sizes(pinned, attachment.bytes);
+        const [was, now] = distinctSizes(pinned, attachment.bytes);
         issues.push({
           file: attachment.absolute,
           message: `${attachment.key} is exempt from the ${kb(limit)} limit at ${was}, but grew to ${now}.`,
@@ -139,7 +126,7 @@ export class AttachmentValidator implements IAttachmentValidator {
         found.push(...(await this.listAttachments(absolute)));
       } else if (entry.isFile() && path.extname(entry.name).toLowerCase() !== '.md') {
         const { size } = await fs.stat(absolute);
-        found.push({ absolute, bytes: size, key: toKey(path.relative(this.options.tasksDir, absolute)) });
+        found.push({ absolute, bytes: size, key: toPosixKey(path.relative(this.options.tasksDir, absolute)) });
       }
     }
     return found;
@@ -181,7 +168,7 @@ export class AttachmentValidator implements IAttachmentValidator {
     const entries = new Map<string, Partial<AttachmentException>>();
     for (const [key, value] of Object.entries(exceptions)) {
       const entry = (typeof value === 'object' && value !== null ? value : {}) as Partial<AttachmentException>;
-      entries.set(toKey(key), entry);
+      entries.set(toPosixKey(key), entry);
     }
     return { entries, issues: [] };
   }
