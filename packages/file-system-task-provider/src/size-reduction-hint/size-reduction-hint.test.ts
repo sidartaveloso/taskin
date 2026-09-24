@@ -63,6 +63,35 @@ describe('everything else', () => {
   );
 });
 
+/*
+ * ffmpeg cannot write over the file it is reading: `ffmpeg -i a.png … a.png`
+ * refuses, or with `-y` truncates the input mid-read. Seen running the hint
+ * against a real repository.
+ */
+it.each(['assets/screen.png', 'assets/flight.webm', 'assets/flight.gif'])(
+  'no command in the hint for %s writes over its own input',
+  (file) => {
+    const commands = hint
+      .for(file)
+      .split('\n')
+      .flatMap((line) => line.match(/ffmpeg .*/g) ?? []);
+
+    expect(commands.length).toBeGreaterThan(0);
+    for (const command of commands) {
+      const [input] = command.match(/-i (\S+)/)?.slice(1) ?? [];
+      const output = command
+        .split(' ')
+        .filter((word) => !word.startsWith('-'))
+        .at(-1);
+      expect(output, command).not.toBe(input);
+    }
+  },
+);
+
+it('says how to put the reduced file in place of the original', () => {
+  expect(hint.for('assets/screen.png')).toContain('mv assets/screen.reduced.png assets/screen.png');
+});
+
 it('is multi-line text, one action per line', () => {
   expect(hint.for('assets/screen.png').split('\n').length).toBeGreaterThan(3);
 });
