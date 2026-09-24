@@ -11,6 +11,7 @@ import { readMetadataField, writeMetadataField } from './metadata-style/index.js
 export type AssigneeIdentity =
   | { readonly kind: 'resolved'; readonly raw: string; readonly user: User }
   | { readonly kind: 'unassigned'; readonly raw: string }
+  /** A registered user written as anything but their id — the display name included. */
   | { readonly kind: 'correctable'; readonly raw: string; readonly user: User }
   | { readonly kind: 'unknown'; readonly raw: string };
 
@@ -69,12 +70,6 @@ export function classifyAssignee(
 
   const user = registry.resolveUser(trimmed);
 
-  /*
-   * So o id e `resolved`. O `resolveUser` tambem casa pelo nome de exibicao, e
-   * era por ali que `Assignee: Sidarta Veloso` passava calado no lint: a pessoa
-   * e a mesma, mas o nome muda e o id e a chave do registro. Continua
-   * identificado — quem le a task nao perde ninguem —, so que reescrevivel.
-   */
   if (user) {
     return user.id === trimmed ? { kind: 'resolved', raw, user } : { kind: 'correctable', raw, user };
   }
