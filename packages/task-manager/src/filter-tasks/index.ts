@@ -12,5 +12,5 @@ export {
   filterCriteriaJsonSchema,
   parseFilterCriteria,
 } from './filter-criteria.js';
-export { filterTasks, summarizeTask } from './filter-tasks.js';
+export { effectiveFilterCriteria, filterTasks, summarizeTask } from './filter-tasks.js';
 export type { TaskSummary } from './filter-tasks.types.js';

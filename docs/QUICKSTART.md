@@ -29,8 +29,11 @@ pnpm -r build
 # Inicializar estrutura de tasks
 taskin init
 
-# Listar todas as tarefas
+# Listar as tarefas abertas (o padrão)
 taskin list
+
+# Listar todas, fechadas inclusive
+taskin list --all
 
 # Criar nova tarefa
 taskin new "Implementar autenticação"

@@ -26,6 +26,27 @@ const ENCERRADOS: readonly TaskStatus[] = ['done', 'canceled'];
  */
 const ATIVAS: readonly TaskStatus[] = ['in-progress', 'paused', 'in-review'];
 
+/**
+ * Sem nenhum criterio de status, a listagem mostra so o que esta em aberto.
+ *
+ * Quem abre a lista quer saber o que falta fazer, e as encerradas so crescem —
+ * neste repositorio ja passam de cem e empurram as abertas para fora da tela.
+ *
+ * O padrao mora aqui, e nao em cada superficie, para que a CLI, o `list_tasks`
+ * do MCP e o dashboard nao possam discordar sobre ele. Um criterio de status
+ * explicito (`status`, `open`, `closed`, `active`) o desliga: `status: 'done'`
+ * intersectado com "abertas" daria lista vazia. `all` o desliga sem por outro
+ * recorte no lugar.
+ *
+ * @public
+ */
+export function effectiveFilterCriteria(criteria: TaskFilterCriteria): TaskFilterCriteria {
+  const temRecorteDeStatus =
+    criteria.status !== undefined || criteria.open || criteria.closed || criteria.active || criteria.all;
+
+  return temRecorteDeStatus ? criteria : { ...criteria, open: true };
+}
+
 const contem = (valor: string | undefined, procurado: string): boolean =>
   valor?.toLowerCase().includes(procurado) ?? false;
 
@@ -50,9 +71,14 @@ function casaResponsavel(task: Task, procurado: string): boolean {
  *
  * Nao ordena e nao muda o arranjo recebido: a ordem que entra e a que sai.
  *
+ * Sem criterio de status, devolve so as abertas — ver
+ * {@link effectiveFilterCriteria}. Para ver todas, `all: true`.
+ *
  * @public
  */
-export function filterTasks(tasks: readonly Task[], criteria: TaskFilterCriteria): Task[] {
+export function filterTasks(tasks: readonly Task[], recebidos: TaskFilterCriteria): Task[] {
+  const criteria = effectiveFilterCriteria(recebidos);
+
   return tasks.filter((task) => {
     if (criteria.status !== undefined) {
       if (task.status !== criteria.status) return false;

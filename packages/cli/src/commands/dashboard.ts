@@ -27,6 +27,7 @@ interface DashboardOptions {
   open?: boolean;
   closed?: boolean;
   active?: boolean;
+  all?: boolean;
 }
 
 export interface DashboardAppOptions {
@@ -243,7 +244,7 @@ export const dashboardCommand = defineCommand({
     },
     {
       flags: '--open',
-      description: 'Show only open tasks (pending, in-progress, blocked)',
+      description: 'Show only open tasks (pending, in-progress, blocked) — already the default',
     },
     {
       flags: '--closed',
@@ -252,6 +253,10 @@ export const dashboardCommand = defineCommand({
     {
       flags: '--active',
       description: 'Show only tasks started and not finished (in-progress, paused, in-review)',
+    },
+    {
+      flags: '--all',
+      description: 'Show every task, closed ones included',
     },
   ],
   handler: async (options: DashboardOptions) => {
@@ -411,6 +416,8 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       filterParams.set('filter', 'closed');
     } else if (options.active) {
       filterParams.set('filter', 'active');
+    } else if (options.all) {
+      filterParams.set('filter', 'all');
     }
     const filterQuery = filterParams.toString() ? `?${filterParams.toString()}` : '';
 
@@ -433,6 +440,10 @@ async function startDashboard(options: DashboardOptions): Promise<void> {
       info(`  • Filter: ${chalk.yellow('Closed tasks only')}`);
     } else if (options.active) {
       info(`  • Filter: ${chalk.yellow('Active tasks only')}`);
+    } else if (options.all) {
+      info(`  • Filter: ${chalk.yellow('All tasks')}`);
+    } else {
+      info(`  • Filter: ${chalk.yellow('Open tasks (default)')}`);
     }
     info(`  • Press ${chalk.bold('Ctrl+C')} to stop both servers`);
     info('');

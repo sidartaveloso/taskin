@@ -111,3 +111,22 @@ describe('parseFilterCriteria', () => {
     expect(parseFilterCriteria({})).toEqual({});
   });
 });
+
+describe('o criterio all', () => {
+  it('vira a flag --all, sem valor, derivada do schema', () => {
+    expect(filterCriteriaCliOptions().find((o) => o.flags.includes('--all'))?.flags).toBe('--all');
+    expect((filterCriteriaJsonSchema().properties.all as { type?: string }).type).toBe('boolean');
+  });
+
+  it('a ajuda de --open diz que ele ja e o padrao', () => {
+    expect(filterCriteriaCliOptions().find((o) => o.flags === '--open')?.description).toMatch(/default/);
+  });
+
+  it.each(['open', 'closed', 'active'])('recusa `all` combinado com `%s`', (recorte) => {
+    expect(() => parseFilterCriteria({ all: true, [recorte]: true })).toThrow(/`all` cannot be combined/);
+  });
+
+  it('aceita `all` com os criterios que nao sao de status', () => {
+    expect(parseFilterCriteria({ all: true, type: 'fix' })).toEqual({ all: true, type: 'fix' });
+  });
+});

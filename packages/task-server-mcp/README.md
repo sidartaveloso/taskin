@@ -97,7 +97,7 @@ console.log('MCP server running');
 
 ## MCP Tools
 
-- `list_tasks` - List tasks as JSON, without the markdown body. Filters:
+- `list_tasks` - List tasks as JSON, without the markdown body. Only the open tasks unless a status criterion (`status`, `closed`, `active`) or `all: true` is given; `all` is refused together with `open`, `closed` or `active`
 - `prioritize_tasks` - Give every task a priority number, once and on purpose
 - `list_groups` - List the task groups, each with its id and name
 - `join_group` - Put a task in an existing group. Only offered when the provider has groups

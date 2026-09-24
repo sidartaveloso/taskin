@@ -856,7 +856,7 @@ Let me start by marking the task as done using the finish_task tool.`,
     const uri = params.uri;
 
     if (uri === 'taskin://tasks') {
-      const tarefas = await this.selecionarTarefas({});
+      const tarefas = await this.selecionarTarefas({ all: true });
       return {
         contents: [
           {

@@ -1,5 +1,5 @@
 /**
- * list command - List all tasks in the project
+ * list command - List the open tasks in the project, or every task with --all
  */
 
 import {
@@ -19,7 +19,7 @@ import { defineCommand } from './define-command/index.js';
 
 export const listCommand = defineCommand({
   name: 'list [filter]',
-  description: '📊 List all tasks in the project',
+  description: '📊 List the open tasks in the project (--all for every task)',
   alias: 'ls',
   /*
    * As opcoes de filtro saem do schema unico em `filterCriteriaCliOptions`, nao

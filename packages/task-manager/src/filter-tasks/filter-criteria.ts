@@ -41,6 +41,7 @@ export const FilterCriteriaSchema = z.object({
   open: z.boolean().optional(),
   closed: z.boolean().optional(),
   active: z.boolean().optional(),
+  all: z.boolean().optional(),
   scored: z.boolean().optional(),
   unscored: z.boolean().optional(),
   text: z.string().optional(),
@@ -81,10 +82,14 @@ export const FILTER_CRITERIA_SURFACES = {
   status: { description: 'Exact status (pending, in-progress, done, ...)', cli: { kind: 'flag', short: 's' } },
   type: { description: 'Exact type (feat, fix, chore, ...)', cli: { kind: 'flag', short: 't' } },
   assignee: { description: 'Assignee id or name, whole or in part', cli: { kind: 'flag', short: 'u' } },
-  open: { description: 'Only tasks still open', cli: { kind: 'flag' } },
+  open: { description: 'Only tasks still open — already the default, kept for scripts', cli: { kind: 'flag' } },
   closed: { description: 'Only tasks already closed', cli: { kind: 'flag' } },
   active: {
     description: 'Only tasks started and not finished (in-progress, paused, in-review)',
+    cli: { kind: 'flag' },
+  },
+  all: {
+    description: 'Every task, closed ones included. Without any status criterion only open tasks are listed',
     cli: { kind: 'flag' },
   },
   scored: { description: 'Only tasks that already have a difficulty', cli: { kind: 'flag' } },
@@ -175,5 +180,26 @@ export function filterCriteriaCliOptions(
  * vez de devolver lista vazia como se nao houvesse tarefa.
  */
 export function parseFilterCriteria(raw: unknown): TaskFilterCriteria {
-  return FilterCriteriaSchema.parse(raw);
+  const criteria = FilterCriteriaSchema.parse(raw);
+  recusarAllComRecorte(criteria);
+  return criteria;
+}
+
+/**
+ * `all` pede todas; `open`, `closed` e `active` pedem um recorte. Juntos, um
+ * dos dois teria de ser ignorado em silencio — e qualquer escolha surpreende
+ * alguem. Recusar e a unica resposta que nao mente.
+ *
+ * Fica fora do schema de proposito: um `z.object` com refinamento deixa de
+ * aceitar `.extend`, e o teste de derivacao estende o schema.
+ */
+function recusarAllComRecorte(criteria: TaskFilterCriteria): void {
+  if (!criteria.all) return;
+
+  const recortes = (['open', 'closed', 'active'] as const).filter((chave) => criteria[chave]);
+  if (recortes.length > 0) {
+    throw new Error(
+      `\`all\` cannot be combined with ${recortes.map((r) => `\`${r}\``).join(', ')}: \`all\` lists every task, the others narrow it.`,
+    );
+  }
 }
