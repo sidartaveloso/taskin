@@ -3,6 +3,8 @@
 - Status: pending
 - Type: fix
 - Assignee: sidartaveloso
+- Difficulty: 2
+- Priority: 13351
 
 ## Description
 O autoSync nao funciona e nao da para ver nem configurar: o taskin init grava autoSync true sem defaultBranch, o taskin config nao tem opcao para defaultBranch, originBranch nem autoSync, o config --show nao os mostra, e o unico sinal e um warning no meio da saida do new. Pior: com defaultBranch configurada, o taskin new faz rebase da branch atual sobre origin/<defaultBranch> e depois empurra a <defaultBranch> local, e nao o commit que acabou de fazer. Foi assim que as tasks 107 e 108 colidiram entre main e develop.

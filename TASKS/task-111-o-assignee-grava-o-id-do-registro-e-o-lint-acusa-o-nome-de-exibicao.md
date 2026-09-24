@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: sidartaveloso
+- Priority: 13051
 
 ## Description
 O taskin new -u <id> resolve o usuario e grava user.name no Assignee (file-system-task-provider.ts, createTask), e o taskin lint nao acusa porque resolveUser tambem casa pelo nome, entao o nome de exibicao cai em 'resolved'. O Assignee deve guardar o id, que e a chave estavel do registro; o nome muda. Corrigir a escrita no createTask e fazer o lint avisar do nome de exibicao e o lint --fix reescreve-lo para o id.
