@@ -474,6 +474,10 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     return tasks;
   }
 
+  private registryIdOrAsTyped(nameOrId: string): string {
+    return this.userRegistry.resolveUser(nameOrId)?.id ?? nameOrId;
+  }
+
   async createTask(options: CreateTaskOptions): Promise<CreateTaskFileResult> {
     // Get all existing tasks to determine next ID and detect locale
     const allTasks = await this.getAllTasks();
@@ -514,15 +518,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       throw new Error(`Task file already exists: ${fileName}`);
     }
 
-    /*
-     * O `Assignee:` guarda o id do registro, e nao o nome de exibicao: o nome
-     * muda, e o lint acusa quem o grava. Quem nao esta no registro fica como
-     * foi digitado — o id que `createTemporaryUser` inventaria esconderia do
-     * lint o valor que ele precisa mostrar.
-     */
-    const assignee = options.assignee
-      ? (this.userRegistry.resolveUser(options.assignee)?.id ?? options.assignee)
-      : undefined;
+    const assignee = options.assignee && this.registryIdOrAsTyped(options.assignee);
 
     // Generate task content using i18n
     const taskContent = this.generateTaskMarkdown({

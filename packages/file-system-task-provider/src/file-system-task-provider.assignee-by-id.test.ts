@@ -6,15 +6,6 @@ import { FileSystemTaskProvider } from './file-system-task-provider';
 import { UserRegistry } from './user-registry';
 import { TASKIN_DIR_NAME, USERS_FILE_NAME } from './users-file-location';
 
-/*
- * O `Assignee:` de uma task guarda o id do registro, e nao o nome de exibicao.
- *
- * O nome muda (casamento, grafia, acento); o id e a chave estavel pela qual o
- * registro, o `stats --team` e os filtros por assignee se encontram. Hoje o
- * `createTask` resolve o id e grava `user.name`, e o lint aceita o nome calado
- * porque `resolveUser` tambem casa pelo nome.
- */
-
 let projectRoot: string;
 let tasksDir: string;
 
@@ -50,8 +41,8 @@ afterEach(() => {
   rmSync(projectRoot, { recursive: true, force: true });
 });
 
-describe('FileSystemTaskProvider — o Assignee guarda o id', () => {
-  it('createTask grava o id quando recebe o id', async () => {
+describe('FileSystemTaskProvider — the Assignee line stores the registry id', () => {
+  it('createTask writes the id when given the id', async () => {
     const provider = await makeProvider();
 
     const { task } = await provider.createTask({ title: 'Nova', type: 'feat', assignee: 'josedasilva' });
@@ -61,7 +52,7 @@ describe('FileSystemTaskProvider — o Assignee guarda o id', () => {
     expect(created).not.toContain('José da Silva');
   });
 
-  it('createTask grava o id mesmo quando recebe o nome de exibicao', async () => {
+  it('createTask writes the id when given the display name', async () => {
     const provider = await makeProvider();
 
     const { task } = await provider.createTask({ title: 'Nova', type: 'feat', assignee: 'José da Silva' });
@@ -70,9 +61,7 @@ describe('FileSystemTaskProvider — o Assignee guarda o id', () => {
     expect(created).toMatch(/^- Assignee: josedasilva$/m);
   });
 
-  // Quem nao esta no registro nao tem id. O que `createTemporaryUser` inventa
-  // (`fulano-de-tal`) esconderia do lint o valor que ele precisa mostrar.
-  it('createTask grava como foi digitado quem nao esta no registro', async () => {
+  it('createTask writes someone outside the registry as typed', async () => {
     const provider = await makeProvider();
 
     const { task } = await provider.createTask({ title: 'Nova', type: 'feat', assignee: 'Fulano de Tal' });
@@ -82,7 +71,7 @@ describe('FileSystemTaskProvider — o Assignee guarda o id', () => {
     expect((await provider.lint()).issues.some((issue) => issue.message.includes('Fulano de Tal'))).toBe(true);
   });
 
-  it('lint avisa quando o Assignee e o nome de exibicao, e sugere o id', async () => {
+  it('lint warns about a display name and suggests the id', async () => {
     writeTask('001', 'José da Silva');
 
     const result = await (await makeProvider()).lint();
@@ -92,7 +81,7 @@ describe('FileSystemTaskProvider — o Assignee guarda o id', () => {
     expect(issue?.suggestion).toContain('josedasilva');
   });
 
-  it('lint --fix reescreve o nome de exibicao para o id', async () => {
+  it('lint --fix rewrites a display name into the id', async () => {
     const filePath = writeTask('002', 'José da Silva');
     const provider = await makeProvider();
 

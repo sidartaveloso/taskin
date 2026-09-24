@@ -56,8 +56,6 @@ describe('classifyAssignee', () => {
     expect(identity).toEqual({ kind: 'correctable', raw: 'anasouza', user: ANA });
   });
 
-  // O `Assignee:` guarda o id. O nome de exibicao ainda identifica a pessoa —
-  // por isso nao e `unknown` —, mas e reescrevivel, e o lint tem que dizer.
   it('reports the display name as correctable, not as resolved', () => {
     expect(classifyAssignee('Ana Souza', registryWith(ANA))).toEqual({
       kind: 'correctable',
