@@ -1,6 +1,6 @@
 # 🧩 Task 118 — O quadro de priorizacao move pelas operacoes do dominio, sem numerar sozinho
 
-- Status: in-progress
+- Status: done
 - Type: refactor
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
