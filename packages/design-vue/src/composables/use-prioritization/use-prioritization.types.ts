@@ -58,6 +58,14 @@ export interface UsePrioritization {
   groupWithGroup(draggedGroupId: string, targetGroupId: string): void;
   moveUp(id: string): void;
   moveDown(id: string): void;
+  /** Leva a tarefa para antes da primeira linha visivel do seu contêiner (o proprio grupo, se agrupada). So no modo `manual`. */
+  moveToTop(taskId: string): void;
+  /** Leva a tarefa para depois da ultima linha visivel do seu contêiner. So no modo `manual`. */
+  moveToBottom(taskId: string): void;
+  /** Leva o grupo inteiro para o topo visivel da lista que o contem. So no modo `manual`. */
+  moveGroupToTop(groupId: string): void;
+  /** Leva o grupo inteiro para o fim visivel da lista que o contem. So no modo `manual`. */
+  moveGroupToBottom(groupId: string): void;
   ungroup(groupId: string): void;
   exportJson(): string;
   exportTreeJson(): string;

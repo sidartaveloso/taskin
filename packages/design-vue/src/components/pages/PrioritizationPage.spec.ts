@@ -54,6 +54,10 @@ const ScreenStub = {
     'group-with-group',
     'move-up',
     'move-down',
+    'move-to-top',
+    'move-to-bottom',
+    'move-group-to-top',
+    'move-group-to-bottom',
     'ungroup',
     'export-json',
     'copy-card',
@@ -107,11 +111,19 @@ describe('PrioritizationPage', () => {
     screen.vm.$emit('undo');
     screen.vm.$emit('set-difficulty', '1', 3);
     screen.vm.$emit('move-up', '2');
+    screen.vm.$emit('move-to-top', '2');
+    screen.vm.$emit('move-to-bottom', '1');
+    screen.vm.$emit('move-group-to-top', 'g-a');
+    screen.vm.$emit('move-group-to-bottom', 'g-b');
     screen.vm.$emit('update:score-filter', 'unscored');
     await nextTick();
     expect(api.undo).toHaveBeenCalled();
     expect(api.setDifficulty).toHaveBeenCalledWith('1', 3);
     expect(api.moveUp).toHaveBeenCalledWith('2');
+    expect(api.moveToTop).toHaveBeenCalledWith('2');
+    expect(api.moveToBottom).toHaveBeenCalledWith('1');
+    expect(api.moveGroupToTop).toHaveBeenCalledWith('g-a');
+    expect(api.moveGroupToBottom).toHaveBeenCalledWith('g-b');
     expect(api.setScoreFilter).toHaveBeenCalledWith('unscored');
   });
 

@@ -43,6 +43,10 @@ const {
   groupWithGroup,
   moveUp,
   moveDown,
+  moveToTop,
+  moveToBottom,
+  moveGroupToTop,
+  moveGroupToBottom,
   ungroup,
   exportJson,
   copyCardText,
@@ -193,6 +197,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
     @group-with-group="groupWithGroup"
     @move-up="moveUp"
     @move-down="moveDown"
+    @move-to-top="moveToTop"
+    @move-to-bottom="moveToBottom"
+    @move-group-to-top="moveGroupToTop"
+    @move-group-to-bottom="moveGroupToBottom"
     @ungroup="ungroup"
     @export-json="handleExportJson"
     @copy-card="handleCopyCard"
