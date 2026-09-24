@@ -98,6 +98,17 @@ have been started.
 
 # Done
 
-When all actionable issues are complete (or you are blocked on all remaining ones), or the open-issues block at the top of this prompt is empty, output the completion signal:
+The completion signal **ends the whole run**, not your iteration. Emitting it
+while actionable issues remain stops the loop and leaves them undone — a run
+once closed two of four tasks this way, right after saying the other two were
+"still open for later iterations".
+
+So, after closing your one issue, look at the queue as it stands now: the block
+at the top of this prompt, minus the issue you just closed.
+
+- **Another issue there is still actionable** → end your turn with no signal.
+  The next iteration picks it up.
+- **None is left**, because the block was empty or every remaining issue is
+  blocked → output the completion signal:
 
 <promise>COMPLETE</promise>

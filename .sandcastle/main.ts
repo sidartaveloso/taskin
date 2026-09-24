@@ -80,7 +80,16 @@ await run({
   name: 'worker',
 
   // Sandbox provider — runs the agent inside an isolated container.
-  sandbox: docker(),
+  // O cache do turbo fora da montagem vale tambem para o agente, e nao so para
+  // o setup: sem isto o `pnpm test` que ele roda tenta escrever no caminho do
+  // host (ver o comentario de `onSandboxReady`) e o agente perde tempo
+  // descobrindo o `TURBO_CACHE_DIR` sozinho.
+  sandbox: docker({
+    env: {
+      TURBO_CACHE_DIR: '/home/agent/.turbo-cache',
+      TURBO_TELEMETRY_DISABLED: '1',
+    },
+  }),
 
   // The agent provider. Pass a model string to claudeCode() — sonnet balances
   // capability and speed for most tasks. Switch to claude-opus-5-5 for harder
