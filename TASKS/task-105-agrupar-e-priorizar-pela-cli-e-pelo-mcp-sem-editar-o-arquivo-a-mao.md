@@ -1,6 +1,6 @@
 # 🧩 Task 105 — Agrupar e priorizar pela CLI e pelo MCP, sem editar o arquivo a mao
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 884
