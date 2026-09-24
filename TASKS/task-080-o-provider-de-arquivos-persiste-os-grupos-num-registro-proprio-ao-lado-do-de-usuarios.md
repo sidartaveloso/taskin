@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Priority: 6151
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 A linha GroupName sai do markdown e o nome passa a viver num registro unico. Apagar um grupo precisa dizer o que acontece com os membros, como Redmine e Jira ja fazem.

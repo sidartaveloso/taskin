@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: chore
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Priority: 1358
 - Difficulty: 2
 

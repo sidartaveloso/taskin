@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: test
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Priority: 240
 
 ## Description

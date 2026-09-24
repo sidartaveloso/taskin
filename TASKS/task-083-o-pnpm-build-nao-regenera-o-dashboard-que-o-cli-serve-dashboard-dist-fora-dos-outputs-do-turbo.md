@@ -3,7 +3,7 @@
 - Status: done
 - Type: fix
 - Priority: 5851
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 O comando dashboard serve packages/cli/dashboard-dist, produzido por build:dashboard. Esse diretorio nao esta nos outputs declarados do turbo, entao um acerto de cache restaura o dist e deixa o dashboard-dist velho no lugar.

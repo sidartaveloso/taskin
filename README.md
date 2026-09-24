@@ -51,6 +51,17 @@ Taskin implements multiple layers of security to protect against common attacks:
 - **Content-Security-Policy** - Restricts script and style sources
 - **X-Powered-By: disabled** - Removes Express fingerprinting
 
+### Auto-commits (Layer 4)
+
+The commits Taskin makes on its own carry only what their message says:
+
+- **Status commits** (`start`, `pause`, `finish`, `review`, and the MCP `start_task`/`finish_task`) commit only the task file. Whatever you had staged stays staged and out of the commit.
+- **Work commits** (`pause`, and `finish` in autopilot) look at every change before `git add -A`. If one looks sensitive — an `.env` file, a private key, a credentials file, or an added line carrying a token — nothing is staged or committed, and Taskin lists the file, the line and the reason for you to decide. `.env.example` and friends are fine; deleting a sensitive file is fine; a secret already in history that the change does not touch is not flagged.
+- **The commit body lists the files**, so the subject never hides what went in.
+- **No shell**: git runs with an argument list, so a task title with quotes or `$(...)` is written literally.
+
+This is a safety net, not a secret scanner: keep secrets in `.gitignore` and use a real scanner in CI.
+
 ### Testing
 
 - 46 unit tests covering injection attacks, XSS, path traversal
@@ -79,7 +90,7 @@ npx taskin list
 taskin --help
 
 # Create a new task
-taskin new -t feat -T "Add login feature" -u "Developer"
+taskin new -t feat -T "Add login feature" -u ana-souza
 ```
 
 **🔍 Task Linter** - Validate your task markdown files (language-agnostic):
@@ -121,7 +132,7 @@ taskin config --level assisted  # manual | assisted | autopilot
 
 # Manage tasks
 taskin start task-01            # Suggests commits
-taskin pause task-01            # Auto-commits work
+taskin pause task-01            # Auto-commits work, unless something looks sensitive
 taskin finish task-01           # Suggests commits
 ```
 
@@ -343,6 +354,7 @@ Token expiration: 24h.
 #### Metadata Format
 
 - **Inline metadata** (Status, Type, Assignee) uses two trailing spaces for line breaks
+- **Assignee** holds the user's **id** from `.taskin/.taskin-users.json`, not the display name: the name changes, the id is the key. `taskin new -u` accepts either and writes the id; `taskin lint` warns about a display name and `taskin lint --fix` rewrites it to the id
 - **Blank lines** after title and before description improve readability
 - **Section headers** (Description, Tasks, Notes) can be localized
 - **Multi-language support**: English and Portuguese (automatically detected)

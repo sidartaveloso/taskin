@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: feat
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Priority: 230
 
 ## Description

@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Priority: 5951
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 Com a entidade no dominio e a persistencia pronta, as tres superficies passam a manipular grupo. Hoje so o dashboard agrupa, e por arrastar.

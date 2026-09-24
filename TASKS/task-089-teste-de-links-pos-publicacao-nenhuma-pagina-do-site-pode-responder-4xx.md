@@ -2,7 +2,7 @@
 
 - Status: pending
 - Type: test
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 - Priority: 1408
 
 ## Description

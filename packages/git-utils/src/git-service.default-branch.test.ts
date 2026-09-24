@@ -14,6 +14,7 @@ describe('GitService - defaultBranch feature', () => {
     mockGitService = {
       addFiles: vi.fn().mockResolvedValue(true),
       commit: vi.fn().mockResolvedValue(true),
+      commitWork: vi.fn().mockResolvedValue({ status: 'nothing-to-commit' }),
       addAndCommit: vi.fn().mockResolvedValue(true),
       commitTaskStatusChange: vi.fn().mockResolvedValue(true),
       commitTaskStatusChangeOnBranch: vi.fn().mockResolvedValue(true),

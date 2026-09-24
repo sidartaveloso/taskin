@@ -185,6 +185,17 @@ Taskin supports three automation levels for git commits:
 
 Configure with: `taskin config --level <level>`
 
+What the auto-commits never take:
+
+- A status commit contains only the task file. Anything you had staged stays
+  staged and out of it.
+- A work commit (`pause`, and `finish` in autopilot) is refused when a change
+  looks sensitive: an `.env` file (templates like `.env.example` are fine), a
+  private key or certificate store, a credentials file, or an added line with a
+  token. Nothing is staged; Taskin prints the file, line and reason, and the
+  command to commit yourself once you've dealt with it.
+- The work commit's body lists every file it took.
+
 ## 🤖 MCP Server (Model Context Protocol)
 
 Taskin includes an MCP server that allows AI assistants like Claude Desktop to interact with your tasks:
@@ -313,10 +324,10 @@ Or provide all options directly:
 
 ```bash
 # Create a new feature task
-taskin new -t feat -T "Add user authentication" -d "Implement JWT-based auth" -u "John Doe"
+taskin new -t feat -T "Add user authentication" -d "Implement JWT-based auth" -u ana-souza
 
 # Create a bug fix task
-taskin new --type fix --title "Fix login error" --user "Developer"
+taskin new --type fix --title "Fix login error" --user ana-souza
 
 # Using the 'create' alias
 taskin create -t docs -T "Update README"
@@ -327,7 +338,7 @@ taskin create -t docs -T "Update README"
 - `-t, --type <type>` - Task type: feat, fix, refactor, docs, test, chore
 - `-T, --title <title>` - Task title (required in command-line mode)
 - `-d, --description <description>` - Task description
-- `-u, --user <user>` - Assigned user
+- `-u, --user <user>` - Assigned user: the id from `.taskin/.taskin-users.json` (the display name is accepted too). The file always records the id; someone not in the registry is written as typed, and `taskin lint` warns about it
 
 The command will:
 

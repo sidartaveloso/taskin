@@ -3,7 +3,7 @@
 - Status: done
 - Type: docs
 - Priority: 242
-- Assignee: Sidarta Veloso
+- Assignee: sidartaveloso
 
 ## Description
 Hoje o finish so troca o campo Status e nao olha o corpo da tarefa. Tres tarefas fecharam com o checklist inteiro em aberto. Avaliar as possibilidades e planejar — esta task nao implementa.

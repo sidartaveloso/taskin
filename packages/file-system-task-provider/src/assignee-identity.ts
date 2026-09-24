@@ -69,8 +69,14 @@ export function classifyAssignee(
 
   const user = registry.resolveUser(trimmed);
 
+  /*
+   * So o id e `resolved`. O `resolveUser` tambem casa pelo nome de exibicao, e
+   * era por ali que `Assignee: Sidarta Veloso` passava calado no lint: a pessoa
+   * e a mesma, mas o nome muda e o id e a chave do registro. Continua
+   * identificado — quem le a task nao perde ninguem —, so que reescrevivel.
+   */
   if (user) {
-    return { kind: 'resolved', raw, user };
+    return user.id === trimmed ? { kind: 'resolved', raw, user } : { kind: 'correctable', raw, user };
   }
 
   const folded = fold(trimmed);
@@ -114,7 +120,10 @@ export function validateAssignees(
       case 'correctable':
         issues.push({
           file: task.file,
-          message: `Assignee "${identity.raw.trim()}" is not in the user registry, but folds onto exactly one registered user.`,
+          message:
+            registry.resolveUser(identity.raw.trim()) === undefined
+              ? `Assignee "${identity.raw.trim()}" is not in the user registry, but folds onto exactly one registered user.`
+              : `Assignee "${identity.raw.trim()}" is the display name of "${identity.user.id}"; the Assignee line stores the registry id.`,
           severity: 'warning',
           suggestion: `Rewrite it as "${identity.user.id}" — lint --fix does this.`,
         });
