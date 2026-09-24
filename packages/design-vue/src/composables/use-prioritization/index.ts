@@ -2,10 +2,11 @@ export {
   buildPriorityTree,
   diffAgainstBaseline,
   flattenPriorityTree,
-  renumber,
   usePrioritization,
 } from './use-prioritization';
 export type {
+  LadoDoMovimento,
+  MovimentoDoQuadro,
   PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,

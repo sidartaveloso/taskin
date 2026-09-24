@@ -136,6 +136,16 @@ describe('PrioritizationPage', () => {
     expect(wrapper.emitted('update-tasks')).toEqual([[[changed]]]);
   });
 
+  it('emite move com o movimento que o composable pede ao dominio', () => {
+    const wrapper = mountPage();
+    const [, options] = vi.mocked(usePrioritization).mock.calls.at(-1) ?? [];
+    const movimento = { kind: 'task', id: '2', lado: 'before', targetId: '1' } as const;
+
+    options?.onMove?.(movimento);
+
+    expect(wrapper.emitted('move')).toEqual([[movimento]]);
+  });
+
   it('triggers undo on ctrl+z', async () => {
     mountPage();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));

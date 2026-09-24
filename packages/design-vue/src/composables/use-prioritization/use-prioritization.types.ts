@@ -25,11 +25,33 @@ export interface PriorityGroupNode {
 
 export type PriorityNode = PriorityTaskNode | PriorityGroupNode;
 
+/** De que lado da referencia o movimento deixa a tarefa ou o grupo. */
+export type LadoDoMovimento = 'before' | 'after';
+
+/**
+ * Um movimento que o quadro pede ao dominio, sem numerar nada: uma tarefa
+ * (`move-before`/`move-after`) ou um grupo inteiro
+ * (`move-group-before`/`move-group-after`) de um lado de `targetId`.
+ *
+ * Para uma tarefa, `targetId` e sempre outra tarefa. Para um grupo, uma
+ * tarefa solta ou outro grupo.
+ */
+export interface MovimentoDoQuadro {
+  kind: 'task' | 'group';
+  id: string;
+  lado: LadoDoMovimento;
+  targetId: string;
+}
+
 export interface UsePrioritizationOptions {
   /** localStorage key used to persist view-only preferences (view mode, sort mode, collapsed groups) */
   storageKey?: string;
-  /** Spacing used when renumbering `order` after a structural change */
-  orderStep?: number;
+  /**
+   * Recebe cada movimento — setas, topo, fim, arrastar. O quadro nao calcula
+   * numeros: quem hospeda manda o movimento ao dominio, e a lista de tarefas
+   * que volta traz a nova ordem.
+   */
+  onMove?: (movimento: MovimentoDoQuadro) => void;
 }
 
 export interface UsePrioritization {
@@ -56,7 +78,9 @@ export interface UsePrioritization {
   moveGroupBefore(groupId: string, targetId: string): void;
   moveGroupAfter(groupId: string, targetId: string): void;
   groupWithGroup(draggedGroupId: string, targetGroupId: string): void;
+  /** Pede `move-before` da linha visivel anterior (a primeira tarefa dela, se for grupo). So no modo `manual`. */
   moveUp(id: string): void;
+  /** Pede `move-after` da linha visivel seguinte. So no modo `manual`. */
   moveDown(id: string): void;
   /** Leva a tarefa para antes da primeira linha visivel do seu contêiner (o proprio grupo, se agrupada). So no modo `manual`. */
   moveToTop(taskId: string): void;
