@@ -1,9 +1,8 @@
-# Task 033 — adicionar suporte a relacionar tasks (dependencia/bloqueio) no taskin
+# 🧩 Task 126 — adicionar suporte a relacionar tasks (dependencia/bloqueio) no taskin
 
-Status: pending
-Type: feat
-Assignee: A definir
-Priority: 11151
+- Status: pending
+- Type: feat
+- Assignee: A definir
 
 ## Description
 
@@ -37,3 +36,4 @@ esse vínculo.
 
 - Origem: auditoria 2026-08-08 da task-004/task-016 no OpenTask (repositório opentask).
 - Status `draft` a pedido de Sidarta Veloso; aguarda início formal via `taskin start`.
+- Renumerada de 033 para esta em 2026-09-24: o número 033 já era da task do LocalStudio, e o cabeçalho antigo não tinha os marcadores de lista, então a task aparecia sem status (ver a task-124).
