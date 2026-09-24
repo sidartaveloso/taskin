@@ -26,7 +26,7 @@ async function mountApp() {
       stubs: {
         Dashboard: {
           template:
-            '<div><slot /><div data-testid="tasks-count">{{ tasks.length }}</div><div data-testid="board-show-connection">{{ String(showConnection) }}</div></div>',
+            '<div><slot /><div data-testid="tasks-count">{{ tasks.length }}</div><div data-testid="task-ids">{{ tasks.map((t) => t.id).join(",") }}</div><div data-testid="grid-title">{{ gridTitle }}</div><div data-testid="board-show-connection">{{ String(showConnection) }}</div></div>',
           props: [
             'tasks',
             'title',
@@ -37,13 +37,15 @@ async function mountApp() {
             'isRetrying',
             'isLoading',
             'showConnection',
+            'gridTitle',
           ],
         },
         PrioritizationPage: {
           name: 'PrioritizationPage',
           emits: ['update-task', 'update-group', 'move'],
-          template: '<div data-testid="prioritization"><div data-testid="tasks-count">{{ tasks.length }}</div></div>',
-          props: ['tasks', 'groups'],
+          template:
+            '<div data-testid="prioritization"><div data-testid="tasks-count">{{ tasks.length }}</div><div data-testid="task-ids">{{ tasks.map((t) => t.id).join(",") }}</div></div>',
+          props: ['tasks', 'groups', 'sortMode'],
         },
       },
     },
@@ -405,5 +407,160 @@ describe('App — o estado da conexao vale para as duas telas', () => {
     await nextTick();
 
     expect(wrapper.find('[data-testid="connection-error"]').text()).toContain('O servidor nao responde');
+  });
+});
+
+/*
+ * Busca, ordem e pontuacao dizem quais tasks e em que ordem, e nao como
+ * desenhar (task-129): valem para as duas telas, ficam na barra do topo e na
+ * URL, e a regra e a do dominio — o `text`, o `scored`/`unscored` do
+ * `filterTasks` e o `ordenarTarefas` —, a mesma do `taskin list`.
+ */
+describe('App — busca, ordem e pontuacao valem para as duas telas', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  async function comTarefas(url: string) {
+    window.history.replaceState({}, '', url);
+    const wrapper = await mountApp();
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    store.tasks = [
+      createMockTask({ id: '001', type: 'feat', title: 'Criar login', order: 10, difficulty: 2 }),
+      createMockTask({ id: '002', type: 'fix', title: 'Corrigir crash', order: 20 }),
+      createMockTask({ id: '003', type: 'chore', title: 'Limpar painel', order: 30, difficulty: 5 }),
+      createMockTask({ id: '004', type: 'fix', title: 'Guia antigo', order: 5, status: 'done', difficulty: 1 }),
+    ];
+    await nextTick();
+    return wrapper;
+  }
+
+  const ids = (wrapper: Awaited<ReturnType<typeof mountApp>>) => wrapper.find('[data-testid="task-ids"]').text();
+  const params = () => new URLSearchParams(window.location.search);
+
+  it.each(['board', 'prioritization'])(
+    'na tela %s, `?q=` busca pelo texto do dominio, que casa o tipo',
+    async (tela) => {
+      const wrapper = await comTarefas(`/?view=${tela}&q=fix`);
+
+      expect(ids(wrapper)).toBe('002');
+    },
+  );
+
+  it.each(['board', 'prioritization'])('na tela %s, `?score=` recorta pontuadas e nao pontuadas', async (tela) => {
+    const pontuadas = await comTarefas(`/?view=${tela}&score=scored`);
+    expect(ids(pontuadas)).toBe('001,003');
+
+    const semNota = await comTarefas(`/?view=${tela}&score=unscored`);
+    expect(ids(semNota)).toBe('002');
+  });
+
+  it.each(['board', 'prioritization'])('na tela %s, `?sort=` ordena pelo ordenarTarefas', async (tela) => {
+    const manual = await comTarefas(`/?view=${tela}`);
+    expect(ids(manual)).toBe('001,002,003');
+
+    const dificil = await comTarefas(`/?view=${tela}&sort=diff-desc`);
+    // Sem nota vai para o fim, como no `taskin list --sort diff-desc`.
+    expect(ids(dificil)).toBe('003,001,002');
+  });
+
+  it('a busca soma com o recorte de status: `?filter=all&q=fix` traz a aberta e a concluida', async () => {
+    const wrapper = await comTarefas('/?filter=all&q=fix');
+
+    expect(ids(wrapper)).toBe('004,002');
+  });
+
+  it('a ordem chega a priorizacao, que so arrasta em manual', async () => {
+    const wrapper = await comTarefas('/?view=prioritization&sort=diff-asc');
+
+    expect(wrapper.findComponent({ name: 'PrioritizationPage' }).props('sortMode')).toBe('diff-asc');
+  });
+
+  it('valor desconhecido cai no padrao: manual e todas as pontuacoes', async () => {
+    const wrapper = await comTarefas('/?sort=xyz&score=xyz');
+
+    expect(ids(wrapper)).toBe('001,002,003');
+    expect((wrapper.find('[data-testid="sort-select"]').element as HTMLSelectElement).value).toBe('manual');
+    expect((wrapper.find('[data-testid="score-select"]').element as HTMLSelectElement).value).toBe('all');
+  });
+
+  it('os tres controles ficam na barra do topo, e mostram o que a URL pediu', async () => {
+    const wrapper = await comTarefas('/?q=crash&sort=diff-desc&score=unscored');
+    const barra = wrapper.find('[data-testid="top-bar"]');
+
+    expect((barra.find('[data-testid="search-input"]').element as HTMLInputElement).value).toBe('crash');
+    expect((barra.find('[data-testid="sort-select"]').element as HTMLSelectElement).value).toBe('diff-desc');
+    expect((barra.find('[data-testid="score-select"]').element as HTMLSelectElement).value).toBe('unscored');
+  });
+
+  it('gravar um nao apaga os outros, e a tela e o filtro ficam', async () => {
+    const wrapper = await comTarefas('/?view=prioritization&filter=closed');
+
+    await wrapper.find('[data-testid="search-input"]').setValue('guia');
+    await wrapper.find('[data-testid="sort-select"]').setValue('diff-desc');
+    await wrapper.find('[data-testid="score-select"]').setValue('scored');
+
+    expect(Object.fromEntries(params())).toEqual({
+      view: 'prioritization',
+      filter: 'closed',
+      q: 'guia',
+      sort: 'diff-desc',
+      score: 'scored',
+    });
+    expect(ids(wrapper)).toBe('004');
+  });
+
+  it('apagar a busca tira o `?q=` da URL', async () => {
+    const wrapper = await comTarefas('/?q=crash');
+
+    await wrapper.find('[data-testid="search-input"]').setValue('');
+
+    expect(params().has('q')).toBe(false);
+    expect(ids(wrapper)).toBe('001,002,003');
+  });
+
+  it('trocar de tela nao perde a busca, a ordem nem a pontuacao', async () => {
+    const wrapper = await comTarefas('/?q=a&sort=diff-desc&score=scored');
+
+    await wrapper.find('.mode-toggle button[data-view="prioritization"]').trigger('click');
+
+    expect(params().get('q')).toBe('a');
+    expect(params().get('sort')).toBe('diff-desc');
+    expect(params().get('score')).toBe('scored');
+    expect(ids(wrapper)).toBe('003,001');
+  });
+});
+
+/*
+ * Com o filtro em Closed, o quadro mostrava tarefas concluidas sob o titulo
+ * "Tarefas em Andamento" (task-129). O titulo descreve o recorte, no idioma da
+ * barra do topo.
+ */
+describe('App — o titulo do quadro segue o recorte', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  it.each([
+    ['/', 'Open tasks'],
+    ['/?filter=open', 'Open tasks'],
+    ['/?filter=active', 'Active tasks'],
+    ['/?filter=closed', 'Closed tasks'],
+    ['/?filter=all', 'All tasks'],
+  ])('em %s o titulo e "%s"', async (url, titulo) => {
+    window.history.replaceState({}, '', url);
+    const wrapper = await mountApp();
+
+    expect(wrapper.find('[data-testid="grid-title"]').text()).toBe(titulo);
+  });
+
+  it('trocar o filtro troca o titulo', async () => {
+    window.history.replaceState({}, '', '/');
+    const wrapper = await mountApp();
+
+    await wrapper.find('.filter-toggle button[data-filter="closed"]').trigger('click');
+
+    expect(wrapper.find('[data-testid="grid-title"]').text()).toBe('Closed tasks');
   });
 });

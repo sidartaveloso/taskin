@@ -3,7 +3,6 @@ import { type Ref, ref } from 'vue';
 import type { Task } from '../../types';
 import type {
   MudancaDeGrupo,
-  PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
   PriorityNode,
@@ -14,19 +13,14 @@ import type {
 export function createPrioritizationMock(): UsePrioritization {
   return {
     tree: ref<PriorityNode[]>([]),
-    filter: ref(''),
     viewMode: ref<PrioritizationViewMode>('cards'),
     sortMode: ref<PrioritizationSortMode>('manual'),
-    scoreFilter: ref<PrioritizationScoreFilter>('all'),
     dragEnabled: ref(true),
     changedTasks: ref<Task[]>([]),
     changedGroups: ref<MudancaDeGrupo[]>([]),
     canUndo: ref(false),
     canRedo: ref(false),
-    setFilter: vi.fn(),
     setViewMode: vi.fn(),
-    setSortMode: vi.fn(),
-    setScoreFilter: vi.fn(),
     toggleGroupCollapsed: vi.fn(),
     setDifficulty: vi.fn(),
     moveBefore: vi.fn(),

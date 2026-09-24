@@ -97,6 +97,14 @@ Vue Reactivity (Pinia state update)
 UI Update (TaskCard.vue re-renders)
 ```
 
+Busca, ordem e pontuacao ficam na barra do topo do `App.vue` e valem para as
+duas telas: o `App.vue` aplica o `filterTasks` (`text`, `scored`/`unscored`, o
+recorte de status) e o `ordenarTarefas` do `task-manager` — as mesmas funcoes do
+`taskin list` e do `list_tasks` — e entrega ao Board e ao quadro a lista pronta,
+com o modo de ordem. Tudo na URL: `?view=`, `?filter=`, `?q=`, `?sort=`,
+`?score=`. O quadro nao filtra nem ordena por conta propria; so arrasta e mostra
+as setas no modo `manual`.
+
 No quadro de priorizacao, mover (setas, topo, fim, arrastar) nao calcula numero
 no navegador: o `usePrioritization` emite um movimento com a linha visivel de
 referencia, o `App.vue` o traduz em `move-before`/`move-after` ou

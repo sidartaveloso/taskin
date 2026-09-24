@@ -191,7 +191,9 @@ Três filtros, iguais em todas as superfícies: `open` (tudo que não terminou),
 
 Sem filtro nenhum, a lista mostra só as abertas — na CLI, no `list_tasks` e no dashboard, porque a pergunta de quem abre a lista é o que falta fazer. Para ver todas, fechadas inclusive: `taskin list --all`, `all: true` no MCP, ou o botão **All** no dashboard. Um filtro de status explícito (`--status done`, `--closed`, `--active`) substitui esse padrão em vez de se somar a ele — e, como já é um recorte, não se combina com `--all`.
 
-Outros dois separam a fila pela dificuldade: `scored` (já pontuada — o que se prioriza) e `unscored` (a fila do que ainda falta pontuar). Na tela de priorização do dashboard eles são um controle próprio, ao lado do modo de ordenação. A fila do `unscored` se trabalha de qualquer lugar: `taskin difficulty 042 3` no terminal, `set_difficulty` para um agente, ou o próprio quadro — de 1 (trivial) a 5 (muito difícil).
+Outros dois separam a fila pela dificuldade: `scored` (já pontuada — o que se prioriza) e `unscored` (a fila do que ainda falta pontuar). No dashboard eles são um controle próprio na barra do topo, ao lado da busca e do modo de ordenação, e valem para as duas telas, o Board e a Priorização.
+
+O texto livre — `taskin list fix`, `text` no MCP, a busca do dashboard — casa id, título, tipo, status e responsável, a mesma regra em todo lugar. O dashboard guarda o que se escolheu na URL (`?q=`, `?sort=`, `?score=`, ao lado de `?view=` e `?filter=`), e recarregar ou compartilhar o link mostra a mesma lista na mesma ordem. A fila do `unscored` se trabalha de qualquer lugar: `taskin difficulty 042 3` no terminal, `set_difficulty` para um agente, ou o próprio quadro — de 1 (trivial) a 5 (muito difícil).
 
 
 ```

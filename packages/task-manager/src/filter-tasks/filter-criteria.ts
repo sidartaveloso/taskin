@@ -94,7 +94,7 @@ export const FILTER_CRITERIA_SURFACES = {
   },
   scored: { description: 'Only tasks that already have a difficulty', cli: { kind: 'flag' } },
   unscored: { description: 'Only tasks still without a difficulty', cli: { kind: 'flag' } },
-  text: { description: 'Free text over id, title, status and assignee', cli: { kind: 'positional' } },
+  text: { description: 'Free text over id, title, type, status and assignee', cli: { kind: 'positional' } },
 } satisfies Record<keyof TaskFilterCriteria, CriterionSurface>;
 
 type SurfaceMap = Record<string, CriterionSurface>;

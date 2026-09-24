@@ -9,7 +9,6 @@ export type {
   LadoDoMovimento,
   MovimentoDoQuadro,
   MudancaDeGrupo,
-  PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
   PriorityGroupNode,

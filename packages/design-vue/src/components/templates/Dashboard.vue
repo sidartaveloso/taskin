@@ -28,7 +28,7 @@
     </div>
 
     <!-- Task grid -->
-    <TaskGrid v-else :tasks="tasks ?? []" />
+    <TaskGrid v-else :tasks="tasks ?? []" :title="gridTitle" />
   </DashboardLayout>
 </template>
 
@@ -48,6 +48,8 @@ export interface DashboardProps {
   tasks?: Task[];
   /** Mostra a conexao no cabecalho; desligue quando ela estiver noutro lugar. */
   showConnection?: boolean;
+  /** O titulo da lista, que segue o recorte de quem a filtrou (task-129). */
+  gridTitle?: string;
 }
 
 withDefaults(defineProps<DashboardProps>(), {
@@ -59,6 +61,7 @@ withDefaults(defineProps<DashboardProps>(), {
   isRetrying: false,
   isLoading: false,
   showConnection: true,
+  gridTitle: 'Tasks',
 });
 
 defineEmits<{
