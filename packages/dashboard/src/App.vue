@@ -613,15 +613,24 @@ body {
   border-color: transparent;
 }
 
-/* Separa as telas do filtro, que sao escolhas de natureza diferente. */
+/* Separa os grupos da barra, que sao escolhas de natureza diferente. */
 .filter-toggle,
 .query-controls {
   padding-left: 1rem;
   border-left: 1px solid var(--border-muted, #e5e5e5);
 }
 
+/*
+ * A busca cresce e encolhe com o espaco que sobra, para a barra caber numa
+ * linha no desktop. A base e pequena de proposito: o `flex-wrap` decide quebrar
+ * pela base, antes de encolher, e com a base na largura do conteudo a barra
+ * quebrava ja em 1280px. Abaixo de 640px os controles quebram entre si, em vez
+ * de alargar a pagina.
+ */
 .query-controls {
   display: flex;
+  flex: 1 1 28rem;
+  min-width: 0;
   align-items: center;
   gap: 0.25rem;
 }
@@ -637,7 +646,22 @@ body {
 }
 
 .query-controls__search {
-  min-width: 14rem;
+  flex: 1 1 8rem;
+  min-width: 7rem;
+  max-width: 20rem;
+}
+
+.query-controls select {
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .query-controls {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    padding-left: 0;
+    border-left: none;
+  }
 }
 
 .filter-toggle__count {
