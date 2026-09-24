@@ -101,7 +101,7 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin list [filter] [options]` - List the open tasks (`filter` is free text over id, title, status and assignee).
   Without a status criterion only open tasks are listed, in the text output and in `--json` alike;
   `--status`, `--closed` and `--active` replace that default rather than narrowing it
-  - `--all` - Show every task, closed ones included (refused together with `--open`, `--closed` or `--active`)
+  - `--all` - Show every task, closed ones included (refused together with `--open`, `--closed`, `--active` or `--status`)
   - `--open` - Show only open tasks (pending, in-progress, paused, in-review, blocked) — already the default, kept for scripts
   - `--closed` - Show only closed tasks (done, canceled)
   - `--active` - Show only tasks started and not finished (in-progress, paused, in-review)

@@ -187,7 +187,7 @@ your repository starts acting on it:
 
 Three filters, the same on every surface: `open` (anything not finished), `closed`, and `active` — started and not finished, which is what you want on screen while work is happening.
 
-With no filter at all, the list shows only the open tasks — in the CLI, in `list_tasks` and on the dashboard, because whoever opens the list wants to know what is left to do. To see every task, closed ones included: `taskin list --all`, `all: true` over MCP, or the **All** button on the dashboard. An explicit status filter (`--status done`, `--closed`, `--active`) replaces that default instead of adding to it.
+With no filter at all, the list shows only the open tasks — in the CLI, in `list_tasks` and on the dashboard, because whoever opens the list wants to know what is left to do. To see every task, closed ones included: `taskin list --all`, `all: true` over MCP, or the **All** button on the dashboard. An explicit status filter (`--status done`, `--closed`, `--active`) replaces that default instead of adding to it — and, since it already narrows the list, it cannot be combined with `--all`.
 
 Two more split the queue by difficulty: `scored` (already rated — what you prioritise) and `unscored` (the queue still waiting to be rated). On the dashboard's prioritization screen they are a control of their own, next to the sort mode. The `unscored` queue is worked from anywhere: `taskin difficulty 042 3` in the terminal, `set_difficulty` for an agent, or the board itself — from 1 (trivial) to 5 (very hard).
 

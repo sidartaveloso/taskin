@@ -23,6 +23,24 @@ A pergunta de quem abre a lista e o que falta fazer, e as tarefas fechadas so cr
 - [x] Documentacao nas quatro frentes: `README.md`, `packages/cli/README.md`, `packages/task-server-mcp/README.md`, `docs/{MCP_CLAUDE_SETUP,MCP_VSCODE_SETUP,QUICKSTART}.md`, `packages/docs/content/index.md` e `packages/docs/content/pt-br/index.md`.
 - [x] Verificacao: `pnpm lint`, `pnpm typecheck` (28/28), `pnpm format` verdes. `turbo run test --continue`: task-manager 142, task-server-mcp 110, dashboard 16, fs-provider 405, pinia 12, ws 30; CLI 436/438 — as 2 falhas mudam a cada rodada (start/finish/notify, no `git commit` do setup) e aparecem tambem sem esta mudanca. design-vue e ui-sense nao rodam aqui: falta o Chromium do Playwright.
 
+### Revisao: o binario de verdade, e o `status` que escapava da recusa
+
+A revisao acrescentou `packages/cli/src/commands/list-default.e2e.test.ts`, que
+roda o `dist/index.js` sobre um projeto temporario com quatro tarefas reais
+(pendente, em andamento, concluida, cancelada) — os testes da CLI acima usam um
+`TaskManager` simulado. Nove casos: o padrao, `--all`, `--closed`/`--active`/
+`--status` trocando o padrao, `--open` igual ao padrao, o texto igual ao
+`--json`, e a recusa de `--all` com cada recorte.
+
+O ultimo caso achou uma falha: `--all --status done` era aceito e devolvia so
+as concluidas, ignorando o `all` em silencio — o que o comentario de
+`recusarAllComRecorte` diz evitar. A recusa passou a incluir `status`
+(`packages/task-manager/src/filter-tasks/filter-criteria.ts`), com teste no
+dominio (`recusa \`all\` combinado com \`status\``, em
+`filter-criteria.test.ts`) e no MCP (`list-tasks.test.ts`), que herdou a regra
+sem edicao propria. Rodar:
+`cd packages/cli && npx vitest run --config vitest.e2e.config.ts src/commands/list-default.e2e.test.ts`.
+
 ## Notes
 
 ### Por que

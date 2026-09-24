@@ -179,7 +179,7 @@ seu repositório passa a mexer nela:
 
 Três filtros, iguais em todas as superfícies: `open` (tudo que não terminou), `closed`, e `active` — começou e não terminou, que é o que interessa na tela enquanto o trabalho acontece.
 
-Sem filtro nenhum, a lista mostra só as abertas — na CLI, no `list_tasks` e no dashboard, porque a pergunta de quem abre a lista é o que falta fazer. Para ver todas, fechadas inclusive: `taskin list --all`, `all: true` no MCP, ou o botão **All** no dashboard. Um filtro de status explícito (`--status done`, `--closed`, `--active`) substitui esse padrão em vez de se somar a ele.
+Sem filtro nenhum, a lista mostra só as abertas — na CLI, no `list_tasks` e no dashboard, porque a pergunta de quem abre a lista é o que falta fazer. Para ver todas, fechadas inclusive: `taskin list --all`, `all: true` no MCP, ou o botão **All** no dashboard. Um filtro de status explícito (`--status done`, `--closed`, `--active`) substitui esse padrão em vez de se somar a ele — e, como já é um recorte, não se combina com `--all`.
 
 Outros dois separam a fila pela dificuldade: `scored` (já pontuada — o que se prioriza) e `unscored` (a fila do que ainda falta pontuar). Na tela de priorização do dashboard eles são um controle próprio, ao lado do modo de ordenação. A fila do `unscored` se trabalha de qualquer lugar: `taskin difficulty 042 3` no terminal, `set_difficulty` para um agente, ou o próprio quadro — de 1 (trivial) a 5 (muito difícil).
 

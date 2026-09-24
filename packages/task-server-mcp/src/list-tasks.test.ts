@@ -88,6 +88,13 @@ describe('listar tarefas por MCP', () => {
     expect(listTasks?.inputSchema.properties).toHaveProperty('all');
   });
 
+  it('recusa `all` combinado com `status`, pela mesma regra do dominio', async () => {
+    const resultado = await servidor().callTool({ name: 'list_tasks', arguments: { all: true, status: 'done' } });
+
+    expect(resultado.isError).toBe(true);
+    expect(texto(resultado)).toMatch(/`all` cannot be combined with `status`/);
+  });
+
   it('recusa `all` combinado com `closed`', async () => {
     const resultado = await servidor().callTool({ name: 'list_tasks', arguments: { all: true, closed: true } });
 

@@ -126,6 +126,10 @@ describe('o criterio all', () => {
     expect(() => parseFilterCriteria({ all: true, [recorte]: true })).toThrow(/`all` cannot be combined/);
   });
 
+  it('recusa `all` combinado com `status`, que tambem e um recorte', () => {
+    expect(() => parseFilterCriteria({ all: true, status: 'done' })).toThrow(/`all` cannot be combined with `status`/);
+  });
+
   it('aceita `all` com os criterios que nao sao de status', () => {
     expect(parseFilterCriteria({ all: true, type: 'fix' })).toEqual({ all: true, type: 'fix' });
   });

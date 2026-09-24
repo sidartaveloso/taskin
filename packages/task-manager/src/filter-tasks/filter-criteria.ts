@@ -186,9 +186,9 @@ export function parseFilterCriteria(raw: unknown): TaskFilterCriteria {
 }
 
 /**
- * `all` pede todas; `open`, `closed` e `active` pedem um recorte. Juntos, um
- * dos dois teria de ser ignorado em silencio — e qualquer escolha surpreende
- * alguem. Recusar e a unica resposta que nao mente.
+ * `all` pede todas; `open`, `closed`, `active` e `status` pedem um recorte.
+ * Juntos, um dos dois teria de ser ignorado em silencio — e qualquer escolha
+ * surpreende alguem. Recusar e a unica resposta que nao mente.
  *
  * Fica fora do schema de proposito: um `z.object` com refinamento deixa de
  * aceitar `.extend`, e o teste de derivacao estende o schema.
@@ -196,7 +196,9 @@ export function parseFilterCriteria(raw: unknown): TaskFilterCriteria {
 function recusarAllComRecorte(criteria: TaskFilterCriteria): void {
   if (!criteria.all) return;
 
-  const recortes = (['open', 'closed', 'active'] as const).filter((chave) => criteria[chave]);
+  const recortes = (['open', 'closed', 'active', 'status'] as const).filter(
+    (chave) => criteria[chave] !== undefined && criteria[chave] !== false,
+  );
   if (recortes.length > 0) {
     throw new Error(
       `\`all\` cannot be combined with ${recortes.map((r) => `\`${r}\``).join(', ')}: \`all\` lists every task, the others narrow it.`,
