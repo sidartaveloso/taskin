@@ -10,6 +10,12 @@ interface Props {
   loading?: boolean;
   emptyMessage?: string;
   variant?: 'default' | 'compact';
+  /**
+   * O que a lista e, dito por quem a recortou — "Open tasks", "Closed tasks".
+   * Era fixo em "Tarefas em Andamento", mesmo mostrando so as concluidas
+   * (task-129). O slot `title` continua valendo por cima.
+   */
+  title?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -18,6 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   emptyMessage: 'Nenhuma tarefa encontrada',
   variant: 'default',
+  title: 'Tasks',
 });
 
 // Grid classes based on columns
@@ -65,7 +72,7 @@ const statusCounts = computed(() => ({
     <div class="task-grid-header">
       <h2 class="task-grid-title">
         <slot name="title">
-          Tarefas em Andamento
+          {{ title }}
         </slot>
       </h2>
 

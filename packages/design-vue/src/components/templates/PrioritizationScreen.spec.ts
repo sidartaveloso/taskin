@@ -57,9 +57,33 @@ describe('PrioritizationScreen — topo e fim num clique', () => {
   });
 
   it('fora do modo manual os botoes nao aparecem', () => {
-    const wrapper = mount(PrioritizationScreen, { props: { tree, sortMode: 'diff-asc', dragEnabled: false } });
+    const wrapper = mount(PrioritizationScreen, { props: { tree, dragEnabled: false } });
 
     expect(wrapper.find('[data-testid="move-to-top-1"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="move-group-to-top-g-a"]').exists()).toBe(false);
+  });
+
+  /*
+   * A ordem troca de fora, na barra do topo do dashboard (task-129): os botoes
+   * tem que sumir e voltar sem remontar a tela.
+   */
+  it('os botoes somem e voltam quando a ordem troca de fora', async () => {
+    const wrapper = mount(PrioritizationScreen, { props: { tree } });
+    expect(wrapper.find('[data-testid="move-to-top-1"]').exists()).toBe(true);
+
+    await wrapper.setProps({ dragEnabled: false });
+    expect(wrapper.find('[data-testid="move-to-top-1"]').exists()).toBe(false);
+
+    await wrapper.setProps({ dragEnabled: true });
+    expect(wrapper.find('[data-testid="move-to-top-1"]').exists()).toBe(true);
+  });
+
+  it('a barra da tela so tem os controles de desenho: sem busca, ordem ou pontuacao', () => {
+    const wrapper = mount(PrioritizationScreen, { props: { tree } });
+
+    expect(wrapper.find('.toolbar input').exists()).toBe(false);
+    expect(wrapper.find('.toolbar select').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="view-mode-cards"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="undo-button"]').exists()).toBe(true);
   });
 });

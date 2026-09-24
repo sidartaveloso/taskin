@@ -1,14 +1,10 @@
+import type { ModoDeOrdenacao } from '@opentask/taskin-task-manager';
 import type { Ref } from 'vue';
 import type { GroupId, Task } from '../../types';
 
 export type PrioritizationViewMode = 'cards' | 'icons' | 'grid';
-export type PrioritizationSortMode = 'manual' | 'diff-asc' | 'diff-desc';
-/**
- * Restricts the visible tree by whether a task already has a difficulty.
- * `scored` is for prioritising (and makes the diff sort modes honest);
- * `unscored` is the queue of what is still waiting to be rated.
- */
-export type PrioritizationScoreFilter = 'all' | 'scored' | 'unscored';
+/** Os modos do `ordenarTarefas` do dominio, que e quem ordena. */
+export type PrioritizationSortMode = ModoDeOrdenacao;
 
 export interface PriorityTaskNode {
   kind: 'task';
@@ -70,7 +66,7 @@ export interface MudancaDeGrupo {
 }
 
 export interface UsePrioritizationOptions {
-  /** localStorage key used to persist view-only preferences (view mode, sort mode, collapsed groups) */
+  /** localStorage key used to persist view-only preferences (view mode, collapsed groups) */
   storageKey?: string;
   /**
    * Recebe cada movimento — setas, topo, fim, arrastar. O quadro nao calcula
@@ -80,24 +76,24 @@ export interface UsePrioritizationOptions {
   onMove?: (movimento: MovimentoDoQuadro) => void;
   /** Os grupos do registro, com o pai de cada um. Sem eles, todo grupo e da raiz. */
   groups?: Ref<GrupoDoQuadro[]>;
+  /**
+   * A ordem em que as tarefas chegam, escolhida por quem hospeda (task-129).
+   * Arrastar e as setas so valem em `manual`. Ausente, `manual`.
+   */
+  sortMode?: Ref<PrioritizationSortMode>;
 }
 
 export interface UsePrioritization {
   tree: Ref<PriorityNode[]>;
-  filter: Ref<string>;
   viewMode: Ref<PrioritizationViewMode>;
   sortMode: Ref<PrioritizationSortMode>;
-  scoreFilter: Ref<PrioritizationScoreFilter>;
   dragEnabled: Ref<boolean>;
   changedTasks: Ref<Task[]>;
   /** Grupos criados ou que mudaram de pai desde a ultima volta dos dados — ver {@link MudancaDeGrupo}. */
   changedGroups: Ref<MudancaDeGrupo[]>;
   canUndo: Ref<boolean>;
   canRedo: Ref<boolean>;
-  setFilter(value: string): void;
   setViewMode(value: PrioritizationViewMode): void;
-  setSortMode(value: PrioritizationSortMode): void;
-  setScoreFilter(value: PrioritizationScoreFilter): void;
   toggleGroupCollapsed(groupId: string): void;
   setDifficulty(taskId: string, difficulty: 1 | 2 | 3 | 4 | 5): void;
   moveBefore(draggedId: string, targetId: string): void;

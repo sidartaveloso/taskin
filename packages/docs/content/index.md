@@ -198,7 +198,9 @@ Three filters, the same on every surface: `open` (anything not finished), `close
 
 With no filter at all, the list shows only the open tasks — in the CLI, in `list_tasks` and on the dashboard, because whoever opens the list wants to know what is left to do. To see every task, closed ones included: `taskin list --all`, `all: true` over MCP, or the **All** button on the dashboard. An explicit status filter (`--status done`, `--closed`, `--active`) replaces that default instead of adding to it — and, since it already narrows the list, it cannot be combined with `--all`.
 
-Two more split the queue by difficulty: `scored` (already rated — what you prioritise) and `unscored` (the queue still waiting to be rated). On the dashboard's prioritization screen they are a control of their own, next to the sort mode. The `unscored` queue is worked from anywhere: `taskin difficulty 042 3` in the terminal, `set_difficulty` for an agent, or the board itself — from 1 (trivial) to 5 (very hard).
+Two more split the queue by difficulty: `scored` (already rated — what you prioritise) and `unscored` (the queue still waiting to be rated). On the dashboard they are a control of their own in the top bar, next to the search and the sort mode, and they apply to both screens, the Board and the Prioritization.
+
+The free text — `taskin list fix`, `text` over MCP, the search box on the dashboard — matches id, title, type, status and assignee, the same rule everywhere. The dashboard keeps what you chose in the URL (`?q=`, `?sort=`, `?score=`, next to `?view=` and `?filter=`), so a reload or a shared link shows the same list in the same order. The `unscored` queue is worked from anywhere: `taskin difficulty 042 3` in the terminal, `set_difficulty` for an agent, or the board itself — from 1 (trivial) to 5 (very hard).
 
 
 ```

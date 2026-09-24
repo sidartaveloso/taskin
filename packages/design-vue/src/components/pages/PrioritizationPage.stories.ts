@@ -15,7 +15,7 @@ const meta: Meta<typeof PrioritizationPage> = {
     docs: {
       description: {
         component:
-          'Smart "page" component for the task prioritization board: owns the `usePrioritization` composable (drag reorder, ad hoc grouping, difficulty, filter, view/sort prefs, change tracking) and renders `PrioritizationScreen`, emitting `update-task`/`update-tasks` whenever the manual order, group, or difficulty of a task changes so the host app can persist it.',
+          'Smart "page" component for the task prioritization board: owns the `usePrioritization` composable (drag reorder, ad hoc grouping, difficulty, view prefs, change tracking — it filters and sorts nothing: the host hands it the visible tasks and the `sortMode`) and renders `PrioritizationScreen`, emitting `update-task`/`update-tasks` whenever the manual order, group, or difficulty of a task changes so the host app can persist it.',
       },
     },
     layout: 'fullscreen',

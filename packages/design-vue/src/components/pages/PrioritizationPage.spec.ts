@@ -20,10 +20,7 @@ const ScreenStub = {
   name: 'PrioritizationScreen',
   props: [
     'tree',
-    'filter',
     'viewMode',
-    'sortMode',
-    'scoreFilter',
     'dragEnabled',
     'canUndo',
     'canRedo',
@@ -37,10 +34,7 @@ const ScreenStub = {
     'toggle-tracking',
     'gesture-action',
     'update:camera-active',
-    'update:filter',
     'update:view-mode',
-    'update:sort-mode',
-    'update:score-filter',
     'toggle-collapse',
     'set-all-collapsed',
     'set-difficulty',
@@ -115,7 +109,6 @@ describe('PrioritizationPage', () => {
     screen.vm.$emit('move-to-bottom', '1');
     screen.vm.$emit('move-group-to-top', 'g-a');
     screen.vm.$emit('move-group-to-bottom', 'g-b');
-    screen.vm.$emit('update:score-filter', 'unscored');
     await nextTick();
     expect(api.undo).toHaveBeenCalled();
     expect(api.setDifficulty).toHaveBeenCalledWith('1', 3);
@@ -124,7 +117,6 @@ describe('PrioritizationPage', () => {
     expect(api.moveToBottom).toHaveBeenCalledWith('1');
     expect(api.moveGroupToTop).toHaveBeenCalledWith('g-a');
     expect(api.moveGroupToBottom).toHaveBeenCalledWith('g-b');
-    expect(api.setScoreFilter).toHaveBeenCalledWith('unscored');
   });
 
   it('emits update-task and update-tasks when tasks change', async () => {
@@ -158,6 +150,15 @@ describe('PrioritizationPage', () => {
     const [, options] = vi.mocked(usePrioritization).mock.calls.at(-1) ?? [];
 
     expect(options?.groups?.value).toEqual([{ id: 'g-pai', name: 'Pai' }]);
+  });
+
+  it('passa a ordem da prop ao composable, e manual quando ausente', async () => {
+    const wrapper = mountPage();
+    const [, semOrdem] = vi.mocked(usePrioritization).mock.calls.at(-1) ?? [];
+    expect(semOrdem?.sortMode?.value).toBe('manual');
+
+    await wrapper.setProps({ sortMode: 'diff-desc' });
+    expect(semOrdem?.sortMode?.value).toBe('diff-desc');
   });
 
   it('emite move com o movimento que o composable pede ao dominio', () => {
