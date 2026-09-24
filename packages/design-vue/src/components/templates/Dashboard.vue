@@ -6,6 +6,7 @@
     :error-message="errorMessage"
     :show-retry="showRetry"
     :is-retrying="isRetrying"
+    :show-connection="showConnection"
     @retry="$emit('retry')"
   >
     <!-- Loading state -->
@@ -45,6 +46,8 @@ export interface DashboardProps {
   isRetrying?: boolean;
   isLoading?: boolean;
   tasks?: Task[];
+  /** Mostra a conexao no cabecalho; desligue quando ela estiver noutro lugar. */
+  showConnection?: boolean;
 }
 
 withDefaults(defineProps<DashboardProps>(), {
@@ -55,6 +58,7 @@ withDefaults(defineProps<DashboardProps>(), {
   showRetry: false,
   isRetrying: false,
   isLoading: false,
+  showConnection: true,
 });
 
 defineEmits<{

@@ -41,16 +41,29 @@
     <span class="filter-toggle__count" data-testid="filter-count">
       Showing {{ tasks.length }} of {{ taskStore.tasks.length }} tasks
     </span>
+
+    <!--
+      A conexao e uma so, a do WebSocket, e as duas telas dependem dela: a de
+      priorizacao grava pelo servidor a cada movimento. Por isso fica aqui, e
+      nao no cabecalho do Board (task-128).
+    -->
+    <ConnectionStatus
+      :status="connectionStatusType"
+      :status-text="statusText"
+      :show-retry="!!connectionError"
+      :is-retrying="isLoading"
+      @retry="handleRefresh"
+    />
+  </div>
+
+  <div v-if="connectionError" class="connection-error" role="alert" data-testid="connection-error">
+    ⚠️ {{ connectionError }}
   </div>
 
   <Dashboard
     v-if="mode === 'board'"
     title="Taskin Dashboard"
-    :connection-status="connectionStatusType"
-    :status-text="statusText"
-    :error-message="connectionError || ''"
-    :show-retry="!!connectionError"
-    :is-retrying="isLoading"
+    :show-connection="false"
     :is-loading="isLoading"
     :tasks="tasks"
     @retry="handleRefresh"
@@ -67,7 +80,7 @@
 
 <script setup lang="ts">
 import type { GrupoDoQuadro, MovimentoDoQuadro, MudancaDeGrupo, Task, TaskStatus } from '@opentask/taskin-design-vue';
-import { Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
+import { ConnectionStatus, Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
 import { effectiveFilterCriteria, filterTasks, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
@@ -506,6 +519,14 @@ body {
   margin-left: auto;
   font-size: 0.875rem;
   color: var(--text-secondary, #6c757d);
+}
+
+.connection-error {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--status-warning-bg, #feb2b2);
+  background: var(--bg-section-error, #fff5f5);
+  color: var(--text-error-dark, #c92a2a);
+  font-size: 0.875rem;
 }
 
 /* Page-specific styles */

@@ -7,6 +7,7 @@
       :error-message="errorMessage"
       :show-retry="showRetry"
       :is-retrying="isRetrying"
+      :show-connection="showConnection"
       @retry="$emit('retry')"
     />
 
@@ -26,6 +27,8 @@ export interface DashboardLayoutProps {
   errorMessage?: string;
   showRetry?: boolean;
   isRetrying?: boolean;
+  /** Mostra a conexao no cabecalho; desligue quando ela estiver noutro lugar. */
+  showConnection?: boolean;
 }
 
 withDefaults(defineProps<DashboardLayoutProps>(), {
@@ -35,6 +38,7 @@ withDefaults(defineProps<DashboardLayoutProps>(), {
   errorMessage: '',
   showRetry: false,
   isRetrying: false,
+  showConnection: true,
 });
 
 defineEmits<{

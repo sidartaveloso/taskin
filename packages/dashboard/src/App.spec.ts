@@ -25,7 +25,8 @@ async function mountApp() {
     global: {
       stubs: {
         Dashboard: {
-          template: '<div><slot /><div data-testid="tasks-count">{{ tasks.length }}</div></div>',
+          template:
+            '<div><slot /><div data-testid="tasks-count">{{ tasks.length }}</div><div data-testid="board-show-connection">{{ String(showConnection) }}</div></div>',
           props: [
             'tasks',
             'title',
@@ -35,6 +36,7 @@ async function mountApp() {
             'showRetry',
             'isRetrying',
             'isLoading',
+            'showConnection',
           ],
         },
         PrioritizationPage: {
@@ -372,5 +374,36 @@ describe('App — a tela escolhida fica na URL, e o topo numa linha so', () => {
     expect(barra.find('.mode-toggle').exists()).toBe(true);
     expect(barra.find('.filter-toggle').exists()).toBe(true);
     expect(barra.find('[data-testid="filter-count"]').exists()).toBe(true);
+  });
+});
+
+describe('App — o estado da conexao vale para as duas telas', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  it.each(['board', 'prioritization'])('na tela %s, a conexao aparece na barra do topo', async (tela) => {
+    window.history.replaceState({}, '', `/?view=${tela}`);
+    const wrapper = await mountApp();
+
+    expect(wrapper.find('[data-testid="top-bar"] .connection-status').exists()).toBe(true);
+  });
+
+  it('o Board nao repete a conexao no proprio cabecalho', async () => {
+    window.history.replaceState({}, '', '/?view=board');
+    const wrapper = await mountApp();
+
+    expect(wrapper.find('[data-testid="board-show-connection"]').text()).toBe('false');
+  });
+
+  it('um erro de conexao aparece abaixo da barra nas duas telas', async () => {
+    window.history.replaceState({}, '', '/?view=prioritization');
+    const wrapper = await mountApp();
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    store.error = 'O servidor nao responde';
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="connection-error"]').text()).toContain('O servidor nao responde');
   });
 });
