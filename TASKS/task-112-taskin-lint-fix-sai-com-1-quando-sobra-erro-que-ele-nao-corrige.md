@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: sidartaveloso
+- Priority: 13151
 
 ## Description
 O taskin lint --fix imprime o erro que nao conseguiu corrigir e sai com 0: a condicao de saida em packages/cli/src/commands/lint.ts e (!result.valid && !options.fix), entao com --fix nunca ha codigo 1. E um gate que engole a propria falha, e com o teto de anexo (task-108) passou a importar, porque tamanho de arquivo nunca se corrige com --fix. Alem disso, sem --fix a dica 'Run with --fix to automatically fix format issues' aparece para qualquer erro, inclusive o de anexo. O --fix deve corrigir o que der e sair com 1 se sobrar erro, dizendo o que sobrou.

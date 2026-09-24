@@ -3,6 +3,8 @@
 - Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
+- Difficulty: 2
+- Priority: 13251
 
 ## Description
 O diretório de tasks do provider de arquivos guarda também os anexos — as

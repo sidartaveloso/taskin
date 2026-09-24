@@ -3,6 +3,7 @@
 - Status: done
 - Type: fix
 - Assignee: sidartaveloso
+- Priority: 12951
 
 ## Description
 O commit automatico de status (taskin start/pause/finish e o finish_task do MCP) faz git add do arquivo da task e depois git commit sem pathspec, levando junto tudo o que ja estava no index. Em outro projeto, um taskin start em autopilot commitou 26 arquivos sob uma mensagem de status, e um deles tinha um token de producao. Os commits de trabalho (pause e finish) fazem git add -A sem olhar o que entra.
