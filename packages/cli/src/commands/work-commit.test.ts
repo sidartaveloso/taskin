@@ -1,7 +1,7 @@
 /**
  * O commit de trabalho automatico (`finish` e `pause`) passa pelo
  * `commitWork`, que recusa arquivo sensivel em vez de fazer `git add -A` as
- * cegas (task-107).
+ * cegas (task-110).
  */
 
 import type { IGitService, WorkCommitResult } from '@opentask/taskin-git-utils';

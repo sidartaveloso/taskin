@@ -29,7 +29,7 @@ O autoSync nao funciona e nao da para ver nem configurar: o taskin init grava au
 - [ ] So depois: `"defaultBranch": "develop"` no `.taskin.json` deste repositorio
 
 ## Notes
-**Como apareceu.** As tasks 107 e 108 existem em dobro entre `main` e `develop`: cada branch numerou olhando so os proprios arquivos, porque o `.taskin.json` tem `autoSync: true` sem `defaultBranch` — o `new` avisa e desliga o sync (`packages/cli/src/commands/new.ts:154`).
+**Como apareceu.** As tasks 107 e 108 existiram em dobro entre `main` e `develop` (as do `main` viraram 110 e 111): cada branch numerou olhando so os proprios arquivos, porque o `.taskin.json` tem `autoSync: true` sem `defaultBranch` — o `new` avisa e desliga o sync (`packages/cli/src/commands/new.ts:154`).
 
 **Por que nao basta configurar.** Com `defaultBranch: develop`, rodar `taskin new` no `main` faria `git rebase origin/develop` no `main` e depois `git push origin develop` da `develop` local — publicando o que estivesse nela, e nao a task nova.
 

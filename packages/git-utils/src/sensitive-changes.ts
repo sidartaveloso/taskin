@@ -1,5 +1,5 @@
 /**
- * O que o taskin se recusa a comitar sozinho (task-107).
+ * O que o taskin se recusa a comitar sozinho (task-110).
  *
  * Nao e um scanner de segredos completo e nao tenta ser: e a rede minima para
  * que um commit automatico nao publique, sem ninguem olhar, o tipo de arquivo

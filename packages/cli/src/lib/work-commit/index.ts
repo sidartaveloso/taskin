@@ -1,5 +1,5 @@
 /**
- * Como a CLI conta o resultado de um commit de trabalho automatico (task-107).
+ * Como a CLI conta o resultado de um commit de trabalho automatico (task-110).
  *
  * O `pause` e o `finish` em autopilot comitam tudo o que esta no working tree.
  * O `GitService.commitWork` recusa quando algo parece sensivel; aqui a recusa

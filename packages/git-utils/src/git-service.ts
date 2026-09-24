@@ -67,7 +67,7 @@ export class GitService implements IGitService {
     try {
       // Com caminhos, o commit grava so eles, e o resto do index fica como
       // estava. Sem caminhos, grava o index inteiro — e o que a pessoa
-      // deixou staged vai junto (task-107).
+      // deixou staged vai junto (task-110).
       this.git(['commit', '-m', message, ...(paths?.length ? ['--', ...paths] : [])]);
       return true;
     } catch {

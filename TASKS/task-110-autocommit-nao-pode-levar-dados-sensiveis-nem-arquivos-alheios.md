@@ -1,4 +1,4 @@
-# 🧩 Task 107 — Autocommit nao pode levar dados sensiveis nem arquivos alheios
+# 🧩 Task 110 — Autocommit nao pode levar dados sensiveis nem arquivos alheios
 
 - Status: done
 - Type: fix
@@ -58,3 +58,5 @@ recusa — a saída é comitar à mão, o que põe uma pessoa olhando. `fetch`,
 `rebase`, `push` e `checkout` seguem pelo `execSync`: recebem nomes de branch
 da configuração, não texto de task.
 
+
+**Renumerada de 107 para 110** ao integrar o `main` no `develop`: a 107 ja existia no `develop`, criada antes, porque o `autoSync` estava inerte (ver task-109). Os commits desta task — o de implementacao e `9d292f1` — citam `task-107` na mensagem.

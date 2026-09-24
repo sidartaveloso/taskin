@@ -1,4 +1,4 @@
-# 🧩 Task 108 — O Assignee grava o id do registro, e o lint acusa o nome de exibicao
+# 🧩 Task 111 — O Assignee grava o id do registro, e o lint acusa o nome de exibicao
 
 - Status: done
 - Type: fix
@@ -30,3 +30,5 @@ O taskin new -u <id> resolve o usuario e grava user.name no Assignee (file-syste
 **Cuidado.** A leitura (`getAllTasks`) continua aceitando o nome, para nao quebrar arquivos antigos antes do `--fix`: o `resolveUser` nao mudou, so o que o lint faz com o resultado.
 
 **Fora do escopo.** `taskin new` ponta a ponta nao ganhou teste de CLI proprio: o comando repassa `-u` direto para `createTask`, que e o que os testes do provider cobrem.
+
+**Renumerada de 108 para 111** ao integrar o `main` no `develop`: a 108 ja existia no `develop`, criada antes, porque o `autoSync` estava inerte (ver task-109). Os commits desta task — o de implementacao e `11a6f20` — citam `task-108` na mensagem.
