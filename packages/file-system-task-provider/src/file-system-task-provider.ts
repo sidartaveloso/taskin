@@ -12,6 +12,7 @@ import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
+import { AttachmentValidator } from './attachment-validator/index.js';
 import { criteriosEmAberto, validarConclusao } from './criterios-de-conclusao/index.js';
 import { FileSystemGroupRegistry } from './group-registry.js';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
@@ -121,6 +122,18 @@ export interface FileSystemTaskProviderOptions {
    * the style it already uses.
    */
   readonly convertMetadataStyleTo?: MetadataStyleId;
+
+  /**
+   * Size limit, in KB, for each attachment — every file under the tasks
+   * directory that is not markdown. When set, `lint` fails on any attachment
+   * over it that `.taskin/.taskin-attachment-exceptions.json` does not exempt.
+   * Unset, there is no limit.
+   *
+   * The limit belongs to this provider, not to taskin: only a provider that
+   * keeps attachments as files in the repository makes the repository — and a
+   * history git never forgets — grow with them.
+   */
+  readonly maxAttachmentKb?: number;
 }
 
 export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
@@ -128,6 +141,8 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   private logger: ILogger;
   private metadataStyle: MetadataStyleId;
   private convertMetadataStyleTo: MetadataStyleId | undefined;
+  private maxAttachmentKb: number | undefined;
+  private taskinDir: string;
 
   /**
    * Os grupos deste projeto, como entidades.
@@ -150,16 +165,15 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     this.logger = logger ?? NullLogger;
     this.metadataStyle = options.metadataStyle ?? DEFAULT_METADATA_STYLE_ID;
     this.convertMetadataStyleTo = options.convertMetadataStyleTo;
+    this.maxAttachmentKb = options.maxAttachmentKb;
+    this.taskinDir = options.taskinDir ?? path.join(tasksDirectory, '..', '.taskin');
 
     /*
      * O registro recebe daqui a unica coisa que ele nao sabe fazer: mexer nas
      * tarefas. Apagar um grupo tem que dizer para onde os membros vao, como
      * Redmine (`reassign_to_id`) e Jira (`moveIssuesTo`) ja fazem.
      */
-    this.groupRegistry = new FileSystemGroupRegistry(
-      options.taskinDir ?? path.join(tasksDirectory, '..', '.taskin'),
-      (de, para) => this.reassignGroup(de, para),
-    );
+    this.groupRegistry = new FileSystemGroupRegistry(this.taskinDir, (de, para) => this.reassignGroup(de, para));
   }
 
   /**
@@ -675,6 +689,15 @@ ${i18n.notesPlaceholder}
         todas.map((t) => ({ file: t.filePath, ...(t.order !== undefined && { priority: t.order }) })),
       ),
     );
+
+    if (this.maxAttachmentKb !== undefined) {
+      const attachments = new AttachmentValidator({
+        maxAttachmentKb: this.maxAttachmentKb,
+        taskinDir: this.taskinDir,
+        tasksDir: this.tasksDirectory,
+      });
+      allIssues.push(...(await attachments.validate()));
+    }
 
     return createLintResult(allIssues);
   }
