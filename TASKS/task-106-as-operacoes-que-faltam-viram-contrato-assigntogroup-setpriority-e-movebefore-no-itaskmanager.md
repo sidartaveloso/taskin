@@ -4,6 +4,7 @@
 - Type: refactor
 - Assignee: sidartaveloso
 - Priority: 1021
+- Group: g-n1xf2yf7
 
 ## Description
 Hoje o dashboard escreve pelo update generico do ITaskProvider, enquanto a CLI e o MCP passam pelo ITaskManager. Priorizar e agrupar existem so no primeiro caminho, e por isso existem so no dashboard: nunca foram nomeadas como operacoes, sao efeito colateral de um update. Nomear assignToGroup, removeFromGroup, setPriority, moveBefore e moveAfter no ITaskManager e fazer o dashboard usa-las, de modo que a CLI e o MCP ganhem as operacoes sem trabalho proprio e o update generico deixe de ser a porta dos fundos. Em seguida generalizar o portao de compilacao que o FilterCriteriaSchema ja tem para os criterios, agora para as operacoes. Ver docs/RDT/superficies-derivam-do-mesmo-contrato.md.
@@ -59,3 +60,16 @@ nomeadas quando esta chegar. Qualquer ordem serve; fazer as duas e o que importa
 Nao obriga toda operacao a existir nas tres superficies. Uma operacao pode nao
 fazer sentido em alguma delas — o que nao pode e a ausencia acontecer por
 omissao, sem ninguem decidir.
+
+### O que a task-105 ja entregou
+
+A 105 nasceu as operacoes direto no `ITaskManager`, com os nomes daqui:
+`assignToGroup`, `removeFromGroup`, `setPriority`, `moveBefore` e `moveAfter`, e
+a CLI (`taskin group join/leave`, `taskin priority`) e o MCP (`join_group`,
+`leave_group`, `set_priority`) ja as chamam. Os tres primeiros itens do
+checklist e a parte de CLI e MCP do sexto estao feitos la — conferir e marcar
+com a evidencia, e nao reimplementar.
+
+O que falta e o miolo desta task: o dashboard e o protocolo do servidor
+WebSocket passarem a usar as operacoes em vez do `update` generico, o portao de
+compilacao, a suite de contrato e a RDT passar de proposta para aceita.
