@@ -209,3 +209,51 @@ describe('priorizar por MCP', () => {
     expect(nomes(montar([]).servidor)).toContain('set_priority');
   });
 });
+
+/**
+ * Pontuar por MCP (task-115): o agente que chega na fila do `unscored` consegue
+ * pontuar o que encontra.
+ */
+describe('pontuar por MCP', () => {
+  it('set_difficulty grava a dificuldade e a devolve', async () => {
+    const { servidor, porId } = montar([tarefa('001')]);
+
+    const r = await servidor.callTool({ name: 'set_difficulty', arguments: { taskId: '001', difficulty: 4 } });
+
+    expect(r.isError).toBeFalsy();
+    expect(porId.get('001')?.difficulty).toBe(4);
+    expect(JSON.parse(texto(r)).task.difficulty).toBe(4);
+  });
+
+  it('a tarefa pontuada sai do unscored', async () => {
+    const { servidor } = montar([tarefa('001'), tarefa('002')]);
+
+    await servidor.callTool({ name: 'set_difficulty', arguments: { taskId: '001', difficulty: 2 } });
+    const r = await servidor.callTool({ name: 'list_tasks', arguments: { unscored: true } });
+
+    expect(JSON.parse(texto(r)).map((t: { id: string }) => t.id)).toEqual(['002']);
+  });
+
+  it.each([0, 6, 2.5, '3', undefined])('recusa %j dizendo a faixa, sem gravar', async (difficulty) => {
+    const { servidor, porId } = montar([tarefa('001', { difficulty: 1 })]);
+
+    const r = await servidor.callTool({ name: 'set_difficulty', arguments: { taskId: '001', difficulty } });
+
+    expect(r.isError).toBe(true);
+    expect(texto(r)).toMatch(/1 to 5/);
+    expect(porId.get('001')?.difficulty).toBe(1);
+  });
+
+  it('recusa uma tarefa que nao existe', async () => {
+    const { servidor } = montar([tarefa('001')]);
+
+    const r = await servidor.callTool({ name: 'set_difficulty', arguments: { taskId: '999', difficulty: 3 } });
+
+    expect(r.isError).toBe(true);
+    expect(texto(r)).toContain('999');
+  });
+
+  it('set_difficulty e anunciado mesmo sem grupos', () => {
+    expect(nomes(montar([]).servidor)).toContain('set_difficulty');
+  });
+});

@@ -227,3 +227,51 @@ describe('taskin new --group --priority', LENTO, () => {
     expect(readdirSync(join(raiz, 'TASKS')).some((f) => f.startsWith('task-004-'))).toBe(false);
   });
 });
+
+/**
+ * Pontuar pela CLI (task-115): a fila do `--unscored` passa a ter o que fazer.
+ */
+describe('taskin difficulty', LENTO, () => {
+  it('grava a dificuldade, e a task sai do --unscored e entra no --scored', async () => {
+    const { code, saida } = await rodar('difficulty', '001', '3');
+
+    expect(code).toBe(0);
+    expect(saida).toContain('difficulty 3');
+    expect(campo('001', 'Difficulty')).toBe('3');
+    expect((await rodar('list', '--unscored')).saida).not.toMatch(/\b001\b/);
+    expect((await rodar('list', '--scored')).saida).toMatch(/\b001\b/);
+  });
+
+  it.each(['0', '6', '2.5', 'dificil', ''])('recusa %j dizendo a faixa, sem gravar', async (valor) => {
+    const { code, saida } = await rodar('difficulty', '001', valor);
+
+    expect(code).toBe(1);
+    expect(saida).toMatch(/1 to 5/);
+    expect(campo('001', 'Difficulty')).toBeUndefined();
+  });
+
+  it('recusa uma tarefa que nao existe', async () => {
+    const { code, saida } = await rodar('difficulty', '999', '3');
+
+    expect(code).toBe(1);
+    expect(saida).toContain('999');
+  });
+});
+
+describe('taskin new --difficulty', LENTO, () => {
+  it('a tarefa ja nasce pontuada', async () => {
+    const { code, saida } = await rodar('new', '-t', 'feat', '-T', 'Nasce pontuada', '--difficulty', '4');
+
+    expect(code).toBe(0);
+    expect(saida).toContain('Difficulty: 4');
+    expect(campo('004', 'Difficulty')).toBe('4');
+  });
+
+  it('dificuldade invalida recusa antes de criar o arquivo', async () => {
+    const { code, saida } = await rodar('new', '-t', 'feat', '-T', 'Nao nasce', '--difficulty', '7');
+
+    expect(code).toBe(1);
+    expect(saida).toMatch(/1 to 5/);
+    expect(readdirSync(join(raiz, 'TASKS')).some((f) => f.startsWith('task-004-'))).toBe(false);
+  });
+});

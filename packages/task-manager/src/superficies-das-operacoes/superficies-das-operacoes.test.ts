@@ -47,6 +47,12 @@ describe('superficies das operacoes', () => {
     );
   });
 
+  it('pontuar chega as tres superficies (task-115)', () => {
+    expect(nomesNaSuperficie('cli')).toContain('difficulty');
+    expect(nomesNaSuperficie('mcp')).toContain('set_difficulty');
+    expect(nomesNaSuperficie('ws')).toContain('set-difficulty');
+  });
+
   it('um nome usado por varias operacoes aparece uma vez so', () => {
     const cli = nomesNaSuperficie('cli');
     expect(cli.filter((n) => n === 'priority')).toHaveLength(1);

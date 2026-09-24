@@ -16,6 +16,7 @@ import type {
   ITaskProvider,
   LintResult,
 } from './task-manager.types';
+import { validarDificuldade } from './validar-dificuldade/index';
 
 /**
  * A frase com que toda superficie recusa uma operacao de grupo num provider sem
@@ -177,9 +178,7 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
   }
 
   async setDifficulty(taskId: TaskId, difficulty: number): Promise<TTask> {
-    if (!Number.isInteger(difficulty) || difficulty < 1 || difficulty > 5) {
-      throw new Error(`Invalid difficulty: ${difficulty}. Use a whole number from 1 to 5.`);
-    }
+    validarDificuldade(difficulty);
     const task = await this.exigirTarefa(taskId);
 
     const atualizada = { ...task, difficulty } as TTask;

@@ -179,7 +179,7 @@ seu repositório passa a mexer nela:
 
 Três filtros, iguais em todas as superfícies: `open` (tudo que não terminou), `closed`, e `active` — começou e não terminou, que é o que interessa na tela enquanto o trabalho acontece.
 
-Outros dois separam a fila pela dificuldade: `scored` (já pontuada — o que se prioriza) e `unscored` (a fila do que ainda falta pontuar). Na tela de priorização do dashboard eles são um controle próprio, ao lado do modo de ordenação.
+Outros dois separam a fila pela dificuldade: `scored` (já pontuada — o que se prioriza) e `unscored` (a fila do que ainda falta pontuar). Na tela de priorização do dashboard eles são um controle próprio, ao lado do modo de ordenação. A fila do `unscored` se trabalha de qualquer lugar: `taskin difficulty 042 3` no terminal, `set_difficulty` para um agente, ou o próprio quadro — de 1 (trivial) a 5 (muito difícil).
 
 
 ```

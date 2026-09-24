@@ -113,6 +113,12 @@ operações nomeadas em vez de uma task inteira para gravar.
   três superfícies (`priority --top`/`--bottom`, `set_priority` com `top`/
   `bottom`, `move-to-top`/`move-to-bottom`), e o servidor WebSocket não compilou
   até ganhar os handlers.
+- **Pontuar (task-115).** `setDifficulty` deixou de ser "só dashboard": a
+  tabela trocou as duas ausências por `difficulty` na CLI e `set_difficulty` no
+  MCP, e os testes que conferem os nomes (`register.superficies.test.ts`,
+  `superficies.test.ts`) passaram a exigi-los. A faixa 1–5 é perguntada ao
+  schema, por `validarDificuldade`, e a CLI a confere antes de o `new` criar o
+  arquivo. Tirar a dificuldade continua sem operação — em nenhuma superfície.
 - **O portão.** `SUPERFICIES_DAS_OPERACOES` (`packages/task-manager/src/
   superficies-das-operacoes/`) declara, para cada operação do `ITaskManager`,
   como cada superfície a expõe — pelo nome, ou ausente com o motivo. O

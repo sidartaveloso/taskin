@@ -9,6 +9,8 @@ import {
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import {
+  DIFICULDADE_MAXIMA,
+  DIFICULDADE_MINIMA,
   filterCriteriaJsonSchema,
   filterTasks,
   GROUPS_NOT_SUPPORTED,
@@ -62,16 +64,24 @@ function recusa(text: string): MCPToolCallResult {
 
 /** Resposta de sucesso com a tarefa como o `start_task` ja a descreve. */
 function tarefaAlterada(
-  task: { id: TaskId; title: string; status: TaskStatus; type: string; groupId?: GroupId; order?: number },
+  task: {
+    id: TaskId;
+    title: string;
+    status: TaskStatus;
+    type: string;
+    groupId?: GroupId;
+    order?: number;
+    difficulty?: number;
+  },
   extra: Record<string, unknown> = {},
 ): MCPToolCallResult {
-  const { id, title, status, type, groupId, order } = task;
+  const { id, title, status, type, groupId, order, difficulty } = task;
   return {
     content: [
       {
         type: 'text' as const,
         text: JSON.stringify(
-          { success: true, task: { id, title, status, type, groupId, priority: order }, ...extra },
+          { success: true, task: { id, title, status, type, groupId, priority: order, difficulty }, ...extra },
           null,
           2,
         ),
@@ -290,6 +300,23 @@ export class TaskMCPServer implements ITaskMCPServer {
         },
       },
       {
+        name: 'set_difficulty',
+        description: `Score how hard one task is, from ${DIFICULDADE_MINIMA} (trivial) to ${DIFICULDADE_MAXIMA} (very hard). Use it on what \`list_tasks\` with \`unscored: true\` returns. A score is corrected by scoring again; there is no way to clear it.`,
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: TASK_ID_PROPERTY,
+            difficulty: {
+              type: 'integer',
+              minimum: DIFICULDADE_MINIMA,
+              maximum: DIFICULDADE_MAXIMA,
+              description: 'Perceived difficulty, a whole number',
+            },
+          },
+          required: ['taskId', 'difficulty'],
+        },
+      },
+      {
         name: 'list_tasks',
         description:
           'List the tasks in the project. Returns a JSON array with what identifies each task — id, title, status, type, assignee — without the markdown body. Fetch a task body by id after choosing one.',
@@ -395,6 +422,9 @@ export class TaskMCPServer implements ITaskMCPServer {
 
         case 'set_priority':
           return await this.handleSetPriority(params.arguments ?? {});
+
+        case 'set_difficulty':
+          return await this.handleSetDifficulty(params.arguments ?? {});
 
         case 'start_task': {
           const taskId = readTaskId(params.arguments?.taskId);
@@ -775,6 +805,19 @@ Let me start by marking the task as done using the finish_task tool.`,
         : await this.taskManager.moveAfter(taskId, targetId);
 
     return tarefaAlterada(task, { changed });
+  }
+
+  private async handleSetDifficulty(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    const taskId = readTaskId(args.taskId);
+    if (!taskId) return invalidTaskId(args.taskId);
+
+    // Um texto como "3" nao vira numero calado: o schema anuncia inteiro.
+    if (typeof args.difficulty !== 'number') {
+      return recusa(
+        `Invalid difficulty: ${JSON.stringify(args.difficulty)}. Use a whole number from ${DIFICULDADE_MINIMA} to ${DIFICULDADE_MAXIMA}.`,
+      );
+    }
+    return tarefaAlterada(await this.taskManager.setDifficulty(taskId, args.difficulty));
   }
 
   private async handleListTasks(args: Record<string, unknown>): Promise<MCPToolCallResult> {
