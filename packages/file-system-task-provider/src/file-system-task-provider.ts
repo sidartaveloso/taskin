@@ -34,7 +34,11 @@ import {
   USERS_FILE_NAME,
   validateUsersFileLocation,
 } from './users-file-location.js';
-import { validarPrioridadesDuplicadas, validarPriorizacao } from './validar-priorizacao/index.js';
+import {
+  validarAninhamentoDosGrupos,
+  validarPrioridadesDuplicadas,
+  validarPriorizacao,
+} from './validar-priorizacao/index.js';
 
 /**
  * Matches the H1 heading `# [🧩] Task NNN — Title`. The separator is anchored
@@ -651,10 +655,11 @@ ${i18n.notesPlaceholder}
      * tarefa que diz pertencer a algo que nao existe. Sem o registro a
      * validacao nao opina, em vez de adivinhar.
      */
-    const gruposConhecidos = await this.groupRegistry
-      .listGroups()
-      .then((gs) => gs.map((g) => String(g.id)))
-      .catch(() => undefined);
+    const grupos = await this.groupRegistry.listGroups().catch(() => undefined);
+    const gruposConhecidos = grupos?.map((g) => String(g.id));
+
+    // Grupo dentro de grupo (task-119): pai que sumiu, ou ciclo, no proprio registro.
+    if (grupos) allIssues.push(...validarAninhamentoDosGrupos(this.groupRegistry.caminho, grupos));
 
     // Then validate all files
     for (const filePath of taskFiles) {

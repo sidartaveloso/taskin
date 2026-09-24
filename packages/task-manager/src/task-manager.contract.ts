@@ -177,6 +177,82 @@ export function runTaskManagerContractTests(
       expect((await ler('001'))?.difficulty).toBe(3);
     });
 
+    it('createGroup cria no registro, com pai quando pedido, e devolve o grupo', async () => {
+      const { manager } = await createSubject([], [{ id: g, name: 'Sprint' }]);
+
+      const criado = await manager.createGroup('Backend', { id: parseGroupId('g-back'), parentId: g });
+
+      expect(criado).toEqual({ id: 'g-back', name: 'Backend', parentId: 'g-sprint' });
+      expect(await manager.groupRegistry?.findGroup(parseGroupId('g-back'))).toEqual(criado);
+    });
+
+    it('createGroup sem id gera um que comeca com g-', async () => {
+      const { manager } = await createSubject([], []);
+
+      const criado = await manager.createGroup('Solto');
+
+      expect(String(criado.id)).toMatch(/^g-/);
+      expect(criado.parentId).toBeUndefined();
+    });
+
+    it('nestGroup e unnestGroup gravam o pai, e a volta o tira', async () => {
+      const filho = parseGroupId('g-filho');
+      const { manager } = await createSubject(
+        [],
+        [
+          { id: g, name: 'Sprint' },
+          { id: filho, name: 'Filho' },
+        ],
+      );
+
+      expect(await manager.nestGroup(filho, g)).toEqual({ id: 'g-filho', name: 'Filho', parentId: 'g-sprint' });
+      expect((await manager.groupRegistry?.findGroup(filho))?.parentId).toBe('g-sprint');
+
+      expect(await manager.unnestGroup(filho)).toEqual({ id: 'g-filho', name: 'Filho' });
+      expect((await manager.groupRegistry?.findGroup(filho))?.parentId).toBeUndefined();
+    });
+
+    it('nestGroup recusa pai inexistente, o proprio grupo e o ciclo, sem gravar', async () => {
+      const filho = parseGroupId('g-filho');
+      const { manager } = await createSubject(
+        [],
+        [
+          { id: g, name: 'Sprint' },
+          { id: filho, name: 'Filho', parentId: g },
+        ],
+      );
+
+      await expect(manager.nestGroup(filho, parseGroupId('g-404'))).rejects.toThrow(/g-404/);
+      await expect(manager.nestGroup(g, g)).rejects.toThrow(/itself/);
+      await expect(manager.nestGroup(g, filho)).rejects.toThrow(/cycle/);
+      await expect(manager.nestGroup(parseGroupId('g-404'), g)).rejects.toThrow(/g-404/);
+      expect((await manager.groupRegistry?.findGroup(g))?.parentId).toBeUndefined();
+    });
+
+    it('mover o grupo pai leva a subarvore inteira, e o subgrupo vai ao topo do pai', async () => {
+      const filho = parseGroupId('g-filho');
+      const { manager } = await createSubject(
+        [
+          tarefa('001', { order: 10 }),
+          tarefa('002', { order: 20, groupId: g }),
+          tarefa('003', { order: 30, groupId: filho }),
+        ],
+        [
+          { id: g, name: 'Sprint' },
+          { id: filho, name: 'Filho', parentId: g },
+        ],
+      );
+      const fila = async () =>
+        [...(await manager.getAllTasks())].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((t) => String(t.id));
+
+      const { members } = await manager.moveGroupToTop(g);
+      expect(members.map((t) => String(t.id))).toEqual(['002', '003']);
+      expect(await fila()).toEqual(['002', '003', '001']);
+
+      await manager.moveGroupToTop(filho);
+      expect(await fila()).toEqual(['003', '002', '001']);
+    });
+
     it('toda operacao recusa uma tarefa que nao existe', async () => {
       const { manager } = await createSubject([], [{ id: g, name: 'Sprint' }]);
       const fantasma = id('999');

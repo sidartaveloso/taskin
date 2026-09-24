@@ -1,5 +1,5 @@
-import type { ValidationIssue } from '@opentask/taskin-task-manager';
-import { TaskSchema } from '@opentask/taskin-types';
+import { problemasDeAninhamento, type ValidationIssue } from '@opentask/taskin-task-manager';
+import { type Group, TaskSchema } from '@opentask/taskin-types';
 
 /** Contexto opcional: sem ele, a validacao nao opina sobre o que nao sabe. */
 export interface OpcoesDeValidacao {
@@ -195,4 +195,22 @@ export function validarPrioridadesDuplicadas(tarefas: readonly PrioridadeDeArqui
   }
 
   return issues;
+}
+
+/**
+ * O aninhamento gravado no registro de grupos (task-119): pai que nao existe e
+ * ciclo sao erro, porque a arvore nao se monta; alem do teto de niveis, aviso,
+ * porque ela se monta e so fica funda demais para ler.
+ *
+ * A regra vem de `problemasDeAninhamento`, a mesma que as operacoes aplicam
+ * antes de gravar.
+ *
+ * @param arquivo - O caminho do registro, para a mensagem apontar onde corrigir
+ */
+export function validarAninhamentoDosGrupos(arquivo: string, grupos: readonly Group[]): ValidationIssue[] {
+  return problemasDeAninhamento(grupos).map((p) => ({
+    file: arquivo,
+    message: p.mensagem,
+    severity: p.problema === 'too-deep' ? 'warning' : 'error',
+  }));
 }

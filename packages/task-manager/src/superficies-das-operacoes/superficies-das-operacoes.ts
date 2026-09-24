@@ -102,6 +102,9 @@ export const SUPERFICIES_DAS_OPERACOES = {
     ws: { nome: 'move-group-to-bottom' },
   },
   setDifficulty: { cli: { nome: 'difficulty' }, mcp: { nome: 'set_difficulty' }, ws: { nome: 'set-difficulty' } },
+  createGroup: { cli: { nome: 'group create' }, mcp: { nome: 'create_group' }, ws: { nome: 'create-group' } },
+  nestGroup: { cli: { nome: 'group nest' }, mcp: { nome: 'nest_group' }, ws: { nome: 'nest-group' } },
+  unnestGroup: { cli: { nome: 'group unnest' }, mcp: { nome: 'unnest_group' }, ws: { nome: 'unnest-group' } },
 } as const satisfies Record<OperacaoDoManager, SuperficiesDaOperacao>;
 
 type Tabela = typeof SUPERFICIES_DAS_OPERACOES;

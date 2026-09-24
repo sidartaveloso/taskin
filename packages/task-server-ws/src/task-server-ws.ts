@@ -77,12 +77,18 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
       this.moverGrupo(client, message, (id) => this.taskManager.moveGroupToTop(id)),
     'move-group-to-bottom': (client, message) =>
       this.moverGrupo(client, message, (id) => this.taskManager.moveGroupToBottom(id)),
+    'create-group': (client, message) => this.handleCreateGroup(client, message),
+    'nest-group': (client, message) =>
+      this.comGrupo(client, message, async (id) => {
+        const parentId = this.readGroupId(client, message, 'parentId');
+        return parentId && this.taskManager.nestGroup(id, parentId);
+      }),
+    'unnest-group': (client, message) => this.comGrupo(client, message, (id) => this.taskManager.unnestGroup(id)),
   };
 
   /** O que o protocolo atende e nao e operacao do `ITaskManager`. */
-  private readonly consultas: Record<'find' | 'create-group' | 'ping', Atendimento> = {
+  private readonly consultas: Record<'find' | 'ping', Atendimento> = {
     find: (client, message) => this.handleFindRequest(client, message),
-    'create-group': (client, message) => this.handleCreateGroup(client, message),
     ping: async (client) => this.sendToClient(client.id, { type: 'pong' }),
   };
 
@@ -480,13 +486,13 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
   }
 
   /**
-   * Cria um grupo no registro. O dashboard gera o id ao agrupar duas tarefas
-   * no quadro, e precisa que o grupo exista antes de `assign-to-group` — que
-   * recusa grupo inexistente, como na CLI e no MCP.
+   * Cria um grupo pelo manager, na raiz ou ja dentro de outro (`parentId`,
+   * task-119). O dashboard gera o id ao agrupar duas tarefas no quadro, e
+   * precisa que o grupo exista antes de `assign-to-group` — que recusa grupo
+   * inexistente, como na CLI e no MCP.
    */
   private async handleCreateGroup(client: ClientConnection, message: WSMessage): Promise<void> {
-    const registry = this.taskManager.groupRegistry;
-    if (!registry) {
+    if (!this.taskManager.groupRegistry) {
       this.recusar(client, message, GROUPS_NOT_SUPPORTED);
       return;
     }
@@ -498,9 +504,28 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
       this.recusar(client, message, `Missing or invalid 'name' in '${message.type}' request`);
       return;
     }
+    const temPai = this.campo(message, 'parentId') !== undefined;
+    const parentId = temPai ? this.readGroupId(client, message, 'parentId') : undefined;
+    if (temPai && !parentId) return;
 
-    await registry.createGroup({ id, name });
-    this.broadcast({ type: 'group:created', payload: { id, name } });
+    const grupo = await this.taskManager.createGroup(name, { id, ...(parentId && { parentId }) });
+    this.broadcast({ type: 'group:created', payload: grupo });
+  }
+
+  /**
+   * Uma operacao sobre um grupo que devolve o grupo como ficou — aninhar e
+   * desaninhar. Nenhuma tarefa muda, entao o aviso e o grupo, e nao a lista.
+   */
+  private async comGrupo(
+    client: ClientConnection,
+    message: WSMessage,
+    operacao: (groupId: GroupId) => Promise<unknown>,
+  ): Promise<void> {
+    const groupId = this.readGroupId(client, message);
+    if (!groupId) return;
+
+    const grupo = await operacao(groupId);
+    if (grupo) this.broadcast({ type: 'group:updated', payload: grupo });
   }
 
   /**

@@ -56,9 +56,13 @@ describe('ferramentas documentadas', () => {
   const servidor = new TaskMCPServer({
     /*
      * Com registro de grupos: as ferramentas de grupo so sao anunciadas quando a
-     * fonte tem o conceito, e sem ele a guarda ficaria cega para elas.
+     * fonte tem o conceito, e sem ele a guarda ficaria cega para elas. Com
+     * `setParent`, pelo mesmo motivo, as de aninhamento (task-119).
      */
-    taskManager: { getAllTasks: vi.fn(async () => []), groupRegistry: {} } as unknown as ITaskManager,
+    taskManager: {
+      getAllTasks: vi.fn(async () => []),
+      groupRegistry: { setParent: vi.fn() },
+    } as unknown as ITaskManager,
   });
   const implementadas = new Set(servidor.listTools().tools.map((t) => t.name));
 

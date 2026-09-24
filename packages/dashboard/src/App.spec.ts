@@ -39,9 +39,9 @@ async function mountApp() {
         },
         PrioritizationPage: {
           name: 'PrioritizationPage',
-          emits: ['update-task', 'move'],
+          emits: ['update-task', 'update-group', 'move'],
           template: '<div data-testid="prioritization"><div data-testid="tasks-count">{{ tasks.length }}</div></div>',
-          props: ['tasks'],
+          props: ['tasks', 'groups'],
         },
       },
     },
@@ -235,6 +235,50 @@ describe('App — o quadro de priorizacao grava por operacoes nomeadas', () => {
     expect(operar.mock.calls.map(([op]) => op)).toEqual([
       { type: 'move-before', payload: { taskId: '002', targetId: '001' } },
       { type: 'move-group-after', payload: { groupId: 'g-a', targetId: '002' } },
+    ]);
+  });
+
+  /*
+   * Grupo dentro de grupo (task-119): o subgrupo que o quadro cria vai ao
+   * dominio ja com o pai, antes de as tarefas entrarem nele — e o App passa a
+   * saber do pai, para a arvore que volta com a lista continuar aninhada.
+   */
+  it('um subgrupo novo vira create-group com o pai, e os membros nao o criam de novo', async () => {
+    const wrapper = await mountApp();
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    store.tasks = [createMockTask({ id: '001', groupId: 'g-pai' }), createMockTask({ id: '002', groupId: 'g-pai' })];
+    const operar = vi.spyOn(store, 'operar').mockImplementation(() => {});
+
+    await wrapper.findAll('.mode-toggle button')[1]?.trigger('click');
+    const pagina = wrapper.findComponent({ name: 'PrioritizationPage' });
+    pagina.vm.$emit('update-group', { id: 'g-sub', name: null, parentId: 'g-pai', novo: true });
+    pagina.vm.$emit('update-task', { id: '001', parent: { type: 'group', id: 'g-sub' } });
+    pagina.vm.$emit('update-task', { id: '002', parent: { type: 'group', id: 'g-sub' } });
+    await nextTick();
+
+    expect(operar.mock.calls.map(([op]) => op)).toEqual([
+      { type: 'create-group', payload: { id: 'g-sub', name: 'Novo grupo', parentId: 'g-pai' } },
+      { type: 'assign-to-group', payload: { taskId: '001', groupId: 'g-sub' } },
+      { type: 'assign-to-group', payload: { taskId: '002', groupId: 'g-sub' } },
+    ]);
+    expect(pagina.props('groups')).toContainEqual({ id: 'g-sub', name: 'Novo grupo', parentId: 'g-pai' });
+  });
+
+  it('aninhar e desaninhar um grupo que existe vira nest-group e unnest-group', async () => {
+    const wrapper = await mountApp();
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    const operar = vi.spyOn(store, 'operar').mockImplementation(() => {});
+
+    await wrapper.findAll('.mode-toggle button')[1]?.trigger('click');
+    const pagina = wrapper.findComponent({ name: 'PrioritizationPage' });
+    pagina.vm.$emit('update-group', { id: 'g-a', name: 'A', parentId: 'g-pai', novo: false });
+    pagina.vm.$emit('update-group', { id: 'g-a', name: 'A', novo: false });
+
+    expect(operar.mock.calls.map(([op]) => op)).toEqual([
+      { type: 'nest-group', payload: { groupId: 'g-a', parentId: 'g-pai' } },
+      { type: 'unnest-group', payload: { groupId: 'g-a' } },
     ]);
   });
 });

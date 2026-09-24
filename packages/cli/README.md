@@ -130,10 +130,19 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `--level <manual|assisted|autopilot>` - Set commit automation level
 - `taskin lint` - Validate task files. Exits `1` when an error is left — with `--fix` too, which corrects what it can and reports what it cannot (an attachment over the size limit, for instance)
 - `taskin group` - Manage task groups (alias: `groups`)
-  - `list` - List the groups
-  - `add <name> [--id <id>]` - Create a group
+  - `list` - List the groups as a tree: each subgroup indented two spaces under
+    its parent. A group whose parent is missing from the groups file is shown at
+    the top level (`taskin lint` reports it)
+  - `create <name> [--id <id>] [--parent <group-id>]` - Create a group (alias:
+    `add`). With `--parent` it is born inside that existing group
+  - `nest <group-id> <parent-id>` - Put a group inside another; its subgroups go
+    along. Up to four levels; a group inside itself or inside one of its own
+    subgroups is refused, in one line and with exit `1`
+  - `unnest <group-id>` - Take a group out of its parent, back to the top level
   - `rename <id> <name>` - Rename it; no task file is touched
-  - `remove <id> [--reassign-to <id>]` - Delete it, saying where its tasks go
+  - `remove <id> [--reassign-to <id>]` - Delete it, saying where its tasks go.
+    Its subgroups move up to its parent — or to the top level — and the command
+    says so
   - `join <task-id> <group-id>` - Put a task in an existing group
   - `leave <task-id>` - Take a task out of its group
   - `move <group-id>` - Move a whole group, its members together and in their
@@ -163,7 +172,8 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   score: a wrong one is corrected by scoring again, as on the dashboard.
 
   A provider without groups does not offer `join` and `leave`, and the CLI says
-  so in one line instead of failing.
+  so in one line instead of failing. A provider with groups but without groups
+  inside groups refuses `create --parent`, `nest` and `unnest` the same way.
 - `taskin prioritize` - Number every task's priority, once and on purpose
   - `--dry-run` - Report how many would be numbered, without writing
 - `taskin dashboard [options]` - Start the web dashboard (see [Avatars](#avatars))
@@ -286,7 +296,12 @@ The listing tools take the same `sort` vocabulary the prioritization board uses:
 `manual` (by priority), `diff-asc` and `diff-desc`. `taskin list --json` emits
 groups as groups — a group node carries its id, its name, the members that
 matched, and how many the filter left out — so a consumer never has to
-reimplement the grouping rule to get it back.
+reimplement the grouping rule to get it back. Nested groups stay nested: a
+node is `{ group: { id, name, parentId?, hidden }, tasks, groups }`, with
+`tasks` the direct members and `groups` the subgroups in the same shape. The
+text output of `taskin list` (manual order) prints the same tree: a
+`▸ <name> (<id>)` line per group, with its members and subgroups indented
+under it.
 - `start_task` - Start working on a task
 - `finish_task` - Mark a task as finished
 

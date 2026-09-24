@@ -88,7 +88,7 @@ This package is responsible for the core logic of managing tasks.
 Grouping, prioritizing and scoring are named operations of `ITaskManager` —
 `assignToGroup`, `removeFromGroup`, `setPriority`, `moveBefore`, `moveAfter`,
 `moveToTop`, `moveToBottom`, `moveGroupBefore`, `moveGroupAfter`, `moveGroupToTop`,
-`moveGroupToBottom`, `setDifficulty` — and not a side effect of a generic `updateTask`. The CLI, the
+`moveGroupToBottom`, `createGroup`, `nestGroup`, `unnestGroup`, `setDifficulty` — and not a side effect of a generic `updateTask`. The CLI, the
 MCP server and the dashboard (through the WebSocket server) all call them.
 
 `SUPERFICIES_DAS_OPERACOES` says, for every operation, how each surface exposes
@@ -107,5 +107,22 @@ import { runTaskManagerContractTests } from '@opentask/taskin-task-manager/testi
 
 runTaskManagerContractTests(async (tasks, groups) => ({ manager, ler: (id) => ... }));
 ```
+
+## Groups inside groups
+
+A group may sit inside another: `Group.parentId` is optional, and a task still
+carries one group, the innermost. `createGroup(name, { id?, parentId? })`,
+`nestGroup(groupId, parentId)` and `unnestGroup(groupId)` write only the group,
+never a task. `validarAninhamento` refuses a missing parent, a group inside
+itself, a cycle, and more than `PROFUNDIDADE_MAXIMA_DE_GRUPO` (4) levels —
+counting the subtree that goes along. Rules about "the whole group" (moving it,
+the top and bottom of a grouped task) use the subtree; `assignToGroup` puts the
+task in that very group.
+
+Nesting is a capability of its own: `IGroupRegistry.setParent?` is optional.
+Without it, the three operations refuse with `NESTING_NOT_SUPPORTED`. A registry
+that implements it proves `runGroupNestingContractTests`, separate from
+`runGroupRegistryContractTests`. Deleting a group moves its subgroups up to its
+parent, or to the root. See `docs/RDT/grupos-aninhados.md`.
 
 See `docs/RDT/superficies-derivam-do-mesmo-contrato.md`.

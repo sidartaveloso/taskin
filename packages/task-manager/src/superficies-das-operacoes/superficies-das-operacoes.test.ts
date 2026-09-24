@@ -61,6 +61,12 @@ describe('superficies das operacoes', () => {
     );
   });
 
+  it('criar e aninhar grupos chegam as tres superficies (task-119)', () => {
+    expect(nomesNaSuperficie('cli')).toEqual(expect.arrayContaining(['group create', 'group nest', 'group unnest']));
+    expect(nomesNaSuperficie('mcp')).toEqual(expect.arrayContaining(['create_group', 'nest_group', 'unnest_group']));
+    expect(nomesNaSuperficie('ws')).toEqual(expect.arrayContaining(['create-group', 'nest-group', 'unnest-group']));
+  });
+
   it('um nome usado por varias operacoes aparece uma vez so', () => {
     const cli = nomesNaSuperficie('cli');
     expect(cli.filter((n) => n === 'priority')).toHaveLength(1);

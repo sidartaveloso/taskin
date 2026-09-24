@@ -1,7 +1,7 @@
 import { type Group, type GroupId, parseGroupId, parseTaskId, type Task } from '@opentask/taskin-types';
 import { describe, expect, it } from 'vitest';
 import type { IGroupRegistry } from './group-registry.types';
-import { GROUPS_NOT_SUPPORTED, TaskManager } from './task-manager';
+import { GROUPS_NOT_SUPPORTED, NESTING_NOT_SUPPORTED, TaskManager } from './task-manager';
 import type { ITaskProvider } from './task-manager.types';
 
 const tarefa = (id: string, extra: Partial<Task> = {}): Task =>
@@ -309,5 +309,27 @@ describe('TaskManager — mover um grupo', () => {
 
     await expect(manager.moveGroupToTop(g)).rejects.toThrow(GROUPS_NOT_SUPPORTED);
     await expect(manager.moveGroupBefore(g, parseTaskId('001'))).rejects.toThrow(GROUPS_NOT_SUPPORTED);
+  });
+});
+
+/*
+ * Grupo dentro de grupo e capacidade propria (task-119): um provider pode ter
+ * grupos e nao ter aninhamento. O registro deste teste nao tem `setParent`.
+ */
+describe('TaskManager — aninhamento como capacidade', () => {
+  it('um provider sem grupos recusa criar e aninhar com a frase de grupos', async () => {
+    const { manager } = emMemoria([]);
+
+    await expect(manager.createGroup('Sprint')).rejects.toThrow(GROUPS_NOT_SUPPORTED);
+    await expect(manager.nestGroup(g, g)).rejects.toThrow(GROUPS_NOT_SUPPORTED);
+  });
+
+  it('um provider com grupos e sem aninhamento cria na raiz, e recusa o resto com uma frase', async () => {
+    const { manager } = emMemoria([], [{ id: g, name: 'CLI' }]);
+
+    await expect(manager.createGroup('Solto')).resolves.toMatchObject({ name: 'Solto' });
+    await expect(manager.createGroup('Filho', { parentId: g })).rejects.toThrow(NESTING_NOT_SUPPORTED);
+    await expect(manager.nestGroup(g, g)).rejects.toThrow(NESTING_NOT_SUPPORTED);
+    await expect(manager.unnestGroup(g)).rejects.toThrow(NESTING_NOT_SUPPORTED);
   });
 });

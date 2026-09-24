@@ -69,6 +69,11 @@ function recusa(text: string): MCPToolCallResult {
   return { content: [{ type: 'text' as const, text }], isError: true };
 }
 
+/** Resposta de sucesso com o grupo como ficou gravado — o pai incluso. */
+function grupoAlterado(group: { id: GroupId; name: string; parentId?: GroupId }): MCPToolCallResult {
+  return { content: [{ type: 'text' as const, text: JSON.stringify({ success: true, group }, null, 2) }] };
+}
+
 /** Resposta de sucesso com a tarefa como o `start_task` ja a descreve. */
 function tarefaAlterada(
   task: {
@@ -262,7 +267,7 @@ export class TaskMCPServer implements ITaskMCPServer {
       {
         name: 'list_groups',
         description:
-          'List the task groups in this project, each with its id and name. The name lives in one place — a task only carries the group id — so renaming a group touches no task file.',
+          'List the task groups in this project, each with its id, name and — when nested inside another group — its `parentId`. The name lives in one place — a task only carries the group id — so renaming a group touches no task file.',
         inputSchema: { type: 'object', properties: {} },
       },
       {
@@ -402,6 +407,21 @@ export class TaskMCPServer implements ITaskMCPServer {
         inputSchema: { type: 'object', properties: { taskId: TASK_ID_PROPERTY }, required: ['taskId'] },
       },
       {
+        name: 'create_group',
+        description:
+          'Create a task group, at the root or already inside another group (`parentId`). Returns the group with its id — pass `id` to choose one. Groups nest at most four levels deep.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'The name of the group' },
+            id: { type: 'string', description: 'The id for the group; generated (g-...) when absent' },
+            parentId: { type: 'string', description: 'The group to create it inside, as list_groups returns it' },
+          },
+          required: ['name'],
+        },
+      },
+      ...(this.taskManager.groupRegistry?.setParent ? this.ferramentasDeAninhamento() : []),
+      {
         name: 'move_group',
         description:
           'Move a whole group in the queue, its members together and in their current order. Pass `groupId` and exactly one of: `before` or `after` (a task that is not in a group, or another group id), `top: true` or `bottom: true`. Only the members are written — a group of three writes three files — and the result says how many (`changed`).',
@@ -414,6 +434,37 @@ export class TaskMCPServer implements ITaskMCPServer {
             top: { type: 'boolean', description: 'Move the group to the top of the queue' },
             bottom: { type: 'boolean', description: 'Move the group to the bottom of the queue' },
           },
+          required: ['groupId'],
+        },
+      },
+    ];
+  }
+
+  /**
+   * Grupo dentro de grupo (task-119), so anunciado quando o registro o tem —
+   * um provider pode ter grupos e nao ter aninhamento.
+   */
+  private ferramentasDeAninhamento(): MCPTool[] {
+    return [
+      {
+        name: 'nest_group',
+        description:
+          'Put a group inside another group. Its tasks stay where they are: a task keeps its innermost group, and being in the parent now includes being in a subgroup of it. Refuses a missing parent, the group itself, a group inside it (a cycle), and nesting beyond four levels.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            groupId: { type: 'string', description: 'The group to nest, as list_groups returns it' },
+            parentId: { type: 'string', description: 'The group to put it inside' },
+          },
+          required: ['groupId', 'parentId'],
+        },
+      },
+      {
+        name: 'unnest_group',
+        description: 'Take a group out of its parent, back to the root. A group without a parent is left as it is.',
+        inputSchema: {
+          type: 'object',
+          properties: { groupId: { type: 'string', description: 'The group, as list_groups returns it' } },
           required: ['groupId'],
         },
       },
@@ -445,6 +496,15 @@ export class TaskMCPServer implements ITaskMCPServer {
 
         case 'move_group':
           return await this.handleMoveGroup(params.arguments ?? {});
+
+        case 'create_group':
+          return await this.handleCreateGroup(params.arguments ?? {});
+
+        case 'nest_group':
+          return await this.handleNestGroup(params.arguments ?? {});
+
+        case 'unnest_group':
+          return await this.handleUnnestGroup(params.arguments ?? {});
 
         case 'set_priority':
           return await this.handleSetPriority(params.arguments ?? {});
@@ -775,6 +835,40 @@ Let me start by marking the task as done using the finish_task tool.`,
     if (!groupId) return recusa(`Invalid group id: ${JSON.stringify(args.groupId)}. See list_groups.`);
 
     return tarefaAlterada(await this.taskManager.assignToGroup(taskId, groupId));
+  }
+
+  private async handleCreateGroup(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    if (!this.taskManager.groupRegistry) return recusa(GROUPS_NOT_SUPPORTED);
+
+    if (typeof args.name !== 'string' || args.name.trim() === '') {
+      return recusa(`A group needs a name; got ${JSON.stringify(args.name)}.`);
+    }
+    const id = args.id === undefined ? undefined : readGroupId(args.id);
+    if (args.id !== undefined && !id) return recusa(`Invalid group id: ${JSON.stringify(args.id)}.`);
+    const parentId = args.parentId === undefined ? undefined : readGroupId(args.parentId);
+    if (args.parentId !== undefined && !parentId) {
+      return recusa(`Invalid group id: ${JSON.stringify(args.parentId)}. See list_groups.`);
+    }
+
+    return grupoAlterado(
+      await this.taskManager.createGroup(args.name, { ...(id && { id }), ...(parentId && { parentId }) }),
+    );
+  }
+
+  private async handleNestGroup(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    const groupId = readGroupId(args.groupId);
+    if (!groupId) return recusa(`Invalid group id: ${JSON.stringify(args.groupId)}. See list_groups.`);
+    const parentId = readGroupId(args.parentId);
+    if (!parentId) return recusa(`Invalid group id: ${JSON.stringify(args.parentId)}. See list_groups.`);
+
+    return grupoAlterado(await this.taskManager.nestGroup(groupId, parentId));
+  }
+
+  private async handleUnnestGroup(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    const groupId = readGroupId(args.groupId);
+    if (!groupId) return recusa(`Invalid group id: ${JSON.stringify(args.groupId)}. See list_groups.`);
+
+    return grupoAlterado(await this.taskManager.unnestGroup(groupId));
   }
 
   private async handleLeaveGroup(args: Record<string, unknown>): Promise<MCPToolCallResult> {

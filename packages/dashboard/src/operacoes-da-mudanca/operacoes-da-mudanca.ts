@@ -1,4 +1,4 @@
-import type { MovimentoDoQuadro } from '@opentask/taskin-design-vue';
+import type { MovimentoDoQuadro, MudancaDeGrupo } from '@opentask/taskin-design-vue';
 import type { OperacaoDoQuadro } from '@opentask/taskin-task-provider-pinia';
 
 /**
@@ -74,4 +74,22 @@ export function operacaoDoMovimento(movimento: MovimentoDoQuadro): OperacaoDoQua
   return lado === 'before'
     ? { type: 'move-before', payload: { taskId: id, targetId } }
     : { type: 'move-after', payload: { taskId: id, targetId } };
+}
+
+/**
+ * O que o quadro mudou num grupo vira a operacao do dominio (task-119): um
+ * grupo que ele inventou ao agrupar e criado — ja dentro do pai, quando e um
+ * subgrupo —, e um que mudou de pai e aninhado ou volta a raiz.
+ */
+export function operacaoDoGrupo(mudanca: MudancaDeGrupo): OperacaoDoQuadro {
+  const { id, parentId } = mudanca;
+  if (mudanca.novo) {
+    return {
+      type: 'create-group',
+      payload: { id, name: mudanca.name ?? NOME_DE_GRUPO_NOVO, ...(parentId && { parentId }) },
+    };
+  }
+  return parentId
+    ? { type: 'nest-group', payload: { groupId: id, parentId } }
+    : { type: 'unnest-group', payload: { groupId: id } };
 }

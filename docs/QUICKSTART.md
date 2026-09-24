@@ -51,6 +51,9 @@ taskin finish task-01
 taskin lint
 
 # Agrupar e priorizar, sem editar o arquivo a mão
+taskin group create "Login" --parent g-cli  # Um grupo dentro de outro (até 4 níveis)
+taskin group nest g-auth g-cli     # Ou põe um grupo que já existe dentro de outro
+taskin group unnest g-auth         # E volta para a raiz
 taskin group join 042 g-cli        # Põe a task num grupo que já existe
 taskin group leave 042             # Tira do grupo
 taskin priority 042 150            # Número absoluto; menor vem antes
@@ -133,7 +136,9 @@ taskin mcp-server --debug
 #### Tools Disponíveis
 
 - `list_tasks`: Lista as tarefas, com filtros opcionais
-- `list_groups`: Lista os grupos
+- `list_groups`: Lista os grupos, com o `parentId` dos que estão dentro de outro
+- `create_group`: Cria um grupo, opcionalmente dentro de outro (`parentId`) (só quando o provider tem grupos)
+- `nest_group` / `unnest_group`: Põe um grupo dentro de outro, ou devolve à raiz (só quando o provider tem grupos dentro de grupos)
 - `join_group` / `leave_group`: Põe uma tarefa num grupo, ou tira (só quando o provider tem grupos)
 - `move_group`: Move um grupo inteiro — `before`, `after`, `top` ou `bottom` (só quando o provider tem grupos)
 - `set_priority`: Dá o lugar da tarefa na fila — `priority`, `before`, `after`, `top` ou `bottom`

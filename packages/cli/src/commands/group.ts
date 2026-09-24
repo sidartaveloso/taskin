@@ -1,9 +1,9 @@
 /**
- * `taskin group` — criar, listar, renomear e apagar grupos de tarefas.
+ * `taskin group` — criar, listar, renomear, aninhar e apagar grupos de tarefas.
  */
 
 import { GROUPS_NOT_SUPPORTED, type IGroupRegistry, TaskManager } from '@opentask/taskin-task-manager';
-import { type GroupId, parseGroupId } from '@opentask/taskin-types';
+import { type Group, type GroupId, parseGroupId } from '@opentask/taskin-types';
 import type { Command } from 'commander';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
@@ -112,31 +112,64 @@ export function registerGroupCommand(program: Command): void {
   cmd
     .command('list', { isDefault: true })
     .alias('ls')
-    .description('List the groups in this project')
+    .description('List the groups in this project, subgroups indented under their parent')
     .action(async () => {
       const grupos = await (await registro()).listGroups();
       printHeader('Groups', '\u{1F5C2}\uFE0F');
 
       if (grupos.length === 0) {
-        info('No groups yet. Create one with "taskin group add <name>".');
+        info('No groups yet. Create one with "taskin group create <name>".');
         return;
       }
 
-      for (const g of grupos) {
-        console.log(`  ${colors.highlight(String(g.id))}  ${g.name}`);
+      for (const { grupo, nivel } of emArvore(grupos)) {
+        console.log(`${'  '.repeat(nivel + 1)}${colors.highlight(String(grupo.id))}  ${grupo.name}`);
       }
       console.log();
       info(`${grupos.length} group(s).`);
     });
 
   cmd
-    .command('add <name>')
-    .description('Create a group')
+    .command('create <name>')
+    .alias('add')
+    .description('Create a group, optionally inside another one')
     .option('--id <id>', 'Id for the group (defaults to a generated one)')
-    .action(async (name: string, options: { id?: string }) => {
-      const id = parseGroupId(options.id ?? `g-${Math.random().toString(36).slice(2, 10)}`);
-      await (await registro()).createGroup({ id, name });
-      success(`Created group ${id} \u2014 ${name}`);
+    .option('--parent <group-id>', 'Create the group inside this existing group')
+    .action(async (name: string, options: { id?: string; parent?: string }) => {
+      /*
+       * Pelo manager, e nao direto no registro: e la que o pai e conferido — e
+       * que um provider sem aninhamento recusa o `--parent` em uma frase.
+       */
+      const manager = await gerente();
+      const grupo = await ouSair(
+        manager.createGroup(name, {
+          ...(options.id !== undefined && { id: parseGroupId(options.id) }),
+          ...(options.parent !== undefined && { parentId: parseGroupId(options.parent) }),
+        }),
+      );
+      success(
+        grupo.parentId
+          ? `Created group ${grupo.id} \u2014 ${name}, inside ${grupo.parentId}`
+          : `Created group ${grupo.id} \u2014 ${name}`,
+      );
+    });
+
+  cmd
+    .command('nest <group-id> <parent-id>')
+    .description('Put a group inside another group (subgroups go along)')
+    .action(async (groupId: string, parentId: string) => {
+      const manager = await gerente();
+      await ouSair(manager.nestGroup(parseGroupId(groupId), parseGroupId(parentId)));
+      success(`Group ${groupId} is now inside ${parentId}.`);
+    });
+
+  cmd
+    .command('unnest <group-id>')
+    .description('Take a group out of its parent, back to the top level')
+    .action(async (groupId: string) => {
+      const manager = await gerente();
+      await ouSair(manager.unnestGroup(parseGroupId(groupId)));
+      success(`Group ${groupId} is now at the top level.`);
     });
 
   cmd
@@ -190,7 +223,19 @@ export function registerGroupCommand(program: Command): void {
     .option('--reassign-to <id>', 'Move the tasks to this group instead of ungrouping them')
     .action(async (id: string, options: { reassignTo?: string }) => {
       const destino = options.reassignTo ? parseGroupId(options.reassignTo) : undefined;
-      const { reassigned } = await (await registro()).deleteGroup(parseGroupId(id), { reassignTo: destino });
+      const grupoId = parseGroupId(id);
+      const reg = await registro();
+
+      /*
+       * Os subgrupos sobem para o pai do apagado — quem faz e o registro. A
+       * lista de antes e so para dizer quantos e para onde, e o efeito nao
+       * ficar invisivel como o dos membros tambem nao fica.
+       */
+      const antes = await reg.listGroups();
+      const pai = antes.find((g) => g.id === grupoId)?.parentId;
+      const subgrupos = antes.filter((g) => g.parentId === grupoId).length;
+
+      const { reassigned } = await ouSair(reg.deleteGroup(grupoId, { reassignTo: destino }));
 
       success(`Deleted group ${id}.`);
       if (reassigned > 0) {
@@ -198,5 +243,33 @@ export function registerGroupCommand(program: Command): void {
           destino ? `${reassigned} task(s) moved to ${destino}.` : `${reassigned} task(s) are now without a group.`,
         );
       }
+      if (subgrupos > 0) {
+        warning(`${subgrupos} subgroup(s) moved up to ${pai ?? 'the top level'}.`);
+      }
     });
+}
+
+/**
+ * Os grupos na ordem da arvore: cada pai seguido dos seus, com o nivel.
+ *
+ * Um grupo cujo pai nao esta no registro — o arquivo editado a mao — sai na
+ * raiz, em vez de sumir da listagem; o `lint` e quem acusa. Um ciclo no
+ * arquivo tambem nao some: o que sobrar sem ser visitado entra na raiz.
+ */
+function emArvore(grupos: readonly Group[]): { grupo: Group; nivel: number }[] {
+  const ids = new Set(grupos.map((g) => g.id));
+  const filhos = (pai: GroupId) => grupos.filter((g) => g.parentId === pai);
+  const saida: { grupo: Group; nivel: number }[] = [];
+  const visitados = new Set<GroupId>();
+
+  const descer = (grupo: Group, nivel: number) => {
+    if (visitados.has(grupo.id)) return;
+    visitados.add(grupo.id);
+    saida.push({ grupo, nivel });
+    for (const filho of filhos(grupo.id)) descer(filho, nivel + 1);
+  };
+
+  for (const g of grupos) if (g.parentId === undefined || !ids.has(g.parentId)) descer(g, 0);
+  for (const g of grupos) descer(g, 0);
+  return saida;
 }

@@ -5,8 +5,10 @@ export {
   usePrioritization,
 } from './use-prioritization';
 export type {
+  GrupoDoQuadro,
   LadoDoMovimento,
   MovimentoDoQuadro,
+  MudancaDeGrupo,
   PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,

@@ -97,3 +97,106 @@ export function runGroupRegistryContractTests(
     });
   });
 }
+
+/**
+ * Contrato do aninhamento (task-119), para o registro que o oferece — o que
+ * implementa `setParent`. Separado de {@link runGroupRegistryContractTests}
+ * porque e capacidade propria: um registro sem ela continua cumprindo aquele.
+ *
+ * @public
+ */
+export function runGroupNestingContractTests(
+  createSubject: () => Promise<{ registry: IGroupRegistry & Required<Pick<IGroupRegistry, 'setParent'>> }>,
+): void {
+  const g = (id: string) => parseGroupId(id);
+
+  describe('IGroupRegistry nesting contract', () => {
+    it('cria um grupo ja dentro de outro, e le o pai de volta', async () => {
+      const { registry } = await createSubject();
+      await registry.createGroup({ id: g('g-pai'), name: 'Pai' });
+
+      await registry.createGroup({ id: g('g-filho'), name: 'Filho', parentId: g('g-pai') });
+
+      expect(await registry.findGroup(g('g-filho'))).toEqual({ id: 'g-filho', name: 'Filho', parentId: 'g-pai' });
+    });
+
+    it('aninha e desaninha um grupo que ja existe', async () => {
+      const { registry } = await createSubject();
+      await registry.createGroup({ id: g('g-pai'), name: 'Pai' });
+      await registry.createGroup({ id: g('g-filho'), name: 'Filho' });
+
+      await registry.setParent(g('g-filho'), g('g-pai'));
+      expect((await registry.findGroup(g('g-filho')))?.parentId).toBe('g-pai');
+
+      await registry.setParent(g('g-filho'), undefined);
+      expect(await registry.findGroup(g('g-filho'))).toEqual({ id: 'g-filho', name: 'Filho' });
+    });
+
+    it('renomear nao mexe no pai', async () => {
+      const { registry } = await createSubject();
+      await registry.createGroup({ id: g('g-pai'), name: 'Pai' });
+      await registry.createGroup({ id: g('g-filho'), name: 'Filho', parentId: g('g-pai') });
+
+      await registry.renameGroup(g('g-filho'), 'Outro nome');
+
+      expect((await registry.findGroup(g('g-filho')))?.parentId).toBe('g-pai');
+    });
+
+    it('recusa pai inexistente, ao criar e ao aninhar', async () => {
+      const { registry } = await createSubject();
+      await registry.createGroup({ id: g('g-1'), name: 'Um' });
+
+      await expect(registry.createGroup({ id: g('g-2'), name: 'Dois', parentId: g('g-404') })).rejects.toThrow(/g-404/);
+      await expect(registry.setParent(g('g-1'), g('g-404'))).rejects.toThrow(/g-404/);
+      expect(await registry.findGroup(g('g-2'))).toBeUndefined();
+    });
+
+    it('recusa aninhar o que nao existe', async () => {
+      const { registry } = await createSubject();
+      await registry.createGroup({ id: g('g-1'), name: 'Um' });
+
+      await expect(registry.setParent(g('g-404'), g('g-1'))).rejects.toThrow(/g-404/);
+    });
+
+    it('recusa o grupo dentro de si mesmo, e o ciclo', async () => {
+      const { registry } = await createSubject();
+      await registry.createGroup({ id: g('g-a'), name: 'A' });
+      await registry.createGroup({ id: g('g-b'), name: 'B', parentId: g('g-a') });
+
+      await expect(registry.setParent(g('g-a'), g('g-a'))).rejects.toThrow(/itself/);
+      await expect(registry.setParent(g('g-a'), g('g-b'))).rejects.toThrow(/cycle/);
+      expect((await registry.findGroup(g('g-a')))?.parentId).toBeUndefined();
+    });
+
+    it('recusa passar do teto de niveis', async () => {
+      const { registry } = await createSubject();
+      await registry.createGroup({ id: g('g-0'), name: 'N0' });
+      for (let i = 1; i < 4; i++) {
+        await registry.createGroup({ id: g(`g-${i}`), name: `N${i}`, parentId: g(`g-${i - 1}`) });
+      }
+
+      await expect(registry.createGroup({ id: g('g-4'), name: 'N4', parentId: g('g-3') })).rejects.toThrow(/levels/);
+    });
+
+    it('apagar um grupo sobe os subgrupos para o pai dele', async () => {
+      const { registry } = await createSubject();
+      await registry.createGroup({ id: g('g-avo'), name: 'Avo' });
+      await registry.createGroup({ id: g('g-pai'), name: 'Pai', parentId: g('g-avo') });
+      await registry.createGroup({ id: g('g-filho'), name: 'Filho', parentId: g('g-pai') });
+
+      await registry.deleteGroup(g('g-pai'));
+
+      expect((await registry.findGroup(g('g-filho')))?.parentId).toBe('g-avo');
+    });
+
+    it('apagar um grupo da raiz leva os subgrupos para a raiz', async () => {
+      const { registry } = await createSubject();
+      await registry.createGroup({ id: g('g-pai'), name: 'Pai' });
+      await registry.createGroup({ id: g('g-filho'), name: 'Filho', parentId: g('g-pai') });
+
+      await registry.deleteGroup(g('g-pai'));
+
+      expect(await registry.findGroup(g('g-filho'))).toEqual({ id: 'g-filho', name: 'Filho' });
+    });
+  });
+}

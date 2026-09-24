@@ -133,7 +133,7 @@ consome apenas `Task` continua funcionando com qualquer provider.
 
 O `ITaskManager` fica em cima, com as transições de estado e as operações
 nomeadas — `startTask`, `finishTask`, `assignToGroup`, `setPriority`,
-`moveBefore`, `moveToTop`, `moveGroupToTop`, `setDifficulty` e as demais — e é genérico sobre a mesma forma. A
+`moveBefore`, `moveToTop`, `moveGroupToTop`, `nestGroup`, `setDifficulty` e as demais — e é genérico sobre a mesma forma. A
 CLI, o servidor MCP e o dashboard passam todos por ele: o WebSocket do dashboard
 manda `set-priority` ou `assign-to-group`, nunca uma tarefa inteira para
 sobrescrever. No quadro de priorização, as setas, o topo, o fim e o arrastar
@@ -142,6 +142,10 @@ mandam `move-before` / `move-after` (ou `move-group-before` /
 primeira ou a última — com filtro, o topo é o do que se está vendo — e os
 números novos voltam do domínio, a mesma regra do `taskin priority --before`.
 Desfazer reenvia os valores anteriores só das tarefas que o movimento alterou.
+Soltar uma tarefa sobre outra do mesmo grupo cria um subgrupo de verdade, e
+soltar um grupo sobre outro cria um pai com os dois dentro — enviados como
+`create-group` e `nest-group`, então o aninhamento sobrevive a recarregar a
+página, até quatro níveis.
 Uma tabela, `SUPERFICIES_DAS_OPERACOES`, diz onde cada operação
 aparece — e acrescentar uma operação sem decidir as três superfícies não compila.
 
@@ -202,9 +206,11 @@ uma chamada REST. Quem resolve isso é o provider.
 O agente também organiza a fila que ele mesmo executa. `set_priority` coloca uma
 tarefa por número, logo `before` ou `after` de outra, ou no `top` ou no
 `bottom` da fila, `join_group` / `leave_group` a movem entre grupos, e
-`move_group` move um grupo inteiro, com os membros juntos. O terminal tem as
-mesmas operações — `taskin priority 042 --before 017`, `taskin priority 042 --top`,
-`taskin group join 042 g-cli`, `taskin group move g-cli --top` — e ninguém
+`move_group` move um grupo inteiro, com os membros juntos. `create_group`,
+`nest_group` e `unnest_group` põem um grupo dentro de outro, ou o tiram. O
+terminal tem as mesmas operações — `taskin priority 042 --before 017`,
+`taskin priority 042 --top`, `taskin group join 042 g-cli`,
+`taskin group move g-cli --top`, `taskin group nest g-auth g-cli` — e ninguém
 precisa editar o bloco de metadados à mão.
 
 Registrar o servidor é um comando:

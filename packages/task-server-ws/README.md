@@ -59,12 +59,16 @@ was how grouping, prioritizing and scoring used to exist only in the dashboard
 | `move-to-top` / `move-to-bottom` | `{ taskId }` — a grouped task stays inside its group | `tasks` (an unnumbered tail is numbered once) |
 | `move-group-before` / `move-group-after` | `{ groupId, targetId }` — `targetId` is a task not in a group, or another group | `tasks` (only the members are renumbered, unless there is no room) |
 | `move-group-to-top` / `move-group-to-bottom` | `{ groupId }` | `tasks` |
-| `create-group` | `{ id, name }` | `group:created` |
+| `create-group` | `{ id, name, parentId? }` — with `parentId`, born inside that existing group | `group:created` (the group) |
+| `nest-group` | `{ groupId, parentId }` — at most four levels; a cycle is refused | `group:updated` (the group) |
+| `unnest-group` | `{ groupId }` — back to the root | `group:updated` (the group) |
 | `ping` | — | `pong` (to the sender) |
 
 Anything refused comes back to the sender as `error` with `{ message }`.
 Requests are handled one at a time, in arrival order, so `create-group`
-followed by `assign-to-group` always finds the group.
+followed by `assign-to-group` always finds the group. A provider with groups
+but without groups inside groups refuses `parentId`, `nest-group` and
+`unnest-group` with the same `error`.
 
 Which operations the WebSocket exposes is not a list kept here: the handlers
 are typed by `NomeNaSuperficie<'ws'>` from `SUPERFICIES_DAS_OPERACOES` in

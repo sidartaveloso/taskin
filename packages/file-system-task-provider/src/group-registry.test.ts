@@ -1,7 +1,7 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runGroupRegistryContractTests } from '@opentask/taskin-task-manager/testing';
+import { runGroupNestingContractTests, runGroupRegistryContractTests } from '@opentask/taskin-task-manager/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 import { FileSystemGroupRegistry } from './group-registry.js';
 
@@ -36,7 +36,32 @@ runGroupRegistryContractTests(async () => {
   };
 });
 
+runGroupNestingContractTests(async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'taskin-grupos-'));
+  temporarios.push(dir);
+  return { registry: new FileSystemGroupRegistry(dir, async () => 0) };
+});
+
 describe('FileSystemGroupRegistry, alem do contrato', () => {
+  /*
+   * O aninhamento sobrevive ao recarregar: quem le e outra instancia, sobre o
+   * mesmo arquivo — o que o dashboard faz a cada volta da lista.
+   */
+  it('o pai fica no .taskin-groups.json, e outra instancia o le', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'taskin-grupos-'));
+    temporarios.push(dir);
+    const antes = new FileSystemGroupRegistry(dir, async () => 0);
+    await antes.createGroup({ id: 'g-pai' as never, name: 'Pai' });
+    await antes.createGroup({ id: 'g-filho' as never, name: 'Filho' });
+    await antes.setParent('g-filho' as never, 'g-pai' as never);
+
+    const bruto = JSON.parse(readFileSync(join(dir, '.taskin-groups.json'), 'utf-8'));
+    expect(bruto.groups['g-filho']).toEqual({ id: 'g-filho', name: 'Filho', parentId: 'g-pai' });
+
+    const depois = new FileSystemGroupRegistry(dir, async () => 0);
+    expect((await depois.findGroup('g-filho' as never))?.parentId).toBe('g-pai');
+  });
+
   it('um projeto sem o arquivo simplesmente nao tem grupo', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'taskin-grupos-'));
     temporarios.push(dir);

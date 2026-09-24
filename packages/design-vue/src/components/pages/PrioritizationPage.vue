@@ -1,21 +1,29 @@
 <script setup lang="ts">
 import { defaultFunctions } from '@opentask/ui-sense';
-import { onMounted, onUnmounted, ref, toRef, watch } from 'vue';
-import type { MovimentoDoQuadro } from '../../composables/use-prioritization';
+import { computed, onMounted, onUnmounted, ref, toRef, watch } from 'vue';
+import type { GrupoDoQuadro, MovimentoDoQuadro, MudancaDeGrupo } from '../../composables/use-prioritization';
 import { usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
 import PrioritizationScreen from '../templates/PrioritizationScreen.vue';
 
 export interface PrioritizationPageProps {
   tasks: Task[];
+  /** Os grupos do registro, com o pai de cada um — e daqui que o quadro aninha (task-119). */
+  groups?: GrupoDoQuadro[];
   gestureUserId?: string;
 }
 
-const props = defineProps<PrioritizationPageProps>();
+const props = withDefaults(defineProps<PrioritizationPageProps>(), { groups: () => [] });
 
 const emit = defineEmits<{
   'update-task': [task: Task];
   'update-tasks': [tasks: Task[]];
+  /**
+   * Um grupo que o quadro criou ou mudou de pai, para gravar pelo dominio
+   * (`create-group`, `nest-group`, `unnest-group`). Sai antes das tarefas: o
+   * grupo precisa existir antes de alguem entrar nele.
+   */
+  'update-group': [mudanca: MudancaDeGrupo];
   /** Um movimento para o dominio numerar (`move-before`, `move-group-after`, ...). */
   move: [movimento: MovimentoDoQuadro];
 }>();
@@ -28,6 +36,7 @@ const {
   scoreFilter,
   dragEnabled,
   changedTasks,
+  changedGroups,
   canUndo,
   canRedo,
   setFilter,
@@ -57,7 +66,10 @@ const {
   acknowledgeChanges,
   undo,
   redo,
-} = usePrioritization(toRef(props, 'tasks'), { onMove: (movimento) => emit('move', movimento) });
+} = usePrioritization(toRef(props, 'tasks'), {
+  onMove: (movimento) => emit('move', movimento),
+  groups: toRef(props, 'groups'),
+});
 
 const focusedId = ref<string | null>(null);
 const detecting = ref(false);
@@ -105,10 +117,13 @@ function onGestureAction(action: string) {
   }
 }
 
-watch(changedTasks, (changes) => {
-  if (changes.length === 0) return;
-  for (const task of changes) emit('update-task', task);
-  emit('update-tasks', changes);
+const mudancas = computed(() => ({ grupos: changedGroups.value, tarefas: changedTasks.value }));
+
+watch(mudancas, ({ grupos, tarefas }) => {
+  if (grupos.length === 0 && tarefas.length === 0) return;
+  for (const grupo of grupos) emit('update-group', grupo);
+  for (const task of tarefas) emit('update-task', task);
+  if (tarefas.length > 0) emit('update-tasks', tarefas);
   acknowledgeChanges();
 });
 

@@ -1,6 +1,10 @@
 import type { ValidationIssue } from '@opentask/taskin-task-manager';
 import { describe, expect, it } from 'vitest';
-import { validarPrioridadesDuplicadas, validarPriorizacao } from './validar-priorizacao.js';
+import {
+  validarAninhamentoDosGrupos,
+  validarPrioridadesDuplicadas,
+  validarPriorizacao,
+} from './validar-priorizacao.js';
 
 const arquivo = (linhas: string[]) => linhas.join('\n');
 
@@ -160,5 +164,33 @@ describe('validarPrioridadesDuplicadas', () => {
     ]);
 
     expect(issues).toHaveLength(3);
+  });
+});
+
+/*
+ * O registro de grupos e um arquivo, e arquivo se edita a mao e passa por
+ * merge. As operacoes recusam pai inexistente e ciclo; o arquivo nao recusa
+ * nada, entao o lint olha (task-119).
+ */
+describe('validarAninhamentoDosGrupos', () => {
+  const g = (id: string, parentId?: string) => ({ id, name: id, ...(parentId && { parentId }) }) as never;
+
+  it('nada a dizer quando cada pai existe e nao ha ciclo', () => {
+    expect(validarAninhamentoDosGrupos('.taskin/.taskin-groups.json', [g('a'), g('b', 'a')])).toEqual([]);
+  });
+
+  it('acusa como erro o pai que nao existe, no arquivo do registro', () => {
+    const issues = validarAninhamentoDosGrupos('.taskin/.taskin-groups.json', [g('b', 'sumiu')]);
+
+    expect(issues).toEqual([
+      { file: '.taskin/.taskin-groups.json', severity: 'error', message: expect.stringContaining("'sumiu'") },
+    ]);
+  });
+
+  it('acusa como erro cada grupo do ciclo', () => {
+    const issues = validarAninhamentoDosGrupos('grupos.json', [g('a', 'b'), g('b', 'a')]);
+
+    expect(issues.map((i) => i.severity)).toEqual(['error', 'error']);
+    expect(mensagens(issues)[0]).toMatch(/inside itself/);
   });
 });

@@ -43,6 +43,32 @@ export interface MovimentoDoQuadro {
   targetId: string;
 }
 
+/**
+ * Um grupo como o registro o guarda: o nome e, quando aninhado, o pai
+ * (task-119). E daqui que o quadro sabe que um grupo esta dentro de outro — a
+ * tarefa so carrega o grupo mais interno.
+ */
+export interface GrupoDoQuadro {
+  id: string;
+  name: string | null;
+  parentId?: string;
+}
+
+/**
+ * O que o quadro mudou num grupo, para quem hospeda gravar pelo dominio:
+ * `novo` e um grupo que o quadro inventou ao agrupar (`create-group`, com o pai
+ * quando houver); os outros mudaram de pai (`nest-group`/`unnest-group`).
+ *
+ * Vem na ordem em que precisa ser gravado: os novos primeiro, do mais raso ao
+ * mais fundo, para o pai existir antes de alguem entrar nele.
+ */
+export interface MudancaDeGrupo {
+  id: string;
+  name: string | null;
+  parentId?: string;
+  novo: boolean;
+}
+
 export interface UsePrioritizationOptions {
   /** localStorage key used to persist view-only preferences (view mode, sort mode, collapsed groups) */
   storageKey?: string;
@@ -52,6 +78,8 @@ export interface UsePrioritizationOptions {
    * que volta traz a nova ordem.
    */
   onMove?: (movimento: MovimentoDoQuadro) => void;
+  /** Os grupos do registro, com o pai de cada um. Sem eles, todo grupo e da raiz. */
+  groups?: Ref<GrupoDoQuadro[]>;
 }
 
 export interface UsePrioritization {
@@ -62,6 +90,8 @@ export interface UsePrioritization {
   scoreFilter: Ref<PrioritizationScoreFilter>;
   dragEnabled: Ref<boolean>;
   changedTasks: Ref<Task[]>;
+  /** Grupos criados ou que mudaram de pai desde a ultima volta dos dados — ver {@link MudancaDeGrupo}. */
+  changedGroups: Ref<MudancaDeGrupo[]>;
   canUndo: Ref<boolean>;
   canRedo: Ref<boolean>;
   setFilter(value: string): void;

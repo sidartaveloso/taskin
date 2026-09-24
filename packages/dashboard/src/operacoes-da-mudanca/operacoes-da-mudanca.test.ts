@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NOME_DE_GRUPO_NOVO, operacaoDoMovimento, operacoesDaMudanca } from './operacoes-da-mudanca';
+import { NOME_DE_GRUPO_NOVO, operacaoDoGrupo, operacaoDoMovimento, operacoesDaMudanca } from './operacoes-da-mudanca';
 
 describe('operacoesDaMudanca — o que o quadro mudou vira operacao nomeada', () => {
   const original = { id: '001', order: 10, groupId: 'g-a', difficulty: 2 };
@@ -76,6 +76,37 @@ describe('operacaoDoMovimento — mover vai ao dominio, sem numero calculado no 
     expect(operacaoDoMovimento({ kind: 'group', id: 'g-a', lado: 'after', targetId: 'g-b' })).toEqual({
       type: 'move-group-after',
       payload: { groupId: 'g-a', targetId: 'g-b' },
+    });
+  });
+});
+
+/*
+ * Grupo dentro de grupo (task-119): o que o quadro mudou num grupo vira a
+ * operacao do dominio — criar, ja com o pai, ou mudar de pai.
+ */
+describe('operacaoDoGrupo', () => {
+  it('um grupo novo vira create-group, com o pai e o nome padrao', () => {
+    expect(operacaoDoGrupo({ id: 'g-sub', name: null, parentId: 'g-pai', novo: true })).toEqual({
+      type: 'create-group',
+      payload: { id: 'g-sub', name: NOME_DE_GRUPO_NOVO, parentId: 'g-pai' },
+    });
+  });
+
+  it('um grupo novo da raiz vai sem pai', () => {
+    expect(operacaoDoGrupo({ id: 'g-novo', name: 'Nome', novo: true })).toEqual({
+      type: 'create-group',
+      payload: { id: 'g-novo', name: 'Nome' },
+    });
+  });
+
+  it('um grupo que ganhou pai vira nest-group, e um que perdeu, unnest-group', () => {
+    expect(operacaoDoGrupo({ id: 'g-a', name: 'A', parentId: 'g-pai', novo: false })).toEqual({
+      type: 'nest-group',
+      payload: { groupId: 'g-a', parentId: 'g-pai' },
+    });
+    expect(operacaoDoGrupo({ id: 'g-a', name: 'A', novo: false })).toEqual({
+      type: 'unnest-group',
+      payload: { groupId: 'g-a' },
     });
   });
 });

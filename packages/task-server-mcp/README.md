@@ -99,9 +99,12 @@ console.log('MCP server running');
 
 - `list_tasks` - List tasks as JSON, without the markdown body. Only the open tasks unless a status criterion (`status`, `closed`, `active`) or `all: true` is given; `all` is refused together with `open`, `closed` or `active`
 - `prioritize_tasks` - Give every task a priority number, once and on purpose
-- `list_groups` - List the task groups, each with its id and name
+- `list_groups` - List the task groups, each with its id and name — and its `parentId` when it is nested inside another group
 - `join_group` - Put a task in an existing group. Only offered when the provider has groups
 - `leave_group` - Take a task out of its group. Only offered when the provider has groups
+- `create_group` - Create a group: a `name`, an optional `id` (generated `g-...` when absent) and an optional `parentId` to create it inside an existing group. Groups nest at most four levels deep. Only offered when the provider has groups; a provider with groups but without nesting refuses `parentId` with `NESTING_NOT_SUPPORTED`
+- `nest_group` - Put a group inside another: `groupId` and `parentId`. Its subgroups go along and no task file is written. A missing parent, the group itself, a cycle and more than four levels are refused. Only offered when the provider supports groups inside groups (`IGroupRegistry.setParent`)
+- `unnest_group` - Take a group out of its parent, back to the root: `groupId`. Offered together with `nest_group`
 - `move_group` - Move a whole group, its members together: exactly one of `before` / `after` (a task not in a group, or another group id), `top: true` or `bottom: true`. Only the members are written, and the result carries `changed`. Only offered when the provider has groups
 - `set_difficulty` - Score how hard one task is: a whole `difficulty` from 1 (trivial) to 5 (very hard). Anything else is refused without writing; there is no way to clear a score, a wrong one is corrected by scoring again
 - `set_priority` - Place one task: exactly one of `priority` (absolute, lower comes first), `before` or `after` another task id, `top: true` or `bottom: true` (a grouped task goes to the top or bottom of its own group). The result carries `changed`, the number of task files written

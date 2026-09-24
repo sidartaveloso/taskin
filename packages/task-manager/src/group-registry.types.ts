@@ -42,6 +42,23 @@ export interface IGroupRegistry {
   createGroup: (group: Group) => Promise<void>;
   /** Falha quando o grupo nao existe. */
   renameGroup: (id: GroupId, name: string) => Promise<void>;
-  /** Falha quando o grupo nao existe. */
+  /**
+   * Falha quando o grupo nao existe. Os subgrupos do apagado sobem para o pai
+   * dele — ou para a raiz —, como os membros vao para `reassignTo`: ninguem
+   * fica apontando para o vazio.
+   */
   deleteGroup: (id: GroupId, options?: DeleteGroupOptions) => Promise<DeleteGroupResult>;
+  /**
+   * Poe o grupo dentro de outro, ou de volta na raiz com `undefined` (task-119).
+   *
+   * **Opcional de proposito**, como o proprio registro: uma fonte pode ter
+   * grupos e nao ter grupo dentro de grupo — a milestone do GitHub nao tem. Sem
+   * este metodo, o registro tambem nao aceita `parentId` em `createGroup`, e
+   * as superficies dizem isso em uma frase.
+   *
+   * Falha quando o grupo nao existe, ou o pai nao passa em
+   * `validarAninhamento`: inexistente, o proprio grupo, um descendente dele, ou
+   * alem do teto de niveis.
+   */
+  setParent?: (id: GroupId, parentId: GroupId | undefined) => Promise<void>;
 }

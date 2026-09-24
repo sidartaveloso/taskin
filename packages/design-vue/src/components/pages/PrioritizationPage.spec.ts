@@ -136,6 +136,30 @@ describe('PrioritizationPage', () => {
     expect(wrapper.emitted('update-tasks')).toEqual([[[changed]]]);
   });
 
+  it('emite update-group antes das tarefas, para o grupo existir quando alguem entrar nele', async () => {
+    const wrapper = mountPage();
+    const changed = makeTask('1');
+    const grupo = { id: 'g-sub', name: null, parentId: 'g-pai', novo: true };
+    api.changedGroups.value = [grupo];
+    api.changedTasks.value = [changed];
+    await nextTick();
+
+    expect(wrapper.emitted('update-group')).toEqual([[grupo]]);
+    expect(wrapper.emitted('update-task')).toEqual([[changed]]);
+    const ordem = Object.keys(wrapper.emitted()).filter((e) => e === 'update-group' || e === 'update-task');
+    expect(ordem).toEqual(['update-group', 'update-task']);
+  });
+
+  it('passa os grupos da prop ao composable', () => {
+    mount(PrioritizationPage, {
+      props: { tasks: [], groups: [{ id: 'g-pai', name: 'Pai' }] },
+      global: { stubs: { PrioritizationScreen: ScreenStub } },
+    });
+    const [, options] = vi.mocked(usePrioritization).mock.calls.at(-1) ?? [];
+
+    expect(options?.groups?.value).toEqual([{ id: 'g-pai', name: 'Pai' }]);
+  });
+
   it('emite move com o movimento que o composable pede ao dominio', () => {
     const wrapper = mountPage();
     const [, options] = vi.mocked(usePrioritization).mock.calls.at(-1) ?? [];
