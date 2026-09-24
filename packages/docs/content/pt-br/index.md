@@ -136,7 +136,13 @@ nomeadas — `startTask`, `finishTask`, `assignToGroup`, `setPriority`,
 `moveBefore`, `moveToTop`, `moveGroupToTop`, `setDifficulty` e as demais — e é genérico sobre a mesma forma. A
 CLI, o servidor MCP e o dashboard passam todos por ele: o WebSocket do dashboard
 manda `set-priority` ou `assign-to-group`, nunca uma tarefa inteira para
-sobrescrever. Uma tabela, `SUPERFICIES_DAS_OPERACOES`, diz onde cada operação
+sobrescrever. No quadro de priorização, as setas, o topo, o fim e o arrastar
+mandam `move-before` / `move-after` (ou `move-group-before` /
+`move-group-after`) tendo como referência a linha **visível** vizinha, a
+primeira ou a última — com filtro, o topo é o do que se está vendo — e os
+números novos voltam do domínio, a mesma regra do `taskin priority --before`.
+Desfazer reenvia os valores anteriores só das tarefas que o movimento alterou.
+Uma tabela, `SUPERFICIES_DAS_OPERACOES`, diz onde cada operação
 aparece — e acrescentar uma operação sem decidir as três superfícies não compila.
 
 ## O provider de arquivos, que é o padrão

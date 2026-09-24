@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { defaultFunctions } from '@opentask/ui-sense';
 import { onMounted, onUnmounted, ref, toRef, watch } from 'vue';
+import type { MovimentoDoQuadro } from '../../composables/use-prioritization';
 import { usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
 import PrioritizationScreen from '../templates/PrioritizationScreen.vue';
@@ -15,6 +16,8 @@ const props = defineProps<PrioritizationPageProps>();
 const emit = defineEmits<{
   'update-task': [task: Task];
   'update-tasks': [tasks: Task[]];
+  /** Um movimento para o dominio numerar (`move-before`, `move-group-after`, ...). */
+  move: [movimento: MovimentoDoQuadro];
 }>();
 
 const {
@@ -54,7 +57,7 @@ const {
   acknowledgeChanges,
   undo,
   redo,
-} = usePrioritization(toRef(props, 'tasks'));
+} = usePrioritization(toRef(props, 'tasks'), { onMove: (movimento) => emit('move', movimento) });
 
 const focusedId = ref<string | null>(null);
 const detecting = ref(false);

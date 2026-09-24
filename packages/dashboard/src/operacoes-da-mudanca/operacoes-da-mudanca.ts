@@ -1,3 +1,4 @@
+import type { MovimentoDoQuadro } from '@opentask/taskin-design-vue';
 import type { OperacaoDoQuadro } from '@opentask/taskin-task-provider-pinia';
 
 /**
@@ -18,9 +19,10 @@ export interface CamposDoQuadro {
  * nomeadas do `ITaskManager` — as mesmas que a CLI e o MCP chamam.
  *
  * Ate a task-106 o dashboard mandava a tarefa inteira num `update` generico, e
- * por isso agrupar, priorizar e pontuar existiam so aqui. O quadro continua
- * calculando a mudanca (com desfazer e refazer); o que muda e o que vai pelo
- * fio.
+ * por isso agrupar, priorizar e pontuar existiam so aqui. Desde a task-118 o
+ * quadro nao calcula numero ao mover (isso e {@link operacaoDoMovimento}): o
+ * que chega aqui e grupo, dificuldade, e o valor anterior que o desfazer
+ * reenvia — por isso `set-priority` ficou.
  *
  * Grupo vai antes de prioridade para a tarefa nunca ficar, nem por um momento,
  * com o numero novo no grupo velho.
@@ -56,4 +58,20 @@ export function operacoesDaMudanca(
   }
 
   return ops;
+}
+
+/**
+ * Um movimento do quadro vira a operacao de mover do dominio — o numero sai de
+ * `posicionarPrioridade`/`posicionarGrupo`, e nao de uma copia no navegador.
+ */
+export function operacaoDoMovimento(movimento: MovimentoDoQuadro): OperacaoDoQuadro {
+  const { id, lado, targetId } = movimento;
+  if (movimento.kind === 'group') {
+    return lado === 'before'
+      ? { type: 'move-group-before', payload: { groupId: id, targetId } }
+      : { type: 'move-group-after', payload: { groupId: id, targetId } };
+  }
+  return lado === 'before'
+    ? { type: 'move-before', payload: { taskId: id, targetId } }
+    : { type: 'move-after', payload: { taskId: id, targetId } };
 }

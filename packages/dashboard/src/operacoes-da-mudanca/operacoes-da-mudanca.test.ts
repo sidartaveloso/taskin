@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NOME_DE_GRUPO_NOVO, operacoesDaMudanca } from './operacoes-da-mudanca';
+import { NOME_DE_GRUPO_NOVO, operacaoDoMovimento, operacoesDaMudanca } from './operacoes-da-mudanca';
 
 describe('operacoesDaMudanca — o que o quadro mudou vira operacao nomeada', () => {
   const original = { id: '001', order: 10, groupId: 'g-a', difficulty: 2 };
@@ -53,5 +53,29 @@ describe('operacoesDaMudanca — o que o quadro mudou vira operacao nomeada', ()
     expect(
       operacoesDaMudanca(original, { order: undefined, groupId: 'g-a', difficulty: undefined }, conhecidos),
     ).toEqual([]);
+  });
+});
+
+describe('operacaoDoMovimento — mover vai ao dominio, sem numero calculado no quadro', () => {
+  it('tarefa antes ou depois de outra vira move-before ou move-after', () => {
+    expect(operacaoDoMovimento({ kind: 'task', id: '003', lado: 'before', targetId: '001' })).toEqual({
+      type: 'move-before',
+      payload: { taskId: '003', targetId: '001' },
+    });
+    expect(operacaoDoMovimento({ kind: 'task', id: '003', lado: 'after', targetId: '005' })).toEqual({
+      type: 'move-after',
+      payload: { taskId: '003', targetId: '005' },
+    });
+  });
+
+  it('grupo antes ou depois de um alvo vira move-group-before ou move-group-after', () => {
+    expect(operacaoDoMovimento({ kind: 'group', id: 'g-a', lado: 'before', targetId: '001' })).toEqual({
+      type: 'move-group-before',
+      payload: { groupId: 'g-a', targetId: '001' },
+    });
+    expect(operacaoDoMovimento({ kind: 'group', id: 'g-a', lado: 'after', targetId: 'g-b' })).toEqual({
+      type: 'move-group-after',
+      payload: { groupId: 'g-a', targetId: 'g-b' },
+    });
   });
 });

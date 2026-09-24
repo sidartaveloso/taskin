@@ -39,7 +39,7 @@ async function mountApp() {
         },
         PrioritizationPage: {
           name: 'PrioritizationPage',
-          emits: ['update-task'],
+          emits: ['update-task', 'move'],
           template: '<div data-testid="prioritization"><div data-testid="tasks-count">{{ tasks.length }}</div></div>',
           props: ['tasks'],
         },
@@ -218,5 +218,23 @@ describe('App — o quadro de priorizacao grava por operacoes nomeadas', () => {
     pagina.vm.$emit('update-task', { id: '002', parent: novo });
 
     expect(operar.mock.calls.map(([op]) => op.type)).toEqual(['create-group', 'assign-to-group', 'assign-to-group']);
+  });
+
+  it('um movimento do quadro vai ao dominio como move-before, sem set-priority calculado', async () => {
+    const wrapper = await mountApp();
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    store.tasks = [createMockTask({ id: '001', order: 10 }), createMockTask({ id: '002', order: 20 })];
+    const operar = vi.spyOn(store, 'operar').mockImplementation(() => {});
+
+    await wrapper.findAll('.mode-toggle button')[1]?.trigger('click');
+    const pagina = wrapper.findComponent({ name: 'PrioritizationPage' });
+    pagina.vm.$emit('move', { kind: 'task', id: '002', lado: 'before', targetId: '001' });
+    pagina.vm.$emit('move', { kind: 'group', id: 'g-a', lado: 'after', targetId: '002' });
+
+    expect(operar.mock.calls.map(([op]) => op)).toEqual([
+      { type: 'move-before', payload: { taskId: '002', targetId: '001' } },
+      { type: 'move-group-after', payload: { groupId: 'g-a', targetId: '002' } },
+    ]);
   });
 });

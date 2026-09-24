@@ -1,15 +1,10 @@
+import { posicionarGrupo, posicionarPrioridade } from '@opentask/taskin-task-manager';
 import { describe, expect, it } from 'vitest';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import type { Task } from '../../types';
 import { groupId, taskId } from '../../types';
-import {
-  buildPriorityTree,
-  diffAgainstBaseline,
-  flattenPriorityTree,
-  renumber,
-  usePrioritization,
-} from './use-prioritization';
-import type { PriorityGroupNode, PriorityNode } from './use-prioritization.types';
+import { buildPriorityTree, diffAgainstBaseline, flattenPriorityTree, usePrioritization } from './use-prioritization';
+import type { MovimentoDoQuadro, PriorityGroupNode, PriorityNode } from './use-prioritization.types';
 
 function makeTask(overrides: Omit<Partial<Task>, 'id'> & { id: string }): Task {
   return {
@@ -33,6 +28,72 @@ function nodeAt(nodes: readonly PriorityNode[], index: number): PriorityNode {
   const node = nodes[index];
   if (!node) throw new Error(`Esperava um no no indice ${index}, a arvore tem ${nodes.length}`);
   return node;
+}
+
+type TarefaDoDominio = Parameters<typeof posicionarPrioridade>[0][number];
+
+/**
+ * O que o servidor faz com um movimento: a regra do dominio, e nao uma copia
+ * dela. Devolve as tarefas que a operacao gravaria.
+ */
+function noDominio(tarefas: readonly Task[], m: MovimentoDoQuadro): { id: string; order?: number }[] {
+  const doDominio = tarefas.map((t) => ({
+    ...t,
+    groupId: t.parent?.type === 'group' ? t.parent.id : undefined,
+  })) as unknown as TarefaDoDominio[];
+  type Ids = Parameters<typeof posicionarPrioridade>[1];
+  type Grupo = Parameters<typeof posicionarGrupo>[1];
+
+  if (m.kind === 'task') {
+    return posicionarPrioridade(doDominio, m.id as Ids, m.targetId as Ids, m.lado);
+  }
+  const alvoEGrupo = doDominio.some((t) => t.groupId === m.targetId);
+  return posicionarGrupo(doDominio, m.id as Grupo, {
+    lado: m.lado,
+    alvo: alvoEGrupo ? { groupId: m.targetId as Grupo } : { taskId: m.targetId as Ids },
+  });
+}
+
+/**
+ * O quadro ligado a um dominio de mentira: cada movimento passa pela regra do
+ * dominio e volta como lista nova, como o servidor faz; `gravar` faz o papel
+ * do app hospedeiro com o `changedTasks`. `escritas` sao os ids gravados pela
+ * ultima operacao — o que apareceria no `git status`.
+ */
+function comDominio(tarefas: Task[]) {
+  const tasksRef = ref(tarefas);
+  const movimentos: MovimentoDoQuadro[] = [];
+  let escritas: string[] = [];
+
+  const composable = usePrioritization(tasksRef, {
+    storageKey: `test-dominio-${Math.random()}`,
+    onMove: (m) => {
+      movimentos.push(m);
+      const alteradas = new Map(noDominio(tasksRef.value, m).map((t) => [t.id, t.order]));
+      escritas = [...alteradas.keys()];
+      tasksRef.value = tasksRef.value.map((t) => (alteradas.has(t.id) ? { ...t, order: alteradas.get(t.id) } : t));
+    },
+  });
+
+  function gravar(): void {
+    const mudadas = new Map(composable.changedTasks.value.map((t) => [t.id, t]));
+    escritas = [...mudadas.keys()];
+    tasksRef.value = tasksRef.value.map((t) => {
+      const m = mudadas.get(t.id);
+      return m ? { ...t, order: m.order, parent: m.parent, groupName: m.groupName, difficulty: m.difficulty } : t;
+    });
+    composable.acknowledgeChanges();
+  }
+
+  return {
+    tasksRef,
+    composable,
+    movimentos,
+    gravar,
+    get escritas() {
+      return escritas;
+    },
+  };
 }
 
 describe('buildPriorityTree', () => {
@@ -128,7 +189,7 @@ describe('buildPriorityTree', () => {
   });
 });
 
-describe('flattenPriorityTree / renumber', () => {
+describe('flattenPriorityTree', () => {
   it('flattens groups back into a task list with parent set to the group', () => {
     const tasks = [
       makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
@@ -139,12 +200,6 @@ describe('flattenPriorityTree / renumber', () => {
 
     expect(flat.map((t) => t.id)).toEqual([taskId('a'), taskId('b')]);
     expect(flat.every((t) => t.parent?.type === 'group' && t.parent.id === groupId('g1'))).toBe(true);
-  });
-
-  it('renumbers order as multiples of step, preserving list order', () => {
-    const tasks = [makeTask({ id: 'a' }), makeTask({ id: 'b' }), makeTask({ id: 'c' })];
-    const renumbered = renumber(tasks, 10);
-    expect(renumbered.map((t) => t.order)).toEqual([10, 20, 30]);
   });
 
   it('sets parent on tasks inside nested groups (parent = immediate group)', () => {
@@ -391,20 +446,37 @@ describe('usePrioritization', () => {
     return { tasksRef, composable };
   }
 
-  it('moveBefore reorders a task and reports it in changedTasks', () => {
-    const { composable } = setup([
+  it('moveBefore pede move-before ao dominio, sem numerar nada', async () => {
+    const b = comDominio([
       makeTask({ id: 'a', order: 10 }),
       makeTask({ id: 'b', order: 20 }),
       makeTask({ id: 'c', order: 30 }),
     ]);
 
-    composable.moveBefore('c', 'a');
+    b.composable.moveBefore('c', 'a');
 
-    const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
+    expect(b.movimentos).toEqual([{ kind: 'task', id: 'c', lado: 'before', targetId: 'a' }]);
+    // O quadro nao calcula numero: nada para o hospedeiro gravar por conta propria
+    expect(b.composable.changedTasks.value).toEqual([]);
+
+    await nextTick();
+    const ids = b.composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
     expect(ids).toEqual(['c', 'a', 'b']);
-    // So a tarefa movida muda de numero: `a` e `b` guardam os seus, e os
-    // arquivos delas nao sao reescritos. Antes as tres eram renumeradas.
-    expect(composable.changedTasks.value.map((t) => t.id)).toEqual(['c']);
+    // So a tarefa movida muda de numero, e quem numera e o dominio
+    expect(b.escritas).toEqual(['c']);
+  });
+
+  it('moveBefore sobre uma tarefa de outro grupo muda o grupo aqui e o numero no dominio', async () => {
+    const b = comDominio([
+      makeTask({ id: 'a', order: 10 }),
+      makeTask({ id: 'b', order: 20, parent: { type: 'group', id: groupId('g1') } }),
+      makeTask({ id: 'c', order: 30, parent: { type: 'group', id: groupId('g1') } }),
+    ]);
+
+    b.composable.moveBefore('a', 'c');
+
+    expect(b.movimentos).toEqual([{ kind: 'task', id: 'a', lado: 'before', targetId: 'c' }]);
+    expect(b.composable.changedTasks.value.map((t) => [t.id, t.parent?.id, t.order])).toEqual([['a', 'g1', 10]]);
   });
 
   function taskIdsFromGroup(node: PriorityNode): string[] {
@@ -483,7 +555,7 @@ describe('usePrioritization', () => {
   it('acknowledgeChanges clears changedTasks until the next mutation', () => {
     const { composable } = setup([makeTask({ id: 'a', order: 10 }), makeTask({ id: 'b', order: 20 })]);
 
-    composable.moveBefore('b', 'a');
+    composable.setDifficulty('b', 4);
     expect(composable.changedTasks.value.length).toBeGreaterThan(0);
 
     composable.acknowledgeChanges();
@@ -587,37 +659,62 @@ describe('usePrioritization', () => {
       expect(composable.canRedo.value).toBe(false);
     });
 
-    it('undo reverts a moveBefore back to the previous order', () => {
-      const { composable } = setup([
+    it('undo reenvia o valor anterior so das tarefas que o movimento alterou', async () => {
+      const b = comDominio([
         makeTask({ id: 'a', order: 10 }),
         makeTask({ id: 'b', order: 20 }),
         makeTask({ id: 'c', order: 30 }),
       ]);
+      const { composable } = b;
 
       composable.moveBefore('c', 'a');
+      await nextTick();
       expect(ids(composable)).toEqual(['c', 'a', 'b']);
       expect(composable.canUndo.value).toBe(true);
 
       composable.undo();
       expect(ids(composable)).toEqual(['a', 'b', 'c']);
+      expect(composable.changedTasks.value.map((t) => [t.id, t.order])).toEqual([['c', 30]]);
+      b.gravar();
+      expect(b.escritas).toEqual(['c']);
       expect(composable.canUndo.value).toBe(false);
       expect(composable.canRedo.value).toBe(true);
     });
 
-    it('redo reapplies the undone moveBefore', () => {
-      const { composable } = setup([
+    it('redo reaplica os valores que o movimento tinha deixado', async () => {
+      const b = comDominio([
         makeTask({ id: 'a', order: 10 }),
         makeTask({ id: 'b', order: 20 }),
         makeTask({ id: 'c', order: 30 }),
       ]);
+      const { composable } = b;
 
       composable.moveBefore('c', 'a');
+      await nextTick();
       composable.undo();
+      b.gravar();
+      await nextTick();
       composable.redo();
 
       expect(ids(composable)).toEqual(['c', 'a', 'b']);
+      expect(composable.changedTasks.value.map((t) => [t.id, t.order])).toEqual([['c', 5]]);
+      expect(b.movimentos).toHaveLength(1);
       expect(composable.canRedo.value).toBe(false);
       expect(composable.canUndo.value).toBe(true);
+    });
+
+    it('undo de uma mudanca de grupo reenvia o grupo anterior', () => {
+      const b = comDominio([
+        makeTask({ id: 'a', order: 10 }),
+        makeTask({ id: 'b', order: 20, parent: { type: 'group', id: groupId('g1') } }),
+        makeTask({ id: 'c', order: 30, parent: { type: 'group', id: groupId('g1') } }),
+      ]);
+
+      b.composable.joinGroup('a', 'g1');
+      b.gravar();
+      b.composable.undo();
+
+      expect(b.composable.changedTasks.value.map((t) => [t.id, t.parent?.id])).toEqual([['a', undefined]]);
     });
 
     it('undo reverts a groupWith back to two standalone tasks', () => {
@@ -642,7 +739,7 @@ describe('usePrioritization', () => {
     });
 
     it('a new action after undo clears the redo stack', () => {
-      const { composable } = setup([
+      const { composable } = comDominio([
         makeTask({ id: 'a', order: 10 }),
         makeTask({ id: 'b', order: 20 }),
         makeTask({ id: 'c', order: 30 }),
@@ -946,8 +1043,8 @@ describe('usePrioritization', () => {
     });
 
     describe('group drag operations', () => {
-      it('moveGroupBefore reorders a group before another group', () => {
-        const { composable } = setup([
+      it('moveGroupBefore reorders a group before another group', async () => {
+        const { composable } = comDominio([
           makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
           makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
           makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
@@ -956,6 +1053,7 @@ describe('usePrioritization', () => {
 
         // [g1(a,b), g2(c,d)]
         composable.moveGroupBefore('g2', 'g1');
+        await nextTick();
 
         expect(composable.tree.value).toHaveLength(2);
         // g2 is now first
@@ -968,8 +1066,8 @@ describe('usePrioritization', () => {
         expect(composable.tree.value[1]?.kind).toBe('group');
       });
 
-      it('moveGroupAfter reorders a group after a standalone task', () => {
-        const { composable } = setup([
+      it('moveGroupAfter reorders a group after a standalone task', async () => {
+        const { composable } = comDominio([
           makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
           makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
           makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
@@ -979,6 +1077,7 @@ describe('usePrioritization', () => {
 
         // [g1(a,b), g2(c,d), task(e)]
         composable.moveGroupAfter('g1', 'e');
+        await nextTick();
 
         // [g2(c,d), task(e), g1(a,b)]
         expect(composable.tree.value).toHaveLength(3);
@@ -1012,8 +1111,8 @@ describe('usePrioritization', () => {
         expect(composable.tree.value[0]?.items[1]?.kind).toBe('group');
       });
 
-      it('moveGroupBefore preserves flattened order after reorder', () => {
-        const { composable } = setup([
+      it('moveGroupBefore preserves flattened order after reorder', async () => {
+        const { composable } = comDominio([
           makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
           makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
           makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
@@ -1021,6 +1120,8 @@ describe('usePrioritization', () => {
         ]);
 
         composable.moveGroupBefore('g2', 'g1');
+
+        await nextTick();
         const flat = flattenPriorityTree(composable.tree.value);
         expect(flat.map((t) => t.id)).toEqual([taskId('c'), taskId('d'), taskId('a'), taskId('b')]);
       });
@@ -1046,8 +1147,8 @@ describe('usePrioritization', () => {
       });
 
       describe('moveUp / moveDown', () => {
-        it('moveUp swaps a task with its previous sibling', () => {
-          const { composable } = setup([
+        it('moveUp swaps a task with its previous sibling', async () => {
+          const { composable } = comDominio([
             makeTask({ id: 'a', order: 10 }),
             makeTask({ id: 'b', order: 20 }),
             makeTask({ id: 'c', order: 30 }),
@@ -1055,18 +1156,22 @@ describe('usePrioritization', () => {
 
           composable.moveUp('b');
 
+          await nextTick();
+
           const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
           expect(ids).toEqual([taskId('b'), taskId('a'), taskId('c')]);
         });
 
-        it('moveDown swaps a task with its next sibling', () => {
-          const { composable } = setup([
+        it('moveDown swaps a task with its next sibling', async () => {
+          const { composable } = comDominio([
             makeTask({ id: 'a', order: 10 }),
             makeTask({ id: 'b', order: 20 }),
             makeTask({ id: 'c', order: 30 }),
           ]);
 
           composable.moveDown('b');
+
+          await nextTick();
 
           const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
           expect(ids).toEqual([taskId('a'), taskId('c'), taskId('b')]);
@@ -1086,8 +1191,8 @@ describe('usePrioritization', () => {
           expect(composable.canUndo.value).toBe(false);
         });
 
-        it('moveUp moves a group before another group', () => {
-          const { composable } = setup([
+        it('moveUp moves a group before another group', async () => {
+          const { composable } = comDominio([
             makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
             makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
             makeTask({ id: 'c', order: 3, parent: { type: 'group', id: groupId('g2') } }),
@@ -1095,6 +1200,8 @@ describe('usePrioritization', () => {
           ]);
 
           composable.moveUp('g2');
+
+          await nextTick();
 
           expect(composable.tree.value[0]?.kind).toBe('group');
           if (composable.tree.value[0]?.kind !== 'group') return;
@@ -1104,14 +1211,16 @@ describe('usePrioritization', () => {
           ]);
         });
 
-        it('moveUp supports undo', () => {
-          const { composable } = setup([
+        it('moveUp supports undo', async () => {
+          const { composable } = comDominio([
             makeTask({ id: 'a', order: 10 }),
             makeTask({ id: 'b', order: 20 }),
             makeTask({ id: 'c', order: 30 }),
           ]);
 
           composable.moveUp('c');
+
+          await nextTick();
           expect(composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual([
             taskId('a'),
             taskId('c'),
@@ -1192,58 +1301,59 @@ describe('usePrioritization', () => {
  * ordem passaria por cima do defeito.
  */
 describe('custo de um movimento', () => {
-  it('subir uma tarefa grava so a tarefa que subiu', () => {
-    const tasks = ref([
+  it('subir uma tarefa grava so a tarefa que subiu', async () => {
+    const b = comDominio([
       makeTask({ id: '001', order: 10 }),
       makeTask({ id: '002', order: 20 }),
       makeTask({ id: '003', order: 30 }),
       makeTask({ id: '004', order: 40 }),
     ]);
-    const board = usePrioritization(tasks);
 
-    board.moveUp('002');
+    b.composable.moveUp('002');
+    await nextTick();
 
-    expect(board.changedTasks.value.map((t) => t.id)).toEqual(['002']);
+    expect(b.movimentos).toEqual([{ kind: 'task', id: '002', lado: 'before', targetId: '001' }]);
+    expect(b.escritas).toEqual(['002']);
   });
 
   /*
    * O caso que revela a numeracao densa: mover a ultima para o topo desloca
    * todas as outras uma posicao, e renumerar por posicao reescreve a lista
-   * inteira. Numerando entre vizinhos, muda uma so.
+   * inteira. Numerando entre vizinhos, muda uma so a cada passo.
    */
-  it('mover da ultima posicao para a primeira grava uma tarefa so', () => {
-    const tasks = ref([
+  it('mover da ultima posicao para a primeira grava uma tarefa so a cada passo', async () => {
+    const b = comDominio([
       makeTask({ id: '001', order: 10 }),
       makeTask({ id: '002', order: 20 }),
       makeTask({ id: '003', order: 30 }),
       makeTask({ id: '004', order: 40 }),
     ]);
-    const board = usePrioritization(tasks);
 
-    board.moveUp('004');
-    board.moveUp('004');
-    board.moveUp('004');
-
-    expect(board.changedTasks.value.map((t) => t.id)).toEqual(['004']);
+    for (let i = 0; i < 3; i++) {
+      b.composable.moveUp('004');
+      await nextTick();
+      expect(b.escritas).toEqual(['004']);
+    }
+    expect(shape(b.composable.tree.value)).toEqual(['004', '001', '002', '003']);
   });
 
   /*
    * Metade das tarefas de um projeto real nao tem `order`. Dar numero a todas
    * no primeiro movimento e exatamente o que faz o dashboard reescrever o
-   * repositorio inteiro — quem nao foi movida continua sem numero.
+   * repositorio inteiro — quem vem depois continua sem numero.
    */
-  it('nao numera quem ninguem mexeu', () => {
-    const tasks = ref([
+  it('nao numera quem vem depois do movido', async () => {
+    const b = comDominio([
       makeTask({ id: '001' }),
       makeTask({ id: '002' }),
       makeTask({ id: '003' }),
       makeTask({ id: '004' }),
     ]);
-    const board = usePrioritization(tasks);
 
-    board.moveUp('003');
+    b.composable.moveUp('003');
+    await nextTick();
 
-    expect(board.changedTasks.value.length).toBeLessThanOrEqual(2);
+    expect(b.escritas).not.toContain('004');
   });
 });
 
@@ -1254,7 +1364,7 @@ function shape(nodes: readonly PriorityNode[]): unknown[] {
 
 describe('moveToTop / moveToBottom', () => {
   function board(extra: Task[] = []) {
-    const tasks = ref([
+    return comDominio([
       makeTask({ id: '001', order: 10, difficulty: 1 }),
       makeTask({ id: '002', order: 20, difficulty: 3 }),
       makeTask({ id: '003', order: 30, title: 'alvo', difficulty: 2 }),
@@ -1262,159 +1372,220 @@ describe('moveToTop / moveToBottom', () => {
       makeTask({ id: '005', order: 50, title: 'alvo', difficulty: 5 }),
       ...extra,
     ]);
-    return usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
   }
 
-  it('leva a tarefa para o topo e grava so ela', () => {
+  it('leva a tarefa para o topo pedindo move-before da primeira linha, e grava so ela', async () => {
     const b = board();
-    b.moveToTop('004');
-    expect(shape(b.tree.value)).toEqual(['004', '001', '002', '003', '005']);
-    expect(b.changedTasks.value.map((t) => t.id)).toEqual(['004']);
+    b.composable.moveToTop('004');
+    expect(b.movimentos).toEqual([{ kind: 'task', id: '004', lado: 'before', targetId: '001' }]);
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual(['004', '001', '002', '003', '005']);
+    expect(b.escritas).toEqual(['004']);
   });
 
-  it('leva a tarefa para o fim e grava so ela', () => {
+  it('leva a tarefa para o fim pedindo move-after da ultima linha, e grava so ela', async () => {
     const b = board();
-    b.moveToBottom('002');
-    expect(shape(b.tree.value)).toEqual(['001', '003', '004', '005', '002']);
-    expect(b.changedTasks.value.map((t) => t.id)).toEqual(['002']);
+    b.composable.moveToBottom('002');
+    expect(b.movimentos).toEqual([{ kind: 'task', id: '002', lado: 'after', targetId: '005' }]);
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual(['001', '003', '004', '005', '002']);
+    expect(b.escritas).toEqual(['002']);
   });
 
-  it('com filtro, o topo e o da lista visivel e a tarefa continua a vista', () => {
-    const b = board();
-    b.setFilter('alvo');
-    b.moveToTop('005');
-    expect(shape(b.tree.value)).toEqual(['005', '003', '004']);
-    b.setFilter('');
-    expect(shape(b.tree.value)).toEqual(['001', '002', '005', '003', '004']);
-    expect(b.changedTasks.value.map((t) => t.id)).toEqual(['005']);
+  it('sem filtro, o topo visivel coincide com o move-to-top do dominio', async () => {
+    const gid = groupId('g-a');
+    const b = comDominio([
+      makeTask({ id: '001', order: 10, parent: { type: 'group', id: gid } }),
+      makeTask({ id: '002', order: 20, parent: { type: 'group', id: gid } }),
+      makeTask({ id: '003', order: 30 }),
+    ]);
+    b.composable.moveToTop('003');
+    // A primeira linha e um grupo: a referencia e o primeiro membro dele
+    expect(b.movimentos).toEqual([{ kind: 'task', id: '003', lado: 'before', targetId: '001' }]);
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual(['003', ['001', '002']]);
   });
 
-  it('com filtro, o fim e o da lista visivel', () => {
+  it('com filtro, o topo e o da lista visivel e a tarefa continua a vista', async () => {
     const b = board();
-    b.setScoreFilter('scored');
-    b.moveToBottom('001');
-    expect(shape(b.tree.value)).toEqual(['002', '003', '005', '001']);
-    b.setScoreFilter('all');
-    expect(shape(b.tree.value)).toEqual(['002', '003', '004', '005', '001']);
+    b.composable.setFilter('alvo');
+    b.composable.moveToTop('005');
+    expect(b.movimentos).toEqual([{ kind: 'task', id: '005', lado: 'before', targetId: '003' }]);
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual(['005', '003', '004']);
+    b.composable.setFilter('');
+    expect(shape(b.composable.tree.value)).toEqual(['001', '002', '005', '003', '004']);
+    expect(b.escritas).toEqual(['005']);
+  });
+
+  it('com filtro, o fim e o da lista visivel', async () => {
+    const b = board();
+    b.composable.setScoreFilter('scored');
+    b.composable.moveToBottom('001');
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual(['002', '003', '005', '001']);
+    b.composable.setScoreFilter('all');
+    expect(shape(b.composable.tree.value)).toEqual(['002', '003', '004', '005', '001']);
   });
 
   it('fora do modo manual nao faz nada, porque a exibicao nao segue a prioridade', () => {
     const b = board();
-    b.setSortMode('diff-desc');
-    const antes = shape(b.tree.value);
-    b.moveToTop('001');
-    b.moveToBottom('005');
-    expect(shape(b.tree.value)).toEqual(antes);
-    expect(b.changedTasks.value).toEqual([]);
-    expect(b.canUndo.value).toBe(false);
+    b.composable.setSortMode('diff-desc');
+    b.composable.moveToTop('001');
+    b.composable.moveToBottom('005');
+    b.composable.moveUp('003');
+    b.composable.moveGroupToTop('g-a');
+    expect(b.movimentos).toEqual([]);
+    expect(b.composable.canUndo.value).toBe(false);
   });
 
-  it('quem ja esta no topo ou no fim nao gera historico nem mudanca', () => {
+  it('quem ja esta no topo ou no fim nao gera movimento nem historico', () => {
     const b = board();
-    b.moveToTop('001');
-    b.moveToBottom('005');
-    expect(b.canUndo.value).toBe(false);
-    expect(b.changedTasks.value).toEqual([]);
+    b.composable.moveToTop('001');
+    b.composable.moveToBottom('005');
+    expect(b.movimentos).toEqual([]);
+    expect(b.composable.canUndo.value).toBe(false);
   });
 
-  it('entra no historico de undo/redo', () => {
+  it('entra no historico de undo/redo', async () => {
     const b = board();
-    b.moveToTop('005');
-    expect(b.canUndo.value).toBe(true);
-    b.undo();
-    expect(shape(b.tree.value)).toEqual(['001', '002', '003', '004', '005']);
-    b.redo();
-    expect(shape(b.tree.value)).toEqual(['005', '001', '002', '003', '004']);
+    b.composable.moveToTop('005');
+    await nextTick();
+    expect(b.composable.canUndo.value).toBe(true);
+    b.composable.undo();
+    expect(shape(b.composable.tree.value)).toEqual(['001', '002', '003', '004', '005']);
+    b.composable.redo();
+    expect(shape(b.composable.tree.value)).toEqual(['005', '001', '002', '003', '004']);
   });
 
-  it('tarefa dentro de grupo vai para o topo do proprio grupo, e nao da lista', () => {
+  it('tarefa dentro de grupo vai para o topo do proprio grupo, e nao da lista', async () => {
     const gid = groupId('g-a');
-    const tasks = ref([
+    const b = comDominio([
       makeTask({ id: '001', order: 10 }),
       makeTask({ id: '002', order: 20, parent: { type: 'group', id: gid } }),
       makeTask({ id: '003', order: 30, parent: { type: 'group', id: gid } }),
       makeTask({ id: '004', order: 40, parent: { type: 'group', id: gid } }),
     ]);
-    const b = usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
-    b.moveToTop('004');
-    expect(shape(b.tree.value)).toEqual(['001', ['004', '002', '003']]);
-    b.moveToBottom('004');
-    expect(shape(b.tree.value)).toEqual(['001', ['002', '003', '004']]);
+    b.composable.moveToTop('004');
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual(['001', ['004', '002', '003']]);
+    b.composable.moveToBottom('004');
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual(['001', ['002', '003', '004']]);
   });
 
-  it('grupo sobe para o topo e desce para o fim da lista de fora', () => {
+  it('grupo sobe para o topo e desce para o fim da lista de fora, pelas operacoes de grupo', async () => {
     const gid = groupId('g-a');
-    const tasks = ref([
+    const b = comDominio([
       makeTask({ id: '001', order: 10 }),
       makeTask({ id: '002', order: 20 }),
       makeTask({ id: '003', order: 30, parent: { type: 'group', id: gid } }),
       makeTask({ id: '004', order: 40, parent: { type: 'group', id: gid } }),
       makeTask({ id: '005', order: 50 }),
     ]);
-    const b = usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
-    b.moveGroupToTop('g-a');
-    expect(shape(b.tree.value)).toEqual([['003', '004'], '001', '002', '005']);
-    expect(b.changedTasks.value.map((t) => t.id).sort()).toEqual(['003', '004']);
+    b.composable.moveGroupToTop('g-a');
+    expect(b.movimentos.at(-1)).toEqual({ kind: 'group', id: 'g-a', lado: 'before', targetId: '001' });
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual([['003', '004'], '001', '002', '005']);
+    expect([...b.escritas].sort()).toEqual(['003', '004']);
 
-    b.moveGroupToBottom('g-a');
-    expect(shape(b.tree.value)).toEqual(['001', '002', '005', ['003', '004']]);
-    expect(b.changedTasks.value.map((t) => t.id).sort()).toEqual(['003', '004']);
-    b.undo();
-    expect(shape(b.tree.value)).toEqual([['003', '004'], '001', '002', '005']);
+    b.composable.moveGroupToBottom('g-a');
+    expect(b.movimentos.at(-1)).toEqual({ kind: 'group', id: 'g-a', lado: 'after', targetId: '005' });
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual(['001', '002', '005', ['003', '004']]);
+    expect([...b.escritas].sort()).toEqual(['003', '004']);
+
+    b.composable.undo();
+    expect(shape(b.composable.tree.value)).toEqual([['003', '004'], '001', '002', '005']);
+    b.gravar();
+    expect([...b.escritas].sort()).toEqual(['003', '004']);
   });
 
-  it('grupo respeita o filtro: vai para antes da primeira linha visivel', () => {
+  it('grupo respeita o filtro: vai para antes da primeira linha visivel', async () => {
     const gid = groupId('g-a');
-    const tasks = ref([
+    const b = comDominio([
       makeTask({ id: '001', order: 10 }),
       makeTask({ id: '002', order: 20, title: 'alvo' }),
       makeTask({ id: '003', order: 30, title: 'alvo', parent: { type: 'group', id: gid } }),
       makeTask({ id: '004', order: 40, parent: { type: 'group', id: gid } }),
     ]);
-    const b = usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
-    b.setFilter('alvo');
-    b.moveGroupToTop('g-a');
-    b.setFilter('');
-    expect(shape(b.tree.value)).toEqual(['001', ['003', '004'], '002']);
+    b.composable.setFilter('alvo');
+    b.composable.moveGroupToTop('g-a');
+    expect(b.movimentos).toEqual([{ kind: 'group', id: 'g-a', lado: 'before', targetId: '002' }]);
+    await nextTick();
+    b.composable.setFilter('');
+    expect(shape(b.composable.tree.value)).toEqual(['001', ['003', '004'], '002']);
+  });
+
+  it('tarefa solta que passa por um grupo tem o primeiro ou o ultimo membro dele como referencia', async () => {
+    const gid = groupId('g-a');
+    const b = comDominio([
+      makeTask({ id: '001', order: 10, parent: { type: 'group', id: gid } }),
+      makeTask({ id: '002', order: 20, parent: { type: 'group', id: gid } }),
+      makeTask({ id: '003', order: 30 }),
+    ]);
+    b.composable.moveUp('003');
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual(['003', ['001', '002']]);
+    b.composable.moveDown('003');
+    await nextTick();
+    expect(shape(b.composable.tree.value)).toEqual([['001', '002'], '003']);
+    expect(b.movimentos).toEqual([
+      { kind: 'task', id: '003', lado: 'before', targetId: '001' },
+      { kind: 'task', id: '003', lado: 'after', targetId: '002' },
+    ]);
+  });
+
+  it('arrastar um grupo sobre um membro de outro grupo mira o outro grupo', () => {
+    const b = comDominio([
+      makeTask({ id: '001', order: 10, parent: { type: 'group', id: groupId('g-a') } }),
+      makeTask({ id: '002', order: 20, parent: { type: 'group', id: groupId('g-a') } }),
+      makeTask({ id: '003', order: 30, parent: { type: 'group', id: groupId('g-b') } }),
+      makeTask({ id: '004', order: 40, parent: { type: 'group', id: groupId('g-b') } }),
+    ]);
+    b.composable.moveGroupBefore('g-b', '002');
+    b.composable.moveGroupAfter('g-a', '001');
+    expect(b.movimentos).toEqual([{ kind: 'group', id: 'g-b', lado: 'before', targetId: 'g-a' }]);
   });
 
   /*
    * O cenario da task-082: 500 tarefas, so as primeiras com prioridade. Mover
-   * para o topo e o movimento de maior alcance, entao e ele que mede se a
-   * numeracao por vizinhos continua valendo.
+   * para o topo e o movimento de maior alcance, entao e ele que mede se o
+   * quadro, mandando o movimento ao dominio, continua gravando pouco.
    */
   describe('custo no cenario de 500 tarefas', () => {
     function quinhentas() {
       const gid = groupId('g-x');
-      return ref(
-        Array.from({ length: 500 }, (_, i) =>
-          makeTask({
-            id: String(i + 1).padStart(3, '0'),
-            order: i < 20 ? (i + 1) * 10 : undefined,
-            parent: i === 10 || i === 11 ? { type: 'group', id: gid } : undefined,
-          }),
-        ),
+      return Array.from({ length: 500 }, (_, i) =>
+        makeTask({
+          id: String(i + 1).padStart(3, '0'),
+          order: i < 20 ? (i + 1) * 10 : undefined,
+          parent: i === 10 || i === 11 ? { type: 'group', id: gid } : undefined,
+        }),
       );
     }
 
-    it('levar uma tarefa numerada ao topo grava um arquivo', () => {
-      const b = usePrioritization(quinhentas(), { storageKey: `test-top-${Math.random()}` });
-      b.moveToTop('015');
-      expect(b.changedTasks.value.map((t) => t.id)).toEqual(['015']);
+    it('levar uma tarefa numerada ao topo grava um arquivo', async () => {
+      const b = comDominio(quinhentas());
+      b.composable.moveToTop('015');
+      await nextTick();
+      expect(b.escritas).toEqual(['015']);
     });
 
-    it('levar uma tarefa sem numero ao topo grava um arquivo', () => {
-      const b = usePrioritization(quinhentas(), { storageKey: `test-top-${Math.random()}` });
-      b.moveToTop('400');
-      expect(b.changedTasks.value.map((t) => t.id)).toEqual(['400']);
+    it('levar uma tarefa sem numero ao topo grava um arquivo', async () => {
+      const b = comDominio(quinhentas());
+      b.composable.moveToTop('400');
+      await nextTick();
+      expect(b.escritas).toEqual(['400']);
     });
 
-    it('levar uma tarefa ao fim de uma cauda numerada grava um arquivo', () => {
+    it('levar uma tarefa ao fim de uma cauda numerada grava um arquivo', async () => {
       const tasks = quinhentas();
-      for (const t of tasks.value) t.order ??= Number(t.id) * 10;
-      const b = usePrioritization(tasks, { storageKey: `test-top-${Math.random()}` });
-      b.moveToBottom('005');
-      expect(b.changedTasks.value.map((t) => t.id)).toEqual(['005']);
+      for (const t of tasks) t.order ??= Number(t.id) * 10;
+      const b = comDominio(tasks);
+      b.composable.moveToBottom('005');
+      await nextTick();
+      expect(b.escritas).toEqual(['005']);
     });
 
     /*
@@ -1423,16 +1594,27 @@ describe('moveToTop / moveToBottom', () => {
      * cauda inteira — o mesmo custo de prefixo que a task-082 registrou para o
      * meio da regiao sem numero, aqui no seu maximo.
      */
-    it('levar uma tarefa ao fim de uma cauda sem numero numera a cauda', () => {
-      const b = usePrioritization(quinhentas(), { storageKey: `test-top-${Math.random()}` });
-      b.moveToBottom('005');
-      expect(b.changedTasks.value.length).toBe(481);
+    it('levar uma tarefa ao fim de uma cauda sem numero numera a cauda', async () => {
+      const b = comDominio(quinhentas());
+      b.composable.moveToBottom('005');
+      await nextTick();
+      expect(b.escritas.length).toBe(481);
     });
 
-    it('levar um grupo ao topo grava so os membros dele', () => {
-      const b = usePrioritization(quinhentas(), { storageKey: `test-top-${Math.random()}` });
-      b.moveGroupToTop('g-x');
-      expect(b.changedTasks.value.map((t) => t.id).sort()).toEqual(['011', '012']);
+    it('levar um grupo ao topo grava so os membros dele', async () => {
+      const b = comDominio(quinhentas());
+      b.composable.moveGroupToTop('g-x');
+      await nextTick();
+      expect([...b.escritas].sort()).toEqual(['011', '012']);
+    });
+
+    it('desfazer grava de volta so o que o movimento alterou', async () => {
+      const b = comDominio(quinhentas());
+      b.composable.moveToTop('400');
+      await nextTick();
+      b.composable.undo();
+      b.gravar();
+      expect(b.escritas).toEqual(['400']);
     });
   });
 });
