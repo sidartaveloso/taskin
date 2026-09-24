@@ -149,10 +149,11 @@ comando.
 **Pendente**:
 
 - publicar a versão e adotar no geohub e no mapgrid (último item da lista);
-- ainda sem solução: com erro de anexo, o lint termina com "Run with --fix to
-  automatically fix format issues", que não se aplica — o `--fix` não reduz
-  arquivo. A `ValidationIssue` não diz se o problema é corrigível
-  automaticamente, e a CLI não tem como distinguir.
+- ~~ainda sem solução: com erro de anexo, o lint termina com "Run with --fix to
+  automatically fix format issues", que não se aplica~~ — resolvido na
+  task-112: a `ValidationIssue` ganhou `fixable?: boolean`, o
+  `AttachmentValidator` marca os seus erros como `fixable: false`, a dica só
+  aparece quando há erro corrigível, e o `--fix` sai com 1 quando sobra erro.
 
 ## Notes
 - O teto de 300 KB é decisão de Sidarta (2026-09-23), depois dos 16 MB da
