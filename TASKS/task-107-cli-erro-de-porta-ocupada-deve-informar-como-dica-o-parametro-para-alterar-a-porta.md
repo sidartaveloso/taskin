@@ -1,6 +1,6 @@
 # 🧩 Task 107 — CLI - erro de porta ocupada deve informar como dica o parametro para alterar a porta.
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: A definir
 - Priority: 870
