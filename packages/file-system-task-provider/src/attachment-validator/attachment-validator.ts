@@ -15,6 +15,10 @@ const KB = 1024;
 
 const kb = (bytes: number): string => `${Math.round(bytes / KB)} KB`;
 
+/** Two sizes, in KB unless rounding would make them read the same. */
+const sizes = (before: number, after: number): [string, string] =>
+  kb(before) === kb(after) ? [`${before} bytes`, `${after} bytes`] : [kb(before), kb(after)];
+
 /** Keys are relative to the tasks directory and always use `/`. */
 const toKey = (relative: string): string => relative.split(path.sep).join('/');
 
@@ -69,9 +73,10 @@ export class AttachmentValidator implements IAttachmentValidator {
           suggestion: this.suggestionFor(attachment.key),
         });
       } else if (attachment.bytes > pinned) {
+        const [was, now] = sizes(pinned, attachment.bytes);
         issues.push({
           file: attachment.absolute,
-          message: `${attachment.key} is exempt from the ${kb(limit)} limit at ${kb(pinned)}, but grew to ${kb(attachment.bytes)}.`,
+          message: `${attachment.key} is exempt from the ${kb(limit)} limit at ${was}, but grew to ${now}.`,
           severity: 'error',
           suggestion: this.suggestionFor(attachment.key),
         });
