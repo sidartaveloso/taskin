@@ -1,16 +1,11 @@
 <template>
   <div class="prioritization-screen">
     <div class="toolbar">
-      <input
-        class="filter-input"
-        type="text"
-        placeholder="🔎 filtrar…"
-        :value="filter"
-        @input="
-          emit('update:filter', ($event.target as HTMLInputElement).value)
-        "
-      />
-
+      <!--
+        So o que e de desenho. A busca, a ordem e a pontuacao dizem quais
+        tarefas e em que ordem, valem para as duas telas e ficam na barra do
+        topo do dashboard (task-129).
+      -->
       <div class="segmented" role="group" aria-label="View mode">
         <button
           v-for="v in ['cards', 'icons', 'grid'] as PrioritizationViewMode[]"
@@ -25,41 +20,6 @@
           }}
         </button>
       </div>
-
-      <select
-        class="sort-select"
-        data-testid="sort-select"
-        :value="sortMode"
-        @change="
-          emit(
-            'update:sortMode',
-            ($event.target as HTMLSelectElement)
-              .value as PrioritizationSortMode,
-          )
-        "
-      >
-        <option value="manual">Manual (priority)</option>
-        <option value="diff-desc">Difficulty ↓ (high→low)</option>
-        <option value="diff-asc">Difficulty ↑ (low→high)</option>
-      </select>
-
-      <select
-        class="sort-select"
-        data-testid="score-filter-select"
-        aria-label="Difficulty filter"
-        :value="scoreFilter"
-        @change="
-          emit(
-            'update:scoreFilter',
-            ($event.target as HTMLSelectElement)
-              .value as PrioritizationScoreFilter,
-          )
-        "
-      >
-        <option value="all">All tasks</option>
-        <option value="scored">Scored only</option>
-        <option value="unscored">Unscored only</option>
-      </select>
 
       <button
         class="ghost"
@@ -165,20 +125,13 @@
 <script setup lang="ts">
 import { type ConfigurableFunction, GestureSystem, TrackingControls } from '@opentask/ui-sense';
 import { provide, ref, toRef } from 'vue';
-import type {
-  PrioritizationScoreFilter,
-  PrioritizationSortMode,
-  PrioritizationViewMode,
-  PriorityNode,
-} from '../../composables/use-prioritization';
+import type { PrioritizationViewMode, PriorityNode } from '../../composables/use-prioritization';
 import PriorityGroupRenderer from './PriorityGroupRenderer.vue';
 
 export interface PrioritizationScreenProps {
   tree: PriorityNode[];
-  filter?: string;
   viewMode?: PrioritizationViewMode;
-  sortMode?: PrioritizationSortMode;
-  scoreFilter?: PrioritizationScoreFilter;
+  /** Falso fora da ordem `manual`: sem arrastar e sem setas. */
   dragEnabled?: boolean;
   canUndo?: boolean;
   canRedo?: boolean;
@@ -195,10 +148,7 @@ export interface PrioritizationScreenProps {
 }
 
 const props = withDefaults(defineProps<PrioritizationScreenProps>(), {
-  filter: '',
   viewMode: 'cards',
-  sortMode: 'manual',
-  scoreFilter: 'all',
   dragEnabled: true,
   canUndo: false,
   canRedo: false,
@@ -206,10 +156,7 @@ const props = withDefaults(defineProps<PrioritizationScreenProps>(), {
 });
 
 const emit = defineEmits<{
-  'update:filter': [value: string];
   'update:viewMode': [value: PrioritizationViewMode];
-  'update:sortMode': [value: PrioritizationSortMode];
-  'update:scoreFilter': [value: PrioritizationScoreFilter];
   'toggle-collapse': [groupId: string];
   'set-all-collapsed': [collapsed: boolean];
   'set-difficulty': [taskId: string, difficulty: 1 | 2 | 3 | 4 | 5];
@@ -370,7 +317,13 @@ function groupClass(groupId: string) {
 }
 
 provide('dragContext', {
-  dragEnabled: props.dragEnabled,
+  /*
+   * Lido na hora, e nao copiado no setup: a ordem troca de fora, na barra do
+   * topo, e o arrastar e as setas tem que sumir e voltar com ela.
+   */
+  get dragEnabled() {
+    return props.dragEnabled;
+  },
   draggedId,
   dropIntent,
   onDragStart,
@@ -413,19 +366,6 @@ provide('dragContext', {
   align-items: center;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
-}
-
-.filter-input,
-.sort-select {
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border-muted);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-sm) var(--spacing-md);
-}
-
-.filter-input {
-  min-width: 200px;
 }
 
 .segmented {

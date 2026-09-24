@@ -1,10 +1,15 @@
 import { posicionarGrupo, posicionarPrioridade } from '@opentask/taskin-task-manager';
 import { describe, expect, it } from 'vitest';
-import { nextTick, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import type { Task } from '../../types';
 import { groupId, taskId } from '../../types';
 import { buildPriorityTree, diffAgainstBaseline, flattenPriorityTree, usePrioritization } from './use-prioritization';
-import type { MovimentoDoQuadro, PriorityGroupNode, PriorityNode } from './use-prioritization.types';
+import type {
+  MovimentoDoQuadro,
+  PrioritizationSortMode,
+  PriorityGroupNode,
+  PriorityNode,
+} from './use-prioritization.types';
 
 function makeTask(overrides: Omit<Partial<Task>, 'id'> & { id: string }): Task {
   return {
@@ -59,14 +64,22 @@ function noDominio(tarefas: readonly Task[], m: MovimentoDoQuadro): { id: string
  * dominio e volta como lista nova, como o servidor faz; `gravar` faz o papel
  * do app hospedeiro com o `changedTasks`. `escritas` sao os ids gravados pela
  * ultima operacao — o que apareceria no `git status`.
+ *
+ * `recortar` e `sortMode` fazem o papel da barra do topo do dashboard: desde a
+ * task-129 o quadro nao filtra nem escolhe a ordem, recebe o recorte pronto. O
+ * dominio de mentira move sobre a lista inteira, como o servidor.
  */
 function comDominio(tarefas: Task[]) {
   const tasksRef = ref(tarefas);
+  const recorte = ref<(t: Task) => boolean>(() => true);
+  const sortMode = ref<PrioritizationSortMode>('manual');
+  const visiveis = computed(() => tasksRef.value.filter(recorte.value));
   const movimentos: MovimentoDoQuadro[] = [];
   let escritas: string[] = [];
 
-  const composable = usePrioritization(tasksRef, {
+  const composable = usePrioritization(visiveis, {
     storageKey: `test-dominio-${Math.random()}`,
+    sortMode,
     onMove: (m) => {
       movimentos.push(m);
       const alteradas = new Map(noDominio(tasksRef.value, m).map((t) => [t.id, t.order]));
@@ -90,6 +103,10 @@ function comDominio(tarefas: Task[]) {
     composable,
     movimentos,
     gravar,
+    sortMode,
+    recortar(filtro: (t: Task) => boolean = () => true): void {
+      recorte.value = filtro;
+    },
     get escritas() {
       return escritas;
     },
@@ -577,75 +594,47 @@ describe('usePrioritization', () => {
     }
   });
 
-  it('filter narrows the visible tree without mutating the underlying data', () => {
-    const { composable } = setup([
-      makeTask({ id: 'a', order: 10, title: 'Fix login bug' }),
-      makeTask({ id: 'b', order: 20, title: 'Add dashboard export' }),
-    ]);
+  /*
+   * A busca e a pontuacao sairam daqui (task-129): sao o `text`, o `scored` e
+   * o `unscored` do `filterTasks`, testados no dominio e aplicados pelo App.
+   * A ordem tambem: o quadro recebe o modo e monta a arvore pelo
+   * `ordenarTarefas` do dominio.
+   */
+  it('monta a arvore na ordem que recebe, pela regra do dominio, e so arrasta em manual', async () => {
+    const sortMode = ref<PrioritizationSortMode>('manual');
+    const composable = usePrioritization(
+      ref([
+        makeTask({ id: 'a', order: 10, difficulty: 1 }),
+        makeTask({ id: 'b', order: 20, difficulty: 5 }),
+        makeTask({ id: 'c', order: 30 }),
+      ]),
+      { storageKey: `test-prefs-${Math.random()}`, sortMode },
+    );
+    const ids = () => composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
+    expect(ids()).toEqual(['a', 'b', 'c']);
+    expect(composable.dragEnabled.value).toBe(true);
 
-    composable.setFilter('login');
-
-    const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
-    expect(ids).toEqual(['a']);
-  });
-
-  it('scoreFilter scored shows only the tasks that already have a difficulty', () => {
-    const { composable } = setup([
-      makeTask({ id: 'a', order: 10, difficulty: 2 }),
-      makeTask({ id: 'b', order: 20 }),
-      makeTask({ id: 'c', order: 30, difficulty: 4 }),
-    ]);
-
-    composable.setScoreFilter('scored');
-
-    const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
-    expect(ids).toEqual(['a', 'c']);
-  });
-
-  it('scoreFilter unscored shows the queue still waiting for a difficulty, groups included', () => {
-    const { composable } = setup([
-      makeTask({ id: 'a', order: 10, difficulty: 2 }),
-      makeTask({ id: 'b', order: 20, parent: { type: 'group', id: groupId('g1') } }),
-      makeTask({ id: 'c', order: 30, difficulty: 3, parent: { type: 'group', id: groupId('g1') } }),
-      makeTask({ id: 'd', order: 40, difficulty: 5, parent: { type: 'group', id: groupId('g2') } }),
-    ]);
-
-    composable.setScoreFilter('unscored');
-
-    const tree = composable.tree.value;
-    expect(tree).toHaveLength(1);
-    const group = nodeAt(tree, 0);
-    expect(group.kind === 'group' && group.items.map((n) => (n.kind === 'task' ? n.task.id : ''))).toEqual(['b']);
-  });
-
-  it('scoreFilter combines with the text filter and defaults to all', () => {
-    const { composable } = setup([
-      makeTask({ id: 'a', order: 10, difficulty: 2, title: 'Fix login' }),
-      makeTask({ id: 'b', order: 20, title: 'Fix crash' }),
-      makeTask({ id: 'c', order: 30, difficulty: 1, title: 'Add export' }),
-    ]);
-
-    expect(composable.scoreFilter.value).toBe('all');
-    expect(composable.tree.value).toHaveLength(3);
-
-    composable.setScoreFilter('scored');
-    composable.setFilter('fix');
-
-    const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
-    expect(ids).toEqual(['a']);
-  });
-
-  it('sortMode diff-desc reorders the visible tree by difficulty without touching manual order', () => {
-    const { composable } = setup([
-      makeTask({ id: 'a', order: 10, difficulty: 1 }),
-      makeTask({ id: 'b', order: 20, difficulty: 5 }),
-    ]);
-
-    composable.setSortMode('diff-desc');
-
-    const ids = composable.tree.value.map((n) => (n.kind === 'task' ? n.task.id : ''));
-    expect(ids).toEqual(['b', 'a']);
+    sortMode.value = 'diff-desc';
+    await nextTick();
+    expect(ids()).toEqual(['b', 'a', 'c']);
     expect(composable.dragEnabled.value).toBe(false);
+
+    // Sem nota vai para o fim nas duas direcoes, como no `taskin list --sort`.
+    sortMode.value = 'diff-asc';
+    await nextTick();
+    expect(ids()).toEqual(['a', 'b', 'c']);
+  });
+
+  it('nao guarda a ordem no localStorage: ela mora na URL de quem hospeda', () => {
+    const storageKey = `test-prefs-${Math.random()}`;
+    localStorage.setItem(storageKey, JSON.stringify({ viewMode: 'grid', sortMode: 'diff-desc' }));
+    const composable = usePrioritization(ref([makeTask({ id: 'a' })]), { storageKey });
+
+    expect(composable.viewMode.value).toBe('grid');
+    expect(composable.sortMode.value).toBe('manual');
+
+    composable.setViewMode('icons');
+    expect(JSON.parse(localStorage.getItem(storageKey) ?? '{}')).not.toHaveProperty('sortMode');
   });
 
   describe('undo/redo', () => {
@@ -753,16 +742,13 @@ describe('usePrioritization', () => {
       expect(composable.canRedo.value).toBe(false);
     });
 
-    it('view-only actions (filter/viewMode/sortMode/collapse) do not affect undo/redo', () => {
+    it('view-only actions (viewMode/collapse) do not affect undo/redo', () => {
       const { composable } = setup([
         makeTask({ id: 'a', order: 1, parent: { type: 'group', id: groupId('g1') } }),
         makeTask({ id: 'b', order: 2, parent: { type: 'group', id: groupId('g1') } }),
       ]);
 
-      composable.setFilter('a');
       composable.setViewMode('grid');
-      composable.setSortMode('diff-desc');
-      composable.setSortMode('manual');
       composable.toggleGroupCollapsed('g1');
 
       expect(composable.canUndo.value).toBe(false);
@@ -1408,29 +1394,34 @@ describe('moveToTop / moveToBottom', () => {
 
   it('com filtro, o topo e o da lista visivel e a tarefa continua a vista', async () => {
     const b = board();
-    b.composable.setFilter('alvo');
+    b.recortar((t) => t.title === 'alvo');
+    await nextTick();
     b.composable.moveToTop('005');
     expect(b.movimentos).toEqual([{ kind: 'task', id: '005', lado: 'before', targetId: '003' }]);
     await nextTick();
     expect(shape(b.composable.tree.value)).toEqual(['005', '003', '004']);
-    b.composable.setFilter('');
+    b.recortar();
+    await nextTick();
     expect(shape(b.composable.tree.value)).toEqual(['001', '002', '005', '003', '004']);
     expect(b.escritas).toEqual(['005']);
   });
 
   it('com filtro, o fim e o da lista visivel', async () => {
     const b = board();
-    b.composable.setScoreFilter('scored');
+    b.recortar((t) => t.difficulty !== undefined);
+    await nextTick();
     b.composable.moveToBottom('001');
     await nextTick();
     expect(shape(b.composable.tree.value)).toEqual(['002', '003', '005', '001']);
-    b.composable.setScoreFilter('all');
+    b.recortar();
+    await nextTick();
     expect(shape(b.composable.tree.value)).toEqual(['002', '003', '004', '005', '001']);
   });
 
-  it('fora do modo manual nao faz nada, porque a exibicao nao segue a prioridade', () => {
+  it('fora do modo manual nao faz nada, porque a exibicao nao segue a prioridade', async () => {
     const b = board();
-    b.composable.setSortMode('diff-desc');
+    b.sortMode.value = 'diff-desc';
+    await nextTick();
     b.composable.moveToTop('001');
     b.composable.moveToBottom('005');
     b.composable.moveUp('003');
@@ -1509,11 +1500,13 @@ describe('moveToTop / moveToBottom', () => {
       makeTask({ id: '003', order: 30, title: 'alvo', parent: { type: 'group', id: gid } }),
       makeTask({ id: '004', order: 40, parent: { type: 'group', id: gid } }),
     ]);
-    b.composable.setFilter('alvo');
+    b.recortar((t) => t.title === 'alvo');
+    await nextTick();
     b.composable.moveGroupToTop('g-a');
     expect(b.movimentos).toEqual([{ kind: 'group', id: 'g-a', lado: 'before', targetId: '002' }]);
     await nextTick();
-    b.composable.setFilter('');
+    b.recortar();
+    await nextTick();
     expect(shape(b.composable.tree.value)).toEqual(['001', ['003', '004'], '002']);
   });
 

@@ -6,7 +6,6 @@ import type {
   LadoDoMovimento,
   MovimentoDoQuadro,
   MudancaDeGrupo,
-  PrioritizationScoreFilter,
   PrioritizationSortMode,
   PrioritizationViewMode,
   PriorityGroupNode,
@@ -25,16 +24,19 @@ interface PrioritizationSnapshot {
 const DEFAULT_STORAGE_KEY = 'taskin-prioritization-prefs';
 const MAX_HISTORY_SIZE = 50;
 
+/*
+ * So o que e de desenho. A ordem saiu daqui na task-129: ela diz em que ordem
+ * as tarefas vem, vale para as duas telas e mora na URL (`?sort=`). Um
+ * `sortMode` que um navegador ainda tenha guardado e ignorado.
+ */
 interface PersistedPrefs {
   viewMode: PrioritizationViewMode;
-  sortMode: PrioritizationSortMode;
   collapsedGroups: Record<string, boolean>;
 }
 
 function loadPrefs(storageKey: string): PersistedPrefs {
   const fallback: PersistedPrefs = {
     viewMode: 'cards',
-    sortMode: 'manual',
     collapsedGroups: {},
   };
 
@@ -43,7 +45,8 @@ function loadPrefs(storageKey: string): PersistedPrefs {
   try {
     const raw = localStorage.getItem(storageKey);
     if (!raw) return fallback;
-    return { ...fallback, ...JSON.parse(raw) };
+    const { viewMode, collapsedGroups } = { ...fallback, ...JSON.parse(raw) } as PersistedPrefs;
+    return { viewMode, collapsedGroups };
   } catch {
     return fallback;
   }
@@ -61,7 +64,8 @@ function savePrefs(storageKey: string, prefs: PersistedPrefs): void {
 /**
  * Builds the ordered task/group tree from a flat task list.
  *
- * Tasks are sorted by `order` (undefined last, stable otherwise), then grouped
+ * Tasks are sorted by the domain's `ordenarTarefas` in `modo` — `order` for
+ * `manual` (undefined last, stable otherwise), `difficulty` for the other two —, then grouped
  * **by identity**: all tasks sharing a `parentId` land in the same group node,
  * regardless of whether they end up adjacent after sorting or filtering. Grouping
  * by adjacency was a latent bug — a group whose members were interleaved (by
@@ -82,16 +86,16 @@ export function buildPriorityTree(
   tasks: Task[],
   collapsedGroups: Record<string, boolean> = {},
   grupos: readonly GrupoDoQuadro[] = [],
+  modo: PrioritizationSortMode = 'manual',
 ): PriorityNode[] {
   /*
-   * A ordenacao manual vem do dominio, e nao daqui.
+   * A ordenacao vem do dominio, e nao daqui — nos tres modos.
    *
-   * Esta funcao carregava uma copia byte a byte de `ordenarTarefas(_, 'manual')`
-   * — a mesma regra de `order` com ausente por ultimo e empate estavel. Elas
-   * conviveram porque `task-manager` era inalcancavel deste pacote; o que
-   * destravou foi declarar a referencia de projeto no `tsconfig`, que faltava.
+   * Esta funcao carregava uma copia byte a byte de `ordenarTarefas(_, 'manual')`,
+   * e a arvore visivel tinha um `sortRecursive` proprio para a dificuldade, que
+   * punha a tarefa sem nota no comeco e o dominio poe no fim (task-129).
    */
-  const sorted = ordenarTarefas(tasks, 'manual');
+  const sorted = ordenarTarefas(tasks, modo);
   const pais = new Map(grupos.flatMap((g) => (g.parentId ? [[g.id, g.parentId] as const] : [])));
   const nomes = new Map(grupos.map((g) => [g.id, g.name]));
 
@@ -229,23 +233,27 @@ export function diffAgainstBaseline(tasks: Task[], baseline: Map<string, Priorit
 
 /**
  * Owns the client-side state and mutations for the task prioritization board:
- * ad hoc grouping (drag to group), difficulty rating, filtering, view/sort
- * preferences, and change tracking so the host app only has to persist the
- * tasks that actually changed. Manual ordering is not computed here: moves go
- * out through `onMove`, and the domain numbers them (task-118).
+ * ad hoc grouping (drag to group), difficulty rating, view preferences, and
+ * change tracking so the host app only has to persist the tasks that actually
+ * changed. Manual ordering is not computed here: moves go out through
+ * `onMove`, and the domain numbers them (task-118).
+ *
+ * Nao filtra e nao escolhe a ordem (task-129): a busca, a pontuacao e a ordem
+ * valem para as duas telas, e quem hospeda as aplica pelo dominio. O que chega
+ * em `tasks` e o que se ve, e `options.sortMode` diz em que ordem veio.
  */
 export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritizationOptions = {}): UsePrioritization {
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY;
 
   const prefs = loadPrefs(storageKey);
   const viewMode = ref<PrioritizationViewMode>(prefs.viewMode);
-  const sortMode = ref<PrioritizationSortMode>(prefs.sortMode);
+  const sortMode = options.sortMode ?? ref<PrioritizationSortMode>('manual');
   const collapsedGroups = ref<Record<string, boolean>>(prefs.collapsedGroups);
-  const filter = ref('');
-  const scoreFilter = ref<PrioritizationScoreFilter>('all');
 
   const gruposDeFora = options.groups ?? ref<GrupoDoQuadro[]>([]);
-  const treeInternal = ref<PriorityNode[]>(buildPriorityTree(tasks.value, collapsedGroups.value, gruposDeFora.value));
+  const treeInternal = ref<PriorityNode[]>(
+    buildPriorityTree(tasks.value, collapsedGroups.value, gruposDeFora.value, sortMode.value),
+  );
 
   const baseline = shallowRef(
     new Map<string, PrioritizationSnapshot>(tasks.value.map((task) => [task.id, snapshotOf(task)])),
@@ -274,7 +282,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
    * de antes das tarefas, e desfazer os reaplica. So as tarefas que a operacao
    * alterou diferem do que esta gravado, entao o `changedTasks` que sai dai tem
    * so elas — e o app hospedeiro grava so isso.
-   * Filtro, modo de exibicao, ordenacao e recolher ficam de fora.
+   * Modo de exibicao e recolher ficam de fora.
    */
   const history = shallowRef<Valores[]>([]);
   const future = shallowRef<Valores[]>([]);
@@ -284,8 +292,8 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   // What arrives is what is stored, so it becomes the new baseline.
   // The groups come back the same way: creating and nesting are recorded by the
   // domain, and the tree is rebuilt from the parent of each group (task-119).
-  watch([tasks, gruposDeFora], ([next, grupos]) => {
-    treeInternal.value = buildPriorityTree(next, collapsedGroups.value, grupos);
+  watch([tasks, gruposDeFora, sortMode], ([next, grupos, modo]) => {
+    treeInternal.value = buildPriorityTree(next, collapsedGroups.value, grupos, modo);
     baseline.value = new Map(next.map((task) => [task.id, snapshotOf(task)]));
     baselineDosGrupos.value = paisGravados();
   });
@@ -293,7 +301,6 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
   function persistPrefs(): void {
     savePrefs(storageKey, {
       viewMode: viewMode.value,
-      sortMode: sortMode.value,
       collapsedGroups: collapsedGroups.value,
     });
   }
@@ -353,7 +360,7 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     });
     const grupos = new Map([...gruposDaArvore(treeInternal.value), ...valores.grupos]);
     for (const grupo of gruposDeFora.value) if (!grupos.has(grupo.id)) grupos.set(grupo.id, grupo);
-    treeInternal.value = buildPriorityTree(tarefas, collapsedGroups.value, [...grupos.values()]);
+    treeInternal.value = buildPriorityTree(tarefas, collapsedGroups.value, [...grupos.values()], sortMode.value);
   }
 
   const canUndo = computed(() => history.value.length > 0);
@@ -459,21 +466,8 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
     return null;
   }
 
-  function setFilter(value: string): void {
-    filter.value = value;
-  }
-
-  function setScoreFilter(value: PrioritizationScoreFilter): void {
-    scoreFilter.value = value;
-  }
-
   function setViewMode(value: PrioritizationViewMode): void {
     viewMode.value = value;
-    persistPrefs();
-  }
-
-  function setSortMode(value: PrioritizationSortMode): void {
-    sortMode.value = value;
     persistPrefs();
   }
 
@@ -821,7 +815,8 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
    * `move-after` que tem como referencia a linha vizinha, a primeira ou a
    * ultima que a pessoa esta vendo.
    *
-   * "Visivel" e o `tree` ja filtrado: com filtro, o topo e antes da primeira
+   * "Visivel" e o que chegou em `tasks`, ja recortado por quem hospeda: com
+   * filtro, o topo e antes da primeira
    * linha que se ve, e nao o extremo da lista inteira — senao a tarefa sumiria
    * de vista ao se mover (task-101). Sem filtro, antes da primeira linha e o
    * `move-to-top` do dominio. "Irma" quer dizer do mesmo contêiner: uma tarefa
@@ -948,70 +943,18 @@ export function usePrioritization(tasks: Ref<Task[]>, options: UsePrioritization
 
   const dragEnabled = computed(() => sortMode.value === 'manual');
 
-  const tree = computed<PriorityNode[]>(() => {
-    let nodes = treeInternal.value;
-
-    if (sortMode.value !== 'manual') {
-      const dir = sortMode.value === 'diff-asc' ? 1 : -1;
-
-      function nodeRank(n: PriorityNode): number {
-        if (n.kind === 'task') return n.task.difficulty ?? 0;
-        return Math.max(0, ...n.items.map(nodeRank));
-      }
-
-      function sortRecursive(list: PriorityNode[]): PriorityNode[] {
-        return list.map((n) =>
-          n.kind === 'group'
-            ? {
-                ...n,
-                items: sortRecursive([...n.items]).sort((a, b) => (nodeRank(a) - nodeRank(b)) * dir),
-              }
-            : n,
-        );
-      }
-
-      nodes = sortRecursive(nodes);
-      nodes = [...nodes].sort((a, b) => (nodeRank(a) - nodeRank(b)) * dir);
-    }
-
-    const q = filter.value.trim().toLowerCase();
-    const score = scoreFilter.value;
-    if (!q && score === 'all') return nodes;
-
-    const matchesScore = (t: Task) => score === 'all' || (t.difficulty !== undefined) === (score === 'scored');
-    const matches = (t: Task) =>
-      matchesScore(t) && (!q || `${t.id} ${t.type ?? ''} ${t.title}`.toLowerCase().includes(q));
-
-    function filterRecursive(list: PriorityNode[]): PriorityNode[] {
-      return list
-        .map((n) => {
-          if (n.kind === 'group') {
-            const filtered = filterRecursive(n.items);
-            return filtered.length > 0 ? { ...n, items: filtered } : null;
-          }
-          return matches(n.task) ? n : null;
-        })
-        .filter((n): n is PriorityNode => n !== null);
-    }
-
-    return filterRecursive(nodes);
-  });
+  const tree = computed<PriorityNode[]>(() => treeInternal.value);
 
   return {
     tree: tree as Ref<PriorityNode[]>,
-    filter,
     viewMode,
     sortMode,
-    scoreFilter,
     dragEnabled,
     changedTasks,
     changedGroups,
     canUndo,
     canRedo,
-    setFilter,
     setViewMode,
-    setSortMode,
-    setScoreFilter,
     toggleGroupCollapsed,
     setDifficulty,
     moveBefore,

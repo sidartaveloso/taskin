@@ -63,11 +63,21 @@ describe('filterTasks', () => {
     expect(filterTasks(TAREFAS, { assignee: 'ana' }).map((t) => t.id)).not.toContain('004');
   });
 
-  it('o texto livre procura em id, titulo, status e responsavel', () => {
+  it('o texto livre procura em id, titulo, tipo, status e responsavel', () => {
     expect(filterTasks(TAREFAS, { text: 'crash', all: true }).map((t) => t.id)).toEqual(['002']);
     expect(filterTasks(TAREFAS, { text: '003', all: true }).map((t) => t.id)).toEqual(['003']);
     expect(filterTasks(TAREFAS, { text: 'blocked', all: true }).map((t) => t.id)).toEqual(['004']);
     expect(filterTasks(TAREFAS, { text: 'joão', all: true }).map((t) => t.id)).toEqual(['002', '005']);
+  });
+
+  /*
+   * O tipo entra na busca (task-129): era o que a busca do quadro de
+   * priorizacao casava e o dominio nao, e a mesma palavra dava resultados
+   * diferentes no dashboard e na CLI.
+   */
+  it('o texto livre procura tambem no tipo', () => {
+    expect(filterTasks(TAREFAS, { text: 'chore', all: true }).map((t) => t.id)).toEqual(['004']);
+    expect(filterTasks(TAREFAS, { text: 'FIX', all: true }).map((t) => t.id)).toEqual(['002']);
   });
 
   it('combina criterios, exigindo todos', () => {

@@ -38,6 +38,38 @@
       </button>
     </div>
 
+    <!--
+      Busca, ordem e pontuacao dizem quais tarefas e em que ordem, e nao como
+      desenhar: valem para as duas telas, e por isso moram aqui (task-129).
+    -->
+    <div class="query-controls" role="group" aria-label="Search, order and score">
+      <input
+        type="search"
+        class="query-controls__search"
+        data-testid="search-input"
+        placeholder="Search id, title, type, status, assignee"
+        aria-label="Search tasks"
+        :value="busca"
+        @input="escolherBusca(($event.target as HTMLInputElement).value)"
+      />
+      <select
+        data-testid="sort-select"
+        aria-label="Order"
+        :value="ordem"
+        @change="escolherOrdem(($event.target as HTMLSelectElement).value as ModoDeOrdenacao)"
+      >
+        <option v-for="opcao in ORDENS" :key="opcao.valor" :value="opcao.valor">{{ opcao.rotulo }}</option>
+      </select>
+      <select
+        data-testid="score-select"
+        aria-label="Difficulty score"
+        :value="pontuacao"
+        @change="escolherPontuacao(($event.target as HTMLSelectElement).value as Pontuacao)"
+      >
+        <option v-for="opcao in PONTUACOES" :key="opcao.valor" :value="opcao.valor">{{ opcao.rotulo }}</option>
+      </select>
+    </div>
+
     <span class="filter-toggle__count" data-testid="filter-count">
       Showing {{ tasks.length }} of {{ taskStore.tasks.length }} tasks
     </span>
@@ -66,12 +98,14 @@
     :show-connection="false"
     :is-loading="isLoading"
     :tasks="tasks"
+    :grid-title="tituloDoQuadro"
     @retry="handleRefresh"
   />
   <PrioritizationPage
     v-else
     :tasks="tasks"
     :groups="gruposDoQuadro"
+    :sort-mode="ordem"
     @update-task="handleUpdateTask"
     @update-group="handleUpdateGroup"
     @move="handleMove"
@@ -81,7 +115,13 @@
 <script setup lang="ts">
 import type { GrupoDoQuadro, MovimentoDoQuadro, MudancaDeGrupo, Task, TaskStatus } from '@opentask/taskin-design-vue';
 import { ConnectionStatus, Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
-import { effectiveFilterCriteria, filterTasks, type TaskFilterCriteria } from '@opentask/taskin-task-manager';
+import {
+  effectiveFilterCriteria,
+  filterTasks,
+  type ModoDeOrdenacao,
+  ordenarTarefas,
+  type TaskFilterCriteria,
+} from '@opentask/taskin-task-manager';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { NOME_DE_GRUPO_NOVO, operacaoDoGrupo, operacaoDoMovimento, operacoesDaMudanca } from './operacoes-da-mudanca';
@@ -123,11 +163,21 @@ function telaDaUrl(): Tela {
 
 const mode = ref<Tela>(telaDaUrl());
 
-/** Grava um parametro na URL sem tocar nos outros, e sem criar entrada no historico. */
-function gravarNaUrl(chave: 'view' | 'filter', valor: string) {
+/**
+ * Grava um parametro na URL sem tocar nos outros, e sem criar entrada no
+ * historico. Valor vazio tira o parametro: uma busca apagada nao fica como `?q=`.
+ */
+function gravarNaUrl(chave: 'view' | 'filter' | 'q' | 'sort' | 'score', valor: string) {
   const url = new URL(window.location.href);
-  url.searchParams.set(chave, valor);
+  if (valor) url.searchParams.set(chave, valor);
+  else url.searchParams.delete(chave);
   window.history.replaceState({}, '', url);
+}
+
+/** O valor do parametro, se for um dos aceitos; senao `undefined`, e quem chama cai no padrao. */
+function daUrl<T extends string>(chave: string, aceitos: readonly { valor: T }[]): T | undefined {
+  const pedido = new URLSearchParams(window.location.search).get(chave);
+  return aceitos.find((a) => a.valor === pedido)?.valor;
 }
 
 function escolherTela(valor: Tela) {
@@ -155,21 +205,75 @@ const FILTROS: readonly { valor: Filtro; rotulo: string }[] = [
   { valor: 'all', rotulo: 'All' },
 ];
 
-function filtroDaUrl(): Filtro | undefined {
-  const pedido = new URLSearchParams(window.location.search).get('filter');
-  return FILTROS.find((f) => f.valor === pedido)?.valor;
-}
+const filtro = ref<Filtro | undefined>(daUrl('filter', FILTROS));
 
-const filtro = ref<Filtro | undefined>(filtroDaUrl());
-const criterios = computed<TaskFilterCriteria>(() => (filtro.value ? { [filtro.value]: true } : {}));
+/*
+ * Busca, pontuacao e ordem (task-129). Viviam dentro do quadro de
+ * priorizacao, com regra propria: a busca casava id, tipo e titulo, e a da CLI
+ * casava id, titulo, status e responsavel. Agora sao o `text`, o
+ * `scored`/`unscored` do `filterTasks` e o `ordenarTarefas` do dominio — a
+ * mesma resposta que o `taskin list [filter] --scored --sort` da.
+ *
+ * Ficam na URL, como a tela e o filtro: `?q=`, `?score=` e `?sort=`. A ordem
+ * morava no `localStorage` do quadro; la ela nao e mais lida, e sem `?sort=`
+ * a ordem e a manual — recarregar mostra o que o link diz, e nao o que o
+ * navegador lembrava.
+ */
+type Pontuacao = 'all' | 'scored' | 'unscored';
+
+const PONTUACOES: readonly { valor: Pontuacao; rotulo: string }[] = [
+  { valor: 'all', rotulo: 'Scored and unscored' },
+  { valor: 'scored', rotulo: 'Scored only' },
+  { valor: 'unscored', rotulo: 'Unscored only' },
+];
+
+const ORDENS: readonly { valor: ModoDeOrdenacao; rotulo: string }[] = [
+  { valor: 'manual', rotulo: 'Manual (priority)' },
+  { valor: 'diff-desc', rotulo: 'Difficulty ↓ (high→low)' },
+  { valor: 'diff-asc', rotulo: 'Difficulty ↑ (low→high)' },
+];
+
+const busca = ref(new URLSearchParams(window.location.search).get('q') ?? '');
+const pontuacao = ref<Pontuacao>(daUrl('score', PONTUACOES) ?? 'all');
+const ordem = ref<ModoDeOrdenacao>(daUrl('sort', ORDENS) ?? 'manual');
+
+const criterios = computed<TaskFilterCriteria>(() => {
+  const texto = busca.value.trim();
+  return {
+    ...(filtro.value && { [filtro.value]: true }),
+    ...(texto && { text: texto }),
+    ...(pontuacao.value !== 'all' && { [pontuacao.value]: true }),
+  };
+});
 const filtroEfetivo = computed(() => {
   const efetivos = effectiveFilterCriteria(criterios.value);
   return FILTROS.find((f) => efetivos[f.valor])?.valor;
 });
 
+/* O titulo do Board diz o recorte; era fixo em "Tarefas em Andamento", mesmo em Closed. */
+const tituloDoQuadro = computed(() => {
+  const rotulo = FILTROS.find((f) => f.valor === filtroEfetivo.value)?.rotulo ?? 'All';
+  return `${rotulo} tasks`;
+});
+
 function escolherFiltro(valor: Filtro) {
   filtro.value = valor;
   gravarNaUrl('filter', valor);
+}
+
+function escolherBusca(valor: string) {
+  busca.value = valor;
+  gravarNaUrl('q', valor.trim());
+}
+
+function escolherOrdem(valor: ModoDeOrdenacao) {
+  ordem.value = valor;
+  gravarNaUrl('sort', valor);
+}
+
+function escolherPontuacao(valor: Pontuacao) {
+  pontuacao.value = valor;
+  gravarNaUrl('score', valor);
 }
 
 // WebSocket configuration
@@ -259,7 +363,7 @@ const tasks = computed<Task[]>(() => {
    * sem ele o compilador seguia o `.d.ts` do pacote ate o `src`, e o `rootDir`
    * recusava.
    */
-  const filtered = filterTasks(taskStore.tasks, criterios.value);
+  const filtered = ordenarTarefas(filterTasks(taskStore.tasks, criterios.value), ordem.value);
 
   const mapped = filtered.map((source) => {
     const progressPercentage = PROGRESS_BY_STATUS[source.status];
@@ -510,9 +614,30 @@ body {
 }
 
 /* Separa as telas do filtro, que sao escolhas de natureza diferente. */
-.filter-toggle {
+.filter-toggle,
+.query-controls {
   padding-left: 1rem;
   border-left: 1px solid var(--border-muted, #e5e5e5);
+}
+
+.query-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.query-controls input,
+.query-controls select {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-muted, #e5e5e5);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-primary, #212529);
+}
+
+.query-controls__search {
+  min-width: 14rem;
 }
 
 .filter-toggle__count {

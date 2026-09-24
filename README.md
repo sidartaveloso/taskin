@@ -121,6 +121,7 @@ taskin list --closed            # Only closed tasks
 taskin list --status pending    # Specific status
 taskin list --scored            # Only tasks that already have a difficulty
 taskin list --unscored          # Only tasks still waiting for a difficulty
+taskin list fix                 # Free text over id, title, type, status and assignee
 
 # Machine-readable output, for another tool to consume
 taskin list --json              # JSON array, no header and no framing
@@ -162,6 +163,12 @@ taskin dashboard
 # With filters
 taskin dashboard --filter-open    # Show only open tasks
 taskin dashboard --filter-closed  # Show only closed tasks
+
+# The top bar filters both screens (Board and Prioritization) by the same
+# rules as `taskin list`, and keeps them in the URL, so a reload or a shared
+# link shows the same cut:
+#   ?view=board|prioritization  ?filter=open|active|closed|all
+#   ?q=<text>  ?sort=manual|diff-desc|diff-asc  ?score=all|scored|unscored
 
 # Access: http://localhost:5173
 # WebSocket: ws://localhost:3001
