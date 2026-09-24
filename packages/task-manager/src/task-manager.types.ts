@@ -279,6 +279,31 @@ export interface ITaskManager<TTask extends Task = Task> {
   moveAfter: (taskId: TaskId, targetId: TaskId) => Promise<{ task: TTask; changed: number }>;
 
   /**
+   * Leva a tarefa ao topo da fila — ou do proprio grupo, quando agrupada, como
+   * o botao do dashboard (task-101).
+   *
+   * Um {@link ITaskManager.moveBefore} cuja referencia a operacao descobre: sem
+   * ela, levar ao topo exigia saber antes qual era a primeira. Grava um arquivo,
+   * e nenhum quando a tarefa ja esta la.
+   *
+   * @returns A tarefa, e quantas tarefas foram gravadas
+   * @throws Error quando a tarefa nao existe
+   */
+  moveToTop: (taskId: TaskId) => Promise<{ task: TTask; changed: number }>;
+
+  /**
+   * Leva a tarefa ao fim da fila, ou do proprio grupo.
+   *
+   * Tarefa sem numero ordena depois de todas as numeradas; por isso, quando a
+   * fila termina numa cauda sem `Priority`, ir ao fim numera a cauda — uma vez
+   * so, e o `changed` diz quantas foram.
+   *
+   * @returns A tarefa, e quantas tarefas foram gravadas
+   * @throws Error quando a tarefa nao existe
+   */
+  moveToBottom: (taskId: TaskId) => Promise<{ task: TTask; changed: number }>;
+
+  /**
    * Da a tarefa uma dificuldade percebida, de 1 (trivial) a 5 (muito dificil).
    *
    * Nomeada pelo mesmo motivo das de agrupar e priorizar: ate a task-106 so o

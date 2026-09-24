@@ -67,6 +67,8 @@ export interface PayloadsDasOperacoes {
   'remove-from-group': { taskId: string };
   'move-before': { taskId: string; targetId: string };
   'move-after': { taskId: string; targetId: string };
+  'move-to-top': { taskId: string };
+  'move-to-bottom': { taskId: string };
   'create-group': { id: string; name: string };
 }
 

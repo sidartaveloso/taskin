@@ -91,6 +91,8 @@ export const SUPERFICIES_DAS_OPERACOES = {
   setPriority: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'set-priority' } },
   moveBefore: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-before' } },
   moveAfter: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-after' } },
+  moveToTop: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-to-top' } },
+  moveToBottom: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-to-bottom' } },
   setDifficulty: {
     cli: { ausente: 'pontuar nasceu no quadro de priorizacao; nenhuma task pediu pela CLI ainda' },
     mcp: { ausente: 'pontuar nasceu no quadro de priorizacao; nenhuma task pediu pelo MCP ainda' },

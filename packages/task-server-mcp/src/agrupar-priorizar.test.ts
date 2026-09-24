@@ -158,6 +158,53 @@ describe('priorizar por MCP', () => {
     expect(texto(duas)).toContain('exactly one');
   });
 
+  it('set_priority com top leva a tarefa a frente da fila, e diz quantas gravou', async () => {
+    const { servidor, porId } = montar([tarefa('001', { order: 100 }), tarefa('002', { order: 200 })]);
+
+    const r = await servidor.callTool({ name: 'set_priority', arguments: { taskId: '002', top: true } });
+
+    expect(r.isError).toBeFalsy();
+    expect(porId.get('002')?.order).toBeLessThan(100);
+    expect(JSON.parse(texto(r)).changed).toBe(1);
+  });
+
+  it('set_priority com bottom numera a cauda sem numero, e diz quantas gravou', async () => {
+    const { servidor, porId } = montar([
+      tarefa('001', { order: 100 }),
+      tarefa('002', { order: 200 }),
+      tarefa('003'),
+      tarefa('004'),
+    ]);
+
+    const r = await servidor.callTool({ name: 'set_priority', arguments: { taskId: '001', bottom: true } });
+
+    expect(JSON.parse(texto(r)).changed).toBe(3);
+    expect(porId.get('001')?.order).toBeGreaterThan(porId.get('004')?.order ?? Number.POSITIVE_INFINITY);
+  });
+
+  it('top e bottom contam como forma: nao combinam com outra', async () => {
+    const { servidor, porId } = montar([tarefa('001', { order: 100 }), tarefa('002', { order: 200 })]);
+
+    const r = await servidor.callTool({
+      name: 'set_priority',
+      arguments: { taskId: '002', top: true, after: '001' },
+    });
+
+    expect(r.isError).toBe(true);
+    expect(texto(r)).toContain('exactly one');
+    expect(porId.get('002')?.order).toBe(200);
+  });
+
+  it('top ou bottom que nao seja true e recusado, sem gravar', async () => {
+    const { servidor, porId } = montar([tarefa('001', { order: 100 }), tarefa('002', { order: 200 })]);
+
+    const r = await servidor.callTool({ name: 'set_priority', arguments: { taskId: '002', top: 'yes' } });
+
+    expect(r.isError).toBe(true);
+    expect(texto(r)).toContain('`top`');
+    expect(porId.get('002')?.order).toBe(200);
+  });
+
   it('set_priority e anunciado mesmo sem grupos', () => {
     expect(nomes(montar([]).servidor)).toContain('set_priority');
   });

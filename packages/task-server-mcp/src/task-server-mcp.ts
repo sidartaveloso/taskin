@@ -268,7 +268,7 @@ export class TaskMCPServer implements ITaskMCPServer {
       {
         name: 'set_priority',
         description:
-          'Give one task a place in the queue. Pass exactly one of: `priority` (an absolute number, lower comes first), `before` (the id of the task it should come right before) or `after`. Relative moves write only what changes — usually one file.',
+          'Give one task a place in the queue. Pass exactly one of: `priority` (an absolute number, lower comes first), `before` (the id of the task it should come right before), `after`, `top: true` or `bottom: true`. A grouped task goes to the top or bottom of its own group. Relative moves write only what changes — usually one file — and the result says how many (`changed`).',
         inputSchema: {
           type: 'object',
           properties: {
@@ -276,6 +276,15 @@ export class TaskMCPServer implements ITaskMCPServer {
             priority: { type: 'integer', minimum: 1, description: 'Absolute priority number; lower comes first' },
             before: { type: 'string', description: 'Place the task right before this task id' },
             after: { type: 'string', description: 'Place the task right after this task id' },
+            top: {
+              type: 'boolean',
+              description: 'Move the task to the top of the queue — of its own group, when grouped',
+            },
+            bottom: {
+              type: 'boolean',
+              description:
+                'Move the task to the bottom of the queue — of its own group, when grouped. An unnumbered tail is numbered once; `changed` says how many files',
+            },
           },
           required: ['taskId'],
         },
@@ -730,9 +739,24 @@ Let me start by marking the task as done using the finish_task tool.`,
     const taskId = readTaskId(args.taskId);
     if (!taskId) return invalidTaskId(args.taskId);
 
-    const formas = (['priority', 'before', 'after'] as const).filter((k) => args[k] !== undefined);
+    for (const extremo of ['top', 'bottom'] as const) {
+      if (args[extremo] !== undefined && typeof args[extremo] !== 'boolean') {
+        return recusa(`\`${extremo}\` must be true; got ${JSON.stringify(args[extremo])}.`);
+      }
+    }
+
+    // `top: false` e o mesmo que nao pedir: nao conta como forma.
+    const formas = (['priority', 'before', 'after', 'top', 'bottom'] as const).filter(
+      (k) => args[k] !== undefined && args[k] !== false,
+    );
     if (formas.length !== 1) {
-      return recusa('Pass exactly one of `priority`, `before` or `after`.');
+      return recusa('Pass exactly one of `priority`, `before`, `after`, `top` or `bottom`.');
+    }
+
+    if (args.top === true || args.bottom === true) {
+      const { task, changed } =
+        args.top === true ? await this.taskManager.moveToTop(taskId) : await this.taskManager.moveToBottom(taskId);
+      return tarefaAlterada(task, { changed });
     }
 
     if (args.priority !== undefined) {

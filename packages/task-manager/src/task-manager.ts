@@ -1,7 +1,13 @@
 import type { GroupId, Task, TaskId, TaskStatus } from '@opentask/taskin-types';
 import type { IGroupRegistry } from './group-registry.types';
 import { numerarPrioridade } from './numerar-prioridade/index';
-import { type LadoDaReferencia, posicionarPrioridade, validarPrioridade } from './posicionar-prioridade/index';
+import {
+  type ExtremoDaFila,
+  type LadoDaReferencia,
+  posicionarNoExtremo,
+  posicionarPrioridade,
+  validarPrioridade,
+} from './posicionar-prioridade/index';
 import type {
   CreateTaskOptions,
   CreateTaskResult,
@@ -189,14 +195,29 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
     return this.mover(taskId, targetId, 'after');
   }
 
+  async moveToTop(taskId: TaskId): Promise<{ task: TTask; changed: number }> {
+    return this.levarAoExtremo(taskId, 'top');
+  }
+
+  async moveToBottom(taskId: TaskId): Promise<{ task: TTask; changed: number }> {
+    return this.levarAoExtremo(taskId, 'bottom');
+  }
+
   private async mover(
     taskId: TaskId,
     targetId: TaskId,
     lado: LadoDaReferencia,
   ): Promise<{ task: TTask; changed: number }> {
     const tarefas = await this.taskProvider.getAllTasks();
-    const mudancas = posicionarPrioridade(tarefas, taskId, targetId, lado);
+    return this.gravarMudancas(taskId, posicionarPrioridade(tarefas, taskId, targetId, lado));
+  }
 
+  private async levarAoExtremo(taskId: TaskId, extremo: ExtremoDaFila): Promise<{ task: TTask; changed: number }> {
+    const tarefas = await this.taskProvider.getAllTasks();
+    return this.gravarMudancas(taskId, posicionarNoExtremo(tarefas, taskId, extremo));
+  }
+
+  private async gravarMudancas(taskId: TaskId, mudancas: TTask[]): Promise<{ task: TTask; changed: number }> {
     for (const tarefa of mudancas) {
       await this.taskProvider.updateTask(tarefa);
     }

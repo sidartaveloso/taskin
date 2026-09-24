@@ -76,6 +76,42 @@ export function runTaskManagerContractTests(
       expect(await ordem('003')).toBeGreaterThan(await ordem('002'));
     });
 
+    it('moveToTop e moveToBottom levam a tarefa aos extremos da fila', async () => {
+      const { manager, ler } = await createSubject(
+        [tarefa('001', { order: 10 }), tarefa('002', { order: 20 }), tarefa('003', { order: 30 })],
+        [],
+      );
+      const ordem = async (valor: string) => (await ler(valor))?.order ?? Number.POSITIVE_INFINITY;
+
+      await manager.moveToTop(id('003'));
+      expect(await ordem('003')).toBeLessThan(await ordem('001'));
+
+      await manager.moveToBottom(id('001'));
+      expect(await ordem('001')).toBeGreaterThan(await ordem('002'));
+      expect(await ordem('001')).toBeGreaterThan(await ordem('003'));
+    });
+
+    it('moveToTop e moveToBottom de uma agrupada ficam dentro do grupo', async () => {
+      const { manager, ler } = await createSubject(
+        [
+          tarefa('001', { order: 10 }),
+          tarefa('002', { order: 20, groupId: g }),
+          tarefa('003', { order: 30, groupId: g }),
+          tarefa('004', { order: 40 }),
+        ],
+        [{ id: g, name: 'Sprint' }],
+      );
+      const ordem = async (valor: string) => (await ler(valor))?.order ?? Number.POSITIVE_INFINITY;
+
+      await manager.moveToTop(id('003'));
+      expect(await ordem('003')).toBeGreaterThan(await ordem('001'));
+      expect(await ordem('003')).toBeLessThan(await ordem('002'));
+
+      await manager.moveToBottom(id('003'));
+      expect(await ordem('003')).toBeGreaterThan(await ordem('002'));
+      expect(await ordem('003')).toBeLessThan(await ordem('004'));
+    });
+
     it('setDifficulty grava de 1 a 5, e recusa o resto sem gravar', async () => {
       const { manager, ler } = await createSubject([tarefa('001')], []);
 
@@ -96,6 +132,8 @@ export function runTaskManagerContractTests(
       await expect(manager.removeFromGroup(fantasma)).rejects.toThrow(/999/);
       await expect(manager.setPriority(fantasma, 5)).rejects.toThrow(/999/);
       await expect(manager.setDifficulty(fantasma, 2)).rejects.toThrow(/999/);
+      await expect(manager.moveToTop(fantasma)).rejects.toThrow(/999/);
+      await expect(manager.moveToBottom(fantasma)).rejects.toThrow(/999/);
     });
   });
 }

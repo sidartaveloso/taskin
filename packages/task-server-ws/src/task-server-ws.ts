@@ -69,6 +69,8 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
       }),
     'move-before': (client, message) => this.mover(client, message, 'before'),
     'move-after': (client, message) => this.mover(client, message, 'after'),
+    'move-to-top': (client, message) => this.levarAoExtremo(client, message, 'top'),
+    'move-to-bottom': (client, message) => this.levarAoExtremo(client, message, 'bottom'),
   };
 
   /** O que o protocolo atende e nao e operacao do `ITaskManager`. */
@@ -414,6 +416,19 @@ export class TaskWebSocketServer<TTask extends Task = Task> implements ITaskServ
     await (lado === 'before'
       ? this.taskManager.moveBefore(taskId, targetId)
       : this.taskManager.moveAfter(taskId, targetId));
+
+    this.broadcast({ type: 'tasks', payload: await this.taskManager.getAllTasks() });
+  }
+
+  /**
+   * Topo e fim, como {@link TaskWebSocketServer.mover}: ir ao fim de uma cauda
+   * sem numero numera a cauda, entao todos recebem a lista inteira.
+   */
+  private async levarAoExtremo(client: ClientConnection, message: WSMessage, extremo: 'top' | 'bottom'): Promise<void> {
+    const taskId = this.readTaskId(client, message);
+    if (!taskId) return;
+
+    await (extremo === 'top' ? this.taskManager.moveToTop(taskId) : this.taskManager.moveToBottom(taskId));
 
     this.broadcast({ type: 'tasks', payload: await this.taskManager.getAllTasks() });
   }

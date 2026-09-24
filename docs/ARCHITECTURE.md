@@ -123,7 +123,7 @@ LLM continues conversation
 
 - **Interface**: `ITaskManager` (write), `ITaskProvider` (read)
 - **Responsabilidade**: Validação de transições de estado, lógica de negócio
-- **Principais métodos**: `startTask()`, `pauseTask()`, `finishTask()`, `assignToGroup()`, `setPriority()`, `moveBefore()`, `setDifficulty()`
+- **Principais métodos**: `startTask()`, `pauseTask()`, `finishTask()`, `assignToGroup()`, `setPriority()`, `moveBefore()`, `moveToTop()`, `moveToBottom()`, `setDifficulty()`
 - **Portão**: `SUPERFICIES_DAS_OPERACOES` declara onde cada operação aparece (CLI, MCP, WebSocket); operação sem as três decididas não compila
 
 #### @opentask/taskin-file-system-provider

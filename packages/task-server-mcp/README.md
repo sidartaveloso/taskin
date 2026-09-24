@@ -102,7 +102,7 @@ console.log('MCP server running');
 - `list_groups` - List the task groups, each with its id and name
 - `join_group` - Put a task in an existing group. Only offered when the provider has groups
 - `leave_group` - Take a task out of its group. Only offered when the provider has groups
-- `set_priority` - Place one task: exactly one of `priority` (absolute, lower comes first), `before` or `after` another task id
+- `set_priority` - Place one task: exactly one of `priority` (absolute, lower comes first), `before` or `after` another task id, `top: true` or `bottom: true` (a grouped task goes to the top or bottom of its own group). The result carries `changed`, the number of task files written
   `status`, `type`, `assignee`, `open`, `closed`, `text`
 - `start_task` - Start working on a task
 - `finish_task` - Mark task as complete

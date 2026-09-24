@@ -176,6 +176,37 @@ describe('servidor WebSocket — operacoes nomeadas no lugar do update generico'
     expect(porId.get('001')?.order).toBeGreaterThan(porId.get('002')?.order ?? 0);
   });
 
+  it('move-to-top leva a tarefa a frente da fila, sem referencia', async () => {
+    const { enviar, esperar, porId, recebidas } = await conectar([
+      tarefa('001', { order: 10 }),
+      tarefa('002', { order: 20 }),
+      tarefa('003', { order: 30 }),
+    ]);
+    await esperar((m) => m.type === 'tasks');
+    recebidas.length = 0;
+
+    enviar('move-to-top', { taskId: '003' });
+
+    await esperar((m) => m.type === 'tasks');
+    expect(porId.get('003')?.order).toBeLessThan(porId.get('001')?.order ?? 0);
+  });
+
+  it('move-to-bottom leva a tarefa ao fim, numerando a cauda sem numero', async () => {
+    const { enviar, esperar, porId, recebidas } = await conectar([
+      tarefa('001', { order: 10 }),
+      tarefa('002', { order: 20 }),
+      tarefa('003'),
+    ]);
+    await esperar((m) => m.type === 'tasks');
+    recebidas.length = 0;
+
+    enviar('move-to-bottom', { taskId: '001' });
+
+    await esperar((m) => m.type === 'tasks');
+    expect(porId.get('003')?.order).toBeDefined();
+    expect(porId.get('001')?.order).toBeGreaterThan(porId.get('003')?.order ?? Number.POSITIVE_INFINITY);
+  });
+
   it('o update generico nao existe mais: e recusado, e nada e gravado', async () => {
     const { enviar, esperar, porId } = await conectar([tarefa('001')]);
 
