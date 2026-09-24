@@ -1,6 +1,6 @@
 # 🧩 Task 120 — O build do Pages fora da main e uma previa: nome, fila e retencao proprios
 
-- Status: in-progress
+- Status: done
 - Type: chore
 - Assignee: sidartaveloso
 
