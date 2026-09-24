@@ -1,6 +1,6 @@
 # 🧩 Task 131 — O Storybook do dashboard nao sobe: staticDirs aponta para uma pasta que nao existe
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: sidartaveloso
 
