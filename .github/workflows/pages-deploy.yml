@@ -1,5 +1,10 @@
 name: Deploy site and components to GitHub Pages
 
+# Fora da `main` nada e publicado: o build monta a arvore do Pages e a guarda
+# como artefato de previa. O nome da execucao diz isso, porque "Deploy" em todo
+# push do develop fazia parecer que o develop ia ao ar.
+run-name: ${{ github.ref == 'refs/heads/main' && 'Deploy site and components to GitHub Pages' || format('Pages preview ({0})', github.ref_name) }}
+
 # O site fica na raiz do Pages e a galeria de componentes em /components/.
 #
 # O endereco e `components` e nao `storybook` de proposito: quem consome o
@@ -69,9 +74,13 @@ permissions:
   pages: write
   id-token: write
 
+# A fila `pages`, sem cancelamento, e so do deploy da `main`: um deploy pela
+# metade deixaria o site entre duas versoes. As previas tem fila propria por
+# ref, e a mais nova cancela a anterior — sem isso elas se enfileiravam na
+# mesma fila do deploy e o atrasavam.
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: ${{ github.ref == 'refs/heads/main' && 'pages' || format('pages-preview-{0}', github.ref) }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:
@@ -196,7 +205,11 @@ jobs:
         with:
           name: pages-preview-${{ github.sha }}
           path: deploy
-          retention-days: 7
+          # Os `test -f` acima ja sao a verificacao; o artefato so serve para
+          # baixar e olhar a previa, e sai um a cada push. A variavel do
+          # repositorio `PAGES_PREVIEW_RETENTION_DAYS` muda o prazo sem editar
+          # este arquivo; sem ela, 1 dia — o minimo que o GitHub aceita.
+          retention-days: ${{ vars.PAGES_PREVIEW_RETENTION_DAYS || 1 }}
 
       - name: Setup Pages
         if: github.ref == 'refs/heads/main'
