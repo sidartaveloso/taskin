@@ -60,6 +60,11 @@ export interface ValidationIssue {
   severity: ValidationSeverity;
   /** Optional suggestion for fixing the issue */
   suggestion?: string;
+  /**
+   * `false` when `lint --fix` cannot resolve the issue (a file too large, a
+   * missing reason). Absent means it may be fixable.
+   */
+  fixable?: boolean;
 }
 
 /**

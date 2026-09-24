@@ -122,8 +122,12 @@ async function executeLint(options: LintTasksOptions): Promise<void> {
     }
   }
 
-  if (!result.valid && !options.fix) {
+  if (result.valid) return;
+
+  if (options.fix) {
+    console.log(chalk.red(`${errors.length} error(s) left that --fix cannot correct.\n`));
+  } else if (errors.some((issue) => issue.fixable !== false)) {
     console.log(chalk.blue(`💡 Run with --fix to automatically fix format issues\n`));
-    process.exit(1);
   }
+  process.exit(1);
 }

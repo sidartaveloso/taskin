@@ -141,3 +141,23 @@ describe('the exceptions', () => {
     expect(issues.some((i) => i.message.includes('assets/old.png'))).toBe(true);
   });
 });
+
+describe('what lint --fix can do about it', () => {
+  it('marks every issue as not fixable — no rewrite makes a file smaller or writes a reason', async () => {
+    attachment('assets/big.png', 2_000 * KB);
+    attachment('assets/grew.png', 2_000 * KB);
+    attachment('assets/fits.png', 10 * KB);
+    exceptions({
+      exceptions: {
+        'assets/grew.png': { bytes: 1_000 * KB, reason: REASON },
+        'assets/fits.png': { bytes: 10 * KB, reason: REASON },
+        'assets/gone.png': { bytes: 10 * KB },
+      },
+    });
+
+    const issues = await validator().validate();
+
+    expect(issues.length).toBeGreaterThanOrEqual(4);
+    expect(issues.every((issue) => issue.fixable === false)).toBe(true);
+  });
+});

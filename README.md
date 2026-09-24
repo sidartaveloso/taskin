@@ -369,10 +369,8 @@ The built-in linter validates format and converts legacy section-based metadata:
 # Validate all tasks
 taskin lint
 
-# Auto-fix format issues (adds trailing spaces, blank lines)
-taskin lint --fix
-
-# Auto-fix format issues
+# Auto-fix format issues (adds trailing spaces, blank lines).
+# Exits 1 if an error is left that --fix cannot correct, such as an oversized attachment.
 taskin lint --fix
 
 # Validate specific directory
