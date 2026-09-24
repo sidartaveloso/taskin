@@ -9,103 +9,25 @@
     </button>
   </div>
 
-  <div class="top-bar" data-testid="top-bar">
-    <div class="mode-toggle" role="group" aria-label="Which screen to show">
-      <button
-        v-for="opcao in TELAS"
-        :key="opcao.valor"
-        type="button"
-        :data-view="opcao.valor"
-        :class="{ active: mode === opcao.valor }"
-        :aria-pressed="mode === opcao.valor"
-        @click="escolherTela(opcao.valor)"
-      >
-        {{ opcao.rotulo }}
-      </button>
-    </div>
-
-    <div class="filter-toggle" role="group" aria-label="Which tasks to show">
-      <button
-        v-for="opcao in FILTROS"
-        :key="opcao.valor"
-        type="button"
-        :data-filter="opcao.valor"
-        :class="{ active: filtroEfetivo === opcao.valor }"
-        :aria-pressed="filtroEfetivo === opcao.valor"
-        @click="escolherFiltro(opcao.valor)"
-      >
-        {{ opcao.rotulo }}
-      </button>
-    </div>
-
-    <!--
-      Busca, ordem e pontuacao dizem quais tarefas e em que ordem, e nao como
-      desenhar: valem para as duas telas, e por isso moram aqui (task-129).
-    -->
-    <div class="query-controls" role="group" aria-label="Search, order and score">
-      <input
-        type="search"
-        class="query-controls__search"
-        data-testid="search-input"
-        placeholder="Search id, title, type, status, assignee"
-        aria-label="Search tasks"
-        :value="busca"
-        @input="escolherBusca(($event.target as HTMLInputElement).value)"
-      />
-      <select
-        data-testid="sort-select"
-        aria-label="Order"
-        :value="ordem"
-        @change="escolherOrdem(($event.target as HTMLSelectElement).value as ModoDeOrdenacao)"
-      >
-        <option v-for="opcao in ORDENS" :key="opcao.valor" :value="opcao.valor">{{ opcao.rotulo }}</option>
-      </select>
-      <select
-        data-testid="score-select"
-        aria-label="Difficulty score"
-        :value="pontuacao"
-        @change="escolherPontuacao(($event.target as HTMLSelectElement).value as Pontuacao)"
-      >
-        <option v-for="opcao in PONTUACOES" :key="opcao.valor" :value="opcao.valor">{{ opcao.rotulo }}</option>
-      </select>
-    </div>
-
-    <span class="filter-toggle__count" data-testid="filter-count">
-      Showing {{ tasks.length }} of {{ taskStore.tasks.length }} tasks
-    </span>
-
-    <!--
-      A conexao e uma so, a do WebSocket, e as duas telas dependem dela: a de
-      priorizacao grava pelo servidor a cada movimento. Por isso fica aqui, e
-      nao no cabecalho do Board (task-128).
-    -->
-    <ConnectionStatus
-      :status="connectionStatusType"
-      :status-text="statusText"
-      :show-retry="!!connectionError"
-      :is-retrying="isLoading"
-      @retry="handleRefresh"
-    />
-  </div>
-
-  <div v-if="connectionError" class="connection-error" role="alert" data-testid="connection-error">
-    ⚠️ {{ connectionError }}
-  </div>
-
-  <Dashboard
-    v-if="mode === 'board'"
-    title="Taskin Dashboard"
-    :show-connection="false"
-    :is-loading="isLoading"
+  <TaskinWorkspace
     :tasks="tasks"
-    :grid-title="tituloDoQuadro"
-    @retry="handleRefresh"
-  />
-  <PrioritizationPage
-    v-else
-    :tasks="tasks"
+    :total="taskStore.tasks.length"
     :groups="gruposDoQuadro"
-    :sort-mode="ordem"
+    :view="mode"
+    :filter="filtroEfetivo"
+    :search="busca"
+    :sort="ordem"
+    :score="pontuacao"
+    :connection-status="connectionStatusType"
+    :status-text="statusText"
+    :connection-error="connectionError ?? ''"
+    :is-loading="isLoading"
+    @update:view="escolherTela"
+    @update:filter="escolherFiltro"
+    @update:search="escolherBusca"
+    @update:sort="escolherOrdem"
+    @update:score="escolherPontuacao"
+    @retry="handleRefresh"
     @update-task="handleUpdateTask"
     @update-group="handleUpdateGroup"
     @move="handleMove"
@@ -113,12 +35,28 @@
 </template>
 
 <script setup lang="ts">
-import type { GrupoDoQuadro, MovimentoDoQuadro, MudancaDeGrupo, Task, TaskStatus } from '@opentask/taskin-design-vue';
-import { ConnectionStatus, Dashboard, groupId, PrioritizationPage } from '@opentask/taskin-design-vue';
+import type {
+  GrupoDoQuadro,
+  MovimentoDoQuadro,
+  MudancaDeGrupo,
+  Task,
+  TaskStatus,
+  WorkspaceFilter,
+  WorkspaceScore,
+  WorkspaceSort,
+  WorkspaceView,
+} from '@opentask/taskin-design-vue';
+import {
+  groupId,
+  TaskinWorkspace,
+  WORKSPACE_FILTERS,
+  WORKSPACE_SCORES,
+  WORKSPACE_SORTS,
+  WORKSPACE_VIEWS,
+} from '@opentask/taskin-design-vue';
 import {
   effectiveFilterCriteria,
   filterTasks,
-  type ModoDeOrdenacao,
   ordenarTarefas,
   type TaskFilterCriteria,
 } from '@opentask/taskin-task-manager';
@@ -148,20 +86,18 @@ const PROGRESS_BY_STATUS: Record<TaskStatus, number> = {
  * Qual tela esta aberta. Fica na URL (`?view=`), como o filtro: recarregar a
  * pagina ou abrir um link leva a mesma tela, e nao de volta ao Board. Sem o
  * parametro, ou com um valor que nao e tela, abre o Board.
+ *
+ * A barra que mostra estas escolhas e o `TaskinWorkspace` do design-vue
+ * (task-132); aqui ficam a URL e o recorte pelo dominio. Os valores aceitos
+ * na URL sao os mesmos que a barra oferece.
  */
-type Tela = 'board' | 'prioritization';
-
-const TELAS: readonly { valor: Tela; rotulo: string }[] = [
-  { valor: 'board', rotulo: 'Board' },
-  { valor: 'prioritization', rotulo: 'Prioritization' },
-];
-
-function telaDaUrl(): Tela {
-  const pedida = new URLSearchParams(window.location.search).get('view');
-  return TELAS.find((t) => t.valor === pedida)?.valor ?? 'board';
+/** O valor do parametro, se for um dos aceitos; senao `undefined`, e quem chama cai no padrao. */
+function daUrl<T extends string>(chave: string, aceitos: readonly { value: T }[]): T | undefined {
+  const pedido = new URLSearchParams(window.location.search).get(chave);
+  return aceitos.find((a) => a.value === pedido)?.value;
 }
 
-const mode = ref<Tela>(telaDaUrl());
+const mode = ref<WorkspaceView>(daUrl('view', WORKSPACE_VIEWS) ?? 'board');
 
 /**
  * Grava um parametro na URL sem tocar nos outros, e sem criar entrada no
@@ -174,13 +110,7 @@ function gravarNaUrl(chave: 'view' | 'filter' | 'q' | 'sort' | 'score', valor: s
   window.history.replaceState({}, '', url);
 }
 
-/** O valor do parametro, se for um dos aceitos; senao `undefined`, e quem chama cai no padrao. */
-function daUrl<T extends string>(chave: string, aceitos: readonly { valor: T }[]): T | undefined {
-  const pedido = new URLSearchParams(window.location.search).get(chave);
-  return aceitos.find((a) => a.valor === pedido)?.valor;
-}
-
-function escolherTela(valor: Tela) {
+function escolherTela(valor: WorkspaceView) {
   mode.value = valor;
   gravarNaUrl('view', valor);
 }
@@ -193,19 +123,10 @@ function escolherTela(valor: Tela) {
  * O controle existe porque parametro de URL ninguem descobre. Trocar reescreve
  * a URL, para que recarregar e compartilhar o link mostrem o mesmo recorte.
  *
- * Os contadores (este "Showing N of M" e os do quadro) contam o que esta na
+ * Os contadores (o "Showing N of M" e os do quadro) contam o que esta na
  * tela, e nao o projeto inteiro: o M e o total.
  */
-type Filtro = 'open' | 'active' | 'closed' | 'all';
-
-const FILTROS: readonly { valor: Filtro; rotulo: string }[] = [
-  { valor: 'open', rotulo: 'Open' },
-  { valor: 'active', rotulo: 'Active' },
-  { valor: 'closed', rotulo: 'Closed' },
-  { valor: 'all', rotulo: 'All' },
-];
-
-const filtro = ref<Filtro | undefined>(daUrl('filter', FILTROS));
+const filtro = ref<WorkspaceFilter | undefined>(daUrl('filter', WORKSPACE_FILTERS));
 
 /*
  * Busca, pontuacao e ordem (task-129). Viviam dentro do quadro de
@@ -219,23 +140,9 @@ const filtro = ref<Filtro | undefined>(daUrl('filter', FILTROS));
  * a ordem e a manual — recarregar mostra o que o link diz, e nao o que o
  * navegador lembrava.
  */
-type Pontuacao = 'all' | 'scored' | 'unscored';
-
-const PONTUACOES: readonly { valor: Pontuacao; rotulo: string }[] = [
-  { valor: 'all', rotulo: 'Scored and unscored' },
-  { valor: 'scored', rotulo: 'Scored only' },
-  { valor: 'unscored', rotulo: 'Unscored only' },
-];
-
-const ORDENS: readonly { valor: ModoDeOrdenacao; rotulo: string }[] = [
-  { valor: 'manual', rotulo: 'Manual (priority)' },
-  { valor: 'diff-desc', rotulo: 'Difficulty ↓ (high→low)' },
-  { valor: 'diff-asc', rotulo: 'Difficulty ↑ (low→high)' },
-];
-
 const busca = ref(new URLSearchParams(window.location.search).get('q') ?? '');
-const pontuacao = ref<Pontuacao>(daUrl('score', PONTUACOES) ?? 'all');
-const ordem = ref<ModoDeOrdenacao>(daUrl('sort', ORDENS) ?? 'manual');
+const pontuacao = ref<WorkspaceScore>(daUrl('score', WORKSPACE_SCORES) ?? 'all');
+const ordem = ref<WorkspaceSort>(daUrl('sort', WORKSPACE_SORTS) ?? 'manual');
 
 const criterios = computed<TaskFilterCriteria>(() => {
   const texto = busca.value.trim();
@@ -247,16 +154,10 @@ const criterios = computed<TaskFilterCriteria>(() => {
 });
 const filtroEfetivo = computed(() => {
   const efetivos = effectiveFilterCriteria(criterios.value);
-  return FILTROS.find((f) => efetivos[f.valor])?.valor;
+  return WORKSPACE_FILTERS.find((f) => efetivos[f.value])?.value;
 });
 
-/* O titulo do Board diz o recorte; era fixo em "Tarefas em Andamento", mesmo em Closed. */
-const tituloDoQuadro = computed(() => {
-  const rotulo = FILTROS.find((f) => f.valor === filtroEfetivo.value)?.rotulo ?? 'All';
-  return `${rotulo} tasks`;
-});
-
-function escolherFiltro(valor: Filtro) {
+function escolherFiltro(valor: WorkspaceFilter) {
   filtro.value = valor;
   gravarNaUrl('filter', valor);
 }
@@ -266,12 +167,12 @@ function escolherBusca(valor: string) {
   gravarNaUrl('q', valor.trim());
 }
 
-function escolherOrdem(valor: ModoDeOrdenacao) {
+function escolherOrdem(valor: WorkspaceSort) {
   ordem.value = valor;
   gravarNaUrl('sort', valor);
 }
 
-function escolherPontuacao(valor: Pontuacao) {
+function escolherPontuacao(valor: WorkspaceScore) {
   pontuacao.value = valor;
   gravarNaUrl('score', valor);
 }
@@ -562,160 +463,5 @@ body {
     border-color: #d69e2e;
     color: #f0d9a8;
   }
-}
-
-/*
- * Uma barra so para as telas, o filtro e a contagem: eram duas, e cada uma
- * gastava uma linha inteira de altura. Em tela estreita, os grupos quebram
- * para a linha de baixo em vez de espremer os botoes.
- */
-.top-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
-  padding: 0.4rem 1rem;
-  background: var(--bg-card, #fff);
-  border-bottom: 1px solid var(--border-muted, #e5e5e5);
-}
-
-.mode-toggle,
-.filter-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.mode-toggle button,
-.filter-toggle button {
-  background: transparent;
-  border: 1px solid var(--border-muted, #e5e5e5);
-  border-radius: 6px;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  color: var(--text-primary, #212529);
-}
-
-.mode-toggle button {
-  font-weight: 600;
-}
-
-.mode-toggle button.active {
-  background: var(--status-progress-bg, #169bd7);
-  color: #fff;
-  border-color: transparent;
-}
-
-.filter-toggle button.active {
-  background: var(--text-primary, #212529);
-  color: var(--bg-card, #fff);
-  border-color: transparent;
-}
-
-/* Separa os grupos da barra, que sao escolhas de natureza diferente. */
-.filter-toggle,
-.query-controls {
-  padding-left: 1rem;
-  border-left: 1px solid var(--border-muted, #e5e5e5);
-}
-
-/*
- * A busca cresce e encolhe com o espaco que sobra, para a barra caber numa
- * linha no desktop. A base e pequena de proposito: o `flex-wrap` decide quebrar
- * pela base, antes de encolher, e com a base na largura do conteudo a barra
- * quebrava ja em 1280px. Abaixo de 640px os controles quebram entre si, em vez
- * de alargar a pagina.
- */
-.query-controls {
-  display: flex;
-  flex: 1 1 28rem;
-  min-width: 0;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.query-controls input,
-.query-controls select {
-  background: var(--bg-card, #fff);
-  border: 1px solid var(--border-muted, #e5e5e5);
-  border-radius: 6px;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-primary, #212529);
-}
-
-.query-controls__search {
-  flex: 1 1 8rem;
-  min-width: 7rem;
-  max-width: 20rem;
-}
-
-.query-controls select {
-  max-width: 100%;
-}
-
-@media (max-width: 640px) {
-  .query-controls {
-    flex-basis: 100%;
-    flex-wrap: wrap;
-    padding-left: 0;
-    border-left: none;
-  }
-}
-
-.filter-toggle__count {
-  margin-left: auto;
-  font-size: 0.875rem;
-  color: var(--text-secondary, #6c757d);
-}
-
-.connection-error {
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--status-warning-bg, #feb2b2);
-  background: var(--bg-section-error, #fff5f5);
-  color: var(--text-error-dark, #c92a2a);
-  font-size: 0.875rem;
-}
-
-/* Page-specific styles */
-.loading-state,
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-}
-
-.spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid var(--color-border, #e5e5e5);
-  border-top-color: var(--color-primary, #169bd7);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-state p,
-.empty-state p {
-  color: var(--color-text-secondary, #495057);
-  margin: 0.5rem 0;
-}
-
-.empty-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.empty-state h2 {
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: var(--color-text-primary, #212529);
-  margin-bottom: 0.5rem;
 }
 </style>
