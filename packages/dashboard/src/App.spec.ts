@@ -282,3 +282,32 @@ describe('App — o quadro de priorizacao grava por operacoes nomeadas', () => {
     ]);
   });
 });
+
+describe('App — o console fica limpo', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  /*
+   * Cada operacao do quadro devolve a lista inteira, e o mapeamento das tarefas
+   * imprimia uma linha por tarefa: com 500 tarefas, 500 linhas por clique, e
+   * qualquer erro de verdade se perdia no meio.
+   */
+  it('mapear as tarefas que chegam nao imprime nada no console', async () => {
+    window.history.replaceState({}, '', '/');
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const wrapper = await mountApp();
+    const { usePiniaTaskProvider } = await import('@opentask/taskin-task-provider-pinia');
+    const store = usePiniaTaskProvider();
+    store.tasks = [
+      createMockTask({ id: '1', title: 'Primeira' }),
+      createMockTask({ id: '2', title: 'Segunda', assignee: { id: 'ana', name: 'Ana' } }),
+    ];
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="tasks-count"]').text()).toBe('2');
+    expect(log).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
+});
