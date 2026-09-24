@@ -3,7 +3,11 @@ import { defaultFunctions, WebcamVideo } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fireEvent, waitFor, within } from 'storybook/test';
 import { h, ref, toRef } from 'vue';
-import { buildPriorityTree, usePrioritization } from '../../composables/use-prioritization';
+import {
+  buildPriorityTree,
+  type PrioritizationSortMode,
+  usePrioritization,
+} from '../../composables/use-prioritization';
 import type { Task } from '../../types';
 import { groupId } from '../../types';
 import PrioritizationScreen from './PrioritizationScreen.vue';
@@ -16,7 +20,7 @@ const meta: Meta<typeof PrioritizationScreen> = {
     docs: {
       description: {
         component:
-          'Presentational screen for the task prioritization board: toolbar (filter, view mode, sort mode, export) plus a drag-and-drop list of task cards and ad hoc groups. Pure props/emits — the `PrioritizationPage` owns the state via `usePrioritization`.',
+          'Presentational screen for the task prioritization board: toolbar (view mode, collapse/expand, undo/redo, export — search, sort and score live in the dashboard top bar since task-129) plus a drag-and-drop list of task cards and ad hoc groups. Pure props/emits — the `PrioritizationPage` owns the state via `usePrioritization`.',
       },
     },
     layout: 'fullscreen',
@@ -60,22 +64,16 @@ export const Default: Story = {
     components: { PrioritizationScreen },
     setup() {
       const tasks = ref<Task[]>([...defaultTasks]);
-      const { tree, filter, viewMode, sortMode, scoreFilter, dragEnabled, setViewMode, setSortMode, setScoreFilter } =
-        usePrioritization(toRef(tasks));
+      const { tree, viewMode, dragEnabled, setViewMode } = usePrioritization(toRef(tasks));
 
-      return { tree, filter, viewMode, sortMode, scoreFilter, dragEnabled, setViewMode, setSortMode, setScoreFilter };
+      return { tree, viewMode, dragEnabled, setViewMode };
     },
     template: `
       <PrioritizationScreen
         :tree="tree"
-        :filter="filter"
         :view-mode="viewMode"
-        :sort-mode="sortMode"
-        :score-filter="scoreFilter"
         :drag-enabled="dragEnabled"
         @update:view-mode="setViewMode"
-        @update:sort-mode="setSortMode"
-        @update:score-filter="setScoreFilter"
       />
     `,
   }),
@@ -108,58 +106,33 @@ export const Default: Story = {
       expect(cardsBtn.className).toContain('active');
       expect(nodeList.className).toContain('view-cards');
     });
+  },
+};
 
-    // ── Sort mode switching ──
-    const sortSelect = canvas.getByTestId('sort-select') as HTMLSelectElement;
+/*
+ * A ordem vem de fora (task-129): quem hospeda escolhe o modo, e a arvore sai
+ * do `ordenarTarefas` do dominio. Em `diff-desc` o grupo fica no lugar do
+ * membro mais dificil, e a tarefa sem nota vai para o fim.
+ */
+export const SortedByTheHost: Story = {
+  render: () => ({
+    components: { PrioritizationScreen },
+    setup() {
+      const tasks = ref<Task[]>([...defaultTasks]);
+      const { tree, viewMode, dragEnabled } = usePrioritization(toRef(tasks), {
+        sortMode: ref<PrioritizationSortMode>('diff-desc'),
+      });
 
-    function cardIds(): string[] {
-      const cards = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-card-"]');
-      return Array.from(cards).map((c) => c.dataset.testid!.replace('priority-card-', ''));
-    }
+      return { tree, viewMode, dragEnabled };
+    },
+    template: `<PrioritizationScreen :tree="tree" :view-mode="viewMode" :drag-enabled="dragEnabled" />`,
+  }),
+  play: async ({ canvasElement }) => {
+    const cards = canvasElement.querySelectorAll<HTMLElement>('[data-testid^="priority-card-"]');
+    const ids = Array.from(cards).map((c) => c.dataset.testid!.replace('priority-card-', ''));
 
-    expect(sortSelect.value).toBe('manual');
-    expect(cardIds().slice(0, 5)).toEqual(['001', '002', '003', '004', '005']);
-
-    await fireEvent.change(sortSelect, { target: { value: 'diff-desc' } });
-    await waitFor(() => {
-      expect(sortSelect.value).toBe('diff-desc');
-      const ids = cardIds();
-      // g1(max=4) → 002(diff=4), 003(diff=0); then 001(diff=2), 005(diff=1), 004(sem)
-      expect(ids.slice(0, 5)).toEqual(['002', '003', '001', '005', '004']);
-    });
-
-    await fireEvent.change(sortSelect, { target: { value: 'diff-asc' } });
-    await waitFor(() => {
-      expect(sortSelect.value).toBe('diff-asc');
-      const ids = cardIds();
-      // 004(sem), 005(diff=1), 001(diff=2), then g1(max=4) → 003(diff=0), 002(diff=4)
-      expect(ids.slice(0, 5)).toEqual(['004', '005', '001', '003', '002']);
-    });
-
-    await fireEvent.change(sortSelect, { target: { value: 'manual' } });
-    await waitFor(() => {
-      expect(sortSelect.value).toBe('manual');
-      expect(cardIds().slice(0, 5)).toEqual(['001', '002', '003', '004', '005']);
-    });
-
-    // ── Difficulty filter, separate from the text filter ──
-    const scoreSelect = canvas.getByTestId('score-filter-select') as HTMLSelectElement;
-    expect(scoreSelect.value).toBe('all');
-
-    await fireEvent.change(scoreSelect, { target: { value: 'scored' } });
-    await waitFor(() => {
-      expect(cardIds()).toEqual(['001', '002', '005']);
-    });
-
-    await fireEvent.change(scoreSelect, { target: { value: 'unscored' } });
-    await waitFor(() => {
-      expect(cardIds()).toEqual(['003', '004']);
-    });
-
-    await fireEvent.change(scoreSelect, { target: { value: 'all' } });
-    await waitFor(() => {
-      expect(cardIds()).toEqual(['001', '002', '003', '004', '005']);
-    });
+    expect(ids).toEqual(['002', '003', '001', '005', '004']);
+    expect(canvasElement.querySelector('.drag-warning')).not.toBeNull();
   },
 };
 
@@ -191,9 +164,7 @@ export const WithGesture: Story = {
             }),
             h(PrioritizationScreen, {
               tree: buildPriorityTree(defaultTasks),
-              filter: '',
               viewMode: 'cards',
-              sortMode: 'manual',
               dragEnabled: true,
               detecting: detecting.value,
               cameraActive: cameraActive.value,

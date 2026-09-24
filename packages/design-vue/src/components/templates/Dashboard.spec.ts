@@ -65,4 +65,26 @@ describe('Dashboard', () => {
     await wrapper.find('.retry-btn').trigger('click');
     expect(wrapper.emitted('retry')).toHaveLength(1);
   });
+
+  /*
+   * Com o filtro em Closed, o quadro mostrava tarefas concluidas sob
+   * "Tarefas em Andamento" (task-129). O titulo vem de quem recortou.
+   */
+  it('o titulo da lista e o que quem recortou diz, e nao um fixo', () => {
+    const tarefa = {
+      id: taskId('1'),
+      number: 1,
+      title: 'T1',
+      status: 'done' as const,
+      type: 'feat' as const,
+      dates: { created: '2026-01-01' },
+    };
+    const wrapper = mount(Dashboard, {
+      props: { tasks: [tarefa], gridTitle: 'Closed tasks' },
+      global: { stubs: { DashboardLayout: SlotLayoutStub } },
+    });
+
+    expect(wrapper.find('.task-grid-title').text()).toBe('Closed tasks');
+    expect(wrapper.text()).not.toContain('Tarefas em Andamento');
+  });
 });

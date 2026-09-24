@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { defaultFunctions } from '@opentask/ui-sense';
 import { computed, onMounted, onUnmounted, ref, toRef, watch } from 'vue';
-import type { GrupoDoQuadro, MovimentoDoQuadro, MudancaDeGrupo } from '../../composables/use-prioritization';
+import type {
+  GrupoDoQuadro,
+  MovimentoDoQuadro,
+  MudancaDeGrupo,
+  PrioritizationSortMode,
+} from '../../composables/use-prioritization';
 import { usePrioritization } from '../../composables/use-prioritization';
 import type { Task } from '../../types';
 import PrioritizationScreen from '../templates/PrioritizationScreen.vue';
@@ -10,10 +15,15 @@ export interface PrioritizationPageProps {
   tasks: Task[];
   /** Os grupos do registro, com o pai de cada um — e daqui que o quadro aninha (task-119). */
   groups?: GrupoDoQuadro[];
+  /**
+   * A ordem em que `tasks` chega. Quem hospeda filtra e ordena pelo dominio
+   * (task-129); a pagina so precisa saber se e `manual`, para arrastar.
+   */
+  sortMode?: PrioritizationSortMode;
   gestureUserId?: string;
 }
 
-const props = withDefaults(defineProps<PrioritizationPageProps>(), { groups: () => [] });
+const props = withDefaults(defineProps<PrioritizationPageProps>(), { groups: () => [], sortMode: 'manual' });
 
 const emit = defineEmits<{
   'update-task': [task: Task];
@@ -30,19 +40,13 @@ const emit = defineEmits<{
 
 const {
   tree,
-  filter,
   viewMode,
-  sortMode,
-  scoreFilter,
   dragEnabled,
   changedTasks,
   changedGroups,
   canUndo,
   canRedo,
-  setFilter,
   setViewMode,
-  setSortMode,
-  setScoreFilter,
   toggleGroupCollapsed,
   setDifficulty,
   moveBefore,
@@ -69,6 +73,7 @@ const {
 } = usePrioritization(toRef(props, 'tasks'), {
   onMove: (movimento) => emit('move', movimento),
   groups: toRef(props, 'groups'),
+  sortMode: toRef(props, 'sortMode'),
 });
 
 const focusedId = ref<string | null>(null);
@@ -183,10 +188,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 <template>
   <PrioritizationScreen
     :tree="tree"
-    :filter="filter"
     :view-mode="viewMode"
-    :sort-mode="sortMode"
-    :score-filter="scoreFilter"
     :drag-enabled="dragEnabled"
     :can-undo="canUndo"
     :can-redo="canRedo"
@@ -198,10 +200,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
     @toggle-tracking="detecting = !detecting"
     @gesture-action="onGestureAction"
     @update:camera-active="cameraActive = $event"
-    @update:filter="setFilter"
     @update:view-mode="setViewMode"
-    @update:sort-mode="setSortMode"
-    @update:score-filter="setScoreFilter"
     @toggle-collapse="toggleGroupCollapsed"
     @set-all-collapsed="setAllCollapsed"
     @set-difficulty="setDifficulty"

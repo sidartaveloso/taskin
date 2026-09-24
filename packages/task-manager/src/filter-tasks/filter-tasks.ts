@@ -102,6 +102,7 @@ export function filterTasks(tasks: readonly Task[], recebidos: TaskFilterCriteri
       const casa =
         task.id.toLowerCase().includes(procurado) ||
         contem(task.title, procurado) ||
+        contem(task.type, procurado) ||
         contem(task.status, procurado) ||
         casaResponsavel(task, procurado);
       if (!casa) return false;
