@@ -22,7 +22,14 @@ import {
   summarizeTask,
   type TaskFilterCriteria,
 } from '@opentask/taskin-task-manager';
-import { type GroupId, GroupIdSchema, type TaskId, TaskIdSchema, type TaskStatus } from '@opentask/taskin-types';
+import {
+  type GroupId,
+  GroupIdSchema,
+  type Task,
+  type TaskId,
+  TaskIdSchema,
+  type TaskStatus,
+} from '@opentask/taskin-types';
 import type {
   ITaskMCPServer,
   MCPConnectionOptions,
@@ -394,6 +401,22 @@ export class TaskMCPServer implements ITaskMCPServer {
         description: 'Take a task out of its group. A task without a group is left as it is.',
         inputSchema: { type: 'object', properties: { taskId: TASK_ID_PROPERTY }, required: ['taskId'] },
       },
+      {
+        name: 'move_group',
+        description:
+          'Move a whole group in the queue, its members together and in their current order. Pass `groupId` and exactly one of: `before` or `after` (a task that is not in a group, or another group id), `top: true` or `bottom: true`. Only the members are written — a group of three writes three files — and the result says how many (`changed`).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            groupId: { type: 'string', description: 'The id of the group to move, as list_groups returns it' },
+            before: { type: 'string', description: 'Place the group right before this task id or group id' },
+            after: { type: 'string', description: 'Place the group right after this task id or group id' },
+            top: { type: 'boolean', description: 'Move the group to the top of the queue' },
+            bottom: { type: 'boolean', description: 'Move the group to the bottom of the queue' },
+          },
+          required: ['groupId'],
+        },
+      },
     ];
   }
 
@@ -419,6 +442,9 @@ export class TaskMCPServer implements ITaskMCPServer {
 
         case 'leave_group':
           return await this.handleLeaveGroup(params.arguments ?? {});
+
+        case 'move_group':
+          return await this.handleMoveGroup(params.arguments ?? {});
 
         case 'set_priority':
           return await this.handleSetPriority(params.arguments ?? {});
@@ -805,6 +831,56 @@ Let me start by marking the task as done using the finish_task tool.`,
         : await this.taskManager.moveAfter(taskId, targetId);
 
     return tarefaAlterada(task, { changed });
+  }
+
+  /**
+   * Um grupo inteiro se move (task-117), nas mesmas quatro formas do
+   * `set_priority` sem o numero absoluto — um numero so nao diz onde ficam
+   * varios membros. O alvo pode ser tarefa ou grupo: quem decide e o manager.
+   */
+  private async handleMoveGroup(args: Record<string, unknown>): Promise<MCPToolCallResult> {
+    if (!this.taskManager.groupRegistry) return recusa(GROUPS_NOT_SUPPORTED);
+
+    const groupId = readGroupId(args.groupId);
+    if (!groupId) return recusa(`Invalid group id: ${JSON.stringify(args.groupId)}. See list_groups.`);
+
+    for (const extremo of ['top', 'bottom'] as const) {
+      if (args[extremo] !== undefined && typeof args[extremo] !== 'boolean') {
+        return recusa(`\`${extremo}\` must be true; got ${JSON.stringify(args[extremo])}.`);
+      }
+    }
+
+    const formas = (['before', 'after', 'top', 'bottom'] as const).filter(
+      (k) => args[k] !== undefined && args[k] !== false,
+    );
+    if (formas.length !== 1) return recusa('Pass exactly one of `before`, `after`, `top` or `bottom`.');
+
+    let resultado: { members: Task[]; changed: number };
+    if (args.top === true) resultado = await this.taskManager.moveGroupToTop(groupId);
+    else if (args.bottom === true) resultado = await this.taskManager.moveGroupToBottom(groupId);
+    else {
+      const referencia = args.before ?? args.after;
+      const alvo = readGroupId(referencia);
+      if (!alvo) return recusa(`Invalid target: ${JSON.stringify(referencia)}. Use a task id or a group id.`);
+      resultado =
+        args.before !== undefined
+          ? await this.taskManager.moveGroupBefore(groupId, alvo)
+          : await this.taskManager.moveGroupAfter(groupId, alvo);
+    }
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify(
+            { success: true, groupId, members: resultado.members.map(summarizeTask), changed: resultado.changed },
+            null,
+            2,
+          ),
+        },
+      ],
+      isError: false,
+    };
   }
 
   private async handleSetDifficulty(args: Record<string, unknown>): Promise<MCPToolCallResult> {

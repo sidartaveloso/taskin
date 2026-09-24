@@ -53,6 +53,14 @@ describe('superficies das operacoes', () => {
     expect(nomesNaSuperficie('ws')).toContain('set-difficulty');
   });
 
+  it('mover um grupo chega as tres superficies (task-117)', () => {
+    expect(nomesNaSuperficie('cli')).toContain('group move');
+    expect(nomesNaSuperficie('mcp')).toContain('move_group');
+    expect(nomesNaSuperficie('ws')).toEqual(
+      expect.arrayContaining(['move-group-before', 'move-group-after', 'move-group-to-top', 'move-group-to-bottom']),
+    );
+  });
+
   it('um nome usado por varias operacoes aparece uma vez so', () => {
     const cli = nomesNaSuperficie('cli');
     expect(cli.filter((n) => n === 'priority')).toHaveLength(1);

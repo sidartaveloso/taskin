@@ -1,5 +1,5 @@
 import { type IGroupRegistry, type ITaskProvider, TaskManager } from '@opentask/taskin-task-manager';
-import { type Group, type GroupId, parseTaskId, type Task } from '@opentask/taskin-types';
+import { type Group, type GroupId, parseGroupId, parseTaskId, type Task } from '@opentask/taskin-types';
 import { afterEach, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
 import { TaskWebSocketServer } from './task-server-ws.js';
@@ -205,6 +205,71 @@ describe('servidor WebSocket — operacoes nomeadas no lugar do update generico'
     await esperar((m) => m.type === 'tasks');
     expect(porId.get('003')?.order).toBeDefined();
     expect(porId.get('001')?.order).toBeGreaterThan(porId.get('003')?.order ?? Number.POSITIVE_INFINITY);
+  });
+
+  it('move-group-to-top e move-group-to-bottom levam o grupo inteiro (task-117)', async () => {
+    const g = parseGroupId('g-a');
+    const { enviar, esperar, porId, recebidas } = await conectar(
+      [
+        tarefa('001', { order: 10 }),
+        tarefa('002', { order: 20, groupId: g }),
+        tarefa('003', { order: 30, groupId: g }),
+      ],
+      [{ id: g, name: 'A' }],
+    );
+    await esperar((m) => m.type === 'tasks');
+    recebidas.length = 0;
+
+    enviar('move-group-to-top', { groupId: 'g-a' });
+    await esperar((m) => m.type === 'tasks');
+    expect(porId.get('003')?.order).toBeLessThan(porId.get('001')?.order ?? 0);
+    expect(porId.get('002')?.order).toBeLessThan(porId.get('003')?.order ?? 0);
+
+    recebidas.length = 0;
+    enviar('move-group-to-bottom', { groupId: 'g-a' });
+    await esperar((m) => m.type === 'tasks');
+    expect(porId.get('002')?.order).toBeGreaterThan(porId.get('001')?.order ?? Number.POSITIVE_INFINITY);
+  });
+
+  it('move-group-before e move-group-after aceitam tarefa ou grupo como alvo', async () => {
+    const [a, b] = [parseGroupId('g-a'), parseGroupId('g-b')];
+    const { enviar, esperar, porId, recebidas } = await conectar(
+      [
+        tarefa('001', { order: 10, groupId: b }),
+        tarefa('002', { order: 20 }),
+        tarefa('003', { order: 30, groupId: a }),
+      ],
+      [
+        { id: a, name: 'A' },
+        { id: b, name: 'B' },
+      ],
+    );
+    await esperar((m) => m.type === 'tasks');
+    recebidas.length = 0;
+
+    enviar('move-group-before', { groupId: 'g-a', targetId: 'g-b' });
+    await esperar((m) => m.type === 'tasks');
+    expect(porId.get('003')?.order).toBeLessThan(porId.get('001')?.order ?? 0);
+
+    recebidas.length = 0;
+    enviar('move-group-after', { groupId: 'g-a', targetId: '002' });
+    await esperar((m) => m.type === 'tasks');
+    expect(porId.get('003')?.order).toBeGreaterThan(porId.get('002')?.order ?? Number.POSITIVE_INFINITY);
+  });
+
+  it('move-group com alvo membro do proprio grupo volta como erro, sem gravar', async () => {
+    const g = parseGroupId('g-a');
+    const { enviar, esperar, porId } = await conectar(
+      [tarefa('001', { order: 10, groupId: g }), tarefa('002', { order: 20, groupId: g })],
+      [{ id: g, name: 'A' }],
+    );
+    await esperar((m) => m.type === 'tasks');
+
+    enviar('move-group-after', { groupId: 'g-a', targetId: '002' });
+
+    const erro = await esperar((m) => m.type === 'error');
+    expect(JSON.stringify(erro)).toContain('member');
+    expect(porId.get('001')?.order).toBe(10);
   });
 
   it('o update generico nao existe mais: e recusado, e nada e gravado', async () => {

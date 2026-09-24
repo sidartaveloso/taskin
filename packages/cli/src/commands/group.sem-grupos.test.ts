@@ -49,6 +49,7 @@ describe('taskin group join/leave num provider sem grupos', () => {
   it.each([
     ['join', '001', 'g-cli'],
     ['leave', '001'],
+    ['move', 'g-cli', '--top'],
   ])('%s recusa em uma frase, sem gravar', async (...argv) => {
     await expect(rodar(...argv)).rejects.toThrow('exit 1');
 

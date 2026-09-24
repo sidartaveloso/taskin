@@ -77,6 +77,22 @@ export class MockTaskManager implements ITaskManager {
     return { task: buildTask(taskId), changed: 1 };
   }
 
+  async moveGroupBefore(): Promise<{ members: Task[]; changed: number }> {
+    return { members: [], changed: 0 };
+  }
+
+  async moveGroupAfter(): Promise<{ members: Task[]; changed: number }> {
+    return { members: [], changed: 0 };
+  }
+
+  async moveGroupToTop(): Promise<{ members: Task[]; changed: number }> {
+    return { members: [], changed: 0 };
+  }
+
+  async moveGroupToBottom(): Promise<{ members: Task[]; changed: number }> {
+    return { members: [], changed: 0 };
+  }
+
   async setDifficulty(taskId: TaskId, difficulty: number): Promise<Task> {
     return buildTask(taskId, { difficulty });
   }

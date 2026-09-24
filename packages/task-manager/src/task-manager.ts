@@ -1,9 +1,12 @@
 import type { GroupId, Task, TaskId, TaskStatus } from '@opentask/taskin-types';
 import type { IGroupRegistry } from './group-registry.types';
 import { numerarPrioridade } from './numerar-prioridade/index';
+import { ordenarTarefas } from './ordenar-tarefas/index';
 import {
+  type DestinoDoGrupo,
   type ExtremoDaFila,
   type LadoDaReferencia,
+  posicionarGrupo,
   posicionarNoExtremo,
   posicionarPrioridade,
   validarPrioridade,
@@ -200,6 +203,51 @@ export class TaskManager<TTask extends Task = Task> implements ITaskManager<TTas
 
   async moveToBottom(taskId: TaskId): Promise<{ task: TTask; changed: number }> {
     return this.levarAoExtremo(taskId, 'bottom');
+  }
+
+  async moveGroupBefore(groupId: GroupId, target: TaskId | GroupId): Promise<{ members: TTask[]; changed: number }> {
+    return this.moverGrupo(groupId, { lado: 'before', alvo: await this.resolverAlvo(target) });
+  }
+
+  async moveGroupAfter(groupId: GroupId, target: TaskId | GroupId): Promise<{ members: TTask[]; changed: number }> {
+    return this.moverGrupo(groupId, { lado: 'after', alvo: await this.resolverAlvo(target) });
+  }
+
+  async moveGroupToTop(groupId: GroupId): Promise<{ members: TTask[]; changed: number }> {
+    return this.moverGrupo(groupId, { extremo: 'top' });
+  }
+
+  async moveGroupToBottom(groupId: GroupId): Promise<{ members: TTask[]; changed: number }> {
+    return this.moverGrupo(groupId, { extremo: 'bottom' });
+  }
+
+  /**
+   * O alvo chega como texto — da flag da CLI, do argumento do MCP. Grupo
+   * primeiro: o id gerado por `group add` comeca com `g-` e nunca colide com o
+   * de uma tarefa, que e so digitos.
+   */
+  private async resolverAlvo(target: TaskId | GroupId): Promise<{ groupId: GroupId } | { taskId: TaskId }> {
+    const registro = this.exigirRegistro();
+    if (await registro.findGroup(target as GroupId)) return { groupId: target as GroupId };
+    if (await this.taskProvider.findTask(target as TaskId)) return { taskId: target as TaskId };
+    throw new Error(`No task or group with ID '${target}'.`);
+  }
+
+  private async moverGrupo(groupId: GroupId, destino: DestinoDoGrupo): Promise<{ members: TTask[]; changed: number }> {
+    const registro = this.exigirRegistro();
+    if (!(await registro.findGroup(groupId))) {
+      throw new Error(`Group '${groupId}' does not exist. See "taskin group list".`);
+    }
+
+    const tarefas = await this.taskProvider.getAllTasks();
+    const mudancas = posicionarGrupo(tarefas, groupId, destino);
+    for (const tarefa of mudancas) {
+      await this.taskProvider.updateTask(tarefa);
+    }
+
+    const depois = tarefas.map((t) => mudancas.find((m) => m.id === t.id) ?? t);
+    const members = ordenarTarefas(depois.filter((t) => t.groupId === groupId));
+    return { members, changed: mudancas.length };
   }
 
   private async mover(

@@ -304,6 +304,47 @@ export interface ITaskManager<TTask extends Task = Task> {
   moveToBottom: (taskId: TaskId) => Promise<{ task: TTask; changed: number }>;
 
   /**
+   * Poe um grupo inteiro imediatamente antes do alvo: uma tarefa solta, ou
+   * outro grupo.
+   *
+   * O bloco de membros se move junto e na ordem em que estava, e so ele e
+   * gravado — um grupo de tres grava tres, a vizinhanca so quando falta
+   * espaco. E o gesto que antes so o dashboard tinha (task-101); como operacao
+   * nomeada ele chega as tres superficies (task-117).
+   *
+   * O alvo e procurado primeiro entre os grupos, e depois entre as tarefas.
+   *
+   * @returns Os membros, na ordem nova, e quantas tarefas foram gravadas
+   * @throws Error quando o provider nao tem grupos, o grupo ou o alvo nao
+   *   existem, ou o alvo e o proprio grupo, um membro dele ou uma tarefa de
+   *   outro grupo
+   */
+  moveGroupBefore: (groupId: GroupId, target: TaskId | GroupId) => Promise<{ members: TTask[]; changed: number }>;
+
+  /**
+   * Como {@link ITaskManager.moveGroupBefore}, do outro lado do alvo. Depois
+   * de um grupo quer dizer depois do grupo inteiro, como o quadro o mostra.
+   */
+  moveGroupAfter: (groupId: GroupId, target: TaskId | GroupId) => Promise<{ members: TTask[]; changed: number }>;
+
+  /**
+   * Leva um grupo inteiro ao topo da fila. Nenhuma gravacao quando ele ja
+   * esta la.
+   *
+   * @throws Error quando o provider nao tem grupos, ou o grupo nao existe
+   */
+  moveGroupToTop: (groupId: GroupId) => Promise<{ members: TTask[]; changed: number }>;
+
+  /**
+   * Leva um grupo inteiro ao fim da fila. Como em
+   * {@link ITaskManager.moveToBottom}, uma cauda sem `Priority` e numerada uma
+   * vez so.
+   *
+   * @throws Error quando o provider nao tem grupos, ou o grupo nao existe
+   */
+  moveGroupToBottom: (groupId: GroupId) => Promise<{ members: TTask[]; changed: number }>;
+
+  /**
    * Da a tarefa uma dificuldade percebida, de 1 (trivial) a 5 (muito dificil).
    *
    * Nomeada pelo mesmo motivo das de agrupar e priorizar: ate a task-106 so o

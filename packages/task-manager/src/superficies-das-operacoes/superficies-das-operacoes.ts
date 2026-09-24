@@ -93,6 +93,14 @@ export const SUPERFICIES_DAS_OPERACOES = {
   moveAfter: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-after' } },
   moveToTop: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-to-top' } },
   moveToBottom: { cli: { nome: 'priority' }, mcp: { nome: 'set_priority' }, ws: { nome: 'move-to-bottom' } },
+  moveGroupBefore: { cli: { nome: 'group move' }, mcp: { nome: 'move_group' }, ws: { nome: 'move-group-before' } },
+  moveGroupAfter: { cli: { nome: 'group move' }, mcp: { nome: 'move_group' }, ws: { nome: 'move-group-after' } },
+  moveGroupToTop: { cli: { nome: 'group move' }, mcp: { nome: 'move_group' }, ws: { nome: 'move-group-to-top' } },
+  moveGroupToBottom: {
+    cli: { nome: 'group move' },
+    mcp: { nome: 'move_group' },
+    ws: { nome: 'move-group-to-bottom' },
+  },
   setDifficulty: { cli: { nome: 'difficulty' }, mcp: { nome: 'set_difficulty' }, ws: { nome: 'set-difficulty' } },
 } as const satisfies Record<OperacaoDoManager, SuperficiesDaOperacao>;
 

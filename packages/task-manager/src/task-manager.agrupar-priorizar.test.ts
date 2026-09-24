@@ -1,7 +1,7 @@
 import { type Group, type GroupId, parseGroupId, parseTaskId, type Task } from '@opentask/taskin-types';
 import { describe, expect, it } from 'vitest';
 import type { IGroupRegistry } from './group-registry.types';
-import { TaskManager } from './task-manager';
+import { GROUPS_NOT_SUPPORTED, TaskManager } from './task-manager';
 import type { ITaskProvider } from './task-manager.types';
 
 const tarefa = (id: string, extra: Partial<Task> = {}): Task =>
@@ -201,5 +201,113 @@ describe('TaskManager — topo e fim', () => {
 
     await expect(manager.moveToTop(parseTaskId('999'))).rejects.toThrow(/999/);
     await expect(manager.moveToBottom(parseTaskId('999'))).rejects.toThrow(/999/);
+  });
+});
+
+/**
+ * Mover um grupo inteiro como operacao nomeada (task-117): o que so o
+ * dashboard fazia, agora no contrato — e dali na CLI e no MCP.
+ */
+describe('TaskManager — mover um grupo', () => {
+  const outro = parseGroupId('g-outro');
+  const grupos = [
+    { id: g, name: 'CLI' },
+    { id: outro, name: 'Outro' },
+  ];
+  const fila = (porId: Map<string, Task>) =>
+    [...porId.values()]
+      .sort((a, b) => (a.order ?? Number.POSITIVE_INFINITY) - (b.order ?? Number.POSITIVE_INFINITY))
+      .map((t) => String(t.id));
+
+  it('moveGroupToTop leva o bloco a frente, e grava so os membros: grupo de 3 grava 3', async () => {
+    const { manager, porId, gravadas } = emMemoria(
+      [
+        tarefa('001', { order: 100 }),
+        tarefa('002', { order: 200, groupId: g }),
+        tarefa('003', { order: 300, groupId: g }),
+        tarefa('004', { order: 400, groupId: g }),
+      ],
+      grupos,
+    );
+
+    const { members, changed } = await manager.moveGroupToTop(g);
+
+    expect(changed).toBe(3);
+    expect([...gravadas].sort()).toEqual(['002', '003', '004']);
+    expect(members.map((t) => String(t.id))).toEqual(['002', '003', '004']);
+    expect(fila(porId)).toEqual(['002', '003', '004', '001']);
+  });
+
+  it('moveGroupToBottom leva o bloco ao fim', async () => {
+    const { manager, porId } = emMemoria(
+      [tarefa('001', { order: 100, groupId: g }), tarefa('002', { order: 200 }), tarefa('003', { order: 300 })],
+      grupos,
+    );
+
+    await manager.moveGroupToBottom(g);
+
+    expect(fila(porId)).toEqual(['002', '003', '001']);
+  });
+
+  it('moveGroupBefore aceita uma tarefa solta ou outro grupo como alvo', async () => {
+    const { manager, porId } = emMemoria(
+      [
+        tarefa('001', { order: 100, groupId: outro }),
+        tarefa('002', { order: 200 }),
+        tarefa('003', { order: 300, groupId: g }),
+      ],
+      grupos,
+    );
+
+    await manager.moveGroupBefore(g, parseTaskId('002'));
+    expect(fila(porId)).toEqual(['001', '003', '002']);
+
+    await manager.moveGroupBefore(g, outro);
+    expect(fila(porId)).toEqual(['003', '001', '002']);
+  });
+
+  it('moveGroupAfter poe o bloco depois do alvo', async () => {
+    const { manager, porId } = emMemoria(
+      [
+        tarefa('001', { order: 100, groupId: g }),
+        tarefa('002', { order: 200, groupId: outro }),
+        tarefa('003', { order: 300 }),
+      ],
+      grupos,
+    );
+
+    await manager.moveGroupAfter(g, outro);
+
+    expect(fila(porId)).toEqual(['002', '001', '003']);
+  });
+
+  it('ja no lugar, nao grava nada', async () => {
+    const { manager, gravadas } = emMemoria(
+      [tarefa('001', { order: 100, groupId: g }), tarefa('002', { order: 200 })],
+      grupos,
+    );
+
+    expect((await manager.moveGroupToTop(g)).changed).toBe(0);
+    expect(gravadas).toEqual([]);
+  });
+
+  it('recusa grupo inexistente, alvo inexistente e alvo do proprio grupo, sem gravar', async () => {
+    const { manager, gravadas } = emMemoria(
+      [tarefa('001', { order: 100, groupId: g }), tarefa('002', { order: 200, groupId: g })],
+      grupos,
+    );
+
+    await expect(manager.moveGroupToTop(parseGroupId('g-fantasma'))).rejects.toThrow(/g-fantasma/);
+    await expect(manager.moveGroupBefore(g, parseTaskId('999'))).rejects.toThrow(/999/);
+    await expect(manager.moveGroupBefore(g, parseGroupId('g-nada'))).rejects.toThrow(/g-nada/);
+    await expect(manager.moveGroupAfter(g, parseTaskId('002'))).rejects.toThrow(/member/);
+    expect(gravadas).toEqual([]);
+  });
+
+  it('um provider sem grupos recusa com a frase de sempre', async () => {
+    const { manager } = emMemoria([tarefa('001', { order: 100 })]);
+
+    await expect(manager.moveGroupToTop(g)).rejects.toThrow(GROUPS_NOT_SUPPORTED);
+    await expect(manager.moveGroupBefore(g, parseTaskId('001'))).rejects.toThrow(GROUPS_NOT_SUPPORTED);
   });
 });

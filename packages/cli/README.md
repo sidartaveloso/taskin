@@ -136,13 +136,18 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `remove <id> [--reassign-to <id>]` - Delete it, saying where its tasks go
   - `join <task-id> <group-id>` - Put a task in an existing group
   - `leave <task-id>` - Take a task out of its group
+  - `move <group-id>` - Move a whole group, its members together and in their
+    order. Exactly one of `--top`, `--bottom`, `--before <task-or-group>` or
+    `--after <task-or-group>`; the target is a task that is not in a group, or
+    another group. Only the members are written — a group of three writes three
+    files — and the command prints how many
 - `taskin priority <task-id> [n]` - Give one task its place in the queue; lower comes first. Exactly one of:
   - `<n>` - An absolute number, a whole number from 1
   - `--before <task-id>` - Right before that task
   - `--after <task-id>` - Right after it
   - `--top` / `--bottom` - To the top or the bottom of the queue. A grouped task
     goes to the top or bottom of **its own group**, as the dashboard buttons do;
-    to move a whole group, use the dashboard
+    to move a whole group, use `taskin group move`
 
   The relative forms are for when you know *what goes before what* and not which
   number you want. They write only what changes — normally one file; the
@@ -265,6 +270,7 @@ install answers happily, with the wrong set of tools. Skip the check with
 - `list_groups` - List the task groups, each with its id and name
 - `join_group` - Put a task in an existing group (only offered when the provider has groups)
 - `leave_group` - Take a task out of its group (only offered when the provider has groups)
+- `move_group` - Move a whole group: exactly one of `before` / `after` (a task or another group), `top: true` or `bottom: true` (only offered when the provider has groups)
 - `set_priority` - Place one task: an absolute `priority`, or `before`/`after` another task
 - `set_difficulty` - Score one task, a whole `difficulty` from 1 to 5
 

@@ -3,7 +3,7 @@
  */
 
 import { GROUPS_NOT_SUPPORTED, type IGroupRegistry, TaskManager } from '@opentask/taskin-task-manager';
-import { parseGroupId } from '@opentask/taskin-types';
+import { type GroupId, parseGroupId } from '@opentask/taskin-types';
 import type { Command } from 'commander';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { requireTaskinProject } from '../lib/project-check.js';
@@ -57,6 +57,47 @@ async function ouSair<T>(operacao: Promise<T>): Promise<T> {
     error(falha instanceof Error ? falha.message : String(falha));
     process.exit(1);
   }
+}
+
+interface MoveGroupOptions {
+  top?: boolean;
+  bottom?: boolean;
+  before?: string;
+  after?: string;
+}
+
+/**
+ * Mover um grupo inteiro (task-117), na regra do `taskin priority`: uma forma
+ * so por chamada. Nao ha numero absoluto — um numero nao diz onde ficam varios
+ * membros. O alvo pode ser tarefa ou grupo, e quem decide qual e o dominio.
+ */
+async function moverGrupo(groupId: GroupId, options: MoveGroupOptions): Promise<void> {
+  const formas = [options.top, options.bottom, options.before, options.after].filter((f) => f !== undefined);
+  if (formas.length !== 1) {
+    error('Pass exactly one of: --top, --bottom, --before <task-or-group> or --after <task-or-group>.');
+    process.exit(1);
+  }
+
+  const manager = await gerente();
+  const alvo = options.before ?? options.after ?? '';
+  const onde = options.top
+    ? 'at the top'
+    : options.bottom
+      ? 'at the bottom'
+      : `${options.before ? 'before' : 'after'} ${alvo}`;
+
+  let movimento: ReturnType<TaskManager['moveGroupToTop']>;
+  if (options.top) movimento = manager.moveGroupToTop(groupId);
+  else if (options.bottom) movimento = manager.moveGroupToBottom(groupId);
+  else if (options.before) movimento = manager.moveGroupBefore(groupId, parseGroupId(alvo));
+  else movimento = manager.moveGroupAfter(groupId, parseGroupId(alvo));
+
+  const { members, changed } = await ouSair(movimento);
+  success(
+    changed === 0
+      ? `Group ${groupId} (${members.length} task(s)) is already ${onde} — no task file written.`
+      : `Group ${groupId} (${members.length} task(s)) is now ${onde} — ${changed} task file(s) written.`,
+  );
 }
 
 /**
@@ -129,6 +170,17 @@ export function registerGroupCommand(program: Command): void {
       const manager = await gerente();
       await ouSair(manager.removeFromGroup(id));
       success(`Task ${id} is no longer in a group.`);
+    });
+
+  cmd
+    .command('move <group-id>')
+    .description('Move a whole group in the queue: to the top or bottom, or before/after a task or another group')
+    .option('--top', 'Move the group to the top of the queue')
+    .option('--bottom', 'Move the group to the bottom of the queue')
+    .option('--before <task-or-group>', 'Place the group right before this task or group')
+    .option('--after <task-or-group>', 'Place the group right after this task or group')
+    .action(async (groupId: string, options: MoveGroupOptions) => {
+      await moverGrupo(parseGroupId(groupId), options);
     });
 
   cmd

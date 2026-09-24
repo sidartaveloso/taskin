@@ -113,6 +113,12 @@ operações nomeadas em vez de uma task inteira para gravar.
   três superfícies (`priority --top`/`--bottom`, `set_priority` com `top`/
   `bottom`, `move-to-top`/`move-to-bottom`), e o servidor WebSocket não compilou
   até ganhar os handlers.
+- **Mover um grupo (task-117).** O que só o dashboard fazia virou
+  `moveGroupBefore`, `moveGroupAfter`, `moveGroupToTop` e `moveGroupToBottom`.
+  Acrescentá-las ao `ITaskManager` não compilou até a tabela declarar as três
+  superfícies (`group move`, `move_group`, `move-group-*`), e o servidor
+  WebSocket não compilou até ganhar os quatro handlers — a lacuna que a task-114
+  deixou declarada ("fica para quando alguém pedir") fechou pelo mesmo portão.
 - **Pontuar (task-115).** `setDifficulty` deixou de ser "só dashboard": a
   tabela trocou as duas ausências por `difficulty` na CLI e `set_difficulty` no
   MCP, e os testes que conferem os nomes (`register.superficies.test.ts`,
