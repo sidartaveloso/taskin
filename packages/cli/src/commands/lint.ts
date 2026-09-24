@@ -39,6 +39,13 @@ export const lintCommand = defineCommand({
   },
 });
 
+function formatSuggestion(suggestion: string): string {
+  return suggestion
+    .split('\n')
+    .map((line, index) => (index === 0 ? `    ↳ ${line}` : `      ${line}`))
+    .join('\n');
+}
+
 async function executeLint(options: LintTasksOptions): Promise<void> {
   const style = options.metadataStyle;
 
@@ -78,7 +85,7 @@ async function executeLint(options: LintTasksOptions): Promise<void> {
     for (const issue of errors) {
       console.log(chalk.yellow(`  ${issue.file}: ${issue.message}`));
       if (issue.suggestion) {
-        console.log(chalk.dim(`    ↳ ${issue.suggestion}`));
+        console.log(chalk.dim(formatSuggestion(issue.suggestion)));
       }
     }
     console.log();
@@ -88,7 +95,7 @@ async function executeLint(options: LintTasksOptions): Promise<void> {
     const label = issue.severity === 'warning' ? chalk.yellow('⚠') : chalk.blue('ℹ');
     console.log(`${label} ${issue.file}: ${issue.message}`);
     if (issue.suggestion) {
-      console.log(chalk.dim(`    ↳ ${issue.suggestion}`));
+      console.log(chalk.dim(formatSuggestion(issue.suggestion)));
     }
   }
   if (notices.length > 0) {
