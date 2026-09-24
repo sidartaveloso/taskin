@@ -11,15 +11,15 @@ A barra do topo (telas, filtro de status, busca, ordem, pontuacao, contagem e co
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Componente de pagina no `design-vue` (nome a decidir e declarar; proposta `TaskinWorkspace`, em `packages/design-vue/src/components/pages/`), com a barra do topo e a troca entre `Dashboard` (Board) e `PrioritizationPage`
-- [ ] Props: as tarefas ja recortadas, o total, os grupos, o estado da conexao (`ConnectionStatus`, task-128) e as escolhas atuais (tela, filtro de status, busca, ordem, pontuacao). Emite cada escolha e repassa os eventos da priorizacao (`update-task`, `update-group`, `move`). O componente **nao** le a URL nem o store, e nao filtra: quem aplica o recorte pelo dominio continua sendo o `App.vue` (task-129)
-- [ ] `packages/dashboard/src/App.vue` fica so com a ligacao: store Pinia, URL (`?view=`, `?filter=`, `?q=`, `?sort=`, `?score=`), dominio e operacoes. Os testes de `App.spec.ts` continuam passando, com os ajustes de seletor que a mudanca pedir
-- [ ] Stories da tela completa, titulo `Pages/...` pela convencao Nivel/Familia/Componente: Board, Prioritization, conexao caida com retry, recorte vazio e celular; com `play` exercitando a troca de tela, o filtro de status e a busca (as emissoes, por `fn()`)
-- [ ] Remover os exemplos do `storybook init` em `packages/dashboard/src/stories/` (Button, Header, Page, Configure.mdx e o `Button.spec.ts`), que nao sao do dashboard
-- [ ] Testes de componente do novo `design-vue` (jsdom), alem das stories
-- [ ] Rodar `pnpm storytype analyze` em `packages/dashboard` antes e depois, e registrar os dois resultados aqui
-- [ ] Changeset (minor no `design-vue`, pelo componente novo)
-- [ ] Verificacao: `pnpm lint`, `pnpm typecheck`, `pnpm format`, `pnpm test`; as stories novas rodam no Chromium, que o sandbox nao tem — deixar a conferencia no navegador para fora dele
+- [x] Componente de pagina no `design-vue` com a barra do topo e a troca entre `Dashboard` (Board) e `PrioritizationPage` — nome decidido: `TaskinWorkspace`, em `packages/design-vue/src/components/pages/TaskinWorkspace.vue`, exportado por `pages/index.ts` (e dali pelo pacote)
+- [x] Props e emissoes — `tasks` (ja recortadas), `total`, `groups`, `view`, `filter` (o efetivo, para acender o botao), `search`, `sort`, `score`, `connectionStatus`, `statusText`, `connectionError`, `isLoading`, `title`. Emite `update:view`, `update:filter`, `update:search`, `update:sort`, `update:score`, `retry`, e repassa `update-task`, `update-group`, `move`. Nao le URL nem store e nao filtra; o titulo do Board ("Closed tasks") sai do `filter` recebido. Tipos e listas de valores em `TaskinWorkspace.types.ts` (`WorkspaceView`, `WORKSPACE_FILTERS`, ...), que o `App.vue` usa para validar o que le da URL
+- [x] `packages/dashboard/src/App.vue` so com a ligacao: store, URL, dominio e operacoes, mais o aviso de prioridade (que fala com `/api/prioritize`). `App.spec.ts` passou **sem nenhum ajuste**: os stubs globais de `Dashboard` e `PrioritizationPage` alcancam os que o `TaskinWorkspace` renderiza — `cd packages/dashboard && pnpm test` (53/53)
+- [x] Stories `Pages/TaskinWorkspace` (`TaskinWorkspace.stories.ts`): `Board`, `Prioritization`, `ConnectionLost`, `EmptySlice`, `Mobile` (viewport `mobile1`), com `play` clicando telas e filtros, digitando e limpando a busca, e o retry; as emissoes por `fn()`. O `play` das cinco rodou em jsdom por `composeStories` (arquivo temporario, nao versionado); para confirmar que o `play` roda de verdade, uma expectativa foi trocada de proposito e a story falhou
+- [x] Removidos os exemplos do `storybook init` em `packages/dashboard/src/stories/` (Button, Header, Page, Configure.mdx, Button.spec.ts, css e assets)
+- [x] Testes de componente — `packages/design-vue/src/components/pages/TaskinWorkspace.spec.ts`, 9 testes (tela padrao, troca pelo `view`, emissao sem trocar sozinho, filtro aceso e emitido, titulo pelo filtro, busca/ordem/pontuacao, contagem, conexao e retry, repasse dos eventos). `cd packages/design-vue && npx vitest run --browser.enabled=false --environment jsdom` — 318/318
+- [x] `pnpm storytype analyze` em `packages/dashboard`, antes e depois — ver Notes. Depois: 83/135
+- [x] Changeset — `.changeset/tela-completa-no-design-vue.md` (minor no `design-vue`, patch no `dashboard`)
+- [x] Verificacao — `pnpm lint`, `pnpm typecheck`, `pnpm format` limpos. `pnpm test`: falha so o que precisa de navegador (`design-vue`, `ui-sense`) e, sob a carga paralela, os e2e da CLI e o build do docs; o docs builda sozinho, e `npx vitest run src/cli.e2e.test.ts` passou 34/34 duas vezes seguidas com a mudanca (a cada rodada que falhou, caiu um teste diferente: flaky, e a CLI nao toca nada desta task). Stories no Chromium: conferencia no navegador fica para fora do sandbox
 
 ## Notes
 
@@ -45,3 +45,15 @@ que nao tem story.
 
 O usuario pediu, na sequencia, `pnpm storytype normalize --dry-run --verbose`
 em `packages/dashboard` e depois o `normalize` de verdade.
+
+### O `storytype analyze` depois
+
+`packages/dashboard`, 2026-09-24: **83/135 (61%)**, abaixo dos 95. Estrutura
+Atomic Design 13/50, TypeScript 30/30, Testes e Stories 15/30 (testes 15/15,
+stories 0/15 — 0/1), Nomenclatura 15/15, Documentacao 10/10. A queda e o que
+a nota de antes previa: os 95 vinham dos tres exemplos do `storybook init`;
+agora o unico componente contado e o `App.vue`, que so liga store, URL e
+dominio e nao tem story. A tela que ele mostra tem as suas em
+`Pages/TaskinWorkspace`, no `design-vue`. Uma story do `App.vue` pediria um
+store Pinia e um WebSocket falsos, e mediria a ligacao, nao a tela — fica para
+decidir junto com o `normalize` pedido a seguir.
