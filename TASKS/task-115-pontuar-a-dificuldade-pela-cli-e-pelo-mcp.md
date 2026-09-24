@@ -1,6 +1,6 @@
 # 🧩 Task 115 — Pontuar a dificuldade pela CLI e pelo MCP
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
