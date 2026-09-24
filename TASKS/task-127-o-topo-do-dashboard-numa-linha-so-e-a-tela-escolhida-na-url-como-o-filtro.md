@@ -1,6 +1,6 @@
 # 🧩 Task 127 — O topo do dashboard numa linha so, e a tela escolhida na URL como o filtro
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 750
