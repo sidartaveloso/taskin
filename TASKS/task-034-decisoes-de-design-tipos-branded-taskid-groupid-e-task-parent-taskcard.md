@@ -3,7 +3,7 @@
 - Status: pending
 - Type: docs
 - Assignee: sidartaveloso
-- Priority: 952
+- Priority: 13451
 - Difficulty: 4
 
 ## Description
@@ -73,3 +73,12 @@ decisões em aberto para não bloquear a implementação.
 - Ver task-032 Notes: "O brand do TaskId continua quebrado… decidir se id é uuid ou sequência
   é modelagem de domínio, não limpeza."
 - Esta task é só de decisões; a conclusão mecânica NÃO deve ficar presa nela.
+
+### Revisao da fila, 2026-09-24
+
+Levada ao fim da fila, candidata a cancelamento. Ela pede decisoes para o WIP
+da branch `feat/task-032`, e boa parte ja foi tomada: `Task.parent` existe, a
+fonte da verdade da hierarquia de grupos esta em `docs/RDT/grupos-aninhados.md`
+(task-119), e os tipos branded estao em uso. Falta conferir item a item o que
+sobra — em especial os ids sequenciais contra o UUID do schema — e cancelar o
+resto quando houver o comando (task-125).

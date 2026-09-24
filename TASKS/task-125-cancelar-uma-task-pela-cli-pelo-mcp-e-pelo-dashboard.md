@@ -3,6 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: sidartaveloso
+- Priority: 900
 
 ## Description
 O status canceled existe no schema e conta como fechado no filtro, mas nenhuma superficie o aplica: nao ha taskin cancel, nem ferramenta no MCP, nem acao no dashboard. Para cancelar uma task obsoleta hoje so editando o arquivo a mao, que e o que o projeto pede para nao se fazer. Operacao nomeada no ITaskManager, entrando no portao de SUPERFICIES_DAS_OPERACOES, com o motivo do cancelamento registrado na task.

@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: sidartaveloso
-- Priority: 251
+- Priority: 2200
 
 ## Description
 Deriva da decisão em `docs/RDT/portao-de-conclusao-e-evidencia.md` (task-069),

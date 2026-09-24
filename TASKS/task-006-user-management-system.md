@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: To be defined
-- Priority: 10
+- Priority: 1200
 
 ## Description
 

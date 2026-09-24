@@ -3,7 +3,7 @@
 - Status: pending
 - Type: fix
 - Assignee: sidartaveloso
-- Priority: 1428
+- Priority: 500
 
 ## Description
 No release de 21/09 o changeset publish reportou Successfully published para os doze pacotes, e o passo Sync markers, rodando segundos depois, perguntou ao npm e ouviu not on npm yet para todos. Pela propria regra ele nao criou tag nem Release do que acreditava nao publicado, e o reconcile:tags concordou: o job passou verde com o npm a frente e o repositorio sem as tags. A causa e uma corrida: o caminho de escrita do registry responde na hora e o de leitura levou 150 segundos, e o guarda-corpo consulta uma unica vez. O passo de publish ja sabe o que publicou, entao o sync deveria esperar por essas versoes com retry limitado em vez de perguntar uma vez e desistir.

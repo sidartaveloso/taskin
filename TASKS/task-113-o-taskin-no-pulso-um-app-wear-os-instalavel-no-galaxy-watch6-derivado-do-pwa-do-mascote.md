@@ -4,6 +4,7 @@
 - Type: feat
 - Assignee: sidartaveloso
 - Difficulty: 5
+- Priority: 13251
 
 ## Description
 Levar o mascote da task-099 para o Samsung Galaxy Watch6 como aplicacao instalada no relogio, e nao como pagina aberta num navegador. O Watch6 roda Wear OS (One UI Watch), que nao instala PWA nem tem navegador de verdade, e nao tem camera: o que se aproveita do PWA e o comportamento do shhh (microfone, sustentacao, etapas de irritacao, nome a chamar, frase) e o formato do bloco mascot, nao o empacotamento. O produto entregue e um APK Wear OS que se instala no relogio por adb e sobrevive a tela redonda, ao modo ambiente e a bateria de um relogio.

@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: sidartaveloso
-- Priority: 230
+- Priority: 1600
 
 ## Description
 

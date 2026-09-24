@@ -4,7 +4,7 @@
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
-- Priority: 1120
+- Priority: 4000
 
 ## Description
 Mover um grupo existe so no dashboard (botoes da task-101 e setas) e nao e operacao do ITaskManager, entao o portao da task-106 nem enxerga a lacuna: e a ausencia por omissao que a RDT superficies-derivam-do-mesmo-contrato proibe. Nomear moveGroupBefore, moveGroupAfter, moveGroupToTop e moveGroupToBottom no ITaskManager, com taskin group move <grupo> --top|--bottom|--before|--after e o equivalente no MCP.

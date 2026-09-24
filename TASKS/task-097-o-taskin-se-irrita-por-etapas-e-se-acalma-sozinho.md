@@ -3,7 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: sidartaveloso
-- Priority: 1418
+- Priority: 5800
 
 ## Description
 Hoje a reacao ao ruido poe o mascote em thoughtful, que se le como um hmm pensativo e nao como um pedido de silencio, e volta a neutral dois segundos depois — sem memoria do que acabou de acontecer. O humor passa a acompanhar uma irritacao acumulada: sobe conforme a ocupacao da janela se aproxima da exigida, dispara para furious no momento do shhh, e decai sozinha depois de um tempo de sala calma.

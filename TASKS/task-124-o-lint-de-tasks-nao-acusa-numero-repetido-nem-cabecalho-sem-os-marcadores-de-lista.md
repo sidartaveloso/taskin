@@ -3,6 +3,7 @@
 - Status: pending
 - Type: fix
 - Assignee: sidartaveloso
+- Priority: 600
 
 ## Description
 Existem dois arquivos com o numero 033: task-033-analise-aproveitamento-localstudio (done) e task-033-adicionar-suporte-a-relacionar-tasks, cujo cabecalho escreve Status: pending sem o '- ' na frente, entao a task aparece sem status na listagem. O pnpm lint:tasks diz All task files are valid. O lint deve acusar numero repetido como erro, e campo de metadado sem o marcador de lista, e o --fix corrigir o que for mecanico (o marcador), sem renumerar sozinho.

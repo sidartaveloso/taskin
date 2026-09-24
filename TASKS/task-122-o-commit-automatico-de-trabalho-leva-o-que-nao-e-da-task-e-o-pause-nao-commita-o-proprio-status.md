@@ -3,6 +3,7 @@
 - Status: pending
 - Type: fix
 - Assignee: sidartaveloso
+- Priority: 100
 
 ## Description
 Dois casos no mesmo dia. O taskin finish 120 criou um commit de trabalho que levou, sob a mensagem da task-120, edicoes do usuario em TASKS/task-108 a 112 e o arquivo novo task-113, nunca commitado. E pausar as tasks 026, 016, 024, 078 e 108 em sequencia gerou commits WIP em que cada um levava o status da task anterior, e o status da ultima ficou sem commit: o pause muda o status e nao o commita, e o commit de trabalho da pausa seguinte o varre com o nome errado. A task-110 restringiu o commit de status ao arquivo da task, mas o commit de trabalho (GitService.commitWork, chamado por finish e pause em packages/cli/src/lib/work-commit) ainda faz git add -A de tudo o que nao e sensivel.

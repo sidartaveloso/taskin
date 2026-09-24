@@ -3,7 +3,7 @@
 - Status: done
 - Type: feat
 - Assignee: A definir
-- Priority: 870
+- Priority: 2400
 - Group: g-n1xf2yf7
 - Difficulty: 1
 

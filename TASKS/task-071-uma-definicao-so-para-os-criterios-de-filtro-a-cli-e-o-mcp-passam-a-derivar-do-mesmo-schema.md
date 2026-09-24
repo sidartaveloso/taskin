@@ -2,7 +2,7 @@
 
 - Status: done
 - Type: refactor
-- Priority: 245
+- Priority: 2000
 - Assignee: sidartaveloso
 
 ## Description

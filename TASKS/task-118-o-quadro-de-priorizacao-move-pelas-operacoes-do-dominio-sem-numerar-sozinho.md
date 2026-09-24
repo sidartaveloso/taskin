@@ -4,7 +4,7 @@
 - Type: refactor
 - Assignee: sidartaveloso
 - Group: g-n1xf2yf7
-- Priority: 1130
+- Priority: 4100
 
 ## Description
 Desde a task-106 o dashboard grava por operacoes nomeadas, mas o usePrioritization ainda calcula os numeros por conta propria, e a regra de numeracao existe duas vezes: no composable e no posicionarPrioridade do dominio. O quadro passa a mandar move-before e move-after tendo como referencia a primeira ou a ultima task visivel, o que preserva o topo da lista filtrada, e o desfazer passa a reenviar os valores anteriores das tarefas que a operacao devolveu como alteradas.
