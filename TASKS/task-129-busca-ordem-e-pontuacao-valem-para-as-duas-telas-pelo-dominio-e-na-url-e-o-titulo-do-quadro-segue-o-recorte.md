@@ -4,6 +4,7 @@
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 787
+- Group: g-n1xf2yf7
 
 ## Description
 A busca por texto, a ordem (manual, diff-asc, diff-desc) e o recorte Scored/Unscored so existem na tela de priorizacao, e la sao reimplementados dentro do usePrioritization: a busca casa id, tipo e titulo, enquanto o filterTasks do dominio, que a CLI usa, casa id, titulo, status e responsavel. O dominio ja tem os tres (criterio de texto, scored/unscored da task-102, ordenarTarefas da task-070). Levar os tres para a barra comum, aplicados pelo dominio no App como o filtro Open/Closed ja e, e guardados na URL como ?view= e ?filter=. E o titulo do quadro diz Tarefas em Andamento qualquer que seja o recorte, mesmo com Closed.
