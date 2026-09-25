@@ -1,5 +1,128 @@
 # Changelog
 
+## 0.2.0
+
+### Minor Changes
+
+- 342a312: A listagem mostra so as tarefas abertas por padrao, e `all` mostra todas.
+  
+  - **Quebra compatibilidade**: `taskin list` (texto e `--json`), `list_tasks` do
+    MCP e `filterTasks` sem criterio de status passam a devolver so as abertas
+    (pending, in-progress, paused, in-review, blocked). Quem consome `list --json`
+    e queria as fechadas passa a pedir `--all`.
+  - O padrao mora no dominio: `filterTasks` aplica `effectiveFilterCriteria`
+    (exportada), e a CLI, o MCP e o dashboard derivam dele. `status`, `open`,
+    `closed` e `active` explicitos desligam o padrao — `--status done` devolve o
+    mesmo que antes.
+  - Criterio novo `all` no `FilterCriteriaSchema`: flag `--all` na CLI, propriedade
+    `all` no `list_tasks`. `parseFilterCriteria` recusa `all` com `open`, `closed`
+    ou `active`. `--open` continua aceito, agora redundante.
+  - O recurso MCP `taskin://tasks` ("All Tasks") segue trazendo todas.
+  - Dashboard: sem `?filter=`, as abertas; um controle na tela alterna entre
+    Open, Active, Closed e All (e reescreve a URL), com "Showing N of M tasks".
+    `taskin dashboard --all` abre em todas. O contador do quadro passa de "Total"
+    a "Shown": conta as visiveis.
+- a9343e9: Busca, ordem e pontuação valem para as duas telas do dashboard, pelo domínio e
+  na URL.
+  
+  - `task-manager`: o critério `text` do `filterTasks` casa também o tipo (id,
+    título, tipo, status e responsável). `taskin list [filter]` e o `list_tasks`
+    do MCP ganham junto.
+  - `dashboard`: busca, ordem (`manual`, `diff-desc`, `diff-asc`) e pontuação
+    (`scored`/`unscored`) saem da tela de priorização para a barra do topo,
+    aplicadas pelo `filterTasks` e pelo `ordenarTarefas`, e ficam na URL como
+    `?q=`, `?sort=` e `?score=`. O título do Board segue o recorte (`Open tasks`,
+    `Active tasks`, `Closed tasks`, `All tasks`).
+  - `design-vue`: o `usePrioritization` não filtra nem ordena por conta própria —
+    saem `filter`, `scoreFilter`, `setFilter`, `setScoreFilter`, `setSortMode` e o
+    tipo `PrioritizationScoreFilter`; a ordem entra por `options.sortMode` (a
+    `PrioritizationPage` ganha a prop `sortMode`), e a arvore sai do
+    `ordenarTarefas` nos três modos. A `PrioritizationScreen` perde a busca e os
+    dois seletores. A ordem deixa de ser guardada no `localStorage`. `TaskGrid`
+    ganha `title` e `Dashboard` ganha `gridTitle`.
+- eba94c1: Grupos aninhados: um grupo pode estar dentro de outro, ate quatro niveis. O pai
+  mora no grupo (`parentId` opcional no `GroupSchema`, gravado no
+  `.taskin-groups.json`), e a task continua guardando um grupo so, o mais interno.
+  `createGroup(name, { id?, parentId? })`, `nestGroup` e `unnestGroup` entram no
+  `ITaskManager` e nas tres superficies: `taskin group create <nome> --parent
+  <grupo>` (`add` segue como apelido), `taskin group nest <grupo> <pai>` e
+  `taskin group unnest <grupo>`; `create_group`, `nest_group` e `unnest_group` no
+  MCP; `create-group` com `parentId`, `nest-group` e `unnest-group` no WebSocket.
+  Pai inexistente, ciclo e passar de quatro niveis sao recusados. Apagar um grupo
+  sobe os subgrupos para o pai dele. Aninhar e capacidade opcional do registro
+  (`IGroupRegistry.setParent?`): sem ela, as tres recusam com
+  `NESTING_NOT_SUPPORTED` e o MCP nao anuncia `nest_group` nem `unnest_group`.
+  `taskin list` indenta os subgrupos e `taskin list --json` leva a arvore
+  (`{ group, tasks, groups }`); `taskin group list` mostra a hierarquia;
+  `list_groups` traz o `parentId`; `taskin lint` acusa pai inexistente e ciclo
+  como erro, e profundidade acima de quatro como aviso. No quadro, soltar uma task
+  sobre outra do mesmo grupo cria um subgrupo de verdade, e soltar um grupo sobre
+  outro cria um pai com os dois dentro — gravados pelo dominio, sobrevivem a
+  recarregar, e o desfazer cobre o aninhamento.
+- d25da57: O quadro de priorizacao move pelas operacoes do dominio, sem numerar sozinho.
+  Setas, topo, fim e arrastar emitem um movimento (`onMove` no `usePrioritization`,
+  evento `move` na `PrioritizationPage`) com a linha visivel de referencia, e o
+  dashboard o manda como `move-before` / `move-after` / `move-group-before` /
+  `move-group-after`. O desfazer guarda valores, e nao a arvore: reenvia o valor
+  anterior so das tarefas que a operacao alterou. Sai a numeracao propria do
+  composable — `renumber` e a opcao `orderStep` deixam de existir.
+
+### Patch Changes
+
+- e7a2eaf: O estado da conexão com o servidor passa a aparecer na barra do topo do
+  dashboard, nas duas telas: a priorização grava pelo servidor a cada movimento e
+  também precisa mostrar quando a conexão cai.
+  
+  - `design-vue`: nova molécula `ConnectionStatus` (indicador, texto e botão de
+    tentar de novo), usada pelo `DashboardHeader`. `Dashboard`, `DashboardLayout`
+    e `DashboardHeader` ganham `showConnection` (padrão `true`), para quem mostra a
+    conexão em outro lugar.
+- 4e1f3c1: O dashboard passa a gravar pelas mesmas operações nomeadas do `ITaskManager`
+  que a CLI e o MCP usam, e o servidor WebSocket deixa de aceitar `update`.
+  
+  - `ITaskManager` ganha `setDifficulty(taskId, difficulty)` — de 1 a 5.
+  - `SUPERFICIES_DAS_OPERACOES` declara como cada superfície (CLI, MCP,
+    WebSocket) expõe cada operação, ou por que não expõe; operação nova sem as
+    três decisões não compila. `runTaskManagerContractTests` sai em `./testing`.
+  - Protocolo WebSocket: `set-priority`, `set-difficulty`, `assign-to-group`,
+    `remove-from-group`, `move-before`, `move-after` e `create-group`, atendidas
+    na ordem de chegada. `update` e `applyTaskUpdate` foram removidos.
+  - Store Pinia: `operar(operacao)` manda a operação e já a reflete no cache;
+    `updateTask` passa a recusar. **Quebra compatibilidade**: quem gravava pelo
+    `updateTask` precisa passar a `operar` com a operação nomeada.
+- f465b41: A tela completa do dashboard — a barra do topo (telas, filtro de status, busca,
+  ordem, pontuação, contagem e conexão) e a troca entre o Board e a priorização —
+  vira o componente de página `TaskinWorkspace`, em
+  `packages/dashboard/src/components/pages/`, com stories e testes.
+  
+  - Mora no dashboard, e não no design-vue: é a tela desta aplicação, composta
+    das peças do design-vue (`Dashboard`, `PrioritizationPage`,
+    `ConnectionStatus`). Recebe as tarefas já recortadas, o total, os grupos, a
+    conexão e as escolhas atuais por props, e emite cada escolha. Não lê URL nem
+    store, e não filtra.
+  - O `App.vue` fica só com a ligação ao store, à URL e ao domínio, e saem os
+    exemplos do `storybook init` (`src/stories`).
+  - As stories do dashboard entram no Storybook da raiz e rodam no `pnpm test`,
+    no Chromium. O `test` do pacote deixa de terminar em `|| true`, que engolia
+    qualquer falha.
+- 9d7746a: O topo do dashboard passa a ser uma linha só, com as telas, o filtro e a
+  contagem, em vez de duas barras. A tela escolhida vai para a URL
+  (`?view=prioritization`), ao lado do `?filter=`: recarregar a página ou abrir um
+  link leva à mesma tela.
+- Updated dependencies [342a312]
+- Updated dependencies [a9343e9]
+- Updated dependencies [e7a2eaf]
+- Updated dependencies [eba94c1]
+- Updated dependencies [d7a97ad]
+- Updated dependencies [f78c212]
+- Updated dependencies [4e1f3c1]
+- Updated dependencies [7fbe097]
+- Updated dependencies [d25da57]
+- Updated dependencies [1320e15]
+  - @opentask/taskin-task-manager@4.0.0
+  - @opentask/taskin-design-vue@0.6.0
+  - @opentask/taskin-task-provider-pinia@4.0.0
+
 ## 0.1.14
 
 ### Patch Changes
