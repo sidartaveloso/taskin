@@ -5,6 +5,7 @@
 - Assignee: sidartaveloso
 - Difficulty: 2
 - Priority: 400
+- Group: antes-da-5
 
 ## Description
 Quem sobe do `taskin@3.x` para o `taskin@4.0.0` (`@opentask/taskin-file-system-provider@3.1.0`) tem o registro de usuarios migrado da raiz do projeto para `.taskin/.taskin-users.json`. No caminho `legacy` a migracao esta certa: `fixUsersFileLocation` chama `moveFile`, que usa `git mv` quando o arquivo e versionado, e o historico do registro continua.
