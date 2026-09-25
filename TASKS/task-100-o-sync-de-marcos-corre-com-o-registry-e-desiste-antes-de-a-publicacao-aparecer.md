@@ -75,3 +75,13 @@ dois pacotes foi tocado. Os outros pacotes passam.
 Nao testado contra o npm de verdade: o comportamento real so vai ser visto no
 proximo release.
 
+
+### Verificacao fora do sandbox, antes do release da 5.0.0
+
+Em 2026-09-25, no host: `npx turbo run build --force`, `pnpm typecheck`,
+`pnpm lint`, `pnpm test` (44/44), `pnpm test:dev-scripts` (96 testes, 12
+arquivos, incluindo `espera-pela-publicacao.test.ts`) e `biome check .` verdes.
+O `release.yml` passa `steps.changesets.outputs.publishedPackages` aos dois
+passos, e o passo da action tem `id: changesets`. A prova de verdade e o
+proximo release: o PR de versao, ao ser mesclado, deve publicar e sair com as
+tags e as Releases do GitHub criadas.
