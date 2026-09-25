@@ -1,5 +1,89 @@
 # @opentask/taskin-file-system-provider
 
+## 3.4.0
+
+### Minor Changes
+
+- eba94c1: Grupos aninhados: um grupo pode estar dentro de outro, ate quatro niveis. O pai
+  mora no grupo (`parentId` opcional no `GroupSchema`, gravado no
+  `.taskin-groups.json`), e a task continua guardando um grupo so, o mais interno.
+  `createGroup(name, { id?, parentId? })`, `nestGroup` e `unnestGroup` entram no
+  `ITaskManager` e nas tres superficies: `taskin group create <nome> --parent
+  <grupo>` (`add` segue como apelido), `taskin group nest <grupo> <pai>` e
+  `taskin group unnest <grupo>`; `create_group`, `nest_group` e `unnest_group` no
+  MCP; `create-group` com `parentId`, `nest-group` e `unnest-group` no WebSocket.
+  Pai inexistente, ciclo e passar de quatro niveis sao recusados. Apagar um grupo
+  sobe os subgrupos para o pai dele. Aninhar e capacidade opcional do registro
+  (`IGroupRegistry.setParent?`): sem ela, as tres recusam com
+  `NESTING_NOT_SUPPORTED` e o MCP nao anuncia `nest_group` nem `unnest_group`.
+  `taskin list` indenta os subgrupos e `taskin list --json` leva a arvore
+  (`{ group, tasks, groups }`); `taskin group list` mostra a hierarquia;
+  `list_groups` traz o `parentId`; `taskin lint` acusa pai inexistente e ciclo
+  como erro, e profundidade acima de quatro como aviso. No quadro, soltar uma task
+  sobre outra do mesmo grupo cria um subgrupo de verdade, e soltar um grupo sobre
+  outro cria um pai com os dois dentro — gravados pelo dominio, sobrevivem a
+  recarregar, e o desfazer cobre o aninhamento.
+
+### Patch Changes
+
+- 11a6f20: O `Assignee:` passa a guardar o id do registro, e não o nome de exibição.
+  
+  `taskin new -u <id>` gravava o nome de exibição do usuário, e o `taskin lint` não
+  acusava, porque a resolução também casa pelo nome. Agora o `createTask` grava o
+  id (recebendo o id ou o nome); quem não está no registro fica como foi digitado.
+  O `taskin lint` avisa quando o `Assignee:` é o nome de exibição, e o
+  `taskin lint --fix` o reescreve para o id. A leitura continua aceitando o nome,
+  para que arquivos antigos sigam resolvendo até o `--fix` rodar.
+- 9d292f1: Os commits automáticos passam a levar só o que a mensagem diz.
+  
+  O commit de status (`start`, `pause`, `finish`, `review` e o `start_task`/
+  `finish_task` do MCP) fazia `git add` do arquivo da task e depois `git commit`
+  sem caminho, e o `git commit` sem caminho grava o index inteiro: o que a pessoa
+  tinha deixado staged ia junto, sob uma mensagem de status. Agora o commit
+  recebe os caminhos, e o resto do index fica como estava. O squash do
+  `autoSync` tinha o mesmo defeito e a mesma correção.
+  
+  O commit de trabalho (`pause`, e `finish` em autopilot) ganha
+  `GitService.commitWork`: antes do `git add -A`, ele olha cada mudança e recusa
+  quando alguma parece sensível — arquivo `.env`, chave privada, arquivo de
+  credenciais, ou linha adicionada com um token. Nada é staged; a CLI mostra o
+  arquivo, a linha e o motivo. O corpo do commit lista os arquivos.
+  
+  O git passa a rodar sem shell nesses caminhos: um título de task com aspas ou
+  `$(...)` vai literal para a mensagem.
+- d7a97ad: `taskin lint --fix` passa a sair com 1 quando sobra erro que ele não corrige.
+  
+  Antes, com `--fix`, o comando nunca saía com erro: imprimia o que não tinha
+  conseguido corrigir — um anexo acima do teto, por exemplo — e terminava com 0.
+  Agora ele corrige o que dá, diz quantos erros restaram e sai com 1.
+  
+  O `ValidationIssue` ganha `fixable?: boolean`. O validador de anexos marca os
+  seus erros como `fixable: false`, e o `taskin lint` sem `--fix` só sugere rodar
+  `--fix` quando algum erro pode ser corrigido por ele.
+- 3244faa: A migração do registro de usuários da 3.x deixa de terminar num commit que remove o registro sem pôr nada no lugar.
+  
+  Com o arquivo antigo na raiz **e** o canônico em `.taskin/`, o `taskin lint --fix` usava `git mv`
+  para levar o da raiz a `.taskin/.taskin-users.legacy.json` — preservando o histórico de um arquivo
+  que o passo seguinte mandava apagar — e o canônico, que é o que se lê, continuava fora do Git.
+  
+  Agora o estacionado sai da raiz por rename comum e fica fora do índice; o que vai para o índice é a
+  remoção do arquivo da raiz junto com a adição do canônico, no mesmo commit, que é onde o Git infere
+  o rename. O informativo do estacionado diz o que fazer com o Git, e o `taskin lint` avisa quando o
+  registro canônico existe mas não está versionado. Projeto sem Git e registro excluído pelo
+  `.gitignore` seguem funcionando, sem aviso. Guia em `docs/UPGRADE.md`.
+- Updated dependencies [342a312]
+- Updated dependencies [9d292f1]
+- Updated dependencies [a9343e9]
+- Updated dependencies [eba94c1]
+- Updated dependencies [d7a97ad]
+- Updated dependencies [f78c212]
+- Updated dependencies [4e1f3c1]
+- Updated dependencies [7fbe097]
+- Updated dependencies [1320e15]
+  - @opentask/taskin-task-manager@4.0.0
+  - @opentask/taskin-types@2.6.0
+  - @opentask/taskin-git-utils@3.1.0
+
 ## 3.3.2
 
 ### Patch Changes

@@ -1,5 +1,93 @@
 # @opentask/taskin-design-vue
 
+## 0.6.0
+
+### Minor Changes
+
+- a9343e9: Busca, ordem e pontuação valem para as duas telas do dashboard, pelo domínio e
+  na URL.
+  
+  - `task-manager`: o critério `text` do `filterTasks` casa também o tipo (id,
+    título, tipo, status e responsável). `taskin list [filter]` e o `list_tasks`
+    do MCP ganham junto.
+  - `dashboard`: busca, ordem (`manual`, `diff-desc`, `diff-asc`) e pontuação
+    (`scored`/`unscored`) saem da tela de priorização para a barra do topo,
+    aplicadas pelo `filterTasks` e pelo `ordenarTarefas`, e ficam na URL como
+    `?q=`, `?sort=` e `?score=`. O título do Board segue o recorte (`Open tasks`,
+    `Active tasks`, `Closed tasks`, `All tasks`).
+  - `design-vue`: o `usePrioritization` não filtra nem ordena por conta própria —
+    saem `filter`, `scoreFilter`, `setFilter`, `setScoreFilter`, `setSortMode` e o
+    tipo `PrioritizationScoreFilter`; a ordem entra por `options.sortMode` (a
+    `PrioritizationPage` ganha a prop `sortMode`), e a arvore sai do
+    `ordenarTarefas` nos três modos. A `PrioritizationScreen` perde a busca e os
+    dois seletores. A ordem deixa de ser guardada no `localStorage`. `TaskGrid`
+    ganha `title` e `Dashboard` ganha `gridTitle`.
+- e7a2eaf: O estado da conexão com o servidor passa a aparecer na barra do topo do
+  dashboard, nas duas telas: a priorização grava pelo servidor a cada movimento e
+  também precisa mostrar quando a conexão cai.
+  
+  - `design-vue`: nova molécula `ConnectionStatus` (indicador, texto e botão de
+    tentar de novo), usada pelo `DashboardHeader`. `Dashboard`, `DashboardLayout`
+    e `DashboardHeader` ganham `showConnection` (padrão `true`), para quem mostra a
+    conexão em outro lugar.
+- eba94c1: Grupos aninhados: um grupo pode estar dentro de outro, ate quatro niveis. O pai
+  mora no grupo (`parentId` opcional no `GroupSchema`, gravado no
+  `.taskin-groups.json`), e a task continua guardando um grupo so, o mais interno.
+  `createGroup(name, { id?, parentId? })`, `nestGroup` e `unnestGroup` entram no
+  `ITaskManager` e nas tres superficies: `taskin group create <nome> --parent
+  <grupo>` (`add` segue como apelido), `taskin group nest <grupo> <pai>` e
+  `taskin group unnest <grupo>`; `create_group`, `nest_group` e `unnest_group` no
+  MCP; `create-group` com `parentId`, `nest-group` e `unnest-group` no WebSocket.
+  Pai inexistente, ciclo e passar de quatro niveis sao recusados. Apagar um grupo
+  sobe os subgrupos para o pai dele. Aninhar e capacidade opcional do registro
+  (`IGroupRegistry.setParent?`): sem ela, as tres recusam com
+  `NESTING_NOT_SUPPORTED` e o MCP nao anuncia `nest_group` nem `unnest_group`.
+  `taskin list` indenta os subgrupos e `taskin list --json` leva a arvore
+  (`{ group, tasks, groups }`); `taskin group list` mostra a hierarquia;
+  `list_groups` traz o `parentId`; `taskin lint` acusa pai inexistente e ciclo
+  como erro, e profundidade acima de quatro como aviso. No quadro, soltar uma task
+  sobre outra do mesmo grupo cria um subgrupo de verdade, e soltar um grupo sobre
+  outro cria um pai com os dois dentro — gravados pelo dominio, sobrevivem a
+  recarregar, e o desfazer cobre o aninhamento.
+- d25da57: O quadro de priorizacao move pelas operacoes do dominio, sem numerar sozinho.
+  Setas, topo, fim e arrastar emitem um movimento (`onMove` no `usePrioritization`,
+  evento `move` na `PrioritizationPage`) com a linha visivel de referencia, e o
+  dashboard o manda como `move-before` / `move-after` / `move-group-before` /
+  `move-group-after`. O desfazer guarda valores, e nao a arvore: reenvia o valor
+  anterior so das tarefas que a operacao alterou. Sai a numeracao propria do
+  composable — `renumber` e a opcao `orderStep` deixam de existir.
+
+### Patch Changes
+
+- 342a312: A listagem mostra so as tarefas abertas por padrao, e `all` mostra todas.
+  
+  - **Quebra compatibilidade**: `taskin list` (texto e `--json`), `list_tasks` do
+    MCP e `filterTasks` sem criterio de status passam a devolver so as abertas
+    (pending, in-progress, paused, in-review, blocked). Quem consome `list --json`
+    e queria as fechadas passa a pedir `--all`.
+  - O padrao mora no dominio: `filterTasks` aplica `effectiveFilterCriteria`
+    (exportada), e a CLI, o MCP e o dashboard derivam dele. `status`, `open`,
+    `closed` e `active` explicitos desligam o padrao — `--status done` devolve o
+    mesmo que antes.
+  - Criterio novo `all` no `FilterCriteriaSchema`: flag `--all` na CLI, propriedade
+    `all` no `list_tasks`. `parseFilterCriteria` recusa `all` com `open`, `closed`
+    ou `active`. `--open` continua aceito, agora redundante.
+  - O recurso MCP `taskin://tasks` ("All Tasks") segue trazendo todas.
+  - Dashboard: sem `?filter=`, as abertas; um controle na tela alterna entre
+    Open, Active, Closed e All (e reescreve a URL), com "Showing N of M tasks".
+    `taskin dashboard --all` abre em todas. O contador do quadro passa de "Total"
+    a "Shown": conta as visiveis.
+- Updated dependencies [342a312]
+- Updated dependencies [a9343e9]
+- Updated dependencies [eba94c1]
+- Updated dependencies [d7a97ad]
+- Updated dependencies [f78c212]
+- Updated dependencies [4e1f3c1]
+- Updated dependencies [7fbe097]
+- Updated dependencies [1320e15]
+  - @opentask/taskin-task-manager@4.0.0
+  - @opentask/taskin-types@2.6.0
+
 ## 0.5.0
 
 ### Minor Changes

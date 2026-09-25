@@ -1,5 +1,24 @@
 # @opentask/taskin
 
+## 3.0.15
+
+### Patch Changes
+
+- Updated dependencies [342a312]
+- Updated dependencies [11a6f20]
+- Updated dependencies [9d292f1]
+- Updated dependencies [a9343e9]
+- Updated dependencies [e7a2eaf]
+- Updated dependencies [eba94c1]
+- Updated dependencies [d7a97ad]
+- Updated dependencies [f78c212]
+- Updated dependencies [4e1f3c1]
+- Updated dependencies [7fbe097]
+- Updated dependencies [3244faa]
+- Updated dependencies [9d7746a]
+- Updated dependencies [1320e15]
+  - taskin@5.0.0
+
 ## 3.0.14
 
 ### Patch Changes

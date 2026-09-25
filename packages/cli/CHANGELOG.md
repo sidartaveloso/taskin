@@ -1,5 +1,178 @@
 # taskin
 
+## 5.0.0
+
+### Major Changes
+
+- 342a312: A listagem mostra so as tarefas abertas por padrao, e `all` mostra todas.
+  
+  - **Quebra compatibilidade**: `taskin list` (texto e `--json`), `list_tasks` do
+    MCP e `filterTasks` sem criterio de status passam a devolver so as abertas
+    (pending, in-progress, paused, in-review, blocked). Quem consome `list --json`
+    e queria as fechadas passa a pedir `--all`.
+  - O padrao mora no dominio: `filterTasks` aplica `effectiveFilterCriteria`
+    (exportada), e a CLI, o MCP e o dashboard derivam dele. `status`, `open`,
+    `closed` e `active` explicitos desligam o padrao — `--status done` devolve o
+    mesmo que antes.
+  - Criterio novo `all` no `FilterCriteriaSchema`: flag `--all` na CLI, propriedade
+    `all` no `list_tasks`. `parseFilterCriteria` recusa `all` com `open`, `closed`
+    ou `active`. `--open` continua aceito, agora redundante.
+  - O recurso MCP `taskin://tasks` ("All Tasks") segue trazendo todas.
+  - Dashboard: sem `?filter=`, as abertas; um controle na tela alterna entre
+    Open, Active, Closed e All (e reescreve a URL), com "Showing N of M tasks".
+    `taskin dashboard --all` abre em todas. O contador do quadro passa de "Total"
+    a "Shown": conta as visiveis.
+
+### Minor Changes
+
+- eba94c1: Grupos aninhados: um grupo pode estar dentro de outro, ate quatro niveis. O pai
+  mora no grupo (`parentId` opcional no `GroupSchema`, gravado no
+  `.taskin-groups.json`), e a task continua guardando um grupo so, o mais interno.
+  `createGroup(name, { id?, parentId? })`, `nestGroup` e `unnestGroup` entram no
+  `ITaskManager` e nas tres superficies: `taskin group create <nome> --parent
+  <grupo>` (`add` segue como apelido), `taskin group nest <grupo> <pai>` e
+  `taskin group unnest <grupo>`; `create_group`, `nest_group` e `unnest_group` no
+  MCP; `create-group` com `parentId`, `nest-group` e `unnest-group` no WebSocket.
+  Pai inexistente, ciclo e passar de quatro niveis sao recusados. Apagar um grupo
+  sobe os subgrupos para o pai dele. Aninhar e capacidade opcional do registro
+  (`IGroupRegistry.setParent?`): sem ela, as tres recusam com
+  `NESTING_NOT_SUPPORTED` e o MCP nao anuncia `nest_group` nem `unnest_group`.
+  `taskin list` indenta os subgrupos e `taskin list --json` leva a arvore
+  (`{ group, tasks, groups }`); `taskin group list` mostra a hierarquia;
+  `list_groups` traz o `parentId`; `taskin lint` acusa pai inexistente e ciclo
+  como erro, e profundidade acima de quatro como aviso. No quadro, soltar uma task
+  sobre outra do mesmo grupo cria um subgrupo de verdade, e soltar um grupo sobre
+  outro cria um pai com os dois dentro — gravados pelo dominio, sobrevivem a
+  recarregar, e o desfazer cobre o aninhamento.
+- f78c212: Mover um grupo inteiro fora do dashboard: `moveGroupBefore`, `moveGroupAfter`,
+  `moveGroupToTop` e `moveGroupToBottom` no `ITaskManager`, `taskin group move
+  <grupo> --top | --bottom | --before <task-ou-grupo> | --after <task-ou-grupo>`,
+  a ferramenta `move_group` no MCP, e `move-group-before` / `move-group-after` /
+  `move-group-to-top` / `move-group-to-bottom` no protocolo do servidor WebSocket.
+  Os membros vao juntos, na ordem em que estavam, e so eles sao gravados — um
+  grupo de tres grava tres; as tres superficies dizem quantos arquivos gravaram.
+- 7fbe097: Pontuar a dificuldade pela CLI e pelo MCP: `taskin difficulty <task> <1-5>`,
+  `taskin new --difficulty <1-5>` (conferido antes de criar o arquivo) e a
+  ferramenta `set_difficulty` no MCP. O `task-manager` exporta
+  `validarDificuldade`, `DIFICULDADE_MINIMA` e `DIFICULDADE_MAXIMA`, com a faixa
+  perguntada ao schema. Nao ha como tirar a dificuldade: corrige-se pontuando de
+  novo.
+- 1320e15: Levar uma task ao topo ou ao fim da fila sem saber antes qual e a primeira:
+  `moveToTop` e `moveToBottom` no `ITaskManager`, `taskin priority <task> --top`
+  e `--bottom`, `top`/`bottom` no `set_priority` do MCP, e `move-to-top` /
+  `move-to-bottom` no protocolo do servidor WebSocket. Uma task agrupada vai ao
+  extremo do proprio grupo, como os botoes do dashboard. Topo grava um arquivo;
+  fim depois de uma cauda sem `Priority` numera a cauda uma vez, e as tres
+  superficies dizem quantos arquivos foram gravados.
+
+### Patch Changes
+
+- 11a6f20: O `Assignee:` passa a guardar o id do registro, e não o nome de exibição.
+  
+  `taskin new -u <id>` gravava o nome de exibição do usuário, e o `taskin lint` não
+  acusava, porque a resolução também casa pelo nome. Agora o `createTask` grava o
+  id (recebendo o id ou o nome); quem não está no registro fica como foi digitado.
+  O `taskin lint` avisa quando o `Assignee:` é o nome de exibição, e o
+  `taskin lint --fix` o reescreve para o id. A leitura continua aceitando o nome,
+  para que arquivos antigos sigam resolvendo até o `--fix` rodar.
+- 9d292f1: Os commits automáticos passam a levar só o que a mensagem diz.
+  
+  O commit de status (`start`, `pause`, `finish`, `review` e o `start_task`/
+  `finish_task` do MCP) fazia `git add` do arquivo da task e depois `git commit`
+  sem caminho, e o `git commit` sem caminho grava o index inteiro: o que a pessoa
+  tinha deixado staged ia junto, sob uma mensagem de status. Agora o commit
+  recebe os caminhos, e o resto do index fica como estava. O squash do
+  `autoSync` tinha o mesmo defeito e a mesma correção.
+  
+  O commit de trabalho (`pause`, e `finish` em autopilot) ganha
+  `GitService.commitWork`: antes do `git add -A`, ele olha cada mudança e recusa
+  quando alguma parece sensível — arquivo `.env`, chave privada, arquivo de
+  credenciais, ou linha adicionada com um token. Nada é staged; a CLI mostra o
+  arquivo, a linha e o motivo. O corpo do commit lista os arquivos.
+  
+  O git passa a rodar sem shell nesses caminhos: um título de task com aspas ou
+  `$(...)` vai literal para a mensagem.
+- a9343e9: Busca, ordem e pontuação valem para as duas telas do dashboard, pelo domínio e
+  na URL.
+  
+  - `task-manager`: o critério `text` do `filterTasks` casa também o tipo (id,
+    título, tipo, status e responsável). `taskin list [filter]` e o `list_tasks`
+    do MCP ganham junto.
+  - `dashboard`: busca, ordem (`manual`, `diff-desc`, `diff-asc`) e pontuação
+    (`scored`/`unscored`) saem da tela de priorização para a barra do topo,
+    aplicadas pelo `filterTasks` e pelo `ordenarTarefas`, e ficam na URL como
+    `?q=`, `?sort=` e `?score=`. O título do Board segue o recorte (`Open tasks`,
+    `Active tasks`, `Closed tasks`, `All tasks`).
+  - `design-vue`: o `usePrioritization` não filtra nem ordena por conta própria —
+    saem `filter`, `scoreFilter`, `setFilter`, `setScoreFilter`, `setSortMode` e o
+    tipo `PrioritizationScoreFilter`; a ordem entra por `options.sortMode` (a
+    `PrioritizationPage` ganha a prop `sortMode`), e a arvore sai do
+    `ordenarTarefas` nos três modos. A `PrioritizationScreen` perde a busca e os
+    dois seletores. A ordem deixa de ser guardada no `localStorage`. `TaskGrid`
+    ganha `title` e `Dashboard` ganha `gridTitle`.
+- e7a2eaf: O estado da conexão com o servidor passa a aparecer na barra do topo do
+  dashboard, nas duas telas: a priorização grava pelo servidor a cada movimento e
+  também precisa mostrar quando a conexão cai.
+  
+  - `design-vue`: nova molécula `ConnectionStatus` (indicador, texto e botão de
+    tentar de novo), usada pelo `DashboardHeader`. `Dashboard`, `DashboardLayout`
+    e `DashboardHeader` ganham `showConnection` (padrão `true`), para quem mostra a
+    conexão em outro lugar.
+- d7a97ad: `taskin lint --fix` passa a sair com 1 quando sobra erro que ele não corrige.
+  
+  Antes, com `--fix`, o comando nunca saía com erro: imprimia o que não tinha
+  conseguido corrigir — um anexo acima do teto, por exemplo — e terminava com 0.
+  Agora ele corrige o que dá, diz quantos erros restaram e sai com 1.
+  
+  O `ValidationIssue` ganha `fixable?: boolean`. O validador de anexos marca os
+  seus erros como `fixable: false`, e o `taskin lint` sem `--fix` só sugere rodar
+  `--fix` quando algum erro pode ser corrigido por ele.
+- 4e1f3c1: O dashboard passa a gravar pelas mesmas operações nomeadas do `ITaskManager`
+  que a CLI e o MCP usam, e o servidor WebSocket deixa de aceitar `update`.
+  
+  - `ITaskManager` ganha `setDifficulty(taskId, difficulty)` — de 1 a 5.
+  - `SUPERFICIES_DAS_OPERACOES` declara como cada superfície (CLI, MCP,
+    WebSocket) expõe cada operação, ou por que não expõe; operação nova sem as
+    três decisões não compila. `runTaskManagerContractTests` sai em `./testing`.
+  - Protocolo WebSocket: `set-priority`, `set-difficulty`, `assign-to-group`,
+    `remove-from-group`, `move-before`, `move-after` e `create-group`, atendidas
+    na ordem de chegada. `update` e `applyTaskUpdate` foram removidos.
+  - Store Pinia: `operar(operacao)` manda a operação e já a reflete no cache;
+    `updateTask` passa a recusar. **Quebra compatibilidade**: quem gravava pelo
+    `updateTask` precisa passar a `operar` com a operação nomeada.
+- 3244faa: A migração do registro de usuários da 3.x deixa de terminar num commit que remove o registro sem pôr nada no lugar.
+  
+  Com o arquivo antigo na raiz **e** o canônico em `.taskin/`, o `taskin lint --fix` usava `git mv`
+  para levar o da raiz a `.taskin/.taskin-users.legacy.json` — preservando o histórico de um arquivo
+  que o passo seguinte mandava apagar — e o canônico, que é o que se lê, continuava fora do Git.
+  
+  Agora o estacionado sai da raiz por rename comum e fica fora do índice; o que vai para o índice é a
+  remoção do arquivo da raiz junto com a adição do canônico, no mesmo commit, que é onde o Git infere
+  o rename. O informativo do estacionado diz o que fazer com o Git, e o `taskin lint` avisa quando o
+  registro canônico existe mas não está versionado. Projeto sem Git e registro excluído pelo
+  `.gitignore` seguem funcionando, sem aviso. Guia em `docs/UPGRADE.md`.
+- 9d7746a: O topo do dashboard passa a ser uma linha só, com as telas, o filtro e a
+  contagem, em vez de duas barras. A tela escolhida vai para a URL
+  (`?view=prioritization`), ao lado do `?filter=`: recarregar a página ou abrir um
+  link leva à mesma tela.
+- Updated dependencies [342a312]
+- Updated dependencies [11a6f20]
+- Updated dependencies [9d292f1]
+- Updated dependencies [a9343e9]
+- Updated dependencies [eba94c1]
+- Updated dependencies [d7a97ad]
+- Updated dependencies [f78c212]
+- Updated dependencies [4e1f3c1]
+- Updated dependencies [7fbe097]
+- Updated dependencies [3244faa]
+- Updated dependencies [1320e15]
+  - @opentask/taskin-task-manager@4.0.0
+  - @opentask/taskin-task-server-mcp@0.6.0
+  - @opentask/taskin-types@2.6.0
+  - @opentask/taskin-file-system-provider@3.4.0
+  - @opentask/taskin-git-utils@3.1.0
+  - @opentask/taskin-task-server-ws@0.4.0
+
 ## 4.4.2
 
 ### Patch Changes
