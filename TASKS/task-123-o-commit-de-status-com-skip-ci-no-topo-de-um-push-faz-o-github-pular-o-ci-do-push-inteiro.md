@@ -23,3 +23,12 @@ Um push de 31 commits para origin/develop nao disparou nenhum workflow, porque o
 Em 2026-09-24 o push dos 31 commits de grupos aninhados, operacoes nomeadas e
 listagem por padrao so foi verificado porque se notou a falta da execucao e se
 disparou `gh workflow run ci.yml --ref develop` a mao.
+
+### Ocorrencias em 2026-09-25, no release da 5.0.0
+
+O workflow `Release` so dispara por push na `main`, sem `workflow_dispatch`. Com
+um commit de status no topo, o push da `main` pularia o Release e o PR de
+versao nao seria atualizado. Duas vezes no mesmo dia foi preciso deixar no topo
+um commit de evidencia sem a tag (nas tasks 100 e nesta) antes de avancar a
+`main`. Contornar a mao funciona, mas depende de alguem lembrar — e o caso que
+esta task tem que resolver.
