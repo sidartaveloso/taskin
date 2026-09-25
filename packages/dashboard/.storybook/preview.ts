@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/vue3-vite';
+import '@opentask/taskin-design-vue/style.css';
 import './preview.css'; // Import global styles
 
 const preview: Preview = {
