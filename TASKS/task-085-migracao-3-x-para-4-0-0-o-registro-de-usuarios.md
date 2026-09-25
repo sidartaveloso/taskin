@@ -1,6 +1,6 @@
 # 🧩 Task 085 — Migracao 3.x para 4.0.0: o registro de usuarios perde o historico mesmo com git mv, e o canonico pode ficar fora do Git
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Difficulty: 2
