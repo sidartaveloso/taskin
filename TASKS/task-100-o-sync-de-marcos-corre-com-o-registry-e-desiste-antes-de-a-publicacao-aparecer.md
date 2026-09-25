@@ -1,6 +1,6 @@
 # 🧩 Task 100 — O sync de marcos corre com o registry e desiste antes de a publicacao aparecer
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Priority: 500
