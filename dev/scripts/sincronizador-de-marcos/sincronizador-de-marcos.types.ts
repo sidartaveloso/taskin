@@ -17,6 +17,12 @@ export type ItemDeMarco =
   | { tipo: 'a-marcar'; pacote: string; tag: string }
   /** Versao ainda nao publicada: nao se cria marco para o que nao existe no npm. */
   | { tipo: 'nao-publicado'; pacote: string; tag: string }
+  /**
+   * O publish reportou esta versao, mas o npm ainda nao a mostra mesmo depois
+   * da espera: a leitura do registry nao alcancou a escrita. Nao se marca, e o
+   * job reprova em vez de passar verde sem marco.
+   */
+  | { tipo: 'nao-propagado'; pacote: string; tag: string }
   /** Nao deu para perguntar ao npm: decidir seria chutar, entao para o job. */
   | { tipo: 'indeterminado'; pacote: string; tag: string; motivo: string };
 
@@ -26,4 +32,6 @@ export type PlanoDeMarcos = {
   aMarcar: Extract<ItemDeMarco, { tipo: 'a-marcar' }>[];
   /** Quantos ficaram indeterminados — se houver algum, o job nao pode confiar no plano. */
   indeterminados: number;
+  /** Quantos o publish reportou e o npm nao mostrou a tempo — tambem reprovam. */
+  naoPropagados: number;
 };

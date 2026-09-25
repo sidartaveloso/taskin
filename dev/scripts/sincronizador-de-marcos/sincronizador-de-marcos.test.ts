@@ -98,4 +98,38 @@ describe('planejarMarcos', () => {
     ]);
     expect(plano.aMarcar.map((item) => item.pacote)).toEqual(['@opentask/ui-sense']);
   });
+
+  it('separa "ainda nao propagou" de "nao foi publicado" pelo que o publish reportou', () => {
+    const plano = planejarMarcos(
+      [
+        { nome: '@opentask/taskin', versao: '4.1.0' },
+        { nome: '@opentask/ui-sense', versao: '0.3.0' },
+      ],
+      new Map([
+        ['@opentask/taskin', ausente()],
+        ['@opentask/ui-sense', ausente()],
+      ]),
+      new Set<string>(),
+      // o publish disse ter publicado o taskin, nao o ui-sense.
+      new Set(['@opentask/taskin@4.1.0']),
+    );
+
+    expect(plano.itens.map((item) => [item.pacote, item.tipo])).toEqual([
+      ['@opentask/taskin', 'nao-propagado'],
+      ['@opentask/ui-sense', 'nao-publicado'],
+    ]);
+    expect(plano.naoPropagados).toBe(1);
+    expect(plano.aMarcar).toEqual([]);
+  });
+
+  it('sem nada reportado pelo publish, a ausencia continua sendo so "nao publicado"', () => {
+    const plano = planejarMarcos(
+      [{ nome: '@opentask/taskin', versao: '4.1.0' }],
+      new Map([['@opentask/taskin', ausente()]]),
+      new Set<string>(),
+    );
+
+    expect(plano.itens[0]).toMatchObject({ tipo: 'nao-publicado' });
+    expect(plano.naoPropagados).toBe(0);
+  });
 });

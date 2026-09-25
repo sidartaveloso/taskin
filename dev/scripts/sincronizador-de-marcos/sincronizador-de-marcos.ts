@@ -14,11 +14,16 @@ import type { EstadoNoRegistry, ItemDeMarco, PacotePublicavel, PlanoDeMarcos } f
  * @param estadosNoNpm estado de CADA pacote na SUA versao atual (consulta a
  *   `nome@versao`), nao a `latest` do pacote. Um pacote sem entrada e tratado
  *   como indeterminado — nao da para marcar sem ter perguntado.
+ * @param publicadosPeloPublish tags `nome@versao` que o `changeset publish`
+ *   reportou nesta passada. Nao decide o que marcar — isso segue vindo do npm —
+ *   so desfaz a ambiguidade da ausencia: reportada e ausente e "ainda nao
+ *   propagou", e reprova; nao reportada e ausente e "nao publicado".
  */
 export function planejarMarcos(
   pacotes: PacotePublicavel[],
   estadosNoNpm: Map<string, EstadoNoRegistry>,
   tagsRemotas: Iterable<string>,
+  publicadosPeloPublish: ReadonlySet<string> = new Set(),
 ): PlanoDeMarcos {
   const tags = tagsRemotas instanceof Set ? tagsRemotas : new Set(tagsRemotas);
 
@@ -34,7 +39,9 @@ export function planejarMarcos(
         return { tipo: 'indeterminado', pacote: pacote.nome, tag, motivo: estado.motivo };
       }
       if (estado.tipo === 'ausente') {
-        return { tipo: 'nao-publicado', pacote: pacote.nome, tag };
+        return publicadosPeloPublish.has(tag)
+          ? { tipo: 'nao-propagado', pacote: pacote.nome, tag }
+          : { tipo: 'nao-publicado', pacote: pacote.nome, tag };
       }
       // Publicado no npm: o marco existe se, e so se, a tag estiver no remoto.
       return tags.has(tag)
@@ -47,5 +54,6 @@ export function planejarMarcos(
     itens,
     aMarcar: itens.filter((item): item is Extract<ItemDeMarco, { tipo: 'a-marcar' }> => item.tipo === 'a-marcar'),
     indeterminados: itens.filter((item) => item.tipo === 'indeterminado').length,
+    naoPropagados: itens.filter((item) => item.tipo === 'nao-propagado').length,
   };
 }

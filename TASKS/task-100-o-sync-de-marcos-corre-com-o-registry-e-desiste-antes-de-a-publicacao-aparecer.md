@@ -11,12 +11,12 @@ No release de 21/09 o changeset publish reportou Successfully published para os 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Usar o `publishedPackages` que a action do changesets ja devolve, em vez de deduzir do registry o que acabou de ser publicado
-- [ ] Esperar por essas versoes com retry limitado — o teto medido foi 150s, entao algo como 10 tentativas de 30s
-- [ ] Distinguir no log "ainda nao propagou" de "nao foi publicado": hoje as duas situacoes imprimem a mesma linha
-- [ ] Falhar o job quando o prazo estourar, em vez de passar verde sem criar marco nenhum
-- [ ] Testes do planejador com relogio falso, sem rede
-- [ ] Conferir que o `reconcile:tags` nao repete a mesma leitura unica
+- [x] Usar o `publishedPackages` que a action do changesets ja devolve, em vez de deduzir do registry o que acabou de ser publicado — `.github/workflows/release.yml` passa `steps.changesets.outputs.publishedPackages` como `PUBLISHED_PACKAGES` aos dois passos; `parsearPacotesPublicados` em `dev/scripts/espera-pela-publicacao/espera-pela-publicacao.ts` le. Ele entra como a lista do que DEVE aparecer, nao como o que marcar: a garantia da task-047 (marco so do que o npm confirma) continua.
+- [x] Esperar por essas versoes com retry limitado — `consultarEsperando` com `ESPERA_PADRAO` = 10 tentativas de 30s (270s de espera, quase o dobro dos 150s medidos). So insiste no que foi reportado e ainda nao respondeu; o resto e consultado uma vez. `estadoDaVersaoNoNpm` passou a usar `--prefer-online`, para a nova leitura nao ouvir o cache local do npm. Teste: `espera a versao publicada aparecer no registry — a corrida do release de 21/09`.
+- [x] Distinguir no log "ainda nao propagou" de "nao foi publicado" — novo item `nao-propagado` em `planejarMarcos` e `reconciliarTags` (`⌛ … reported published, still not on npm`) contra `⏭️ … not published`; espera logada a cada tentativa (`⏳ Waiting for N published version(s)…`). Testes: `separa "ainda nao propagou" de "nao foi publicado" pelo que o publish reportou`, `sem nada reportado pelo publish, a ausencia continua sendo so "nao publicado"`.
+- [x] Falhar o job quando o prazo estourar, em vez de passar verde sem criar marco nenhum — `plano.naoPropagados > 0` sai com `process.exit(1)` em `dev/scripts/sincronizar-marcos.ts`, antes do "Nothing to sync".
+- [x] Testes do planejador com relogio falso, sem rede — `dev/scripts/espera-pela-publicacao/espera-pela-publicacao.test.ts` (registry falso que propaga depois de N leituras + `dormir` injetado que registra as sonecas). Rodar: `pnpm test:dev-scripts`.
+- [x] Conferir que o `reconcile:tags` nao repete a mesma leitura unica — repetia; agora `dev/scripts/reconciliar-tags.ts` usa o mesmo `consultarEsperando` e reprova com `naoPropagados`. Teste: `reprova a versao que o publish reportou e o npm ainda nao mostra, em vez de passar verde`.
 
 ## Notes
 
@@ -64,3 +64,14 @@ Sao defeitos diferentes no mesmo passo. A 086 era o `git tag` engolindo o
 um registry que ainda nao sabe da propria escrita. A 086 ja esta corrigida e
 funcionou neste release: quando a re-execucao encontrou o que faltava, criou
 tag, empurrou e abriu o Release dos doze sem tropecar.
+
+### Verificacao (task-100)
+
+`pnpm lint`, `pnpm typecheck` e `pnpm test:dev-scripts` (96 testes) verdes. No
+`pnpm test` completo, so os testes de navegador do design-vue e do dashboard
+falham, e por ambiente: o sandbox nao tem as dependencias de sistema do
+Chromium (`Host system is missing dependencies to run browsers`). Nenhum dos
+dois pacotes foi tocado. Os outros pacotes passam.
+Nao testado contra o npm de verdade: o comportamento real so vai ser visto no
+proximo release.
+

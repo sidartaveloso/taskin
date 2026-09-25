@@ -132,10 +132,17 @@ jobs:
       # condicionado a `published == 'true'` simplesmente nao roda, e o buraco
       # volta. Como este passo so marca o que o npm confirma publicado, rodar em
       # todo release e barato e nunca inventa marco para o que nao existe.
+      #
+      # O `publishedPackages` entra so como a lista do que DEVE aparecer no npm,
+      # nunca como o que marcar: a leitura do registry chega atrasada da escrita
+      # (150s no release de 21/09), e o passo espera por essas versoes com retry
+      # limitado. Se o prazo estoura, reprova em vez de passar verde sem marco.
+      # Vazio — a action nao publicou — e so a consulta unica de sempre.
       - name: Sync markers (tags + Releases) from npm
         run: pnpm run sync:markers
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
 
       # Catraca de "verde honesto": cada versao publicada no npm precisa ter tag
       # correspondente no remoto. O release de 06/09 publicou 12 pacotes e
@@ -149,3 +156,5 @@ jobs:
       # run que apenas abre o PR de versao passa limpo.
       - name: Assert published versions are tagged on the remote
         run: pnpm run reconcile:tags
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}

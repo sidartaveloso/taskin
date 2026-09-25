@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { estadoDaVersaoNoNpm } from './cliente-npm';
-import type { EstadoNoRegistry } from './cliente-npm/cliente-npm.types';
+import { consultarEsperando, dormirDeVerdade, ESPERA_PADRAO, parsearPacotesPublicados } from './espera-pela-publicacao';
 import { lerPacotesPublicaveis, parsearTagsDoLsRemote, reconciliarTags } from './reconciliador-de-tags';
 
 const exec = promisify(execFile);
@@ -18,16 +18,25 @@ const exec = promisify(execFile);
  * mentiu uma vez. Como a catraca so exige tag do que ESTA no npm, um pacote
  * recem-criado (ainda fora do registry) nao vira falso positivo, e ela pode
  * rodar sempre. Ver `reconciliador-de-tags`.
+ *
+ * Espera pelo que o publish reportou (`PUBLISHED_PACKAGES`) do mesmo jeito que
+ * o `sync:markers`, em vez de repetir a leitura unica que concordou com ele no
+ * release de 21/09: reportado e ainda ausente reprova, nao passa verde.
  */
 const reconciliar = async () => {
   console.log('🔍 Reconciling published versions against remote tags...');
 
   const pacotes = await lerPacotesPublicaveis(process.cwd());
-  const estados = new Map<string, EstadoNoRegistry>(
-    await Promise.all(
-      pacotes.map(async (pacote) => [pacote.nome, await estadoDaVersaoNoNpm(pacote.nome, pacote.versao)] as const),
-    ),
-  );
+  const publicados = parsearPacotesPublicados(process.env.PUBLISHED_PACKAGES);
+  const estados = await consultarEsperando(pacotes, publicados, estadoDaVersaoNoNpm, {
+    ...ESPERA_PADRAO,
+    dormir: dormirDeVerdade,
+    aoEsperar: (pendentes, tentativa, tentativas) =>
+      console.log(
+        `⏳ Waiting for ${pendentes.length} published version(s) to show up on npm ` +
+          `(attempt ${tentativa}/${tentativas}): ${pendentes.join(', ')}`,
+      ),
+  });
 
   const { stdout } = await exec('git', ['ls-remote', '--tags', 'origin']);
   const tags = parsearTagsDoLsRemote(stdout);
@@ -36,7 +45,8 @@ const reconciliar = async () => {
 
   for (const item of relatorio.itens) {
     if (item.tipo === 'marcado') console.log(`✅ ${item.tag} → tag present on remote`);
-    else if (item.tipo === 'nao-publicado') console.log(`⏭️  ${item.tag} → not on npm yet, nothing to reconcile`);
+    else if (item.tipo === 'nao-publicado') console.log(`⏭️  ${item.tag} → not published, nothing to reconcile`);
+    else if (item.tipo === 'nao-propagado') console.error(`⌛ ${item.tag} → reported published, still not on npm`);
     else if (item.tipo === 'indeterminado') console.error(`❓ ${item.pacote} → could not query npm: ${item.motivo}`);
     else console.error(`❌ ${item.pacote} → no remote tag ${item.tag}`);
   }
@@ -45,6 +55,14 @@ const reconciliar = async () => {
     console.error(
       `\n❌ Could not determine the npm state of ${relatorio.indeterminados} package(s). ` +
         'Refusing to declare the release green without confirming it — rerun once the registry answers.',
+    );
+    process.exit(1);
+  }
+
+  if (relatorio.naoPropagados > 0) {
+    console.error(
+      `\n❌ ${relatorio.naoPropagados} version(s) reported published are still not on npm. ` +
+        'Refusing to declare the release green before the registry confirms them.',
     );
     process.exit(1);
   }
