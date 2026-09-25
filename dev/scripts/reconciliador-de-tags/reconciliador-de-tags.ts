@@ -47,11 +47,16 @@ export function parsearTagsDoLsRemote(saida: string): Set<string> {
  * @param estadosNoNpm estado de CADA pacote na SUA versao atual (consulta a
  *   `nome@versao`). Um pacote sem entrada e tratado como indeterminado — nao da
  *   para afirmar honestidade sem ter perguntado.
+ * @param publicadosPeloPublish tags `nome@versao` que o `changeset publish`
+ *   reportou nesta passada. Nao decide o que marcar — isso segue vindo do npm —
+ *   so desfaz a ambiguidade da ausencia: reportada e ausente e "ainda nao
+ *   propagou", e reprova; nao reportada e ausente e "nao publicado".
  */
 export function reconciliarTags(
   pacotes: PacotePublicavel[],
   estadosNoNpm: Map<string, EstadoNoRegistry>,
   tagsRemotas: Iterable<string>,
+  publicadosPeloPublish: ReadonlySet<string> = new Set(),
 ): RelatorioDeReconciliacao {
   const tags = tagsRemotas instanceof Set ? tagsRemotas : new Set(tagsRemotas);
 
@@ -67,7 +72,9 @@ export function reconciliarTags(
         return { tipo: 'indeterminado', pacote: pacote.nome, tag, motivo: estado.motivo };
       }
       if (estado.tipo === 'ausente') {
-        return { tipo: 'nao-publicado', pacote: pacote.nome, tag };
+        return publicadosPeloPublish.has(tag)
+          ? { tipo: 'nao-propagado', pacote: pacote.nome, tag }
+          : { tipo: 'nao-publicado', pacote: pacote.nome, tag };
       }
       // Publicado no npm: o release so e honesto se a tag estiver no remoto.
       return tags.has(tag)
@@ -80,6 +87,7 @@ export function reconciliarTags(
     itens,
     dessincronizados: itens.filter((item) => item.tipo === 'sem-tag').length,
     indeterminados: itens.filter((item) => item.tipo === 'indeterminado').length,
+    naoPropagados: itens.filter((item) => item.tipo === 'nao-propagado').length,
   };
 }
 

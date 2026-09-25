@@ -5,10 +5,11 @@ export type PacotePublicavel = {
 
 /**
  * A catraca so exige tag da versao que ESTA no npm — nunca do que o
- * `changeset publish` disse ter feito. Por isso ela conhece os quatro estados:
+ * `changeset publish` disse ter feito. Por isso ela conhece os cinco estados:
  * `nao-publicado` (versao ainda fora do registry, entao exigir tag seria falso
  * positivo em pacote novo) e `indeterminado` (nao deu para perguntar ao npm, e
- * decidir seria chutar) alem do par `marcado`/`sem-tag`.
+ * decidir seria chutar) e `nao-propagado` (o publish reportou e o npm ainda
+ * nao mostra) alem do par `marcado`/`sem-tag`.
  */
 export type ItemDeReconciliacao =
   /** Versao no npm e tag no remoto: em dia. */
@@ -17,6 +18,8 @@ export type ItemDeReconciliacao =
   | { tipo: 'sem-tag'; pacote: string; tag: string }
   /** Versao ainda fora do npm: nao ha marco a exigir (ex.: pacote recem-criado). */
   | { tipo: 'nao-publicado'; pacote: string; tag: string }
+  /** Reportada pelo publish e ainda fora do npm: nao da para declarar verde. */
+  | { tipo: 'nao-propagado'; pacote: string; tag: string }
   /** Nao deu para perguntar ao npm: verde as cegas e o que se quer evitar. */
   | { tipo: 'indeterminado'; pacote: string; tag: string; motivo: string };
 
@@ -26,4 +29,6 @@ export type RelatorioDeReconciliacao = {
   dessincronizados: number;
   /** Pacotes cujo estado no npm nao pode ser confirmado — tambem reprovam. */
   indeterminados: number;
+  /** Versoes que o publish reportou e o npm nao mostrou a tempo — tambem reprovam. */
+  naoPropagados: number;
 };

@@ -40,6 +40,18 @@ describe('parsearTagsDoLsRemote', () => {
 });
 
 describe('reconciliarTags', () => {
+  it('reprova a versao que o publish reportou e o npm ainda nao mostra, em vez de passar verde', () => {
+    const relatorio = reconciliarTags(
+      [{ nome: '@opentask/taskin', versao: '4.1.0' }],
+      new Map([['@opentask/taskin', ausente()]]),
+      new Set<string>(),
+      new Set(['@opentask/taskin@4.1.0']),
+    );
+
+    expect(relatorio.itens[0]).toMatchObject({ tipo: 'nao-propagado', tag: '@opentask/taskin@4.1.0' });
+    expect(relatorio.naoPropagados).toBe(1);
+  });
+
   it('aprova quando toda versao publicada no npm tem tag no remoto', () => {
     const relatorio = reconciliarTags(
       [

@@ -126,7 +126,9 @@ function classificarFalha(saida: string, motivo: string): ResultadoDeConfianca {
  */
 export async function estadoDaVersaoNoNpm(nome: string, versao: string, binario = 'npm'): Promise<EstadoNoRegistry> {
   try {
-    const { stdout } = await capturar(binario, ['view', `${nome}@${versao}`, 'version']);
+    // `--prefer-online` revalida o packument: quem pergunta de novo esperando a
+    // propagacao nao pode ouvir a resposta velha do cache local.
+    const { stdout } = await capturar(binario, ['view', `${nome}@${versao}`, 'version', '--prefer-online']);
     return stdout.trim() ? { tipo: 'publicado', versao: stdout.trim() } : { tipo: 'ausente' };
   } catch (erro) {
     const motivo = mensagemDe(erro);
