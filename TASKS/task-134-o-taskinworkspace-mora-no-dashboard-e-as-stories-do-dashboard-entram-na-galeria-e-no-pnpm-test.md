@@ -29,3 +29,21 @@ O design-vue e a biblioteca de pecas, que serve a mais de uma aplicacao. O
 que vai na barra sao do dashboard, e ele e o unico que a usa. Morando aqui, o
 Storybook do pacote passa a mostrar a tela, e o `storytype analyze` do pacote
 mede um componente real.
+
+### O `storytype normalize`, depois
+
+Pedido pelo usuario em seguida a esta task. `pnpm storytype normalize --dry-run
+--verbose` em `packages/dashboard` propos duas coisas: mover o
+`TaskinWorkspace` para pasta propria, e renomear `src/main.ts` para
+`src/Main.ts`. A segunda quebra o build no Linux: o `index.html` carrega
+`/src/main.ts`, e o `normalize` nao o atualiza — no macOS passaria, porque o
+sistema de arquivos nao diferencia maiusculas. O `main.ts` e o ponto de entrada,
+nao um componente.
+
+A ferramenta nao tem opcao de exclusao, mas aceita um caminho: rodado como
+`pnpm storytype normalize src/components`, aplicou so a primeira, por `git mv`.
+Os imports do `App.vue` foram ajustados a mao (com caminho restrito ele nao os
+atualiza), e o `index.ts` gerado, que exportava o mock e as stories, ficou so
+com o componente e os tipos. `pnpm storytype analyze` depois: **103/135 (76%)**,
+Nomenclatura 15/15. Verificacao: build, typecheck, lint, `turbo run test
+--force` (44/44) e `biome check .` verdes.
