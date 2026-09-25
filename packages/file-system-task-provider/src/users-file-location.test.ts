@@ -226,3 +226,147 @@ describe('validateUsersFileLocation — arquivo estacionado', () => {
     expect(await validateUsersFileLocation(projectRoot)).toEqual([]);
   });
 });
+
+function indexStatus(): string {
+  return execSync('git status --porcelain --untracked-files=all', { cwd: projectRoot }).toString();
+}
+
+function statusOf(file: string): string | undefined {
+  return indexStatus()
+    .split('\n')
+    .find((line) => line.slice(3) === file)
+    ?.slice(0, 2);
+}
+
+describe('migracao 3.x → 4.x no caso both — o estado final do indice do Git', () => {
+  const legacyName = USERS_FILE_NAME;
+  const canonicalName = join(TASKIN_DIR_NAME, USERS_FILE_NAME);
+  const parkedName = join(TASKIN_DIR_NAME, PARKED_USERS_FILE_NAME);
+
+  beforeEach(() => {
+    initRepo();
+    writeLegacy('developer');
+    commitAll('registro na raiz, como no taskin 3.x');
+    writeCanonical('ana');
+  });
+
+  it('stages the root removal together with the canonical registry, and leaves the parked copy out of the index', async () => {
+    const result = await fixUsersFileLocation(projectRoot);
+
+    expect(result).toMatchObject({ action: 'parked', viaGit: true });
+    expect(statusOf(legacyName)).toBe('D ');
+    expect(statusOf(canonicalName)).toBe('A ');
+    expect(statusOf(parkedName)).toBe('??');
+  });
+
+  it('following the lint to the letter commits the canonical registry in place of the root one', async () => {
+    await fixUsersFileLocation(projectRoot);
+    rmSync(join(projectRoot, parkedName));
+    execSync('git commit -m "migra o registro de usuarios"', { cwd: projectRoot, stdio: 'ignore' });
+
+    const tree = execSync('git ls-tree -r --name-only HEAD', { cwd: projectRoot }).toString().split('\n');
+    expect(tree).toContain(canonicalName);
+    expect(tree).not.toContain(legacyName);
+    expect(indexStatus()).toBe('');
+  });
+
+  it('lets git follow the history when the contents are alike, since the rename is inferred from that commit', async () => {
+    writeFileSync(join(projectRoot, canonicalName), readFileSync(join(projectRoot, legacyName)));
+
+    await fixUsersFileLocation(projectRoot);
+
+    const staged = execSync('git diff --cached --name-status -M', { cwd: projectRoot }).toString();
+    expect(staged).toMatch(new RegExp(`^R\\d+\\s+${legacyName.replace('.', '\\.')}\\s+${TASKIN_DIR_NAME}/`, 'm'));
+  });
+
+  it('does not add a canonical registry that .gitignore excludes', async () => {
+    writeFileSync(join(projectRoot, '.gitignore'), `${canonicalName}\n`);
+
+    const result = await fixUsersFileLocation(projectRoot);
+
+    expect(result.viaGit).toBe(true);
+    expect(statusOf(legacyName)).toBe('D ');
+    expect(indexStatus()).not.toContain(canonicalName);
+    expect(existsSync(join(projectRoot, canonicalName))).toBe(true);
+  });
+
+  it('touches no index when the root file was never tracked', async () => {
+    execSync(`git rm --cached --quiet -- ${legacyName}`, { cwd: projectRoot });
+    execSync('git commit -m "tira da raiz"', { cwd: projectRoot, stdio: 'ignore' });
+
+    const result = await fixUsersFileLocation(projectRoot);
+
+    expect(result).toMatchObject({ action: 'parked', viaGit: false });
+    expect(statusOf(canonicalName)).toBe('??');
+    expect(existsSync(join(projectRoot, parkedName))).toBe(true);
+  });
+
+  it('tells, for the parked copy, what to do with Git and not only with the content', async () => {
+    await fixUsersFileLocation(projectRoot);
+
+    const parked = (await validateUsersFileLocation(projectRoot)).find((issue) =>
+      issue.file.endsWith(PARKED_USERS_FILE_NAME),
+    );
+
+    expect(parked?.suggestion).toContain(`rm ${parkedName}`);
+    expect(parked?.suggestion).not.toContain('git rm');
+    expect(parked?.suggestion).toContain(`git add ${canonicalName}`);
+    expect(parked?.suggestion).toContain('same commit');
+  });
+});
+
+describe('validateUsersFileLocation — registro canonico fora do Git', () => {
+  it('warns when the canonical registry exists but is not tracked in a git project', async () => {
+    initRepo();
+    const canonical = writeCanonical('ana');
+
+    const issues = await validateUsersFileLocation(projectRoot);
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ file: canonical, severity: 'warning' });
+    expect(issues[0]?.suggestion).toContain(`git add ${join(TASKIN_DIR_NAME, USERS_FILE_NAME)}`);
+  });
+
+  it('stays quiet once the registry is committed', async () => {
+    initRepo();
+    writeCanonical('ana');
+    commitAll('registro');
+
+    expect(await validateUsersFileLocation(projectRoot)).toEqual([]);
+  });
+
+  it('stays quiet on a project without git — that is a legitimate setup', async () => {
+    writeCanonical('ana');
+
+    expect(await validateUsersFileLocation(projectRoot)).toEqual([]);
+  });
+
+  it('stays quiet when .gitignore excludes the registry on purpose', async () => {
+    initRepo();
+    writeFileSync(join(projectRoot, '.gitignore'), `${TASKIN_DIR_NAME}/\n`);
+    writeCanonical('ana');
+
+    expect(await validateUsersFileLocation(projectRoot)).toEqual([]);
+  });
+
+  it('points at an untracked canonical alongside a stale root file, before any fix', async () => {
+    initRepo();
+    writeLegacy('developer');
+    writeCanonical('ana');
+
+    const severities = (await validateUsersFileLocation(projectRoot)).map((issue) => issue.severity);
+
+    expect(severities).toEqual(['warning', 'warning']);
+  });
+
+  it('suggests git rm for a parked copy that an older lint put in the index', async () => {
+    initRepo();
+    writeCanonical('ana');
+    writeFileSync(join(projectRoot, TASKIN_DIR_NAME, PARKED_USERS_FILE_NAME), usersJson('developer'), 'utf-8');
+    commitAll('estacionado versionado pelo git mv antigo');
+
+    const [issue] = await validateUsersFileLocation(projectRoot);
+
+    expect(issue?.suggestion).toContain(`git rm ${join(TASKIN_DIR_NAME, PARKED_USERS_FILE_NAME)}`);
+  });
+});

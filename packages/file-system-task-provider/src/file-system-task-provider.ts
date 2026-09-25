@@ -596,7 +596,11 @@ ${i18n.notesPlaceholder}
       const migration = await fixUsersFileLocation(this.projectRoot);
       if (migration.action !== 'none') {
         const verb = migration.action === 'moved' ? 'Moved' : 'Parked stale';
-        const via = migration.viaGit ? ' (git mv, rename kept in history)' : '';
+        const staged =
+          migration.action === 'moved'
+            ? ' (git mv, rename kept in history)'
+            : ` (root removal and ${path.join(TASKIN_DIR_NAME, USERS_FILE_NAME)} staged together)`;
+        const via = migration.viaGit ? staged : '';
         allIssues.push({
           file: migration.from ?? this.projectRoot,
           message: `${verb} ${USERS_FILE_NAME} → ${path.relative(this.projectRoot, migration.to ?? '')}${via}`,

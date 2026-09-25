@@ -427,6 +427,7 @@ taskin lint --path ./custom-tasks
 
 - 📖 [Quick Start Guide](./docs/QUICKSTART.md)
 - 🏗️ [Detailed Architecture](./docs/ARCHITECTURE.md)
+- ⬆️ [Upgrade Guide](./docs/UPGRADE.md) - Moving between major versions
 - 🎨 [Design System](./packages/dashboard/docs/design-specifications.md)
 - 🎭 [Taskin Design Vue](./packages/design-vue/README.md) - Mascot and UI components
 - 🔌 [WebSocket Examples](./packages/task-server-ws/EXAMPLES.md)

@@ -22,6 +22,28 @@ sai como `.taskin-users.legacy.json` para comparação manual. Nada é mesclado 
 arquivo legado normalmente contém apenas o usuário sintético que o `initialize()` antigo criava
 (`$USER` / `<user>@example.com`).
 
+### O commit da migração
+
+O registro é dado de time: fora do Git, ninguém mais vê os usuários. Num projeto com Git, o
+`taskin lint` avisa quando `.taskin/.taskin-users.json` existe mas não está versionado (aviso, não
+erro — projeto sem Git e arquivo excluído pelo `.gitignore` são escolhas legítimas).
+
+No caso dos dois arquivos, o estacionado **não** vai para o índice — é para ser apagado. Quando o
+arquivo da raiz era versionado, o `--fix` põe no índice a remoção dele **junto com** a adição do
+canônico, e é esse par, no mesmo commit, que liga um ao outro: o Git não grava renomeação, só a
+infere por similaridade entre remoção e adição de um mesmo commit.
+
+```bash
+taskin lint --fix
+rm .taskin/.taskin-users.legacy.json   # depois de copiar quem faltar para o canônico
+git add .taskin/.taskin-users.json
+git commit
+```
+
+Como o conteúdo costuma mudar muito (a raiz tem o usuário sintético, o canônico tem o time), a
+similaridade fica abaixo dos 50% padrão; `git log --follow -M15% -- .taskin/.taskin-users.json`
+acha o histórico. Passo a passo em [docs/UPGRADE.md](../../docs/UPGRADE.md).
+
 ## Attachment size limit
 
 Everything under the tasks directory that is not markdown — screenshots, videos
