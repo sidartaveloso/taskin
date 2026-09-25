@@ -1,12 +1,12 @@
-import { parseTaskId } from '@opentask/taskin-types';
+import type { Task } from '@opentask/taskin-design-vue';
+import { taskId } from '@opentask/taskin-design-vue';
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { defineComponent, h } from 'vue';
-import type { Task } from '../../types';
 import TaskinWorkspace from './TaskinWorkspace.vue';
 
 const tarefa = (id: string): Task => ({
-  id: parseTaskId(id),
+  id: taskId(id),
   number: Number(id),
   title: `Task ${id}`,
   status: 'pending',

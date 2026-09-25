@@ -8,12 +8,10 @@
  * escolhas atuais, e emite cada escolha; quem hospeda guarda e aplica o
  * recorte pelo dominio (task-129). Os eventos da priorizacao passam direto.
  */
+
+import type { GrupoDoQuadro, MovimentoDoQuadro, MudancaDeGrupo, Task } from '@opentask/taskin-design-vue';
+import { ConnectionStatus, Dashboard, PrioritizationPage } from '@opentask/taskin-design-vue';
 import { computed } from 'vue';
-import type { GrupoDoQuadro, MovimentoDoQuadro, MudancaDeGrupo } from '../../composables/use-prioritization';
-import type { Task } from '../../types';
-import ConnectionStatus from '../molecules/ConnectionStatus.vue';
-import Dashboard from '../templates/Dashboard.vue';
-import PrioritizationPage from './PrioritizationPage.vue';
 import {
   WORKSPACE_FILTERS,
   WORKSPACE_SCORES,

@@ -35,25 +35,8 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  GrupoDoQuadro,
-  MovimentoDoQuadro,
-  MudancaDeGrupo,
-  Task,
-  TaskStatus,
-  WorkspaceFilter,
-  WorkspaceScore,
-  WorkspaceSort,
-  WorkspaceView,
-} from '@opentask/taskin-design-vue';
-import {
-  groupId,
-  TaskinWorkspace,
-  WORKSPACE_FILTERS,
-  WORKSPACE_SCORES,
-  WORKSPACE_SORTS,
-  WORKSPACE_VIEWS,
-} from '@opentask/taskin-design-vue';
+import type { GrupoDoQuadro, MovimentoDoQuadro, MudancaDeGrupo, Task, TaskStatus } from '@opentask/taskin-design-vue';
+import { groupId } from '@opentask/taskin-design-vue';
 import {
   effectiveFilterCriteria,
   filterTasks,
@@ -62,6 +45,17 @@ import {
 } from '@opentask/taskin-task-manager';
 import { usePiniaTaskProvider } from '@opentask/taskin-task-provider-pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import {
+  WORKSPACE_FILTERS,
+  WORKSPACE_SCORES,
+  WORKSPACE_SORTS,
+  WORKSPACE_VIEWS,
+  type WorkspaceFilter,
+  type WorkspaceScore,
+  type WorkspaceSort,
+  type WorkspaceView,
+} from './components/pages/TaskinWorkspace.types';
+import TaskinWorkspace from './components/pages/TaskinWorkspace.vue';
 import { NOME_DE_GRUPO_NOVO, operacaoDoGrupo, operacaoDoMovimento, operacoesDaMudanca } from './operacoes-da-mudanca';
 
 // Progress bar filled per status.
@@ -87,8 +81,8 @@ const PROGRESS_BY_STATUS: Record<TaskStatus, number> = {
  * pagina ou abrir um link leva a mesma tela, e nao de volta ao Board. Sem o
  * parametro, ou com um valor que nao e tela, abre o Board.
  *
- * A barra que mostra estas escolhas e o `TaskinWorkspace` do design-vue
- * (task-132); aqui ficam a URL e o recorte pelo dominio. Os valores aceitos
+ * A barra que mostra estas escolhas e o `TaskinWorkspace`, em
+ * `components/pages/` (tasks 132 e 134); aqui ficam a URL e o recorte pelo dominio. Os valores aceitos
  * na URL sao os mesmos que a barra oferece.
  */
 /** O valor do parametro, se for um dos aceitos; senao `undefined`, e quem chama cai no padrao. */

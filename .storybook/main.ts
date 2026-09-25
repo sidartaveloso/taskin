@@ -37,6 +37,7 @@ const config: StorybookConfig = {
     './welcome.mdx',
     '../packages/design-vue/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
     '../packages/ui-sense/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    '../packages/dashboard/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
 
   addons: [
@@ -62,9 +63,12 @@ const config: StorybookConfig = {
 
   framework: {
     name: getAbsolutePath('@storybook/vue3-vite'),
-    // `vue-component-meta` e nao o padrao `vue-docgen-api`, que o Storybook 10
-    // marca como obsoleto e remove no proximo major (task-133).
-    options: { docgen: 'vue-component-meta' },
+    // Aqui, e so aqui, fica o `vue-docgen-api`, obsoleto no Storybook 10: a raiz
+    // usa TypeScript 7, que nao tem mais a API JavaScript de que o
+    // `vue-component-meta` depende (`ts.readJsonConfigFile is not a function`),
+    // e o Storybook nao subia. Os pacotes, em TypeScript 6, usam o
+    // `vue-component-meta` (task-133). Rever quando ele suportar TypeScript 7.
+    options: { docgen: 'vue-docgen-api' },
   },
 
   docs: {
@@ -156,6 +160,13 @@ const config: StorybookConfig = {
 
     viteConfig.resolve.alias = [
       { find: /^@opentask\/ui-sense$/, replacement: resolve(here, '../packages/ui-sense/src/index.ts') },
+      // As stories do dashboard importam o design-vue pelo nome do pacote; sem
+      // o alias viria o `dist/`, e o mesmo componente entraria duas vezes na
+      // pagina, uma do fonte (pelas stories do design-vue) e outra do build.
+      {
+        find: /^@opentask\/taskin-design-vue$/,
+        replacement: resolve(here, '../packages/design-vue/src/index.ts'),
+      },
       ...asArray,
     ];
 

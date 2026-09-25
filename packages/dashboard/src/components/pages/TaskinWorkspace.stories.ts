@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { MOCK_DASHBOARD_TASKS } from '../templates/Dashboard.mock';
+import { MOCK_DASHBOARD_TASKS } from './TaskinWorkspace.mock';
 import TaskinWorkspace from './TaskinWorkspace.vue';
 
 const meta: Meta<typeof TaskinWorkspace> = {

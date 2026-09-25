@@ -1,4 +1,4 @@
-import type { PrioritizationSortMode } from '../../composables/use-prioritization';
+import type { PrioritizationSortMode } from '@opentask/taskin-design-vue';
 
 /*
  * As escolhas da barra do topo. A pagina desenha e emite; quem a hospeda
