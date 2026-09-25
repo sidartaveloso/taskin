@@ -1,5 +1,97 @@
 # @opentask/taskin-task-server-mcp
 
+## 0.6.0
+
+### Minor Changes
+
+- 342a312: A listagem mostra so as tarefas abertas por padrao, e `all` mostra todas.
+  
+  - **Quebra compatibilidade**: `taskin list` (texto e `--json`), `list_tasks` do
+    MCP e `filterTasks` sem criterio de status passam a devolver so as abertas
+    (pending, in-progress, paused, in-review, blocked). Quem consome `list --json`
+    e queria as fechadas passa a pedir `--all`.
+  - O padrao mora no dominio: `filterTasks` aplica `effectiveFilterCriteria`
+    (exportada), e a CLI, o MCP e o dashboard derivam dele. `status`, `open`,
+    `closed` e `active` explicitos desligam o padrao — `--status done` devolve o
+    mesmo que antes.
+  - Criterio novo `all` no `FilterCriteriaSchema`: flag `--all` na CLI, propriedade
+    `all` no `list_tasks`. `parseFilterCriteria` recusa `all` com `open`, `closed`
+    ou `active`. `--open` continua aceito, agora redundante.
+  - O recurso MCP `taskin://tasks` ("All Tasks") segue trazendo todas.
+  - Dashboard: sem `?filter=`, as abertas; um controle na tela alterna entre
+    Open, Active, Closed e All (e reescreve a URL), com "Showing N of M tasks".
+    `taskin dashboard --all` abre em todas. O contador do quadro passa de "Total"
+    a "Shown": conta as visiveis.
+- eba94c1: Grupos aninhados: um grupo pode estar dentro de outro, ate quatro niveis. O pai
+  mora no grupo (`parentId` opcional no `GroupSchema`, gravado no
+  `.taskin-groups.json`), e a task continua guardando um grupo so, o mais interno.
+  `createGroup(name, { id?, parentId? })`, `nestGroup` e `unnestGroup` entram no
+  `ITaskManager` e nas tres superficies: `taskin group create <nome> --parent
+  <grupo>` (`add` segue como apelido), `taskin group nest <grupo> <pai>` e
+  `taskin group unnest <grupo>`; `create_group`, `nest_group` e `unnest_group` no
+  MCP; `create-group` com `parentId`, `nest-group` e `unnest-group` no WebSocket.
+  Pai inexistente, ciclo e passar de quatro niveis sao recusados. Apagar um grupo
+  sobe os subgrupos para o pai dele. Aninhar e capacidade opcional do registro
+  (`IGroupRegistry.setParent?`): sem ela, as tres recusam com
+  `NESTING_NOT_SUPPORTED` e o MCP nao anuncia `nest_group` nem `unnest_group`.
+  `taskin list` indenta os subgrupos e `taskin list --json` leva a arvore
+  (`{ group, tasks, groups }`); `taskin group list` mostra a hierarquia;
+  `list_groups` traz o `parentId`; `taskin lint` acusa pai inexistente e ciclo
+  como erro, e profundidade acima de quatro como aviso. No quadro, soltar uma task
+  sobre outra do mesmo grupo cria um subgrupo de verdade, e soltar um grupo sobre
+  outro cria um pai com os dois dentro — gravados pelo dominio, sobrevivem a
+  recarregar, e o desfazer cobre o aninhamento.
+- f78c212: Mover um grupo inteiro fora do dashboard: `moveGroupBefore`, `moveGroupAfter`,
+  `moveGroupToTop` e `moveGroupToBottom` no `ITaskManager`, `taskin group move
+  <grupo> --top | --bottom | --before <task-ou-grupo> | --after <task-ou-grupo>`,
+  a ferramenta `move_group` no MCP, e `move-group-before` / `move-group-after` /
+  `move-group-to-top` / `move-group-to-bottom` no protocolo do servidor WebSocket.
+  Os membros vao juntos, na ordem em que estavam, e so eles sao gravados — um
+  grupo de tres grava tres; as tres superficies dizem quantos arquivos gravaram.
+- 7fbe097: Pontuar a dificuldade pela CLI e pelo MCP: `taskin difficulty <task> <1-5>`,
+  `taskin new --difficulty <1-5>` (conferido antes de criar o arquivo) e a
+  ferramenta `set_difficulty` no MCP. O `task-manager` exporta
+  `validarDificuldade`, `DIFICULDADE_MINIMA` e `DIFICULDADE_MAXIMA`, com a faixa
+  perguntada ao schema. Nao ha como tirar a dificuldade: corrige-se pontuando de
+  novo.
+- 1320e15: Levar uma task ao topo ou ao fim da fila sem saber antes qual e a primeira:
+  `moveToTop` e `moveToBottom` no `ITaskManager`, `taskin priority <task> --top`
+  e `--bottom`, `top`/`bottom` no `set_priority` do MCP, e `move-to-top` /
+  `move-to-bottom` no protocolo do servidor WebSocket. Uma task agrupada vai ao
+  extremo do proprio grupo, como os botoes do dashboard. Topo grava um arquivo;
+  fim depois de uma cauda sem `Priority` numera a cauda uma vez, e as tres
+  superficies dizem quantos arquivos foram gravados.
+
+### Patch Changes
+
+- 4e1f3c1: O dashboard passa a gravar pelas mesmas operações nomeadas do `ITaskManager`
+  que a CLI e o MCP usam, e o servidor WebSocket deixa de aceitar `update`.
+  
+  - `ITaskManager` ganha `setDifficulty(taskId, difficulty)` — de 1 a 5.
+  - `SUPERFICIES_DAS_OPERACOES` declara como cada superfície (CLI, MCP,
+    WebSocket) expõe cada operação, ou por que não expõe; operação nova sem as
+    três decisões não compila. `runTaskManagerContractTests` sai em `./testing`.
+  - Protocolo WebSocket: `set-priority`, `set-difficulty`, `assign-to-group`,
+    `remove-from-group`, `move-before`, `move-after` e `create-group`, atendidas
+    na ordem de chegada. `update` e `applyTaskUpdate` foram removidos.
+  - Store Pinia: `operar(operacao)` manda a operação e já a reflete no cache;
+    `updateTask` passa a recusar. **Quebra compatibilidade**: quem gravava pelo
+    `updateTask` precisa passar a `operar` com a operação nomeada.
+- Updated dependencies [342a312]
+- Updated dependencies [11a6f20]
+- Updated dependencies [9d292f1]
+- Updated dependencies [a9343e9]
+- Updated dependencies [eba94c1]
+- Updated dependencies [d7a97ad]
+- Updated dependencies [f78c212]
+- Updated dependencies [4e1f3c1]
+- Updated dependencies [7fbe097]
+- Updated dependencies [3244faa]
+- Updated dependencies [1320e15]
+  - @opentask/taskin-task-manager@4.0.0
+  - @opentask/taskin-types@2.6.0
+  - @opentask/taskin-file-system-provider@3.4.0
+
 ## 0.5.2
 
 ### Patch Changes

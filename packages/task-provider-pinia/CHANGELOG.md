@@ -1,5 +1,69 @@
 # @opentask/taskin-task-provider-pinia
 
+## 4.0.0
+
+### Major Changes
+
+- 4e1f3c1: O dashboard passa a gravar pelas mesmas operações nomeadas do `ITaskManager`
+  que a CLI e o MCP usam, e o servidor WebSocket deixa de aceitar `update`.
+  
+  - `ITaskManager` ganha `setDifficulty(taskId, difficulty)` — de 1 a 5.
+  - `SUPERFICIES_DAS_OPERACOES` declara como cada superfície (CLI, MCP,
+    WebSocket) expõe cada operação, ou por que não expõe; operação nova sem as
+    três decisões não compila. `runTaskManagerContractTests` sai em `./testing`.
+  - Protocolo WebSocket: `set-priority`, `set-difficulty`, `assign-to-group`,
+    `remove-from-group`, `move-before`, `move-after` e `create-group`, atendidas
+    na ordem de chegada. `update` e `applyTaskUpdate` foram removidos.
+  - Store Pinia: `operar(operacao)` manda a operação e já a reflete no cache;
+    `updateTask` passa a recusar. **Quebra compatibilidade**: quem gravava pelo
+    `updateTask` precisa passar a `operar` com a operação nomeada.
+
+### Patch Changes
+
+- eba94c1: Grupos aninhados: um grupo pode estar dentro de outro, ate quatro niveis. O pai
+  mora no grupo (`parentId` opcional no `GroupSchema`, gravado no
+  `.taskin-groups.json`), e a task continua guardando um grupo so, o mais interno.
+  `createGroup(name, { id?, parentId? })`, `nestGroup` e `unnestGroup` entram no
+  `ITaskManager` e nas tres superficies: `taskin group create <nome> --parent
+  <grupo>` (`add` segue como apelido), `taskin group nest <grupo> <pai>` e
+  `taskin group unnest <grupo>`; `create_group`, `nest_group` e `unnest_group` no
+  MCP; `create-group` com `parentId`, `nest-group` e `unnest-group` no WebSocket.
+  Pai inexistente, ciclo e passar de quatro niveis sao recusados. Apagar um grupo
+  sobe os subgrupos para o pai dele. Aninhar e capacidade opcional do registro
+  (`IGroupRegistry.setParent?`): sem ela, as tres recusam com
+  `NESTING_NOT_SUPPORTED` e o MCP nao anuncia `nest_group` nem `unnest_group`.
+  `taskin list` indenta os subgrupos e `taskin list --json` leva a arvore
+  (`{ group, tasks, groups }`); `taskin group list` mostra a hierarquia;
+  `list_groups` traz o `parentId`; `taskin lint` acusa pai inexistente e ciclo
+  como erro, e profundidade acima de quatro como aviso. No quadro, soltar uma task
+  sobre outra do mesmo grupo cria um subgrupo de verdade, e soltar um grupo sobre
+  outro cria um pai com os dois dentro — gravados pelo dominio, sobrevivem a
+  recarregar, e o desfazer cobre o aninhamento.
+- f78c212: Mover um grupo inteiro fora do dashboard: `moveGroupBefore`, `moveGroupAfter`,
+  `moveGroupToTop` e `moveGroupToBottom` no `ITaskManager`, `taskin group move
+  <grupo> --top | --bottom | --before <task-ou-grupo> | --after <task-ou-grupo>`,
+  a ferramenta `move_group` no MCP, e `move-group-before` / `move-group-after` /
+  `move-group-to-top` / `move-group-to-bottom` no protocolo do servidor WebSocket.
+  Os membros vao juntos, na ordem em que estavam, e so eles sao gravados — um
+  grupo de tres grava tres; as tres superficies dizem quantos arquivos gravaram.
+- 1320e15: Levar uma task ao topo ou ao fim da fila sem saber antes qual e a primeira:
+  `moveToTop` e `moveToBottom` no `ITaskManager`, `taskin priority <task> --top`
+  e `--bottom`, `top`/`bottom` no `set_priority` do MCP, e `move-to-top` /
+  `move-to-bottom` no protocolo do servidor WebSocket. Uma task agrupada vai ao
+  extremo do proprio grupo, como os botoes do dashboard. Topo grava um arquivo;
+  fim depois de uma cauda sem `Priority` numera a cauda uma vez, e as tres
+  superficies dizem quantos arquivos foram gravados.
+- Updated dependencies [342a312]
+- Updated dependencies [a9343e9]
+- Updated dependencies [eba94c1]
+- Updated dependencies [d7a97ad]
+- Updated dependencies [f78c212]
+- Updated dependencies [4e1f3c1]
+- Updated dependencies [7fbe097]
+- Updated dependencies [1320e15]
+  - @opentask/taskin-task-manager@4.0.0
+  - @opentask/taskin-types@2.6.0
+
 ## 3.0.6
 
 ### Patch Changes
