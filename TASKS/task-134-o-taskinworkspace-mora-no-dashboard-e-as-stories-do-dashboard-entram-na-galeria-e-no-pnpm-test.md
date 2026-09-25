@@ -1,6 +1,6 @@
 # 🧩 Task 134 — O TaskinWorkspace mora no dashboard, e as stories do dashboard entram na galeria e no pnpm test
 
-- Status: in-progress
+- Status: done
 - Type: refactor
 - Assignee: sidartaveloso
 
