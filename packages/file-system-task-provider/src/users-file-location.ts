@@ -87,25 +87,29 @@ export async function inspectUsersFileLocation(projectRoot: string): Promise<Use
   return 'missing';
 }
 
-function isTrackedByGit(projectRoot: string, filePath: string): boolean {
+function git(projectRoot: string, args: string[]): boolean {
   try {
-    execFileSync('git', ['ls-files', '--error-unmatch', '--', filePath], {
-      cwd: projectRoot,
-      stdio: 'ignore',
-    });
+    execFileSync('git', args, { cwd: projectRoot, stdio: 'ignore' });
     return true;
   } catch {
     return false;
   }
 }
 
+function isGitWorkTree(projectRoot: string): boolean {
+  return git(projectRoot, ['rev-parse', '--is-inside-work-tree']);
+}
+
+function isTrackedByGit(projectRoot: string, filePath: string): boolean {
+  return git(projectRoot, ['ls-files', '--error-unmatch', '--', filePath]);
+}
+
+function isIgnoredByGit(projectRoot: string, filePath: string): boolean {
+  return git(projectRoot, ['check-ignore', '--quiet', '--', filePath]);
+}
+
 function gitMove(projectRoot: string, from: string, to: string): boolean {
-  try {
-    execFileSync('git', ['mv', '--', from, to], { cwd: projectRoot, stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
+  return git(projectRoot, ['mv', '--', from, to]);
 }
 
 /**
@@ -128,6 +132,36 @@ async function moveFile(projectRoot: string, from: string, to: string): Promise<
 }
 
 /**
+ * Tira o legado redundante da raiz sem gastar o `git mv` nele.
+ *
+ * O estacionado existe para ser comparado à mão e apagado; quem sobrevive é o
+ * canônico. Por isso o arquivo sai da raiz por rename do sistema de arquivos
+ * (o estacionado fica fora do índice) e, quando o legado era versionado, o que
+ * vai para o índice é a remoção do legado **junto com** a adição do canônico.
+ * O Git não grava rename: ele o infere por similaridade entre remoção e adição
+ * do mesmo commit — é esse par que liga o registro novo ao antigo.
+ *
+ * Canônico ignorado pelo `.gitignore` não é adicionado: a escolha é do projeto.
+ *
+ * @returns `true` quando o índice do Git foi atualizado
+ */
+async function parkLegacy(projectRoot: string, paths: UsersFilePaths): Promise<boolean> {
+  const legacyTracked = isTrackedByGit(projectRoot, paths.legacy);
+
+  await fs.mkdir(path.dirname(paths.parked), { recursive: true });
+  await fs.rename(paths.legacy, paths.parked);
+
+  if (!legacyTracked || !git(projectRoot, ['rm', '--cached', '--quiet', '--', paths.legacy])) {
+    return false;
+  }
+
+  if (!isTrackedByGit(projectRoot, paths.canonical) && !isIgnoredByGit(projectRoot, paths.canonical)) {
+    git(projectRoot, ['add', '--', paths.canonical]);
+  }
+  return true;
+}
+
+/**
  * O que a correção fez.
  *
  * @public
@@ -142,7 +176,10 @@ export type UsersFileFixAction = 'none' | 'moved' | 'parked';
 export interface UsersFileFixResult {
   /** `moved`: legado promovido a canônico. `parked`: legado redundante tirado da raiz. */
   action: UsersFileFixAction;
-  /** `true` quando o Git registrou a renomeação (histórico preservado, mudança staged) */
+  /**
+   * `true` quando a mudança foi para o índice do Git. Em `moved`, via `git mv`;
+   * em `parked`, a remoção do legado e a adição do canônico, juntas.
+   */
   viaGit: boolean;
   /** Caminho de origem, quando houve movimentação */
   from?: string;
@@ -163,41 +200,59 @@ export interface UsersFileFixResult {
 export async function validateUsersFileLocation(projectRoot: string): Promise<ValidationIssue[]> {
   const paths = resolveUsersFilePaths(projectRoot);
   const location = await inspectUsersFileLocation(projectRoot);
+  const inGit = isGitWorkTree(projectRoot);
+  const canonicalName = path.join(TASKIN_DIR_NAME, USERS_FILE_NAME);
+  const issues: ValidationIssue[] = [];
 
   if (location === 'legacy') {
-    return [
-      {
-        file: paths.legacy,
-        message: `User registry is at the project root, where nothing reads it. The registry is read from ${path.join(TASKIN_DIR_NAME, USERS_FILE_NAME)}, so every task assignee is currently left unresolved.`,
-        severity: 'error',
-        suggestion: `Run lint with --fix to move it (via 'git mv' when the file is tracked).`,
-      },
-    ];
-  }
-
-  if (location === 'canonical' && (await exists(paths.parked))) {
-    return [
-      {
-        file: paths.parked,
-        message: `A parked legacy user registry is still sitting in ${TASKIN_DIR_NAME}/. It is read by nothing — it was moved out of the project root so it could be compared by hand.`,
-        severity: 'info',
-        suggestion: `Copy over any user missing from ${USERS_FILE_NAME} and delete it.`,
-      },
-    ];
+    issues.push({
+      file: paths.legacy,
+      message: `User registry is at the project root, where nothing reads it. The registry is read from ${canonicalName}, so every task assignee is currently left unresolved.`,
+      severity: 'error',
+      suggestion: `Run lint with --fix to move it (via 'git mv' when the file is tracked).`,
+    });
   }
 
   if (location === 'both') {
-    return [
-      {
-        file: paths.legacy,
-        message: `Stale user registry at the project root, shadowed by ${path.join(TASKIN_DIR_NAME, USERS_FILE_NAME)} — it was never read, so any user added to it was silently ignored.`,
-        severity: 'warning',
-        suggestion: `Check whether it holds users missing from the canonical file, then run lint with --fix to move it out of the root as ${PARKED_USERS_FILE_NAME}.`,
-      },
-    ];
+    issues.push({
+      file: paths.legacy,
+      message: `Stale user registry at the project root, shadowed by ${canonicalName} — it was never read, so any user added to it was silently ignored.`,
+      severity: 'warning',
+      suggestion: `Check whether it holds users missing from the canonical file, then run lint with --fix to move it out of the root as ${PARKED_USERS_FILE_NAME}.`,
+    });
   }
 
-  return [];
+  if (location === 'canonical' && (await exists(paths.parked))) {
+    const parkedName = path.join(TASKIN_DIR_NAME, PARKED_USERS_FILE_NAME);
+    const remove = isTrackedByGit(projectRoot, paths.parked) ? 'git rm' : 'rm';
+    const commit = inGit
+      ? ` Then commit the removal of the root ${USERS_FILE_NAME} together with ${canonicalName} ('git add ${canonicalName}'): Git infers a rename only from a removal and an addition in the same commit, and never from this parked copy.`
+      : '';
+    issues.push({
+      file: paths.parked,
+      message: `A parked legacy user registry is still sitting in ${TASKIN_DIR_NAME}/. It is read by nothing — it was moved out of the project root so it could be compared by hand.`,
+      severity: 'info',
+      suggestion: `Copy over any user missing from ${canonicalName}, then delete it ('${remove} ${parkedName}').${commit}`,
+    });
+  }
+
+  // Projeto sem Git e registro ignorado pelo .gitignore são escolhas legítimas;
+  // o que se aponta é o registro que ficou fora do índice por esquecimento.
+  if (
+    (location === 'canonical' || location === 'both') &&
+    inGit &&
+    !isTrackedByGit(projectRoot, paths.canonical) &&
+    !isIgnoredByGit(projectRoot, paths.canonical)
+  ) {
+    issues.push({
+      file: paths.canonical,
+      message: `The user registry is not tracked by Git. It is team data, not a local cache: until it is committed, nobody else sees these users and their assignees stay unresolved.`,
+      severity: 'warning',
+      suggestion: `Run 'git add ${canonicalName}' and commit it.`,
+    });
+  }
+
+  return issues;
 }
 
 /**
@@ -209,6 +264,8 @@ export async function validateUsersFileLocation(projectRoot: string): Promise<Va
  * - só o legado existe: promovido a canônico (o `UserRegistry` volta a ler)
  * - os dois existem: o canônico é a fonte de verdade e fica intocado; o legado
  *   sai da raiz como `.taskin-users.legacy.json` para o usuário comparar à mão.
+ *   Quando o legado era versionado, a remoção dele e a adição do canônico vão
+ *   juntas para o índice — ver `parkLegacy`.
  *   Mesclar seria arriscado: o legado costuma conter só o usuário sintético que
  *   o `initialize()` antigo semeava (`$USER` / `<user>@example.com`).
  * - qualquer outro estado: nada a fazer
@@ -226,7 +283,7 @@ export async function fixUsersFileLocation(projectRoot: string): Promise<UsersFi
   }
 
   if (location === 'both') {
-    const { viaGit } = await moveFile(projectRoot, paths.legacy, paths.parked);
+    const viaGit = await parkLegacy(projectRoot, paths);
     return { action: 'parked', viaGit, from: paths.legacy, to: paths.parked };
   }
 
