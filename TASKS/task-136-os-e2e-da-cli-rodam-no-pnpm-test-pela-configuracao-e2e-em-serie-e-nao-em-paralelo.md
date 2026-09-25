@@ -1,6 +1,6 @@
 # 🧩 Task 136 — Os e2e da CLI rodam no pnpm test pela configuracao e2e, em serie, e nao em paralelo
 
-- Status: in-progress
+- Status: done
 - Type: test
 - Assignee: sidartaveloso
 - Group: antes-da-5
