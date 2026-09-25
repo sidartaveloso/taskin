@@ -25,3 +25,11 @@ exemplos do `storybook init`. O Storybook do pacote ficou so com o
 `Introduction.mdx`, e a tela completa tem as suas stories em
 `Pages/TaskinWorkspace`, no `design-vue`. Se o Storybook do pacote continua a
 existir e decisao do usuario, perguntada na conversa.
+
+### Correcao posterior (task-134)
+
+O Storybook da **raiz** nao subia com o `vue-component-meta`
+(`ts.readJsonConfigFile is not a function`): a raiz usa TypeScript 7, que nao
+tem mais a API JavaScript de que ele depende. A conferencia desta task subiu so
+o Storybook do design-vue, em TypeScript 6, e nao pegou. A raiz voltou ao
+`vue-docgen-api`; os tres pacotes seguem com o `vue-component-meta`.
