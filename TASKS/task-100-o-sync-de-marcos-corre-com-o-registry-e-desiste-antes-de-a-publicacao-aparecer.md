@@ -85,3 +85,19 @@ O `release.yml` passa `steps.changesets.outputs.publishedPackages` aos dois
 passos, e o passo da action tem `id: changesets`. A prova de verdade e o
 proximo release: o PR de versao, ao ser mesclado, deve publicar e sair com as
 tags e as Releases do GitHub criadas.
+
+### O release da 5.0.0 mostrou que a correcao nao entrou em acao
+
+Em 2026-09-25 o PR #14 publicou onze pacotes, e o `Sync markers` rodou um
+segundo depois com `PUBLISHED_PACKAGES: []`: o `changesets/action` monta o
+`publishedPackages` lendo as linhas `New tag:` da saida do `changeset publish`,
+e o changeset 3.x (`@changesets/cli` 3.0.3) nao as imprime mais — o log so tem
+`Successfully published:`. Com a lista vazia o passo caiu na consulta unica de
+sempre, viu `not published` para todos e passou verde sem marco nenhum: o mesmo
+defeito. As versoes levaram ate 236s para aparecer no registry, alem dos 150s
+medidos antes.
+
+Os marcos foram criados a mao, rodando `pnpm run sync:markers` a partir da
+`main` depois de as onze versoes aparecerem: onze tags e onze Releases, e o
+`reconcile:tags` confirmou 13 pacotes em sincronia. A correcao que nao depende
+do output da action e a task-137.
