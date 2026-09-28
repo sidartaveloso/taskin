@@ -1,6 +1,6 @@
 # 🧩 Task 138 — A direcao da prioridade dita em todo lugar: numero menor vem primeiro
 
-- Status: in-progress
+- Status: done
 - Type: docs
 - Assignee: sidartaveloso
 
