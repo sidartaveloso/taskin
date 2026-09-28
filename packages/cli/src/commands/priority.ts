@@ -52,7 +52,8 @@ export function exigirTaskId(texto: string): TaskId {
  */
 export const priorityCommand = defineCommand({
   name: 'priority <task-id> [priority]',
-  description: '🔝 Set where a task sits in the queue: a number, before/after another task, or top/bottom',
+  description:
+    '🔝 Set where a task sits in the queue: a number (lower comes first), before/after another task, or top/bottom',
   options: [
     { flags: '--before <task-id>', description: 'Place the task right before this one' },
     { flags: '--after <task-id>', description: 'Place the task right after this one' },
