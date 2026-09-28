@@ -135,6 +135,15 @@ export interface FileSystemTaskProviderOptions {
   readonly maxAttachmentKb?: number;
 }
 
+/**
+ * Maior trecho do titulo que entra no nome do arquivo da task, depois do
+ * `task-NNN-`. O titulo completo continua no arquivo; o nome so precisa
+ * identificar a task numa listagem de diretorio (task-139).
+ *
+ * @public
+ */
+export const TASK_FILE_SLUG_MAX_LENGTH = 50;
+
 export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   private locale: Locale;
   private logger: ILogger;
@@ -506,10 +515,12 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
     const taskId = parseTaskId(String(nextNumber).padStart(3, '0'));
 
-    // Create task file name with slugified title (removes accents)
-    const titleSlug = slugify(options.title);
+    // O nome leva o numero, que e unico, e so o comeco do titulo: o titulo pode
+    // ser longo, o nome do arquivo nao precisa acompanhar (task-139). Titulo
+    // sem letra nem digito vira `task-NNN.md`, que o linter aceita.
+    const titleSlug = slugify(options.title, { maxLength: TASK_FILE_SLUG_MAX_LENGTH });
 
-    const fileName = `task-${taskId}-${titleSlug}.md`;
+    const fileName = titleSlug ? `task-${taskId}-${titleSlug}.md` : `task-${taskId}.md`;
     const filePath = path.join(this.tasksDirectory, fileName);
 
     // Check if file already exists
