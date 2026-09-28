@@ -1,6 +1,6 @@
 # 🧩 Task 139 — Nome do arquivo da task com tamanho limitado
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 
