@@ -65,7 +65,7 @@ inviabilizaria as metricas do `git-utils`, que amarram commit -> task.
 
 ## Dependencia
 
-Bloqueada pela [task-043](./task-043-factory-de-provider-no-cli-e-porta-iuserregistry-agnostica.md)
+Bloqueada pela [task-043](./task-043-factory-de-provider-no-cli-e-porta-iuserregistry.md)
 (factory de provider no CLI + porta `IUserRegistry` no `task-manager`), que era a Fase 0 desta
 task. Sem ela, `provider.type: "github"` no `.taskin.json` nao tem efeito: o CLI instancia
 `FileSystemTaskProvider` hardcoded em 13 lugares. O pacote da Fase 1 pode ser escrito e testado
@@ -136,7 +136,7 @@ em paralelo — o que depende da 043 e so o momento em que o CLI passa a usa-lo 
   projeto) e fecham a issue no `finish` -> `taskin list` e `taskin dashboard` leem do GitHub ->
   `taskin lint` aponta e conserta labels inconsistentes -> tudo isso sem PAT em arquivo versionado.
 - Referencias: [task-002](./task-002-add-redmine-support.md) (molde de provider via API, `paused`),
-  [task-031](./task-031-revisar-se-task-manager-deveria-lidar-com-taskfile-ou-task.md) (agnosticismo
+  [task-031](./task-031-revisar-se-task-manager-deveria-lidar-com-taskfile.md) (agnosticismo
   do `ITaskManager` — habilitou esta task), [task-005](./task-005-painel-tasks.md) (dashboard),
   [task-019](./task-019-fazer-push-automatico-e-pull-automatico.md) (autoSync git).
 - Docs externas: [Issues REST API](https://docs.github.com/en/rest/issues/issues),

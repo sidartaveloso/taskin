@@ -67,11 +67,11 @@ exatamente como hoje.
   mensagem explicita** em vez de silenciosamente usar arquivos. Quem tinha type errado na config
   passa a ver o erro.
 
-- Desbloqueia [task-041](./task-041-github-task-provider-issues-como-registro-e-projects-v2-como-projecao.md)
+- Desbloqueia [task-041](./task-041-github-task-provider-issues-como-registro-e.md)
   (GitHub) e [task-002](./task-002-add-redmine-support.md) (Redmine, `paused`). Era a "Fase 0"
   da task-041 e saiu de la por ter perfil diferente: refactor em codigo existente, com risco de
   regressao no que ja funciona, contra pacote novo onde nada quebra se estiver errado.
-- Continua a [task-031](./task-031-revisar-se-task-manager-deveria-lidar-com-taskfile-ou-task.md),
+- Continua a [task-031](./task-031-revisar-se-task-manager-deveria-lidar-com-taskfile.md),
   que tornou `ITaskProvider`/`ITaskManager` genericos sobre a forma da task. Aquela task tirou o
   vazamento de tipo; esta tira o vazamento de instanciacao.
 - Criterio de aceite: `taskin init -p <provider>` seguido de `new`/`start`/`list`/`lint` usa o
