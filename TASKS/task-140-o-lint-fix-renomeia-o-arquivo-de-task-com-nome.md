@@ -1,6 +1,6 @@
 # 🧩 Task 140 — O lint --fix renomeia o arquivo de task com nome longo, por git mv, e reescreve as referencias
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 
