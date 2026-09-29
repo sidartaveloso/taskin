@@ -52,7 +52,11 @@ export const estimateCommand = defineCommand({
   name: 'estimate [task-ids...]',
   description: '🥊 Suggest how hard tasks are, asking Jev and Laya — or run the rinha against the human scores',
   options: [
-    { flags: '--rinha', description: 'Benchmark Jev and Laya against every task that already has a difficulty' },
+    {
+      flags: '--rinha',
+      description:
+        '(beta) Benchmark Jev and Laya against every task that already has a difficulty — a hint, not the truth',
+    },
     { flags: '--apply', description: 'Write the suggestion to the tasks that have no difficulty yet' },
     {
       flags: '--by <source>',
@@ -98,7 +102,7 @@ async function rinha(tasks: Task[], router: EstimatorRouter, store: RinhaStoreFs
     falhar('No task has a difficulty yet. Score a few with `taskin difficulty`: they are the answer key.');
   }
 
-  printHeader(`Rinha: Jev x Laya against ${gabarito.length} human scores`, '🥊');
+  printHeader(`Rinha (beta): Jev x Laya against ${gabarito.length} human scores`, '🥊');
   for (const fora of router.unavailable()) warning(avisoDeFora(fora));
 
   const placar = await new DifficultyBenchmark(router).run(gabarito, progresso);
@@ -107,6 +111,7 @@ async function rinha(tasks: Task[], router: EstimatorRouter, store: RinhaStoreFs
   imprimirPlacar(placar);
   const onde = await store.saveScoreboard(placar);
   info(`Scoreboard saved to ${path.relative(raiz, onde)}`);
+  warning(avisoDeBeta(gabarito.length));
 }
 
 function imprimirPlacar(placar: Scoreboard): void {
@@ -183,6 +188,7 @@ async function sugerir(
     return;
   }
   info(`Suggestion from ${escolha.why}.`);
+  if (!by) warning('The rinha is beta: its winner is a hint, not the truth. Review before applying.');
   if (calibracao) info(`Calibrated on the ${calibracao.size} tasks a human scored.`);
   if (!aplicar) {
     info('Nothing written. Run again with --apply to write these suggestions.');
@@ -220,6 +226,15 @@ function imprimirSugestoes(sugestoes: readonly Suggestion[]): void {
   });
   console.log();
   tabela(['task', 'title', 'jev', 'laya', 'agree', 'suggestion'], linhas);
+}
+
+/**
+ * A rinha e beta: mede poucos pontos de nota humana, e o placar muda com cada
+ * nota nova. Serve de pista para quem prioriza, nao de verdade — e o `--apply`
+ * herda isso.
+ */
+export function avisoDeBeta(notas: number): string {
+  return `Beta: this scoreboard comes from ${notas} human score(s) and changes with every new one. It is a hint, not the truth — review the suggestions before applying them.`;
 }
 
 /** Fora do ar ainda responde o que esta no cache; sem configuracao, nao roda. */

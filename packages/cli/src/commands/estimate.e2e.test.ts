@@ -152,7 +152,9 @@ describe('taskin estimate --rinha', LENTO, () => {
     const { code, saida } = await rodar({}, '--rinha');
 
     expect(code).toBe(0);
-    expect(saida).toContain('Rinha: Jev x Laya against 3 human scores');
+    expect(saida).toContain('Rinha (beta): Jev x Laya against 3 human scores');
+    expect(saida).toContain('Beta: this scoreboard comes from 3 human score(s) and changes with every new one.');
+    expect(saida).toContain('It is a hint, not the truth');
     expect(saida).toMatch(/1\s+jev\s+3\/3\s+0\.00\s+100%/);
     expect(saida).toContain('jev is the best model.');
     expect(saida).toContain('It beats the baselines');
@@ -226,6 +228,7 @@ describe('taskin estimate', LENTO, () => {
 
     expect(code).toBe(0);
     expect(saida).toContain('Suggestion from jev won the last rinha.');
+    expect(saida).toContain('The rinha is beta: its winner is a hint, not the truth.');
     expect(saida).toContain('task-004 now has difficulty 3 (jev).');
     expect(dificuldade('004')).toBe('3');
     expect(dificuldade('001')).toBe('2');

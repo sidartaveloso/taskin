@@ -173,11 +173,13 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin estimate [task-ids...]` - Ask Jev and Laya how hard tasks are. Without
   ids, it asks about the open tasks with no difficulty. It shows what each model
   said, its confidence, and whether they agree — and writes nothing.
-  - `--rinha` - Benchmark Jev and Laya against every task a human already scored,
+  - `--rinha` - **Beta.** Benchmark Jev and Laya against every task a human already scored,
     next to their calibrated versions and two baselines (`always-2` and a
     heuristic), and save the scoreboard to
     `.taskin/rinhas/`. A model that does not run (no key, server down) is listed
-    with the reason, and the other wins by walkover.
+    with the reason, and the other wins by walkover. The scoreboard comes from
+    however many human scores the project has (39 here) and changes with every
+    new one: it is a hint for whoever prioritizes, not the truth.
   - `--apply` - Write the suggestion to the tasks that have no difficulty. The
     suggestion is the last rinha winner's, and only if it beat the baselines;
     a human score is never overwritten.
