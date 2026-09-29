@@ -57,6 +57,8 @@ Laya 0.3.21 local, num M3; Jev `jev-latest`.
 | `laya` (`LAYA_MODEL=english`) | 1,10 | 13% | 77% | 0,14 |
 | `jev` | 1,51 | 21% | 38% | 0,58 |
 | `heuristic` | 1,51 | 13% | 56% | — |
+| `jev-calibrated` | **0,82** | 49% | 77% | — |
+| `laya-calibrated` | 1,05 | 41% | 72% | — |
 
 O Laya respondeu 3 ("média") para as 39 tasks, nos dois checkpoints, com
 confiança de 0,8 a 0,9 no `multilingual`. O "trivial" nunca passou de 1% de
@@ -68,9 +70,16 @@ O Jev chuta um nível acima (4 em 32 das 39; média 4,03 contra 2,62), mas na
 ordem certa: correlação de 0,43 com as notas humanas, contra nenhuma do Laya. O
 erro médio, que premia ficar perto da moda, põe o Laya na frente; quem tem
 sinal é o Jev. Recalibrado pela posição (o `score` contínuo vira a nota humana
-do mesmo quantil, aprendido sem a task prevista), o Jev erra 0,79 e passa o
-`always-2` (0,87). Com 39 notas a diferença é pequena: o próximo passo é pôr o
-Jev calibrado na rinha como competidor, não aplicar a nota dele.
+do mesmo quantil, aprendido sem a task prevista), o Jev erra 0,82 e passa o
+`always-2` (0,87).
+
+7. **Calibrados competem, não substituem.** `jev-calibrated` e
+   `laya-calibrated` entram na rinha ao lado dos crus. A calibração por posição
+   (`QuantileCalibration`) tira o deslocamento e fica com a ordem; na rinha,
+   cada task é calibrada só com as outras (leave-one-out), e na sugestão com
+   todas as notas humanas. O vencedor da rinha pode ser uma fonte calibrada, e
+   é a nota calibrada que o `--apply` grava. Com 39 notas, a vantagem do Jev
+   calibrado sobre o `always-2` é pequena: cada nota humana nova refaz a conta.
 
 ## O que ficou de fora
 
