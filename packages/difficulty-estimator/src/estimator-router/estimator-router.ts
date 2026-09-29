@@ -28,29 +28,34 @@ export function answerCacheKey(provider: ISystemOneProvider, request: SystemOneR
  * provider e nunca junta os dois; juntar e decidir e de quem pergunta.
  */
 export class EstimatorRouter implements IEstimatorRouter {
-  private readonly fora: Map<RemoteEstimatorId, string>;
+  /** Sem configuracao (o Jev sem chave): nao ha provider, nem cache a consultar. */
+  private readonly semConfiguracao: Map<RemoteEstimatorId, string>;
+  /** Configurado, mas o `probe` nao achou: responde so pelo cache. */
+  private readonly foraDoAr = new Map<RemoteEstimatorId, string>();
 
   constructor(
     private readonly estimators: ResolvedEstimators,
     private readonly store: IRinhaStore,
     private readonly options: EstimatorRouterOptions = {},
   ) {
-    this.fora = new Map(estimators.unavailable.map((u) => [u.estimator, u.reason]));
+    this.semConfiguracao = new Map(estimators.unavailable.map((u) => [u.estimator, u.reason]));
   }
 
   async probe(): Promise<void> {
     await Promise.all(
-      this.ativos().map(async (provider) => {
+      this.estimators.providers.map(async (provider) => {
         const saude = await provider.probe();
-        if (!saude.ok) this.fora.set(provider.id, saude.reason);
+        if (!saude.ok) this.foraDoAr.set(provider.id, saude.reason);
       }),
     );
   }
 
   unavailable(): readonly UnavailableEstimator[] {
-    return REMOTE_ESTIMATORS.flatMap((estimator) => {
-      const reason = this.fora.get(estimator);
-      return reason ? [{ estimator, reason }] : [];
+    return REMOTE_ESTIMATORS.flatMap((estimator): UnavailableEstimator[] => {
+      const semConfiguracao = this.semConfiguracao.get(estimator);
+      if (semConfiguracao) return [{ estimator, reason: semConfiguracao }];
+      const foraDoAr = this.foraDoAr.get(estimator);
+      return foraDoAr ? [{ estimator, reason: foraDoAr, cacheOnly: true }] : [];
     });
   }
 
@@ -59,12 +64,12 @@ export class EstimatorRouter implements IEstimatorRouter {
     const resultados = new Map<string, EstimatorOutcome>();
     const pendentes: ISystemOneProvider<RemoteEstimatorId>[] = [];
 
-    for (const provider of this.ativos()) {
+    for (const provider of this.estimators.providers) {
       const guardada =
         this.options.useCache === false ? undefined : await this.store.readAnswer(answerCacheKey(provider, request));
       const resultado = guardada && respondido(provider, guardada.response, guardada.latencyMs, true);
       if (resultado?.kind === 'answered') resultados.set(provider.id, resultado);
-      else pendentes.push(provider);
+      else if (!this.foraDoAr.has(provider.id)) pendentes.push(provider);
     }
 
     if (pendentes.length > 0) {
@@ -90,13 +95,10 @@ export class EstimatorRouter implements IEstimatorRouter {
         resultados.get(estimator) ?? {
           kind: 'unavailable',
           estimator,
-          reason: this.fora.get(estimator) ?? `${estimator} is not configured`,
+          reason:
+            this.foraDoAr.get(estimator) ?? this.semConfiguracao.get(estimator) ?? `${estimator} is not configured`,
         },
     );
-  }
-
-  private ativos(): ISystemOneProvider<RemoteEstimatorId>[] {
-    return this.estimators.providers.filter((p) => !this.fora.has(p.id));
   }
 
   private async fanOut(

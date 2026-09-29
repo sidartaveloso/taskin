@@ -3,7 +3,10 @@ import type { RemoteEstimatorId, UnavailableEstimator } from '../estimators/esti
 
 /** Pergunta ao Jev e ao Laya de uma vez, e diz o que cada um respondeu — ou por que nao. */
 export interface IEstimatorRouter {
-  /** Confere quem esta no ar antes de comecar; quem nao estiver fica indisponivel, com o motivo. */
+  /**
+   * Confere quem esta no ar antes de comecar. Quem nao estiver nao e chamado,
+   * mas o que ja esta no cache dele continua valendo (`cacheOnly`).
+   */
   probe(): Promise<void>;
   unavailable(): readonly UnavailableEstimator[];
   /** Um resultado por modelo, na ordem de `REMOTE_ESTIMATORS`. */

@@ -6,6 +6,8 @@ export type RemoteEstimatorId = 'jev' | 'laya';
 export interface UnavailableEstimator {
   readonly estimator: RemoteEstimatorId;
   readonly reason: string;
+  /** Configurado, mas fora do ar: ainda responde o que esta no cache. */
+  readonly cacheOnly?: boolean;
 }
 
 export interface ResolvedEstimators {
