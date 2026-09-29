@@ -46,15 +46,16 @@ A moda é 2. Responder "2" para tudo, sem ler nada, acerta 49% e erra em média
    `.taskin/rinhas/`. A chave do cache leva a versão da pergunta, o texto da
    task e a configuração do provider.
 
-## O que a primeira rinha mostrou (29/09/2026)
+## O que a rinha mostrou (29/09/2026)
 
-Jev sem chave (W.O.); Laya 0.3.21 local, num M3.
+Laya 0.3.21 local, num M3; Jev `jev-latest`.
 
 | competidor | erro médio | exato | ±1 | Brier |
 |---|---|---|---|---|
 | `always-2` | 0,87 | 49% | 74% | — |
 | `laya` (auto → `multilingual`) | 1,10 | 13% | 77% | 0,60 |
 | `laya` (`LAYA_MODEL=english`) | 1,10 | 13% | 77% | 0,14 |
+| `jev` | 1,51 | 21% | 38% | 0,58 |
 | `heuristic` | 1,51 | 13% | 56% | — |
 
 O Laya respondeu 3 ("média") para as 39 tasks, nos dois checkpoints, com
@@ -62,6 +63,14 @@ confiança de 0,8 a 0,9 no `multilingual`. O "trivial" nunca passou de 1% de
 probabilidade: é o viés de posição que o próprio README do Laya descreve. Com o
 placar assim, a sugestão dele não é aplicada por padrão, e a decisão do
 desenho se paga: sem a rinha, o `--apply` teria gravado 3 em tudo.
+
+O Jev chuta um nível acima (4 em 32 das 39; média 4,03 contra 2,62), mas na
+ordem certa: correlação de 0,43 com as notas humanas, contra nenhuma do Laya. O
+erro médio, que premia ficar perto da moda, põe o Laya na frente; quem tem
+sinal é o Jev. Recalibrado pela posição (o `score` contínuo vira a nota humana
+do mesmo quantil, aprendido sem a task prevista), o Jev erra 0,79 e passa o
+`always-2` (0,87). Com 39 notas a diferença é pequena: o próximo passo é pôr o
+Jev calibrado na rinha como competidor, não aplicar a nota dele.
 
 ## O que ficou de fora
 

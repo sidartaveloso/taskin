@@ -26,10 +26,12 @@ Das 141 tasks, so 39 tem dificuldade, toda dada a mao no quadro de priorizacao, 
 - [x] Achado: o `preserveSymlinks` do tsup da CLI nao resolve as dependencias do `@layerall/core` (`@turf/*`) no store do pnpm. O `@layerall/core` vai como `external` e dependencia da CLI (esta no npm); o `@rinhany/core`, sem dependencias, entra no bundle — o `taskin` publicado nao precisa dele em runtime
 - [x] Testes sem rede — 123 no pacote, em 9 arquivos: provedor com `fetch` falso (14: corpo, `model` omitido, 401, 422 com o que o servidor disse, 429/529 com retry, timeout, `ECONNREFUSED`, resposta crua; `probe`); pergunta (21: nenhuma linha de dificuldade chega, nem o `Difficulty: 9` da task-054 dentro de bloco de codigo; secoes em portugues; corte; `score` -> nota; `humanScore` recusa 9, 0, 2.5); estimadores (5); roteador (9: `fan_out` com os dois, um falha e o outro fica, Jev sem chave nunca chamado, cache com a latencia original, so quem falta e chamado, `--no-cache`, falha fora do cache, `probe`); contrato do store (5 x 2, mais 3 do fs); competidores (36, com a `testarBaseAlgoritmo` do `@rinhany/testing` nos quatro); juiz (8); rinha (8: o modelo certo vence, a nota nunca chega a quem compete, W.O. com motivo, modelo que nao bate o piso, ninguem roda, falha parcial penalizada, progresso, `answerKeyFrom`); sugestao (9). E2e da CLI (`estimate.e2e.test.ts`, 14), com dois servidores System One falsos em `127.0.0.1`: placar salvo, nenhum pedido com `Difficulty`, W.O. sem chave, chave do `.env` e do shell, `--rinha` recusa ids, sugestao sem gravar, `--apply` so onde nao ha nota, nota humana nao sobrescrita, vencedor abaixo do piso recusa o `--apply`, os dois fora falha, `--by gpt` recusado, cache nao pergunta duas vezes
 - [x] A rinha de verdade neste repositorio, com o Laya 0.3.21 local (`uvx --from "laya[serve]" laya-serve`, num M3): placar em Notes. O Jev nao rodou — o `.env` daqui nao tem `TYPESAFE_API_KEY` — e o Laya ganhou por W.O., mas nao bate o `always-2`: a sugestao dele nao vira nota por padrao. Conferido: o Laya respondeu 3 para as 39 tasks, e o "trivial" nunca passou de 1% de probabilidade
-- [ ] Rodar a rinha com o Jev — em aberto: precisa da `TYPESAFE_API_KEY` no `.env`; depois, `taskin estimate --rinha` (o Laya vem do cache)
+- [x] A rinha com o Jev (`jev-latest`, chave no `.env`, 47.773 tokens de entrada — uns US$ 0,002): erro medio 1,51, 21% exato, 38% em ±1, Brier 0,58, 329 ms. Chuta alto (4 em 32 das 39; media 4,03 contra 2,62 das notas humanas), mas acompanha a ordem: correlacao 0,43 (0,40 por posto) com as notas. O Laya, constante em 3, tem correlacao nenhuma. Placar em Notes
+- [x] Achado, corrigido: com o `laya-serve` desligado, o `probe` tirava o Laya antes de olhar o cache, e as 39 respostas guardadas dele nao contavam — a primeira rinha com o Jev deu W.O. ao contrario. Agora quem esta fora do ar nao e chamado, mas responde o que esta no cache (`cacheOnly` no `UnavailableEstimator`); so quem nao tem configuracao (o Jev sem chave) fica de fora de vez. Testes: `still answers from the cache for a model that is down` (roteador, 10) e `keeps counting what Laya already answered when laya-serve is down` (e2e, 15)
+- [ ] Um competidor `jev` calibrado — em aberto: mapeando o `score` continuo do Jev para a distribuicao das notas humanas pela posicao, deixando de fora a task prevista (leave-one-out), ele chega a erro medio 0,79, 49% exato e 79% em ±1 — a frente do `always-2` (0,87 / 49% / 74%). Com 39 notas, a diferenca e pequena para decidir sozinha; entra na rinha como competidor, com a calibracao aprendida so das outras tasks
 - [x] Docs: `taskin estimate`, as variaveis e o `laya-serve` em `packages/cli/README.md` e `docs/QUICKSTART.md`; `packages/difficulty-estimator/README.md`; registro `docs/RDT/sugestao-de-dificuldade-pela-rinha.md` — a rinha escolhe o estimador, e sugestao nao e nota
 - [x] Changeset `.changeset/estimate-jev-x-laya.md` (minor no `taskin` e no pacote novo, que nasce em 0.1.0)
-- [x] Verificacao: `pnpm build` (24/24), `pnpm typecheck` (31/31), `pnpm lint` (23/23, com `lint:manifests`, `lint:repository-url` e `lint:tasks`), `pnpm test` (46/46: o pacote novo com 123, a CLI com 365 e os e2e com 123, os 14 do `estimate` entre eles) e `biome check .` verdes — com as mudancas do design-vue de outra sessao na mesma arvore, que nao entram nos commits desta task
+- [x] Verificacao: `pnpm build` (24/24), `pnpm typecheck` (31/31), `pnpm lint` (23/23, com `lint:manifests`, `lint:repository-url` e `lint:tasks`), `pnpm test` (46/46: o pacote novo com 123, a CLI com 365 e os e2e com 123, os 14 do `estimate` entre eles) e `biome check .` verdes — com as mudancas do design-vue de outra sessao na mesma arvore, que nao entram nos commits desta task. Depois da correcao do cache: pacote 124, CLI 365 + e2e 124 (15 do `estimate`), `tsc --noEmit` dos dois e `biome check` dos arquivos mexidos verdes
 - [ ] Processar audio, como o partway — adiado: o pedido e categorizar tasks; o state e o texto da task
 - [ ] Sugestao pelo MCP, pelo WebSocket e no quadro de priorizacao — adiado: CLI primeiro; o mesmo pacote serve aos tres depois
 - [ ] Sugerir no `taskin new` — adiado: so depois que o placar mostrar que a sugestao presta
@@ -65,17 +67,22 @@ A dificuldade existe desde o quadro de priorizacao e ganhou CLI e MCP na task-11
 
 39 no total. A task-054 tem `Difficulty: 9` dentro de um bloco de codigo (o exemplo do lint) e nao conta. Sem nota: 96 `done` e 6 `pending`, esta inclusive.
 
-### O placar da primeira rinha (29/09/2026)
+### O placar (29/09/2026)
 
-Jev sem chave (W.O.); Laya 0.3.21, `laya-serve` local num M3, 39 tasks em 24 s.
+Laya 0.3.21, `laya-serve` local num M3; Jev `jev-latest`. 39 tasks.
 
 | competidor | respondeu | erro medio | exato | ±1 | Brier | ms |
 |---|---|---|---|---|---|---|
 | `always-2` | 39/39 | 0,87 | 49% | 74% | — | 0 |
 | `laya` (auto -> `multilingual`) | 39/39 | 1,10 | 13% | 77% | 0,60 | 594 |
 | `laya` (`LAYA_MODEL=english`) | 39/39 | 1,10 | 13% | 77% | 0,14 | 538 |
+| `jev` | 39/39 | 1,51 | 21% | 38% | 0,58 | 329 |
 | `heuristic` | 39/39 | 1,51 | 13% | 56% | — | 0 |
-| `jev` | nao rodou: `TYPESAFE_API_KEY is not set (in .env or in the environment)` | | | | | |
+
+- O Jev distribui assim, por nota humana: 1 -> {3: 2, 4: 3}; 2 -> {4: 18, 5: 1}; 3 -> {3: 1, 4: 4}; 4 -> {4: 5, 5: 1}; 5 -> {4: 2, 5: 2}. Um nivel acima, mas na ordem certa: correlacao 0,43 (Pearson) e 0,40 (Spearman).
+- O Laya empata em erro com "sempre 3" — e e isso que ele e: 43/39 = 1,10, 5/39 = 13%, 30/39 = 77%, exatamente os numeros da tabela.
+- O ranking por erro medio poe o Laya a frente do Jev, porque erro medio premia ficar perto da moda. Quem tem sinal e o Jev; quem erra menos sem calibrar e o `always-2`.
+- Calibrado (score continuo -> nota humana pela posicao, leave-one-out): Jev 0,79 / 49% / 79%; Laya 1,05 / 41% / 72%. So o Jev, calibrado, passa o piso.
 
 - O Laya disse 3 ("media") para todas as 39, nos dois checkpoints. No `multilingual` a probabilidade do nivel 3 ficou entre 0,78 e 0,92, e o "trivial" sempre abaixo de 0,01: o vies de posicao que o README dele descreve, com excesso de confianca (Brier 0,60). O `english` erra igual, com confianca mais honesta (0,14).
 - As tasks, mesmo sem acento, o Laya roteia como portugues (`language looks like 'pt'`) para o `multilingual`; so um texto de duas linhas caiu no `english`.
