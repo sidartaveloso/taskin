@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { TASKIN_VARIANTS } from '../../organisms/taskin/Taskin.variants';
 import TaskinEffectTears from './TaskinEffectTears';
 import type { TaskinEffectTearsProps } from './TaskinEffectTears.types';
 
@@ -7,6 +8,11 @@ const meta = {
   component: TaskinEffectTears,
   tags: ['design-vue'],
   argTypes: {
+    variant: {
+      control: { type: 'select' },
+      options: [...TASKIN_VARIANTS],
+      description: 'Which character: taskin (octopus) or sapin (frog)',
+    },
     animationsEnabled: {
       control: { type: 'boolean' },
     },
@@ -49,6 +55,19 @@ export const NoAnimation: Story = {
     docs: {
       description: {
         story: 'Tears without animation (static)',
+      },
+    },
+  },
+};
+
+export const Sapin: Story = {
+  args: {
+    variant: 'sapin',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "On the Sapin the effect follows the frog's face.",
       },
     },
   },

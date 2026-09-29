@@ -1,6 +1,7 @@
 import type { Ref } from 'vue';
 import type { TaskinEyesProps } from '../../atoms/taskin-eyes/TaskinEyes.types';
 import type { TASKIN_MOODS } from './Taskin.moods';
+import type { TaskinVariant } from './Taskin.variants';
 
 export type TaskinArmSide = 'left' | 'right';
 
@@ -29,6 +30,12 @@ export interface TaskinProps {
    * Initial visual mood of Taskin.
    */
   mood?: TaskinMood;
+
+  /**
+   * Which character to draw: the Taskin octopus (default) or the Sapin frog.
+   * Same moods, behaviours and movements; only the drawing changes.
+   */
+  variant?: TaskinVariant;
 
   /**
    * If true, small idle animations will occur.

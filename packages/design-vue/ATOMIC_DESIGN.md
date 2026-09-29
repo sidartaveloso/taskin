@@ -45,9 +45,11 @@ host app (e.g. `packages/dashboard`) can persist it via its task provider.
 
 ### TaskinBody
 
-- Renders the octopus body (main circle)
+- Renders the octopus body (main circle), or the Sapin frog with `variant="sapin"`
 - Handles body color changes
-- Provides animations: shiver, dance, angry shake
+- Provides animations for the body alone: float, bounce, sway. The `Taskin`
+  organism does not use them: its mood motions (dance, float, sway, shiver,
+  pant) move the whole character, eyes and mouth included
 
 ### TaskinEyes
 

@@ -1,4 +1,5 @@
 import { computed, defineComponent, h, type PropType } from 'vue';
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 import { layoutThoughtBubble } from './thought-bubble-layout';
 
 export default defineComponent({
@@ -12,11 +13,16 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    /** Which character the bubble comes from: it sits clear of that character's eyes. */
+    variant: {
+      type: String as PropType<TaskinVariant>,
+      default: 'taskin',
+    },
   },
   setup(props) {
     // A frase e configuravel, entao o tamanho do balao vem dela. Ver
     // `thought-bubble-layout.ts` para o porque de estimar a largura do texto.
-    const layout = computed(() => layoutThoughtBubble(props.text));
+    const layout = computed(() => layoutThoughtBubble(props.text, props.variant));
 
     return () =>
       h(

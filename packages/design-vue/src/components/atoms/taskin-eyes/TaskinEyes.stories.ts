@@ -1,6 +1,7 @@
 import { FaceTrackingDebug, TrackingControls, useFaceLandmarker, WebcamVideo } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
+import { TASKIN_VARIANTS } from '../../organisms/taskin/Taskin.variants';
 import type { EyeState, TaskinEyesProps } from './TaskinEyes.types';
 import TaskinEyes from './TaskinEyes.vue';
 
@@ -9,6 +10,11 @@ const meta = {
   component: TaskinEyes,
   tags: ['autodocs', 'design-vue'],
   argTypes: {
+    variant: {
+      control: { type: 'select' },
+      options: [...TASKIN_VARIANTS],
+      description: 'Which character: taskin (octopus) or sapin (frog)',
+    },
     state: {
       control: { type: 'select' },
       options: ['normal', 'closed', 'squint', 'wide'],
@@ -675,6 +681,37 @@ export const FaceTracking: Story = {
     docs: {
       description: {
         story: '📹 Eyes track your face using webcam! Click "Start Detection" to start.',
+      },
+    },
+  },
+};
+
+export const Sapin: Story = {
+  args: {
+    variant: 'sapin',
+    state: 'normal',
+    trackingMode: 'none',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "The Sapin's eyes: higher and further apart, on the bumps of its head, round and without an outline.",
+      },
+    },
+  },
+};
+
+export const SapinClosed: Story = {
+  args: {
+    variant: 'sapin',
+    state: 'closed',
+    trackingMode: 'none',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A closed Sapin eye always draws the stroke: it is the lid, which would vanish into the green otherwise.',
       },
     },
   },

@@ -34,6 +34,7 @@ export * from './components/molecules/taskin-arm-with-phone';
 export * from './components/molecules/taskin-effect-fart-cloud';
 export * from './components/molecules/taskin-effect-hearts';
 export * from './components/molecules/taskin-effect-phone';
+export * from './components/molecules/taskin-effect-sweat';
 export * from './components/molecules/taskin-effect-tears';
 export * from './components/molecules/taskin-effect-thought-bubble';
 export * from './components/molecules/taskin-effect-vomit';
@@ -49,6 +50,7 @@ export {
 } from './components/organisms/taskin';
 export * from './components/organisms/taskin/Taskin.moods';
 export * from './components/organisms/taskin/Taskin.types';
+export * from './components/organisms/taskin/Taskin.variants';
 export { default as TaskinWithFaceTracking } from './components/organisms/taskin/TaskinWithFaceTracking.vue';
 export * from './components/pages';
 export * from './components/templates';

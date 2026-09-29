@@ -29,6 +29,7 @@
     <!-- Taskin Mascot -->
     <div class="mascot-container" ref="mascotContainer">
       <Taskin
+        :variant="variant"
         :mood="currentMood"
         :size="mascotSize"
         :eye-tracking-mode="eyeTrackingMode"
@@ -54,15 +55,19 @@ import { FaceTrackingDebug, TrackingControls, useFaceLandmarker, WebcamVideo } f
 import { computed, onMounted, ref, watch } from 'vue';
 import Taskin from './Taskin';
 import type { TaskinMood } from './Taskin.types';
+import type { TaskinVariant } from './Taskin.variants';
 
 export interface Props {
   mascotSize?: number;
+  /** Which character reacts: the Taskin octopus (default) or the Sapin frog. */
+  variant?: TaskinVariant;
   showWebcam?: boolean;
   showDebug?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   mascotSize: 300,
+  variant: 'taskin',
   showWebcam: false,
   showDebug: false,
 });

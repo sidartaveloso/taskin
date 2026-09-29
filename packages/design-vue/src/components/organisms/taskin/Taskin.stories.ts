@@ -3,6 +3,7 @@ import { defineComponent, h, onMounted, onUnmounted, ref } from 'vue';
 import Taskin from './Taskin';
 import { TASKIN_MOODS } from './Taskin.moods';
 import type { TaskinMood } from './Taskin.types';
+import { TASKIN_VARIANTS } from './Taskin.variants';
 
 const meta = {
   title: 'Organisms/Taskin/Taskin',
@@ -21,6 +22,11 @@ const meta = {
       control: 'select',
       options: [...TASKIN_MOODS],
       description: 'The mood state of the Taskin mascot',
+    },
+    variant: {
+      control: 'select',
+      options: [...TASKIN_VARIANTS],
+      description: 'Which character to draw: the Taskin octopus or the Sapin frog',
     },
     size: {
       control: { type: 'number', min: 50, max: 500, step: 10 },
@@ -61,18 +67,18 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const AllMoods: Story = {
-  render: () => ({
+  render: (args) => ({
     components: { Taskin },
     template: `
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px;">
         <div v-for="mood in moods" :key="mood" style="text-align: center;">
-          <Taskin :mood="mood" :size="150" />
+          <Taskin :mood="mood" :size="150" :variant="variant" />
           <p style="margin-top: 10px; font-size: 12px;">{{ mood }}</p>
         </div>
       </div>
     `,
     data() {
-      return { moods: TASKIN_MOODS };
+      return { moods: TASKIN_MOODS, variant: args.variant };
     },
   }),
 };
@@ -260,7 +266,7 @@ export const EyeTrackingMouse: Story = {
 };
 
 export const EyeTrackingElement: Story = {
-  render: () => {
+  render: (args) => {
     const targetElement = ref<HTMLElement | undefined>(undefined);
     const buttonPos = ref({ x: 0, y: 0 });
     const isDragging = ref(false);
@@ -355,6 +361,7 @@ export const EyeTrackingElement: Story = {
             ],
           ),
           h(Taskin, {
+            variant: args.variant,
             mood: 'neutral' as TaskinMood,
             size: 200,
             idleAnimation: true,
@@ -375,7 +382,7 @@ export const EyeTrackingElement: Story = {
 };
 
 export const EyeTrackingCustomPosition: Story = {
-  render: () =>
+  render: (args) =>
     // Options API com `this`: defineComponent e o que o tipa, sem cast manual
     defineComponent({
       components: { Taskin },
@@ -396,6 +403,7 @@ export const EyeTrackingCustomPosition: Story = {
             <Taskin
               mood="neutral"
               :size="150"
+              :variant="variant"
               eye-tracking-mode="custom"
               :eye-custom-position="customPosition"
             />
@@ -405,6 +413,7 @@ export const EyeTrackingCustomPosition: Story = {
     `,
       data() {
         return {
+          variant: args.variant,
           customPosition: null as { x: number; y: number } | null,
           visualIndicator: null as { x: number; y: number } | null,
         };
