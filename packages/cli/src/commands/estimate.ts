@@ -1,6 +1,7 @@
 /**
  * `taskin estimate` — o Jev e o Laya sugerem a dificuldade, e a rinha contra
- * as notas humanas diz em quem confiar (task-141).
+ * as notas humanas diz em quem confiar (task-141). E labs: so roda no projeto
+ * que ligou `"labs": ["estimate"]` no `.taskin.json`.
  */
 
 import path from 'node:path';
@@ -32,6 +33,7 @@ import {
 } from '@opentask/taskin-difficulty-estimator';
 import { type Task, TaskManager } from '@opentask/taskin-task-manager';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
+import { requireLabs } from '../lib/labs/index.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { normalizeTaskId } from '../lib/task-id.js';
@@ -50,7 +52,8 @@ export const RINHA_DIR = path.join('.taskin', 'rinhas');
 
 export const estimateCommand = defineCommand({
   name: 'estimate [task-ids...]',
-  description: '🥊 Suggest how hard tasks are, asking Jev and Laya — or run the rinha against the human scores',
+  description:
+    '🧪 (labs) Suggest how hard tasks are, asking Jev and Laya — or run the rinha against the human scores. Enable with `taskin config --labs estimate`',
   options: [
     {
       flags: '--rinha',
@@ -71,6 +74,7 @@ export const estimateCommand = defineCommand({
 
 async function estimar(ids: string[], options: EstimateOptions): Promise<void> {
   requireTaskinProject();
+  requireLabs('estimate');
   const by = lerFonte(options.by);
   if (options.rinha && (ids.length > 0 || options.apply)) {
     falhar('--rinha runs against every task a human scored: it takes no task ids and no --apply.');

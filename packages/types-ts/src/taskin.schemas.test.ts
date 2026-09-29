@@ -8,6 +8,8 @@ import {
   EngagementMetricsSchema,
   GitCommitSchema,
   GroupSchema,
+  LABS_FEATURES,
+  LabsFeatureSchema,
   MascotConfigSchema,
   MascotNoiseReactionConfigSchema,
   NOTIFICATION_EVENTS,
@@ -1404,5 +1406,27 @@ describe('GroupSchema', () => {
     const aceitaSoGroupId = (id: GroupId) => id;
 
     expect(aceitaSoGroupId(grupo.id)).toBe('g-abc');
+  });
+});
+
+describe('TaskinConfigSchema - labs', () => {
+  const base = { version: '1.0.3', provider: { type: 'fs', config: {} } };
+
+  it('keeps the labs features a project switched on', () => {
+    expect(TaskinConfigSchema.parse({ ...base, labs: ['estimate'] }).labs).toEqual(['estimate']);
+  });
+
+  it('keeps a feature it does not know, instead of rejecting the whole config', () => {
+    expect(TaskinConfigSchema.safeParse({ ...base, labs: ['estimate', 'from-a-newer-taskin'] }).success).toBe(true);
+  });
+
+  it('has no labs when the block is missing', () => {
+    expect(TaskinConfigSchema.parse(base).labs).toBeUndefined();
+  });
+
+  it('lists estimate as a labs feature', () => {
+    expect(LABS_FEATURES).toContain('estimate');
+    expect(LabsFeatureSchema.safeParse('estimate').success).toBe(true);
+    expect(LabsFeatureSchema.safeParse('nope').success).toBe(false);
   });
 });

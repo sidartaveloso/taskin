@@ -28,5 +28,6 @@
       "webhookUrl": "${DISCORD_TASKIN_WEBHOOK_URL}",
       "events": ["task:start", "task:done"]
     }
-  }
+  },
+  "labs": ["estimate"]
 }
