@@ -2,7 +2,8 @@
 
 > **Beta.** The rinha measures the estimators against the scores a project
 > already has — a small sample, and the scoreboard changes with every new score.
-> It is a hint for whoever prioritizes, not the truth.
+> It is a hint for whoever prioritizes, not the truth. In the `taskin` CLI it is
+> a labs feature, off until a project turns it on (`taskin config --labs estimate`).
 
 Suggests how hard a task is (1 to 5, the scale of `TaskSchema.difficulty`) by
 asking two System One decision models, and runs a rinha against the tasks a

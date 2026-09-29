@@ -827,6 +827,25 @@ export const MascotReactionsConfigSchema = z.object({
 });
 
 /**
+ * Features in labs: experiments still in beta, available only to a project
+ * that asked for them (`"labs": ["estimate"]` in `.taskin.json`), in the
+ * spirit of Google Labs. Each one is switched on by itself.
+ *
+ * - `estimate` — Jev and Laya suggest task difficulty, and the rinha against
+ *   the human scores tells which one to trust (task-141).
+ *
+ * @public
+ */
+export const LabsFeatureSchema = z.enum(['estimate']);
+
+/**
+ * Every feature currently in labs.
+ *
+ * @public
+ */
+export const LABS_FEATURES = LabsFeatureSchema.options;
+
+/**
  * Mascot configuration block in .taskin.json.
  *
  * @public
@@ -949,4 +968,11 @@ export const TaskinConfigSchema = z.object({
   notifications: NotificationConfigSchema.optional(),
   /** Mascot behavior, including its reaction to ambient noise */
   mascot: MascotConfigSchema.optional(),
+  /**
+   * Labs features switched on in this project. Plain strings, not
+   * {@link LabsFeatureSchema}: a feature that leaves labs (or a newer taskin's
+   * one) must not make an older config invalid. Unknown entries are kept and
+   * ignored.
+   */
+  labs: z.array(z.string()).optional(),
 });

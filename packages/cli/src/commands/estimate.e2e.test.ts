@@ -131,6 +131,7 @@ beforeEach(async () => {
       version: '1.0.3',
       provider: { type: 'fs', config: { tasksDir: 'TASKS' } },
       automation: { level: 'manual', autoSync: false },
+      labs: ['estimate'],
     }),
   );
   for (const [id, { nota, status }] of Object.entries(NOTAS)) {
@@ -145,6 +146,33 @@ afterEach(async () => {
   await jev.descer();
   await laya.descer();
   rmSync(raiz, { recursive: true, force: true });
+});
+
+describe('taskin estimate is a labs feature', LENTO, () => {
+  const semLabs = () => {
+    const config = JSON.parse(readFileSync(join(raiz, '.taskin.json'), 'utf-8')) as Record<string, unknown>;
+    delete config.labs;
+    writeFileSync(join(raiz, '.taskin.json'), JSON.stringify(config));
+  };
+
+  it('refuses to run, saying how to turn it on, when the project did not ask for it', async () => {
+    semLabs();
+    const { code, saida } = await rodar({}, '--rinha');
+
+    expect(code).toBe(1);
+    expect(saida).toContain('taskin estimate is a labs feature: it is beta, and off until this project turns it on.');
+    expect(saida).toContain('taskin config --labs estimate');
+    expect(jev.pedidos).toHaveLength(0);
+    expect(laya.pedidos).toHaveLength(0);
+  });
+
+  it('runs once `taskin config --labs estimate` turns it on', async () => {
+    semLabs();
+    await execFileAsync('node', [CLI, 'config', '--labs', 'estimate'], { cwd: raiz });
+    const { code, saida } = await rodar({}, '--rinha');
+    expect(code).toBe(0);
+    expect(saida).toContain('Rinha (beta)');
+  });
 });
 
 describe('taskin estimate --rinha', LENTO, () => {

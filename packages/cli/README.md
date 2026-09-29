@@ -128,6 +128,8 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `--period <day|week|month|year>` - Time period for stats
 - `taskin config [options]` - Configure automation level
   - `--level <manual|assisted|autopilot>` - Set commit automation level
+  - `--labs <feature>` / `--labs-off <feature>` - Turn a labs feature on or off
+    in this project (see [Labs](#labs)). `--show` lists them
 - `taskin lint` - Validate task files. Exits `1` when an error is left — with `--fix` too, which corrects what it can and reports what it cannot (an attachment over the size limit, for instance)
 - `taskin group` - Manage task groups (alias: `groups`)
   - `list` - List the groups as a tree: each subgroup indented two spaces under
@@ -170,7 +172,8 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   (trivial) to 5 (very hard) — the command for the queue `taskin list --unscored`
   shows. Anything else is refused without writing. There is no way to clear a
   score: a wrong one is corrected by scoring again, as on the dashboard.
-- `taskin estimate [task-ids...]` - Ask Jev and Laya how hard tasks are. Without
+- `taskin estimate [task-ids...]` - **Labs** (`taskin config --labs estimate`).
+  Ask Jev and Laya how hard tasks are. Without
   ids, it asks about the open tasks with no difficulty. It shows what each model
   said, its confidence, and whether they agree — and writes nothing.
   - `--rinha` - **Beta.** Benchmark Jev and Laya against every task a human already scored,
@@ -479,3 +482,22 @@ Found a bug? Have a feature request? Please [open an issue](https://github.com/s
 ## 📄 License
 
 MIT © [OpenTask](https://opentask.com.br)
+
+## Labs
+
+Some features are experiments still in beta. Like Google Labs, they are off
+until a project asks for them, one by one, in `.taskin.json`:
+
+```json
+{ "labs": ["estimate"] }
+```
+
+`taskin config --labs <feature>` turns one on, `--labs-off <feature>` turns it
+off, and `taskin config --show` lists them. A labs command stays in `--help`,
+marked `(labs)`; run while off, it exits `1` saying how to turn it on. What a
+labs feature says is a hint, not the truth.
+
+Labs features today:
+
+- **estimate** — `taskin estimate`: Jev and Laya suggest task difficulty, judged
+  by a rinha against the human scores (task-141)

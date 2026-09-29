@@ -1,5 +1,6 @@
 ---
 '@opentask/taskin-difficulty-estimator': minor
+'@opentask/taskin-types': minor
 'taskin': minor
 ---
 
@@ -14,3 +15,8 @@ outro ganha por W.O. `--apply` grava a sugestão do vencedor, só se ele bater o
 pisos, e nunca por cima de uma nota humana. Pacote novo:
 `@opentask/taskin-difficulty-estimator`. A rinha é beta: o placar é uma pista, não
 a verdade, e a CLI diz isso ao mostrá-lo.
+
+O `taskin estimate` é a primeira funcionalidade de labs: só roda no projeto que
+a liga (`"labs": ["estimate"]` no `.taskin.json`, por `taskin config --labs
+estimate`; `--labs-off` desliga, `--show` lista). O schema da configuração
+ganha `labs` e o `LabsFeatureSchema`.

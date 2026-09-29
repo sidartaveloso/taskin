@@ -81,6 +81,13 @@ do mesmo quantil, aprendido sem a task prevista), o Jev erra 0,82 e passa o
    todas as notas humanas. O vencedor da rinha pode ser uma fonte calibrada, e
    é a nota calibrada que o `--apply` grava. Com 39 notas, a vantagem do Jev
    calibrado sobre o `always-2` é pequena: cada nota humana nova refaz a conta.
+8. **Labs.** Sendo beta, o `taskin estimate` inteiro — rinha, sugestão e
+   `--apply` — só roda no projeto que liga `"labs": ["estimate"]` no
+   `.taskin.json` (`taskin config --labs estimate`). Uma chave por
+   funcionalidade, como no Google Labs: o próximo experimento entra na mesma
+   lista, e liga ou desliga sozinho. A lista aceita nomes que este taskin não
+   conhece (de uma versão mais nova, ou de algo que saiu de labs) sem invalidar
+   a configuração. O `taskin difficulty` manual não é labs.
 
 ## O que ficou de fora
 

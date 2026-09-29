@@ -10,11 +10,17 @@ import type {
   CommandHooks,
   CommitAutomation,
   HookSettings,
+  LabsFeature,
   NotificationConfig,
   TaskinConfig,
   TaskinConfigInput,
 } from '@opentask/taskin-types';
-import { type MascotNoiseSettings, resolveMascotNoiseSettings, TaskinConfigSchema } from '@opentask/taskin-types';
+import {
+  LabsFeatureSchema,
+  type MascotNoiseSettings,
+  resolveMascotNoiseSettings,
+  TaskinConfigSchema,
+} from '@opentask/taskin-types';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
@@ -193,6 +199,44 @@ export class ConfigManager {
       return resolveMascotNoiseSettings(this.loadConfig().mascot);
     } catch {
       return resolveMascotNoiseSettings(undefined);
+    }
+  }
+
+  /**
+   * As funcionalidades de labs ligadas neste projeto, so as que este taskin
+   * conhece. Config ausente ou invalida nao liga nada: um experimento nunca
+   * aparece por acidente.
+   */
+  getLabs(): LabsFeature[] {
+    return this.labsNoArquivo().flatMap((nome) => {
+      const lido = LabsFeatureSchema.safeParse(nome);
+      return lido.success ? [lido.data] : [];
+    });
+  }
+
+  /** O que esta em `labs` e este taskin nao conhece — de uma versao mais nova, ou que saiu de labs. */
+  getUnknownLabs(): string[] {
+    return this.labsNoArquivo().filter((nome) => !LabsFeatureSchema.safeParse(nome).success);
+  }
+
+  isLabsEnabled(feature: LabsFeature): boolean {
+    return this.getLabs().includes(feature);
+  }
+
+  /** Liga ou desliga uma funcionalidade; as entradas desconhecidas ficam como estavam. */
+  setLabs(feature: LabsFeature, enabled: boolean): void {
+    const config = this.loadConfig();
+    const outras = (config.labs ?? []).filter((nome) => nome !== feature);
+    const labs = enabled ? [...outras, feature] : outras;
+    const { labs: _antes, ...resto } = config;
+    this.saveConfig(labs.length > 0 ? { ...resto, labs } : resto);
+  }
+
+  private labsNoArquivo(): string[] {
+    try {
+      return this.loadConfig().labs ?? [];
+    } catch {
+      return [];
     }
   }
 

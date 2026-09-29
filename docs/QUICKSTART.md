@@ -61,11 +61,14 @@ taskin priority 042 --before 017   # Ou relativo: logo antes (ou --after) de out
 taskin priority 042 --top          # Ou ao topo (ou --bottom) — do próprio grupo, se agrupada
 taskin group move g-cli --top      # O grupo inteiro: --top, --bottom, --before/--after de task ou grupo
 taskin difficulty 042 3            # Pontua de 1 (trivial) a 5 (muito difícil) — a fila do --unscored
+taskin config --labs estimate      # O estimate é labs: só roda no projeto que liga
 taskin estimate --rinha            # (beta) Jev x Laya contra as notas que você já deu; salva o placar
 taskin estimate                    # Sugere a nota das tasks abertas sem nota, sem gravar
 taskin estimate --apply            # Grava a sugestão do vencedor, se ele bater os pisos
 ```
 
+O `estimate` é uma funcionalidade de **labs**, como no Google Labs: fica
+desligado até o projeto pedir (`"labs": ["estimate"]` no `.taskin.json`).
 A rinha é **beta**: o placar sai das notas que o projeto já tem e muda a cada
 nota nova. É uma pista para quem prioriza, não a verdade — revise as sugestões
 antes do `--apply`.
