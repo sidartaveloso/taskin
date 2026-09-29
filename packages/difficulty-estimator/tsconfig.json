@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "types": ["node"],
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "references": [{ "path": "../types-ts" }, { "path": "../task-manager" }]
+}

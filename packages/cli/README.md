@@ -170,6 +170,23 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   (trivial) to 5 (very hard) — the command for the queue `taskin list --unscored`
   shows. Anything else is refused without writing. There is no way to clear a
   score: a wrong one is corrected by scoring again, as on the dashboard.
+- `taskin estimate [task-ids...]` - Ask Jev and Laya how hard tasks are. Without
+  ids, it asks about the open tasks with no difficulty. It shows what each model
+  said, its confidence, and whether they agree — and writes nothing.
+  - `--rinha` - Benchmark Jev and Laya against every task a human already scored,
+    next to two baselines (`always-2` and a heuristic), and save the scoreboard to
+    `.taskin/rinhas/`. A model that does not run (no key, server down) is listed
+    with the reason, and the other wins by walkover.
+  - `--apply` - Write the suggestion to the tasks that have no difficulty. The
+    suggestion is the last rinha winner's, and only if it beat the baselines;
+    a human score is never overwritten.
+  - `--by jev|laya` - Choose whose suggestion counts, whatever the rinha said
+  - `--no-cache` - Ask again even when an answer is stored
+
+  Jev is hosted: set `TYPESAFE_API_KEY` in the project `.env` (optionally
+  `JEV_URL`, `JEV_MODEL`). Laya runs locally:
+  `uvx --from "laya[serve]" laya-serve` serves it on `http://localhost:8000`
+  (`LAYA_URL`, `LAYA_MODEL` and `LAYA_MAX_LEN` override the defaults).
 
   A provider without groups does not offer `join` and `leave`, and the CLI says
   so in one line instead of failing. A provider with groups but without groups

@@ -24,9 +24,13 @@ export default defineConfig({
     'express',
     '@opentask/taskin-types',
     '@modelcontextprotocol/sdk',
+    // As dependencias do layerall (@turf/*) nao se resolvem com preserveSymlinks;
+    // ele esta no npm, entao vai como dependencia de runtime (task-141).
+    '@layerall/core',
   ],
   noExternal: [
     '@opentask/taskin-core',
+    '@opentask/taskin-difficulty-estimator',
     '@opentask/taskin-file-system-provider',
     '@opentask/taskin-git-utils',
     '@opentask/taskin-task-manager',
