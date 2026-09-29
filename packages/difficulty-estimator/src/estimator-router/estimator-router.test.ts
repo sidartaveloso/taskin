@@ -153,12 +153,34 @@ describe('EstimatorRouter.probe', () => {
     await router.probe();
 
     expect(router.unavailable()).toEqual([
-      { estimator: 'laya', reason: 'laya is not reachable at http://laya.test/health (ECONNREFUSED)' },
+      { estimator: 'laya', reason: 'laya is not reachable at http://laya.test/health (ECONNREFUSED)', cacheOnly: true },
     ]);
     fetch.mockClear();
     const [jev, laya] = await router.ask(TASK);
     expect(jev?.kind).toBe('answered');
     expect(laya?.kind).toBe('unavailable');
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('still answers from the cache for a model that is down', async () => {
+    let layaNoAr = true;
+    const fetch = servidores(
+      () => resposta(2),
+      () => (layaNoAr ? resposta(0.8) : recusado()),
+    );
+    const store = new RinhaStoreMemory();
+    await new EstimatorRouter(resolveEstimators(ENV, { fetch }), store).ask(TASK);
+
+    layaNoAr = false;
+    fetch.mockClear();
+    const router = new EstimatorRouter(resolveEstimators(ENV, { fetch }), store);
+    await router.probe();
+    const [, laya] = await router.ask(TASK);
+    const outra = await router.ask({ ...TASK, id: '142', markdown: 'outra task' });
+
+    expect(laya).toMatchObject({ kind: 'answered', fromCache: true, estimate: { difficulty: 2 } });
+    expect(outra[1]).toMatchObject({ kind: 'unavailable', reason: expect.stringContaining('ECONNREFUSED') });
+    const chamadasAoLaya = fetch.mock.calls.filter(([url]) => String(url).includes('laya.test/v1'));
+    expect(chamadasAoLaya).toHaveLength(0);
   });
 });

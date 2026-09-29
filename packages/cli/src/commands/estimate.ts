@@ -20,6 +20,7 @@ import {
   type Scoreboard,
   type Suggestion,
   taskForEstimate,
+  type UnavailableEstimator,
   unscoredOpenTasks,
 } from '@opentask/taskin-difficulty-estimator';
 import { type Task, TaskManager } from '@opentask/taskin-task-manager';
@@ -88,7 +89,7 @@ async function rinha(tasks: Task[], router: EstimatorRouter, store: RinhaStoreFs
   }
 
   printHeader(`Rinha: Jev x Laya against ${gabarito.length} human scores`, '🥊');
-  for (const fora of router.unavailable()) warning(`${fora.estimator} will not run: ${fora.reason}`);
+  for (const fora of router.unavailable()) warning(avisoDeFora(fora));
 
   const placar = await new DifficultyBenchmark(router).run(gabarito, progresso);
   limparProgresso();
@@ -151,16 +152,17 @@ async function sugerir(
   }
 
   const fora = router.unavailable();
-  if (fora.length === 2) {
-    falhar(`Neither Jev nor Laya can answer:\n${fora.map((f) => `  ${f.estimator}: ${f.reason}`).join('\n')}`);
-  }
+  if (fora.length === 2 && fora.every((f) => !f.cacheOnly)) falharSemNinguem(fora);
 
   const escolha = chooseEstimator(await store.latestScoreboard(), by);
   const quem = escolha.kind === 'chosen' ? escolha.estimator : undefined;
   const sugestoes = await new DifficultySuggester(router).suggest(alvos.map(taskForEstimate), quem);
 
+  const alguemRespondeu = sugestoes.some((s) => s.outcomes.some((o) => o.kind === 'answered'));
+  if (!alguemRespondeu && fora.length === 2) falharSemNinguem(fora);
+
   imprimirSugestoes(sugestoes);
-  for (const f of fora) console.log(colors.secondary(`  ${f.estimator} did not run: ${f.reason}`));
+  for (const f of fora) console.log(colors.secondary(`  ${avisoDeFora(f)}`));
   for (const falha of falhas(sugestoes)) console.log(colors.secondary(`  ${falha}`));
   console.log();
 
@@ -206,6 +208,17 @@ function imprimirSugestoes(sugestoes: readonly Suggestion[]): void {
   });
   console.log();
   tabela(['task', 'title', 'jev', 'laya', 'agree', 'suggestion'], linhas);
+}
+
+/** Fora do ar ainda responde o que esta no cache; sem configuracao, nao roda. */
+function avisoDeFora(fora: UnavailableEstimator): string {
+  return fora.cacheOnly
+    ? `${fora.estimator} is down, so only its cached answers count: ${fora.reason}`
+    : `${fora.estimator} will not run: ${fora.reason}`;
+}
+
+function falharSemNinguem(fora: readonly UnavailableEstimator[]): never {
+  falhar(`Neither Jev nor Laya can answer:\n${fora.map((f) => `  ${f.estimator}: ${f.reason}`).join('\n')}`);
 }
 
 function celula(o: EstimatorOutcome | undefined): string {

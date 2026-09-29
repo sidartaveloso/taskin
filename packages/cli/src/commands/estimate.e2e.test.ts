@@ -190,6 +190,17 @@ describe('taskin estimate --rinha', LENTO, () => {
     expect(jev.pedidos[0]?.authorization).toBe('Bearer from-shell');
   });
 
+  it('keeps counting what Laya already answered when laya-serve is down', async () => {
+    await rodar({}, '--rinha');
+    await laya.descer();
+    const { code, saida } = await rodar({}, '--rinha');
+
+    expect(code).toBe(0);
+    expect(saida).toContain('laya is down, so only its cached answers count');
+    expect(saida).toMatch(/laya\s+3\/3/);
+    expect(saida).not.toContain('by walkover');
+  });
+
   it('refuses task ids and --apply', async () => {
     const { code, saida } = await rodar({}, '--rinha', '004');
     expect(code).toBe(1);
