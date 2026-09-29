@@ -12,4 +12,5 @@ tasks que já têm nota humana, e salva o placar em `.taskin/rinhas/`. Quem não
 roda (sem `TYPESAFE_API_KEY`, `laya-serve` fora do ar) aparece com o motivo, e o
 outro ganha por W.O. `--apply` grava a sugestão do vencedor, só se ele bater os
 pisos, e nunca por cima de uma nota humana. Pacote novo:
-`@opentask/taskin-difficulty-estimator`.
+`@opentask/taskin-difficulty-estimator`. A rinha é beta: o placar é uma pista, não
+a verdade, e a CLI diz isso ao mostrá-lo.

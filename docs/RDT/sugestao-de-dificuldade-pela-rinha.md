@@ -4,7 +4,8 @@ Tipo semântico:
 
 `registro_decisao_tecnica`
 
-Status: **implementado** (task-141)
+Status: **implementado, em beta** (task-141) — o placar da rinha é uma pista,
+não a verdade: mede poucas notas humanas (39 aqui) e muda a cada nota nova
 
 Origem: task-141 — `taskin estimate`, pacote `@opentask/taskin-difficulty-estimator`
 
