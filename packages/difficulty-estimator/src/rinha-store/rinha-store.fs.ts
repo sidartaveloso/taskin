@@ -73,7 +73,7 @@ export function ehPlacarDaPerguntaAtual(valor: unknown): valor is Scoreboard {
     typeof valor === 'object' &&
     valor !== null &&
     'schema' in valor &&
-    valor.schema === 1 &&
+    valor.schema === 2 &&
     'questionVersion' in valor &&
     valor.questionVersion === DIFFICULTY_QUESTION_VERSION
   );

@@ -266,10 +266,38 @@ describe('taskin estimate', LENTO, () => {
     expect(saida).toMatch(/laya: laya is not reachable at http:\/\/127\.0\.0\.1:\d+\/health/);
   });
 
+  it('crowns the calibrated Jev, and applies its calibrated score', async () => {
+    // oito notas humanas: as tres do projeto e mais cinco
+    const extras: Record<string, number> = { '006': 2, '007': 2, '008': 3, '009': 5, '010': 2 };
+    for (const [id, nota] of Object.entries(extras)) {
+      writeFileSync(join(raiz, 'TASKS', `task-${id}-tarefa-${id}.md`), tarefa(id, nota, 'pending'));
+    }
+    const humanas: Record<string, number> = { '001': 2, '002': 4, '003': 1, ...extras };
+    // um Jev que chuta alto, mas na ordem certa; para a task sem nota, 2,75
+    await jev.descer();
+    jev = new ServidorFalso((id) => {
+      const nota = humanas[id];
+      return nota === undefined ? 2.75 : 1.5 + nota / 2;
+    });
+    env.JEV_URL = await jev.subir();
+
+    const rinha = await rodar({}, '--rinha');
+    expect(rinha.saida).toMatch(/1\s+jev-calibrated\s+8\/8\s+0\.50/);
+    expect(rinha.saida).toContain('jev-calibrated is the best model.');
+    expect(rinha.saida).toContain('It beats the baselines');
+
+    const { code, saida } = await rodar({}, '--apply');
+    expect(code).toBe(0);
+    expect(saida).toContain('Suggestion from jev-calibrated won the last rinha.');
+    expect(saida).toContain('Calibrated on the 8 tasks a human scored.');
+    expect(saida).toContain('task-004 now has difficulty 3 (jev-calibrated).');
+    expect(dificuldade('004')).toBe('3');
+  });
+
   it('refuses an unknown estimator', async () => {
     const { code, saida } = await rodar({}, '--by', 'gpt');
     expect(code).toBe(1);
-    expect(saida).toContain("Unknown estimator 'gpt'. Use --by jev or --by laya.");
+    expect(saida).toContain("Unknown source 'gpt'. Use --by with one of: jev, laya, jev-calibrated, laya-calibrated.");
   });
 
   it('keeps the answers in .taskin/rinhas/cache and does not ask twice', async () => {

@@ -32,10 +32,19 @@ describe('DifficultyBenchmark', () => {
     const placar = await new DifficultyBenchmark(router).run(gabarito(...NOTAS));
 
     expect(placar.winner).toBe('jev');
-    // com dois itens em cada task a heuristica tambem diz 2: empata com always-2, e o id desempata
-    expect(placar.competitors.map((c) => c.competitor)).toEqual(['jev', 'always-2', 'heuristic', 'laya']);
+    // com dois itens em cada task a heuristica tambem diz 2, como always-2 e o laya: o id desempata.
+    // Com 5 notas, cada task tem 4 outras para calibrar: menos que o minimo, os calibrados nao rodam.
+    expect(placar.competitors.map((c) => c.competitor)).toEqual([
+      'jev',
+      'always-2',
+      'heuristic',
+      'laya',
+      'jev-calibrated',
+      'laya-calibrated',
+    ]);
     expect(placar.competitors[0]).toMatchObject({ answered: 5, meanAbsoluteError: 0, exactRate: 1 });
-    expect(placar.bestModel).toEqual({ estimator: 'jev', byWalkover: false, beatsBaselines: true });
+    expect(placar.competitors[4]?.didNotRun).toBe('jev answered 4 other scored task(s); calibrating needs 5');
+    expect(placar.bestModel).toEqual({ source: 'jev', byWalkover: false, beatsBaselines: true });
     expect(placar.walkovers).toEqual([]);
     expect(placar.answerKeySize).toBe(5);
   });
@@ -58,11 +67,11 @@ describe('DifficultyBenchmark', () => {
     const placar = await new DifficultyBenchmark(router).run(gabarito(...NOTAS));
 
     expect(placar.winner).toBe('laya');
-    expect(placar.bestModel).toEqual({ estimator: 'laya', byWalkover: true, beatsBaselines: true });
+    expect(placar.bestModel).toEqual({ source: 'laya', byWalkover: true, beatsBaselines: true });
     expect(placar.walkovers).toEqual([
       { estimator: 'jev', reason: 'TYPESAFE_API_KEY is not set (in .env or in the environment)' },
     ]);
-    const jev = placar.competitors.at(-1);
+    const jev = placar.competitors.find((c) => c.competitor === 'jev');
     expect(jev).toMatchObject({
       competitor: 'jev',
       answered: 0,
@@ -77,7 +86,7 @@ describe('DifficultyBenchmark', () => {
     const placar = await new DifficultyBenchmark(router).run(gabarito(2, 2, 2, 1));
 
     expect(placar.winner).toBe('always-2');
-    expect(placar.bestModel).toEqual({ estimator: 'laya', byWalkover: true, beatsBaselines: false });
+    expect(placar.bestModel).toEqual({ source: 'laya', byWalkover: true, beatsBaselines: false });
   });
 
   it('has no best model when neither Jev nor Laya ran, and a baseline still wins', async () => {
@@ -100,6 +109,36 @@ describe('DifficultyBenchmark', () => {
     const placar = await new DifficultyBenchmark(router).run(gabarito(...NOTAS));
     const laya = placar.competitors.find((c) => c.competitor === 'laya');
     expect(laya).toMatchObject({ answered: 4, failed: 1, meanAbsoluteError: 4 / 5 });
+  });
+
+  /** Oito notas: quatro 2, e um de cada outra nota. */
+  const OITO = [1, 2, 2, 2, 3, 4, 5, 2];
+  /** Um Jev que chuta quase dois niveis acima, mas na ordem certa. */
+  const alto = (t: { id: string }) => (OITO[Number(t.id) - 1] ?? 1) + 0.9;
+
+  it('crowns the calibrated model when the raw one scores high in the right order', async () => {
+    const router = new EstimatorRouterMock({ jev: alto }, [{ estimator: 'laya', reason: 'down' }]);
+    const placar = await new DifficultyBenchmark(router).run(gabarito(...OITO));
+    const erro = (id: string) => placar.competitors.find((c) => c.competitor === id)?.meanAbsoluteError;
+
+    expect(placar.winner).toBe('jev-calibrated');
+    expect(erro('jev-calibrated')).toBe(0.5);
+    expect(erro('always-2')).toBe(0.875);
+    expect(erro('jev')).toBe(1.625);
+    expect(placar.bestModel).toEqual({ source: 'jev-calibrated', byWalkover: true, beatsBaselines: true });
+    expect(placar.competitors.find((c) => c.competitor === 'laya-calibrated')?.didNotRun).toBe(
+      'laya did not answer: down',
+    );
+  });
+
+  it('never lets the calibrated model see the score of the task it answers', async () => {
+    const SCORES = [0.3, 1.2, 1.1, 1.3, 2.2, 3.1, 3.9, 1.0];
+    const router = () => new EstimatorRouterMock({ jev: (t) => SCORES[Number(t.id) - 1] ?? 0 });
+    const comUm = await new DifficultyBenchmark(router()).run(gabarito(...OITO));
+    const comCinco = await new DifficultyBenchmark(router()).run(gabarito(5, ...OITO.slice(1)));
+
+    const primeira = (p: typeof comUm) => p.tasks[0]?.estimates['jev-calibrated'];
+    expect(primeira(comUm)).toBe(primeira(comCinco));
   });
 
   it('reports progress task by task', async () => {

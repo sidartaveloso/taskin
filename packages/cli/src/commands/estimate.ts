@@ -7,18 +7,25 @@ import path from 'node:path';
 import {
   answerKeyFrom,
   type CompetitorScore,
-  chooseEstimator,
+  calibrationPairs,
+  chooseSource,
   DifficultyBenchmark,
   DifficultySuggester,
   type EstimatorOutcome,
   EstimatorRouter,
   humanScore,
-  isRemoteEstimator,
+  type ICalibration,
+  MIN_CALIBRATION_PAIRS,
+  parseSuggestionSource,
+  QuantileCalibration,
   type RemoteEstimatorId,
   RinhaStoreFs,
   resolveEstimators,
   type Scoreboard,
+  SharedAsk,
+  SUGGESTION_SOURCES,
   type Suggestion,
+  type SuggestionSource,
   taskForEstimate,
   type UnavailableEstimator,
   unscoredOpenTasks,
@@ -47,7 +54,10 @@ export const estimateCommand = defineCommand({
   options: [
     { flags: '--rinha', description: 'Benchmark Jev and Laya against every task that already has a difficulty' },
     { flags: '--apply', description: 'Write the suggestion to the tasks that have no difficulty yet' },
-    { flags: '--by <estimator>', description: 'Whose suggestion counts: jev or laya (default: the last rinha winner)' },
+    {
+      flags: '--by <source>',
+      description: `Whose suggestion counts: ${SUGGESTION_SOURCES.join(', ')} (default: the last rinha winner)`,
+    },
     { flags: '--no-cache', description: 'Ask again even when an answer is stored' },
   ],
   handler: async (ids: string[], options: EstimateOptions) => {
@@ -57,7 +67,7 @@ export const estimateCommand = defineCommand({
 
 async function estimar(ids: string[], options: EstimateOptions): Promise<void> {
   requireTaskinProject();
-  const by = lerEstimador(options.by);
+  const by = lerFonte(options.by);
   if (options.rinha && (ids.length > 0 || options.apply)) {
     falhar('--rinha runs against every task a human scored: it takes no task ids and no --apply.');
   }
@@ -125,7 +135,7 @@ function imprimirPlacar(placar: Scoreboard): void {
   const wo = melhor.byWalkover
     ? ` — by walkover (${placar.walkovers.map((w) => w.estimator).join(', ')} did not run)`
     : '';
-  success(`${melhor.estimator} is the best model${wo}.`);
+  success(`${melhor.source} is the best model${wo}.`);
   if (melhor.beatsBaselines) {
     info(`It beats the baselines: \`taskin estimate --apply\` will write its suggestions.`);
   } else {
@@ -142,7 +152,7 @@ async function sugerir(
   router: EstimatorRouter,
   store: RinhaStoreFs,
   manager: TaskManager,
-  by: RemoteEstimatorId | undefined,
+  by: SuggestionSource | undefined,
   aplicar: boolean,
 ): Promise<void> {
   const alvos = ids.length > 0 ? ids.map((id) => acharTask(tasks, id)) : unscoredOpenTasks(tasks);
@@ -154,9 +164,10 @@ async function sugerir(
   const fora = router.unavailable();
   if (fora.length === 2 && fora.every((f) => !f.cacheOnly)) falharSemNinguem(fora);
 
-  const escolha = chooseEstimator(await store.latestScoreboard(), by);
-  const quem = escolha.kind === 'chosen' ? escolha.estimator : undefined;
-  const sugestoes = await new DifficultySuggester(router).suggest(alvos.map(taskForEstimate), quem);
+  const escolha = chooseSource(await store.latestScoreboard(), by);
+  const fonte = escolha.kind === 'chosen' ? escolha.source : undefined;
+  const calibracao = fonte?.calibrated ? await calibrar(tasks, router, fonte.estimator) : undefined;
+  const sugestoes = await new DifficultySuggester(router).suggest(alvos.map(taskForEstimate), fonte, calibracao);
 
   const alguemRespondeu = sugestoes.some((s) => s.outcomes.some((o) => o.kind === 'answered'));
   if (!alguemRespondeu && fora.length === 2) falharSemNinguem(fora);
@@ -172,6 +183,7 @@ async function sugerir(
     return;
   }
   info(`Suggestion from ${escolha.why}.`);
+  if (calibracao) info(`Calibrated on the ${calibracao.size} tasks a human scored.`);
   if (!aplicar) {
     info('Nothing written. Run again with --apply to write these suggestions.');
     return;
@@ -188,7 +200,7 @@ async function sugerir(
       continue;
     }
     await manager.setDifficulty(task.id, s.chosen.difficulty);
-    success(`task-${s.task.id} now has difficulty ${s.chosen.difficulty} (${s.chosen.estimator}).`);
+    success(`task-${s.task.id} now has difficulty ${s.chosen.difficulty} (${s.chosen.source}).`);
     aplicadas++;
   }
   info(`${aplicadas} of ${sugestoes.length} task(s) scored.`);
@@ -203,7 +215,7 @@ function imprimirSugestoes(sugestoes: readonly Suggestion[]): void {
       celula(jev),
       celula(laya),
       s.agreement === undefined ? '—' : s.agreement ? 'yes' : 'no',
-      s.chosen ? `${s.chosen.difficulty} (${s.chosen.estimator})` : '—',
+      s.chosen ? `${s.chosen.difficulty} (${s.chosen.source})` : '—',
     ];
   });
   console.log();
@@ -248,10 +260,26 @@ function acharTask(tasks: Task[], texto: string): Task {
   return task;
 }
 
-function lerEstimador(texto: string | undefined): RemoteEstimatorId | undefined {
+function lerFonte(texto: string | undefined): SuggestionSource | undefined {
   if (texto === undefined) return undefined;
-  if (isRemoteEstimator(texto)) return texto;
-  falhar(`Unknown estimator '${texto}'. Use --by jev or --by laya.`);
+  const fonte = parseSuggestionSource(texto);
+  if (fonte) return fonte;
+  falhar(`Unknown source '${texto}'. Use --by with one of: ${SUGGESTION_SOURCES.join(', ')}.`);
+}
+
+/**
+ * A calibracao de uma sugestao aprende com todas as notas humanas — a task
+ * sugerida nao tem nota, entao nao ha o que deixar de fora. As respostas do
+ * gabarito costumam vir do cache da ultima rinha.
+ */
+async function calibrar(tasks: Task[], router: EstimatorRouter, estimator: RemoteEstimatorId): Promise<ICalibration> {
+  const pares = await calibrationPairs(answerKeyFrom(tasks), estimator, new SharedAsk(router));
+  if (pares.length < MIN_CALIBRATION_PAIRS) {
+    falhar(
+      `Cannot calibrate ${estimator}: it answered ${pares.length} of the tasks a human scored, and calibrating needs ${MIN_CALIBRATION_PAIRS}.`,
+    );
+  }
+  return new QuantileCalibration(pares);
 }
 
 function tabela(cabecalho: string[], linhas: string[][]): void {

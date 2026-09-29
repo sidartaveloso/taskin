@@ -12,7 +12,7 @@ const RESPOSTA: CachedAnswer['response'] = {
 };
 
 export const placar = (generatedAt: string, extra: Partial<Scoreboard> = {}): Scoreboard => ({
-  schema: 1,
+  schema: 2,
   questionVersion: DIFFICULTY_QUESTION_VERSION,
   generatedAt,
   answerKeySize: 0,

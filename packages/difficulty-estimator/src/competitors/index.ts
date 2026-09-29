@@ -1,4 +1,5 @@
 export {
+  CalibratedCompetitor,
   CompetitorDidNotAnswer,
   ConstantBaseline,
   competitorsFor,
