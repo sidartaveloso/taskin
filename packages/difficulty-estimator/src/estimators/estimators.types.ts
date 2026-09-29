@@ -2,6 +2,15 @@ import type { ISystemOneProvider, RawResponse } from '../system-one/system-one.t
 
 export type RemoteEstimatorId = 'jev' | 'laya';
 
+/** De quem e a nota que vale: um modelo, cru ou calibrado pelas notas humanas. */
+export type SuggestionSourceId = RemoteEstimatorId | `${RemoteEstimatorId}-calibrated`;
+
+export interface SuggestionSource {
+  readonly id: SuggestionSourceId;
+  readonly estimator: RemoteEstimatorId;
+  readonly calibrated: boolean;
+}
+
 /** Um estimador que nem chegou a ser chamado, e por que. */
 export interface UnavailableEstimator {
   readonly estimator: RemoteEstimatorId;

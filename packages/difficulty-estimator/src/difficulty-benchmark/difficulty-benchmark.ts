@@ -12,7 +12,7 @@ import type { DifficultyResult } from '../difficulty-judge/difficulty-judge.type
 import { DIFFICULTY_QUESTION_VERSION, humanScore, taskForEstimate } from '../difficulty-question/difficulty-question';
 import type { TaskForEstimate } from '../difficulty-question/difficulty-question.types';
 import type { IEstimatorRouter } from '../estimator-router/estimator-router.types';
-import { isRemoteEstimator } from '../estimators/estimators';
+import { isRemoteEstimator, parseSuggestionSource } from '../estimators/estimators';
 import type {
   AnswerKeyEntry,
   BestModel,
@@ -35,14 +35,17 @@ type DatasetDaTask = BaseDataset<TaskForEstimate, { readonly expected: number }>
 export class DifficultyBenchmark implements IDifficultyBenchmark {
   constructor(
     private readonly router: IEstimatorRouter,
-    private readonly competitors: (router: IEstimatorRouter) => IDifficultyCompetitor[] = competitorsFor,
+    private readonly competitors: (
+      router: IEstimatorRouter,
+      answerKey: readonly AnswerKeyEntry[],
+    ) => IDifficultyCompetitor[] = competitorsFor,
   ) {}
 
   async run(
     answerKey: readonly AnswerKeyEntry[],
     onProgress?: (done: number, total: number) => void,
   ): Promise<Scoreboard> {
-    const competidores = this.competitors(this.router);
+    const competidores = this.competitors(this.router, answerKey);
     const datasets: DatasetDaTask[] = answerKey.map((entrada) => ({
       id: entrada.task.id as Brand<string, 'DatasetId'>,
       nome: `task-${entrada.task.id}`,
@@ -104,14 +107,14 @@ function placar(
   );
 
   return {
-    schema: 1,
+    schema: 2,
     questionVersion: DIFFICULTY_QUESTION_VERSION,
     generatedAt: new Date().toISOString(),
     answerKeySize: answerKey.length,
     competitors: notas,
     rankings: Object.fromEntries(rankings),
     winner: acerto[0],
-    bestModel: melhorModelo(notas, acerto),
+    bestModel: melhorModelo(notas, acerto, walkovers.length > 0),
     walkovers,
     tasks: answerKey.map((entrada) => ({
       taskId: entrada.task.id,
@@ -128,14 +131,19 @@ function placar(
 }
 
 /** O modelo mais bem colocado no acerto, se W.O., e se ficou a frente de todos os pisos. */
-function melhorModelo(notas: readonly CompetitorScore[], acerto: readonly string[]): BestModel | undefined {
-  const modelos = notas.filter((n) => n.kind === 'model');
-  const melhor = modelos.find((n) => !n.didNotRun);
-  if (!melhor || !isRemoteEstimator(melhor.competitor)) return undefined;
+/** O modelo (cru ou calibrado) mais bem colocado no acerto, se W.O., e se ficou a frente de todos os pisos. */
+function melhorModelo(
+  notas: readonly CompetitorScore[],
+  acerto: readonly string[],
+  byWalkover: boolean,
+): BestModel | undefined {
+  const melhor = notas.find((n) => n.kind === 'model' && !n.didNotRun);
+  const source = melhor && parseSuggestionSource(melhor.competitor);
+  if (!melhor || !source) return undefined;
   const pisoMaisBemColocado = acerto.findIndex((id) => notas.find((n) => n.competitor === id)?.kind === 'baseline');
   return {
-    estimator: melhor.competitor,
-    byWalkover: modelos.some((n) => n.didNotRun),
+    source: source.id,
+    byWalkover,
     beatsBaselines: pisoMaisBemColocado < 0 || acerto.indexOf(melhor.competitor) < pisoMaisBemColocado,
   };
 }

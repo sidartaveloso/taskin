@@ -5,6 +5,8 @@ import type {
   RemoteEstimatorId,
   ResolvedEstimators,
   ResolveEstimatorsOptions,
+  SuggestionSource,
+  SuggestionSourceId,
   UnavailableEstimator,
 } from './estimators.types';
 
@@ -12,6 +14,21 @@ export const REMOTE_ESTIMATORS: readonly RemoteEstimatorId[] = ['jev', 'laya'];
 
 export function isRemoteEstimator(id: string): id is RemoteEstimatorId {
   return (REMOTE_ESTIMATORS as readonly string[]).includes(id);
+}
+
+const CALIBRADO = '-calibrated';
+
+export const SUGGESTION_SOURCES: readonly SuggestionSourceId[] = [
+  ...REMOTE_ESTIMATORS,
+  ...REMOTE_ESTIMATORS.map((e): SuggestionSourceId => `${e}${CALIBRADO}`),
+];
+
+/** `jev`, `laya`, `jev-calibrated` ou `laya-calibrated`; outra coisa nao e fonte de sugestao. */
+export function parseSuggestionSource(texto: string): SuggestionSource | undefined {
+  const calibrated = texto.endsWith(CALIBRADO);
+  const estimator = calibrated ? texto.slice(0, -CALIBRADO.length) : texto;
+  if (!isRemoteEstimator(estimator)) return undefined;
+  return { id: calibrated ? `${estimator}${CALIBRADO}` : estimator, estimator, calibrated };
 }
 
 export const JEV_DEFAULT_URL = 'https://api.typesafe.ai';

@@ -15,6 +15,7 @@ export type CompetitorId = Brand<string, 'AlgoritmoId'>;
 
 export type CompetitorConfig =
   | { readonly kind: 'model'; readonly estimator: RemoteEstimatorId }
+  | { readonly kind: 'calibrated'; readonly estimator: RemoteEstimatorId; readonly method: string }
   | { readonly kind: 'baseline'; readonly rule: string };
 
 export interface CompetitorEstimate {

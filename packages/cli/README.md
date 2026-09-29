@@ -174,13 +174,17 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   ids, it asks about the open tasks with no difficulty. It shows what each model
   said, its confidence, and whether they agree — and writes nothing.
   - `--rinha` - Benchmark Jev and Laya against every task a human already scored,
-    next to two baselines (`always-2` and a heuristic), and save the scoreboard to
+    next to their calibrated versions and two baselines (`always-2` and a
+    heuristic), and save the scoreboard to
     `.taskin/rinhas/`. A model that does not run (no key, server down) is listed
     with the reason, and the other wins by walkover.
   - `--apply` - Write the suggestion to the tasks that have no difficulty. The
     suggestion is the last rinha winner's, and only if it beat the baselines;
     a human score is never overwritten.
-  - `--by jev|laya` - Choose whose suggestion counts, whatever the rinha said
+  - `--by <source>` - Choose whose suggestion counts, whatever the rinha said:
+    `jev`, `laya`, or `jev-calibrated` / `laya-calibrated` — the model's score
+    read by position against the tasks a human scored, which takes out a model
+    that always scores high or low and keeps its order
   - `--no-cache` - Ask again even when an answer is stored
 
   Jev is hosted: set `TYPESAFE_API_KEY` in the project `.env` (optionally

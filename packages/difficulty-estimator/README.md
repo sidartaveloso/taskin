@@ -9,9 +9,14 @@ human already scored to tell which one to trust.
   `SystemOneProvider` covers both.
 - **layerall** (`@layerall/core`) sits in front: one `fan_out` call per task
   brings both answers. The Router never merges them; deciding is the caller's.
-- **rinhany** (`@rinhany/core`) runs the rinha: Jev, Laya and two baselines
-  (`always-2` and `heuristic`) against the human scores. The score stays with the
-  runner; a competitor only ever sees the task without it.
+- **rinhany** (`@rinhany/core`) runs the rinha: Jev, Laya, their calibrated
+  versions and two baselines (`always-2` and `heuristic`) against the human
+  scores. The score stays with the runner; a competitor only ever sees the task
+  without it.
+- **Calibration** (`QuantileCalibration`) reads a model's continuous `score` by
+  position against the scores it gave the tasks a human scored, and answers the
+  human score at the same position. In the rinha each task is calibrated on the
+  others only (leave-one-out).
 
 The question is one `score` with five levels. `DIFFICULTY_QUESTION_VERSION`
 goes into the cache key: an answer to another version of the question never
@@ -33,7 +38,7 @@ const router = new EstimatorRouter(resolveEstimators(process.env), store);
 await router.probe(); // Laya down → unavailable, with the reason
 
 const scoreboard = await new DifficultyBenchmark(router).run(answerKeyFrom(tasks));
-scoreboard.bestModel; // { estimator: 'laya', byWalkover: true, beatsBaselines: false }
+scoreboard.bestModel; // { source: 'jev-calibrated', byWalkover: false, beatsBaselines: true }
 ```
 
 The CLI exposes it as `taskin estimate` (see the `taskin` README).
