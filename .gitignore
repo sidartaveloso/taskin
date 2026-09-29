@@ -78,6 +78,10 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 
+# Rinha de dificuldade (task-141): placares, cache e respostas cruas do Jev e do Laya.
+# Nada disso e nota; a nota so muda por `taskin estimate --apply`.
+.taskin/rinhas/
+
 # Generated files
 generated/
 *.generated.*

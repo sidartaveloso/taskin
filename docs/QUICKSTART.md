@@ -61,6 +61,16 @@ taskin priority 042 --before 017   # Ou relativo: logo antes (ou --after) de out
 taskin priority 042 --top          # Ou ao topo (ou --bottom) — do próprio grupo, se agrupada
 taskin group move g-cli --top      # O grupo inteiro: --top, --bottom, --before/--after de task ou grupo
 taskin difficulty 042 3            # Pontua de 1 (trivial) a 5 (muito difícil) — a fila do --unscored
+taskin estimate --rinha            # Jev x Laya contra as notas que você já deu; salva o placar
+taskin estimate                    # Sugere a nota das tasks abertas sem nota, sem gravar
+taskin estimate --apply            # Grava a sugestão do vencedor, se ele bater os pisos
+```
+
+O Jev pede `TYPESAFE_API_KEY` no `.env` do projeto; sem ela, ele não roda e o
+Laya ganha por W.O. O Laya roda local:
+
+```bash
+uvx --from "laya[serve]" laya-serve   # http://localhost:8000
 ```
 
 ### 2. Dashboard Web com Sincronização Real-Time
