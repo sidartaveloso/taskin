@@ -39,6 +39,15 @@ describe('TaskinWithShhh', () => {
     expect(wrapper.find('g#body').exists()).toBe(true);
   });
 
+  it('repassa a variante ao mascote: o Taskin por padrao, o Sapin quando pedido', () => {
+    expect(mount(TaskinWithShhh).find('g#body').attributes('data-variant')).toBe('taskin');
+    expect(
+      mount(TaskinWithShhh, { props: { variant: 'sapin' } })
+        .find('g#body')
+        .attributes('data-variant'),
+    ).toBe('sapin');
+  });
+
   it('renders the noise controls', () => {
     const wrapper = mount(TaskinWithShhh);
     expect(wrapper.find('[data-testid="mock-toggle-noise"]').exists()).toBe(true);

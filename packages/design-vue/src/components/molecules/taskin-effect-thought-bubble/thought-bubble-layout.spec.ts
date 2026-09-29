@@ -83,4 +83,26 @@ describe('layoutThoughtBubble', () => {
     expect((primeira + ultima) / 2).toBeCloseTo(layout.cy, 0);
     expect(layout.lineY).toHaveLength(layout.lines.length);
   });
+
+  describe('variante sapin', () => {
+    it('nasce mais alto e mais a direita, fora do olho direito', () => {
+      const layout = layoutThoughtBubble('?', 'sapin');
+
+      expect([layout.cx, layout.cy, layout.rx, layout.ry]).toEqual([250, 34, 35, 30]);
+      // O olho direito do sapin, com o calombo, vai ate x = 222.
+      expect(layout.cx - layout.rx).toBeGreaterThan(210);
+    });
+
+    it('respeita os mesmos limites do quadro quando a frase cresce', () => {
+      const layout = layoutThoughtBubble('Bruno, Shhhhhhhhhhhh... fala mais baixo, por favor', 'sapin');
+
+      expect(layout.cx + layout.rx).toBeLessThanOrEqual(BUBBLE_RIGHT_LIMIT);
+      expect(layout.cx - layout.rx).toBeGreaterThanOrEqual(BUBBLE_LEFT_LIMIT);
+      expect(layout.cy - layout.ry).toBeGreaterThanOrEqual(BUBBLE_TOP_LIMIT);
+    });
+
+    it('mantem o taskin como padrao', () => {
+      expect(layoutThoughtBubble('?')).toEqual(layoutThoughtBubble('?', 'taskin'));
+    });
+  });
 });

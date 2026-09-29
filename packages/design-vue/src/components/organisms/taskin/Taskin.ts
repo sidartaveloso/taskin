@@ -8,19 +8,25 @@ import TaskinMouth from '../../atoms/taskin-mouth/TaskinMouth.vue';
 import TaskinArmWithPhone from '../../molecules/taskin-arm-with-phone/TaskinArmWithPhone.vue';
 import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/TaskinEffectFartCloud';
 import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/TaskinEffectHearts';
+import TaskinEffectSweat from '../../molecules/taskin-effect-sweat/TaskinEffectSweat';
 import TaskinEffectTears from '../../molecules/taskin-effect-tears/TaskinEffectTears';
 import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/TaskinEffectThoughtBubble';
 import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/TaskinEffectVomit';
 import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/TaskinEffectZzz';
 import TaskinTentacleWithItem from '../../molecules/taskin-tentacle-with-item/TaskinTentacleWithItem.vue';
 import type { TaskinMood } from './Taskin.types';
+import type { TaskinVariant } from './Taskin.variants';
 
 type LookDirection = 'center' | 'left' | 'right' | 'up' | 'down';
 
-interface MoodConfig {
+interface MoodColors {
   bodyColor: string;
   bodyHighlight: string;
   tentacleColor: string;
+}
+
+/** Sem cor propria, o humor usa a cor de base da variante (`BASE_COLORS`). */
+interface MoodConfig extends Partial<MoodColors> {
   eyeState: EyeState;
   lookDirection: LookDirection;
   mouthExpression: MouthExpression;
@@ -32,13 +38,133 @@ interface MoodConfig {
   showVomit: boolean;
   showPhone: boolean;
   showFartCloud: boolean;
+  /** Gotas de suor em volta da cabeca: o calor. */
+  showSweat: boolean;
 }
+
+/**
+ * A cor de base de cada variante: o azul do polvo, o verde do sapo. Os humores
+ * sem cor propria (`neutral`, `smirk`, `annoyed`, `sarcastic`) usam esta; os
+ * outros trocam a cor inteira nas duas variantes, como o polvo se camuflando.
+ *
+ * O Sapin nao desenha o brilho do polvo: a barriga clara sai de um branco
+ * translucido por cima da cor do corpo, e por isso acompanha qualquer humor.
+ */
+const BASE_COLORS: Record<TaskinVariant, MoodColors> = {
+  taskin: { bodyColor: '#1f7acb', bodyHighlight: '#2090e0', tentacleColor: '#1f7acb' },
+  sapin: { bodyColor: '#4DB848', bodyHighlight: '#CDEEC8', tentacleColor: '#4DB848' },
+};
+
+/**
+ * Como o Taskin se mexe em cada humor: o polvo inteiro, e nao so o corpo —
+ * tentaculos, bracos, olhos, boca e efeitos juntos, porque o rosto mora no
+ * corpo e os tentaculos saem de baixo dele. Danca de um lado para o outro,
+ * flutua apaixonado, balanca cansado, treme com frio e arfa com calor. Dormindo
+ * fica parado. Os tentaculos seguem com o ritmo proprio de cada humor por cima.
+ */
+const TASKIN_MOTION_BY_MOOD: Partial<Record<TaskinMood, string>> = {
+  dancing: 'taskin-dance',
+  'in-love': 'taskin-float',
+  tired: 'taskin-sway',
+  cold: 'taskin-shiver',
+  hot: 'taskin-pant',
+};
+
+// O giro e a escala sao em volta do centro do corpo, em coordenadas do viewBox,
+// como no `dance()` do controller. O `fill-box` do Sapin nao serve aqui: com os
+// tentaculos ondulando dentro do grupo, a caixa — e o eixo — mudaria a cada
+// quadro. Os valores de danca e tremor tambem vem do controller. O arfar e curto
+// e rapido, no passo da lingua (`TaskinMouth`): inchando devagar, parecia suspiro.
+const TASKIN_MOTION_CSS = `
+  .taskin-motion { transform-box: view-box; transform-origin: 160px 110px; }
+  .taskin-dance { animation: taskin-taskin-dance 0.8s ease-in-out infinite; }
+  .taskin-float { animation: taskin-taskin-float 3s ease-in-out infinite; }
+  .taskin-sway { animation: taskin-taskin-sway 2s ease-in-out infinite; }
+  .taskin-shiver { animation: taskin-taskin-shiver 0.2s linear infinite; }
+  .taskin-pant { animation: taskin-taskin-pant 0.4s ease-in-out infinite; }
+  @keyframes taskin-taskin-dance {
+    0%, 50%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(-5px, -3px) rotate(-5deg); }
+    75% { transform: translate(5px, -3px) rotate(5deg); }
+  }
+  @keyframes taskin-taskin-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes taskin-taskin-sway {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-2deg); }
+    75% { transform: rotate(2deg); }
+  }
+  @keyframes taskin-taskin-shiver {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+  }
+  @keyframes taskin-taskin-pant {
+    0%, 100% { transform: scale(1, 1); }
+    50% { transform: scale(1.02, 0.97); }
+  }
+`;
+
+/**
+ * Como o Sapin se mexe em cada humor. O sapo mexe o corpo inteiro — olhos, boca
+ * e efeitos juntos, porque os olhos moram nos calombos da cabeca: pula dancando,
+ * flutua apaixonado, balanca cansado, treme com frio e arfa com calor. Dormindo
+ * fica parado, como o Taskin.
+ */
+const SAPIN_MOTION_BY_MOOD: Partial<Record<TaskinMood, string>> = {
+  dancing: 'sapin-hop',
+  'in-love': 'sapin-float',
+  tired: 'sapin-sway',
+  cold: 'sapin-shiver',
+  hot: 'sapin-pant',
+};
+
+// Nomes com prefixo: o `<style>` dentro do SVG vale para o documento inteiro.
+const SAPIN_MOTION_CSS = `
+  .sapin-motion { transform-box: fill-box; transform-origin: 50% 100%; }
+  .sapin-hop { animation: taskin-sapin-hop 0.6s ease-in-out infinite; }
+  .sapin-float { animation: taskin-sapin-float 3s ease-in-out infinite; }
+  .sapin-sway { animation: taskin-sapin-sway 2.4s ease-in-out infinite; }
+  .sapin-shiver { animation: taskin-sapin-shiver 0.15s linear infinite; }
+  .sapin-pant { animation: taskin-sapin-pant 0.5s ease-in-out infinite; }
+  @keyframes taskin-sapin-hop {
+    0%, 100% { transform: translateY(0) scale(1.04, 0.96); }
+    15%, 85% { transform: translateY(0) scale(1, 1); }
+    50% { transform: translateY(-16px) scale(0.98, 1.03); }
+  }
+  @keyframes taskin-sapin-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes taskin-sapin-sway {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+  }
+  @keyframes taskin-sapin-shiver {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-1.5px); }
+    75% { transform: translateX(1.5px); }
+  }
+  @keyframes taskin-sapin-pant {
+    0%, 100% { transform: scale(1, 1); }
+    50% { transform: scale(1.03, 0.97); }
+  }
+`;
+
+/**
+ * O movimento de cada variante. O bicho vai inteiro num grupo so,
+ * `#taskin-motion` ou `#sapin-motion`; a sombra fica fora dele, no chao.
+ */
+const MOTIONS: Record<TaskinVariant, { byMood: Partial<Record<TaskinMood, string>>; css: string }> = {
+  taskin: { byMood: TASKIN_MOTION_BY_MOOD, css: TASKIN_MOTION_CSS },
+  sapin: { byMood: SAPIN_MOTION_BY_MOOD, css: SAPIN_MOTION_CSS },
+};
 
 const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
   neutral: {
-    bodyColor: '#1f7acb',
-    bodyHighlight: '#2090e0',
-    tentacleColor: '#1f7acb',
     eyeState: 'normal',
     lookDirection: 'center',
     mouthExpression: 'neutral',
@@ -49,11 +175,9 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   smirk: {
-    bodyColor: '#1f7acb',
-    bodyHighlight: '#2090e0',
-    tentacleColor: '#1f7acb',
     eyeState: 'normal',
     lookDirection: 'center',
     mouthExpression: 'smirk',
@@ -64,6 +188,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   happy: {
     bodyColor: '#FFD700',
@@ -79,11 +204,9 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   annoyed: {
-    bodyColor: '#1f7acb',
-    bodyHighlight: '#2090e0',
-    tentacleColor: '#1f7acb',
     eyeState: 'normal',
     lookDirection: 'center',
     mouthExpression: 'neutral',
@@ -94,11 +217,9 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   sarcastic: {
-    bodyColor: '#1f7acb',
-    bodyHighlight: '#2090e0',
-    tentacleColor: '#1f7acb',
     eyeState: 'normal',
     lookDirection: 'center',
     mouthExpression: 'smile',
@@ -109,6 +230,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   crying: {
     bodyColor: '#4A90E2',
@@ -124,6 +246,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   cold: {
     bodyColor: '#A0C4FF',
@@ -139,14 +262,17 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
+  // Com calor, e nao contente: olhos pesados, lingua para fora e suor. Com
+  // olho normal e a boca escancarada do `wide-open`, o humor parecia feliz.
   hot: {
     bodyColor: '#FF6B6B',
     bodyHighlight: '#FFA07A',
     tentacleColor: '#FF6B6B',
-    eyeState: 'normal',
+    eyeState: 'squint',
     lookDirection: 'center',
-    mouthExpression: 'wide-open',
+    mouthExpression: 'panting',
     showTears: false,
     showHearts: false,
     showZzz: false,
@@ -154,6 +280,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: true,
   },
   dancing: {
     bodyColor: '#9B59B6',
@@ -169,6 +296,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   furious: {
     bodyColor: '#DC143C',
@@ -184,6 +312,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   sleeping: {
     bodyColor: '#6C5CE7',
@@ -199,6 +328,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   'in-love': {
     bodyColor: '#FF69B4',
@@ -214,6 +344,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   tired: {
     bodyColor: '#95A5A6',
@@ -229,6 +360,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   thoughtful: {
     bodyColor: '#5F4B8B',
@@ -245,6 +377,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   vomiting: {
     bodyColor: '#7CB342',
@@ -260,6 +393,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: true,
     showPhone: false,
     showFartCloud: false,
+    showSweat: false,
   },
   'taking-selfie': {
     bodyColor: '#FF8A65',
@@ -275,6 +409,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: true,
     showFartCloud: false,
+    showSweat: false,
   },
   farting: {
     bodyColor: '#8D6E63',
@@ -290,6 +425,7 @@ const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
     showVomit: false,
     showPhone: false,
     showFartCloud: true,
+    showSweat: false,
   },
 };
 
@@ -303,6 +439,14 @@ export default defineComponent({
     mood: {
       type: String as PropType<TaskinMood>,
       default: 'neutral',
+    },
+    /**
+     * O bicho que o mascote desenha: o polvo Taskin ou o sapinho Sapin. Os
+     * humores, o ocioso, o rastreio dos olhos e os efeitos sao os mesmos.
+     */
+    variant: {
+      type: String as PropType<TaskinVariant>,
+      default: 'taskin',
     },
     idleAnimation: {
       type: Boolean,
@@ -361,7 +505,7 @@ export default defineComponent({
      * `?` fixo que o humor `thoughtful` carrega.
      */
     const config = computed(() => {
-      const doHumor = MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral;
+      const doHumor = { ...BASE_COLORS[props.variant], ...(MOOD_CONFIGS[props.mood] || MOOD_CONFIGS.neutral) };
       if (props.showThoughtBubble === undefined && props.thoughtBubbleText === undefined) return doHumor;
 
       return {
@@ -413,16 +557,22 @@ export default defineComponent({
     });
 
     return () => {
-      const components = [
-        // Shadow
-        h('ellipse', {
-          cx: '160',
-          cy: '230',
-          rx: '70',
-          ry: '14',
-          fill: '#d8e2f0',
-        }),
-        // Fluid Tentacles (back layer) - connected to body bottom
+      const sapin = props.variant === 'sapin';
+      const variant = props.variant;
+
+      // Shadow
+      const shadow = h('ellipse', {
+        cx: '160',
+        cy: '230',
+        rx: sapin ? '82' : '70',
+        ry: sapin ? '13' : '14',
+        fill: '#d8e2f0',
+      });
+
+      // Fluid Tentacles (back layer) - connected to body bottom. O Sapin tem
+      // pernas, que o corpo dele ja desenha.
+      const tentacles =
+        !sapin &&
         h('g', { transform: 'translate(160, 168)' }, [
           h(TaskinTentacleWithItem, {
             tentacleColor: config.value.tentacleColor,
@@ -456,31 +606,36 @@ export default defineComponent({
             translateX: 30,
             translateY: 0,
           }),
-        ]),
-        // Body
+        ]);
+
+      const mascot = [
+        tentacles,
+        // Body. Sem `float` nem `sway`: o bicho se mexe inteiro pelo grupo de
+        // movimento, e nao so o corpo. No ocioso, o Sapin bate os dedos.
         h(TaskinBody, {
+          variant,
           bodyColor: config.value.bodyColor,
           bodyHighlight: config.value.bodyHighlight,
           animationsEnabled: props.animationsEnabled,
-          shiver: props.mood === 'cold',
-          pant: props.mood === 'hot',
-          dance: props.mood === 'dancing',
-          float: props.mood === 'in-love',
-          sway: props.mood === 'tired',
+          tapToes: sapin && wiggleTentacles.value,
         }),
         // Arms - use TaskinArmWithPhone when taking selfie
         config.value.showPhone
           ? h(TaskinArmWithPhone, {
-              color: config.value.tentacleColor,
+              armColor: config.value.tentacleColor,
               animationsEnabled: props.animationsEnabled,
               itemOnRight: true,
             })
           : h(TaskinArms, {
+              variant,
               color: config.value.tentacleColor,
               animationsEnabled: props.animationsEnabled,
             }),
-        // Eyes
+        // Eyes. A `key` remonta os olhos na troca de variante: o rastreio le
+        // os centros deles uma vez so, no setup.
         h(TaskinEyes, {
+          key: variant,
+          variant,
           state: props.eyeState ?? (blinkEyes.value ? 'closed' : config.value.eyeState),
           trackingMode: props.eyeTrackingMode ?? 'none',
           trackingBounds: props.eyeTrackingBounds,
@@ -491,36 +646,55 @@ export default defineComponent({
         }),
         // Mouth
         h(TaskinMouth, {
+          variant,
           expression: props.mouthExpression !== undefined ? props.mouthExpression : config.value.mouthExpression,
           animationsEnabled: props.animationsEnabled,
         }),
         // Effects
         config.value.showTears &&
           h(TaskinEffectTears, {
+            variant,
             animationsEnabled: props.animationsEnabled,
           }),
         config.value.showHearts &&
           h(TaskinEffectHearts, {
+            variant,
             animationsEnabled: props.animationsEnabled,
           }),
         config.value.showZzz &&
           h(TaskinEffectZzz, {
+            variant,
             animationsEnabled: props.animationsEnabled,
           }),
         config.value.showThoughtBubble &&
           h(TaskinEffectThoughtBubble, {
+            variant,
             text: config.value.thoughtBubbleText || '?',
             animationsEnabled: props.animationsEnabled,
           }),
         config.value.showVomit &&
           h(TaskinEffectVomit, {
+            variant,
             animationsEnabled: props.animationsEnabled,
           }),
         config.value.showFartCloud &&
           h(TaskinEffectFartCloud, {
             animationsEnabled: props.animationsEnabled,
           }),
+        config.value.showSweat &&
+          h(TaskinEffectSweat, {
+            variant,
+            animationsEnabled: props.animationsEnabled,
+          }),
       ].filter(Boolean);
+
+      const { byMood, css } = MOTIONS[variant];
+      const motion = props.animationsEnabled ? byMood[props.mood] : undefined;
+      const components = [
+        shadow,
+        h('g', { id: `${variant}-motion`, class: [`${variant}-motion`, motion] }, mascot),
+        h('style', css),
+      ];
 
       return h(
         'div',

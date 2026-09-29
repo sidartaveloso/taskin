@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect } from 'storybook/test';
 import { defaultTaskinProps } from './Taskin.mock';
+import { TASKIN_VARIANTS } from './Taskin.variants';
 import TaskinWithShhh from './TaskinWithShhh.vue';
 
 const meta = {
@@ -9,6 +10,7 @@ const meta = {
   tags: ['design-vue', 'webcam', 'microphone'],
   argTypes: {
     mascotSize: { control: { type: 'number' } },
+    variant: { control: { type: 'select' }, options: [...TASKIN_VARIANTS] },
     showWebcam: { control: { type: 'boolean' } },
     showDebug: { control: { type: 'boolean' } },
     enableNoiseReactions: { control: { type: 'boolean' } },
@@ -175,5 +177,16 @@ export const BrunoShhh: Story = {
   },
   play: async ({ canvasElement }) => {
     expect(canvasElement.querySelector('.mascot-container')).not.toBeNull();
+  },
+};
+
+/** O mesmo shhh, feito pelo Sapin: a reacao e do mascote, e nao do bicho. */
+export const Sapin: Story = {
+  ...Default,
+  args: {
+    variant: 'sapin',
+  },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('g#body')?.getAttribute('data-variant')).toBe('sapin');
   },
 };

@@ -22,26 +22,47 @@
 <script setup lang="ts">
 import { mirrorAngleForSide } from '@opentask/ui-sense';
 import { computed } from 'vue';
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 import { type ArmPosition, type ArmSide, NEUTRAL_ARM_POSITION, type SideRelativeAngle } from './TaskinArms.types';
 
 export interface Props {
   color?: string;
   leftArmPosition?: ArmPosition;
   rightArmPosition?: ArmPosition;
+  variant?: TaskinVariant;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   color: '#FF6B9D',
+  variant: 'taskin',
 });
 
-// Taskin's arm base positions
-const SHOULDER = {
-  left: { x: 95, y: 120 },
-  right: { x: 225, y: 120 },
-} as const satisfies Record<ArmSide, { x: number; y: number }>;
+interface ArmGeometry {
+  shoulder: Record<ArmSide, { x: number; y: number }>;
+  upperArmLength: number;
+  forearmLength: number;
+}
 
-const UPPER_ARM_LENGTH = 25;
-const FOREARM_LENGTH = 25;
+/**
+ * Where each character's arms start, and how long they are.
+ *
+ * The Sapin's shoulders sit on the edge of its wider body, a little higher, and
+ * its upper arm is longer — the same neutral angles then draw the frog's arms
+ * from the reference. The angles, and so the pose tracking,
+ * are shared: only the skeleton changes.
+ */
+const ARM_GEOMETRY: Record<TaskinVariant, ArmGeometry> = {
+  taskin: {
+    shoulder: { left: { x: 95, y: 120 }, right: { x: 225, y: 120 } },
+    upperArmLength: 25,
+    forearmLength: 25,
+  },
+  sapin: {
+    shoulder: { left: { x: 90, y: 113 }, right: { x: 230, y: 113 } },
+    upperArmLength: 34,
+    forearmLength: 26,
+  },
+};
 
 /**
  * Walks one segment from `origin`, in a side-relative direction.
@@ -67,9 +88,10 @@ const step = (
 
 /** Shoulder -> elbow -> wrist, as a quadratic curve through the elbow. */
 const generateArmPath = (side: ArmSide, position: ArmPosition): string => {
-  const shoulder = SHOULDER[side];
-  const elbow = step(shoulder, position.shoulderAngle, side, UPPER_ARM_LENGTH);
-  const wrist = step(elbow, position.forearmAngle, side, FOREARM_LENGTH);
+  const geometry = ARM_GEOMETRY[props.variant];
+  const shoulder = geometry.shoulder[side];
+  const elbow = step(shoulder, position.shoulderAngle, side, geometry.upperArmLength);
+  const wrist = step(elbow, position.forearmAngle, side, geometry.forearmLength);
 
   return `M${shoulder.x} ${shoulder.y} Q${elbow.x} ${elbow.y} ${wrist.x} ${wrist.y}`;
 };

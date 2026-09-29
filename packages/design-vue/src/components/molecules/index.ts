@@ -8,6 +8,7 @@ export * from './taskin-arm-with-phone';
 export * from './taskin-effect-fart-cloud';
 export * from './taskin-effect-hearts';
 export * from './taskin-effect-phone';
+export * from './taskin-effect-sweat';
 export * from './taskin-effect-tears';
 export * from './taskin-effect-thought-bubble';
 export * from './taskin-effect-vomit';

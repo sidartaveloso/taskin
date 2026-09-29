@@ -53,6 +53,15 @@ describe('TaskinWithFaceTracking', () => {
     expect(wrapper.find('g#body').exists()).toBe(true);
   });
 
+  it('repassa a variante ao mascote: o Taskin por padrao, o Sapin quando pedido', () => {
+    expect(mount(TaskinWithFaceTracking).find('g#body').attributes('data-variant')).toBe('taskin');
+    expect(
+      mount(TaskinWithFaceTracking, { props: { variant: 'sapin' } })
+        .find('g#body')
+        .attributes('data-variant'),
+    ).toBe('sapin');
+  });
+
   it('shows the debug panel when showDebug and detection data exists', async () => {
     const wrapper = mount(TaskinWithFaceTracking, { props: { showDebug: true } });
     expect(wrapper.find('[data-testid="mock-face-tracking-debug"]').exists()).toBe(false);

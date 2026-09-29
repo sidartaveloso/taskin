@@ -1,4 +1,6 @@
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, type PropType } from 'vue';
+import { eyeShift } from '../../atoms/taskin-eyes/TaskinEyes.types';
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 
 export default defineComponent({
   name: 'TaskinEffectZzz',
@@ -7,13 +9,21 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    /** Which character the effect sits on: it follows that character's face. */
+    variant: {
+      type: String as PropType<TaskinVariant>,
+      default: 'taskin',
+    },
   },
   setup(props) {
-    return () =>
-      h('g', { id: 'effect-zzz' }, [
+    return () => {
+      // Os Z sobem do olho direito: andam com ele de uma variante para outra.
+      const shift = eyeShift(props.variant, 'right');
+
+      return h('g', { id: 'effect-zzz' }, [
         h('text', {
-          x: '190',
-          y: '90',
+          x: String(190 + shift.x),
+          y: String(90 + shift.y),
           fill: '#2C3E50',
           'font-size': '24',
           'font-weight': 'bold',
@@ -21,8 +31,8 @@ export default defineComponent({
           style: props.animationsEnabled ? 'animation: zzz-rise 2s ease-in-out infinite;' : '',
         }),
         h('text', {
-          x: '200',
-          y: '80',
+          x: String(200 + shift.x),
+          y: String(80 + shift.y),
           fill: '#2C3E50',
           'font-size': '24',
           'font-weight': 'bold',
@@ -30,8 +40,8 @@ export default defineComponent({
           style: props.animationsEnabled ? 'animation: zzz-rise 2s ease-in-out infinite 0.3s;' : '',
         }),
         h('text', {
-          x: '210',
-          y: '70',
+          x: String(210 + shift.x),
+          y: String(70 + shift.y),
           fill: '#2C3E50',
           'font-size': '24',
           'font-weight': 'bold',
@@ -48,5 +58,6 @@ export default defineComponent({
         `,
         ),
       ]);
+    };
   },
 });

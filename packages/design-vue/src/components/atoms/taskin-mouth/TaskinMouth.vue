@@ -2,8 +2,9 @@
   <path
     id="mouth"
     :d="mouthPath"
+    :transform="mouthTransform(props.variant)"
     :fill="
-      ['open', 'wide-open', 'o-shape', 'surprised'].includes(props.expression)
+      ['open', 'wide-open', 'o-shape', 'surprised', 'panting'].includes(props.expression)
         ? '#2C3E50'
         : 'none'
     "
@@ -11,20 +12,37 @@
     stroke-width="3"
     stroke-linecap="round"
   />
+  <!--
+    A lingua para fora do ofegante. Mora num grupo com o deslocamento da boca:
+    a animacao mexe no `transform` do path, e sobrescreveria o do Sapin.
+  -->
+  <g v-if="props.expression === 'panting'" id="mouth-tongue" :transform="mouthTransform(props.variant)">
+    <path
+      :class="{ 'tongue-pant': props.animationsEnabled }"
+      d="M151 132 L151 143 Q151 152 160 152 Q169 152 169 143 L169 132 M160 135 L160 145"
+      fill="#FF9EB5"
+      stroke="#2C3E50"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+  </g>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { MouthExpression } from './TaskinMouth.types';
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import { type MouthExpression, mouthTransform } from './TaskinMouth.types';
 
 export interface Props {
   expression?: MouthExpression;
   animationsEnabled?: boolean;
+  variant?: TaskinVariant;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   expression: 'neutral',
   animationsEnabled: true,
+  variant: 'taskin',
 });
 
 const mouthPath = computed(() => {
@@ -48,6 +66,10 @@ const mouthPath = computed(() => {
     case 'surprised':
       // Surpresa (O alongado vertical - maior que o-shape)
       return 'M155 118 Q152 118 152 125 Q152 132 155 132 Q165 132 165 125 Q165 118 155 118 Z';
+    case 'panting':
+      // Ofegante: aberta e redonda, com os cantos caidos — nao o sorriso
+      // escancarado do `wide-open`, que no calor parecia contentamento.
+      return 'M143 124 Q160 112 177 124 Q176 139 160 140 Q144 139 143 124 Z';
     default:
       return 'M145 125 Q160 130 175 125';
   }
@@ -59,3 +81,19 @@ export default {
   name: 'TaskinMouth',
 };
 </script>
+
+<style scoped>
+.tongue-pant {
+  animation: tongue-pant 0.4s ease-in-out infinite;
+}
+
+@keyframes tongue-pant {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(1.5px);
+  }
+}
+</style>

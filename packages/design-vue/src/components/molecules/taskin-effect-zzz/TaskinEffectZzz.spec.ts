@@ -22,4 +22,12 @@ describe('TaskinEffectZzz', () => {
     const wrapper = mount(TaskinEffectZzz, { props: { animationsEnabled: false } });
     expect(wrapper.find('text').attributes('style')).not.toContain('animation');
   });
+
+  it('sobe do olho direito do sapin', () => {
+    const taskin = mount(TaskinEffectZzz).find('text');
+    const sapin = mount(TaskinEffectZzz, { props: { variant: 'sapin' } }).find('text');
+
+    expect([taskin.attributes('x'), taskin.attributes('y')]).toEqual(['190', '90']);
+    expect([sapin.attributes('x'), sapin.attributes('y')]).toEqual(['204', '71']);
+  });
 });

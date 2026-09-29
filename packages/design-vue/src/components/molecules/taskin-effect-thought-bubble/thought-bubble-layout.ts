@@ -13,15 +13,24 @@
  * texto latino; o excesso de folga fica por conta do preenchimento.
  */
 
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+
 /** Quadro do mascote: `viewBox="0 0 320 260"`. */
 export const BUBBLE_RIGHT_LIMIT = 316;
 /** A cabeca do mascote vive a esquerda disto; o balao nao a cobre. */
 export const BUBBLE_LEFT_LIMIT = 150;
 export const BUBBLE_TOP_LIMIT = 4;
 
-/** Posicao e tamanho de sempre, preservados enquanto a frase couber neles. */
-const BASE_CX = 210;
-const BASE_CY = 50;
+/**
+ * Posicao de sempre, preservada enquanto a frase couber no balao minimo, em cada
+ * variante. O do Sapin nasce mais alto e mais a direita: os olhos dele moram no
+ * topo da cabeca, e o balao do Taskin cobriria o olho direito. A cauda continua
+ * encostando na cabeca.
+ */
+export const BUBBLE_BASE: Record<TaskinVariant, { cx: number; cy: number }> = {
+  taskin: { cx: 210, cy: 50 },
+  sapin: { cx: 250, cy: 34 },
+};
 const MIN_RX = 35;
 const MIN_RY = 30;
 
@@ -98,7 +107,8 @@ const quebrarEmLinhas = (texto: string, maxChars: number): string[] => {
 
 const maxCharsPara = (fontSize: number) => Math.max(1, Math.floor(MAX_TEXT_WIDTH / (fontSize * GLYPH_WIDTH_RATIO)));
 
-export const layoutThoughtBubble = (texto: string): ThoughtBubbleLayout => {
+export const layoutThoughtBubble = (texto: string, variant: TaskinVariant = 'taskin'): ThoughtBubbleLayout => {
+  const base = BUBBLE_BASE[variant];
   const frase = texto.trim() || '?';
   const maiorPalavra = frase
     .split(/\s+/)
@@ -136,8 +146,8 @@ export const layoutThoughtBubble = (texto: string): ThoughtBubbleLayout => {
 
   // Cresce para a direita antes de crescer para a esquerda: a esquerda e onde
   // esta a cabeca do mascote, e um balao por cima dela nao se le.
-  const cx = Math.min(BUBBLE_RIGHT_LIMIT - rx, Math.max(BASE_CX, BUBBLE_LEFT_LIMIT + rx));
-  const cy = Math.max(BASE_CY, ry + BUBBLE_TOP_LIMIT);
+  const cx = Math.min(BUBBLE_RIGHT_LIMIT - rx, Math.max(base.cx, BUBBLE_LEFT_LIMIT + rx));
+  const cy = Math.max(base.cy, ry + BUBBLE_TOP_LIMIT);
 
   const primeiraLinha = cy - ((lines.length - 1) * alturaDaLinha) / 2;
 

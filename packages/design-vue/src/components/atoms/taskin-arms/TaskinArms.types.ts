@@ -1,5 +1,6 @@
 import type { ArmAngle, ArmSide, SideRelativeAngle } from '@opentask/ui-sense';
 import { mirrorAngleForSide, sideRelativeAngle, smoothAngle } from '@opentask/ui-sense';
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 
 export type { ArmSide, SideRelativeAngle } from '@opentask/ui-sense';
 
@@ -103,4 +104,6 @@ export interface TaskinArmsProps {
   color?: string;
   leftArmPosition?: ArmPosition;
   rightArmPosition?: ArmPosition;
+  /** Which character the arms belong to: the Sapin's start wider and reach further. */
+  variant?: TaskinVariant;
 }
