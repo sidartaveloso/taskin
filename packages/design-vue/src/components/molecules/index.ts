@@ -12,6 +12,7 @@ export * from './taskin-effect-sweat';
 export * from './taskin-effect-tears';
 export * from './taskin-effect-thought-bubble';
 export * from './taskin-effect-vomit';
+export * from './taskin-effect-weight';
 export * from './taskin-effect-zzz';
 export * from './taskin-tentacle-with-item';
 export * from './taskin-tentacles-fluid';

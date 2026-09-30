@@ -12,13 +12,13 @@ A acao `effort`, para quando uma task ganha dificuldade 4 ou 5: o bicho ergue um
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `effort` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~2s
-- [ ] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-weight/` (`TaskinEffectWeight.ts`, `.types.ts`, `.spec.ts`, `.stories.ts`, `index.ts`), no molde do `TaskinEffectZzz`: uma barra com um disco em cada ponta, acima da cabeca, com a prop `variant` (a barra fica entre as maos erguidas de cada bicho). Exportado no `index.ts` dos molecules e do pacote
-- [ ] O organismo mostra o peso e o `TaskinEffectSweat` enquanto a acao roda (como os outros efeitos, pela acao atual); `pose` com os dois bracos para o alto segurando a barra e `eyeState: 'squint'`; o bicho treme de leve (translate +-1,5px)
-- [ ] Sapin: as pernas tremem mais que o corpo — `.sapin-effort #body-legs`
-- [ ] Testes: o peso e o suor so durante a acao; a barra entre as maos (a ponta de cada braco perto de um disco); o efeito sozinho nas duas variantes
-- [ ] Evidencia visual em `TASKS/assets/task-154/`: `effort` com o peso no alto e o suor — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-154/<nome>.png)`), pela receita de Notes
-- [ ] Changeset minor no `@opentask/taskin-design-vue` (efeito novo)
+- [x] `effort` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~2s — `ACTIONS` em `Taskin.ts` (2000ms), `TASKIN_ACTIONS`; spec `effort › dura cerca de 2s...`
+- [x] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-weight/` (`TaskinEffectWeight.ts`, `.types.ts`, `.spec.ts`, `.stories.ts`, `index.ts`), no molde do `TaskinEffectZzz`: uma barra com um disco em cada ponta, acima da cabeca, com a prop `variant` (a barra fica entre as maos erguidas de cada bicho). Exportado no `index.ts` dos molecules e do pacote — `molecules/taskin-effect-weight/`; spec `TaskinEffectWeight.spec.ts`; exportado no `molecules/index.ts`
+- [x] O organismo mostra o peso e o `TaskinEffectSweat` enquanto a acao roda (como os outros efeitos, pela acao atual); `pose` com os dois bracos para o alto segurando a barra e `eyeState: 'squint'`; o bicho treme de leve (translate +-1,5px) — spec `effort › o peso e o suor so durante a acao`; pose EFFORT (squint), tremor CSS `taskin-effort`/`sapin-effort`
+- [x] Sapin: as pernas tremem mais que o corpo — `.sapin-effort #body-legs` — `.sapin-effort #body-legs` em `Taskin.ts`
+- [x] Testes: o peso e o suor so durante a acao; a barra entre as maos (a ponta de cada braco perto de um disco); o efeito sozinho nas duas variantes — `effort` em `Taskin.actions.spec.ts` e `TaskinEffectWeight.spec.ts`
+- [x] Evidencia visual em `TASKS/assets/task-154/`: `effort` com o peso no alto e o suor — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-154/<nome>.png)`), pela receita de Notes — ![taskin com o peso e o suor](assets/task-154/taskin-effort.png) ![sapin com o peso e o suor](assets/task-154/sapin-effort.png)
+- [x] Changeset minor no `@opentask/taskin-design-vue` (efeito novo) — `.changeset/o-mascote-faz-forca.md`
 
 ## Notes
 ### Contexto da rodada

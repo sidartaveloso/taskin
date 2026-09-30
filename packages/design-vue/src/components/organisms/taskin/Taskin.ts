@@ -13,6 +13,7 @@ import TaskinEffectSweat from '../../molecules/taskin-effect-sweat/TaskinEffectS
 import TaskinEffectTears from '../../molecules/taskin-effect-tears/TaskinEffectTears';
 import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/TaskinEffectThoughtBubble';
 import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/TaskinEffectVomit';
+import TaskinEffectWeight from '../../molecules/taskin-effect-weight/TaskinEffectWeight';
 import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/TaskinEffectZzz';
 import TaskinTentacleWithItem from '../../molecules/taskin-tentacle-with-item/TaskinTentacleWithItem.vue';
 import type { TaskinAction } from './Taskin.actions';
@@ -103,6 +104,7 @@ const TASKIN_MOTION_CSS = `
     animation-iteration-count: 1;
   }
   .taskin-blocked { animation: taskin-taskin-blocked 1.6s ease-in-out; animation-iteration-count: 1; }
+  .taskin-effort { animation: taskin-taskin-effort 2s linear; }
   .taskin-wave { animation: taskin-taskin-wave 1.4s ease-in-out; animation-iteration-count: 1; }
   .taskin-wave #right-arm {
     transform-box: view-box;
@@ -176,6 +178,19 @@ const TASKIN_MOTION_CSS = `
     15%, 40% { transform: translateX(-4px); }
     65% { transform: translateX(0); }
   }
+  @keyframes taskin-taskin-effort {
+    0% { transform: translate(0, 0); }
+    10% { transform: translate(-1.5px, 0.75px); }
+    20% { transform: translate(0, 0); }
+    30% { transform: translate(1.5px, -0.75px); }
+    40% { transform: translate(0, 0); }
+    50% { transform: translate(-1.5px, 0.75px); }
+    60% { transform: translate(0, 0); }
+    70% { transform: translate(1.5px, -0.75px); }
+    80% { transform: translate(0, 0); }
+    90% { transform: translate(-1.5px, 0.75px); }
+    100% { transform: translate(0, 0); }
+  }
   @keyframes taskin-taskin-wave {
     0%, 100% { transform: rotate(0deg); }
     25%, 75% { transform: rotate(-1.5deg); }
@@ -230,6 +245,26 @@ const SAPIN_MOTION_CSS = `
   @keyframes taskin-sapin-blocked {
     0% { transform: translateY(0) scale(1, 1); }
     25%, 100% { transform: translateY(4px) scale(1.04, 0.92); }
+  }
+  .sapin-effort { animation: taskin-sapin-effort 2s linear; }
+  .sapin-effort #body-legs { animation: taskin-sapin-effort-legs 0.14s linear infinite; }
+  @keyframes taskin-sapin-effort {
+    0% { transform: translate(0, 0); }
+    10% { transform: translate(-1.5px, 0.75px); }
+    20% { transform: translate(0, 0); }
+    30% { transform: translate(1.5px, -0.75px); }
+    40% { transform: translate(0, 0); }
+    50% { transform: translate(-1.5px, 0.75px); }
+    60% { transform: translate(0, 0); }
+    70% { transform: translate(1.5px, -0.75px); }
+    80% { transform: translate(0, 0); }
+    90% { transform: translate(-1.5px, 0.75px); }
+    100% { transform: translate(0, 0); }
+  }
+  @keyframes taskin-sapin-effort-legs {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
   }
   .sapin-wave { animation: taskin-sapin-wave 1.4s ease-in-out; animation-iteration-count: 1; }
   .sapin-wave #right-arm {
@@ -375,6 +410,16 @@ const START: ActionPose = {
 };
 
 /**
+ * O esforco: os dois bracos para o alto segurando a barra, de olhos apertados.
+ * Os bracos a -70/-100 graus levam as maos aos pontos de `WEIGHT_HANDS`.
+ */
+const EFFORT: ActionPose = {
+  leftArm: armPosition(-70, -100),
+  rightArm: armPosition(-70, -100),
+  eyeState: 'squint',
+};
+
+/**
  * Bracos cruzados na frente da barriga, de cara virada e cenho franzido. O braco
  * do Taskin tem 50 de comprimento e o ombro fica a 65 da linha do meio (x=160):
  * a mao nao passa dela, so chega perto, e o cruzamento vem das duas maos se
@@ -404,6 +449,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     wave: { className: 'taskin-wave', durationMs: 1400, pose: WAVE },
     start: { className: 'taskin-start', durationMs: 1100, pose: START },
     blocked: { className: 'taskin-blocked', durationMs: 1600, pose: BLOCKED_TASKIN },
+    effort: { className: 'taskin-effort', durationMs: 2000, pose: EFFORT },
   },
   sapin: {
     nod: { className: 'sapin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
@@ -414,6 +460,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     wave: { className: 'sapin-wave', durationMs: 1400, pose: WAVE },
     start: { className: 'sapin-start', durationMs: 1100, pose: START },
     blocked: { className: 'sapin-blocked', durationMs: 1600, pose: BLOCKED_SAPIN },
+    effort: { className: 'sapin-effort', durationMs: 2000, pose: EFFORT },
   },
 };
 
@@ -982,7 +1029,12 @@ export default defineComponent({
           h(TaskinEffectFartCloud, {
             animationsEnabled: props.animationsEnabled,
           }),
-        config.value.showSweat &&
+        running.value?.action === 'effort' &&
+          h(TaskinEffectWeight, {
+            variant,
+            animationsEnabled: props.animationsEnabled,
+          }),
+        (config.value.showSweat || running.value?.action === 'effort') &&
           h(TaskinEffectSweat, {
             variant,
             animationsEnabled: props.animationsEnabled,
