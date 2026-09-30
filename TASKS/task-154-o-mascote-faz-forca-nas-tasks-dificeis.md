@@ -1,6 +1,6 @@
 # 🧩 Task 154 — O mascote faz forca nas tasks dificeis
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-2
