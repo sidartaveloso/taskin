@@ -1,6 +1,6 @@
 # 🧩 Task 160 — O Taskin faz malabarismo quando ha tasks demais em andamento
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-3
