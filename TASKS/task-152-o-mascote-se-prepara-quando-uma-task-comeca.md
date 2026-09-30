@@ -1,6 +1,6 @@
 # 🧩 Task 152 — O mascote se prepara quando uma task comeca
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-2
