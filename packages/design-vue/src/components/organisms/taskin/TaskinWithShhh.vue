@@ -46,6 +46,7 @@
     <div class="mascot-container" ref="mascotContainer">
       <Taskin
         :variant="variant"
+        :listening="listening"
         :mood="currentMood"
         :size="mascotSize"
         :eye-tracking-mode="eyeTrackingMode"
@@ -88,6 +89,8 @@ export interface Props {
   mascotSize?: number;
   /** Which character reacts: the Taskin octopus (default) or the Sapin frog. */
   variant?: TaskinVariant;
+  /** The microphone is on: the mascot holds its listening pose. */
+  listening?: boolean;
   showWebcam?: boolean;
   showDebug?: boolean;
   /**
@@ -143,6 +146,7 @@ export interface Props {
 const props = withDefaults(defineProps<Props>(), {
   mascotSize: 300,
   variant: 'taskin',
+  listening: false,
   showWebcam: false,
   showDebug: false,
   showControls: true,
