@@ -250,3 +250,96 @@ describe('celebrate', () => {
     wrapper.unmount();
   });
 });
+
+describe('point-up e point-down', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  /** Os numeros do `d` do braco: `M x y Q ex ey x y`. */
+  const numeros = (d: string | undefined) => (d ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+
+  /** O `y` do ombro e o da ponta do braco. */
+  const alturas = (d: string | undefined) => {
+    const n = numeros(d);
+    return { ombro: n[1] ?? Number.NaN, ponta: n[n.length - 1] ?? Number.NaN };
+  };
+
+  /** O centro da barriga de cada bicho: o do corpo no Taskin, o de `#body-belly` no Sapin. */
+  const BARRIGA: Record<TaskinVariant, number> = { taskin: 110, sapin: 158 };
+
+  const pupilas = (wrapper: ReturnType<typeof mountTaskin>['wrapper']) =>
+    wrapper.findAll('#eyes circle').map((pupila) => Number(pupila.attributes('cy')));
+
+  it.each(TASKIN_VARIANTS)('%s: cada um dura cerca de 0,9s', (variant) => {
+    expect(ACTIONS[variant]['point-up']?.durationMs).toBe(900);
+    expect(ACTIONS[variant]['point-down']?.durationMs).toBe(900);
+  });
+
+  it.each(TASKIN_VARIANTS)(
+    '%s: point-up leva a ponta do braco direito acima do ombro, quase vertical',
+    async (variant) => {
+      const { wrapper, vm } = mountTaskin({ variant });
+      const esquerdo = wrapper.find('#left-arm').attributes('d');
+      void vm.play('point-up');
+      await nextTick();
+
+      const d = wrapper.find('#right-arm').attributes('d');
+      const { ombro, ponta } = alturas(d);
+      expect(ponta).toBeLessThan(ombro - 40);
+      const n = numeros(d);
+      expect(Math.abs((n[4] ?? 0) - (n[0] ?? 0))).toBeLessThan(15);
+      expect(wrapper.find('#left-arm').attributes('d')).toBe(esquerdo);
+      wrapper.unmount();
+    },
+  );
+
+  it.each(TASKIN_VARIANTS)('%s: point-down leva a ponta do braco direito abaixo da barriga', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    const esquerdo = wrapper.find('#left-arm').attributes('d');
+    const repouso = alturas(wrapper.find('#right-arm').attributes('d')).ponta;
+    void vm.play('point-down');
+    await nextTick();
+
+    const { ponta } = alturas(wrapper.find('#right-arm').attributes('d'));
+    expect(ponta).toBeGreaterThan(BARRIGA[variant]);
+    expect(ponta).toBeGreaterThan(repouso);
+    expect(wrapper.find('#left-arm').attributes('d')).toBe(esquerdo);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: as pupilas sobem no point-up e descem no point-down', async (variant) => {
+    const centro = pupilas(mountTaskin({ variant }).wrapper);
+
+    const acima = mountTaskin({ variant });
+    void acima.vm.play('point-up');
+    await nextTick();
+    for (const [i, cy] of pupilas(acima.wrapper).entries()) {
+      expect(cy).toBeLessThan(centro[i] ?? 0);
+    }
+
+    const abaixo = mountTaskin({ variant });
+    void abaixo.vm.play('point-down');
+    await nextTick();
+    for (const [i, cy] of pupilas(abaixo.wrapper).entries()) {
+      expect(cy).toBeGreaterThan(centro[i] ?? 0);
+    }
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o bicho da um empurraozinho de 3px na direcao', async (variant) => {
+    for (const [action, dy] of [
+      ['point-up', -3],
+      ['point-down', 3],
+    ] as const) {
+      const { wrapper, vm } = mountTaskin({ variant });
+      void vm.play(action);
+      await nextTick();
+      const grupo = wrapper.find(`#${variant}-motion`).element;
+      const [animacao] = grupo.getAnimations();
+      animacao?.pause();
+      if (animacao) animacao.currentTime = 450;
+      expect(new DOMMatrix(getComputedStyle(grupo).transform).f).toBeCloseTo(dy, 0);
+      wrapper.unmount();
+    }
+  });
+});
