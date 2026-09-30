@@ -1,6 +1,6 @@
 # 🧩 Task 156 — O mascote ouve quando o microfone esta ligado
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-3
