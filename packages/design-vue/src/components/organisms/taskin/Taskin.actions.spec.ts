@@ -582,3 +582,51 @@ describe('blocked', () => {
     wrapper.unmount();
   });
 });
+
+describe('effort', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 2s, de olhos apertados e bracos para o alto', (variant) => {
+    const config = ACTIONS[variant].effort;
+    expect(config?.durationMs).toBe(2000);
+    expect(config?.pose?.eyeState).toBe('squint');
+    expect(config?.pose?.leftArm).toBeDefined();
+    expect(config?.pose?.rightArm).toBeDefined();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o peso e o suor so aparecem durante a acao', async (variant) => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin({ variant });
+    expect(wrapper.find('#effect-weight').exists()).toBe(false);
+    expect(wrapper.find('#effect-sweat').exists()).toBe(false);
+
+    void vm.play('effort');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-effort`);
+    expect(wrapper.find('#effect-weight').exists()).toBe(true);
+    expect(wrapper.find('#effect-sweat').exists()).toBe(true);
+
+    vi.advanceTimersByTime(2000);
+    await nextTick();
+    expect(wrapper.find('#effect-weight').exists()).toBe(false);
+    expect(wrapper.find('#effect-sweat').exists()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a ponta de cada braco fica perto de um disco', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('effort');
+    await nextTick();
+    const discos = wrapper.findAll('rect.weight-disc').map((d) => ({
+      x: Number(d.attributes('x')) + Number(d.attributes('width')) / 2,
+      y: Number(d.attributes('y')) + Number(d.attributes('height')) / 2,
+    }));
+    for (const [i, id] of ['#left-arm', '#right-arm'].entries()) {
+      const n = (wrapper.find(id).attributes('d') ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+      const ponta = { x: n[4] ?? 0, y: n[5] ?? 0 };
+      expect(Math.hypot(ponta.x - (discos[i]?.x ?? 0), ponta.y - (discos[i]?.y ?? 0))).toBeLessThan(8);
+    }
+  });
+});
