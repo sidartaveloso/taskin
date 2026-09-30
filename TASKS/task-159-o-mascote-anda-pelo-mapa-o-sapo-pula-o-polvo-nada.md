@@ -1,6 +1,6 @@
 # 🧩 Task 159 — O mascote anda pelo mapa: o sapo pula, o polvo nada
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-3
