@@ -517,3 +517,68 @@ describe('start', () => {
     wrapper.unmount();
   });
 });
+
+describe('blocked', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,6s, de cenho franzido', (variant) => {
+    expect(ACTIONS[variant].blocked?.durationMs).toBe(1600);
+    expect(ACTIONS[variant].blocked?.pose?.mouthExpression).toBe('frown');
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a classe entra no grupo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('blocked');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-blocked`);
+    wrapper.unmount();
+  });
+
+  it('taskin: vira a cara para a esquerda e as maos vao para a frente da barriga', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    const ponta = (id: string) => {
+      const numeros = (wrapper.find(id).attributes('d') ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+      return { x: numeros.at(-2) ?? 0, y: numeros.at(-1) ?? 0 };
+    };
+    const antes = { esq: ponta('#left-arm'), dir: ponta('#right-arm') };
+    void vm.play('blocked');
+    await nextTick();
+    const esq = ponta('#left-arm');
+    const dir = ponta('#right-arm');
+    expect(Math.abs(160 - esq.x)).toBeLessThan(25);
+    expect(Math.abs(dir.x - 160)).toBeLessThan(25);
+    expect(esq.x).toBeGreaterThan(antes.esq.x);
+    expect(dir.x).toBeLessThan(antes.dir.x);
+    wrapper.unmount();
+  });
+
+  it('taskin: recua um pouco e volta', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    void vm.play('blocked');
+    await nextTick();
+    const el = wrapper.find('#taskin-motion').element;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 500;
+    expect(new DOMMatrix(getComputedStyle(el).transform).e).toBeCloseTo(-4, 0);
+    if (animacao) animacao.currentTime = 1500;
+    expect(Math.abs(new DOMMatrix(getComputedStyle(el).transform).e)).toBeLessThan(0.5);
+    wrapper.unmount();
+  });
+
+  it('sapin: no meio da acao esta sentado, com a escala vertical menor que 1', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('blocked');
+    await nextTick();
+    const el = wrapper.find('#sapin-motion').element;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 800;
+    const m = new DOMMatrix(getComputedStyle(el).transform);
+    expect(m.d).toBeLessThan(1);
+    expect(m.f).toBeCloseTo(4, 0);
+    wrapper.unmount();
+  });
+});
