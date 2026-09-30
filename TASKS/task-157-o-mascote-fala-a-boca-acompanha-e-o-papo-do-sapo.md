@@ -1,6 +1,6 @@
 # 🧩 Task 157 — O mascote fala: a boca acompanha e o papo do sapo pulsa
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-3
