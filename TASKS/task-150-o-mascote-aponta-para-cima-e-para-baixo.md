@@ -16,6 +16,7 @@ As acoes `point-up` e `point-down`, para os gestos de mover acima e abaixo na pr
 - [ ] `pose` do braco direito: para cima, a mao acima do ombro, quase vertical; para baixo, a mao abaixo da barriga, rente ao corpo. O esquerdo fica na pose de descanso da variante
 - [ ] `pose.lookDirection`: `up` e `down`. O bicho inteiro da um empurraozinho na direcao (translate de 3px), pelo CSS da acao
 - [ ] Testes: a ponta do `#right-arm` (fim do `d`) acima do ombro no `point-up` e abaixo da barriga no `point-down`, nas duas variantes; as pupilas sobem e descem
+- [ ] Evidencia visual em `TASKS/assets/task-150/`: `point-up` e `point-down`, com o braco no fim do gesto — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-150/<nome>.png)`), pela receita de Notes
 - [ ] Changeset patch no `@opentask/taskin-design-vue`
 
 ## Notes
@@ -27,6 +28,33 @@ Ler, e so isto:
 Nao precisa ler: o corpo, os olhos, a boca e os efeitos.
 
 A API das acoes (da task-148): `TASKIN_ACTIONS` em `packages/design-vue/src/components/organisms/taskin/Taskin.actions.ts`; a tabela `ACTIONS[variante][acao] = { className, durationMs, pose? }` e o CSS das acoes no `<style>` de cada variante, em `packages/design-vue/src/components/organisms/taskin/Taskin.ts`; `play(acao): Promise<boolean>` exposto. A `pose` (bracos, olhos, olhar, boca) vale so enquanto a acao roda; props explicitas do consumidor continuam mandando.
+
+### Evidencia visual
+A task e de componente visual: a evidencia e imagem, e nao so contagem de teste. O agente nao ve o desenho, mas tira o screenshot no Chromium do container, por um spec temporario em `packages/design-vue/src/components/organisms/taskin/` (apague-o antes do commit; fica so a imagem):
+```ts
+import { mount } from '@vue/test-utils';
+import { it } from 'vitest';
+import { page } from 'vitest/browser';
+import { nextTick } from 'vue';
+import Taskin from './Taskin';
+
+it('evidencia visual', async () => {
+  for (const variant of ['taskin', 'sapin'] as const) {
+    const wrapper = mount(Taskin, { attachTo: document.body, props: { variant, size: 320, idleAnimation: false } });
+    const vm = wrapper.vm as unknown as { play: (a: string) => Promise<boolean> };
+    void vm.play('<acao>');
+    await nextTick();
+    // congele no quadro que mostra o movimento
+    const [animacao] = wrapper.find(`#${variant}-motion`).element.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = <ms>;
+    // relativo ao spec: seis niveis acima fica a raiz do repositorio (o Vite recusa caminho fora dele)
+    await page.screenshot({ path: `../../../../../../TASKS/assets/task-150/${variant}-<nome>.png`, element: wrapper.element as HTMLElement });
+    wrapper.unmount();
+  }
+});
+```
+Rode so ele (`pnpm --filter @opentask/taskin-design-vue exec vitest run src/components/organisms/taskin/<spec-temporario>.spec.ts`), confira que as imagens existem e registre-as no checklist. Receita provada na task-147 (o screenshot da task-146 saiu assim).
 
 ### Verificacao
 ```bash

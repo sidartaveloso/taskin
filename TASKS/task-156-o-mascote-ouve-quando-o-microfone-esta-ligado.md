@@ -16,6 +16,7 @@ Ouvir nao e acao de uma vez so: dura enquanto o microfone estiver ligado. A prop
 - [ ] Enquanto `true`: uma pose que perde para a acao que estiver rodando e ganha do humor — Taskin com o braco direito dobrado, a mao junto da cabeca; os dois com `eyeState: 'wide'` — e uma classe em laco no grupo (`*-listening`: inclina 6deg e respira devagar)
 - [ ] Com `animationsEnabled=false`, fica so a pose, sem laco
 - [ ] Testes: a pose e a classe so com `listening`; uma acao por cima ganha, e no fim a escuta volta; os wrappers repassam
+- [ ] Evidencia visual em `TASKS/assets/task-156/`: `listening` ligado — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-156/<nome>.png)`), pela receita de Notes
 - [ ] Changeset patch no `@opentask/taskin-design-vue`
 
 ## Notes
@@ -28,6 +29,28 @@ Ler, e so isto:
 Nao precisa ler: os atomos, os efeitos e as stories dos wrappers.
 
 A API das acoes (da task-148): `TASKIN_ACTIONS` em `packages/design-vue/src/components/organisms/taskin/Taskin.actions.ts`; a tabela `ACTIONS[variante][acao] = { className, durationMs, pose? }` e o CSS das acoes no `<style>` de cada variante, em `packages/design-vue/src/components/organisms/taskin/Taskin.ts`; `play(acao): Promise<boolean>` exposto. A `pose` (bracos, olhos, olhar, boca) vale so enquanto a acao roda; props explicitas do consumidor continuam mandando.
+
+### Evidencia visual
+A task e de componente visual: a evidencia e imagem, e nao so contagem de teste. O agente nao ve o desenho, mas tira o screenshot no Chromium do container, por um spec temporario em `packages/design-vue/src/components/organisms/taskin/` (apague-o antes do commit; fica so a imagem):
+```ts
+import { mount } from '@vue/test-utils';
+import { it } from 'vitest';
+import { page } from 'vitest/browser';
+import { nextTick } from 'vue';
+import Taskin from './Taskin';
+
+it('evidencia visual', async () => {
+  for (const variant of ['taskin', 'sapin'] as const) {
+    const wrapper = mount(Taskin, { attachTo: document.body, props: { variant, size: 320, idleAnimation: false } });
+    // a prop ja entra no mount (ex.: listening: true)
+    await nextTick();
+    // relativo ao spec: seis niveis acima fica a raiz do repositorio (o Vite recusa caminho fora dele)
+    await page.screenshot({ path: `../../../../../../TASKS/assets/task-156/${variant}-<nome>.png`, element: wrapper.element as HTMLElement });
+    wrapper.unmount();
+  }
+});
+```
+Rode so ele (`pnpm --filter @opentask/taskin-design-vue exec vitest run src/components/organisms/taskin/<spec-temporario>.spec.ts`), confira que as imagens existem e registre-as no checklist. Receita provada na task-147 (o screenshot da task-146 saiu assim).
 
 ### Verificacao
 ```bash

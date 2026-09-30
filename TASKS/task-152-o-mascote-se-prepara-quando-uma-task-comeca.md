@@ -16,6 +16,7 @@ A acao `start`, para `taskin start`: o Taskin dobra os bracos e os puxa duas vez
 - [ ] Taskin: `pose` com os bracos dobrados para cima (cotovelo para fora, mao na altura do ombro) e o CSS puxando os dois bracos duas vezes em volta dos ombros; `eyeState: 'wide'`
 - [ ] Sapin: agacha (escala 1,05 x 0,9, no eixo da base) por ~0,7s e solta num pulinho de 8px; `eyeState: 'wide'`
 - [ ] Testes: a classe no grupo; a pose; no Sapin, a escala vertical menor que 1 no meio da agachada (animacao congelada)
+- [ ] Evidencia visual em `TASKS/assets/task-152/`: `start` no fundo da agachada — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-152/<nome>.png)`), pela receita de Notes
 - [ ] Changeset patch no `@opentask/taskin-design-vue`
 
 ## Notes
@@ -29,6 +30,33 @@ Nao precisa ler: o corpo, a boca e os efeitos.
 A API das acoes (da task-148): `TASKIN_ACTIONS` em `packages/design-vue/src/components/organisms/taskin/Taskin.actions.ts`; a tabela `ACTIONS[variante][acao] = { className, durationMs, pose? }` e o CSS das acoes no `<style>` de cada variante, em `packages/design-vue/src/components/organisms/taskin/Taskin.ts`; `play(acao): Promise<boolean>` exposto. A `pose` (bracos, olhos, olhar, boca) vale so enquanto a acao roda; props explicitas do consumidor continuam mandando.
 
 Como testar movimento sem esperar o relogio: congele a animacao pela Web Animations API (`el.getAnimations()[0].currentTime = t`) e confira `getComputedStyle(el).transform` ou `getBoundingClientRect()`. Aba oculta nao anda o relogio das animacoes; os testes nao devem depender dele.
+
+### Evidencia visual
+A task e de componente visual: a evidencia e imagem, e nao so contagem de teste. O agente nao ve o desenho, mas tira o screenshot no Chromium do container, por um spec temporario em `packages/design-vue/src/components/organisms/taskin/` (apague-o antes do commit; fica so a imagem):
+```ts
+import { mount } from '@vue/test-utils';
+import { it } from 'vitest';
+import { page } from 'vitest/browser';
+import { nextTick } from 'vue';
+import Taskin from './Taskin';
+
+it('evidencia visual', async () => {
+  for (const variant of ['taskin', 'sapin'] as const) {
+    const wrapper = mount(Taskin, { attachTo: document.body, props: { variant, size: 320, idleAnimation: false } });
+    const vm = wrapper.vm as unknown as { play: (a: string) => Promise<boolean> };
+    void vm.play('<acao>');
+    await nextTick();
+    // congele no quadro que mostra o movimento
+    const [animacao] = wrapper.find(`#${variant}-motion`).element.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = <ms>;
+    // relativo ao spec: seis niveis acima fica a raiz do repositorio (o Vite recusa caminho fora dele)
+    await page.screenshot({ path: `../../../../../../TASKS/assets/task-152/${variant}-<nome>.png`, element: wrapper.element as HTMLElement });
+    wrapper.unmount();
+  }
+});
+```
+Rode so ele (`pnpm --filter @opentask/taskin-design-vue exec vitest run src/components/organisms/taskin/<spec-temporario>.spec.ts`), confira que as imagens existem e registre-as no checklist. Receita provada na task-147 (o screenshot da task-146 saiu assim).
 
 ### Verificacao
 ```bash

@@ -93,6 +93,15 @@ have been started.
    the test names, the command someone can run, the file where the thing lives.
    An item you did not do stays unticked, with the reason in the notes.
 
+   **A task about a visual component needs visual evidence**, not only a test
+   count. You cannot see the drawing, but Chromium in this container can: take
+   a screenshot from a temporary Vitest browser-mode spec (`page.screenshot`
+   from `vitest/browser`), save it under `TASKS/assets/task-<ID>/`, delete the
+   temporary spec before committing, and reference each image in the task file
+   next to the item it proves: `![what it shows](assets/task-<ID>/<name>.png)`.
+   If the task has an `### Evidencia visual` section, it says what to capture
+   and how.
+
    This is not bookkeeping. Neither `finish_task` nor the CLI touches the body
    of a task — they only change the `Status` field. A task that says `done` with
    an untouched checklist is indistinguishable from an agent that gave up and
