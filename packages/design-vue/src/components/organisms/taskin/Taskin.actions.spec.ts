@@ -452,3 +452,68 @@ describe('wave', () => {
     wrapper.unmount();
   });
 });
+
+describe('start', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,1s, de olhos bem abertos', (variant) => {
+    expect(ACTIONS[variant].start?.durationMs).toBe(1100);
+    expect(ACTIONS[variant].start?.pose?.eyeState).toBe('wide');
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a classe entra no grupo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('start');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-start`);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a pose dobra os dois bracos', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    const antes = wrapper.find('#left-arm').attributes('d');
+    void vm.play('start');
+    await nextTick();
+    expect(wrapper.find('#left-arm').attributes('d')).not.toBe(antes);
+    expect(wrapper.find('#right-arm').attributes('d')).not.toBe(antes);
+    wrapper.unmount();
+  });
+
+  it('sapin: no meio da agachada a escala vertical e menor que 1', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('start');
+    await nextTick();
+    const el = wrapper.find('#sapin-motion').element;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 400;
+    const m = new DOMMatrix(getComputedStyle(el).transform);
+    expect(m.d).toBeLessThan(1);
+    wrapper.unmount();
+  });
+
+  it('taskin: os bracos puxam duas vezes, cada um para um lado', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    void vm.play('start');
+    await nextTick();
+    const esq = wrapper.find('#left-arm').element;
+    const dir = wrapper.find('#right-arm').element;
+    const [a] = esq.getAnimations();
+    const [b] = dir.getAnimations();
+    a?.pause();
+    b?.pause();
+    const graus = (el: Element) => {
+      const m = new DOMMatrix(getComputedStyle(el).transform);
+      return (Math.atan2(m.b, m.a) * 180) / Math.PI;
+    };
+    const puxoes = [220, 660].map((t) => {
+      if (a) a.currentTime = t;
+      if (b) b.currentTime = t;
+      return [graus(esq), graus(dir)];
+    });
+    for (const [e = 0, d = 0] of puxoes) expect(Math.sign(e)).toBe(-Math.sign(d));
+    wrapper.unmount();
+  });
+});

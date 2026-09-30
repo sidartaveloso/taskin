@@ -12,12 +12,12 @@ A acao `start`, para `taskin start`: o Taskin dobra os bracos e os puxa duas vez
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `start` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~1,1s
-- [ ] Taskin: `pose` com os bracos dobrados para cima (cotovelo para fora, mao na altura do ombro) e o CSS puxando os dois bracos duas vezes em volta dos ombros; `eyeState: 'wide'`
-- [ ] Sapin: agacha (escala 1,05 x 0,9, no eixo da base) por ~0,7s e solta num pulinho de 8px; `eyeState: 'wide'`
-- [ ] Testes: a classe no grupo; a pose; no Sapin, a escala vertical menor que 1 no meio da agachada (animacao congelada)
-- [ ] Evidencia visual em `TASKS/assets/task-152/`: `start` no fundo da agachada — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-152/<nome>.png)`), pela receita de Notes
-- [ ] Changeset patch no `@opentask/taskin-design-vue`
+- [x] `start` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~1,1s — `TASKIN_ACTIONS` e `ACTIONS` em `Taskin.actions.ts`/`Taskin.ts`; teste `start > dura cerca de 1,1s`
+- [x] Taskin: `pose` com os bracos dobrados para cima (cotovelo para fora, mao na altura do ombro) e o CSS puxando os dois bracos duas vezes em volta dos ombros; `eyeState: 'wide'` — `START` pose (30,-70) + CSS `taskin-start-arm-*`; testes `a pose dobra os dois bracos`, `os bracos puxam duas vezes`
+- [x] Sapin: agacha (escala 1,05 x 0,9, no eixo da base) por ~0,7s e solta num pulinho de 8px; `eyeState: 'wide'` — `sapin-start` scale(1.05,.9) e hop -8px; teste `sapin: no meio da agachada a escala vertical e menor que 1`
+- [x] Testes: a classe no grupo; a pose; no Sapin, a escala vertical menor que 1 no meio da agachada (animacao congelada) — bloco `describe('start')` em `Taskin.actions.spec.ts` (284 testes passam)
+- [x] Evidencia visual em `TASKS/assets/task-152/`: `start` no fundo da agachada — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-152/<nome>.png)`), pela receita de Notes — ![taskin start](assets/task-152/taskin-start.png) ![sapin start](assets/task-152/sapin-start.png)
+- [x] Changeset patch no `@opentask/taskin-design-vue` — `.changeset/mascote-se-prepara.md`
 
 ## Notes
 ### Contexto da rodada
