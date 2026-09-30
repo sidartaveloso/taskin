@@ -27,6 +27,7 @@ export const TASKIN_ACTIONS = [
   'catch-fly',
   'travel-left',
   'travel-right',
+  'ink',
 ] as const;
 
 /** Uma acao de uma vez so. Deriva de `TASKIN_ACTIONS`. */

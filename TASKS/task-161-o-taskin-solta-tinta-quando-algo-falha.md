@@ -12,12 +12,12 @@ A assinatura do polvo: quando algo falha (lint, teste, CI), ele se assusta e sol
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `ink` em `TASKIN_ACTIONS` e so no `ACTIONS` do Taskin, com ~1,6s
-- [ ] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-ink/` (no molde do `TaskinEffectZzz`): a nuvem escura sai de baixo, entre os tentaculos (desenhada antes do corpo, atras dele), cresce e se desfaz
-- [ ] `pose`: `eyeState: 'wide'`, `mouthExpression: 'o-shape'`; o polvo da um tranco para cima (8px) no susto
-- [ ] Testes: a acao so no Taskin (`play` no Sapin resolve `false`); a nuvem so durante a acao, atras do corpo (ordem no DOM)
-- [ ] Evidencia visual em `TASKS/assets/task-161/`: `ink` com a nuvem no maior tamanho — so taskin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-161/<nome>.png)`), pela receita de Notes
-- [ ] Changeset minor no `@opentask/taskin-design-vue` (efeito novo)
+- [x] `ink` em `TASKIN_ACTIONS` e so no `ACTIONS` do Taskin, com ~1,6s — `Taskin.actions.ts` e `ACTIONS.taskin.ink` (1600ms) em `Taskin.ts`; teste `ink > so o Taskin tem a acao, com cerca de 1,6s, de olhos arregalados e boca em O`
+- [x] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-ink/` (no molde do `TaskinEffectZzz`): a nuvem escura sai de baixo, entre os tentaculos (desenhada antes do corpo, atras dele), cresce e se desfaz — `TaskinEffectInk.ts` (keyframes `ink-burst`, 1,6s, de 0,15x a 1x e ate 1,35x sumindo), com spec e story; renderizado entre a sombra e o grupo `#taskin-motion`, fora do tranco
+- [x] `pose`: `eyeState: 'wide'`, `mouthExpression: 'o-shape'`; o polvo da um tranco para cima (8px) no susto — pose `INK` e keyframes `taskin-taskin-ink` em `Taskin.ts`; teste `ink > o polvo da um tranco de 8px para cima no susto`
+- [x] Testes: a acao so no Taskin (`play` no Sapin resolve `false`); a nuvem so durante a acao, atras do corpo (ordem no DOM) — `describe('ink')` em `Taskin.actions.spec.ts` (`a nuvem so aparece durante a acao`, `a nuvem fica atras do corpo e dos tentaculos: vem antes deles no DOM`), `actionDuration('sapin', 'ink')` zero, e `TaskinEffectInk.spec.ts`
+- [x] Evidencia visual em `TASKS/assets/task-161/`: `ink` com a nuvem no maior tamanho — so taskin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-161/<nome>.png)`), pela receita de Notes — quadro congelado com a nuvem a 720ms (escala 1) e o tranco a 250ms: ![Taskin no ink: olhos arregalados, boca em O, levantado, a nuvem de tinta atras dos tentaculos](assets/task-161/taskin-ink.png)
+- [x] Changeset minor no `@opentask/taskin-design-vue` (efeito novo) — `.changeset/o-taskin-solta-tinta.md`
 
 ## Notes
 ### Contexto da rodada
