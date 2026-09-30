@@ -1,6 +1,6 @@
 # 🧩 Task 163 — O papo do Sapin infla abaixo da boca
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: movimentos-lote-2
