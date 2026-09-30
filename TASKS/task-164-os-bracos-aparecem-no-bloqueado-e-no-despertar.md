@@ -1,6 +1,6 @@
 # 🧩 Task 164 — Os bracos aparecem no bloqueado e no despertar
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: movimentos-lote-3
