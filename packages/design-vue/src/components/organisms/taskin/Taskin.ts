@@ -10,6 +10,7 @@ import TaskinArmWithPhone from '../../molecules/taskin-arm-with-phone/TaskinArmW
 import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/TaskinEffectFartCloud';
 import TaskinEffectFly, { FLY_STOP } from '../../molecules/taskin-effect-fly/TaskinEffectFly';
 import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/TaskinEffectHearts';
+import TaskinEffectInk from '../../molecules/taskin-effect-ink/TaskinEffectInk';
 import TaskinEffectJuggle from '../../molecules/taskin-effect-juggle/TaskinEffectJuggle';
 import type { JuggleBalls } from '../../molecules/taskin-effect-juggle/TaskinEffectJuggle.types';
 import TaskinEffectSweat from '../../molecules/taskin-effect-sweat/TaskinEffectSweat';
@@ -221,6 +222,12 @@ const TASKIN_MOTION_CSS = `
     0%, 100% { transform: rotate(0deg); }
     10%, 40%, 70% { transform: rotate(-15deg); }
     25%, 55%, 85% { transform: rotate(15deg); }
+  }
+  .taskin-ink { animation: taskin-taskin-ink 1.6s ease-out; animation-iteration-count: 1; }
+  @keyframes taskin-taskin-ink {
+    0%, 100% { transform: translateY(0); }
+    10%, 25% { transform: translateY(-8px); }
+    55% { transform: translateY(0); }
   }
   .taskin-travel-left { animation: taskin-taskin-travel-left 0.9s ease-in-out; animation-iteration-count: 1; }
   .taskin-travel-right { animation: taskin-taskin-travel-right 0.9s ease-in-out; animation-iteration-count: 1; }
@@ -550,6 +557,9 @@ const BLOCKED_TASKIN: ActionPose = {
 /** O Sapin senta e desanima: olhos apertados e a boca para baixo. */
 const BLOCKED_SAPIN: ActionPose = { eyeState: 'squint', mouthExpression: 'frown' };
 
+/** O susto do polvo, na `ink`: olhos arregalados e a boca em O. */
+const INK: ActionPose = { eyeState: 'wide', mouthExpression: 'o-shape' };
+
 /**
  * O bote do Sapin, na `catch-fly`: os olhos seguem a mosca para a direita e, aos
  * 60%, quando ela para na frente da boca, voltam ao centro e a boca abre para a
@@ -589,6 +599,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     wake: { className: 'taskin-wake', durationMs: 2000, pose: WAKE },
     'travel-left': { className: 'taskin-travel-left', durationMs: 900, pose: { lookDirection: 'left' } },
     'travel-right': { className: 'taskin-travel-right', durationMs: 900, pose: { lookDirection: 'right' } },
+    ink: { className: 'taskin-ink', durationMs: 1600, pose: INK },
   },
   sapin: {
     nod: { className: 'sapin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
@@ -1275,6 +1286,13 @@ export default defineComponent({
       const motion = props.animationsEnabled ? (running.value?.config.className ?? idle) : undefined;
       const components = [
         shadow,
+        // A tinta, fora do grupo de movimento: fica onde saiu enquanto o polvo da
+        // o tranco para cima, e atras dele, porque vem antes dos tentaculos e do corpo.
+        !sapin &&
+          running.value?.action === 'ink' &&
+          h(TaskinEffectInk, {
+            animationsEnabled: props.animationsEnabled,
+          }),
         h(
           'g',
           {

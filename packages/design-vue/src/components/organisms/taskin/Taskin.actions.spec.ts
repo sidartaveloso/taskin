@@ -945,6 +945,65 @@ describe('catch-fly', () => {
   });
 });
 
+describe('ink', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.innerHTML = '';
+  });
+
+  it('so o Taskin tem a acao, com cerca de 1,6s, de olhos arregalados e boca em O', async () => {
+    const config = ACTIONS.taskin.ink;
+    expect(config?.durationMs).toBe(1600);
+    expect(config?.pose?.eyeState).toBe('wide');
+    expect(config?.pose?.mouthExpression).toBe('o-shape');
+    expect(ACTIONS.sapin.ink).toBeUndefined();
+
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    await expect(vm.play('ink')).resolves.toBe(false);
+    await nextTick();
+    expect(wrapper.find('#effect-ink').exists()).toBe(false);
+  });
+
+  it('a nuvem so aparece durante a acao', async () => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin();
+    expect(wrapper.find('#effect-ink').exists()).toBe(false);
+
+    const fim = vm.play('ink');
+    await nextTick();
+    expect(wrapper.find('#taskin-motion').classes()).toContain('taskin-ink');
+    expect(wrapper.find('#effect-ink').exists()).toBe(true);
+
+    vi.advanceTimersByTime(1600);
+    await expect(fim).resolves.toBe(true);
+    await nextTick();
+    expect(wrapper.find('#effect-ink').exists()).toBe(false);
+  });
+
+  it('a nuvem fica atras do corpo e dos tentaculos: vem antes deles no DOM', async () => {
+    const { wrapper, vm } = mountTaskin();
+    void vm.play('ink');
+    await nextTick();
+    const tinta = wrapper.find('#effect-ink').element;
+    for (const id of ['#body-main', '#taskin-tentacles']) {
+      const outro = wrapper.find(id).element;
+      expect(tinta.compareDocumentPosition(outro) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
+  it('o polvo da um tranco de 8px para cima no susto', async () => {
+    const { wrapper, vm } = mountTaskin();
+    void vm.play('ink');
+    await nextTick();
+    const motion = wrapper.find('#taskin-motion').element;
+    const [animacao] = motion.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 250;
+    const m = new DOMMatrix(getComputedStyle(motion).transform);
+    expect(m.f).toBeCloseTo(-8, 0);
+  });
+});
+
 describe('travel-left e travel-right', () => {
   afterEach(() => {
     document.body.innerHTML = '';
@@ -1027,6 +1086,7 @@ describe('actionDuration', () => {
 
   it('acao que a variante nao tem dura zero: resolve na hora', () => {
     expect(actionDuration('taskin', 'catch-fly')).toBe(0);
+    expect(actionDuration('sapin', 'ink')).toBe(0);
   });
 
   it('sai do pacote ao lado de TASKIN_ACTIONS', async () => {
