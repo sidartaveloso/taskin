@@ -32,6 +32,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const AllMoods: Story = { ...TaskinStories.AllMoods };
+export const Actions: Story = { ...TaskinStories.Actions };
 export const Default: Story = { ...TaskinStories.Default };
 export const Happy: Story = { ...TaskinStories.Happy };
 export const Crying: Story = { ...TaskinStories.Crying };

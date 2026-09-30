@@ -48,6 +48,7 @@ export {
   Taskin,
   TaskinV1,
 } from './components/organisms/taskin';
+export * from './components/organisms/taskin/Taskin.actions';
 export * from './components/organisms/taskin/Taskin.moods';
 export * from './components/organisms/taskin/Taskin.types';
 export * from './components/organisms/taskin/Taskin.variants';

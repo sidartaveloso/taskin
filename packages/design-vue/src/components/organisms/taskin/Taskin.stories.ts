@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { defineComponent, h, onMounted, onUnmounted, ref } from 'vue';
 import Taskin from './Taskin';
+import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
 import { TASKIN_MOODS } from './Taskin.moods';
 import type { TaskinMood } from './Taskin.types';
 import { TASKIN_VARIANTS } from './Taskin.variants';
@@ -81,6 +82,34 @@ export const AllMoods: Story = {
       return { moods: TASKIN_MOODS, variant: args.variant };
     },
   }),
+};
+
+/**
+ * Um botao por acao de `TASKIN_ACTIONS`, chamando `play()` pela ref: as acoes
+ * novas aparecem aqui sozinhas. Ao lado, a ultima que terminou.
+ */
+export const Actions: Story = {
+  render: (args) =>
+    defineComponent({
+      components: { Taskin },
+      setup() {
+        const taskin = ref<{ play: (action: TaskinAction) => Promise<boolean> } | null>(null);
+        const ultima = ref<string>('-');
+        const tocar = async (action: TaskinAction) => {
+          if (await taskin.value?.play(action)) ultima.value = action;
+        };
+        return { args, actions: TASKIN_ACTIONS, taskin, ultima, tocar };
+      },
+      template: `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+          <Taskin ref="taskin" v-bind="args" />
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button v-for="action in actions" :key="action" type="button" @click="tocar(action)">{{ action }}</button>
+            <span style="font-size: 12px;">ultima: <strong data-testid="ultima-acao">{{ ultima }}</strong></span>
+          </div>
+        </div>
+      `,
+    }),
 };
 
 export const Default: Story = {
