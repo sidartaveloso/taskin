@@ -29,6 +29,22 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
+# Os testes do design-vue — todos os do mascote — rodam no Chromium, pelo Vitest
+# em modo navegador com Playwright. Sem o navegador na imagem, o agente nao
+# consegue verificar o proprio trabalho numa task do mascote.
+#
+# A versao acompanha o `playwright` de `packages/design-vue/package.json` (e do
+# lockfile): cada versao do Playwright procura um build exato do Chromium, e um
+# build de outra versao nao serve. Quem mexer em um mexe no outro, como o Node e
+# o `.tool-versions`.
+#
+# Em dois passos, porque sao dois donos: as bibliotecas de sistema entram pelo
+# apt, como root; o navegador vai para o `~/.cache/ms-playwright` do `agent`,
+# que e quem roda os testes.
+ARG PLAYWRIGHT_VERSION=1.57.0
+RUN npx -y playwright@${PLAYWRIGHT_VERSION} install-deps chromium \
+  && rm -rf /var/lib/apt/lists/*
+
 # Build-args for UID/GID alignment: sandcastle docker build-image
 # defaults these to the host user's UID/GID so image-built files
 # and bind-mounted files share an owner without runtime chown.
@@ -44,6 +60,10 @@ RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Add Claude to PATH
 ENV PATH="/home/agent/.local/bin:$PATH"
+
+# O Chromium do Playwright, ja como `agent` (ver as bibliotecas de sistema,
+# acima; o `PLAYWRIGHT_VERSION` declarado la vale ate o fim deste estagio).
+RUN npx -y playwright@${PLAYWRIGHT_VERSION} install chromium
 
 WORKDIR /home/agent
 
