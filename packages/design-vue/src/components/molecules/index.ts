@@ -6,6 +6,7 @@ export { default as TaskHeader } from './TaskHeader.vue';
 export { default as TimeEstimate } from './TimeEstimate.vue';
 export * from './taskin-arm-with-phone';
 export * from './taskin-effect-fart-cloud';
+export * from './taskin-effect-fly';
 export * from './taskin-effect-hearts';
 export * from './taskin-effect-phone';
 export * from './taskin-effect-sweat';
