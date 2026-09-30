@@ -33,6 +33,13 @@ export interface EyeGeometry {
    * into the body, so the closed state always draws the stroke: it is the lid.
    */
   outline: boolean;
+  /**
+   * Where each pupil rests inside its white, before looking anywhere. Tracking
+   * and the look direction move the pupil from here.
+   */
+  pupilRest: { left: { x: number; y: number }; right: { x: number; y: number } };
+  /** Colour of the pupils, the outline and the lid. */
+  ink: string;
 }
 
 /**
@@ -40,8 +47,10 @@ export interface EyeGeometry {
  * Sapin desenha os calombos em volta destes centros, e as lagrimas caem deles —
  * quem precisa de onde o olho esta importa daqui, sem copiar o numero.
  *
- * O Sapin tem os olhos saltados no topo da cabeca, redondos e sem contorno,
- * como na referencia (`TASKS/assets/sapin/sapin-mascote.png`).
+ * O Sapin tem os olhos saltados no topo da cabeca, sem contorno e um pouco mais
+ * altos que largos, com as pupilas puxadas para o nariz — o olhar para a frente
+ * da referencia (`TASKS/assets/sapin/sapin-mascote.png`) — e uma tinta mais
+ * escura que a do polvo.
  */
 export const EYE_GEOMETRY: Record<TaskinVariant, EyeGeometry> = {
   taskin: {
@@ -51,14 +60,18 @@ export const EYE_GEOMETRY: Record<TaskinVariant, EyeGeometry> = {
     ry: { normal: 14, closed: 1, squint: 8, wide: 18 },
     pupilRadius: { normal: 5, closed: 0, squint: 2, wide: 3 },
     outline: true,
+    pupilRest: { left: { x: 0, y: 0 }, right: { x: 0, y: 0 } },
+    ink: '#2C3E50',
   },
   sapin: {
     left: { x: 121, y: 71 },
     right: { x: 199, y: 71 },
-    rx: 15.5,
+    rx: 14.8,
     ry: { normal: 15.5, closed: 1.5, squint: 9, wide: 18 },
     pupilRadius: { normal: 6, closed: 0, squint: 3, wide: 4 },
     outline: false,
+    pupilRest: { left: { x: 3, y: 0 }, right: { x: -3, y: 0 } },
+    ink: '#213037',
   },
 };
 

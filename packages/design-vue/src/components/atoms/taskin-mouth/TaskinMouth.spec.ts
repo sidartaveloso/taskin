@@ -80,4 +80,14 @@ describe('TaskinMouth', () => {
       expect(lingua(false)).not.toContain('tongue-pant');
     });
   });
+
+  it('pinta a boca do sapin de verde-escuro, e a do taskin segue azul-escura', () => {
+    const sapin = mount(TaskinMouth, { props: { expression: 'panting', variant: 'sapin' } });
+    const taskin = mount(TaskinMouth, { props: { expression: 'panting' } });
+
+    expect(sapin.find('#mouth').attributes('stroke')).toBe('#134635');
+    expect(sapin.find('#mouth').attributes('fill')).toBe('#134635');
+    expect(sapin.find('#mouth-tongue path').attributes('stroke')).toBe('#134635');
+    expect(taskin.find('#mouth').attributes('stroke')).toBe('#2C3E50');
+  });
 });

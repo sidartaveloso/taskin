@@ -5,10 +5,10 @@
     :transform="mouthTransform(props.variant)"
     :fill="
       ['open', 'wide-open', 'o-shape', 'surprised', 'panting'].includes(props.expression)
-        ? '#2C3E50'
+        ? MOUTH_INK[props.variant]
         : 'none'
     "
-    stroke="#2C3E50"
+    :stroke="MOUTH_INK[props.variant]"
     stroke-width="3"
     stroke-linecap="round"
   />
@@ -21,7 +21,7 @@
       :class="{ 'tongue-pant': props.animationsEnabled }"
       d="M151 132 L151 143 Q151 152 160 152 Q169 152 169 143 L169 132 M160 135 L160 145"
       fill="#FF9EB5"
-      stroke="#2C3E50"
+      :stroke="MOUTH_INK[props.variant]"
       stroke-width="2"
       stroke-linecap="round"
     />
@@ -31,7 +31,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
-import { type MouthExpression, mouthTransform } from './TaskinMouth.types';
+import { MOUTH_INK, type MouthExpression, mouthTransform } from './TaskinMouth.types';
 
 export interface Props {
   expression?: MouthExpression;

@@ -52,4 +52,25 @@ describe('TaskinArms', () => {
     expect(raised.find('#left-arm').attributes('d')).not.toBe(neutral.find('#left-arm').attributes('d'));
     expect(raised.find('#left-arm').attributes('d')).toMatch(/^M90 113 /);
   });
+
+  it('desenha os bracos do sapin mais grossos, e os do taskin como sempre', () => {
+    expect(
+      mount(TaskinArms, { props: { variant: 'sapin' } })
+        .find('#left-arm')
+        .attributes('stroke-width'),
+    ).toBe('11');
+    expect(mount(TaskinArms).find('#left-arm').attributes('stroke-width')).toBe('8');
+  });
+
+  it('pendura os bracos do sapin num arco mais aberto, que desce mais', () => {
+    const ponta = (d: string | undefined) => (d ?? '').trim().split(/\s+/).slice(-2).map(Number);
+    const [x, y] = ponta(
+      mount(TaskinArms, { props: { variant: 'sapin' } })
+        .find('#left-arm')
+        .attributes('d'),
+    );
+
+    expect(x).toBeCloseTo(54.5, 0);
+    expect(y).toBeCloseTo(160.5, 0);
+  });
 });

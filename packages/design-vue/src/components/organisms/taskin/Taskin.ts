@@ -566,7 +566,8 @@ export default defineComponent({
         cy: '230',
         rx: sapin ? '82' : '70',
         ry: sapin ? '13' : '14',
-        fill: '#d8e2f0',
+        // A sombra do Sapin, na referencia, e mais clara e mais cinza.
+        fill: sapin ? '#E4E9ED' : '#d8e2f0',
       });
 
       // Fluid Tentacles (back layer) - connected to body bottom. O Sapin tem

@@ -11,10 +11,10 @@
         stroke-width="2"
       />
       <circle
-        :cx="geometry.left.x + leftPupilOffsetX"
-        :cy="geometry.left.y + leftPupilOffsetY"
+        :cx="geometry.left.x + geometry.pupilRest.left.x + leftPupilOffsetX"
+        :cy="geometry.left.y + geometry.pupilRest.left.y + leftPupilOffsetY"
         :r="pupilRadius"
-        fill="#2C3E50"
+        :fill="geometry.ink"
       />
     </g>
 
@@ -29,10 +29,10 @@
         stroke-width="2"
       />
       <circle
-        :cx="geometry.right.x + rightPupilOffsetX"
-        :cy="geometry.right.y + rightPupilOffsetY"
+        :cx="geometry.right.x + geometry.pupilRest.right.x + rightPupilOffsetX"
+        :cy="geometry.right.y + geometry.pupilRest.right.y + rightPupilOffsetY"
         :r="pupilRadius"
-        fill="#2C3E50"
+        :fill="geometry.ink"
       />
     </g>
   </g>
@@ -56,7 +56,7 @@ const geometry = computed(() => EYE_GEOMETRY[props.variant]);
 
 // O olho fechado desenha sempre o traco: sem ele, no Sapin, que nao tem
 // contorno, a palpebra sumiria no verde.
-const outlineColor = computed(() => (geometry.value.outline || props.state === 'closed' ? '#2C3E50' : 'none'));
+const outlineColor = computed(() => (geometry.value.outline || props.state === 'closed' ? geometry.value.ink : 'none'));
 
 // Referência ao container SVG
 const eyesContainer = ref<SVGElement | null>(null);
