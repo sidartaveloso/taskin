@@ -20,6 +20,7 @@ O mascote tem humores, que sao estados em laco, e o ocioso; nao ha como pedir "a
 - [ ] `@media (prefers-reduced-motion: reduce)` desliga as animacoes do grupo de movimento, humores e acoes, pelo CSS; o timer das acoes continua, e quem espera o fim nao fica pendurado
 - [ ] Story `Actions` em `packages/design-vue/src/components/organisms/taskin/Taskin.stories.ts`: um botao por item de `TASKIN_ACTIONS` chamando `play()` pela ref, e o nome da ultima acao terminada ao lado. O `Sapin.stories.ts` a reaproveita com `{ ...TaskinStories.Actions }`, como as outras. Acoes novas das proximas tasks aparecem nela sozinhas
 - [ ] Testes em `packages/design-vue/src/components/organisms/taskin/Taskin.actions.spec.ts`, com fake timers: lista sem repeticao; `it.each` das variantes x acoes — a classe entra no grupo, sai depois de `durationMs` e a do humor volta; `play` resolve `true`; interrompida resolve `false`; `action-start` e `action-end` emitidos; com animacao desligada nao ha classe e resolve; a `pose` troca a boca durante a acao e perde para a prop explicita; acao que a variante nao tem resolve `false`
+- [ ] Evidencia visual em `TASKS/assets/task-148/`: `nod` e `shake`, cada uma no quadro de maior inclinacao — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-148/<nome>.png)`), pela receita de Notes
 - [ ] Changeset `.changeset/<nome>.md`, minor no `@opentask/taskin-design-vue`: `play()`, os eventos e `TASKIN_ACTIONS` sao API nova
 
 ## Notes
@@ -45,6 +46,33 @@ interface ActionConfig {
 ```
 
 Como testar movimento sem esperar o relogio: congele a animacao pela Web Animations API (`el.getAnimations()[0].currentTime = t`) e confira `getComputedStyle(el).transform` ou `getBoundingClientRect()`. Aba oculta nao anda o relogio das animacoes; os testes nao devem depender dele.
+
+### Evidencia visual
+A task e de componente visual: a evidencia e imagem, e nao so contagem de teste. O agente nao ve o desenho, mas tira o screenshot no Chromium do container, por um spec temporario em `packages/design-vue/src/components/organisms/taskin/` (apague-o antes do commit; fica so a imagem):
+```ts
+import { mount } from '@vue/test-utils';
+import { it } from 'vitest';
+import { page } from 'vitest/browser';
+import { nextTick } from 'vue';
+import Taskin from './Taskin';
+
+it('evidencia visual', async () => {
+  for (const variant of ['taskin', 'sapin'] as const) {
+    const wrapper = mount(Taskin, { attachTo: document.body, props: { variant, size: 320, idleAnimation: false } });
+    const vm = wrapper.vm as unknown as { play: (a: string) => Promise<boolean> };
+    void vm.play('<acao>');
+    await nextTick();
+    // congele no quadro que mostra o movimento
+    const [animacao] = wrapper.find(`#${variant}-motion`).element.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = <ms>;
+    // relativo ao spec: seis niveis acima fica a raiz do repositorio (o Vite recusa caminho fora dele)
+    await page.screenshot({ path: `../../../../../../TASKS/assets/task-148/${variant}-<nome>.png`, element: wrapper.element as HTMLElement });
+    wrapper.unmount();
+  }
+});
+```
+Rode so ele (`pnpm --filter @opentask/taskin-design-vue exec vitest run src/components/organisms/taskin/<spec-temporario>.spec.ts`), confira que as imagens existem e registre-as no checklist. Receita provada na task-147 (o screenshot da task-146 saiu assim).
 
 ### Verificacao
 ```bash

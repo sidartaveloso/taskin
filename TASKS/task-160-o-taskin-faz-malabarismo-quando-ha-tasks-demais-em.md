@@ -16,6 +16,7 @@ Um aviso de WIP que se le sem texto: com tasks demais em andamento, o polvo faz 
 - [ ] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-juggle/` (no molde do `TaskinEffectZzz`): bolinhas coloridas em arco acima dos bracos, defasadas entre si, em laco; os bracos alternam subindo e descendo no ritmo (classe no grupo)
 - [ ] Com `animationsEnabled=false`, as bolinhas paradas no alto do arco
 - [ ] Testes: o numero de bolinhas segue a prop; nada no Sapin; nada com `0`
+- [ ] Evidencia visual em `TASKS/assets/task-160/`: `juggling` 1 e 3 — so taskin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-160/<nome>.png)`), pela receita de Notes
 - [ ] Changeset minor no `@opentask/taskin-design-vue` (efeito novo)
 
 ## Notes
@@ -26,6 +27,28 @@ Ler, e so isto:
 - `packages/design-vue/src/components/molecules/taskin-effect-zzz/` inteiro — o molde de efeito
 - `packages/design-vue/src/components/atoms/taskin-arms/TaskinArms.vue` — `ARM_GEOMETRY` do Taskin
 Nao precisa ler: o Sapin, os olhos, a boca e os wrappers.
+
+### Evidencia visual
+A task e de componente visual: a evidencia e imagem, e nao so contagem de teste. O agente nao ve o desenho, mas tira o screenshot no Chromium do container, por um spec temporario em `packages/design-vue/src/components/organisms/taskin/` (apague-o antes do commit; fica so a imagem):
+```ts
+import { mount } from '@vue/test-utils';
+import { it } from 'vitest';
+import { page } from 'vitest/browser';
+import { nextTick } from 'vue';
+import Taskin from './Taskin';
+
+it('evidencia visual', async () => {
+  for (const variant of ['taskin'] as const) {
+    const wrapper = mount(Taskin, { attachTo: document.body, props: { variant, size: 320, idleAnimation: false } });
+    // a prop ja entra no mount (ex.: listening: true)
+    await nextTick();
+    // relativo ao spec: seis niveis acima fica a raiz do repositorio (o Vite recusa caminho fora dele)
+    await page.screenshot({ path: `../../../../../../TASKS/assets/task-160/${variant}-<nome>.png`, element: wrapper.element as HTMLElement });
+    wrapper.unmount();
+  }
+});
+```
+Rode so ele (`pnpm --filter @opentask/taskin-design-vue exec vitest run src/components/organisms/taskin/<spec-temporario>.spec.ts`), confira que as imagens existem e registre-as no checklist. Receita provada na task-147 (o screenshot da task-146 saiu assim).
 
 ### Verificacao
 ```bash
