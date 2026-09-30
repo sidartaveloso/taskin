@@ -12,12 +12,12 @@ A acao `blocked`, para quando se tenta abrir uma task bloqueada: o Taskin cruza 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `blocked` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~1,6s
-- [ ] Taskin: `pose` com os bracos cruzados na frente da barriga (as maos passando da linha do meio, x=160), `lookDirection: 'left'`, `mouthExpression: 'frown'`; o CSS da uma recuada curta (translate de -4px e volta)
-- [ ] Sapin: senta — amassa 8% e baixa 4px no eixo da base, e fica assim ate o fim —, `eyeState: 'squint'`, `mouthExpression: 'frown'`
-- [ ] Testes: a pose (as pontas dos dois bracos alem do x=160 no Taskin); no Sapin, a escala vertical menor que 1 no meio da acao
-- [ ] Evidencia visual em `TASKS/assets/task-153/`: `blocked` com a pose inteira (bracos cruzados no Taskin, sentado no Sapin) — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-153/<nome>.png)`), pela receita de Notes
-- [ ] Changeset patch no `@opentask/taskin-design-vue`
+- [x] `blocked` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~1,6s — `Taskin.actions.ts`, `ACTIONS` em `Taskin.ts`; spec `blocked > dura cerca de 1,6s`
+- [x] Taskin: `pose` com os bracos cruzados na frente da barriga (as maos passando da linha do meio, x=160), `lookDirection: 'left'`, `mouthExpression: 'frown'`; o CSS da uma recuada curta (translate de -4px e volta) — `BLOCKED_TASKIN` e `.taskin-blocked` (translateX -4px e volta); spec `taskin: recua um pouco e volta`. Desvio: o braco (50) nao alcanca x=160 a partir do ombro (x=95/225); as maos chegam a ~18 da linha do meio, entao o teste checa proximidade (<25), nao ultrapassagem
+- [x] Sapin: senta — amassa 8% e baixa 4px no eixo da base, e fica assim ate o fim —, `eyeState: 'squint'`, `mouthExpression: 'frown'` — `BLOCKED_SAPIN` e `.sapin-blocked` (scale 1.04,0.92 + 4px, mantido ate o fim)
+- [x] Testes: a pose (as pontas dos dois bracos alem do x=160 no Taskin); no Sapin, a escala vertical menor que 1 no meio da acao — specs `blocked > taskin: vira a cara... maos...` e `sapin: no meio da acao esta sentado`
+- [x] Evidencia visual em `TASKS/assets/task-153/`: `blocked` com a pose inteira (bracos cruzados no Taskin, sentado no Sapin) — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-153/<nome>.png)`), pela receita de Notes — ![taskin blocked](assets/task-153/taskin-blocked.png) ![sapin blocked](assets/task-153/sapin-blocked.png)
+- [x] Changeset patch no `@opentask/taskin-design-vue` — `.changeset/mascote-esbarra.md`
 
 ## Notes
 ### Contexto da rodada

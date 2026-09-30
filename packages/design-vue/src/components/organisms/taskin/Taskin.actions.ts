@@ -13,7 +13,16 @@
  *
  * Este arquivo nao importa nada, como `Taskin.variants.ts`.
  */
-export const TASKIN_ACTIONS = ['nod', 'shake', 'celebrate', 'point-up', 'point-down', 'wave', 'start'] as const;
+export const TASKIN_ACTIONS = [
+  'nod',
+  'shake',
+  'celebrate',
+  'point-up',
+  'point-down',
+  'wave',
+  'start',
+  'blocked',
+] as const;
 
 /** Uma acao de uma vez so. Deriva de `TASKIN_ACTIONS`. */
 export type TaskinAction = (typeof TASKIN_ACTIONS)[number];

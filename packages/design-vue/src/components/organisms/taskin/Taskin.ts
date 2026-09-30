@@ -102,6 +102,7 @@ const TASKIN_MOTION_CSS = `
     animation: taskin-taskin-start-arm-right 1.1s ease-in-out;
     animation-iteration-count: 1;
   }
+  .taskin-blocked { animation: taskin-taskin-blocked 1.6s ease-in-out; animation-iteration-count: 1; }
   .taskin-wave { animation: taskin-taskin-wave 1.4s ease-in-out; animation-iteration-count: 1; }
   .taskin-wave #right-arm {
     transform-box: view-box;
@@ -170,6 +171,11 @@ const TASKIN_MOTION_CSS = `
     20%, 60% { transform: rotate(14deg); }
     40%, 80% { transform: rotate(-10deg); }
   }
+  @keyframes taskin-taskin-blocked {
+    0%, 100% { transform: translateX(0); }
+    15%, 40% { transform: translateX(-4px); }
+    65% { transform: translateX(0); }
+  }
   @keyframes taskin-taskin-wave {
     0%, 100% { transform: rotate(0deg); }
     25%, 75% { transform: rotate(-1.5deg); }
@@ -219,6 +225,11 @@ const SAPIN_MOTION_CSS = `
     0%, 100% { transform: translateY(0) scale(1, 1); }
     30%, 55% { transform: translateY(0) scale(1.05, 0.9); }
     80% { transform: translateY(-8px) scale(0.98, 1.03); }
+  }
+  .sapin-blocked { animation: taskin-sapin-blocked 1.6s ease-in-out forwards; animation-iteration-count: 1; }
+  @keyframes taskin-sapin-blocked {
+    0% { transform: translateY(0) scale(1, 1); }
+    25%, 100% { transform: translateY(4px) scale(1.04, 0.92); }
   }
   .sapin-wave { animation: taskin-sapin-wave 1.4s ease-in-out; animation-iteration-count: 1; }
   .sapin-wave #right-arm {
@@ -364,6 +375,22 @@ const START: ActionPose = {
 };
 
 /**
+ * Bracos cruzados na frente da barriga, de cara virada e cenho franzido. O braco
+ * do Taskin tem 50 de comprimento e o ombro fica a 65 da linha do meio (x=160):
+ * a mao nao passa dela, so chega perto, e o cruzamento vem das duas maos se
+ * encontrando na frente do corpo.
+ */
+const BLOCKED_TASKIN: ActionPose = {
+  leftArm: armPosition(150, 175),
+  rightArm: armPosition(150, 175),
+  lookDirection: 'left',
+  mouthExpression: 'frown',
+};
+
+/** O Sapin senta e desanima: olhos apertados e a boca para baixo. */
+const BLOCKED_SAPIN: ActionPose = { eyeState: 'squint', mouthExpression: 'frown' };
+
+/**
  * As acoes de cada variante. A que falta numa variante resolve `false` na hora:
  * e o que deixa uma acao existir so num dos bichos.
  */
@@ -376,6 +403,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     'point-down': { className: 'taskin-point-down', durationMs: 900, pose: POINT_DOWN },
     wave: { className: 'taskin-wave', durationMs: 1400, pose: WAVE },
     start: { className: 'taskin-start', durationMs: 1100, pose: START },
+    blocked: { className: 'taskin-blocked', durationMs: 1600, pose: BLOCKED_TASKIN },
   },
   sapin: {
     nod: { className: 'sapin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
@@ -385,6 +413,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     'point-down': { className: 'sapin-point-down', durationMs: 900, pose: POINT_DOWN },
     wave: { className: 'sapin-wave', durationMs: 1400, pose: WAVE },
     start: { className: 'sapin-start', durationMs: 1100, pose: START },
+    blocked: { className: 'sapin-blocked', durationMs: 1600, pose: BLOCKED_SAPIN },
   },
 };
 
