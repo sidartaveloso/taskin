@@ -1,6 +1,6 @@
 # 🧩 Task 161 — O Taskin solta tinta quando algo falha
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-3
