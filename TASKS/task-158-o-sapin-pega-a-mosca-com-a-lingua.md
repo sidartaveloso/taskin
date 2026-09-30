@@ -1,6 +1,6 @@
 # 🧩 Task 158 — O Sapin pega a mosca com a lingua
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-3
