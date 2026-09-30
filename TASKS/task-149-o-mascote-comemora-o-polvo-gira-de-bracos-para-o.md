@@ -1,0 +1,44 @@
+# 🧩 Task 149 — O mascote comemora: o polvo gira de bracos para o alto, o sapo pula e infla o papo
+
+- Status: pending
+- Type: feat
+- Assignee: sidartaveloso
+- Group: movimentos-lote-1
+- Priority: 14020
+- Difficulty: 3
+
+## Description
+A acao `celebrate`, para quando uma task e concluida: o Taskin ergue os bracos e da um giro curto; o Sapin pula alto e infla o papo. O papo e um elemento novo do corpo do Sapin, que a fala e a lingua reaproveitam depois.
+
+## Tasks
+<!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
+- [ ] `celebrate` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~1,2s
+- [ ] Taskin: `pose` com os dois bracos para o alto (por exemplo `armPosition(-70, -100)` nos dois lados, ajustado para as maos passarem acima da cabeca) e o bicho inteiro num pulinho com meio giro de volta (`rotate` de ate 12deg, no eixo do `.taskin-motion`)
+- [ ] Sapin: agacha (escala 1,06 x 0,92), sobe ~24px com os bracos para o alto, e aterrissa amassando; no topo do pulo, o papo infla
+- [ ] O papo: elemento novo `#body-throat` no `TaskinBody` do Sapin, depois da barriga — elipse sob a boca (cx 160, cy 112, rx 16, ry 9), branca a 72% como a barriga, com `transform: scale(0)` em repouso (`transform-box: fill-box`, origem no centro). A classe da acao no grupo o infla: `.sapin-celebrate #body-throat`. Fica pronto para a fala (`speaking`) e para a lingua
+- [ ] Testes: a classe `*-celebrate` no grupo das duas variantes; o `#body-throat` so no Sapin, em escala 0 fora da acao e maior que 0 no meio dela (animacao congelada); a pose ergue os bracos acima dos ombros
+- [ ] Changeset patch no `@opentask/taskin-design-vue`
+
+## Notes
+### Contexto da rodada
+Ler, e so isto:
+- `packages/design-vue/src/components/organisms/taskin/Taskin.actions.ts` e, em `packages/design-vue/src/components/organisms/taskin/Taskin.ts`, o `ACTIONS` e o CSS das acoes (task-148)
+- `packages/design-vue/src/components/atoms/taskin-body/TaskinBody.vue` — so o bloco do Sapin (`v-if="variant === 'sapin'"`) e as constantes `SAPIN_*`
+- `packages/design-vue/src/components/atoms/taskin-body/TaskinBody.spec.ts` — o `describe('variante sapin')`
+- `packages/design-vue/src/components/organisms/taskin/Taskin.actions.spec.ts` — onde entram os testes da acao
+Nao precisa ler: os olhos, a boca, os efeitos e os wrappers.
+
+A API das acoes (da task-148): `TASKIN_ACTIONS` em `packages/design-vue/src/components/organisms/taskin/Taskin.actions.ts`; a tabela `ACTIONS[variante][acao] = { className, durationMs, pose? }` e o CSS das acoes no `<style>` de cada variante, em `packages/design-vue/src/components/organisms/taskin/Taskin.ts`; `play(acao): Promise<boolean>` exposto. A `pose` (bracos, olhos, olhar, boca) vale so enquanto a acao roda; props explicitas do consumidor continuam mandando.
+
+Como testar movimento sem esperar o relogio: congele a animacao pela Web Animations API (`el.getAnimations()[0].currentTime = t`) e confira `getComputedStyle(el).transform` ou `getBoundingClientRect()`. Aba oculta nao anda o relogio das animacoes; os testes nao devem depender dele.
+
+### Verificacao
+```bash
+pnpm --filter @opentask/taskin-design-vue typecheck
+pnpm --filter @opentask/taskin-design-vue lint
+pnpm --filter @opentask/taskin-design-vue test
+```
+O `test` roda os specs e as stories no Chromium; na imagem do sandcastle, depende da task-147.
+
+### Onde executar
+Sandcastle, lote 1: `SANDCASTLE_GROUP=movimentos-lote-1 SANDCASTLE_MODEL=claude-opus-5-5 npx tsx .sandcastle/main.ts`. Maquina: o `sidarta-desktop` da tailnet (Manjaro, i5-12600K com 16 threads, 31 GB, Docker nativo amd64, onde ja existe a imagem `sandcastle:taskin` e o `.sandcastle/.env`), no clone `~/repositorios/sidartaveloso/taskin`, depois de trazer a branch do Mac. Sem camada de VM e isolado das sessoes interativas do Mac. Ele divide a maquina com os containers do geohub e do mapgrid (sobravam 8,6 GB de RAM e 30 GB de disco na sondagem de 29/09): rode um lote por vez. Reserva: o Mac, pelo perfil Colima `sandcastle`, so a partir de um clone dedicado sob `$HOME` (o `merge-to-head` mescla no HEAD e troca a branch do diretorio). A revisao visual e no Mac, depois do lote: o agente no container nao ve o desenho, so os testes.
