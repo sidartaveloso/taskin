@@ -1,6 +1,6 @@
 # 🧩 Task 155 — O mascote acorda: boceja e se espreguica
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-2
