@@ -12,12 +12,16 @@ As acoes `point-up` e `point-down`, para os gestos de mover acima e abaixo na pr
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `point-up` e `point-down` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~0,9s cada
-- [ ] `pose` do braco direito: para cima, a mao acima do ombro, quase vertical; para baixo, a mao abaixo da barriga, rente ao corpo. O esquerdo fica na pose de descanso da variante
-- [ ] `pose.lookDirection`: `up` e `down`. O bicho inteiro da um empurraozinho na direcao (translate de 3px), pelo CSS da acao
-- [ ] Testes: a ponta do `#right-arm` (fim do `d`) acima do ombro no `point-up` e abaixo da barriga no `point-down`, nas duas variantes; as pupilas sobem e descem
-- [ ] Evidencia visual em `TASKS/assets/task-150/`: `point-up` e `point-down`, com o braco no fim do gesto — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-150/<nome>.png)`), pela receita de Notes
-- [ ] Changeset patch no `@opentask/taskin-design-vue`
+- [x] `point-up` e `point-down` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~0,9s cada — `Taskin.actions.ts` e `ACTIONS` em `Taskin.ts` (900ms); prova: `point-up e point-down > %s: cada um dura cerca de 0,9s` e os `Taskin.play` que rodam por todo par variante x acao
+- [x] `pose` do braco direito: para cima, a mao acima do ombro, quase vertical; para baixo, a mao abaixo da barriga, rente ao corpo. O esquerdo fica na pose de descanso da variante — `POINT_UP` (`armPosition(-80, -88)`) e `POINT_DOWN` (`armPosition(85, 92)`) em `Taskin.ts`, sem `leftArm`; prova: os testes de point-up/point-down conferem que o `d` do `#left-arm` nao muda
+- [x] `pose.lookDirection`: `up` e `down`. O bicho inteiro da um empurraozinho na direcao (translate de 3px), pelo CSS da acao — keyframes `taskin-<variante>-point-up/down` (translateY -3px/3px entre 30% e 70%); prova: `%s: o bicho da um empurraozinho de 3px na direcao`
+- [x] Testes: a ponta do `#right-arm` (fim do `d`) acima do ombro no `point-up` e abaixo da barriga no `point-down`, nas duas variantes; as pupilas sobem e descem — em `packages/design-vue/src/components/organisms/taskin/Taskin.actions.spec.ts`, describe `point-up e point-down` (barriga = centro do corpo, y 110, no Taskin; centro do `#body-belly`, y 158, no Sapin: nenhum dos bracos alcanca a borda de baixo do corpo). `pnpm --filter @opentask/taskin-design-vue exec vitest run src/components/organisms/taskin/Taskin.actions.spec.ts` — 49 passam
+- [x] Evidencia visual em `TASKS/assets/task-150/`: `point-up` e `point-down`, com o braco no fim do gesto — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-150/<nome>.png)`), pela receita de Notes — quadro em 450ms:
+  - ![taskin point-up](assets/task-150/taskin-point-up.png)
+  - ![sapin point-up](assets/task-150/sapin-point-up.png)
+  - ![taskin point-down](assets/task-150/taskin-point-down.png)
+  - ![sapin point-down](assets/task-150/sapin-point-down.png)
+- [x] Changeset patch no `@opentask/taskin-design-vue` — `.changeset/mascote-aponta.md`
 
 ## Notes
 ### Contexto da rodada

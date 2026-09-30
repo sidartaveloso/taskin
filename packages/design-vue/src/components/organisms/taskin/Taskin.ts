@@ -87,6 +87,8 @@ const TASKIN_MOTION_CSS = `
   .taskin-nod { animation: taskin-taskin-nod 0.7s ease-in-out; animation-iteration-count: 1; }
   .taskin-shake { animation: taskin-taskin-shake 0.7s ease-in-out; animation-iteration-count: 1; }
   .taskin-celebrate { animation: taskin-taskin-celebrate 1.2s ease-in-out; animation-iteration-count: 1; }
+  .taskin-point-up { animation: taskin-taskin-point-up 0.9s ease-in-out; animation-iteration-count: 1; }
+  .taskin-point-down { animation: taskin-taskin-point-down 0.9s ease-in-out; animation-iteration-count: 1; }
   @keyframes taskin-taskin-dance {
     0%, 50%, 100% { transform: translate(0, 0) rotate(0deg); }
     25% { transform: translate(-5px, -3px) rotate(-5deg); }
@@ -126,6 +128,14 @@ const TASKIN_MOTION_CSS = `
     70% { transform: translateY(-6px) rotate(6deg) scale(1, 1); }
     85% { transform: translateY(2px) rotate(0deg) scale(1.03, 0.96); }
   }
+  @keyframes taskin-taskin-point-up {
+    0%, 100% { transform: translateY(0); }
+    30%, 70% { transform: translateY(-3px); }
+  }
+  @keyframes taskin-taskin-point-down {
+    0%, 100% { transform: translateY(0); }
+    30%, 70% { transform: translateY(3px); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .taskin-motion { animation-name: none !important; }
   }
@@ -156,6 +166,8 @@ const SAPIN_MOTION_CSS = `
   .sapin-nod { animation: taskin-sapin-nod 0.7s ease-in-out; animation-iteration-count: 1; }
   .sapin-shake { animation: taskin-sapin-shake 0.7s ease-in-out; animation-iteration-count: 1; }
   .sapin-celebrate { animation: taskin-sapin-celebrate 1.2s ease-in-out; animation-iteration-count: 1; }
+  .sapin-point-up { animation: taskin-sapin-point-up 0.9s ease-in-out; animation-iteration-count: 1; }
+  .sapin-point-down { animation: taskin-sapin-point-down 0.9s ease-in-out; animation-iteration-count: 1; }
   .sapin-celebrate #body-throat { animation: taskin-sapin-throat 1.2s ease-in-out; animation-iteration-count: 1; }
   @keyframes taskin-sapin-hop {
     0%, 100% { transform: translateY(0) scale(1.04, 0.96); }
@@ -198,6 +210,14 @@ const SAPIN_MOTION_CSS = `
   @keyframes taskin-sapin-throat {
     0%, 30%, 80%, 100% { transform: scale(0); }
     45%, 55% { transform: scale(1); }
+  }
+  @keyframes taskin-sapin-point-up {
+    0%, 100% { transform: translateY(0); }
+    30%, 70% { transform: translateY(-3px); }
+  }
+  @keyframes taskin-sapin-point-down {
+    0%, 100% { transform: translateY(0); }
+    30%, 70% { transform: translateY(3px); }
   }
   @media (prefers-reduced-motion: reduce) {
     .sapin-motion { animation-name: none !important; }
@@ -242,6 +262,21 @@ const celebratePose = (shoulder: number, forearm: number): ActionPose => ({
 });
 
 /**
+ * O braco direito aponta e os olhos acompanham: os gestos de mover acima e abaixo
+ * na priorizacao. O esquerdo fica de fora, na pose de descanso da variante.
+ */
+const pointPose = (lookDirection: 'up' | 'down', shoulder: number, forearm: number): ActionPose => ({
+  rightArm: armPosition(shoulder, forearm),
+  lookDirection,
+});
+
+/** Para cima, a mao acima do ombro, quase vertical. */
+const POINT_UP = pointPose('up', -80, -88);
+
+/** Para baixo, a mao abaixo da barriga, rente ao corpo. */
+const POINT_DOWN = pointPose('down', 85, 92);
+
+/**
  * As acoes de cada variante. A que falta numa variante resolve `false` na hora:
  * e o que deixa uma acao existir so num dos bichos.
  */
@@ -250,11 +285,15 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     nod: { className: 'taskin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
     shake: { className: 'taskin-shake', durationMs: 700, pose: { mouthExpression: 'frown' } },
     celebrate: { className: 'taskin-celebrate', durationMs: 1200, pose: celebratePose(-70, -100) },
+    'point-up': { className: 'taskin-point-up', durationMs: 900, pose: POINT_UP },
+    'point-down': { className: 'taskin-point-down', durationMs: 900, pose: POINT_DOWN },
   },
   sapin: {
     nod: { className: 'sapin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
     shake: { className: 'sapin-shake', durationMs: 700, pose: { mouthExpression: 'frown' } },
     celebrate: { className: 'sapin-celebrate', durationMs: 1200, pose: celebratePose(-60, -100) },
+    'point-up': { className: 'sapin-point-up', durationMs: 900, pose: POINT_UP },
+    'point-down': { className: 'sapin-point-down', durationMs: 900, pose: POINT_DOWN },
   },
 };
 
