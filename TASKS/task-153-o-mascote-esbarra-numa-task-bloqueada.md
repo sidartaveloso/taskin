@@ -1,6 +1,6 @@
 # 🧩 Task 153 — O mascote esbarra numa task bloqueada
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-2
