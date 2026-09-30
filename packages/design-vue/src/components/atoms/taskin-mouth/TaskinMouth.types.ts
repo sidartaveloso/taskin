@@ -29,6 +29,15 @@ export const MOUTH_OFFSET: Record<TaskinVariant, { x: number; y: number }> = {
   sapin: { x: 0, y: -21 },
 };
 
+/**
+ * A tinta da boca de cada variante: o azul-escuro do polvo, e o verde-escuro da
+ * referencia no Sapin.
+ */
+export const MOUTH_INK: Record<TaskinVariant, string> = {
+  taskin: '#2C3E50',
+  sapin: '#134635',
+};
+
 /** O `transform` que leva um desenho preso a boca do Taskin para a boca da variante. */
 export const mouthTransform = (variant: TaskinVariant): string | undefined => {
   const { x, y } = MOUTH_OFFSET[variant];

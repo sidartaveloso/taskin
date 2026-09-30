@@ -250,6 +250,8 @@ describe('Taskin', () => {
       expect(grupo.find('#mouth').exists()).toBe(true);
       expect(grupo.find('ellipse[fill="#d8e2f0"]').exists()).toBe(false);
       expect(wrapper.find('svg > ellipse').attributes('rx')).toBe('82');
+      expect(wrapper.find('svg > ellipse').attributes('fill')).toBe('#E4E9ED');
+      expect(mountTaskin().find('svg > ellipse').attributes('fill')).toBe('#d8e2f0');
     });
   });
 });
