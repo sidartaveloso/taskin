@@ -1,4 +1,5 @@
 import { computed, defineComponent, h, onMounted, onUnmounted, type PropType, ref } from 'vue';
+import type { ArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
 import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
 import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
 import type { EyeState } from '../../atoms/taskin-eyes/TaskinEyes.types';
@@ -14,6 +15,7 @@ import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bub
 import TaskinEffectVomit from '../../molecules/taskin-effect-vomit/TaskinEffectVomit';
 import TaskinEffectZzz from '../../molecules/taskin-effect-zzz/TaskinEffectZzz';
 import TaskinTentacleWithItem from '../../molecules/taskin-tentacle-with-item/TaskinTentacleWithItem.vue';
+import type { TaskinAction } from './Taskin.actions';
 import type { TaskinMood } from './Taskin.types';
 import type { TaskinVariant } from './Taskin.variants';
 
@@ -82,6 +84,8 @@ const TASKIN_MOTION_CSS = `
   .taskin-sway { animation: taskin-taskin-sway 2s ease-in-out infinite; }
   .taskin-shiver { animation: taskin-taskin-shiver 0.2s linear infinite; }
   .taskin-pant { animation: taskin-taskin-pant 0.4s ease-in-out infinite; }
+  .taskin-nod { animation: taskin-taskin-nod 0.7s ease-in-out; animation-iteration-count: 1; }
+  .taskin-shake { animation: taskin-taskin-shake 0.7s ease-in-out; animation-iteration-count: 1; }
   @keyframes taskin-taskin-dance {
     0%, 50%, 100% { transform: translate(0, 0) rotate(0deg); }
     25% { transform: translate(-5px, -3px) rotate(-5deg); }
@@ -104,6 +108,18 @@ const TASKIN_MOTION_CSS = `
   @keyframes taskin-taskin-pant {
     0%, 100% { transform: scale(1, 1); }
     50% { transform: scale(1.02, 0.97); }
+  }
+  @keyframes taskin-taskin-nod {
+    0%, 50%, 100% { transform: translateY(0) scale(1, 1); }
+    25%, 75% { transform: translateY(8px) scale(1.02, 0.94); }
+  }
+  @keyframes taskin-taskin-shake {
+    0%, 100% { transform: rotate(0deg); }
+    8%, 42%, 75% { transform: rotate(-8deg); }
+    25%, 58%, 92% { transform: rotate(8deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .taskin-motion { animation-name: none !important; }
   }
 `;
 
@@ -129,6 +145,8 @@ const SAPIN_MOTION_CSS = `
   .sapin-sway { animation: taskin-sapin-sway 2.4s ease-in-out infinite; }
   .sapin-shiver { animation: taskin-sapin-shiver 0.15s linear infinite; }
   .sapin-pant { animation: taskin-sapin-pant 0.5s ease-in-out infinite; }
+  .sapin-nod { animation: taskin-sapin-nod 0.7s ease-in-out; animation-iteration-count: 1; }
+  .sapin-shake { animation: taskin-sapin-shake 0.7s ease-in-out; animation-iteration-count: 1; }
   @keyframes taskin-sapin-hop {
     0%, 100% { transform: translateY(0) scale(1.04, 0.96); }
     15%, 85% { transform: translateY(0) scale(1, 1); }
@@ -152,6 +170,18 @@ const SAPIN_MOTION_CSS = `
     0%, 100% { transform: scale(1, 1); }
     50% { transform: scale(1.03, 0.97); }
   }
+  @keyframes taskin-sapin-nod {
+    0%, 50%, 100% { transform: translateY(0) scale(1, 1); }
+    25%, 75% { transform: translateY(4px) scale(1.03, 0.9); }
+  }
+  @keyframes taskin-sapin-shake {
+    0%, 100% { transform: rotate(0deg); }
+    8%, 42%, 75% { transform: rotate(-6deg); }
+    25%, 58%, 92% { transform: rotate(6deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sapin-motion { animation-name: none !important; }
+  }
 `;
 
 /**
@@ -162,6 +192,49 @@ const MOTIONS: Record<TaskinVariant, { byMood: Partial<Record<TaskinMood, string
   taskin: { byMood: TASKIN_MOTION_BY_MOOD, css: TASKIN_MOTION_CSS },
   sapin: { byMood: SAPIN_MOTION_BY_MOOD, css: SAPIN_MOTION_CSS },
 };
+
+/**
+ * O que uma acao impoe enquanto roda, por cima do humor. A prop explicita do
+ * consumidor ainda ganha dela.
+ */
+interface ActionPose {
+  leftArm?: ArmPosition;
+  rightArm?: ArmPosition;
+  eyeState?: EyeState;
+  lookDirection?: LookDirection;
+  mouthExpression?: MouthExpression;
+}
+
+interface ActionConfig {
+  /** Entra no `#<variante>-motion` enquanto a acao roda, no lugar da do humor. */
+  className: string;
+  /** O fim, por timer: aba oculta congela a animacao e o `animationend` nao viria. */
+  durationMs: number;
+  pose?: ActionPose;
+}
+
+/**
+ * As acoes de cada variante. A que falta numa variante resolve `false` na hora:
+ * e o que deixa uma acao existir so num dos bichos.
+ */
+export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionConfig>>> = {
+  taskin: {
+    nod: { className: 'taskin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
+    shake: { className: 'taskin-shake', durationMs: 700, pose: { mouthExpression: 'frown' } },
+  },
+  sapin: {
+    nod: { className: 'sapin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
+    shake: { className: 'sapin-shake', durationMs: 700, pose: { mouthExpression: 'frown' } },
+  },
+};
+
+/** A acao que esta rodando, com o que e preciso para encerra-la. */
+interface RunningAction {
+  action: TaskinAction;
+  config: ActionConfig;
+  timer: ReturnType<typeof setTimeout>;
+  resolve: (completed: boolean) => void;
+}
 
 const MOOD_CONFIGS: Record<TaskinMood, MoodConfig> = {
   neutral: {
@@ -498,7 +571,11 @@ export default defineComponent({
       default: undefined,
     },
   },
-  setup(props) {
+  emits: {
+    'action-start': (_action: TaskinAction) => true,
+    'action-end': (_payload: { action: TaskinAction; completed: boolean }) => true,
+  },
+  setup(props, { emit, expose }) {
     /**
      * O humor traz a configuracao base; as props de balao, quando vem, mandam
      * nela. E o que permite o mascote dizer "Bruno, Shhhhhhhhhhhh..." em vez do
@@ -548,17 +625,49 @@ export default defineComponent({
       }
     };
 
+    const running = ref<RunningAction | null>(null);
+
+    const endAction = (completed: boolean) => {
+      const current = running.value;
+      if (!current) return;
+      clearTimeout(current.timer);
+      running.value = null;
+      emit('action-end', { action: current.action, completed });
+      current.resolve(completed);
+    };
+
+    /**
+     * Faz a acao uma vez e devolve o bicho ao humor. Resolve `true` quando ela
+     * termina; `false` quando outra a interrompe, o componente sai da tela ou a
+     * variante nao tem a acao. Sem animacao, nao ha classe, mas o tempo e o mesmo.
+     */
+    const play = (action: TaskinAction): Promise<boolean> => {
+      const config = ACTIONS[props.variant][action];
+      if (!config) return Promise.resolve(false);
+      endAction(false);
+
+      return new Promise<boolean>((resolve) => {
+        const timer = setTimeout(() => endAction(true), config.durationMs);
+        running.value = { action, config, timer, resolve };
+        emit('action-start', action);
+      });
+    };
+
+    expose({ play });
+
     onMounted(() => {
       setupIdleAnimation();
     });
 
     onUnmounted(() => {
       clearIdleAnimation();
+      endAction(false);
     });
 
     return () => {
       const sapin = props.variant === 'sapin';
       const variant = props.variant;
+      const pose = running.value?.config.pose ?? {};
 
       // Shadow
       const shadow = h('ellipse', {
@@ -631,16 +740,18 @@ export default defineComponent({
               variant,
               color: config.value.tentacleColor,
               animationsEnabled: props.animationsEnabled,
+              leftArmPosition: pose.leftArm,
+              rightArmPosition: pose.rightArm,
             }),
         // Eyes. A `key` remonta os olhos na troca de variante: o rastreio le
         // os centros deles uma vez so, no setup.
         h(TaskinEyes, {
           key: variant,
           variant,
-          state: props.eyeState ?? (blinkEyes.value ? 'closed' : config.value.eyeState),
+          state: props.eyeState ?? pose.eyeState ?? (blinkEyes.value ? 'closed' : config.value.eyeState),
           trackingMode: props.eyeTrackingMode ?? 'none',
           trackingBounds: props.eyeTrackingBounds,
-          lookDirection: props.eyeLookDirection ?? config.value.lookDirection,
+          lookDirection: props.eyeLookDirection ?? pose.lookDirection ?? config.value.lookDirection,
           targetElement: props.eyeTargetElement,
           customPosition: props.eyeCustomPosition,
           animationsEnabled: props.animationsEnabled,
@@ -648,7 +759,7 @@ export default defineComponent({
         // Mouth
         h(TaskinMouth, {
           variant,
-          expression: props.mouthExpression !== undefined ? props.mouthExpression : config.value.mouthExpression,
+          expression: props.mouthExpression ?? pose.mouthExpression ?? config.value.mouthExpression,
           animationsEnabled: props.animationsEnabled,
         }),
         // Effects
@@ -690,7 +801,8 @@ export default defineComponent({
       ].filter(Boolean);
 
       const { byMood, css } = MOTIONS[variant];
-      const motion = props.animationsEnabled ? byMood[props.mood] : undefined;
+      // A acao, enquanto roda, toma o lugar do movimento do humor.
+      const motion = props.animationsEnabled ? (running.value?.config.className ?? byMood[props.mood]) : undefined;
       const components = [
         shadow,
         h('g', { id: `${variant}-motion`, class: [`${variant}-motion`, motion] }, mascot),

@@ -1,0 +1,172 @@
+import { mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
+import Taskin, { ACTIONS } from './Taskin';
+import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
+import { TASKIN_VARIANTS, type TaskinVariant } from './Taskin.variants';
+
+interface TaskinComAcoes {
+  play: (action: TaskinAction) => Promise<boolean>;
+}
+
+function mountTaskin(overrides: Record<string, unknown> = {}) {
+  const wrapper = mount(Taskin, { props: { idleAnimation: false, ...overrides }, attachTo: document.body });
+  return { wrapper, vm: wrapper.vm as unknown as TaskinComAcoes };
+}
+
+const pares = TASKIN_VARIANTS.flatMap((variant) => TASKIN_ACTIONS.map((action) => [variant, action] as const));
+
+describe('TASKIN_ACTIONS', () => {
+  it('nao repete acao', () => {
+    expect(new Set(TASKIN_ACTIONS).size).toBe(TASKIN_ACTIONS.length);
+  });
+
+  it('comeca pelo sim e pelo nao', () => {
+    expect(TASKIN_ACTIONS).toEqual(expect.arrayContaining(['nod', 'shake']));
+  });
+});
+
+describe('Taskin.play', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.innerHTML = '';
+  });
+
+  it.each(pares)('%s: a classe de %s entra no grupo, sai no fim e a do humor volta', async (variant, action) => {
+    const config = ACTIONS[variant][action];
+    expect(config).toBeDefined();
+    const { wrapper, vm } = mountTaskin({ variant, mood: 'dancing' });
+    const grupo = () => wrapper.find(`#${variant}-motion`);
+    const doHumor = grupo()
+      .classes()
+      .find((classe) => classe !== `${variant}-motion`);
+    expect(doHumor).toBeDefined();
+
+    const fim = vm.play(action);
+    await nextTick();
+    expect(grupo().classes()).toEqual([`${variant}-motion`, config?.className]);
+
+    vi.advanceTimersByTime((config?.durationMs ?? 0) - 1);
+    await nextTick();
+    expect(grupo().classes()).toContain(config?.className);
+
+    vi.advanceTimersByTime(1);
+    await expect(fim).resolves.toBe(true);
+    await nextTick();
+    expect(grupo().classes()).toEqual([`${variant}-motion`, doHumor]);
+    wrapper.unmount();
+  });
+
+  it.each(pares)('%s: %s anima de verdade, uma vez so', async (variant, action) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play(action);
+    await nextTick();
+
+    const animacoes = wrapper.find(`#${variant}-motion`).element.getAnimations() as CSSAnimation[];
+    expect(animacoes.map((animacao) => animacao.animationName)).toEqual([`taskin-${variant}-${action}`]);
+    expect(animacoes[0]?.effect?.getTiming().iterations).toBe(1);
+    wrapper.unmount();
+  });
+
+  it('emite action-start e action-end', async () => {
+    const { wrapper, vm } = mountTaskin();
+    const fim = vm.play('nod');
+    expect(wrapper.emitted('action-start')).toEqual([['nod']]);
+    expect(wrapper.emitted('action-end')).toBeUndefined();
+
+    vi.advanceTimersByTime(ACTIONS.taskin.nod?.durationMs ?? 0);
+    await fim;
+    expect(wrapper.emitted('action-end')).toEqual([[{ action: 'nod', completed: true }]]);
+  });
+
+  it('uma acao nova no meio de outra substitui a atual, que resolve false', async () => {
+    const { wrapper, vm } = mountTaskin();
+    const primeira = vm.play('nod');
+    vi.advanceTimersByTime(100);
+    const segunda = vm.play('shake');
+
+    await expect(primeira).resolves.toBe(false);
+    await nextTick();
+    expect(wrapper.find('#taskin-motion').classes()).toContain(ACTIONS.taskin.shake?.className);
+    expect(wrapper.emitted('action-end')).toEqual([[{ action: 'nod', completed: false }]]);
+
+    vi.advanceTimersByTime(ACTIONS.taskin.shake?.durationMs ?? 0);
+    await expect(segunda).resolves.toBe(true);
+    expect(wrapper.emitted('action-end')?.[1]).toEqual([{ action: 'shake', completed: true }]);
+  });
+
+  it('com as animacoes desligadas nao ha classe, e a promessa resolve no mesmo tempo', async () => {
+    const { wrapper, vm } = mountTaskin({ animationsEnabled: false });
+    let resolvida = false;
+    const fim = vm.play('shake').then((valor) => {
+      resolvida = true;
+      return valor;
+    });
+    await nextTick();
+    expect(wrapper.find('#taskin-motion').classes()).toEqual(['taskin-motion']);
+
+    vi.advanceTimersByTime((ACTIONS.taskin.shake?.durationMs ?? 0) - 1);
+    await Promise.resolve();
+    expect(resolvida).toBe(false);
+    vi.advanceTimersByTime(1);
+    await expect(fim).resolves.toBe(true);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a pose troca a boca durante a acao', async (variant: TaskinVariant) => {
+    const sorrindo = mountTaskin({ variant, mouthExpression: 'smile' }).wrapper.find('#mouth').attributes('d');
+    const { wrapper, vm } = mountTaskin({ variant });
+    const neutra = wrapper.find('#mouth').attributes('d');
+    expect(neutra).not.toBe(sorrindo);
+
+    const fim = vm.play('nod');
+    await nextTick();
+    expect(wrapper.find('#mouth').attributes('d')).toBe(sorrindo);
+
+    vi.advanceTimersByTime(ACTIONS[variant].nod?.durationMs ?? 0);
+    await fim;
+    await nextTick();
+    expect(wrapper.find('#mouth').attributes('d')).toBe(neutra);
+  });
+
+  it('a prop explicita do consumidor ganha da pose', async () => {
+    const aberta = mountTaskin({ mouthExpression: 'wide-open' }).wrapper.find('#mouth').attributes('d');
+    const { wrapper, vm } = mountTaskin({ mouthExpression: 'wide-open' });
+    void vm.play('nod');
+    await nextTick();
+    expect(wrapper.find('#mouth').attributes('d')).toBe(aberta);
+  });
+
+  it('acao que a variante nao tem resolve false na hora, sem mexer no grupo', async () => {
+    const { wrapper, vm } = mountTaskin();
+    await expect(vm.play('inexistente' as TaskinAction)).resolves.toBe(false);
+    expect(wrapper.emitted('action-start')).toBeUndefined();
+    expect(wrapper.find('#taskin-motion').classes()).toEqual(['taskin-motion']);
+  });
+
+  it('desmontar no meio resolve false', async () => {
+    const { wrapper, vm } = mountTaskin();
+    const fim = vm.play('nod');
+    wrapper.unmount();
+    await expect(fim).resolves.toBe(false);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: prefers-reduced-motion desliga o grupo de movimento pelo CSS', (variant) => {
+    const { wrapper } = mountTaskin({ variant });
+    const regras = wrapper
+      .findAll('style')
+      .flatMap((estilo) => [...((estilo.element as HTMLStyleElement).sheet?.cssRules ?? [])])
+      .filter(
+        (regra): regra is CSSMediaRule =>
+          regra instanceof CSSMediaRule && regra.conditionText.includes('prefers-reduced-motion: reduce'),
+      );
+    const dentro = regras.flatMap((regra) => [...regra.cssRules]) as CSSStyleRule[];
+    const doGrupo = dentro.find((regra) => regra.selectorText === `.${variant}-motion`);
+
+    expect(doGrupo?.style.getPropertyValue('animation-name')).toBe('none');
+    expect(doGrupo?.style.getPropertyPriority('animation-name')).toBe('important');
+  });
+});
