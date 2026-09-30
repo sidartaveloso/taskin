@@ -12,13 +12,15 @@ As acoes `travel-left` e `travel-right`, para "Anterior", "Proxima" e "Centraliz
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `travel-left` e `travel-right` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~0,9s
-- [ ] Sapin: agacha, pula num arco inclinado para o lado (sobe ~20px, gira 8deg na direcao) e aterrissa amassando
-- [ ] Taskin: inclina 12deg na direcao e desliza 6px e volta; os tentaculos arrastam por dentro do grupo
-- [ ] Duracao consultavel sem tocar: `actionDuration(variant, action)` exportado ao lado de `TASKIN_ACTIONS`, para o mapa sincronizar o deslocamento
-- [ ] Testes: a inclinacao para cada lado (sinal da rotacao com a animacao congelada), nas duas variantes; `actionDuration` igual ao `durationMs` da tabela
-- [ ] Evidencia visual em `TASKS/assets/task-159/`: `travel-left` e `travel-right` no alto do movimento — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-159/<nome>.png)`), pela receita de Notes
-- [ ] Changeset minor no `@opentask/taskin-design-vue` (`actionDuration` e API nova)
+- [x] `travel-left` e `travel-right` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~0,9s — 900ms, olhar para o lado da viagem; `Taskin.actions.ts` e `ACTIONS` em `Taskin.ts`. Prova: `travel-left e travel-right > %s: as duas direcoes existem, com cerca de 0,9s`
+- [x] Sapin: agacha, pula num arco inclinado para o lado (sobe ~20px, gira 8deg na direcao) e aterrissa amassando — `@keyframes taskin-sapin-travel-*` em `Taskin.ts` (20% agacha, 50% no alto, 80% amassa). Prova: `sapin: em %s pula inclinado para o lado, a uns 20px do chao` e `sapin: agacha antes do pulo e amassa na aterrissagem`
+  ![sapin travel-left no alto do pulo](assets/task-159/sapin-travel-left.png) ![sapin travel-right no alto do pulo](assets/task-159/sapin-travel-right.png)
+- [x] Taskin: inclina 12deg na direcao e desliza 6px e volta; os tentaculos arrastam por dentro do grupo — o grupo `#taskin-tentacles` (dentro de `#taskin-motion`) ganha um `skewX` para o lado de tras. Prova: `taskin: em %s inclina 12 graus e desliza 6px para o lado` e `taskin: em %s os tentaculos arrastam para o lado de tras, dentro do grupo`
+  ![taskin travel-left no alto](assets/task-159/taskin-travel-left.png) ![taskin travel-right no alto](assets/task-159/taskin-travel-right.png)
+- [x] Duracao consultavel sem tocar: `actionDuration(variant, action)` exportado ao lado de `TASKIN_ACTIONS`, para o mapa sincronizar o deslocamento — definido em `Taskin.ts` ao lado de `ACTIONS` (o `Taskin.actions.ts` nao importa nada) e exportado por `index.ts` junto de `TASKIN_ACTIONS`; acao ausente dura 0. Prova: `actionDuration > sai do pacote ao lado de TASKIN_ACTIONS`
+- [x] Testes: a inclinacao para cada lado (sinal da rotacao com a animacao congelada), nas duas variantes; `actionDuration` igual ao `durationMs` da tabela — `describe('travel-left e travel-right')` e `describe('actionDuration')` em `src/components/organisms/taskin/Taskin.actions.spec.ts`; `pnpm --filter @opentask/taskin-design-vue test`
+- [x] Evidencia visual em `TASKS/assets/task-159/`: `travel-left` e `travel-right` no alto do movimento — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-159/<nome>.png)`), pela receita de Notes — as quatro imagens acima, congeladas no alto do movimento (405ms no Taskin, 450ms no Sapin)
+- [x] Changeset minor no `@opentask/taskin-design-vue` (`actionDuration` e API nova) — `.changeset/o-mascote-anda-pelo-mapa.md`
 
 ## Notes
 ### Contexto da rodada

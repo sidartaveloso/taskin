@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
-import Taskin, { ACTIONS } from './Taskin';
+import Taskin, { ACTIONS, actionDuration } from './Taskin';
 import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
 import { TASKIN_VARIANTS, type TaskinVariant } from './Taskin.variants';
 
@@ -942,5 +942,96 @@ describe('catch-fly', () => {
     expect(new DOMMatrix(getComputedStyle(papo).transform).a).toBe(0);
     if (gole) gole.currentTime = 1420;
     expect(new DOMMatrix(getComputedStyle(papo).transform).a).toBeGreaterThan(0.9);
+  });
+});
+
+describe('travel-left e travel-right', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const lados = [
+    ['travel-left', -1],
+    ['travel-right', 1],
+  ] as const;
+
+  /** O giro, em graus, e o deslocamento do grupo de movimento congelado no instante `t`. */
+  async function congelado(variant: TaskinVariant, action: TaskinAction, t: number) {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play(action);
+    await nextTick();
+    const el = wrapper.find(`#${variant}-motion`).element;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = t;
+    const m = new DOMMatrix(getComputedStyle(el).transform);
+    return { wrapper, m, graus: (Math.atan2(m.b, m.a) * 180) / Math.PI };
+  }
+
+  it.each(TASKIN_VARIANTS)('%s: as duas direcoes existem, com cerca de 0,9s', (variant) => {
+    expect(ACTIONS[variant]['travel-left']?.durationMs).toBe(900);
+    expect(ACTIONS[variant]['travel-right']?.durationMs).toBe(900);
+  });
+
+  it.each(lados)('sapin: em %s pula inclinado para o lado, a uns 20px do chao', async (action, sinal) => {
+    const { wrapper, m, graus } = await congelado('sapin', action, 450);
+    expect(Math.sign(graus)).toBe(sinal);
+    expect(graus).toBeCloseTo(8 * sinal, 0);
+    expect(m.f).toBeCloseTo(-20, 0);
+    wrapper.unmount();
+  });
+
+  it('sapin: agacha antes do pulo e amassa na aterrissagem', async () => {
+    const agachado = await congelado('sapin', 'travel-right', 180);
+    expect(agachado.m.d).toBeLessThan(0.95);
+    agachado.wrapper.unmount();
+    const aterrissando = await congelado('sapin', 'travel-right', 720);
+    expect(aterrissando.m.d).toBeLessThan(0.95);
+    expect(Math.abs(aterrissando.m.f)).toBeLessThan(0.5);
+    aterrissando.wrapper.unmount();
+  });
+
+  it.each(lados)('taskin: em %s inclina 12 graus e desliza 6px para o lado', async (action, sinal) => {
+    const { wrapper, m, graus } = await congelado('taskin', action, 405);
+    expect(Math.sign(graus)).toBe(sinal);
+    expect(graus).toBeCloseTo(12 * sinal, 0);
+    expect(m.e).toBeCloseTo(6 * sinal, 0);
+    wrapper.unmount();
+  });
+
+  it.each(lados)('taskin: em %s os tentaculos arrastam para o lado de tras, dentro do grupo', async (action, sinal) => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    void vm.play(action);
+    await nextTick();
+    const tentaculos = wrapper.find('#taskin-motion #taskin-tentacles').element;
+    const [arrasto] = tentaculos.getAnimations() as CSSAnimation[];
+    expect(arrasto?.animationName).toBe(`taskin-taskin-${action}-tentacles`);
+    arrasto?.pause();
+    if (arrasto) arrasto.currentTime = 495;
+    expect(Math.sign(new DOMMatrix(getComputedStyle(tentaculos).transform).e)).toBe(-sinal);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: no fim volta ao lugar', async (variant) => {
+    const { wrapper, m } = await congelado(variant, 'travel-left', 899);
+    expect(Math.abs(m.e)).toBeLessThan(0.5);
+    expect(Math.abs(m.b)).toBeLessThan(0.02);
+    wrapper.unmount();
+  });
+});
+
+describe('actionDuration', () => {
+  it.each(pares)('%s: %s dura o durationMs da tabela', (variant, action) => {
+    expect(actionDuration(variant, action)).toBe(ACTIONS[variant][action]?.durationMs);
+  });
+
+  it('acao que a variante nao tem dura zero: resolve na hora', () => {
+    expect(actionDuration('taskin', 'catch-fly')).toBe(0);
+  });
+
+  it('sai do pacote ao lado de TASKIN_ACTIONS', async () => {
+    const pacote = await import('./index');
+    expect(pacote.actionDuration).toBe(actionDuration);
+    expect(pacote.TASKIN_ACTIONS).toBe(TASKIN_ACTIONS);
   });
 });
