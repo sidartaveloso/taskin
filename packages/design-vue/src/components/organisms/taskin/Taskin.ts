@@ -351,6 +351,11 @@ const SAPIN_MOTION_CSS = `
     10%, 40%, 70% { transform: rotate(-15deg); }
     25%, 55%, 85% { transform: rotate(15deg); }
   }
+  .sapin-speaking #body-throat { animation: taskin-sapin-speaking-throat 0.17s ease-in-out infinite; }
+  @keyframes taskin-sapin-speaking-throat {
+    0%, 100% { transform: scale(0.35); }
+    50% { transform: scale(1); }
+  }
   .sapin-listening { animation: taskin-sapin-listening 3.2s ease-in-out infinite; }
   @keyframes taskin-sapin-listening {
     0%, 100% { transform: rotate(6deg) scale(1, 1); }
@@ -858,6 +863,11 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    /** Ha fala tocando: a boca acompanha e, no Sapin, o papo pulsa a cada silaba. */
+    speaking: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: {
     'action-start': (_action: TaskinAction) => true,
@@ -1049,6 +1059,7 @@ export default defineComponent({
           variant,
           expression: props.mouthExpression ?? pose.mouthExpression ?? config.value.mouthExpression,
           animationsEnabled: props.animationsEnabled,
+          speaking: props.speaking,
         }),
         // Effects
         config.value.showTears &&
@@ -1099,7 +1110,18 @@ export default defineComponent({
       const motion = props.animationsEnabled ? (running.value?.config.className ?? idle) : undefined;
       const components = [
         shadow,
-        h('g', { id: `${variant}-motion`, class: [`${variant}-motion`, motion] }, mascot),
+        h(
+          'g',
+          {
+            id: `${variant}-motion`,
+            class: [
+              `${variant}-motion`,
+              motion,
+              variant === 'sapin' && props.animationsEnabled && props.speaking && 'sapin-speaking',
+            ],
+          },
+          mascot,
+        ),
         h('style', css),
       ];
 

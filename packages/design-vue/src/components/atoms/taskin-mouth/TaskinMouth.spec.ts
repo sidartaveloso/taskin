@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { MOUTH_PATHS } from './TaskinMouth.types';
 import TaskinMouth from './TaskinMouth.vue';
 
 describe('TaskinMouth', () => {
@@ -89,5 +90,53 @@ describe('TaskinMouth', () => {
     expect(sapin.find('#mouth').attributes('fill')).toBe('#134635');
     expect(sapin.find('#mouth-tongue path').attributes('stroke')).toBe('#134635');
     expect(taskin.find('#mouth').attributes('stroke')).toBe('#2C3E50');
+  });
+
+  describe('falando', () => {
+    it('anima a boca so com speaking', () => {
+      expect(mount(TaskinMouth).find('#mouth').classes()).not.toContain('mouth-speaking');
+      expect(
+        mount(TaskinMouth, { props: { speaking: true } })
+          .find('#mouth')
+          .classes(),
+      ).toContain('mouth-speaking');
+    });
+
+    it('alterna entre o caminho da expressao e o do open, da mesma tabela', () => {
+      const falando = mount(TaskinMouth, { props: { expression: 'smile', speaking: true } }).find('#mouth');
+      const style = falando.attributes('style') ?? '';
+
+      expect(style).toContain(`--mouth-rest: path("${MOUTH_PATHS.smile}")`);
+      expect(style).toContain(`--mouth-open: path("${MOUTH_PATHS.open}")`);
+      expect(falando.attributes('d')).toBe(MOUTH_PATHS.smile);
+    });
+
+    it('roda a animacao no navegador', () => {
+      const wrapper = mount(TaskinMouth, { attachTo: document.body, props: { speaking: true } });
+      const boca = wrapper.find('#mouth').element as SVGPathElement;
+      const [animacao] = boca.getAnimations() as CSSAnimation[];
+
+      // o nome ganha o sufixo do `scoped`
+      expect(animacao?.animationName).toMatch(/^mouth-speak/);
+      animacao?.pause();
+      if (animacao) animacao.currentTime = 0;
+      const fechada = getComputedStyle(boca).getPropertyValue('d');
+      if (animacao) animacao.currentTime = 120;
+      const aberta = getComputedStyle(boca).getPropertyValue('d');
+
+      expect(fechada).not.toBe(aberta);
+      expect(aberta).toContain('M 152 122');
+      wrapper.unmount();
+    });
+
+    it('sem animacao, fica na expressao', () => {
+      const boca = mount(TaskinMouth, {
+        props: { expression: 'smile', speaking: true, animationsEnabled: false },
+      }).find('#mouth');
+
+      expect(boca.classes()).not.toContain('mouth-speaking');
+      expect(boca.attributes('style')).toBeUndefined();
+      expect(boca.attributes('d')).toBe(MOUTH_PATHS.smile);
+    });
   });
 });

@@ -47,6 +47,7 @@
       <Taskin
         :variant="variant"
         :listening="listening"
+        :speaking="speaking"
         :mood="currentMood"
         :size="mascotSize"
         :eye-tracking-mode="eyeTrackingMode"
@@ -206,6 +207,9 @@ const mouthExpression = ref<'neutral' | 'smile' | 'frown' | 'open' | 'wide-open'
   'neutral',
 );
 
+/** A voz do shhh esta tocando: o mascote mexe a boca junto. */
+const speaking = ref(false);
+
 const showThoughtBubble = ref(false);
 const thoughtBubbleText = ref<string>('');
 
@@ -270,11 +274,18 @@ const triggerShhhReaction = () => {
   // interruptor que nao faz nada.
   if (plan.playSound) {
     voz ??= criarVozDoShhhDoNavegador();
-    void voz?.shush({
-      name: shhhNameRef.value,
-      phrase: shhhPhraseRef.value,
-      volume: shhhVolumeRef.value,
-    });
+    if (voz) {
+      speaking.value = true;
+      void voz
+        .shush({
+          name: shhhNameRef.value,
+          phrase: shhhPhraseRef.value,
+          volume: shhhVolumeRef.value,
+        })
+        .finally(() => {
+          speaking.value = false;
+        });
+    }
   }
   if (plan.animate) {
     mouthExpression.value = 'o-shape';

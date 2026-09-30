@@ -779,3 +779,42 @@ describe('listening', () => {
     expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-listening`);
   });
 });
+
+describe('speaking', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a boca acompanha a fala so com speaking', (variant) => {
+    expect(mountTaskin({ variant }).wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
+    expect(mountTaskin({ variant, speaking: true }).wrapper.find('#mouth').classes()).toContain('mouth-speaking');
+  });
+
+  it('sapin: o papo pulsa enquanto fala, em laco', () => {
+    const { wrapper } = mountTaskin({ variant: 'sapin', speaking: true });
+    expect(wrapper.find('#sapin-motion').classes()).toContain('sapin-speaking');
+
+    const animacoes = wrapper.find('#body-throat').element.getAnimations() as CSSAnimation[];
+    expect(animacoes.map((animacao) => animacao.animationName)).toEqual(['taskin-sapin-speaking-throat']);
+    expect(animacoes[0]?.effect?.getTiming().iterations).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it('taskin: nao tem papo, nem a classe', () => {
+    const { wrapper } = mountTaskin({ speaking: true });
+    expect(wrapper.find('#taskin-motion').classes()).toEqual(['taskin-motion']);
+    expect(wrapper.find('#body-throat').exists()).toBe(false);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: sem animacao, nem a boca alterna nem o papo pulsa', (variant) => {
+    const { wrapper } = mountTaskin({ variant, speaking: true, animationsEnabled: false });
+    expect(wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
+    expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`]);
+  });
+
+  it('sapin: parar de falar desliga o papo', async () => {
+    const { wrapper } = mountTaskin({ variant: 'sapin', speaking: true });
+    await wrapper.setProps({ speaking: false });
+    expect(wrapper.find('#sapin-motion').classes()).not.toContain('sapin-speaking');
+    expect(wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
+  });
+});
