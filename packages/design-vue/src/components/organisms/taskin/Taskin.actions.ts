@@ -24,6 +24,7 @@ export const TASKIN_ACTIONS = [
   'blocked',
   'effort',
   'wake',
+  'catch-fly',
 ] as const;
 
 /** Uma acao de uma vez so. Deriva de `TASKIN_ACTIONS`. */

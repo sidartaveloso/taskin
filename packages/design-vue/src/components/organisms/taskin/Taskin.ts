@@ -4,10 +4,11 @@ import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
 import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
 import type { EyeState } from '../../atoms/taskin-eyes/TaskinEyes.types';
 import TaskinEyes from '../../atoms/taskin-eyes/TaskinEyes.vue';
-import type { MouthExpression } from '../../atoms/taskin-mouth/TaskinMouth.types';
+import { MOUTH_OFFSET, type MouthExpression, mouthTransform } from '../../atoms/taskin-mouth/TaskinMouth.types';
 import TaskinMouth from '../../atoms/taskin-mouth/TaskinMouth.vue';
 import TaskinArmWithPhone from '../../molecules/taskin-arm-with-phone/TaskinArmWithPhone.vue';
 import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/TaskinEffectFartCloud';
+import TaskinEffectFly, { FLY_STOP } from '../../molecules/taskin-effect-fly/TaskinEffectFly';
 import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/TaskinEffectHearts';
 import TaskinEffectSweat from '../../molecules/taskin-effect-sweat/TaskinEffectSweat';
 import TaskinEffectTears from '../../molecules/taskin-effect-tears/TaskinEffectTears';
@@ -290,6 +291,24 @@ const SAPIN_MOTION_CSS = `
     animation: taskin-sapin-wave-arm 1.4s ease-in-out;
     animation-iteration-count: 1;
   }
+  .sapin-catch-fly { animation: taskin-sapin-catch-fly 1.6s ease-in-out; animation-iteration-count: 1; }
+  @keyframes taskin-sapin-catch-fly {
+    0%, 55%, 80%, 100% { transform: translateY(0) scale(1, 1); }
+    66% { transform: translateY(-3px) scale(1.02, 0.98); }
+  }
+  #sapin-tongue-reach { transform: scale(0); transform-box: view-box; transform-origin: 160px 124px; }
+  .sapin-catch-fly #sapin-tongue-reach { animation: taskin-sapin-tongue 1.6s linear; animation-iteration-count: 1; }
+  @keyframes taskin-sapin-tongue {
+    0%, 60% { transform: scale(0); }
+    66% { transform: scale(1); }
+    78%, 100% { transform: scale(0); }
+  }
+  .sapin-catch-fly #body-throat { animation: taskin-sapin-gulp 1.6s ease-in-out; animation-iteration-count: 1; }
+  @keyframes taskin-sapin-gulp {
+    0%, 80% { transform: scale(0); }
+    88% { transform: scale(1); }
+    100% { transform: scale(0); }
+  }
   .sapin-celebrate #body-throat { animation: taskin-sapin-throat 1.2s ease-in-out; animation-iteration-count: 1; }
   @keyframes taskin-sapin-hop {
     0%, 100% { transform: translateY(0) scale(1.04, 0.96); }
@@ -366,6 +385,7 @@ const SAPIN_MOTION_CSS = `
     .sapin-motion #right-arm { animation-name: none !important; }
     .sapin-motion #left-arm { animation-name: none !important; }
     .sapin-motion #body-throat { animation-name: none !important; }
+    .sapin-motion #sapin-tongue-reach { animation-name: none !important; }
   }
 `;
 
@@ -396,6 +416,11 @@ interface ActionConfig {
   /** O fim, por timer: aba oculta congela a animacao e o `animationend` nao viria. */
   durationMs: number;
   pose?: ActionPose;
+  /**
+   * A pose que muda no meio da acao: cada passo vale a partir de `atMs`, por cima
+   * da `pose` e dos passos anteriores. E como os olhos seguem a mosca.
+   */
+  steps?: { atMs: number; pose: ActionPose }[];
 }
 
 /** Os dois bracos para o alto, sorrindo: a comemoracao. */
@@ -475,6 +500,27 @@ const BLOCKED_TASKIN: ActionPose = {
 const BLOCKED_SAPIN: ActionPose = { eyeState: 'squint', mouthExpression: 'frown' };
 
 /**
+ * O bote do Sapin, na `catch-fly`: os olhos seguem a mosca para a direita e, aos
+ * 60%, quando ela para na frente da boca, voltam ao centro e a boca abre para a
+ * lingua sair. No gole, sorri.
+ */
+const CATCH_FLY: Pick<ActionConfig, 'pose' | 'steps'> = {
+  pose: { lookDirection: 'right' },
+  steps: [
+    { atMs: 960, pose: { lookDirection: 'center', mouthExpression: 'open' } },
+    { atMs: 1280, pose: { mouthExpression: 'smile' } },
+  ],
+};
+
+/**
+ * A lingua do Sapin, no desenho da boca do Taskin (a ancora `mouthTransform` a
+ * leva para a boca do sapo): sai do meio da boca aberta e a ponta cai onde a
+ * mosca para.
+ */
+const TONGUE_ROOT = { x: 160, y: 124 };
+const TONGUE_TIP = { x: FLY_STOP.x - MOUTH_OFFSET.sapin.x, y: FLY_STOP.y - MOUTH_OFFSET.sapin.y };
+
+/**
  * As acoes de cada variante. A que falta numa variante resolve `false` na hora:
  * e o que deixa uma acao existir so num dos bichos.
  */
@@ -502,6 +548,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     blocked: { className: 'sapin-blocked', durationMs: 1600, pose: BLOCKED_SAPIN },
     effort: { className: 'sapin-effort', durationMs: 2000, pose: EFFORT },
     wake: { className: 'sapin-wake', durationMs: 2000, pose: WAKE },
+    'catch-fly': { className: 'sapin-catch-fly', durationMs: 1600, ...CATCH_FLY },
   },
 };
 
@@ -521,6 +568,9 @@ interface RunningAction {
   action: TaskinAction;
   config: ActionConfig;
   timer: ReturnType<typeof setTimeout>;
+  /** Os timers dos passos de `steps`, e o que eles ja trocaram na pose. */
+  stepTimers: ReturnType<typeof setTimeout>[];
+  stepPose: ActionPose;
   resolve: (completed: boolean) => void;
 }
 
@@ -929,6 +979,7 @@ export default defineComponent({
       const current = running.value;
       if (!current) return;
       clearTimeout(current.timer);
+      current.stepTimers.forEach(clearTimeout);
       running.value = null;
       emit('action-end', { action: current.action, completed });
       current.resolve(completed);
@@ -946,7 +997,12 @@ export default defineComponent({
 
       return new Promise<boolean>((resolve) => {
         const timer = setTimeout(() => endAction(true), config.durationMs);
-        running.value = { action, config, timer, resolve };
+        const stepTimers = (config.steps ?? []).map((step) =>
+          setTimeout(() => {
+            if (running.value) running.value.stepPose = { ...running.value.stepPose, ...step.pose };
+          }, step.atMs),
+        );
+        running.value = { action, config, timer, stepTimers, stepPose: {}, resolve };
         emit('action-start', action);
       });
     };
@@ -965,7 +1021,11 @@ export default defineComponent({
     return () => {
       const sapin = props.variant === 'sapin';
       const variant = props.variant;
-      const pose = running.value ? (running.value.config.pose ?? {}) : props.listening ? LISTENING[variant] : {};
+      const pose = running.value
+        ? { ...running.value.config.pose, ...running.value.stepPose }
+        : props.listening
+          ? LISTENING[variant]
+          : {};
 
       // Shadow
       const shadow = h('ellipse', {
@@ -1061,6 +1121,22 @@ export default defineComponent({
           animationsEnabled: props.animationsEnabled,
           speaking: props.speaking,
         }),
+        // A lingua do Sapin, so no bote da `catch-fly`: um traco rosa grosso de
+        // ponta redonda, preso a boca. Quem a estica e recolhe e o CSS.
+        sapin &&
+          running.value?.action === 'catch-fly' &&
+          h('g', { id: 'sapin-tongue', transform: mouthTransform(variant) }, [
+            h('g', { id: 'sapin-tongue-reach' }, [
+              h('path', {
+                d: `M${TONGUE_ROOT.x} ${TONGUE_ROOT.y} L${TONGUE_TIP.x} ${TONGUE_TIP.y}`,
+                stroke: '#FF9EB5',
+                'stroke-width': '6',
+                'stroke-linecap': 'round',
+                fill: 'none',
+              }),
+              h('circle', { cx: String(TONGUE_TIP.x), cy: String(TONGUE_TIP.y), r: '4.5', fill: '#FF9EB5' }),
+            ]),
+          ]),
         // Effects
         config.value.showTears &&
           h(TaskinEffectTears, {
@@ -1090,6 +1166,10 @@ export default defineComponent({
           }),
         config.value.showFartCloud &&
           h(TaskinEffectFartCloud, {
+            animationsEnabled: props.animationsEnabled,
+          }),
+        running.value?.action === 'catch-fly' &&
+          h(TaskinEffectFly, {
             animationsEnabled: props.animationsEnabled,
           }),
         running.value?.action === 'effort' &&

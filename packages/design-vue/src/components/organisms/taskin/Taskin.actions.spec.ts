@@ -14,7 +14,10 @@ function mountTaskin(overrides: Record<string, unknown> = {}) {
   return { wrapper, vm: wrapper.vm as unknown as TaskinComAcoes };
 }
 
-const pares = TASKIN_VARIANTS.flatMap((variant) => TASKIN_ACTIONS.map((action) => [variant, action] as const));
+/** Cada variante com as acoes que ela tem: nem toda acao existe nos dois bichos. */
+const pares = TASKIN_VARIANTS.flatMap((variant) =>
+  TASKIN_ACTIONS.filter((action) => ACTIONS[variant][action]).map((action) => [variant, action] as const),
+);
 
 /** Os pontos do `d` de um braco: ombro, cotovelo (o controle da curva) e ponta. */
 function pontosDoBraco(wrapper: ReturnType<typeof mountTaskin>['wrapper'], id: string) {
@@ -816,5 +819,128 @@ describe('speaking', () => {
     await wrapper.setProps({ speaking: false });
     expect(wrapper.find('#sapin-motion').classes()).not.toContain('sapin-speaking');
     expect(wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
+  });
+});
+
+describe('catch-fly', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.innerHTML = '';
+  });
+
+  /** Congela a primeira animacao de um elemento no instante `t`. */
+  const congelar = (el: Element, t: number) => {
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = t;
+    return animacao as CSSAnimation | undefined;
+  };
+
+  it('so o Sapin tem a acao, com cerca de 1,6s', async () => {
+    expect(ACTIONS.sapin['catch-fly']?.durationMs).toBe(1600);
+    expect(ACTIONS.taskin['catch-fly']).toBeUndefined();
+
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    await expect(vm.play('catch-fly')).resolves.toBe(false);
+    await nextTick();
+    expect(wrapper.find('#effect-fly').exists()).toBe(false);
+    expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
+  });
+
+  it('a mosca e a lingua so aparecem durante a acao', async () => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    expect(wrapper.find('#effect-fly').exists()).toBe(false);
+    expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
+
+    const fim = vm.play('catch-fly');
+    await nextTick();
+    expect(wrapper.find('#effect-fly').exists()).toBe(true);
+    expect(wrapper.find('#sapin-tongue').exists()).toBe(true);
+
+    vi.advanceTimersByTime(1600);
+    await expect(fim).resolves.toBe(true);
+    await nextTick();
+    expect(wrapper.find('#effect-fly').exists()).toBe(false);
+    expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
+  });
+
+  it('os olhos seguem a mosca: a direita no voo, ao centro no bote', async () => {
+    vi.useFakeTimers();
+    const direita = mountTaskin({ variant: 'sapin', eyeLookDirection: 'right' }).wrapper.find('#left-eye').html();
+    const centro = mountTaskin({ variant: 'sapin', eyeLookDirection: 'center' }).wrapper.find('#left-eye').html();
+    expect(direita).not.toBe(centro);
+
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('catch-fly');
+    await nextTick();
+    expect(wrapper.find('#left-eye').html()).toBe(direita);
+
+    vi.advanceTimersByTime(960);
+    await nextTick();
+    expect(wrapper.find('#left-eye').html()).toBe(centro);
+  });
+
+  it('a mosca voa, some depois do bote e bate as asas', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('catch-fly');
+    await nextTick();
+    const mosca = wrapper.find('#effect-fly').element;
+    const voo = congelar(mosca, 300);
+    expect(voo?.animationName).toBe('taskin-fly-catch');
+    expect(Number(getComputedStyle(mosca).opacity)).toBe(1);
+    const antes = mosca.getBoundingClientRect();
+    if (voo) voo.currentTime = 700;
+    const depois = mosca.getBoundingClientRect();
+    expect(depois.left).toBeLessThan(antes.left);
+
+    if (voo) voo.currentTime = 1400;
+    expect(Number(getComputedStyle(mosca).opacity)).toBe(0);
+
+    const asas = wrapper.findAll('#effect-fly .fly-wing');
+    expect(asas).toHaveLength(2);
+    expect(asas[0]?.element.getAnimations().length).toBe(1);
+  });
+
+  it('a lingua sai da boca do Sapin ate a mosca e volta', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin', idleAnimation: false });
+    void vm.play('catch-fly');
+    await nextTick();
+    congelar(wrapper.find('#sapin-motion').element, 1056);
+    const lingua = wrapper.find('#sapin-tongue-reach').element;
+    const lambida = congelar(lingua, 1056);
+    expect(lambida?.animationName).toBe('taskin-sapin-tongue');
+    congelar(wrapper.find('#effect-fly').element, 1056);
+
+    const boca = wrapper.find('#mouth').element.getBoundingClientRect();
+    const noBote = lingua.getBoundingClientRect();
+    const mosca = wrapper.find('#effect-fly').element.getBoundingClientRect();
+    // Sai da boca: a raiz da lingua fica dentro da boca.
+    expect(noBote.left).toBeGreaterThanOrEqual(boca.left);
+    expect(noBote.left).toBeLessThanOrEqual(boca.right);
+    expect(noBote.top).toBeLessThanOrEqual(boca.bottom);
+    // Chega a mosca: a ponta encosta nela.
+    const centroMosca = { x: (mosca.left + mosca.right) / 2, y: (mosca.top + mosca.bottom) / 2 };
+    expect(centroMosca.x).toBeGreaterThanOrEqual(noBote.left);
+    expect(centroMosca.x).toBeLessThanOrEqual(noBote.right + 2);
+    expect(centroMosca.y).toBeLessThanOrEqual(noBote.bottom + 2);
+
+    if (lambida) lambida.currentTime = 300;
+    expect(lingua.getBoundingClientRect().width).toBeLessThan(1);
+    if (lambida) lambida.currentTime = 1500;
+    expect(lingua.getBoundingClientRect().width).toBeLessThan(1);
+  });
+
+  it('no fim o papo infla uma vez: o gole', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('catch-fly');
+    await nextTick();
+    const papo = wrapper.find('#body-throat').element;
+    const gole = congelar(papo, 800);
+    expect(gole?.animationName).toBe('taskin-sapin-gulp');
+    expect(gole?.effect?.getTiming().iterations).toBe(1);
+    expect(new DOMMatrix(getComputedStyle(papo).transform).a).toBe(0);
+    if (gole) gole.currentTime = 1420;
+    expect(new DOMMatrix(getComputedStyle(papo).transform).a).toBeGreaterThan(0.9);
   });
 });

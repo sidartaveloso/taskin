@@ -12,13 +12,17 @@ A assinatura do Sapin: bug e mosca, e o sapo come o bug. A acao `catch-fly`, so 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `catch-fly` em `TASKIN_ACTIONS` e so no `ACTIONS` do Sapin, com ~1,6s
-- [ ] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-fly/` (no molde do `TaskinEffectZzz`): a mosca — corpinho escuro e duas asas que batem — voando num arco a direita da cabeca e parando na frente da boca aos ~60% da acao; some quando a lingua a pega
-- [ ] A lingua: elemento novo do Sapin, na boca — um traco rosa grosso (`#FF9EB5`, como a do ofegante) com a ponta redonda, que sai da boca ate a mosca e volta (`stroke-dashoffset` ou `scale` no eixo da boca), preso a ancora da boca (`mouthTransform`)
-- [ ] Olhos seguindo a mosca pela `pose` (`lookDirection` `right` e depois `center`); no fim, o papo (task-149) infla uma vez: o gole
-- [ ] Testes: a acao so no Sapin (`play` no Taskin resolve `false`); a mosca e a lingua so durante a acao; a mosca some depois do bote (animacao congelada antes e depois); a lingua sai da boca do Sapin
-- [ ] Evidencia visual em `TASKS/assets/task-158/`: `catch-fly` em tres quadros: a mosca voando, a lingua no bote e o gole — so sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-158/<nome>.png)`), pela receita de Notes
-- [ ] Changeset minor no `@opentask/taskin-design-vue` (efeito novo)
+- [x] `catch-fly` em `TASKIN_ACTIONS` e so no `ACTIONS` do Sapin, com ~1,6s — `Taskin.actions.ts`; `ACTIONS.sapin['catch-fly']` (1600 ms) em `Taskin.ts`. Teste `catch-fly > so o Sapin tem a acao, com cerca de 1,6s`
+- [x] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-fly/` (no molde do `TaskinEffectZzz`, com spec, stories, types e index; exportado em `molecules/index.ts` e `src/index.ts`): corpinho `#2C3E50` e duas asas `.fly-wing` que batem (`taskin-fly-flap`, 0,08s); arco a direita da cabeca, parada em `FLY_STOP` (182, 124) aos 60%, levada pela lingua ate a boca e some aos 80% (`taskin-fly-catch`). Testes `TaskinEffectFly.spec.ts` e `catch-fly > a mosca voa, some depois do bote e bate as asas`
+- [x] A lingua: `#sapin-tongue` no `render` do `Taskin.ts`, com `mouthTransform(variant)`; traco `#FF9EB5` de 6 com ponta redonda, da boca (160, 124 no desenho da boca do Taskin) ate a mosca; `#sapin-tongue-reach` escala de 0 a 1 e volta (`taskin-sapin-tongue`, 60% → 66% → 78%) em volta da raiz. Teste `catch-fly > a lingua sai da boca do Sapin ate a mosca e volta`
+- [x] Olhos seguindo a mosca: `ActionConfig` ganhou `steps` (a pose muda no meio, por timer, limpo no `endAction`); `CATCH_FLY` olha `right` e aos 960 ms passa a `center` com a boca `open`, e aos 1280 ms sorri. O gole: `.sapin-catch-fly #body-throat` (`taskin-sapin-gulp`, infla de 80% a 88% e murcha). Testes `os olhos seguem a mosca...` e `no fim o papo infla uma vez: o gole`
+- [x] Testes: todos no `describe('catch-fly')` de `Taskin.actions.spec.ts` (animacao congelada pela Web Animations API); os testes genericos de `Taskin.play` passaram a iterar so as acoes que cada variante tem. `pnpm --filter @opentask/taskin-design-vue test` — 565 specs + 289 stories verdes
+- [x] Evidencia visual em `TASKS/assets/task-158/`, so sapin, por spec temporario (ja apagado) com as animacoes congeladas:
+  - a mosca voando (450 ms): ![a mosca voando a direita da cabeca](assets/task-158/sapin-mosca-voando.png)
+  - a lingua no bote (1056 ms): ![a lingua rosa da boca ate a mosca](assets/task-158/sapin-lingua-no-bote.png)
+  - o gole (1410 ms): ![o papo inflado depois de engolir](assets/task-158/sapin-gole.png)
+  Nos quadros com passos de pose, o olhar e a boca vieram das props explicitas (`eyeLookDirection`, `mouthExpression`), porque os passos correm por timer e o spec nao espera o relogio.
+- [x] Changeset minor no `@opentask/taskin-design-vue` — `.changeset/sapin-pega-a-mosca.md`
 
 ## Notes
 ### Contexto da rodada
