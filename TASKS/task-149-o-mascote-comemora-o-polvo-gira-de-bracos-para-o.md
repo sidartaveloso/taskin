@@ -1,6 +1,6 @@
 # 🧩 Task 149 — O mascote comemora: o polvo gira de bracos para o alto, o sapo pula e infla o papo
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-1
