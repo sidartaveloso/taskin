@@ -1,6 +1,6 @@
 # 🧩 Task 148 — O mascote faz acoes de uma vez so, e as primeiras sao o sim e o nao
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-1
