@@ -105,6 +105,12 @@ const TASKIN_MOTION_CSS = `
   }
   .taskin-blocked { animation: taskin-taskin-blocked 1.6s ease-in-out; animation-iteration-count: 1; }
   .taskin-effort { animation: taskin-taskin-effort 2s linear; }
+  .taskin-wake { animation: taskin-taskin-wake 2s ease-in-out; animation-iteration-count: 1; transform-origin: 50% 100%; }
+  @keyframes taskin-taskin-wake {
+    0% { transform: scale(1, 1); }
+    35%, 70% { transform: scale(0.97, 1.06); }
+    100% { transform: scale(1, 1); }
+  }
   .taskin-wave { animation: taskin-taskin-wave 1.4s ease-in-out; animation-iteration-count: 1; }
   .taskin-wave #right-arm {
     transform-box: view-box;
@@ -266,6 +272,12 @@ const SAPIN_MOTION_CSS = `
     25% { transform: translateX(-3px); }
     75% { transform: translateX(3px); }
   }
+  .sapin-wake { animation: taskin-sapin-wake 2s ease-in-out; animation-iteration-count: 1; transform-origin: 50% 100%; }
+  @keyframes taskin-sapin-wake {
+    0% { transform: scale(1, 1); }
+    35%, 70% { transform: scale(0.97, 1.06); }
+    100% { transform: scale(1, 1); }
+  }
   .sapin-wave { animation: taskin-sapin-wave 1.4s ease-in-out; animation-iteration-count: 1; }
   .sapin-wave #right-arm {
     transform-box: view-box;
@@ -419,6 +431,14 @@ const EFFORT: ActionPose = {
   eyeState: 'squint',
 };
 
+/** O despertar: o bocejo de boca em O, olhos semiabertos e os bracos esticados para o alto e para fora. */
+const WAKE: ActionPose = {
+  leftArm: armPosition(-100, -125),
+  rightArm: armPosition(-100, -125),
+  eyeState: 'squint',
+  mouthExpression: 'o-shape',
+};
+
 /**
  * Bracos cruzados na frente da barriga, de cara virada e cenho franzido. O braco
  * do Taskin tem 50 de comprimento e o ombro fica a 65 da linha do meio (x=160):
@@ -450,6 +470,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     start: { className: 'taskin-start', durationMs: 1100, pose: START },
     blocked: { className: 'taskin-blocked', durationMs: 1600, pose: BLOCKED_TASKIN },
     effort: { className: 'taskin-effort', durationMs: 2000, pose: EFFORT },
+    wake: { className: 'taskin-wake', durationMs: 2000, pose: WAKE },
   },
   sapin: {
     nod: { className: 'sapin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
@@ -461,6 +482,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     start: { className: 'sapin-start', durationMs: 1100, pose: START },
     blocked: { className: 'sapin-blocked', durationMs: 1600, pose: BLOCKED_SAPIN },
     effort: { className: 'sapin-effort', durationMs: 2000, pose: EFFORT },
+    wake: { className: 'sapin-wake', durationMs: 2000, pose: WAKE },
   },
 };
 
