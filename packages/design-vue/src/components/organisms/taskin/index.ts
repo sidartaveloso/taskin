@@ -1,6 +1,6 @@
 import Taskin from './Taskin';
 
-export { default as Taskin } from './Taskin';
+export { actionDuration, default as Taskin } from './Taskin';
 export * from './Taskin.actions';
 export * from './Taskin.controller';
 export * from './Taskin.mock';

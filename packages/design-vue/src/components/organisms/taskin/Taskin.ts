@@ -208,6 +208,28 @@ const TASKIN_MOTION_CSS = `
     10%, 40%, 70% { transform: rotate(-15deg); }
     25%, 55%, 85% { transform: rotate(15deg); }
   }
+  .taskin-travel-left { animation: taskin-taskin-travel-left 0.9s ease-in-out; animation-iteration-count: 1; }
+  .taskin-travel-right { animation: taskin-taskin-travel-right 0.9s ease-in-out; animation-iteration-count: 1; }
+  .taskin-travel-left #taskin-tentacles,
+  .taskin-travel-right #taskin-tentacles { transform-box: view-box; transform-origin: 160px 168px; }
+  .taskin-travel-left #taskin-tentacles { animation: taskin-taskin-travel-left-tentacles 0.9s ease-in-out; animation-iteration-count: 1; }
+  .taskin-travel-right #taskin-tentacles { animation: taskin-taskin-travel-right-tentacles 0.9s ease-in-out; animation-iteration-count: 1; }
+  @keyframes taskin-taskin-travel-left {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    45% { transform: translateX(-6px) rotate(-12deg); }
+  }
+  @keyframes taskin-taskin-travel-right {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    45% { transform: translateX(6px) rotate(12deg); }
+  }
+  @keyframes taskin-taskin-travel-left-tentacles {
+    0%, 100% { transform: translateX(0) skewX(0deg); }
+    55% { transform: translateX(3px) skewX(14deg); }
+  }
+  @keyframes taskin-taskin-travel-right-tentacles {
+    0%, 100% { transform: translateX(0) skewX(0deg); }
+    55% { transform: translateX(-3px) skewX(-14deg); }
+  }
   .taskin-listening { animation: taskin-taskin-listening 3.2s ease-in-out infinite; }
   @keyframes taskin-taskin-listening {
     0%, 100% { transform: rotate(6deg) scale(1, 1); }
@@ -217,6 +239,7 @@ const TASKIN_MOTION_CSS = `
     .taskin-motion { animation-name: none !important; }
     .taskin-motion #right-arm { animation-name: none !important; }
     .taskin-motion #left-arm { animation-name: none !important; }
+    .taskin-motion #taskin-tentacles { animation-name: none !important; }
   }
 `;
 
@@ -290,6 +313,20 @@ const SAPIN_MOTION_CSS = `
     transform-origin: 230px 113px;
     animation: taskin-sapin-wave-arm 1.4s ease-in-out;
     animation-iteration-count: 1;
+  }
+  .sapin-travel-left { animation: taskin-sapin-travel-left 0.9s ease-in-out; animation-iteration-count: 1; }
+  .sapin-travel-right { animation: taskin-sapin-travel-right 0.9s ease-in-out; animation-iteration-count: 1; }
+  @keyframes taskin-sapin-travel-left {
+    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1, 1); }
+    20% { transform: translate(0, 0) rotate(0deg) scale(1.06, 0.9); }
+    50% { transform: translate(-6px, -20px) rotate(-8deg) scale(0.97, 1.04); }
+    80% { transform: translate(0, 0) rotate(0deg) scale(1.08, 0.88); }
+  }
+  @keyframes taskin-sapin-travel-right {
+    0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1, 1); }
+    20% { transform: translate(0, 0) rotate(0deg) scale(1.06, 0.9); }
+    50% { transform: translate(6px, -20px) rotate(8deg) scale(0.97, 1.04); }
+    80% { transform: translate(0, 0) rotate(0deg) scale(1.08, 0.88); }
   }
   .sapin-catch-fly { animation: taskin-sapin-catch-fly 1.6s ease-in-out; animation-iteration-count: 1; }
   @keyframes taskin-sapin-catch-fly {
@@ -536,6 +573,8 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     blocked: { className: 'taskin-blocked', durationMs: 1600, pose: BLOCKED_TASKIN },
     effort: { className: 'taskin-effort', durationMs: 2000, pose: EFFORT },
     wake: { className: 'taskin-wake', durationMs: 2000, pose: WAKE },
+    'travel-left': { className: 'taskin-travel-left', durationMs: 900, pose: { lookDirection: 'left' } },
+    'travel-right': { className: 'taskin-travel-right', durationMs: 900, pose: { lookDirection: 'right' } },
   },
   sapin: {
     nod: { className: 'sapin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
@@ -549,8 +588,19 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     effort: { className: 'sapin-effort', durationMs: 2000, pose: EFFORT },
     wake: { className: 'sapin-wake', durationMs: 2000, pose: WAKE },
     'catch-fly': { className: 'sapin-catch-fly', durationMs: 1600, ...CATCH_FLY },
+    'travel-left': { className: 'sapin-travel-left', durationMs: 900, pose: { lookDirection: 'left' } },
+    'travel-right': { className: 'sapin-travel-right', durationMs: 900, pose: { lookDirection: 'right' } },
   },
 };
+
+/**
+ * Quanto uma acao dura, sem toca-la: e o que deixa o mapa de tarefas casar o
+ * trajeto com o pulo do Sapin ou o nado do Taskin, que se mexem no lugar. A acao
+ * que a variante nao tem dura zero, porque `play` resolve na hora.
+ */
+export function actionDuration(variant: TaskinVariant, action: TaskinAction): number {
+  return ACTIONS[variant][action]?.durationMs ?? 0;
+}
 
 /**
  * A escuta, enquanto o microfone esta ligado: nao e acao de uma vez so, e dura o
@@ -1041,39 +1091,46 @@ export default defineComponent({
       // pernas, que o corpo dele ja desenha.
       const tentacles =
         !sapin &&
-        h('g', { transform: 'translate(160, 168)' }, [
-          h(TaskinTentacleWithItem, {
-            tentacleColor: config.value.tentacleColor,
-            animationsEnabled: props.animationsEnabled,
-            speed: props.mood === 'dancing' ? 1.5 : props.mood === 'tired' ? 0.6 : props.mood === 'sleeping' ? 0 : 1,
-            fluid: true,
-            translateX: -30,
-            translateY: 0,
-          }),
-          h(TaskinTentacleWithItem, {
-            tentacleColor: config.value.tentacleColor,
-            animationsEnabled: props.animationsEnabled,
-            speed: props.mood === 'dancing' ? 1.8 : props.mood === 'tired' ? 0.5 : props.mood === 'sleeping' ? 0 : 1.1,
-            fluid: true,
-            translateX: -10,
-            translateY: 0,
-          }),
-          h(TaskinTentacleWithItem, {
-            tentacleColor: config.value.tentacleColor,
-            animationsEnabled: props.animationsEnabled,
-            speed: props.mood === 'dancing' ? 1.6 : props.mood === 'tired' ? 0.7 : props.mood === 'sleeping' ? 0 : 0.9,
-            fluid: true,
-            translateX: 10,
-            translateY: 0,
-          }),
-          h(TaskinTentacleWithItem, {
-            tentacleColor: config.value.tentacleColor,
-            animationsEnabled: props.animationsEnabled && wiggleTentacles.value,
-            speed: props.mood === 'dancing' ? 1.7 : props.mood === 'tired' ? 0.6 : props.mood === 'sleeping' ? 0 : 1.0,
-            fluid: true,
-            translateX: 30,
-            translateY: 0,
-          }),
+        // O grupo de fora e o que arrasta na viagem: um `transform` de CSS nele
+        // apagaria o `translate` do atributo, que por isso fica no de dentro.
+        h('g', { id: 'taskin-tentacles' }, [
+          h('g', { transform: 'translate(160, 168)' }, [
+            h(TaskinTentacleWithItem, {
+              tentacleColor: config.value.tentacleColor,
+              animationsEnabled: props.animationsEnabled,
+              speed: props.mood === 'dancing' ? 1.5 : props.mood === 'tired' ? 0.6 : props.mood === 'sleeping' ? 0 : 1,
+              fluid: true,
+              translateX: -30,
+              translateY: 0,
+            }),
+            h(TaskinTentacleWithItem, {
+              tentacleColor: config.value.tentacleColor,
+              animationsEnabled: props.animationsEnabled,
+              speed:
+                props.mood === 'dancing' ? 1.8 : props.mood === 'tired' ? 0.5 : props.mood === 'sleeping' ? 0 : 1.1,
+              fluid: true,
+              translateX: -10,
+              translateY: 0,
+            }),
+            h(TaskinTentacleWithItem, {
+              tentacleColor: config.value.tentacleColor,
+              animationsEnabled: props.animationsEnabled,
+              speed:
+                props.mood === 'dancing' ? 1.6 : props.mood === 'tired' ? 0.7 : props.mood === 'sleeping' ? 0 : 0.9,
+              fluid: true,
+              translateX: 10,
+              translateY: 0,
+            }),
+            h(TaskinTentacleWithItem, {
+              tentacleColor: config.value.tentacleColor,
+              animationsEnabled: props.animationsEnabled && wiggleTentacles.value,
+              speed:
+                props.mood === 'dancing' ? 1.7 : props.mood === 'tired' ? 0.6 : props.mood === 'sleeping' ? 0 : 1.0,
+              fluid: true,
+              translateX: 30,
+              translateY: 0,
+            }),
+          ]),
         ]);
 
       const mascot = [
