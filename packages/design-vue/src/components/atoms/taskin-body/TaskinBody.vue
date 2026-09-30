@@ -83,7 +83,7 @@
         />
 
         <!-- O papo: murcho em repouso; a comemoracao o infla, e a fala e a lingua o reaproveitam. -->
-        <ellipse id="body-throat" cx="160" cy="112" rx="16" ry="9" fill="#fff" fill-opacity="0.72" />
+        <ellipse id="body-throat" cx="160" cy="118" rx="15" ry="8" fill="#fff" fill-opacity="0.72" />
 
         <g id="body-toes" :class="{ 'toes-tap': animationsEnabled && tapToes }">
           <g v-for="side in SIDES" :key="side" :transform="mirror(side)">
@@ -241,7 +241,7 @@ export default {
 #body-throat {
   transform: scale(0);
   transform-box: fill-box;
-  transform-origin: center;
+  transform-origin: 50% 0;
 }
 
 .body-float {

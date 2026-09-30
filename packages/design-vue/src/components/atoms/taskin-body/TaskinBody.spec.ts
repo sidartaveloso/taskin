@@ -71,7 +71,7 @@ describe('TaskinBody', () => {
       const papo = wrapper.find('#body-throat');
 
       expect(filhos.indexOf('body-throat')).toBe(filhos.indexOf('body-belly') + 1);
-      expect(papo.attributes()).toMatchObject({ cx: '160', cy: '112', rx: '16', ry: '9', fill: '#fff' });
+      expect(papo.attributes()).toMatchObject({ cx: '160', cy: '118', rx: '15', ry: '8', fill: '#fff' });
       expect(papo.attributes('fill-opacity')).toBe('0.72');
       expect(getComputedStyle(papo.element).transform).toBe('matrix(0, 0, 0, 0, 0, 0)');
       wrapper.unmount();
