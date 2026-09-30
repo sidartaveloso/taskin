@@ -431,23 +431,27 @@ const EFFORT: ActionPose = {
   eyeState: 'squint',
 };
 
-/** O despertar: o bocejo de boca em O, olhos semiabertos e os bracos esticados para o alto e para fora. */
+/**
+ * O despertar: o bocejo de boca em O, olhos semiabertos e a espreguicada, com os
+ * bracos em V para o alto e para fora. Para fora e nao sobre a cabeca: puxados
+ * para dentro, os bracos entravam no contorno do corpo e sumiam.
+ */
 const WAKE: ActionPose = {
-  leftArm: armPosition(-100, -125),
-  rightArm: armPosition(-100, -125),
+  leftArm: armPosition(-55, -70),
+  rightArm: armPosition(-55, -70),
   eyeState: 'squint',
   mouthExpression: 'o-shape',
 };
 
 /**
- * Bracos cruzados na frente da barriga, de cara virada e cenho franzido. O braco
- * do Taskin tem 50 de comprimento e o ombro fica a 65 da linha do meio (x=160):
- * a mao nao passa dela, so chega perto, e o cruzamento vem das duas maos se
- * encontrando na frente do corpo.
+ * Maos na cintura, de cara virada e cenho franzido. Os bracos cruzados nao cabiam:
+ * o braco do Taskin tem 50 de comprimento e o ombro fica a 65 da linha do meio, e
+ * sobre a barriga, na cor do corpo, eles sumiam. De cotovelos para fora, ficam a
+ * vista, e as maos voltam ate a cintura sem entrar no corpo.
  */
 const BLOCKED_TASKIN: ActionPose = {
-  leftArm: armPosition(150, 175),
-  rightArm: armPosition(150, 175),
+  leftArm: armPosition(10, 150),
+  rightArm: armPosition(10, 150),
   lookDirection: 'left',
   mouthExpression: 'frown',
 };
