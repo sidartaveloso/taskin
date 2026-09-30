@@ -16,6 +16,26 @@ function mountTaskin(overrides: Record<string, unknown> = {}) {
 
 const pares = TASKIN_VARIANTS.flatMap((variant) => TASKIN_ACTIONS.map((action) => [variant, action] as const));
 
+/** Os pontos do `d` de um braco: ombro, cotovelo (o controle da curva) e ponta. */
+function pontosDoBraco(wrapper: ReturnType<typeof mountTaskin>['wrapper'], id: string) {
+  const n = (wrapper.find(id).attributes('d') ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+  return {
+    ombro: { x: n[0] ?? 0, y: n[1] ?? 0 },
+    cotovelo: { x: n[2] ?? 0, y: n[3] ?? 0 },
+    ponta: { x: n[4] ?? 0, y: n[5] ?? 0 },
+  };
+}
+
+/** Se a ponta do braco cai dentro do contorno do corpo, no sistema do proprio `#body-main`. */
+function pontaDentroDoCorpo(wrapper: ReturnType<typeof mountTaskin>['wrapper'], id: string): boolean {
+  const braco = wrapper.find(id).element as SVGGraphicsElement;
+  const corpo = wrapper.find('#body-main').element as SVGGeometryElement;
+  const { ponta } = pontosDoBraco(wrapper, id);
+  const naTela = new DOMPoint(ponta.x, ponta.y).matrixTransform(braco.getScreenCTM() ?? undefined);
+  const noCorpo = naTela.matrixTransform(corpo.getScreenCTM()?.inverse());
+  return corpo.isPointInFill(noCorpo);
+}
+
 describe('TASKIN_ACTIONS', () => {
   it('nao repete acao', () => {
     expect(new Set(TASKIN_ACTIONS).size).toBe(TASKIN_ACTIONS.length);
@@ -536,21 +556,22 @@ describe('blocked', () => {
     wrapper.unmount();
   });
 
-  it('taskin: vira a cara para a esquerda e as maos vao para a frente da barriga', async () => {
+  it('taskin: vira a cara para a esquerda, de franzido', () => {
+    expect(ACTIONS.taskin.blocked?.pose?.lookDirection).toBe('left');
+  });
+
+  it('taskin: maos na cintura, de cotovelos para fora e pontas fora do corpo', async () => {
     const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
-    const ponta = (id: string) => {
-      const numeros = (wrapper.find(id).attributes('d') ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
-      return { x: numeros.at(-2) ?? 0, y: numeros.at(-1) ?? 0 };
-    };
-    const antes = { esq: ponta('#left-arm'), dir: ponta('#right-arm') };
     void vm.play('blocked');
     await nextTick();
-    const esq = ponta('#left-arm');
-    const dir = ponta('#right-arm');
-    expect(Math.abs(160 - esq.x)).toBeLessThan(25);
-    expect(Math.abs(dir.x - 160)).toBeLessThan(25);
-    expect(esq.x).toBeGreaterThan(antes.esq.x);
-    expect(dir.x).toBeLessThan(antes.dir.x);
+    const esq = pontosDoBraco(wrapper, '#left-arm');
+    const dir = pontosDoBraco(wrapper, '#right-arm');
+    expect(esq.ombro.x - esq.cotovelo.x).toBeGreaterThanOrEqual(15);
+    expect(dir.cotovelo.x - dir.ombro.x).toBeGreaterThanOrEqual(15);
+    expect(esq.ponta.x).toBeGreaterThan(esq.cotovelo.x);
+    expect(dir.ponta.x).toBeLessThan(dir.cotovelo.x);
+    expect(pontaDentroDoCorpo(wrapper, '#left-arm')).toBe(false);
+    expect(pontaDentroDoCorpo(wrapper, '#right-arm')).toBe(false);
     wrapper.unmount();
   });
 
@@ -657,6 +678,21 @@ describe('wake', () => {
     expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-wake`);
     expect(wrapper.find('#mouth').html()).not.toBe(boca);
     vi.useRealTimers();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: bracos em V, para o alto e para fora, com as pontas fora do corpo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wake');
+    await nextTick();
+    const esq = pontosDoBraco(wrapper, '#left-arm');
+    const dir = pontosDoBraco(wrapper, '#right-arm');
+    expect(esq.ponta.y).toBeLessThan(esq.ombro.y);
+    expect(dir.ponta.y).toBeLessThan(dir.ombro.y);
+    expect(esq.ponta.x).toBeLessThan(esq.ombro.x);
+    expect(dir.ponta.x).toBeGreaterThan(dir.ombro.x);
+    expect(pontaDentroDoCorpo(wrapper, '#left-arm')).toBe(false);
+    expect(pontaDentroDoCorpo(wrapper, '#right-arm')).toBe(false);
+    wrapper.unmount();
   });
 
   it.each(TASKIN_VARIANTS)('%s: o corpo alonga no meio da acao', async (variant) => {
