@@ -12,13 +12,15 @@ Falar dura enquanto houver fala (a voz do shhh, uma resposta lida em voz alta). 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Prop `speaking?: boolean` no `Taskin` (e em `TaskinProps`) e no `TaskinMouth`; o `TaskinWithShhh` a liga enquanto a voz do shhh toca
-- [ ] `TaskinMouth`: com `speaking`, uma classe que anima o `d` do `#mouth` entre o caminho da expressao atual e o de `open`, a ~6 vezes por segundo (CSS `d: path(...)`, como o `TaskinTentacle` ja faz). Os dois caminhos saem da mesma tabela do `mouthPath`, sem copia
-- [ ] Sapin: o `#body-throat` (da task-149) pulsa enquanto fala — `.sapin-speaking #body-throat`
-- [ ] Com `animationsEnabled=false`, a boca fica na expressao, sem alternar
-- [ ] Testes: a classe na boca so com `speaking`; o papo pulsando so no Sapin; o `TaskinWithShhh` liga e desliga durante a voz (pelo mock de voz do `ui-sense`)
-- [ ] Evidencia visual em `TASKS/assets/task-157/`: `speaking` ligado, com a boca aberta (no Sapin, o papo pulsando) — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-157/<nome>.png)`), pela receita de Notes
-- [ ] Changeset patch no `@opentask/taskin-design-vue`
+- [x] Prop `speaking?: boolean` no `Taskin` (e em `TaskinProps`) e no `TaskinMouth`; o `TaskinWithShhh` a liga enquanto a voz do shhh toca — `Taskin.ts` (prop `speaking`, repassada ao `TaskinMouth`), `Taskin.types.ts`, `TaskinMouth.types.ts`; no `TaskinWithShhh.vue`, `speaking` fica `true` do `shush` ate a promessa dele terminar (`.finally`)
+- [x] `TaskinMouth`: com `speaking`, uma classe que anima o `d` do `#mouth` entre o caminho da expressao atual e o de `open`, a ~6 vezes por segundo (CSS `d: path(...)`, como o `TaskinTentacle` ja faz). Os dois caminhos saem da mesma tabela do `mouthPath`, sem copia — o `switch` virou a tabela `MOUTH_PATHS` em `TaskinMouth.types.ts`; a classe `mouth-speaking` anima `d` entre `--mouth-rest` e `--mouth-open` (0.17s, `step-end`). Prova: `TaskinMouth.spec.ts` › falando › "alterna entre o caminho da expressao e o do open, da mesma tabela" e "roda a animacao no navegador" (le o `d` computado no inicio e no meio do ciclo)
+- [x] Sapin: o `#body-throat` (da task-149) pulsa enquanto fala — `.sapin-speaking #body-throat` — no `SAPIN_MOTION_CSS` do `Taskin.ts` (keyframes `taskin-sapin-speaking-throat`); a classe entra no `#sapin-motion`. Prova: `Taskin.actions.spec.ts` › speaking › "sapin: o papo pulsa enquanto fala, em laco"
+- [x] Com `animationsEnabled=false`, a boca fica na expressao, sem alternar — `TaskinMouth.spec.ts` › falando › "sem animacao, fica na expressao"; `Taskin.actions.spec.ts` › speaking › "%s: sem animacao, nem a boca alterna nem o papo pulsa"
+- [x] Testes: a classe na boca so com `speaking`; o papo pulsando so no Sapin; o `TaskinWithShhh` liga e desliga durante a voz (pelo mock de voz do `ui-sense`) — `TaskinMouth.spec.ts` › falando; `Taskin.actions.spec.ts` › speaking (inclui "taskin: nao tem papo, nem a classe"); `TaskinWithShhh.spec.ts` › "fala enquanto a voz do shhh toca, e para quando ela acaba" e "nao fala com o som desligado". `pnpm --filter @opentask/taskin-design-vue test`: 554 + 287 passando
+- [x] Evidencia visual em `TASKS/assets/task-157/`: `speaking` ligado, com a boca aberta (no Sapin, o papo pulsando) — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-157/<nome>.png)`), pela receita de Notes. Animacoes congeladas no meio da silaba (aberta) e no inicio (fechada):
+  - ![taskin falando, boca aberta](assets/task-157/taskin-falando.png) ![taskin falando, boca fechada no sorriso](assets/task-157/taskin-falando-fechada.png)
+  - ![sapin falando, boca aberta e papo cheio](assets/task-157/sapin-falando.png) ![sapin falando, boca fechada e papo murcho](assets/task-157/sapin-falando-fechada.png)
+- [x] Changeset patch no `@opentask/taskin-design-vue` — `.changeset/o-mascote-fala.md`
 
 ## Notes
 ### Contexto da rodada

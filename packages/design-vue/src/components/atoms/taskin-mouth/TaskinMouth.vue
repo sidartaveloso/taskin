@@ -1,13 +1,11 @@
 <template>
   <path
     id="mouth"
+    :class="{ 'mouth-speaking': speakingStyle !== undefined }"
+    :style="speakingStyle"
     :d="mouthPath"
     :transform="mouthTransform(props.variant)"
-    :fill="
-      ['open', 'wide-open', 'o-shape', 'surprised', 'panting'].includes(props.expression)
-        ? MOUTH_INK[props.variant]
-        : 'none'
-    "
+    :fill="mouthFill(props.expression)"
     :stroke="MOUTH_INK[props.variant]"
     stroke-width="3"
     stroke-linecap="round"
@@ -31,49 +29,42 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
-import { MOUTH_INK, type MouthExpression, mouthTransform } from './TaskinMouth.types';
+import { FILLED_MOUTHS, MOUTH_INK, MOUTH_PATHS, type MouthExpression, mouthTransform } from './TaskinMouth.types';
 
 export interface Props {
   expression?: MouthExpression;
   animationsEnabled?: boolean;
   variant?: TaskinVariant;
+  speaking?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   expression: 'neutral',
   animationsEnabled: true,
   variant: 'taskin',
+  speaking: false,
 });
 
-const mouthPath = computed(() => {
-  switch (props.expression) {
-    case 'smile':
-      return 'M145 125 Q160 133 175 125';
-    case 'frown':
-      return 'M145 125 Q160 118 175 125';
-    case 'open':
-      // Forma oval pequena para boca aberta
-      return 'M152 122 Q160 128 168 122 Q160 126 152 122 Z';
-    case 'wide-open':
-      // Boca totalmente escancarada (oval muito maior)
-      return 'M140 115 Q160 145 180 115 Q160 142 140 115 Z';
-    case 'o-shape':
-      // Formato O (círculo perfeito pequeno)
-      return 'M154 122 Q154 119 160 119 Q166 119 166 122 Q166 128 160 128 Q154 128 154 122 Z';
-    case 'smirk':
-      // Sorriso assimétrico de lado (mais alto à direita)
-      return 'M145 127 Q155 130 165 127 Q170 124 175 122';
-    case 'surprised':
-      // Surpresa (O alongado vertical - maior que o-shape)
-      return 'M155 118 Q152 118 152 125 Q152 132 155 132 Q165 132 165 125 Q165 118 155 118 Z';
-    case 'panting':
-      // Ofegante: aberta e redonda, com os cantos caidos — nao o sorriso
-      // escancarado do `wide-open`, que no calor parecia contentamento.
-      return 'M143 124 Q160 112 177 124 Q176 139 160 140 Q144 139 143 124 Z';
-    default:
-      return 'M145 125 Q160 130 175 125';
-  }
-});
+const mouthPath = computed(() => MOUTH_PATHS[props.expression] ?? MOUTH_PATHS.neutral);
+
+const mouthFill = (expression: MouthExpression) =>
+  FILLED_MOUTHS.includes(expression) ? MOUTH_INK[props.variant] : 'none';
+
+/**
+ * A fala anima o `d` pelo CSS, como o tentaculo: os dois caminhos entram como
+ * variaveis e a animacao so troca entre eles. Sem animacao, nada entra, e a
+ * boca fica na expressao.
+ */
+const speakingStyle = computed(() =>
+  props.speaking && props.animationsEnabled
+    ? {
+        '--mouth-rest': `path("${mouthPath.value}")`,
+        '--mouth-rest-fill': mouthFill(props.expression),
+        '--mouth-open': `path("${MOUTH_PATHS.open}")`,
+        '--mouth-open-fill': MOUTH_INK[props.variant],
+      }
+    : undefined,
+);
 </script>
 
 <script lang="ts">
@@ -83,6 +74,23 @@ export default {
 </script>
 
 <style scoped>
+/* Uma silaba a cada ~170ms: fecha na expressao, abre, e volta. */
+.mouth-speaking {
+  animation: mouth-speak 0.17s step-end infinite;
+}
+
+@keyframes mouth-speak {
+  0%,
+  100% {
+    d: var(--mouth-rest);
+    fill: var(--mouth-rest-fill);
+  }
+  50% {
+    d: var(--mouth-open);
+    fill: var(--mouth-open-fill);
+  }
+}
+
 .tongue-pant {
   animation: tongue-pant 0.4s ease-in-out infinite;
 }

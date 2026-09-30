@@ -54,6 +54,13 @@ export interface TaskinProps {
   listening?: boolean;
 
   /**
+   * Speech is playing (the shhh voice, an answer read aloud): the mouth
+   * alternates between the current expression and open, and the Sapin's throat
+   * pulses with each syllable. Off with `animationsEnabled=false`.
+   */
+  speaking?: boolean;
+
+  /**
    * Eye tracking mode configuration
    */
   eyeTrackingMode?: TaskinEyesProps['trackingMode'];
