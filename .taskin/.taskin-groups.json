@@ -11,6 +11,25 @@
     "antes-da-5": {
       "id": "antes-da-5",
       "name": "Antes da 5.0.0"
+    },
+    "movimentos-do-mascote": {
+      "id": "movimentos-do-mascote",
+      "name": "Movimentos do mascote"
+    },
+    "movimentos-lote-1": {
+      "id": "movimentos-lote-1",
+      "name": "Movimentos, lote 1: a base e os gestos",
+      "parentId": "movimentos-do-mascote"
+    },
+    "movimentos-lote-2": {
+      "id": "movimentos-lote-2",
+      "name": "Movimentos, lote 2: os estados do trabalho",
+      "parentId": "movimentos-do-mascote"
+    },
+    "movimentos-lote-3": {
+      "id": "movimentos-lote-3",
+      "name": "Movimentos, lote 3: voz, mapa e assinaturas",
+      "parentId": "movimentos-do-mascote"
     }
   }
 }
