@@ -709,3 +709,73 @@ describe('wake', () => {
     wrapper.unmount();
   });
 });
+
+describe('listening', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: sem listening, nem a classe nem os olhos arregalados', (variant) => {
+    const arregalados = mountTaskin({ variant, eyeState: 'wide' }).wrapper.find('#left-eye').html();
+    const { wrapper } = mountTaskin({ variant });
+    expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-listening`);
+    expect(wrapper.find('#left-eye').html()).not.toBe(arregalados);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: ouvindo, a classe em laco ganha do humor e os olhos arregalam', (variant) => {
+    const arregalados = mountTaskin({ variant, eyeState: 'wide' }).wrapper.find('#left-eye').html();
+    const { wrapper } = mountTaskin({ variant, mood: 'dancing', listening: true });
+    expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`, `${variant}-listening`]);
+    expect(wrapper.find('#left-eye').html()).toBe(arregalados);
+
+    const animacoes = wrapper.find(`#${variant}-motion`).element.getAnimations() as CSSAnimation[];
+    expect(animacoes.map((animacao) => animacao.animationName)).toEqual([`taskin-${variant}-listening`]);
+    expect(animacoes[0]?.effect?.getTiming().iterations).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it('taskin: o braco direito dobra e a mao sobe para junto da cabeca', () => {
+    const parado = pontosDoBraco(mountTaskin().wrapper, '#right-arm');
+    const ouvindo = pontosDoBraco(mountTaskin({ listening: true }).wrapper, '#right-arm');
+    expect(ouvindo.ponta.y).toBeLessThan(parado.ponta.y - 30);
+    expect(ouvindo.ponta.x).toBeLessThan(ouvindo.ombro.x);
+  });
+
+  it('sapin: so os olhos, o braco fica como estava', () => {
+    const parado = mountTaskin({ variant: 'sapin' }).wrapper.find('#right-arm').attributes('d');
+    const ouvindo = mountTaskin({ variant: 'sapin', listening: true }).wrapper.find('#right-arm').attributes('d');
+    expect(ouvindo).toBe(parado);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: sem animacao fica so a pose, sem laco', (variant) => {
+    const arregalados = mountTaskin({ variant, eyeState: 'wide', animationsEnabled: false })
+      .wrapper.find('#left-eye')
+      .html();
+    const { wrapper } = mountTaskin({ variant, listening: true, animationsEnabled: false });
+    expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`]);
+    expect(wrapper.find('#left-eye').html()).toBe(arregalados);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: uma acao por cima ganha, e no fim a escuta volta', async (variant) => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin({ variant, listening: true });
+    const grupo = () => wrapper.find(`#${variant}-motion`);
+    const ouvindo = wrapper.find('#right-arm').attributes('d');
+
+    const fim = vm.play('wave');
+    await nextTick();
+    expect(grupo().classes()).toEqual([`${variant}-motion`, ACTIONS[variant].wave?.className]);
+
+    vi.advanceTimersByTime(ACTIONS[variant].wave?.durationMs ?? 0);
+    await expect(fim).resolves.toBe(true);
+    await nextTick();
+    expect(grupo().classes()).toEqual([`${variant}-motion`, `${variant}-listening`]);
+    expect(wrapper.find('#right-arm').attributes('d')).toBe(ouvindo);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: desligar a escuta devolve o humor', async (variant) => {
+    const { wrapper } = mountTaskin({ variant, mood: 'dancing', listening: true });
+    await wrapper.setProps({ listening: false });
+    expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-listening`);
+  });
+});

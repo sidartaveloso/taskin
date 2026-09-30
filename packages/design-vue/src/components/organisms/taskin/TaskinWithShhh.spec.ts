@@ -150,4 +150,9 @@ describe('TaskinWithShhh', () => {
 
     expect(shhhVoiceMock.shush).toHaveBeenCalledWith(expect.objectContaining({ name: 'Bruno' }));
   });
+
+  it('repassa listening ao mascote', () => {
+    const wrapper = mount(TaskinWithShhh, { props: { listening: true } });
+    expect(wrapper.findComponent({ name: 'Taskin' }).props('listening')).toBe(true);
+  });
 });

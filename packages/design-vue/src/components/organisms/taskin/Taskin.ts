@@ -207,6 +207,11 @@ const TASKIN_MOTION_CSS = `
     10%, 40%, 70% { transform: rotate(-15deg); }
     25%, 55%, 85% { transform: rotate(15deg); }
   }
+  .taskin-listening { animation: taskin-taskin-listening 3.2s ease-in-out infinite; }
+  @keyframes taskin-taskin-listening {
+    0%, 100% { transform: rotate(6deg) scale(1, 1); }
+    50% { transform: rotate(6deg) scale(1.015, 1.015); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .taskin-motion { animation-name: none !important; }
     .taskin-motion #right-arm { animation-name: none !important; }
@@ -345,6 +350,11 @@ const SAPIN_MOTION_CSS = `
     0%, 100% { transform: rotate(0deg); }
     10%, 40%, 70% { transform: rotate(-15deg); }
     25%, 55%, 85% { transform: rotate(15deg); }
+  }
+  .sapin-listening { animation: taskin-sapin-listening 3.2s ease-in-out infinite; }
+  @keyframes taskin-sapin-listening {
+    0%, 100% { transform: rotate(6deg) scale(1, 1); }
+    50% { transform: rotate(6deg) scale(1.02, 1.02); }
   }
   @media (prefers-reduced-motion: reduce) {
     .sapin-motion { animation-name: none !important; }
@@ -488,6 +498,17 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     effort: { className: 'sapin-effort', durationMs: 2000, pose: EFFORT },
     wake: { className: 'sapin-wake', durationMs: 2000, pose: WAKE },
   },
+};
+
+/**
+ * A escuta, enquanto o microfone esta ligado: nao e acao de uma vez so, e dura o
+ * quanto durar a prop `listening`. Perde para a acao que estiver rodando e ganha
+ * do humor. O Taskin leva a mao direita para junto da cabeca, como quem apura o
+ * ouvido; os dois arregalam os olhos. A inclinacao e a respiracao sao do CSS.
+ */
+const LISTENING: Record<TaskinVariant, ActionPose> = {
+  taskin: { rightArm: armPosition(-50, -140), eyeState: 'wide' },
+  sapin: { eyeState: 'wide' },
 };
 
 /** A acao que esta rodando, com o que e preciso para encerra-la. */
@@ -832,6 +853,11 @@ export default defineComponent({
       type: String,
       default: undefined,
     },
+    /** O microfone esta ligado: o mascote fica na pose de escuta enquanto for `true`. */
+    listening: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: {
     'action-start': (_action: TaskinAction) => true,
@@ -929,7 +955,7 @@ export default defineComponent({
     return () => {
       const sapin = props.variant === 'sapin';
       const variant = props.variant;
-      const pose = running.value?.config.pose ?? {};
+      const pose = running.value ? (running.value.config.pose ?? {}) : props.listening ? LISTENING[variant] : {};
 
       // Shadow
       const shadow = h('ellipse', {
@@ -1068,8 +1094,9 @@ export default defineComponent({
       ].filter(Boolean);
 
       const { byMood, css } = MOTIONS[variant];
-      // A acao, enquanto roda, toma o lugar do movimento do humor.
-      const motion = props.animationsEnabled ? (running.value?.config.className ?? byMood[props.mood]) : undefined;
+      // A acao, enquanto roda, toma o lugar da escuta, e a escuta o do humor.
+      const idle = props.listening ? `${variant}-listening` : byMood[props.mood];
+      const motion = props.animationsEnabled ? (running.value?.config.className ?? idle) : undefined;
       const components = [
         shadow,
         h('g', { id: `${variant}-motion`, class: [`${variant}-motion`, motion] }, mascot),

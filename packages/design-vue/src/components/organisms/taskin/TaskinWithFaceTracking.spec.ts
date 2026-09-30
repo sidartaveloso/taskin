@@ -84,4 +84,9 @@ describe('TaskinWithFaceTracking', () => {
     await wrapper.find('[data-testid="mock-toggle-tracking"]').trigger('click');
     expect(face.stopDetection).toHaveBeenCalled();
   });
+
+  it('repassa listening ao mascote', () => {
+    const wrapper = mount(TaskinWithFaceTracking, { props: { listening: true } });
+    expect(wrapper.findComponent({ name: 'Taskin' }).props('listening')).toBe(true);
+  });
 });

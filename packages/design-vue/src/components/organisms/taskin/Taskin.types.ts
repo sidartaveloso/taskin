@@ -48,6 +48,12 @@ export interface TaskinProps {
   animationsEnabled?: boolean;
 
   /**
+   * The microphone is on: while true the mascot holds a listening pose (tilted,
+   * wide-eyed; Taskin cups the right hand by the head). A running action wins over it.
+   */
+  listening?: boolean;
+
+  /**
    * Eye tracking mode configuration
    */
   eyeTrackingMode?: TaskinEyesProps['trackingMode'];

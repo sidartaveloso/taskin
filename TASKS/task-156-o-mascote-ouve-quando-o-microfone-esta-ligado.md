@@ -12,12 +12,19 @@ Ouvir nao e acao de uma vez so: dura enquanto o microfone estiver ligado. A prop
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Prop `listening?: boolean` no `Taskin` (e em `TaskinProps`), repassada pelo `TaskinWithShhh` e pelo `TaskinWithFaceTracking`
-- [ ] Enquanto `true`: uma pose que perde para a acao que estiver rodando e ganha do humor — Taskin com o braco direito dobrado, a mao junto da cabeca; os dois com `eyeState: 'wide'` — e uma classe em laco no grupo (`*-listening`: inclina 6deg e respira devagar)
-- [ ] Com `animationsEnabled=false`, fica so a pose, sem laco
-- [ ] Testes: a pose e a classe so com `listening`; uma acao por cima ganha, e no fim a escuta volta; os wrappers repassam
-- [ ] Evidencia visual em `TASKS/assets/task-156/`: `listening` ligado — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-156/<nome>.png)`), pela receita de Notes
-- [ ] Changeset patch no `@opentask/taskin-design-vue`
+- [x] Prop `listening?: boolean` no `Taskin` (e em `TaskinProps`), repassada pelo `TaskinWithShhh` e pelo `TaskinWithFaceTracking`
+  - Prova: prop em `packages/design-vue/src/components/organisms/taskin/Taskin.ts` (`listening`), tipo em `Taskin.types.ts`, `:listening` nos dois wrappers; testes `repassa listening ao mascote` em `TaskinWithShhh.spec.ts` e `TaskinWithFaceTracking.spec.ts`.
+- [x] Enquanto `true`: uma pose que perde para a acao que estiver rodando e ganha do humor — Taskin com o braco direito dobrado, a mao junto da cabeca; os dois com `eyeState: 'wide'` — e uma classe em laco no grupo (`*-listening`: inclina 6deg e respira devagar)
+  - Prova: `LISTENING` e as classes `taskin-listening`/`sapin-listening` em `packages/design-vue/src/components/organisms/taskin/Taskin.ts` (a pose so vale sem acao rodando; props explicitas ainda mandam). Testes `listening > %s: ouvindo, a classe em laco ganha do humor e os olhos arregalam` e `taskin: o braco direito dobra e a mao sobe para junto da cabeca` em `Taskin.actions.spec.ts`.
+- [x] Com `animationsEnabled=false`, fica so a pose, sem laco
+  - Prova: teste `listening > %s: sem animacao fica so a pose, sem laco`.
+- [x] Testes: a pose e a classe so com `listening`; uma acao por cima ganha, e no fim a escuta volta; os wrappers repassam
+  - Prova: `describe('listening')` em `Taskin.actions.spec.ts` (inclui `uma acao por cima ganha, e no fim a escuta volta` e `desligar a escuta devolve o humor`); `pnpm --filter @opentask/taskin-design-vue test` passa. Nota: os wrappers mandam `eyeState` explicito (do rastreio facial), que ganha dos olhos arregalados da escuta — o contrato de sempre das props explicitas.
+- [x] Evidencia visual em `TASKS/assets/task-156/`: `listening` ligado — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-156/<nome>.png)`), pela receita de Notes
+  - ![taskin ouvindo: inclinado, olhos arregalados, mao direita junto da cabeca](assets/task-156/taskin-listening.png)
+  - ![sapin ouvindo: inclinado, olhos arregalados](assets/task-156/sapin-listening.png)
+- [x] Changeset patch no `@opentask/taskin-design-vue`
+  - Prova: `.changeset/o-mascote-ouve.md`.
 
 ## Notes
 ### Contexto da rodada
