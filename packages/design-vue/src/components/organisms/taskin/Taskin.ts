@@ -1,5 +1,5 @@
 import { computed, defineComponent, h, onMounted, onUnmounted, type PropType, ref } from 'vue';
-import type { ArmPosition } from '../../atoms/taskin-arms/TaskinArms.types';
+import { type ArmPosition, armPosition } from '../../atoms/taskin-arms/TaskinArms.types';
 import TaskinArms from '../../atoms/taskin-arms/TaskinArms.vue';
 import TaskinBody from '../../atoms/taskin-body/TaskinBody.vue';
 import type { EyeState } from '../../atoms/taskin-eyes/TaskinEyes.types';
@@ -86,6 +86,7 @@ const TASKIN_MOTION_CSS = `
   .taskin-pant { animation: taskin-taskin-pant 0.4s ease-in-out infinite; }
   .taskin-nod { animation: taskin-taskin-nod 0.7s ease-in-out; animation-iteration-count: 1; }
   .taskin-shake { animation: taskin-taskin-shake 0.7s ease-in-out; animation-iteration-count: 1; }
+  .taskin-celebrate { animation: taskin-taskin-celebrate 1.2s ease-in-out; animation-iteration-count: 1; }
   @keyframes taskin-taskin-dance {
     0%, 50%, 100% { transform: translate(0, 0) rotate(0deg); }
     25% { transform: translate(-5px, -3px) rotate(-5deg); }
@@ -118,6 +119,13 @@ const TASKIN_MOTION_CSS = `
     8%, 42%, 75% { transform: rotate(-8deg); }
     25%, 58%, 92% { transform: rotate(8deg); }
   }
+  @keyframes taskin-taskin-celebrate {
+    0%, 100% { transform: translateY(0) rotate(0deg) scale(1, 1); }
+    15% { transform: translateY(4px) rotate(0deg) scale(1.03, 0.95); }
+    40% { transform: translateY(-18px) rotate(-12deg) scale(0.98, 1.03); }
+    70% { transform: translateY(-6px) rotate(6deg) scale(1, 1); }
+    85% { transform: translateY(2px) rotate(0deg) scale(1.03, 0.96); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .taskin-motion { animation-name: none !important; }
   }
@@ -147,6 +155,8 @@ const SAPIN_MOTION_CSS = `
   .sapin-pant { animation: taskin-sapin-pant 0.5s ease-in-out infinite; }
   .sapin-nod { animation: taskin-sapin-nod 0.7s ease-in-out; animation-iteration-count: 1; }
   .sapin-shake { animation: taskin-sapin-shake 0.7s ease-in-out; animation-iteration-count: 1; }
+  .sapin-celebrate { animation: taskin-sapin-celebrate 1.2s ease-in-out; animation-iteration-count: 1; }
+  .sapin-celebrate #body-throat { animation: taskin-sapin-throat 1.2s ease-in-out; animation-iteration-count: 1; }
   @keyframes taskin-sapin-hop {
     0%, 100% { transform: translateY(0) scale(1.04, 0.96); }
     15%, 85% { transform: translateY(0) scale(1, 1); }
@@ -179,8 +189,19 @@ const SAPIN_MOTION_CSS = `
     8%, 42%, 75% { transform: rotate(-6deg); }
     25%, 58%, 92% { transform: rotate(6deg); }
   }
+  @keyframes taskin-sapin-celebrate {
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    20% { transform: translateY(0) scale(1.06, 0.92); }
+    45%, 55% { transform: translateY(-24px) scale(0.97, 1.04); }
+    80% { transform: translateY(0) scale(1.06, 0.92); }
+  }
+  @keyframes taskin-sapin-throat {
+    0%, 30%, 80%, 100% { transform: scale(0); }
+    45%, 55% { transform: scale(1); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .sapin-motion { animation-name: none !important; }
+    .sapin-motion #body-throat { animation-name: none !important; }
   }
 `;
 
@@ -213,6 +234,13 @@ interface ActionConfig {
   pose?: ActionPose;
 }
 
+/** Os dois bracos para o alto, sorrindo: a comemoracao. */
+const celebratePose = (shoulder: number, forearm: number): ActionPose => ({
+  leftArm: armPosition(shoulder, forearm),
+  rightArm: armPosition(shoulder, forearm),
+  mouthExpression: 'smile',
+});
+
 /**
  * As acoes de cada variante. A que falta numa variante resolve `false` na hora:
  * e o que deixa uma acao existir so num dos bichos.
@@ -221,10 +249,12 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
   taskin: {
     nod: { className: 'taskin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
     shake: { className: 'taskin-shake', durationMs: 700, pose: { mouthExpression: 'frown' } },
+    celebrate: { className: 'taskin-celebrate', durationMs: 1200, pose: celebratePose(-70, -100) },
   },
   sapin: {
     nod: { className: 'sapin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
     shake: { className: 'sapin-shake', durationMs: 700, pose: { mouthExpression: 'frown' } },
+    celebrate: { className: 'sapin-celebrate', durationMs: 1200, pose: celebratePose(-60, -100) },
   },
 };
 

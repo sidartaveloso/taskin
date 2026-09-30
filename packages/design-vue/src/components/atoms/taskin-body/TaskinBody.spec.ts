@@ -34,8 +34,8 @@ describe('TaskinBody', () => {
   });
 
   describe('variante sapin', () => {
-    const mountSapin = (props: Record<string, unknown> = {}) =>
-      mount(TaskinBody, { props: { variant: 'sapin', bodyColor: '#4DB848', ...props } });
+    const mountSapin = (props: Record<string, unknown> = {}, options: { attachTo?: Element } = {}) =>
+      mount(TaskinBody, { props: { variant: 'sapin', bodyColor: '#4DB848', ...props }, ...options });
 
     it('desenha coxas, corpo, calombos dos olhos, barriga e seis dedos', () => {
       const wrapper = mountSapin();
@@ -63,6 +63,18 @@ describe('TaskinBody', () => {
       expect(wrapper.find('#body-eye-bumps circle').attributes('fill')).toBe('#FFD700');
       expect(wrapper.find('#body-toes .toe').attributes('fill')).toBe('#FFD700');
       expect(wrapper.find('#body-belly').attributes('fill')).toBe('#fff');
+    });
+
+    it('desenha o papo depois da barriga, sob a boca, murcho em repouso', () => {
+      const wrapper = mountSapin({}, { attachTo: document.body });
+      const filhos = wrapper.findAll('#body-sapin > *').map((n) => n.attributes('id'));
+      const papo = wrapper.find('#body-throat');
+
+      expect(filhos.indexOf('body-throat')).toBe(filhos.indexOf('body-belly') + 1);
+      expect(papo.attributes()).toMatchObject({ cx: '160', cy: '112', rx: '16', ry: '9', fill: '#fff' });
+      expect(papo.attributes('fill-opacity')).toBe('0.72');
+      expect(getComputedStyle(papo.element).transform).toBe('matrix(0, 0, 0, 0, 0, 0)');
+      wrapper.unmount();
     });
 
     it('bate os dedos quando pedido, e so com animacao ligada', () => {

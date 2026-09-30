@@ -82,6 +82,9 @@
           fill-opacity="0.72"
         />
 
+        <!-- O papo: murcho em repouso; a comemoracao o infla, e a fala e a lingua o reaproveitam. -->
+        <ellipse id="body-throat" cx="160" cy="112" rx="16" ry="9" fill="#fff" fill-opacity="0.72" />
+
         <g id="body-toes" :class="{ 'toes-tap': animationsEnabled && tapToes }">
           <g v-for="side in SIDES" :key="side" :transform="mirror(side)">
             <path :d="SAPIN_PALM" :fill="bodyColor" />
@@ -235,6 +238,12 @@ export default {
 </script>
 
 <style scoped>
+#body-throat {
+  transform: scale(0);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
 .body-float {
   animation: float 3s ease-in-out infinite;
 }

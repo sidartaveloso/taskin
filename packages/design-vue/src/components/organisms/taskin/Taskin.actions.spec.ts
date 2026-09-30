@@ -170,3 +170,83 @@ describe('Taskin.play', () => {
     expect(doGrupo?.style.getPropertyPriority('animation-name')).toBe('important');
   });
 });
+
+describe('celebrate', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  /** A escala horizontal de um `transform` computado, `none` contando como 1. */
+  const escala = (el: Element) => {
+    const transform = getComputedStyle(el).transform;
+    return transform === 'none' ? 1 : new DOMMatrix(transform).a;
+  };
+
+  /** O `y` do ombro e o do punho, lidos do `d` do braco: `M x y Q ... x y`. */
+  const alturas = (d: string | undefined) => {
+    const numeros = (d ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+    return { ombro: numeros[1] ?? Number.NaN, punho: numeros[numeros.length - 1] ?? Number.NaN };
+  };
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,2s', (variant) => {
+    expect(ACTIONS[variant].celebrate?.durationMs).toBe(1200);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a pose ergue os dois bracos acima dos ombros', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    for (const lado of ['left', 'right']) {
+      const { ombro, punho } = alturas(wrapper.find(`#${lado}-arm`).attributes('d'));
+      expect(punho).toBeGreaterThan(ombro);
+    }
+
+    void vm.play('celebrate');
+    await nextTick();
+    for (const lado of ['left', 'right']) {
+      const { ombro, punho } = alturas(wrapper.find(`#${lado}-arm`).attributes('d'));
+      expect(punho).toBeLessThan(ombro - 40);
+    }
+    wrapper.unmount();
+  });
+
+  it('o papo e so do Sapin', () => {
+    expect(mountTaskin({ variant: 'taskin' }).wrapper.find('#body-throat').exists()).toBe(false);
+    expect(mountTaskin({ variant: 'sapin' }).wrapper.find('#body-throat').exists()).toBe(true);
+  });
+
+  it('o papo fica murcho fora da acao e infla no topo do pulo', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const papo = wrapper.find('#body-throat').element;
+    expect(escala(papo)).toBe(0);
+
+    void vm.play('celebrate');
+    await nextTick();
+    const [animacao] = papo.getAnimations();
+    expect((animacao as CSSAnimation | undefined)?.animationName).toBe('taskin-sapin-throat');
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 600;
+    expect(escala(papo)).toBeGreaterThan(0.9);
+
+    const [pulo] = wrapper.find('#sapin-motion').element.getAnimations();
+    pulo?.pause();
+    if (pulo) pulo.currentTime = 600;
+    expect(new DOMMatrix(getComputedStyle(wrapper.find('#sapin-motion').element).transform).f).toBeCloseTo(-24, 0);
+    wrapper.unmount();
+  });
+
+  it('o Taskin gira no maximo 12 graus', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    void vm.play('celebrate');
+    await nextTick();
+    const grupo = wrapper.find('#taskin-motion').element;
+    const [animacao] = grupo.getAnimations();
+    animacao?.pause();
+    const graus = [0, 200, 400, 480, 600, 840, 1000, 1200].map((t) => {
+      if (animacao) animacao.currentTime = t;
+      const m = new DOMMatrix(getComputedStyle(grupo).transform);
+      return Math.abs((Math.atan2(m.b, m.a) * 180) / Math.PI);
+    });
+    expect(Math.max(...graus)).toBeGreaterThan(10);
+    expect(Math.max(...graus)).toBeLessThanOrEqual(12.5);
+    wrapper.unmount();
+  });
+});
