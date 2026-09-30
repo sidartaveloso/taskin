@@ -1,6 +1,6 @@
 # 🧩 Task 147 — O sandcastle roda os testes de navegador e cada rodada le so o contexto da sua task
 
-- Status: in-progress
+- Status: done
 - Type: chore
 - Assignee: sidartaveloso
 - Group: movimentos-do-mascote
