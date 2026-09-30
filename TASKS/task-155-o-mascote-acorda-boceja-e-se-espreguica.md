@@ -12,12 +12,12 @@ A acao `wake`, para a volta depois de um tempo parado (o `sleeping` ja existe): 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `wake` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~2s
-- [ ] A acao em tres tempos no CSS, com a `pose` do meio: olhos `closed` -> `squint` (a pose fica em `squint`; o piscar do ocioso nao atrapalha), boca `o-shape` (o bocejo), bracos para o alto e para fora; o corpo alonga (escala 0,97 x 1,06) e volta
-- [ ] Se a pose precisar mudar no meio da acao, `pose` passa a aceitar uma lista de etapas com tempo (`{ atMs, ...pose }`) — so se precisar; o teste prova a troca
-- [ ] Testes: a boca em `o-shape` durante a acao e de volta ao humor no fim; o alongamento no meio (animacao congelada)
-- [ ] Evidencia visual em `TASKS/assets/task-155/`: `wake` no meio do bocejo, de bracos para o alto — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-155/<nome>.png)`), pela receita de Notes
-- [ ] Changeset patch no `@opentask/taskin-design-vue`
+- [x] `wake` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~2s — prova: `Taskin.actions.spec.ts` › wake (durationMs 2000 nas duas variantes)
+- [x] A acao em tres tempos no CSS, com a `pose` do meio: olhos `closed` -> `squint` (a pose fica em `squint`; o piscar do ocioso nao atrapalha), boca `o-shape` (o bocejo), bracos para o alto e para fora; o corpo alonga (escala 0,97 x 1,06) e volta — `WAKE` e `.taskin-wake`/`.sapin-wake` em `Taskin.ts` (bracos -100/-125, squint, o-shape, escala 0,97x1,06)
+- [x] Se a pose precisar mudar no meio da acao, `pose` passa a aceitar uma lista de etapas com tempo (`{ atMs, ...pose }`) — so se precisar; o teste prova a troca — nao precisou: a pose fica estatica em `squint`; `pose` nao mudou
+- [x] Testes: a boca em `o-shape` durante a acao e de volta ao humor no fim; o alongamento no meio (animacao congelada) — `wake: a boca boceja durante a acao e volta ao humor no fim` e `o corpo alonga no meio da acao`
+- [x] Evidencia visual em `TASKS/assets/task-155/`: `wake` no meio do bocejo, de bracos para o alto — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-155/<nome>.png)`), pela receita de Notes — ![taskin wake](assets/task-155/taskin-wake.png) ![sapin wake](assets/task-155/sapin-wake.png)
+- [x] Changeset patch no `@opentask/taskin-design-vue` — `.changeset/o-mascote-acorda.md`
 
 ## Notes
 ### Contexto da rodada

@@ -630,3 +630,46 @@ describe('effort', () => {
     }
   });
 });
+
+describe('wake', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 2s, de olhos semiabertos e bracos para o alto', (variant) => {
+    const config = ACTIONS[variant].wake;
+    expect(config?.durationMs).toBe(2000);
+    expect(config?.pose?.eyeState).toBe('squint');
+    expect(config?.pose?.leftArm).toBeDefined();
+    expect(config?.pose?.rightArm).toBeDefined();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a boca boceja durante a acao e volta ao humor no fim', async (variant) => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wake');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-wake`);
+    expect(ACTIONS[variant].wake?.pose?.mouthExpression).toBe('o-shape');
+    const boca = wrapper.find('#mouth').html();
+    vi.advanceTimersByTime(2000);
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-wake`);
+    expect(wrapper.find('#mouth').html()).not.toBe(boca);
+    vi.useRealTimers();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o corpo alonga no meio da acao', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wake');
+    await nextTick();
+    const el = wrapper.find(`#${variant}-motion`).element as HTMLElement;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 1000;
+    const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+    expect(m.a).toBeCloseTo(0.97, 2);
+    expect(m.d).toBeCloseTo(1.06, 2);
+    wrapper.unmount();
+  });
+});
