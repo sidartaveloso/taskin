@@ -1,6 +1,6 @@
 # 🧩 Task 150 — O mascote aponta para cima e para baixo
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-lote-1
