@@ -255,3 +255,30 @@ describe('Taskin', () => {
     });
   });
 });
+
+describe('Taskin juggling', () => {
+  it.each([1, 2, 3] as const)('o polvo faz malabarismo com %i bolinha(s)', (juggling) => {
+    const wrapper = mountTaskin({ juggling });
+    expect(wrapper.findAll('#effect-juggle circle')).toHaveLength(juggling);
+    expect(wrapper.find('#taskin-motion').classes()).toContain('taskin-juggling');
+  });
+
+  it('nada com 0', () => {
+    const wrapper = mountTaskin({ juggling: 0 });
+    expect(wrapper.find('#effect-juggle').exists()).toBe(false);
+    expect(wrapper.find('#taskin-motion').classes()).not.toContain('taskin-juggling');
+  });
+
+  it('o Sapin ignora', () => {
+    const wrapper = mountTaskin({ variant: 'sapin', juggling: 3 });
+    expect(wrapper.find('#effect-juggle').exists()).toBe(false);
+    expect(wrapper.find('#sapin-motion').classes()).not.toContain('taskin-juggling');
+  });
+
+  it('sem animacao, as bolinhas ficam no ar e os bracos parados', () => {
+    const wrapper = mountTaskin({ juggling: 2, animationsEnabled: false });
+    expect(wrapper.findAll('#effect-juggle circle')).toHaveLength(2);
+    expect(wrapper.find('#effect-juggle animateMotion').exists()).toBe(false);
+    expect(wrapper.find('#taskin-motion').classes()).not.toContain('taskin-juggling');
+  });
+});

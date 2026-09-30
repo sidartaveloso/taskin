@@ -34,6 +34,7 @@ export * from './components/molecules/taskin-arm-with-phone';
 export * from './components/molecules/taskin-effect-fart-cloud';
 export * from './components/molecules/taskin-effect-fly';
 export * from './components/molecules/taskin-effect-hearts';
+export * from './components/molecules/taskin-effect-juggle';
 export * from './components/molecules/taskin-effect-phone';
 export * from './components/molecules/taskin-effect-sweat';
 export * from './components/molecules/taskin-effect-tears';

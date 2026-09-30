@@ -61,6 +61,14 @@ export interface TaskinProps {
   speaking?: boolean;
 
   /**
+   * Too many tasks in progress: the octopus juggles, one ball per task over the
+   * limit. Lasts while the prop does. Only the `taskin` variant draws it; the
+   * Sapin ignores it. With `animationsEnabled=false` the balls hold still at the
+   * top of the arc.
+   */
+  juggling?: 0 | 1 | 2 | 3;
+
+  /**
    * Eye tracking mode configuration
    */
   eyeTrackingMode?: TaskinEyesProps['trackingMode'];
