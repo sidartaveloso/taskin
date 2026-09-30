@@ -10,6 +10,8 @@ import TaskinArmWithPhone from '../../molecules/taskin-arm-with-phone/TaskinArmW
 import TaskinEffectFartCloud from '../../molecules/taskin-effect-fart-cloud/TaskinEffectFartCloud';
 import TaskinEffectFly, { FLY_STOP } from '../../molecules/taskin-effect-fly/TaskinEffectFly';
 import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/TaskinEffectHearts';
+import TaskinEffectJuggle from '../../molecules/taskin-effect-juggle/TaskinEffectJuggle';
+import type { JuggleBalls } from '../../molecules/taskin-effect-juggle/TaskinEffectJuggle.types';
 import TaskinEffectSweat from '../../molecules/taskin-effect-sweat/TaskinEffectSweat';
 import TaskinEffectTears from '../../molecules/taskin-effect-tears/TaskinEffectTears';
 import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/TaskinEffectThoughtBubble';
@@ -91,6 +93,18 @@ const TASKIN_MOTION_CSS = `
   .taskin-celebrate { animation: taskin-taskin-celebrate 1.2s ease-in-out; animation-iteration-count: 1; }
   .taskin-point-up { animation: taskin-taskin-point-up 0.9s ease-in-out; animation-iteration-count: 1; }
   .taskin-point-down { animation: taskin-taskin-point-down 0.9s ease-in-out; animation-iteration-count: 1; }
+  .taskin-juggling #left-arm,
+  .taskin-juggling #right-arm { transform-box: view-box; animation: taskin-taskin-juggle-arm-left 0.8s ease-in-out infinite; }
+  .taskin-juggling #left-arm { transform-origin: 95px 120px; }
+  .taskin-juggling #right-arm { transform-origin: 225px 120px; animation-name: taskin-taskin-juggle-arm-right; animation-delay: -0.4s; }
+  @keyframes taskin-taskin-juggle-arm-left {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(14deg); }
+  }
+  @keyframes taskin-taskin-juggle-arm-right {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-14deg); }
+  }
   .taskin-start { animation: taskin-taskin-start 1.1s ease-in-out; animation-iteration-count: 1; }
   .taskin-start #left-arm {
     transform-box: view-box;
@@ -968,6 +982,14 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    /**
+     * Quantas bolinhas o polvo tem no ar: o aviso de tasks demais em andamento.
+     * Dura enquanto durar a prop. So o Taskin desenha; o Sapin ignora.
+     */
+    juggling: {
+      type: Number as PropType<JuggleBalls>,
+      default: 0,
+    },
   },
   emits: {
     'action-start': (_action: TaskinAction) => true,
@@ -1225,6 +1247,12 @@ export default defineComponent({
           h(TaskinEffectFartCloud, {
             animationsEnabled: props.animationsEnabled,
           }),
+        !sapin &&
+          props.juggling > 0 &&
+          h(TaskinEffectJuggle, {
+            balls: props.juggling,
+            animationsEnabled: props.animationsEnabled,
+          }),
         running.value?.action === 'catch-fly' &&
           h(TaskinEffectFly, {
             animationsEnabled: props.animationsEnabled,
@@ -1255,6 +1283,9 @@ export default defineComponent({
               `${variant}-motion`,
               motion,
               variant === 'sapin' && props.animationsEnabled && props.speaking && 'sapin-speaking',
+              // Os bracos sobem e descem alternados, no ritmo das bolinhas. As
+              // acoes que mexem num braco vem depois no CSS e ganham dele.
+              !sapin && props.animationsEnabled && props.juggling > 0 && 'taskin-juggling',
             ],
           },
           mascot,

@@ -12,12 +12,12 @@ Um aviso de WIP que se le sem texto: com tasks demais em andamento, o polvo faz 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Prop `juggling?: 0 | 1 | 2 | 3` no `Taskin` (e em `TaskinProps`): quantas bolinhas no ar; so a variante `taskin` desenha
-- [ ] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-juggle/` (no molde do `TaskinEffectZzz`): bolinhas coloridas em arco acima dos bracos, defasadas entre si, em laco; os bracos alternam subindo e descendo no ritmo (classe no grupo)
-- [ ] Com `animationsEnabled=false`, as bolinhas paradas no alto do arco
-- [ ] Testes: o numero de bolinhas segue a prop; nada no Sapin; nada com `0`
-- [ ] Evidencia visual em `TASKS/assets/task-160/`: `juggling` 1 e 3 — so taskin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-160/<nome>.png)`), pela receita de Notes
-- [ ] Changeset minor no `@opentask/taskin-design-vue` (efeito novo)
+- [x] Prop `juggling?: 0 | 1 | 2 | 3` no `Taskin` (e em `TaskinProps`): quantas bolinhas no ar; so a variante `taskin` desenha — `Taskin.ts` (prop `juggling`, efeito so com `!sapin`) e `Taskin.types.ts`; prova: `Taskin.spec.ts` › `Taskin juggling`
+- [x] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-juggle/` (no molde do `TaskinEffectZzz`): bolinhas coloridas em arco acima dos bracos, defasadas entre si, em laco; os bracos alternam subindo e descendo no ritmo (classe no grupo) — `TaskinEffectJuggle.ts` (arco de mao a mao por cima da cabeca, `animateMotion` ida e volta de 1,6s, `begin` defasado por bolinha) e classe `taskin-juggling` no `#taskin-motion` (bracos 0,8s, direito meio ciclo atras); prova: `TaskinEffectJuggle.spec.ts` › "as bolinhas andam no arco, defasadas entre si", `Taskin.spec.ts` › "o polvo faz malabarismo com %i bolinha(s)"
+- [x] Com `animationsEnabled=false`, as bolinhas paradas no alto do arco — sem `animateMotion`, espalhadas em volta de `JUGGLE_PEAK`, e sem a classe dos bracos; prova: `TaskinEffectJuggle.spec.ts` › "sem animacao, as bolinhas ficam paradas no alto do arco", `Taskin.spec.ts` › "sem animacao, as bolinhas ficam no ar e os bracos parados"; imagem: ![juggling 3 parado](assets/task-160/taskin-juggling-3-parado.png)
+- [x] Testes: o numero de bolinhas segue a prop; nada no Sapin; nada com `0` — `Taskin.spec.ts` › `Taskin juggling` ("o polvo faz malabarismo com 1/2/3", "nada com 0", "o Sapin ignora") e `TaskinEffectJuggle.spec.ts` ("desenha %i bolinha(s)", "nao desenha nada com 0")
+- [x] Evidencia visual em `TASKS/assets/task-160/`: `juggling` 1 e 3 — so taskin. ![juggling 1: a bolinha saindo da mao esquerda](assets/task-160/taskin-juggling-1.png) ![juggling 3: bolinhas defasadas no arco, braco esquerdo subindo](assets/task-160/taskin-juggling-3.png) — spec temporario pela receita de Notes, apagado antes do commit
+- [x] Changeset minor no `@opentask/taskin-design-vue` (efeito novo) — `.changeset/o-taskin-faz-malabarismo.md`
 
 ## Notes
 ### Contexto da rodada
