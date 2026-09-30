@@ -12,12 +12,12 @@ A acao `wave`, para a chegada (app aberto, "Conectado") e a despedida: o braco d
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `wave` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~1,4s
-- [ ] `pose` com o braco direito erguido (a mao ao lado da cabeca) e o balanco pelo CSS: `#right-arm` gira +-15deg em volta do ombro, tres vezes (`transform-box: view-box`; ombro do Taskin em `225px 120px`, do Sapin em `230px 113px`)
-- [ ] `pose.mouthExpression = 'smile'`
-- [ ] Testes: a classe no grupo; com a animacao congelada em dois instantes, o `#right-arm` em angulos diferentes; o ombro nao sai do lugar
-- [ ] Evidencia visual em `TASKS/assets/task-151/`: `wave` com o braco no alto do balanco — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-151/<nome>.png)`), pela receita de Notes
-- [ ] Changeset patch no `@opentask/taskin-design-vue`
+- [x] `wave` em `TASKIN_ACTIONS` e no `ACTIONS` das duas variantes, com ~1,4s — `packages/design-vue/src/components/organisms/taskin/Taskin.actions.ts` e `ACTIONS` em `packages/design-vue/src/components/organisms/taskin/Taskin.ts` (`durationMs: 1400`); testes `wave > %s: dura cerca de 1,4s e sorri` e os `Taskin.play` parametrizados por acao, que agora incluem `wave`
+- [x] `pose` com o braco direito erguido (a mao ao lado da cabeca) e o balanco pelo CSS: `#right-arm` gira +-15deg em volta do ombro, tres vezes (`transform-box: view-box`; ombro do Taskin em `225px 120px`, do Sapin em `230px 113px`) — `WAVE = { rightArm: armPosition(-40, -95), ... }` e o CSS `.taskin-wave #right-arm` / `.sapin-wave #right-arm` com `@keyframes taskin-<variante>-wave-arm` (picos -15deg em 10/40/70%, +15deg em 25/55/85%); o grupo leva um balanco de 1,5deg (`taskin-<variante>-wave`); `prefers-reduced-motion` desliga o `#right-arm` tambem
+- [x] `pose.mouthExpression = 'smile'` — no `WAVE`; teste `wave > %s: dura cerca de 1,4s e sorri`
+- [x] Testes: a classe no grupo; com a animacao congelada em dois instantes, o `#right-arm` em angulos diferentes; o ombro nao sai do lugar — em `packages/design-vue/src/components/organisms/taskin/Taskin.actions.spec.ts`, `describe('wave')`: `a classe entra no grupo`, `a pose ergue o braco direito, a mao ao lado da cabeca`, `o braco balanca 15 graus para cada lado, tres vezes` (congela em seis instantes) e `o ombro nao sai do lugar no balanco` (o `M` do path pelo `getScreenCTM`, com o braco girado; conferido que fica vermelho com a origem trocada para o centro do corpo). Rodar: `pnpm --filter @opentask/taskin-design-vue exec vitest run src/components/organisms/taskin/Taskin.actions.spec.ts`
+- [x] Evidencia visual em `TASKS/assets/task-151/`: `wave` com o braco no alto do balanco — taskin e sapin. Cada imagem registrada aqui, no item que ela prova (`![...](assets/task-151/<nome>.png)`), pela receita de Notes — grupo e braco congelados em 140ms (pico de -15deg): ![taskin acenando, braco no alto do balanco](assets/task-151/taskin-wave.png) ![sapin acenando, braco no alto do balanco](assets/task-151/sapin-wave.png)
+- [x] Changeset patch no `@opentask/taskin-design-vue` — `.changeset/taskin-acena.md`
 
 ## Notes
 ### Contexto da rodada

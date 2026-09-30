@@ -89,6 +89,13 @@ const TASKIN_MOTION_CSS = `
   .taskin-celebrate { animation: taskin-taskin-celebrate 1.2s ease-in-out; animation-iteration-count: 1; }
   .taskin-point-up { animation: taskin-taskin-point-up 0.9s ease-in-out; animation-iteration-count: 1; }
   .taskin-point-down { animation: taskin-taskin-point-down 0.9s ease-in-out; animation-iteration-count: 1; }
+  .taskin-wave { animation: taskin-taskin-wave 1.4s ease-in-out; animation-iteration-count: 1; }
+  .taskin-wave #right-arm {
+    transform-box: view-box;
+    transform-origin: 225px 120px;
+    animation: taskin-taskin-wave-arm 1.4s ease-in-out;
+    animation-iteration-count: 1;
+  }
   @keyframes taskin-taskin-dance {
     0%, 50%, 100% { transform: translate(0, 0) rotate(0deg); }
     25% { transform: translate(-5px, -3px) rotate(-5deg); }
@@ -136,8 +143,19 @@ const TASKIN_MOTION_CSS = `
     0%, 100% { transform: translateY(0); }
     30%, 70% { transform: translateY(3px); }
   }
+  @keyframes taskin-taskin-wave {
+    0%, 100% { transform: rotate(0deg); }
+    25%, 75% { transform: rotate(-1.5deg); }
+    50% { transform: rotate(1.5deg); }
+  }
+  @keyframes taskin-taskin-wave-arm {
+    0%, 100% { transform: rotate(0deg); }
+    10%, 40%, 70% { transform: rotate(-15deg); }
+    25%, 55%, 85% { transform: rotate(15deg); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .taskin-motion { animation-name: none !important; }
+    .taskin-motion #right-arm { animation-name: none !important; }
   }
 `;
 
@@ -168,6 +186,13 @@ const SAPIN_MOTION_CSS = `
   .sapin-celebrate { animation: taskin-sapin-celebrate 1.2s ease-in-out; animation-iteration-count: 1; }
   .sapin-point-up { animation: taskin-sapin-point-up 0.9s ease-in-out; animation-iteration-count: 1; }
   .sapin-point-down { animation: taskin-sapin-point-down 0.9s ease-in-out; animation-iteration-count: 1; }
+  .sapin-wave { animation: taskin-sapin-wave 1.4s ease-in-out; animation-iteration-count: 1; }
+  .sapin-wave #right-arm {
+    transform-box: view-box;
+    transform-origin: 230px 113px;
+    animation: taskin-sapin-wave-arm 1.4s ease-in-out;
+    animation-iteration-count: 1;
+  }
   .sapin-celebrate #body-throat { animation: taskin-sapin-throat 1.2s ease-in-out; animation-iteration-count: 1; }
   @keyframes taskin-sapin-hop {
     0%, 100% { transform: translateY(0) scale(1.04, 0.96); }
@@ -219,8 +244,19 @@ const SAPIN_MOTION_CSS = `
     0%, 100% { transform: translateY(0); }
     30%, 70% { transform: translateY(3px); }
   }
+  @keyframes taskin-sapin-wave {
+    0%, 100% { transform: rotate(0deg); }
+    25%, 75% { transform: rotate(-1.5deg); }
+    50% { transform: rotate(1.5deg); }
+  }
+  @keyframes taskin-sapin-wave-arm {
+    0%, 100% { transform: rotate(0deg); }
+    10%, 40%, 70% { transform: rotate(-15deg); }
+    25%, 55%, 85% { transform: rotate(15deg); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .sapin-motion { animation-name: none !important; }
+    .sapin-motion #right-arm { animation-name: none !important; }
     .sapin-motion #body-throat { animation-name: none !important; }
   }
 `;
@@ -277,6 +313,12 @@ const POINT_UP = pointPose('up', -80, -88);
 const POINT_DOWN = pointPose('down', 85, 92);
 
 /**
+ * O aceno, na chegada e na despedida: o braco direito erguido, a mao ao lado da
+ * cabeca, sorrindo. O balanco e do CSS, girando o `#right-arm` em volta do ombro.
+ */
+const WAVE: ActionPose = { rightArm: armPosition(-40, -95), mouthExpression: 'smile' };
+
+/**
  * As acoes de cada variante. A que falta numa variante resolve `false` na hora:
  * e o que deixa uma acao existir so num dos bichos.
  */
@@ -287,6 +329,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     celebrate: { className: 'taskin-celebrate', durationMs: 1200, pose: celebratePose(-70, -100) },
     'point-up': { className: 'taskin-point-up', durationMs: 900, pose: POINT_UP },
     'point-down': { className: 'taskin-point-down', durationMs: 900, pose: POINT_DOWN },
+    wave: { className: 'taskin-wave', durationMs: 1400, pose: WAVE },
   },
   sapin: {
     nod: { className: 'sapin-nod', durationMs: 700, pose: { mouthExpression: 'smile' } },
@@ -294,6 +337,7 @@ export const ACTIONS: Record<TaskinVariant, Partial<Record<TaskinAction, ActionC
     celebrate: { className: 'sapin-celebrate', durationMs: 1200, pose: celebratePose(-60, -100) },
     'point-up': { className: 'sapin-point-up', durationMs: 900, pose: POINT_UP },
     'point-down': { className: 'sapin-point-down', durationMs: 900, pose: POINT_DOWN },
+    wave: { className: 'sapin-wave', durationMs: 1400, pose: WAVE },
   },
 };
 

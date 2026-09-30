@@ -343,3 +343,97 @@ describe('point-up e point-down', () => {
     }
   });
 });
+
+describe('wave', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  /** Os numeros do `d` do braco: `M x y Q ex ey x y`. */
+  const numeros = (d: string | undefined) => (d ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+
+  /** O angulo, em graus, do `transform` computado de um elemento. */
+  const angulo = (el: Element) => {
+    const transform = getComputedStyle(el).transform;
+    if (transform === 'none') return 0;
+    const m = new DOMMatrix(transform);
+    return (Math.atan2(m.b, m.a) * 180) / Math.PI;
+  };
+
+  /** Onde o ombro — o `M` do braco — cai na tela, com o giro do CSS aplicado. */
+  const ombroNaTela = (braco: SVGGraphicsElement) => {
+    const [x = 0, y = 0] = numeros(braco.getAttribute('d') ?? undefined);
+    const ponto = new DOMPoint(x, y).matrixTransform(braco.getScreenCTM() ?? undefined);
+    return { x: ponto.x, y: ponto.y };
+  };
+
+  async function acenando(variant: TaskinVariant) {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wave');
+    await nextTick();
+    const braco = wrapper.find('#right-arm').element as unknown as SVGGraphicsElement;
+    const [animacao] = braco.getAnimations() as CSSAnimation[];
+    animacao?.pause();
+    return { wrapper, braco, animacao };
+  }
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,4s e sorri', (variant) => {
+    expect(ACTIONS[variant].wave?.durationMs).toBe(1400);
+    expect(ACTIONS[variant].wave?.pose?.mouthExpression).toBe('smile');
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a classe entra no grupo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wave');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-wave`);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a pose ergue o braco direito, a mao ao lado da cabeca', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    const esquerdo = wrapper.find('#left-arm').attributes('d');
+    void vm.play('wave');
+    await nextTick();
+    const n = numeros(wrapper.find('#right-arm').attributes('d'));
+    expect(n[n.length - 1] ?? 0).toBeLessThan((n[1] ?? 0) - 30);
+    expect(wrapper.find('#left-arm').attributes('d')).toBe(esquerdo);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o braco balanca 15 graus para cada lado, tres vezes', async (variant) => {
+    const { wrapper, braco, animacao } = await acenando(variant);
+    expect(animacao?.animationName).toBe(`taskin-${variant}-wave-arm`);
+    expect(animacao?.effect?.getTiming().iterations).toBe(1);
+
+    const graus = [140, 350, 560, 770, 980, 1190].map((t) => {
+      if (animacao) animacao.currentTime = t;
+      return angulo(braco);
+    });
+    expect(graus[0]).toBeCloseTo(-15, 0);
+    expect(graus[1]).toBeCloseTo(15, 0);
+    expect(new Set(graus.map((g) => Math.sign(Math.round(g)))).size).toBe(2);
+    expect(graus.filter((g) => g < -14)).toHaveLength(3);
+    expect(graus.filter((g) => g > 14)).toHaveLength(3);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o ombro nao sai do lugar no balanco', async (variant) => {
+    const { wrapper, braco, animacao } = await acenando(variant);
+    const grupo = wrapper.find(`#${variant}-motion`).element;
+    const [doGrupo] = grupo.getAnimations();
+    doGrupo?.pause();
+    if (doGrupo) doGrupo.currentTime = 0;
+
+    if (animacao) animacao.currentTime = 0;
+    const parado = ombroNaTela(braco);
+    for (const t of [140, 350]) {
+      if (animacao) animacao.currentTime = t;
+      expect(Math.abs(angulo(braco))).toBeGreaterThan(14);
+      const agora = ombroNaTela(braco);
+      expect(agora.x).toBeCloseTo(parado.x, 1);
+      expect(agora.y).toBeCloseTo(parado.y, 1);
+    }
+    wrapper.unmount();
+  });
+});
