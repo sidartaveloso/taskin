@@ -233,6 +233,21 @@ describe('celebrate', () => {
     wrapper.unmount();
   });
 
+  it('o papo inflado comeca abaixo da boca, no Sapin', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('celebrate');
+    await nextTick();
+    for (const el of [wrapper.find('#sapin-motion').element, wrapper.find('#body-throat').element]) {
+      const [animacao] = el.getAnimations();
+      animacao?.pause();
+      if (animacao) animacao.currentTime = 600;
+    }
+    const papo = wrapper.find('#body-throat').element.getBoundingClientRect();
+    const boca = wrapper.find('#mouth').element.getBoundingClientRect();
+    expect(papo.top).toBeGreaterThanOrEqual(boca.bottom);
+    wrapper.unmount();
+  });
+
   it('o Taskin gira no maximo 12 graus', async () => {
     const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
     void vm.play('celebrate');

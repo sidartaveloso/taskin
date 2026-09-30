@@ -12,11 +12,11 @@ O papo do Sapin (#body-throat, da task-149) infla por cima da boca: a elipse em 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `#body-throat` abaixo da boca, no `TaskinBody` do Sapin: centro em cy ~118, com rx ~15 e ry ~8, de modo que a caixa do papo inflado fique inteira abaixo do traco da boca (a boca do Sapin e o caminho da expressao deslocado por `MOUTH_OFFSET.sapin`, `translate(0 -21)`: o `neutral` e o `smile` passam por y 104 a 112). Pode encostar na borda de cima da barriga (y 123,5), mas sem sumir nela
-- [ ] O papo infla a partir de cima, junto do queixo, e nao do centro: `transform-origin` no topo da caixa (`50% 0`, com o `transform-box: fill-box` que ja esta la)
-- [ ] Teste em `packages/design-vue/src/components/organisms/taskin/Taskin.actions.spec.ts`, no `describe` da `celebrate`: com a animacao congelada no topo do pulo, o `getBoundingClientRect()` do `#body-throat` comeca abaixo do fim do `#mouth`, no Sapin; e o papo continua em escala 0 fora da acao (o teste que ja existe)
-- [ ] Evidencia visual em `TASKS/assets/task-163/`: `sapin-celebrate.png`, no topo do pulo, com o papo inflado abaixo da boca — lado a lado com a de antes, `TASKS/assets/task-149/sapin-celebrate.png`, registradas aqui neste item, pela receita de Notes
-- [ ] Changeset patch no `@opentask/taskin-design-vue`
+- [x] `#body-throat` abaixo da boca, no `TaskinBody` do Sapin: centro em cy ~118, com rx ~15 e ry ~8, de modo que a caixa do papo inflado fique inteira abaixo do traco da boca (a boca do Sapin e o caminho da expressao deslocado por `MOUTH_OFFSET.sapin`, `translate(0 -21)`: o `neutral` e o `smile` passam por y 104 a 112). Pode encostar na borda de cima da barriga (y 123,5), mas sem sumir nela — `TaskinBody.vue`: `cx 160 cy 118 rx 15 ry 8`; `TaskinBody.spec.ts` 'desenha o papo depois da barriga...'
+- [x] O papo infla a partir de cima, junto do queixo, e nao do centro: `transform-origin` no topo da caixa (`50% 0`, com o `transform-box: fill-box` que ja esta la) — `transform-origin: 50% 0` em `#body-throat` (`TaskinBody.vue`)
+- [x] Teste em `packages/design-vue/src/components/organisms/taskin/Taskin.actions.spec.ts`, no `describe` da `celebrate`: com a animacao congelada no topo do pulo, o `getBoundingClientRect()` do `#body-throat` comeca abaixo do fim do `#mouth`, no Sapin; e o papo continua em escala 0 fora da acao (o teste que ja existe) — `Taskin.actions.spec.ts`: 'o papo inflado comeca abaixo da boca, no Sapin' e 'o papo fica murcho fora da acao...'
+- [x] Evidencia visual em `TASKS/assets/task-163/`: `sapin-celebrate.png`, no topo do pulo, com o papo inflado abaixo da boca — lado a lado com a de antes, `TASKS/assets/task-149/sapin-celebrate.png`, registradas aqui neste item, pela receita de Notes — antes: ![antes](assets/task-149/sapin-celebrate.png) depois: ![depois](assets/task-163/sapin-celebrate.png)
+- [x] Changeset patch no `@opentask/taskin-design-vue` — `.changeset/papo-abaixo-da-boca.md`
 
 ## Notes
 ### Contexto da rodada
