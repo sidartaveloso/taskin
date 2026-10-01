@@ -25,7 +25,7 @@
     "build": "turbo run build",
     "build:storybook": "storybook build",
     "changeset": "changeset",
-    "changeset:publish": "pnpm build && changeset publish",
+    "changeset:publish": "pnpm build && pnpm verificar:carga-esm && changeset publish",
     "changeset:version": "changeset version && pnpm install --no-frozen-lockfile",
     "ci": "pnpm typecheck && pnpm lint && pnpm test",
     "clean": "turbo run clean",
@@ -60,6 +60,7 @@
     "test:coverage": "turbo run test:coverage",
     "test:dev-scripts": "vitest run --config dev/vitest.config.ts",
     "typecheck": "turbo run typecheck",
+    "verificar:carga-esm": "tsx dev/scripts/verificar-carga-esm.ts",
     "verificar:repository-url": "tsx dev/scripts/verificar-repository-url.ts",
     "verificar:tags-de-publicacao": "tsx dev/scripts/verificar-tags-de-publicacao.ts"
   },
