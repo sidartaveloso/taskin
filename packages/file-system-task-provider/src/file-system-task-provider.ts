@@ -12,7 +12,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
 import { AttachmentValidator } from './attachment-validator/index.js';
-import { criteriosEmAberto, validarConclusao } from './criterios-de-conclusao/index.js';
+import { corrigirConclusao, criteriosEmAberto, validarConclusao } from './criterios-de-conclusao/index.js';
 import { FileSystemGroupRegistry } from './group-registry.js';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
 import {
@@ -22,6 +22,7 @@ import {
   readMetadataField,
   resolveMetadataStyle,
 } from './metadata-style/index.js';
+import { corrigirPrioridadesTextuais } from './prioridade-textual/index.js';
 import { renomearNomesLongos, validarNomeDoArquivo } from './renomear-nomes-longos.js';
 import type { CreateTaskFileResult, TaskFile } from './task-file.types.js';
 import { nomeDoArquivoDaTask } from './task-file-name.js';
@@ -636,6 +637,44 @@ ${i18n.notesPlaceholder}
       }
       if (fixedCount > 0) {
         this.logger.info(`✨ Fixed ${fixedCount} task file(s)`);
+      }
+
+      /*
+       * Decisao ja escrita, so no formato errado (task-144): `Priority: medium`
+       * vira numero, e item de `done` que se anota como fora vira `— adiado:`.
+       * Cada conversao sai como info — o --fix nao muda prioridade calado.
+       */
+      const io = {
+        readFile: (alvo: string) => fs.readFile(alvo, 'utf-8'),
+        writeFile: (alvo: string, conteudo: string) => fs.writeFile(alvo, conteudo, 'utf-8'),
+      };
+      const convertidas = await corrigirPrioridadesTextuais(
+        (await this.getAllTasks()).map((t) => ({
+          file: t.filePath,
+          prioridade: this.readInlineMetadata(t.content).priority,
+        })),
+        io,
+      );
+      for (const { file, de, para } of convertidas) {
+        allIssues.push({
+          file,
+          severity: 'info',
+          message: `Priority "${de}" → ${para} (by level, after the tasks that already had a number)`,
+        });
+      }
+
+      for (const filePath of taskFiles) {
+        const { conteudo, adiados } = corrigirConclusao(await io.readFile(filePath));
+        if (adiados.length === 0) continue;
+
+        await io.writeFile(filePath, conteudo);
+        for (const { texto, razao } of adiados) {
+          allIssues.push({
+            file: filePath,
+            severity: 'info',
+            message: `Deferred "${texto}" — its own note said it was left out: "${razao}"`,
+          });
+        }
       }
 
       // Nome de arquivo longo: renomeia para o que o createTask daria, por

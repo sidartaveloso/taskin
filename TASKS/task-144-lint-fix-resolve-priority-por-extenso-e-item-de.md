@@ -9,17 +9,24 @@ No layerall, 'taskin lint' mandava rodar --fix e o --fix devolvia os 7 erros int
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `Priority` por extenso (`critical/high/medium/low`, `alta/média/baixa`) vira
+- [x] `Priority` por extenso (`critical/high/medium/low`, `alta/média/baixa`) vira
       numero no `--fix`: por nivel, ordem de chegada dentro do nivel, depois do
-      maior numero existente. Numero existente nunca e tocado (task-078)
-- [ ] Tarefa `done` com item aberto que se anota como fora (parentese ou
+      maior numero existente. Numero existente nunca e tocado (task-078) —
+      `prioridade-textual/`, `prioridade-textual.test.ts`
+- [x] Tarefa `done` com item aberto que se anota como fora (parentese ou
       `— ...` com `pendente`, `fora do escopo`, `próximo passo`, `out of scope`,
       `follow-up`, `next step`) vira `— adiado: <a propria anotacao>` no `--fix`.
-      Nunca marca `[x]`; item sem anotacao continua erro
-- [ ] O que o `--fix` nao resolve sai com `fixable: false` e sugestao — o
-      `taskin lint` deixa de mandar rodar `--fix` a toa
-- [ ] O `--fix` diz o que converteu (info por arquivo), para nada mudar calado
-- [ ] Rodar no layerall: os 7 erros somem, e `lint` seguido de `lint` nao muda nada
+      Nunca marca `[x]`; item sem anotacao continua erro — `anotacaoDeAdiamento`,
+      `corrigirConclusao`, `validar-conclusao.test.ts`
+- [x] O que o `--fix` nao resolve sai com `fixable: false` e sugestao — o
+      `taskin lint` deixa de mandar rodar `--fix` a toa — tambem `Difficulty`
+      fora da faixa, que tinha o mesmo defeito; `validar-priorizacao.test.ts`
+- [x] O `--fix` diz o que converteu (info por arquivo), para nada mudar calado —
+      `file-system-task-provider.lint-decisao-escrita.test.ts`
+- [x] Rodar no layerall: os 7 erros somem, e `lint` seguido de `lint` nao muda
+      nada — numa copia dos `TASKS/` do layerall, com o provider compilado: 5
+      `Priority` convertidas (002→100, 001→200, 004→300, 005→400, 003→500), 2
+      itens adiados, `lint` depois sai com zero erros
 
 ## Notes
 

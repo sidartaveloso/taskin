@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validarConclusao } from './validar-conclusao.js';
+import { corrigirConclusao, validarConclusao } from './validar-conclusao.js';
 
 const tarefa = (status: string, ...itens: string[]) =>
   [
@@ -73,5 +73,96 @@ describe('validarConclusao', () => {
 
   it('done sem secao de checklist nao e erro', () => {
     expect(validarConclusao('a.md', '# 🧩 Task 001 — Sem checklist\n\n- Status: done\n\n## Notes\nNada.')).toEqual([]);
+  });
+});
+
+/**
+ * O item cujo proprio texto ja diz que ficou de fora.
+ *
+ * No layerall, duas tarefas `done` tinham `- [ ] ... (galeria — pendente)` e
+ * `- [ ] (fora do escopo desta task, fica registrado como próximo passo) ...`.
+ * A decisao estava tomada e escrita — so nao na forma que o portao le. O
+ * `--fix` move a anotacao para `— adiado:`, sem perder uma palavra.
+ *
+ * O que ele **nunca** faz: marcar `[x]`, ou adiar item sem anotacao. Foi assim
+ * que a auditoria da task-075 achou um item nao feito escondido entre os
+ * feitos, e o conserto nao pode reabrir esse buraco.
+ */
+describe('corrigirConclusao', () => {
+  it('move a anotacao entre parenteses para o adiamento', () => {
+    const { conteudo, adiados } = corrigirConclusao(
+      tarefa('done', '- [x] Um', '- [ ] Adicionar galeria no VitePress (galeria — pendente)'),
+    );
+
+    expect(conteudo).toContain('- [ ] Adicionar galeria no VitePress — adiado: galeria — pendente');
+    expect(adiados).toEqual([{ linha: 8, texto: 'Adicionar galeria no VitePress', razao: 'galeria — pendente' }]);
+    expect(validarConclusao('a.md', conteudo)).toEqual([]);
+  });
+
+  it('le a anotacao no comeco do item, e preserva as linhas de continuacao', () => {
+    const { conteudo } = corrigirConclusao(
+      tarefa(
+        'done',
+        '- [ ] (fora do escopo desta task, fica registrado como próximo passo) Depois de publicado:',
+        '      usar em outro pacote',
+      ),
+    );
+
+    expect(conteudo).toContain(
+      '- [ ] Depois de publicado: — adiado: fora do escopo desta task, fica registrado como próximo passo\n      usar em outro pacote',
+    );
+    expect(validarConclusao('a.md', conteudo)).toEqual([]);
+  });
+
+  it('le a anotacao depois de travessao no fim do item', () => {
+    const { conteudo } = corrigirConclusao(tarefa('done', '- [ ] Traduzir a doc — out of scope'));
+
+    expect(conteudo).toContain('- [ ] Traduzir a doc — adiado: out of scope');
+  });
+
+  /*
+   * A palavra no corpo do item e o que ele pede, e nao uma anotacao sobre ele.
+   * Adia-lo aqui seria esconder trabalho nao feito — exatamente o que o portao
+   * existe para impedir.
+   */
+  it('nao adia item que so menciona a palavra no proprio texto', () => {
+    const original = tarefa('done', '- [ ] Listar os pedidos com status pendente');
+
+    expect(corrigirConclusao(original)).toEqual({ conteudo: original, adiados: [] });
+  });
+
+  it('nunca marca item como feito, nem mexe em item sem anotacao', () => {
+    const original = tarefa('done', '- [x] Um', '- [ ] Dois');
+
+    expect(corrigirConclusao(original).conteudo).toBe(original);
+  });
+
+  it('so age em tarefa done, que e onde o portao cobra', () => {
+    const original = tarefa('in-progress', '- [ ] Galeria (pendente)');
+
+    expect(corrigirConclusao(original).conteudo).toBe(original);
+  });
+
+  it('item que e so a anotacao fica como esta: nao sobra o que adiar', () => {
+    const original = tarefa('done', '- [ ] (pendente)');
+
+    expect(corrigirConclusao(original).conteudo).toBe(original);
+  });
+
+  it('e idempotente', () => {
+    const uma = corrigirConclusao(tarefa('done', '- [ ] Galeria (pendente)')).conteudo;
+
+    expect(corrigirConclusao(uma)).toEqual({ conteudo: uma, adiados: [] });
+  });
+});
+
+describe('validarConclusao — o que o --fix resolve', () => {
+  it('item anotado tem conserto; item sem anotacao, nao', () => {
+    const [anotado, cru] = validarConclusao('a.md', tarefa('done', '- [ ] Galeria (pendente)', '- [ ] Dois'));
+
+    expect(anotado?.fixable).not.toBe(false);
+    expect(anotado?.suggestion).toContain('--fix');
+    expect(cru?.fixable).toBe(false);
+    expect(cru?.suggestion).toContain('adiado');
   });
 });
