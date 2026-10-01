@@ -3,6 +3,7 @@
   "automation": {
     "level": "autopilot",
     "autoSync": true,
+    "defaultBranch": "develop",
     "ciSkipTag": "[skip ci]"
   },
   "provider": {
