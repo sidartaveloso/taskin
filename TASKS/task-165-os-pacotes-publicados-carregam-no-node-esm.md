@@ -1,6 +1,6 @@
 # 🧩 Task 165 — Os pacotes publicados carregam no Node ESM
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: sidartaveloso
 
