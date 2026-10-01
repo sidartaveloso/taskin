@@ -1,5 +1,11 @@
 # @opentask/taskin
 
+## 3.0.16
+
+### Patch Changes
+
+- taskin@5.0.1
+
 ## 3.0.15
 
 ### Patch Changes
