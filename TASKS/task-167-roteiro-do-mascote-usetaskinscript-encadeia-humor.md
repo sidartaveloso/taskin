@@ -1,6 +1,6 @@
 # 🧩 Task 167 — Roteiro do mascote: useTaskinScript encadeia humor, acao e fala
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-do-mascote
