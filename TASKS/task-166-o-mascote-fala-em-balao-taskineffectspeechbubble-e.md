@@ -1,6 +1,6 @@
 # 🧩 Task 166 — O mascote fala em balao: TaskinEffectSpeechBubble e a prop speechText
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-do-mascote
