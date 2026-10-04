@@ -1,6 +1,6 @@
 # 🧩 Task 165 — Os pacotes publicados carregam no Node ESM
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: sidartaveloso
 
@@ -9,13 +9,16 @@ O @opentask/taskin-utils@1.1.1 publica 'export * from ./security' sem extensao .
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] O build do `@opentask/taskin-git-utils` passa pelo `fix-esm-extensions`,
+- [x] O build do `@opentask/taskin-git-utils` passa pelo `fix-esm-extensions`,
       como o utils, o provider fs e o task-manager
-- [ ] Verificacao que empacota cada pacote publicavel com `pnpm pack`, instala os
+- [x] O `@opentask/taskin-git-utils` declara `files` — sem ele, o `.gitignore` da
+      raiz (`**/src/**/*.js`) tirava `dist/src/*.js` do tarball, e so o `main` entrava
+- [x] Verificacao que empacota cada pacote publicavel com `pnpm pack`, instala os
       tarballs num consumidor isolado e carrega cada um no Node ESM (`import` pelo
-      nome; `--version` nos CLIs), com teste
-- [ ] A verificacao roda no `pnpm test` e antes do `changeset publish`
-- [ ] Changeset de patch para utils, git-utils e provider fs
+      nome; `--version` nos CLIs), com teste — `dev/scripts/verificador-de-carga-esm/`
+- [x] A verificacao roda no `pnpm test` (`verificador-de-carga-esm.taskin.test.ts`) e
+      antes do `changeset publish` (`pnpm verificar:carga-esm` no `changeset:publish`)
+- [x] Changeset de patch para utils, git-utils e provider fs
 - [ ] Release pelo fluxo do repositorio (hotfix a partir do `main`) e os pacotes
       do registry carregando num consumidor limpo
 - [ ] O `main` integrado de volta no `develop`
@@ -35,6 +38,27 @@ Estado do registry em 2026-10-01, num consumidor limpo com `node --input-type=mo
 | `@opentask/taskin-file-system-provider@3.4.0` | nao: cai no git-utils, depois no utils |
 | `@opentask/taskin-types@2.6.0`, `-task-manager@4.0.0`, `-task-server-ws@0.4.0`, `-task-server-mcp@0.6.0`, `-task-provider-pinia@4.0.0`, `-design-vue@0.6.0`, `ui-sense@0.6.0`, `-dashboard@0.2.0` | sim |
 | `taskin@5.0.0` | sim: o tsup empacota as dependencias |
+
+O `git-utils@3.1.0` tem um segundo defeito, que a verificacao achou depois de
+corrigida a extensao: o tarball publicado tem 25 arquivos e, de `dist`, so o
+`dist/src/index.js`. Sem `files` no package.json, o pack aplica o `.gitignore` da
+raiz, cuja regra `**/src/**/*.js` (JS gerado dentro de `src/`) casa com o
+`dist/src/` do git-utils. O `main` entra porque o npm sempre o inclui.
+
+A verificacao reprova cada defeito isolado, com o build do repo:
+
+- utils construido so com `tsc`: `ERR_MODULE_NOT_FOUND ... taskin-utils/dist/security`
+  no utils e no provider fs — o erro do opentask;
+- git-utils construido so com `tsc`: `... git-utils/dist/src/commit-message` no
+  git-utils e no provider fs;
+- git-utils sem `files`: `... git-utils/dist/src/commit-message.js`, ausente do tarball.
+
+Com as correcoes, as 14 cargas passam (12 bibliotecas por `import`, 3 bins por
+`--version`, contando os dois bins do `@opentask/taskin`).
+
+Plano do changesets: `taskin-utils` 1.1.2, `taskin-git-utils` 3.1.1,
+`taskin-file-system-provider` 3.4.1 e, em cascata pelo `workspace:*`,
+`taskin-task-server-mcp` 0.6.1, `taskin` 5.0.1 e `@opentask/taskin` 3.0.16.
 
 O `fix-esm-extensions.mjs` entrou no build do utils em 2026-08-21, depois do
 1.1.1 (2026-03-27), e nenhum changeset tocou o utils desde entao. Os pacotes
