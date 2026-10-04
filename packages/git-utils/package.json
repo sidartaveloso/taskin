@@ -31,8 +31,12 @@
       "import": "./dist/src/index.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node ../../scripts/fix-esm-extensions.mjs dist",
     "clean": "rm -rf dist coverage .turbo",
     "dev": "tsc --watch",
     "format": "biome check --write .",
