@@ -12,13 +12,14 @@ Para conversar, o mascote precisa encadear passos: muda o humor, faz uma acao, d
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `useTaskinScript(taskin)` em `packages/design-vue/src/composables/useTaskinScript.ts`: recebe a ref do `Taskin` (quem tem `play`) e devolve `mood`, `speechText`, `speaking`, `running`, `run(steps)` e `stop()`
-- [ ] `TaskinScriptStep { mood?, action?, say?, holdMs? }`: `run` aplica o humor, liga `speaking` e o `speechText` enquanto a fala durar, toca a acao pelo `play()` e espera o fim dela, e segura `holdMs` (padrao: pela frase, ~55 ms por caractere, entre 1,2 s e 6 s; sem frase nem acao, 800 ms). `run` resolve `true` no fim e `false` se `stop()` ou outro `run` o interrompe; o que interrompe limpa a fala
-- [ ] `TaskinScriptStep`, `useTaskinScript` e `scriptDuration(variant, steps)` (a soma, para quem sincroniza por fora) nos exports do pacote
-- [ ] Story `Organisms/Taskin/Taskin` › `Script`: um botao toca um roteiro de tres passos (acena e cumprimenta, pensa, comemora)
-- [ ] Testes com timers falsos: a ordem dos passos, a espera pelo `play`, a interrupcao, a pausa padrao pela frase; `pnpm --filter @opentask/taskin-design-vue test` verde
-- [ ] Evidencia visual em `TASKS/assets/task-167/`: um quadro do roteiro no meio (acenando e falando)
-- [ ] Changeset minor no `@opentask/taskin-design-vue`
+- [x] `useTaskinScript(taskin, { initialMood })` em `packages/design-vue/src/composables/use-taskin-script/`: recebe a ref do `Taskin` (um `TaskinPlayer`, quem tem `play`) e devolve `mood`, `speechText`, `speaking`, `running`, `run(steps)` e `stop()`
+- [x] `TaskinScriptStep { mood?, action?, say?, holdMs? }`: `run` aplica o humor, liga `speaking` e o `speechText` enquanto o passo durar, toca a acao pelo `play()` e espera o fim dela, e segura a pausa (`stepHold`: `holdMs` manda; pela frase, 55 ms por caractere entre 1,2 s e 6 s; acao sozinha nao segura; passo vazio, 800 ms). `run` resolve `true` no fim e `false` se `stop()` ou outro `run` o interrompe; o que interrompe limpa a fala e deixa o humor onde estava
+- [x] `useTaskinScript`, `stepHold`, `scriptDuration(variant, steps)` (a soma das acoes, pela variante, e das pausas) e os tipos nos exports do pacote — `composables/index.ts`
+- [x] Story `Organisms/Taskin/Taskin` › `Script`: um botao toca um roteiro de quatro passos (acena e cumprimenta, pensa, comemora, ironiza), e outro para. Conferida no Storybook: os tres primeiros quadros saem na ordem, com o balao de cada passo
+- [x] Testes com timers falsos em `use-taskin-script.spec.ts`: humor e fala aplicados e limpos no fim do passo; a espera pelo `play` (a pausa inteira passa e o passo nao acaba antes da acao); a ordem dos passos; `stop` e o `run` seguinte interrompem (`false`); interrompido no meio da acao nao toca a seguinte; sem `Taskin` montado o gesto e pulado e o roteiro segue; `stepHold` e `scriptDuration`. `pnpm --filter @opentask/taskin-design-vue test`: 663 + 300 passando
+- [x] Evidencia visual em `TASKS/assets/task-167/`: o primeiro passo do roteiro no meio (`wave` + "Oi, Sidarta!"), nas duas variantes. O balao fica na frente da mao que acena, de proposito: e desenhado por ultimo, como todo efeito
+  - ![taskin acenando e falando](assets/task-167/taskin-roteiro-acenando-e-falando.png) ![sapin acenando e falando](assets/task-167/sapin-roteiro-acenando-e-falando.png)
+- [x] Changeset minor no `@opentask/taskin-design-vue` — `.changeset/roteiro-do-mascote.md`
 
 ## Notes
 Nasce do experimento de 03/10/2026 (ver task-166). Para o mascote conversar, quem o usa encadeia humor, acao e fala com `setTimeout` solto; o composable faz isso uma vez so, do lado do Vue, porque `mood` e uma prop e o componente nao pode trocar o proprio humor. Depende da task-166 (`speechText`).

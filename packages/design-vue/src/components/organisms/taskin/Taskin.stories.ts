@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { defineComponent, h, onMounted, onUnmounted, ref } from 'vue';
+import { type TaskinPlayer, type TaskinScriptStep, useTaskinScript } from '../../../composables/use-taskin-script';
 import Taskin from './Taskin';
 import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
 import { TASKIN_MOODS } from './Taskin.moods';
@@ -491,4 +492,39 @@ export const Speaking: Story = {
       },
     },
   },
+};
+
+/**
+ * O roteiro: `useTaskinScript` encadeia humor, acao e fala, esperando o fim de
+ * cada acao pelo `play()` e dimensionando a pausa pela frase. E assim que o
+ * mascote conversa.
+ */
+export const Script: Story = {
+  render: (args) =>
+    defineComponent({
+      components: { Taskin },
+      setup() {
+        const taskin = ref<TaskinPlayer | null>(null);
+        const { mood, speechText, speaking, running, run, stop } = useTaskinScript(taskin, {
+          initialMood: args.mood,
+        });
+        const roteiro: TaskinScriptStep[] = [
+          { mood: 'happy', action: 'wave', say: 'Oi, Sidarta!' },
+          { mood: 'thoughtful', say: 'Deixa eu ver a task 166...' },
+          { mood: 'happy', action: 'celebrate', say: 'Terminou, e os testes passaram!' },
+          { mood: 'sarcastic', say: 'Agora e so publicar. Facil.' },
+        ];
+        return { args, taskin, mood, speechText, speaking, running, stop, tocar: () => run(roteiro) };
+      },
+      template: `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+          <Taskin ref="taskin" v-bind="args" :mood="mood" :speech-text="speechText" :speaking="speaking" />
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" data-testid="tocar-roteiro" @click="tocar">tocar o roteiro</button>
+            <button type="button" @click="stop()">parar</button>
+            <span style="font-size: 12px;" data-testid="estado-roteiro">{{ running ? 'tocando' : 'parado' }}</span>
+          </div>
+        </div>
+      `,
+    }),
 };
