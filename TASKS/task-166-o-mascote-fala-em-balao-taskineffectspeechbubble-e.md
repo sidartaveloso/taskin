@@ -12,12 +12,16 @@ O mascote so tem balao de pensamento; quem quer que ele fale com a pessoa (o cha
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Molecula `TaskinEffectSpeechBubble` em `packages/design-vue/src/components/molecules/taskin-effect-speech-bubble/`: retangulo arredondado com rabicho apontando para a boca (`MOUTH_OFFSET` de cada variante), texto quebrado em `<tspan>` pelo mesmo `layoutThoughtBubble` do balao de pensamento (reaproveitado, sem copia), sem a pulsacao; com `animationsEnabled`, uma entrada curta (pop) e so
-- [ ] Prop `speechText?: string` no `Taskin` e em `TaskinProps`: com texto, o balao de fala aparece e o de pensamento sai de cena (falar ganha de pensar); vazio ou `undefined`, nada muda. Funciona nas duas variantes
-- [ ] Stories: `Molecules/Taskin/Effects/SpeechBubble` (curta, longa, Sapin, sem animacao) e `Organisms/Taskin/Taskin` ganha a story `Speaking`, com `speechText` e `speaking` ligados
-- [ ] Testes: a molecula desenha o texto e o rabicho; o `Taskin` mostra o balao so com `speechText`, e esconde o de pensamento quando os dois vem; `pnpm --filter @opentask/taskin-design-vue test` verde
-- [ ] Evidencia visual em `TASKS/assets/task-166/`: taskin e sapin falando, frase curta e longa, referenciadas aqui
-- [ ] Changeset minor no `@opentask/taskin-design-vue`
+- [x] Molecula `TaskinEffectSpeechBubble` em `packages/design-vue/src/components/molecules/taskin-effect-speech-bubble/`: retangulo arredondado com rabicho, texto quebrado em `<tspan>` pelo mesmo layout do balao de pensamento, sem a pulsacao; com `animationsEnabled`, so a entrada curta (`speech-pop`). O `layoutThoughtBubble` virou um `layoutBubble(texto, variant, options)` parametrizado (`base`, `leftLimit`, `maxFontSize`, `hugTop`), e o de pensamento e o de fala sao duas chamadas dele — `thought-bubble-layout.ts`, `speech-bubble-layout.ts`
+- [x] O rabicho nao vai ate a boca: entre a caixa e a boca mora o olho direito (Taskin em `y` 72–108; no Sapin, o calombo em cima da cabeca). A caixa cola no topo e para antes do olho (fonte maxima 20, duas linhas acabam em `y` 70), e a ponta encosta no rosto a direita do olho (`SPEECH_TIP`), como as bolinhas do pensamento param na beira da cabeca. No Sapin a caixa so comeca a direita do calombo (`leftLimit` 216): e mais estreita e cede a fonte mais cedo. Prova: `speech-bubble-layout.spec.ts` (a caixa acima do olho do Taskin, a direita do calombo do Sapin, em frases curta, media e longa)
+- [x] Prop `speechText?: string` no `Taskin` e em `TaskinProps`: com texto, o balao de fala aparece e o de pensamento sai de cena; vazio ou `undefined`, nada muda. Nas duas variantes — `Taskin.ts`, `Taskin.types.ts`. Prova: `Taskin.spec.ts` › speechText (sem texto nao ha balao; com texto diz a frase; esconde o de pensamento; o de pensamento volta quando a fala acaba)
+- [x] Stories: `Molecules/Taskin/Effects/SpeechBubble` (Short, LongPhrase, NoAnimation, Sapin; o ponto cinza marca a boca) e `Organisms/Taskin/Taskin` › `Speaking`, com `speechText` e `speaking` ligados
+- [x] Testes: `TaskinEffectSpeechBubble.spec.ts` (caixa, rabicho, texto, quebra sem perder texto, caixa cresce, pop so com animacao), `speech-bubble-layout.spec.ts`, `Taskin.spec.ts` › speechText. `pnpm --filter @opentask/taskin-design-vue test`: 651 + 299 passando
+- [x] Evidencia visual em `TASKS/assets/task-166/` (humor `happy`, `speaking` ligado, animacoes congeladas):
+  - ![taskin, frase curta](assets/task-166/taskin-fala-curta.png) ![taskin, frase longa](assets/task-166/taskin-fala-longa.png)
+  - ![sapin, frase curta](assets/task-166/sapin-fala-curta.png) ![sapin, frase longa](assets/task-166/sapin-fala-longa.png)
+  - ![falar ganha de pensar: humor thoughtful com speechText](assets/task-166/taskin-fala-ganha-de-pensar.png)
+- [x] Changeset minor no `@opentask/taskin-design-vue` — `.changeset/o-mascote-fala-em-balao.md`
 
 ## Notes
 Nasce do experimento de 03/10/2026: o Claude passou a conversar pelo Taskin dentro do chat (componente Vue montado via esm.sh a partir do npm), e o balao de fala teve de ser HTML por fora, porque o mascote so sabe pensar. Esta task traz o balao para dentro do desenho. Irma da task-167 (o roteiro).

@@ -13,6 +13,7 @@ import TaskinEffectHearts from '../../molecules/taskin-effect-hearts/TaskinEffec
 import TaskinEffectInk from '../../molecules/taskin-effect-ink/TaskinEffectInk';
 import TaskinEffectJuggle from '../../molecules/taskin-effect-juggle/TaskinEffectJuggle';
 import type { JuggleBalls } from '../../molecules/taskin-effect-juggle/TaskinEffectJuggle.types';
+import TaskinEffectSpeechBubble from '../../molecules/taskin-effect-speech-bubble/TaskinEffectSpeechBubble';
 import TaskinEffectSweat from '../../molecules/taskin-effect-sweat/TaskinEffectSweat';
 import TaskinEffectTears from '../../molecules/taskin-effect-tears/TaskinEffectTears';
 import TaskinEffectThoughtBubble from '../../molecules/taskin-effect-thought-bubble/TaskinEffectThoughtBubble';
@@ -983,6 +984,15 @@ export default defineComponent({
       type: String,
       default: undefined,
     },
+    /**
+     * O que o mascote esta dizendo: com texto, o balao de fala aparece saindo
+     * da boca, e o de pensamento sai de cena — falar ganha de pensar. Vazio,
+     * nada muda. A boca so se mexe com `speaking`; sao coisas separadas.
+     */
+    speechText: {
+      type: String,
+      default: undefined,
+    },
     /** O microfone esta ligado: o mascote fica na pose de escuta enquanto for `true`. */
     listening: {
       type: Boolean,
@@ -1244,9 +1254,16 @@ export default defineComponent({
             animationsEnabled: props.animationsEnabled,
           }),
         config.value.showThoughtBubble &&
+          !props.speechText &&
           h(TaskinEffectThoughtBubble, {
             variant,
             text: config.value.thoughtBubbleText || '?',
+            animationsEnabled: props.animationsEnabled,
+          }),
+        props.speechText &&
+          h(TaskinEffectSpeechBubble, {
+            variant,
+            text: props.speechText,
             animationsEnabled: props.animationsEnabled,
           }),
         config.value.showVomit &&

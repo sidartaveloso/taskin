@@ -37,6 +37,7 @@ export * from './components/molecules/taskin-effect-hearts';
 export * from './components/molecules/taskin-effect-ink';
 export * from './components/molecules/taskin-effect-juggle';
 export * from './components/molecules/taskin-effect-phone';
+export * from './components/molecules/taskin-effect-speech-bubble';
 export * from './components/molecules/taskin-effect-sweat';
 export * from './components/molecules/taskin-effect-tears';
 export * from './components/molecules/taskin-effect-thought-bubble';

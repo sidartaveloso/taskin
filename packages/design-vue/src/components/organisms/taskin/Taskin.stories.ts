@@ -471,3 +471,24 @@ export const EyeTrackingCustomPosition: Story = {
     },
   },
 };
+
+/**
+ * O mascote fala: `speechText` poe a frase num balao saindo da boca, e
+ * `speaking` mexe a boca junto. O balao de pensamento, se o humor tiver um,
+ * espera a fala acabar.
+ */
+export const Speaking: Story = {
+  args: {
+    mood: 'happy',
+    speechText: 'Oi, Sidarta! Agora eu falo.',
+    speaking: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Speech bubble from `speechText`, with the mouth moving from `speaking`. Switch the variant to see the Sapin speak.',
+      },
+    },
+  },
+};
