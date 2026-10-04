@@ -1,5 +1,5 @@
 /**
- * Layout do balao de pensamento do mascote.
+ * Layout dos baloes do mascote: o de pensamento, e a caixa do de fala.
  *
  * `<text>` em SVG nao quebra linha: o balao era uma elipse fixa de `rx: 35` com
  * uma linha de 24px, entao qualquer frase maior que meia duzia de caracteres
@@ -43,10 +43,22 @@ const PADDING_Y = 10;
 const MAX_LINES = 3;
 
 /**
- * Largura util maxima do texto: o balao inteiro cabe entre os dois limites, e o
- * preenchimento e descontado dos dois lados.
+ * O que muda de um balao para outro. O de pensamento usa os padroes; o de fala
+ * (`speech-bubble-layout.ts`) cola no topo e para antes dos olhos.
  */
-const MAX_TEXT_WIDTH = BUBBLE_RIGHT_LIMIT - BUBBLE_LEFT_LIMIT - 2 * PADDING_X;
+export interface BubbleLayoutOptions {
+  /** Posicao de sempre, preservada enquanto a frase couber no balao minimo. */
+  base: Record<TaskinVariant, { cx: number; cy: number }>;
+  /** O balao nao avanca para a esquerda disto. Padrao: `BUBBLE_LEFT_LIMIT`. */
+  leftLimit?: Partial<Record<TaskinVariant, number>>;
+  /** A maior fonte que a frase curta ganha. Padrao: 24. */
+  maxFontSize?: number;
+  /**
+   * Cola o balao no topo do quadro (`cy = ry + BUBBLE_TOP_LIMIT`), em vez de
+   * preservar `base.cy`: e como o balao de fala fica acima dos olhos.
+   */
+  hugTop?: boolean;
+}
 
 export interface ThoughtBubbleLayout {
   /** Linhas ja quebradas, na ordem. */
@@ -105,10 +117,22 @@ const quebrarEmLinhas = (texto: string, maxChars: number): string[] => {
   return linhas;
 };
 
-const maxCharsPara = (fontSize: number) => Math.max(1, Math.floor(MAX_TEXT_WIDTH / (fontSize * GLYPH_WIDTH_RATIO)));
+/**
+ * Largura util maxima do texto: o balao inteiro cabe entre os dois limites, e o
+ * preenchimento e descontado dos dois lados.
+ */
+const maxCharsPara = (fontSize: number, maxTextWidth: number) =>
+  Math.max(1, Math.floor(maxTextWidth / (fontSize * GLYPH_WIDTH_RATIO)));
 
-export const layoutThoughtBubble = (texto: string, variant: TaskinVariant = 'taskin'): ThoughtBubbleLayout => {
-  const base = BUBBLE_BASE[variant];
+export const layoutBubble = (
+  texto: string,
+  variant: TaskinVariant,
+  options: BubbleLayoutOptions,
+): ThoughtBubbleLayout => {
+  const base = options.base[variant];
+  const leftLimit = options.leftLimit?.[variant] ?? BUBBLE_LEFT_LIMIT;
+  const maxFontSize = options.maxFontSize ?? MAX_FONT_SIZE;
+  const maxTextWidth = BUBBLE_RIGHT_LIMIT - leftLimit - 2 * PADDING_X;
   const frase = texto.trim() || '?';
   const maiorPalavra = frase
     .split(/\s+/)
@@ -122,10 +146,10 @@ export const layoutThoughtBubble = (texto: string, variant: TaskinVariant = 'tas
    * o "Shhhh" no meio — o que se le pior do que a mesma frase um pouco menor.
    */
   let fontSize = MIN_FONT_SIZE;
-  let lines = quebrarEmLinhas(frase, maxCharsPara(MIN_FONT_SIZE));
+  let lines = quebrarEmLinhas(frase, maxCharsPara(MIN_FONT_SIZE, maxTextWidth));
 
-  for (let tamanho = MAX_FONT_SIZE; tamanho >= MIN_FONT_SIZE; tamanho--) {
-    const maxChars = maxCharsPara(tamanho);
+  for (let tamanho = maxFontSize; tamanho >= MIN_FONT_SIZE; tamanho--) {
+    const maxChars = maxCharsPara(tamanho, maxTextWidth);
     const candidatas = quebrarEmLinhas(frase, maxChars);
     if (candidatas.length <= MAX_LINES && maiorPalavra <= maxChars) {
       fontSize = tamanho;
@@ -138,16 +162,13 @@ export const layoutThoughtBubble = (texto: string, variant: TaskinVariant = 'tas
   const larguraDaMaiorLinha = lines.reduce((maior, l) => Math.max(maior, l.length), 0) * larguraDoGlifo;
   const alturaDaLinha = fontSize * LINE_HEIGHT_RATIO;
 
-  const rx = Math.min(
-    (BUBBLE_RIGHT_LIMIT - BUBBLE_LEFT_LIMIT) / 2,
-    Math.max(MIN_RX, larguraDaMaiorLinha / 2 + PADDING_X),
-  );
+  const rx = Math.min((BUBBLE_RIGHT_LIMIT - leftLimit) / 2, Math.max(MIN_RX, larguraDaMaiorLinha / 2 + PADDING_X));
   const ry = Math.max(MIN_RY, (lines.length * alturaDaLinha) / 2 + PADDING_Y);
 
   // Cresce para a direita antes de crescer para a esquerda: a esquerda e onde
   // esta a cabeca do mascote, e um balao por cima dela nao se le.
-  const cx = Math.min(BUBBLE_RIGHT_LIMIT - rx, Math.max(base.cx, BUBBLE_LEFT_LIMIT + rx));
-  const cy = Math.max(base.cy, ry + BUBBLE_TOP_LIMIT);
+  const cx = Math.min(BUBBLE_RIGHT_LIMIT - rx, Math.max(base.cx, leftLimit + rx));
+  const cy = options.hugTop ? ry + BUBBLE_TOP_LIMIT : Math.max(base.cy, ry + BUBBLE_TOP_LIMIT);
 
   const primeiraLinha = cy - ((lines.length - 1) * alturaDaLinha) / 2;
 
@@ -161,3 +182,7 @@ export const layoutThoughtBubble = (texto: string, variant: TaskinVariant = 'tas
     ry: arredondar(ry),
   };
 };
+
+/** O balao de pensamento: a elipse de sempre, na posicao de sempre. */
+export const layoutThoughtBubble = (texto: string, variant: TaskinVariant = 'taskin'): ThoughtBubbleLayout =>
+  layoutBubble(texto, variant, { base: BUBBLE_BASE });

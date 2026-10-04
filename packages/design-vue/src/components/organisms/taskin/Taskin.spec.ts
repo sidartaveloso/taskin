@@ -57,6 +57,37 @@ describe('Taskin', () => {
     expect(wrapper.find('g#effect-hearts').exists()).toBe(true);
   });
 
+  describe('speechText', () => {
+    it('sem texto, nao ha balao de fala', () => {
+      expect(mountTaskin().find('g#effect-speech-bubble').exists()).toBe(false);
+      expect(mountTaskin({ speechText: '' }).find('g#effect-speech-bubble').exists()).toBe(false);
+    });
+
+    it.each(['taskin', 'sapin'] as const)('%s: com texto, o balao de fala diz a frase', (variant) => {
+      const wrapper = mountTaskin({ variant, speechText: 'Oi, Sidarta' });
+      const balao = wrapper.find('g#effect-speech-bubble');
+
+      expect(balao.exists()).toBe(true);
+      expect(balao.find('text').text()).toBe('Oi, Sidarta');
+    });
+
+    // Falar ganha de pensar: os dois baloes juntos cobririam um ao outro.
+    it('esconde o balao de pensamento enquanto fala', () => {
+      const wrapper = mountTaskin({ mood: 'thoughtful', speechText: 'Ja sei' });
+
+      expect(wrapper.find('g#effect-speech-bubble').exists()).toBe(true);
+      expect(wrapper.find('g#effect-thought-bubble').exists()).toBe(false);
+    });
+
+    it('o balao de pensamento volta quando a fala acaba', async () => {
+      const wrapper = mountTaskin({ mood: 'thoughtful', speechText: 'Ja sei' });
+      await wrapper.setProps({ speechText: undefined });
+
+      expect(wrapper.find('g#effect-speech-bubble').exists()).toBe(false);
+      expect(wrapper.find('g#effect-thought-bubble').exists()).toBe(true);
+    });
+  });
+
   it('renders the thought bubble when the mood is thoughtful', () => {
     const wrapper = mountTaskin({ mood: 'thoughtful' });
     expect(wrapper.find('g#effect-thought-bubble').exists()).toBe(true);

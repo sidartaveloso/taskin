@@ -54,6 +54,14 @@ export interface TaskinProps {
   listening?: boolean;
 
   /**
+   * What the mascot is saying: with text, a speech bubble comes out of the
+   * mouth and the thought bubble steps aside (speaking wins over thinking).
+   * Empty or undefined changes nothing. The mouth itself only moves with
+   * `speaking`; the two are independent.
+   */
+  speechText?: string;
+
+  /**
    * Speech is playing (the shhh voice, an answer read aloud): the mouth
    * alternates between the current expression and open, and the Sapin's throat
    * pulses with each syllable. Off with `animationsEnabled=false`.
