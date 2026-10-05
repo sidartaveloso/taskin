@@ -4,10 +4,22 @@
  */
 export type SpeechBubbleTail = 'left' | 'right' | 'none';
 
+/**
+ * Como se fala, na forma do balao, como nos quadrinhos: `speech` (fala, a
+ * caixa de cantos redondos), `shout` (grito, contorno em estrela e texto em
+ * negrito), `whisper` (sussurro, borda tracejada e texto em italico),
+ * `thought` (pensamento, nuvem com bolinhas no lugar do rabicho) e
+ * `narration` (narracao, a caixa reta e amarelada, sem rabicho).
+ */
+export const SPEECH_BUBBLE_KINDS = ['speech', 'shout', 'whisper', 'thought', 'narration'] as const;
+export type SpeechBubbleKind = (typeof SPEECH_BUBBLE_KINDS)[number];
+
 export interface SpeechBubbleProps {
   /** O que vai escrito. O slot padrao, quando vem, ganha dele. */
   text?: string;
-  /** De que lado sai o rabicho. Padrao: `left`. */
+  /** A forma do balao: fala, grito, sussurro, pensamento ou narracao. Padrao: `speech`. */
+  kind?: SpeechBubbleKind;
+  /** De que lado sai o rabicho. Padrao: `left`. A narracao nunca tem. */
   tail?: SpeechBubbleTail;
   /** A distancia, em px, do topo do balao ate a base do rabicho. Padrao: 14, fora do canto arredondado. */
   tailTop?: number;

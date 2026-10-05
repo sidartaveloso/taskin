@@ -99,6 +99,11 @@ describe('TaskinSays', () => {
     expect(css.backgroundColor).toBe('rgb(225, 245, 238)');
   });
 
+  it.each(['shout', 'whisper', 'thought', 'narration'] as const)('bubbleKind %s chega ao balao', (kind) => {
+    const balao = mountSays({ text: 'Oi', bubbleKind: kind }).find('[data-testid="taskin-says-bubble"]');
+    expect(balao.classes()).toContain(`speech-bubble--${kind}`);
+  });
+
   it('as outras props atravessam para o Taskin', () => {
     const wrapper = mountSays({ text: 'Oi', variant: 'sapin', size: 200 });
 

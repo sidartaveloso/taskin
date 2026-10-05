@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import { speechBubbleTailDrop, speechBubbleTailReach, speechBubbleTailScale } from './SpeechBubble.types';
 import SpeechBubble from './SpeechBubble.vue';
 
@@ -131,5 +132,82 @@ describe('SpeechBubble', () => {
     expect(wrapper.classes()).toContain('meu-balao');
     expect(wrapper.attributes('role')).toBe('status');
     expect(wrapper.attributes('data-testid')).toBe('b');
+  });
+
+  describe('kind: os baloes dos quadrinhos', () => {
+    const quadro = () => new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+    it.each(['speech', 'shout', 'whisper', 'thought', 'narration'] as const)('%s poe a classe da forma', (kind) => {
+      expect(mountBubble({ text: 'Oi', kind }).classes()).toContain(`speech-bubble--${kind}`);
+    });
+
+    it.each(['shout', 'thought'] as const)(
+      '%s: a caixa fica transparente e um SVG do tamanho dela desenha a forma',
+      async (kind) => {
+        const wrapper = mountBubble({
+          text: 'Quem quebrou o build?',
+          kind,
+          background: '#FAEEDA',
+          borderColor: '#854F0B',
+        });
+        await nextTick();
+        await quadro();
+        const caixa = wrapper.element as HTMLElement;
+        const contorno = wrapper.find('svg.speech-bubble__outline');
+
+        expect(style(caixa).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+        expect(style(caixa).borderTopColor).toBe('rgba(0, 0, 0, 0)');
+        expect(wrapper.find('svg.speech-bubble__tail').exists()).toBe(false);
+        expect(contorno.attributes('width')).toBe(String(caixa.offsetWidth));
+        expect(contorno.attributes('height')).toBe(String(caixa.offsetHeight));
+        const forma = contorno.find('.speech-bubble__shape').element;
+        expect(style(forma).fill).toBe('rgb(250, 238, 218)');
+        expect(style(forma).stroke).toBe('rgb(133, 79, 11)');
+        // O contorno cobre a caixa: a forma vai de borda a borda.
+        const r = contorno.element.getBoundingClientRect();
+        expect(Math.round(r.left)).toBe(Math.round(caixa.getBoundingClientRect().left));
+      },
+    );
+
+    it('shout: o texto vai em negrito', () => {
+      const texto = mountBubble({ text: 'Oi', kind: 'shout' }).find('.speech-bubble__text').element;
+      expect(style(texto).fontWeight).toBe('700');
+    });
+
+    it('thought: no lugar do rabicho, tres bolinhas', async () => {
+      const wrapper = mountBubble({ text: 'Sera?', kind: 'thought' });
+      await nextTick();
+      await quadro();
+      expect(wrapper.findAll('circle.speech-bubble__puff')).toHaveLength(3);
+      expect(mountBubble({ text: 'Sera?', kind: 'thought', tail: 'none' }).findAll('circle').length).toBe(0);
+    });
+
+    it('a forma acompanha o tamanho: texto mais longo, contorno mais largo', async () => {
+      const wrapper = mountBubble({ text: 'Oi', kind: 'shout' });
+      await nextTick();
+      await quadro();
+      const antes = Number(wrapper.find('svg.speech-bubble__outline').attributes('width'));
+      await wrapper.setProps({ text: 'Agora uma frase bem mais comprida' });
+      await quadro();
+      await nextTick();
+      expect(Number(wrapper.find('svg.speech-bubble__outline').attributes('width'))).toBeGreaterThan(antes);
+    });
+
+    it('whisper: borda tracejada, rabicho tracejado e texto em italico', () => {
+      const wrapper = mountBubble({ text: 'psiu', kind: 'whisper' });
+      expect(style(wrapper.element).borderTopStyle).toBe('dashed');
+      expect(style(wrapper.find('.speech-bubble__tail-line').element).strokeDasharray).not.toBe('none');
+      expect(style(wrapper.find('.speech-bubble__text').element).fontStyle).toBe('italic');
+    });
+
+    it('narration: sem rabicho mesmo pedindo, canto reto e fundo amarelado; as props ainda ganham', () => {
+      const wrapper = mountBubble({ text: 'Tres horas depois...', kind: 'narration', tail: 'left' });
+      expect(wrapper.find('svg.speech-bubble__tail').exists()).toBe(false);
+      expect(style(wrapper.element).borderTopLeftRadius).toBe('2px');
+      expect(style(wrapper.element).backgroundColor).toBe('rgb(253, 243, 199)');
+      const branca = mountBubble({ text: 'x', kind: 'narration', background: '#ffffff', radius: 8 });
+      expect(style(branca.element).backgroundColor).toBe('rgb(255, 255, 255)');
+      expect(style(branca.element).borderTopLeftRadius).toBe('8px');
+    });
   });
 });
