@@ -16,7 +16,7 @@ describe('TaskinSays', () => {
     const balao = wrapper.find('[data-testid="taskin-says-bubble"]');
     expect(balao.exists()).toBe(true);
     expect(balao.element.closest('svg')).toBeNull();
-    expect(balao.find('.taskin-says__text').text()).toBe('Oi, Sidarta!');
+    expect(balao.find('.speech-bubble__text').text()).toBe('Oi, Sidarta!');
     expect(wrapper.find('svg g#effect-speech-bubble').exists()).toBe(false);
   });
 
@@ -36,7 +36,7 @@ describe('TaskinSays', () => {
   // CSS, e nao escala com o desenho.
   it('o texto fica legivel mesmo com o mascote pequeno', () => {
     const wrapper = mountSays({ text: 'As duas tasks estao fechadas.', size: 120 });
-    const texto = wrapper.find('.taskin-says__text').element as HTMLElement;
+    const texto = wrapper.find('.speech-bubble__text').element as HTMLElement;
     expect(Number.parseFloat(getComputedStyle(texto).fontSize)).toBeGreaterThanOrEqual(14);
   });
 
@@ -45,7 +45,7 @@ describe('TaskinSays', () => {
   it.each(['taskin', 'sapin'] as const)('%s: o rabicho encosta na cabeca, dentro do quadro do mascote', (variant) => {
     const wrapper = mountSays({ text: 'Oi, Sidarta!', variant, size: 180 });
     const quadro = (wrapper.find('.taskin-mascot-composed svg').element as SVGElement).getBoundingClientRect();
-    const rabicho = (wrapper.find('svg.taskin-says__tail').element as SVGElement).getBoundingClientRect();
+    const rabicho = (wrapper.find('svg.speech-bubble__tail').element as SVGElement).getBoundingClientRect();
 
     // A ponta esta em x ~2 dos 30 do SVG do rabicho: cai dentro do quadro, perto da beira direita da cabeca.
     const ponta = rabicho.left + 2;
@@ -60,6 +60,43 @@ describe('TaskinSays', () => {
 
     expect(getComputedStyle(polvo).borderTopColor).toBe('rgb(44, 62, 80)');
     expect(getComputedStyle(sapo).borderTopColor).toBe('rgb(19, 70, 53)');
+  });
+
+  it('o balao e o atomo SpeechBubble', () => {
+    const wrapper = mountSays({ text: 'Oi' });
+    expect(wrapper.findComponent({ name: 'SpeechBubble' }).exists()).toBe(true);
+  });
+
+  it('as props bubble* pintam o balao, e a borda deixa de seguir a variante', () => {
+    const wrapper = mountSays({
+      text: 'Oi',
+      variant: 'sapin',
+      bubbleBackground: '#FAEEDA',
+      bubbleBorderColor: '#854F0B',
+      bubbleTextColor: '#633806',
+      bubbleBorderWidth: 3,
+      bubbleFontSize: 18,
+    });
+    const balao = wrapper.find('[data-testid="taskin-says-bubble"]').element as HTMLElement;
+    const css = getComputedStyle(balao);
+
+    expect(css.backgroundColor).toBe('rgb(250, 238, 218)');
+    expect(css.borderTopColor).toBe('rgb(133, 79, 11)');
+    expect(css.color).toBe('rgb(99, 56, 6)');
+    expect(css.borderTopWidth).toBe('3px');
+    expect(css.fontSize).toBe('18px');
+  });
+
+  it('o tema por variavel CSS, posto no style de quem usa, ganha da tinta da variante', () => {
+    const wrapper = mount(TaskinSays, {
+      props: { text: 'Oi', idleAnimation: false, animationsEnabled: false },
+      attrs: { style: '--speech-bubble-border-color: #0F6E56; --speech-bubble-bg: #E1F5EE;' },
+      attachTo: document.body,
+    });
+    const css = getComputedStyle(wrapper.find('[data-testid="taskin-says-bubble"]').element);
+
+    expect(css.borderTopColor).toBe('rgb(15, 110, 86)');
+    expect(css.backgroundColor).toBe('rgb(225, 245, 238)');
   });
 
   it('as outras props atravessam para o Taskin', () => {
