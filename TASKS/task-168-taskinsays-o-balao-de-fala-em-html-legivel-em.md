@@ -21,6 +21,8 @@ O balao de fala em SVG (task-166) vive dentro do quadro de 320x260 do mascote: a
   - ![taskin: antes e depois](assets/task-168/antes-depois-taskin-fala-180px.png)
   - ![sapin: antes e depois](assets/task-168/antes-depois-sapin-fala-180px.png)
   - ![taskin a 100px, ainda legivel](assets/task-168/depois-taskin-fala-html-100px.png)
+- [x] O rabicho, revisto depois da primeira revisao visual (05/10): base larga colada na borda esquerda, a partir de `top: 14px` (fora do canto de raio 14), com um retangulo na cor do fundo cobrindo o trecho da borda onde ele encosta, para o contorno seguir continuo; o traco e so das duas curvas de fora. O SVG absoluto parte da borda de dentro, entao a borda de 2px fica em x 22–24 do SVG e a base das curvas esta em x 23. Junto, `overflow-wrap: break-word` em vez de `anywhere`, que encolhia o balao ate um caractere ("Oi" virava duas linhas), e `flex: 0 0 auto` no balao
+  - ![o rabicho a 4x](assets/task-168/depois-rabicho-zoom-4x.png)
 - [x] Changeset minor no `@opentask/taskin-design-vue` — `.changeset/taskin-says.md`
 - [ ] Balao a esquerda (`placement: 'left'`) e balao acima do mascote — adiado: nenhuma superficie pede ainda; o chat usa a direita
 
