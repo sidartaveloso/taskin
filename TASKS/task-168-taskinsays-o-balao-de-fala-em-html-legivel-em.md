@@ -1,6 +1,6 @@
 # 🧩 Task 168 — TaskinSays: o balao de fala em HTML, legivel em qualquer tamanho
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-do-mascote
@@ -16,7 +16,7 @@ O balao de fala em SVG (task-166) vive dentro do quadro de 320x260 do mascote: a
 - [x] Props proprias: `text`, `size`, `variant`, `animationsEnabled`, `maxWidth` (`TaskinSays.types.ts`). O resto (`mood`, `speaking`, `listening`, `juggling`, olhos...) atravessa para o `Taskin` como attrs; `class` e `style` ficam na raiz. Com texto, o balao de pensamento do SVG sai de cena (falar ganha de pensar). `play()` do `Taskin` de dentro exposto, para o `useTaskinScript`
 - [x] Exports: `TaskinSays` e `TaskinSaysProps` no `organisms/taskin/index.ts` e no `src/index.ts`
 - [x] Stories `Organisms/Taskin/Says`: Default (180px), Small (100px), LongText, Sapin, SemTexto, AntesEDepois (o mesmo texto no balao SVG e no HTML, lado a lado)
-- [x] Testes `TaskinSays.spec.ts`: balao HTML fora do SVG; sem texto nao ha balao e o pensamento fica; com texto o pensamento some; fonte computada >= 14px com o mascote a 120px; borda na tinta de cada variante; attrs atravessam; `class`/`style` na raiz; `play` exposto. `pnpm --filter @opentask/taskin-design-vue test`: 679 + 306 passando
+- [x] Testes `TaskinSays.spec.ts`: balao HTML fora do SVG; sem texto nao ha balao e o pensamento fica; com texto o pensamento some; fonte computada >= 14px com o mascote a 120px; borda na tinta de cada variante; attrs atravessam; `class`/`style` na raiz; `play` exposto. `pnpm --filter @opentask/taskin-design-vue test`: 681 + 306 passando
 - [x] Evidencia visual em `TASKS/assets/task-168/` (`antes` = `speechText` em SVG; `depois` = `TaskinSays`; mesma frase, 180px, animacoes congeladas):
   - ![taskin: antes e depois](assets/task-168/antes-depois-taskin-fala-180px.png)
   - ![sapin: antes e depois](assets/task-168/antes-depois-sapin-fala-180px.png)
