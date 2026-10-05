@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { EYE_GEOMETRY } from '../../atoms/taskin-eyes/TaskinEyes.types';
-import { BUBBLE_TOP_LIMIT } from '../taskin-effect-thought-bubble/thought-bubble-layout';
-import { layoutSpeechBubble, SPEECH_CORNER_RADIUS, SPEECH_TIP } from './speech-bubble-layout';
+import {
+  BUBBLE_TIP,
+  BUBBLE_TOP_LIMIT,
+  SAPIN_EYE_BUMP_RIGHT,
+  TASKIN_EYE_TOP,
+} from '../taskin-effect-thought-bubble/thought-bubble-layout';
+import { layoutSpeechBubble, SPEECH_CORNER_RADIUS } from './speech-bubble-layout';
 
 const FRASES = ['Oi!', 'Oi, Sidarta!', 'Sidarta, a task 166 terminou e os testes passaram'];
 const olhoDireito = (variant: 'taskin' | 'sapin') => {
@@ -20,6 +25,7 @@ describe('layoutSpeechBubble', () => {
   // ou a fala tapa o olho de quem fala.
   it('taskin: a caixa acaba acima do olho direito, em qualquer frase', () => {
     const olho = olhoDireito('taskin');
+    expect(olho.top).toBe(TASKIN_EYE_TOP);
     for (const texto of FRASES) {
       const { y, height } = layoutSpeechBubble(texto, 'taskin');
       expect(y + height).toBeLessThanOrEqual(olho.top);
@@ -29,9 +35,8 @@ describe('layoutSpeechBubble', () => {
   // No Sapin o olho e um calombo em cima da cabeca, mais alto que a caixa: ela
   // fica inteira a direita dele.
   it('sapin: a caixa fica a direita do calombo do olho, em qualquer frase', () => {
-    const olho = olhoDireito('sapin');
     for (const texto of FRASES) {
-      expect(layoutSpeechBubble(texto, 'sapin').x).toBeGreaterThanOrEqual(olho.right);
+      expect(layoutSpeechBubble(texto, 'sapin').x).toBeGreaterThanOrEqual(SAPIN_EYE_BUMP_RIGHT);
     }
   });
 
@@ -39,8 +44,8 @@ describe('layoutSpeechBubble', () => {
     const olho = olhoDireito(variant);
     for (const texto of FRASES) {
       const { y, height, tail } = layoutSpeechBubble(texto, variant);
-      expect(tail.tip.x).toBe(SPEECH_TIP[variant].x);
-      expect(tail.tip.y).toBeGreaterThanOrEqual(SPEECH_TIP[variant].y);
+      expect(tail.tip.x).toBe(BUBBLE_TIP[variant].x);
+      expect(tail.tip.y).toBeGreaterThanOrEqual(BUBBLE_TIP[variant].y);
       expect(tail.tip.x).toBeGreaterThan(olho.right);
       expect(tail.tip.y).toBeGreaterThan(y + height);
     }

@@ -243,7 +243,7 @@ describe('Taskin', () => {
 
     it('tira o balao de pensamento de cima do olho direito', () => {
       const balao = mountSapin({ mood: 'thoughtful' }).find('g#effect-thought-bubble ellipse');
-      expect([balao.attributes('cx'), balao.attributes('cy')]).toEqual(['250', '34']);
+      expect([balao.attributes('cx'), balao.attributes('cy')]).toEqual(['268', '34']);
     });
 
     it('move o sapo inteiro conforme o humor', () => {
