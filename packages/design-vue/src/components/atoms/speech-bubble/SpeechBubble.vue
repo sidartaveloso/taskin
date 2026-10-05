@@ -217,8 +217,10 @@ const vars = computed(() => {
 
 /*
  * Grito e pensamento: a caixa guarda o tamanho (a borda continua la, so que
- * transparente) e o SVG por tras do texto desenha a forma. `isolation` cria o
- * contexto para o `z-index: -1` ficar atras do texto e nao atras da pagina.
+ * transparente) e o SVG por tras do texto desenha a forma. O SVG fica no
+ * `z-index` 0 e o texto no 1, dentro do contexto que o `isolation` cria. Um
+ * `z-index: -1` no SVG desenhava igual, mas o axe nao o entende e via o SVG
+ * por cima do texto.
  */
 .speech-bubble--drawn {
   isolation: isolate;
@@ -230,7 +232,7 @@ const vars = computed(() => {
   position: absolute;
   left: calc(-1 * var(--_border-width));
   top: calc(-1 * var(--_border-width));
-  z-index: -1;
+  z-index: 0;
   overflow: visible;
   pointer-events: none;
 }
@@ -245,6 +247,19 @@ const vars = computed(() => {
 
 .speech-bubble__puff {
   stroke-linejoin: round;
+}
+
+/*
+ * O texto do grito e do pensamento leva o proprio fundo, da cor do balao. A
+ * forma desenhada vem de um SVG por tras dele, e o axe (o painel de
+ * acessibilidade) nao determina o fundo de um elemento sobreposto: o contraste
+ * saia "inconclusivo". O paragrafo fica dentro do padding, e o padding dentro
+ * da forma, entao o fundo dele some no fundo do balao.
+ */
+.speech-bubble--drawn .speech-bubble__text {
+  position: relative;
+  z-index: 1;
+  background: var(--_bg);
 }
 
 /* O grito, em negrito. */
