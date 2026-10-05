@@ -2,6 +2,23 @@ import { defineComponent, h, type PropType } from 'vue';
 import { eyeShift } from '../../atoms/taskin-eyes/TaskinEyes.types';
 import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 
+/**
+ * O contorno de um "Z" em negrito de 24px, com a origem na linha de base a
+ * esquerda, como o `x`/`y` de um `<text>`: tirado do glifo que o `<text>`
+ * desenhava. E desenho, nao texto: um `<text>` de uma letra so sai
+ * "inconclusivo" no `color-contrast` do axe ("conteudo curto demais"), e nem
+ * `aria-hidden` nem `role="presentation"` o tiram da regra, que mede todo
+ * texto visivel.
+ */
+const CONTORNO_Z = 'h12.6v2.6l-8.6 11.5h8.9v2.9h-13.1v-2.6l8.6-11.5h-8.4z';
+
+const letraZ = (x: number, y: number, atraso: string | null) =>
+  h('path', {
+    d: `M${x + 1.2} ${y - 17}${CONTORNO_Z}`,
+    fill: '#2C3E50',
+    style: atraso === null ? '' : `animation: zzz-rise 2s ease-in-out infinite ${atraso};`,
+  });
+
 export default defineComponent({
   name: 'TaskinEffectZzz',
   props: {
@@ -21,33 +38,9 @@ export default defineComponent({
       const shift = eyeShift(props.variant, 'right');
 
       return h('g', { id: 'effect-zzz' }, [
-        h('text', {
-          x: String(190 + shift.x),
-          y: String(90 + shift.y),
-          fill: '#2C3E50',
-          'font-size': '24',
-          'font-weight': 'bold',
-          textContent: 'Z',
-          style: props.animationsEnabled ? 'animation: zzz-rise 2s ease-in-out infinite;' : '',
-        }),
-        h('text', {
-          x: String(200 + shift.x),
-          y: String(80 + shift.y),
-          fill: '#2C3E50',
-          'font-size': '24',
-          'font-weight': 'bold',
-          textContent: 'Z',
-          style: props.animationsEnabled ? 'animation: zzz-rise 2s ease-in-out infinite 0.3s;' : '',
-        }),
-        h('text', {
-          x: String(210 + shift.x),
-          y: String(70 + shift.y),
-          fill: '#2C3E50',
-          'font-size': '24',
-          'font-weight': 'bold',
-          textContent: 'Z',
-          style: props.animationsEnabled ? 'animation: zzz-rise 2s ease-in-out infinite 0.6s;' : '',
-        }),
+        letraZ(190 + shift.x, 90 + shift.y, props.animationsEnabled ? '0s' : null),
+        letraZ(200 + shift.x, 80 + shift.y, props.animationsEnabled ? '0.3s' : null),
+        letraZ(210 + shift.x, 70 + shift.y, props.animationsEnabled ? '0.6s' : null),
         h(
           'style',
           `
