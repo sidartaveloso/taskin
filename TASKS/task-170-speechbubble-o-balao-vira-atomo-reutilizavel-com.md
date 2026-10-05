@@ -1,6 +1,6 @@
 # 🧩 Task 170 — SpeechBubble: o balao vira atomo reutilizavel, com cores personalizaveis
 
-- Status: in-progress
+- Status: done
 - Type: refactor
 - Assignee: sidartaveloso
 - Group: movimentos-do-mascote
