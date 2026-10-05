@@ -236,7 +236,7 @@ describe('Taskin', () => {
 
     it('leva os efeitos do rosto junto: lagrimas, Zzz, coracoes e vomito', () => {
       expect(mountSapin({ mood: 'crying' }).find('g#effect-tears circle').attributes('cy')).toBe('86');
-      expect(mountSapin({ mood: 'sleeping' }).find('g#effect-zzz text').attributes('y')).toBe('71');
+      expect(mountSapin({ mood: 'sleeping' }).find('g#effect-zzz path').attributes('d')).toMatch(/^M205\.2 54h/);
       expect(mountSapin({ mood: 'in-love' }).find('g#effect-hearts text').attributes('y')).toBe('71');
       expect(mountSapin({ mood: 'vomiting' }).find('g#effect-vomit').attributes('transform')).toBe('translate(0 -21)');
     });
