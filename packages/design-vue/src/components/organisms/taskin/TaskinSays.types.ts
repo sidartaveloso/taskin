@@ -1,3 +1,4 @@
+import type { SpeechBubbleKind } from '../../atoms/speech-bubble/SpeechBubble.types';
 import type { TaskinVariant } from './Taskin.variants';
 
 /**
@@ -25,4 +26,6 @@ export interface TaskinSaysProps {
   bubbleBorderWidth?: number;
   /** Tamanho da fonte do balao, em px. Padrao: 15. */
   bubbleFontSize?: number;
+  /** Como o mascote fala: `speech`, `shout`, `whisper`, `thought` ou `narration`. Padrao: `speech`. */
+  bubbleKind?: SpeechBubbleKind;
 }

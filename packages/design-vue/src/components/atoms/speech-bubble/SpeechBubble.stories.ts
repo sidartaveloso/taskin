@@ -1,17 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import type { SpeechBubbleProps } from './SpeechBubble.types';
+import { SPEECH_BUBBLE_KINDS, type SpeechBubbleKind, type SpeechBubbleProps } from './SpeechBubble.types';
 import SpeechBubble from './SpeechBubble.vue';
 
-/**
- * O balao de fala do `TaskinSays`, como atomo. Mexa nas cores, na borda, na
- * fonte e no rabicho pelo painel Controls: a story acompanha.
- */
+/** O que cada balao diz na grade: o nome do modo e uma fala tipica dele. */
+const FALAS: Record<SpeechBubbleKind, { nome: string; text: string }> = {
+  speech: { nome: 'speech · fala', text: 'As duas tasks estao fechadas.' },
+  shout: { nome: 'shout · grito', text: 'QUEM QUEBROU O BUILD?!' },
+  whisper: { nome: 'whisper · sussurro', text: 'o deploy e sexta, nao conta...' },
+  thought: { nome: 'thought · pensamento', text: 'Sera que a 0.7.0 sai hoje?' },
+  narration: { nome: 'narration · narracao', text: 'Tres horas depois...' },
+};
+
 const meta: Meta<SpeechBubbleProps> = {
   title: 'Atoms/Base/SpeechBubble',
   component: SpeechBubble,
   tags: ['autodocs', 'design-vue'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'O balao de quadrinho do Taskin, como atomo reutilizavel. A forma diz como se fala (`kind`): fala, grito, sussurro, pensamento ou narracao. O rabicho sai a esquerda, a direita ou nao sai, e cresce com a borda. Fundo, borda, texto, espessura, fonte, raio e largura vem das props (mexa nelas no painel Controls) ou das variaveis `--speech-bubble-*` de quem envolve; a prop ganha.',
+      },
+    },
+  },
   argTypes: {
     text: { control: 'text' },
+    kind: { control: 'inline-radio', options: [...SPEECH_BUBBLE_KINDS] },
     tail: { control: 'inline-radio', options: ['left', 'right', 'none'] },
     tailTop: { control: { type: 'range', min: 0, max: 60, step: 1 } },
     background: { control: 'color' },
@@ -25,24 +39,64 @@ const meta: Meta<SpeechBubbleProps> = {
   },
   args: {
     text: 'As duas tasks estao fechadas, com testes e evidencia visual.',
+    kind: 'speech',
     tail: 'left',
-    background: '#ffffff',
-    borderColor: '#2c3e50',
-    textColor: '#2c3e50',
-    borderWidth: 2,
-    fontSize: 15,
-    radius: 14,
-    maxWidth: 260,
     animated: true,
   },
-  decorators: [() => ({ template: '<div style="padding: 24px 40px;"><story /></div>' })],
+  decorators: [() => ({ template: '<div style="padding: 24px 48px;"><story /></div>' })],
 };
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/**
+ * Todos os modos, como nos quadrinhos: a forma do balao diz como se fala. As
+ * cores e a borda dos Controls valem para todos de uma vez.
+ */
+export const AllKinds: Story = {
+  render: (args) => ({
+    components: { SpeechBubble },
+    setup: () => ({ args, kinds: SPEECH_BUBBLE_KINDS, falas: FALAS }),
+    template: `
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 36px 56px; padding: 12px 8px;">
+        <div v-for="kind in kinds" :key="kind">
+          <SpeechBubble v-bind="args" :kind="kind" :text="falas[kind].text" />
+          <p style="margin: 14px 0 0; font-size: 12px; color: #5f5e5a;">{{ falas[kind].nome }}</p>
+        </div>
+      </div>
+    `,
+  }),
+};
+
+/** O balao do Controls: um de cada vez, com tudo ajustavel. */
 export const Default: Story = {};
 
+/** Fala: a caixa de cantos redondos com o rabicho curvo. */
+export const Speech: Story = {
+  args: { kind: 'speech', text: FALAS.speech.text },
+};
+
+/** Grito: contorno em estrela, o rabicho vira uma das pontas, e o texto vai em negrito. */
+export const Shout: Story = {
+  args: { kind: 'shout', text: FALAS.shout.text, background: '#FCEBEB', borderColor: '#A32D2D', textColor: '#501313' },
+};
+
+/** Sussurro: borda e rabicho tracejados, texto em italico. */
+export const Whisper: Story = {
+  args: { kind: 'whisper', text: FALAS.whisper.text },
+};
+
+/** Pensamento: nuvem de gomos, com bolinhas cada vez menores no lugar do rabicho. */
+export const Thought: Story = {
+  args: { kind: 'thought', text: FALAS.thought.text },
+};
+
+/** Narracao: a caixa do narrador, de canto reto e amarelada, nunca com rabicho. */
+export const Narration: Story = {
+  args: { kind: 'narration', text: FALAS.narration.text },
+};
+
+/** O rabicho do outro lado, em todos os modos que tem rabicho. */
 export const TailRight: Story = {
   args: { tail: 'right', text: 'O rabicho tambem sai do outro lado.' },
 };
@@ -83,6 +137,6 @@ export const WithSlot: Story = {
   render: (args) => ({
     components: { SpeechBubble },
     setup: () => ({ args }),
-    template: `<SpeechBubble v-bind="args">Leia a <strong>task 170</strong> antes de mesclar.</SpeechBubble>`,
+    template: `<SpeechBubble v-bind="args">Leia a <strong>task 171</strong> antes de mesclar.</SpeechBubble>`,
   }),
 };

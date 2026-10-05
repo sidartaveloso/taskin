@@ -1,15 +1,40 @@
 <template>
   <div
+    ref="root"
     class="speech-bubble"
-    :class="{
-      'speech-bubble--animated': animated,
-      'speech-bubble--tail-right': tail === 'right',
-      'speech-bubble--with-tail': tail !== 'none',
-    }"
+    :class="[
+      `speech-bubble--${kind}`,
+      {
+        'speech-bubble--animated': animated,
+        'speech-bubble--drawn': drawn,
+        'speech-bubble--tail-right': actualTail === 'right',
+        'speech-bubble--with-tail': actualTail !== 'none',
+      },
+    ]"
     :style="vars"
   >
     <svg
-      v-if="tail !== 'none'"
+      v-if="drawn && box"
+      class="speech-bubble__outline"
+      :width="box.width"
+      :height="box.height"
+      aria-hidden="true"
+    >
+      <path v-if="kind === 'shout'" class="speech-bubble__shape" :d="shout" />
+      <template v-else-if="cloud">
+        <path class="speech-bubble__shape" :d="cloud.d" />
+        <circle
+          v-for="(puff, i) in cloud.puffs"
+          :key="i"
+          class="speech-bubble__shape speech-bubble__puff"
+          :cx="puff.x"
+          :cy="puff.y"
+          :r="puff.r"
+        />
+      </template>
+    </svg>
+    <svg
+      v-else-if="!drawn && actualTail !== 'none'"
       class="speech-bubble__tail"
       :viewBox="`0 0 ${T.size} ${T.size}`"
       aria-hidden="true"
@@ -37,19 +62,27 @@
  * borda do balao cair no meio da base dele (x 23), qualquer que seja a
  * espessura. O fundo dele apaga o trecho da borda onde ele encosta, e o traco
  * e so das duas curvas de fora: o contorno segue continuo.
+ *
+ * A forma diz como se fala, como nos quadrinhos (`kind`, task-171). Fala,
+ * sussurro e narracao sao esta caixa de CSS, com borda solida, tracejada ou
+ * reta. O grito e o pensamento nao cabem numa borda: a caixa fica
+ * transparente e um SVG, no tamanho medido dela, desenha a estrela ou a
+ * nuvem (`speech-bubble-shapes.ts`), com a ponta no mesmo lugar do rabicho.
  */
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
   SPEECH_BUBBLE_DEFAULTS,
   SPEECH_BUBBLE_TAIL,
   type SpeechBubbleProps,
   speechBubbleTailScale,
 } from './SpeechBubble.types';
+import { type BubbleBox, shoutOutline, thoughtCloud } from './speech-bubble-shapes';
 
 defineOptions({ name: 'SpeechBubble' });
 
 const props = withDefaults(defineProps<SpeechBubbleProps>(), {
   text: '',
+  kind: 'speech',
   tail: 'left',
   tailTop: SPEECH_BUBBLE_DEFAULTS.tailTop,
   background: undefined,
@@ -85,6 +118,44 @@ const tailPaths = computed(() => {
   };
 });
 
+/** A narracao e a caixa do narrador: nao sai da boca de ninguem. */
+const actualTail = computed(() => (props.kind === 'narration' ? 'none' : props.tail));
+/** As formas que nao cabem numa borda de CSS. */
+const drawn = computed(() => props.kind === 'shout' || props.kind === 'thought');
+
+/*
+ * O tamanho da caixa por fora, medido: a estrela e a nuvem sao desenhadas em
+ * volta dele. `offsetWidth` ignora o `transform` do pop de entrada.
+ */
+const root = ref<HTMLElement | null>(null);
+const size = ref<{ width: number; height: number } | null>(null);
+const medir = () => {
+  const el = root.value;
+  if (el) size.value = { width: el.offsetWidth, height: el.offsetHeight };
+};
+let observer: ResizeObserver | undefined;
+onMounted(() => {
+  medir();
+  if (typeof ResizeObserver !== 'undefined' && root.value) {
+    observer = new ResizeObserver(medir);
+    observer.observe(root.value);
+  }
+});
+onBeforeUnmount(() => observer?.disconnect());
+
+const box = computed<BubbleBox | null>(() =>
+  size.value
+    ? {
+        ...size.value,
+        borderWidth: props.borderWidth ?? SPEECH_BUBBLE_DEFAULTS.borderWidth,
+        tail: actualTail.value,
+        tailTop: props.tailTop,
+      }
+    : null,
+);
+const shout = computed(() => (box.value && props.kind === 'shout' ? shoutOutline(box.value) : ''));
+const cloud = computed(() => (box.value && props.kind === 'thought' ? thoughtCloud(box.value) : null));
+
 const px = (n: number | undefined) => (n === undefined ? undefined : `${n}px`);
 
 /** So as props que vieram viram variavel: as outras deixam passar o tema herdado. */
@@ -114,6 +185,8 @@ const vars = computed(() => {
   --_border-width: var(--speech-bubble-border-width, 2px);
   --_tail-scale: var(--speech-bubble-tail-scale, 1);
   position: relative;
+  /* Abraca o texto em qualquer contexto: solto num bloco, ocupava a largura maxima ate para "Oi". */
+  width: fit-content;
   /* `maxWidth` e a largura do texto, como no `TaskinSays` de antes; explicito para um reset global nao mudar isso. */
   box-sizing: content-box;
   max-width: var(--speech-bubble-max-width, 260px);
@@ -140,6 +213,62 @@ const vars = computed(() => {
 
 .speech-bubble--tail-right {
   transform-origin: right top;
+}
+
+/*
+ * Grito e pensamento: a caixa guarda o tamanho (a borda continua la, so que
+ * transparente) e o SVG por tras do texto desenha a forma. `isolation` cria o
+ * contexto para o `z-index: -1` ficar atras do texto e nao atras da pagina.
+ */
+.speech-bubble--drawn {
+  isolation: isolate;
+  background: transparent;
+  border-color: transparent;
+}
+
+.speech-bubble__outline {
+  position: absolute;
+  left: calc(-1 * var(--_border-width));
+  top: calc(-1 * var(--_border-width));
+  z-index: -1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.speech-bubble__shape {
+  fill: var(--_bg);
+  stroke: var(--_border-color);
+  stroke-width: var(--_border-width);
+  stroke-linejoin: miter;
+  stroke-miterlimit: 12;
+}
+
+.speech-bubble__puff {
+  stroke-linejoin: round;
+}
+
+/* O grito, em negrito. */
+.speech-bubble--shout .speech-bubble__text {
+  font-weight: 700;
+}
+
+/* O sussurro: borda e rabicho tracejados, e o texto em italico. */
+.speech-bubble--whisper {
+  border-style: dashed;
+}
+
+.speech-bubble--whisper .speech-bubble__tail-line {
+  stroke-dasharray: 4 3;
+}
+
+.speech-bubble--whisper .speech-bubble__text {
+  font-style: italic;
+}
+
+/* A narracao: a caixa do narrador, de canto reto e amarelada, sem rabicho. */
+.speech-bubble--narration {
+  --_bg: var(--speech-bubble-bg, #fdf3c7);
+  border-radius: var(--speech-bubble-radius, 2px);
 }
 
 .speech-bubble--animated {

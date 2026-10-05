@@ -22,6 +22,7 @@
       :text-color="bubbleTextColor"
       :border-width="bubbleBorderWidth"
       :font-size="bubbleFontSize"
+      :kind="bubbleKind"
     />
   </div>
 </template>
@@ -60,6 +61,7 @@ const props = withDefaults(defineProps<TaskinSaysProps>(), {
   bubbleTextColor: undefined,
   bubbleBorderWidth: undefined,
   bubbleFontSize: undefined,
+  bubbleKind: 'speech',
 });
 
 const attrs = useAttrs();
