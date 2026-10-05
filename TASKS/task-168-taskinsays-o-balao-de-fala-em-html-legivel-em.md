@@ -23,6 +23,8 @@ O balao de fala em SVG (task-166) vive dentro do quadro de 320x260 do mascote: a
   - ![taskin a 100px, ainda legivel](assets/task-168/depois-taskin-fala-html-100px.png)
 - [x] O rabicho, revisto depois da primeira revisao visual (05/10): base larga colada na borda esquerda, a partir de `top: 14px` (fora do canto de raio 14), com um retangulo na cor do fundo cobrindo o trecho da borda onde ele encosta, para o contorno seguir continuo; o traco e so das duas curvas de fora. O SVG absoluto parte da borda de dentro, entao a borda de 2px fica em x 22–24 do SVG e a base das curvas esta em x 23. Junto, `overflow-wrap: break-word` em vez de `anywhere`, que encolhia o balao ate um caractere ("Oi" virava duas linhas), e `flex: 0 0 auto` no balao
   - ![o rabicho a 4x](assets/task-168/depois-rabicho-zoom-4x.png)
+- [x] Perto de quem fala (segunda revisao visual, 05/10): o quadro de 320 do mascote tem margem vazia a direita do bicho, e o balao nascia depois dela, longe. Agora ele entra na margem com `margin-left` negativo, calculado para a ponta do rabicho encostar a direita da cabeca (`HEAD_RIGHT`: Taskin 229, Sapin 233), e desce ate a ponta ficar na altura do meio da cabeca (`HEAD_LEVEL` 100); abaixo de ~110px de mascote o balao para no topo e a ponta fica um pouco mais baixa. Prova: `TaskinSays.spec.ts` › "o rabicho encosta na cabeca, dentro do quadro do mascote", nas duas variantes
+  - ![sapin a 320px, balao perto](assets/task-168/depois-sapin-fala-html-320px.png)
 - [x] Changeset minor no `@opentask/taskin-design-vue` — `.changeset/taskin-says.md`
 - [ ] Balao a esquerda (`placement: 'left'`) e balao acima do mascote — adiado: nenhuma superficie pede ainda; o chat usa a direita
 

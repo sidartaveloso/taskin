@@ -40,6 +40,19 @@ describe('TaskinSays', () => {
     expect(Number.parseFloat(getComputedStyle(texto).fontSize)).toBeGreaterThanOrEqual(14);
   });
 
+  // O quadro do mascote tem margem vazia a direita do bicho: o balao entra
+  // nela, e a ponta do rabicho para junto da cabeca, nao depois do quadro.
+  it.each(['taskin', 'sapin'] as const)('%s: o rabicho encosta na cabeca, dentro do quadro do mascote', (variant) => {
+    const wrapper = mountSays({ text: 'Oi, Sidarta!', variant, size: 180 });
+    const quadro = (wrapper.find('.taskin-mascot-composed svg').element as SVGElement).getBoundingClientRect();
+    const rabicho = (wrapper.find('svg.taskin-says__tail').element as SVGElement).getBoundingClientRect();
+
+    // A ponta esta em x ~2 dos 30 do SVG do rabicho: cai dentro do quadro, perto da beira direita da cabeca.
+    const ponta = rabicho.left + 2;
+    expect(ponta).toBeLessThan(quadro.right);
+    expect(ponta).toBeGreaterThan(quadro.left + quadro.width * 0.65);
+  });
+
   it('a borda segue a tinta da variante', () => {
     const polvo = mountSays({ text: 'Oi' }).find('[data-testid="taskin-says-bubble"]').element as HTMLElement;
     const sapo = mountSays({ text: 'Oi', variant: 'sapin' }).find('[data-testid="taskin-says-bubble"]')
