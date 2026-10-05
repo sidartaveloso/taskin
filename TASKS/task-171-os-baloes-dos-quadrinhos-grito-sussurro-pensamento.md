@@ -1,6 +1,6 @@
 # 🧩 Task 171 — Os baloes dos quadrinhos: grito, sussurro, pensamento e narracao no SpeechBubble
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: movimentos-do-mascote
