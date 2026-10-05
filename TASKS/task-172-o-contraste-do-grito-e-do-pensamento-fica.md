@@ -1,6 +1,6 @@
 # 🧩 Task 172 — O contraste do grito e do pensamento fica mensuravel para o axe
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: movimentos-do-mascote
