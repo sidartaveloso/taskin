@@ -1,6 +1,6 @@
 # 🧩 Task 173 — Os Z do sono deixam de sair inconclusivos no contraste do axe
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: movimentos-do-mascote
