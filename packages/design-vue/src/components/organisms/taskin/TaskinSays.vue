@@ -39,6 +39,7 @@ import { computed, ref, type StyleValue, useAttrs } from 'vue';
 import { MOUTH_INK } from '../../atoms/taskin-mouth/TaskinMouth.types';
 import Taskin from './Taskin';
 import type { TaskinAction } from './Taskin.actions';
+import type { TaskinVariant } from './Taskin.variants';
 import type { TaskinSaysProps } from './TaskinSays.types';
 
 defineOptions({ name: 'TaskinSays', inheritAttrs: false });
@@ -60,14 +61,25 @@ const taskinAttrs = computed(() => {
   return rest;
 });
 
-/*
- * A cabeca do mascote comeca em y 45 do quadro de 260: o balao nasce nessa
- * altura, e o rabicho sai dele para baixo e para a esquerda, em direcao ao
- * alto da cabeca. A tinta da borda e a mesma da boca da variante.
+/**
+ * Onde a ponta do rabicho encosta, no quadro de 320 do mascote: um pouco a
+ * direita da beira da cabeca, na altura da ponta (y ~107). O quadro tem uma
+ * margem vazia a direita do bicho, entao o balao entra nela em vez de nascer
+ * depois dela; sem isso ficava longe demais de quem fala.
  */
+const HEAD_RIGHT: Record<TaskinVariant, number> = { taskin: 229, sapin: 233 };
+/** A altura, no quadro de 260, em que a ponta encosta: o meio da cabeca, abaixo dos olhos. */
+const HEAD_LEVEL = 100;
+/** Quanto o rabicho avanca para a esquerda da borda do balao, e quanto a ponta desce do topo dele (ver o CSS do `__tail`). */
+const TAIL_REACH = 22;
+const TAIL_DROP = 35;
+
 const rootStyle = computed(() => ({
   '--taskin-says-max-width': `${props.maxWidth}px`,
-  '--taskin-says-head-top': `${Math.round(((props.size * 260) / 320 / 260) * 45)}px`,
+  // O balao desce ate a ponta do rabicho ficar na altura da cabeca; num mascote
+  // muito pequeno (abaixo de ~110px) ele para no topo e a ponta fica um pouco abaixo.
+  '--taskin-says-bubble-top': `${Math.max(0, Math.round((props.size * HEAD_LEVEL) / 320 - TAIL_DROP))}px`,
+  '--taskin-says-bubble-offset': `${Math.round(TAIL_REACH - (props.size * (320 - HEAD_RIGHT[props.variant])) / 320)}px`,
   '--taskin-says-variant-ink': MOUTH_INK[props.variant],
 }));
 
@@ -83,7 +95,6 @@ defineExpose({
 .taskin-says {
   display: inline-flex;
   align-items: flex-start;
-  gap: 14px;
   --taskin-says-bg: #ffffff;
   --taskin-says-ink: var(--taskin-says-variant-ink, #2c3e50);
   --taskin-says-text: #2c3e50;
@@ -94,7 +105,9 @@ defineExpose({
 .taskin-says__bubble {
   position: relative;
   flex: 0 0 auto;
-  margin-top: var(--taskin-says-head-top, 48px);
+  margin-top: var(--taskin-says-bubble-top, 48px);
+  /* Negativo: entra na margem vazia do quadro ate a ponta do rabicho encostar na cabeca. */
+  margin-left: var(--taskin-says-bubble-offset, 0px);
   max-width: var(--taskin-says-max-width, 260px);
   padding: 10px 14px;
   background: var(--taskin-says-bg);
