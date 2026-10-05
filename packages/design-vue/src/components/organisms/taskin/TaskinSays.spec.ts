@@ -1,0 +1,79 @@
+import { mount } from '@vue/test-utils';
+import { describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
+import TaskinSays from './TaskinSays.vue';
+
+const mountSays = (props: Record<string, unknown> = {}, attrs: Record<string, unknown> = {}) =>
+  mount(TaskinSays, {
+    props: { idleAnimation: false, animationsEnabled: false, ...props, ...attrs },
+    attachTo: document.body,
+  });
+
+describe('TaskinSays', () => {
+  it('poe a frase num balao HTML, fora do SVG', () => {
+    const wrapper = mountSays({ text: 'Oi, Sidarta!' });
+
+    const balao = wrapper.find('[data-testid="taskin-says-bubble"]');
+    expect(balao.exists()).toBe(true);
+    expect(balao.element.closest('svg')).toBeNull();
+    expect(balao.find('.taskin-says__text').text()).toBe('Oi, Sidarta!');
+    expect(wrapper.find('svg g#effect-speech-bubble').exists()).toBe(false);
+  });
+
+  it('sem texto, nao ha balao, e o Taskin fica como esta', () => {
+    const wrapper = mountSays({ text: '', mood: 'thoughtful' });
+
+    expect(wrapper.find('[data-testid="taskin-says-bubble"]').exists()).toBe(false);
+    expect(wrapper.find('svg g#effect-thought-bubble').exists()).toBe(true);
+  });
+
+  it('falar ganha de pensar: com texto, o balao de pensamento do SVG some', () => {
+    const wrapper = mountSays({ text: 'Ja sei!', mood: 'thoughtful' });
+    expect(wrapper.find('svg g#effect-thought-bubble').exists()).toBe(false);
+  });
+
+  // O ponto da task: a 180px, o texto do balao SVG tinha uns 6px. Aqui ele e
+  // CSS, e nao escala com o desenho.
+  it('o texto fica legivel mesmo com o mascote pequeno', () => {
+    const wrapper = mountSays({ text: 'As duas tasks estao fechadas.', size: 120 });
+    const texto = wrapper.find('.taskin-says__text').element as HTMLElement;
+    expect(Number.parseFloat(getComputedStyle(texto).fontSize)).toBeGreaterThanOrEqual(14);
+  });
+
+  it('a borda segue a tinta da variante', () => {
+    const polvo = mountSays({ text: 'Oi' }).find('[data-testid="taskin-says-bubble"]').element as HTMLElement;
+    const sapo = mountSays({ text: 'Oi', variant: 'sapin' }).find('[data-testid="taskin-says-bubble"]')
+      .element as HTMLElement;
+
+    expect(getComputedStyle(polvo).borderTopColor).toBe('rgb(44, 62, 80)');
+    expect(getComputedStyle(sapo).borderTopColor).toBe('rgb(19, 70, 53)');
+  });
+
+  it('as outras props atravessam para o Taskin', () => {
+    const wrapper = mountSays({ text: 'Oi', variant: 'sapin', size: 200 });
+
+    expect(wrapper.find('svg g#sapin-motion').exists()).toBe(true);
+    expect(wrapper.find('svg').attributes('width')).toBe('200');
+  });
+
+  it('class e style ficam na raiz, nao no Taskin', () => {
+    const wrapper = mount(TaskinSays, {
+      props: { text: 'Oi' },
+      attrs: { class: 'minha-classe', style: 'margin: 3px;' },
+    });
+
+    expect(wrapper.classes()).toContain('minha-classe');
+    expect(wrapper.find('.taskin-mascot-composed').classes()).not.toContain('minha-classe');
+  });
+
+  it('expoe o play do Taskin de dentro', async () => {
+    // Com animacao: sem ela o Taskin nao poe a classe do gesto, so conta o tempo.
+    const wrapper = mountSays({ text: 'Oi', animationsEnabled: true });
+    const says = wrapper.vm as unknown as { play: (a: 'nod') => Promise<boolean> };
+    const promessa = says.play('nod');
+    await nextTick();
+
+    expect(wrapper.find('svg g#taskin-motion').classes()).toContain('taskin-nod');
+    await expect(promessa).resolves.toBe(true);
+  });
+});

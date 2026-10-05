@@ -56,6 +56,8 @@ export * from './components/organisms/taskin/Taskin.actions';
 export * from './components/organisms/taskin/Taskin.moods';
 export * from './components/organisms/taskin/Taskin.types';
 export * from './components/organisms/taskin/Taskin.variants';
+export * from './components/organisms/taskin/TaskinSays.types';
+export { default as TaskinSays } from './components/organisms/taskin/TaskinSays.vue';
 export { default as TaskinWithFaceTracking } from './components/organisms/taskin/TaskinWithFaceTracking.vue';
 export * from './components/pages';
 export * from './components/templates';
