@@ -16,6 +16,11 @@ const meta: Meta<TaskinSaysProps & { mood?: TaskinMood }> = {
     size: { control: { type: 'range', min: 80, max: 400, step: 10 } },
     maxWidth: { control: { type: 'range', min: 120, max: 480, step: 10 } },
     animationsEnabled: { control: { type: 'boolean' } },
+    bubbleBackground: { control: 'color', description: 'Fundo do balao' },
+    bubbleBorderColor: { control: 'color', description: 'Borda do balao; sem ela, a tinta da variante' },
+    bubbleTextColor: { control: 'color', description: 'Texto do balao' },
+    bubbleBorderWidth: { control: { type: 'range', min: 1, max: 6, step: 1 } },
+    bubbleFontSize: { control: { type: 'range', min: 11, max: 28, step: 1 } },
   },
   args: {
     text: 'As duas tasks estao fechadas, com testes e evidencia visual.',
@@ -68,4 +73,26 @@ export const AntesEDepois: Story = {
       </div>
     `,
   }),
+};
+
+/** As cores do balao pelas props `bubble*`: mexa nelas no painel Controls. */
+export const CustomColors: Story = {
+  args: {
+    text: 'Cuidado: a task 165 esta bloqueada.',
+    mood: 'annoyed',
+    bubbleBackground: '#FAEEDA',
+    bubbleBorderColor: '#854F0B',
+    bubbleTextColor: '#633806',
+  },
+};
+
+/** Modo escuro so pelas cores do balao, sem trocar de componente. */
+export const DarkBubble: Story = {
+  args: {
+    text: 'Modo escuro, mesmo componente.',
+    mood: 'sarcastic',
+    bubbleBackground: '#2C2C2A',
+    bubbleBorderColor: '#B4B2A9',
+    bubbleTextColor: '#F1EFE8',
+  },
 };
