@@ -43,6 +43,28 @@ describe('validarPriorizacao', () => {
     expect(issues[0]?.message).toContain('Priority');
   });
 
+  /*
+   * `alta` e uma decisao escrita no formato errado, e o `--fix` a traduz.
+   * `amanha` nao e nivel nenhum: marcado como sem conserto, o `lint` para de
+   * mandar rodar `--fix` para algo que o `--fix` devolveria intacto.
+   */
+  it('Priority por extenso tem conserto; palavra fora do vocabulario, nao', () => {
+    const [nivel] = validarPriorizacao('a.md', arquivo([...base, '- Priority: alta']));
+    const [palavra] = validarPriorizacao('a.md', arquivo([...base, '- Priority: amanha']));
+
+    expect(nivel?.fixable).not.toBe(false);
+    expect(nivel?.suggestion).toContain('--fix');
+    expect(palavra?.fixable).toBe(false);
+    expect(palavra?.suggestion).toContain('taskin priority');
+  });
+
+  it('Difficulty fora da faixa nao tem conserto automatico', () => {
+    const [issue] = validarPriorizacao('a.md', arquivo([...base, '- Difficulty: 9']));
+
+    expect(issue?.fixable).toBe(false);
+    expect(issue?.suggestion).toContain('taskin difficulty');
+  });
+
   it('diz em que linha o problema esta', () => {
     const conteudo = arquivo([...base, '- Priority: alta']);
 

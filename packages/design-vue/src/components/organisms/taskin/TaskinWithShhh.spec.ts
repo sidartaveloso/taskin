@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@opentask/ui-sense', () => import('@opentask/ui-sense/mocks'));
@@ -37,6 +37,15 @@ describe('TaskinWithShhh', () => {
     const wrapper = mount(TaskinWithShhh);
     expect(wrapper.find('.mascot-container').exists()).toBe(true);
     expect(wrapper.find('g#body').exists()).toBe(true);
+  });
+
+  it('repassa a variante ao mascote: o Taskin por padrao, o Sapin quando pedido', () => {
+    expect(mount(TaskinWithShhh).find('g#body').attributes('data-variant')).toBe('taskin');
+    expect(
+      mount(TaskinWithShhh, { props: { variant: 'sapin' } })
+        .find('g#body')
+        .attributes('data-variant'),
+    ).toBe('sapin');
   });
 
   it('renders the noise controls', () => {
@@ -140,5 +149,36 @@ describe('TaskinWithShhh', () => {
     await pedirSilencio(wrapper);
 
     expect(shhhVoiceMock.shush).toHaveBeenCalledWith(expect.objectContaining({ name: 'Bruno' }));
+  });
+
+  it('repassa listening ao mascote', () => {
+    const wrapper = mount(TaskinWithShhh, { props: { listening: true } });
+    expect(wrapper.findComponent({ name: 'Taskin' }).props('listening')).toBe(true);
+  });
+
+  it('fala enquanto a voz do shhh toca, e para quando ela acaba', async () => {
+    let acabar: () => void = () => {};
+    vi.mocked(shhhVoiceMock.shush).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          acabar = resolve;
+        }),
+    );
+    const wrapper = mount(TaskinWithShhh, { props: { noiseSound: true } });
+    const mascote = () => wrapper.findComponent({ name: 'Taskin' });
+    expect(mascote().props('speaking')).toBe(false);
+
+    await pedirSilencio(wrapper);
+    expect(mascote().props('speaking')).toBe(true);
+
+    acabar();
+    await flushPromises();
+    expect(mascote().props('speaking')).toBe(false);
+  });
+
+  it('nao fala com o som desligado', async () => {
+    const wrapper = mount(TaskinWithShhh, { props: { noiseSound: false } });
+    await pedirSilencio(wrapper);
+    expect(wrapper.findComponent({ name: 'Taskin' }).props('speaking')).toBe(false);
   });
 });

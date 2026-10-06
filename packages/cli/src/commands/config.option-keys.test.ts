@@ -68,3 +68,46 @@ describe('taskin config flag parsing', () => {
     expect(written.notifications?.discord?.events).toEqual(['task:review']);
   });
 });
+
+describe('taskin config --labs', () => {
+  beforeEach(() => {
+    if (existsSync(testDir)) rmSync(testDir, { recursive: true, force: true });
+    mkdirSync(testDir, { recursive: true });
+    writeFileSync(
+      configPath,
+      JSON.stringify({ version: '1.0.13', provider: { type: 'fs', config: {} } }, null, 2),
+      'utf-8',
+    );
+    vi.spyOn(process, 'cwd').mockReturnValue(testDir);
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (existsSync(testDir)) rmSync(testDir, { recursive: true, force: true });
+  });
+
+  const labs = () => (JSON.parse(readFileSync(configPath, 'utf-8')) as { labs?: string[] }).labs;
+
+  it('turns a labs feature on, without the interactive prompt', async () => {
+    await runConfig('--labs', 'estimate');
+    expect(inquirer.prompt).not.toHaveBeenCalled();
+    expect(labs()).toEqual(['estimate']);
+  });
+
+  it('turns it off with --labs-off', async () => {
+    await runConfig('--labs', 'estimate');
+    await runConfig('--labs-off', 'estimate');
+    expect(labs()).toBeUndefined();
+  });
+
+  it('refuses a name that is not a labs feature, without writing', async () => {
+    const saida = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit');
+    });
+    await expect(runConfig('--labs', 'estimativa')).rejects.toThrow('process.exit');
+    expect(saida).toHaveBeenCalledWith(1);
+    expect(labs()).toBeUndefined();
+  });
+});

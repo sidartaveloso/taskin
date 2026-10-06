@@ -116,6 +116,55 @@ export function lerCriteriosDeConclusao(conteudo: string): CriterioDeConclusao[]
 }
 
 /**
+ * As palavras com que alguem anota, no proprio item, que ele ficou de fora.
+ *
+ * So valem **dentro de uma anotacao** — entre parenteses, ou depois de um
+ * travessao no fim. No corpo do item a palavra e o que ele pede: `Listar
+ * pedidos com status pendente` nao diz que o item ficou pendente.
+ */
+const MARCA_DE_FORA =
+  /\b(?:pendente|fora d[oe] escopo|pr[oó]xim[oa]s? passos?|out of scope|follow[- ]?up|next steps?)\b/iu;
+
+/** `(...)` sem parenteses dentro. */
+const PARENTESE = /\(([^()]*)\)/gu;
+
+/** O ultimo ` — resto` do texto: o `.*` guloso deixa o separador mais a direita. */
+const CAUDA = /^(.*)\s[—–-]\s+(.+)$/u;
+
+/**
+ * A anotacao com que o proprio item se declara fora, separada do texto.
+ *
+ * E a forma que o `--fix` le para escrever `— adiado: <razao>`: a razao e a
+ * anotacao, palavra por palavra, e o texto e o que sobra. Nada e inventado — a
+ * decisao ja estava escrita, so nao onde o portao a procura.
+ *
+ * @param texto - O texto de um item em aberto, sem a marca `- [ ]`
+ * @returns `undefined` quando nao ha anotacao, ou quando ela e o item inteiro e
+ *   nao sobraria o que adiar
+ * @public
+ */
+export function anotacaoDeAdiamento(texto: string): { readonly texto: string; readonly razao: string } | undefined {
+  const separar = (resto: string, razao: string) => {
+    const limpo = resto.replace(/\s{2,}/gu, ' ').trim();
+    return limpo ? { texto: limpo, razao: razao.trim() } : undefined;
+  };
+
+  for (const m of texto.matchAll(PARENTESE)) {
+    const dentro = m[1] ?? '';
+    if (MARCA_DE_FORA.test(dentro)) {
+      return separar(texto.slice(0, m.index) + texto.slice((m.index ?? 0) + m[0].length), dentro);
+    }
+  }
+
+  const cauda = texto.match(CAUDA);
+  if (cauda?.[2] && MARCA_DE_FORA.test(cauda[2])) {
+    return separar(cauda[1] ?? '', cauda[2]);
+  }
+
+  return undefined;
+}
+
+/**
  * Os criterios que impedem a conclusao: em aberto, e sem razao declarada.
  *
  * Feito nao bloqueia, e adiado com razao tambem nao — fechar uma tarefa

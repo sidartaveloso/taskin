@@ -71,6 +71,24 @@ const MAX_ITERATIONS = (() => {
   return parsed;
 })();
 
+// O modelo da rodada. Opus por padrao; um lote de pouca invencao — dados numa
+// estrutura que outra task ja definiu — roda com um modelo mais barato:
+//
+//   SANDCASTLE_GROUP=movimentos-lote-2 SANDCASTLE_MODEL=claude-sonnet-5-5 npx tsx .sandcastle/main.ts
+//
+// Validado aqui, e nao no meio da rodada: um id errado so apareceria depois do
+// setup, minutos adiante.
+const MODEL = (() => {
+  const raw = envVar('SANDCASTLE_MODEL');
+  if (raw === '') return 'claude-opus-5-5';
+  if (!/^claude-[a-z0-9-]+$/.test(raw)) {
+    throw new Error(
+      `SANDCASTLE_MODEL deve ser um id de modelo Claude (ex.: claude-sonnet-5-5); veio ${JSON.stringify(raw)}`,
+    );
+  }
+  return raw;
+})();
+
 // Simple loop: an agent that picks open issues one by one and closes them.
 // Run this with: npx tsx .sandcastle/main.ts
 // Or add to package.json scripts: "sandcastle": "npx tsx .sandcastle/main.ts"
@@ -91,10 +109,8 @@ await run({
     },
   }),
 
-  // The agent provider. Pass a model string to claudeCode() — sonnet balances
-  // capability and speed for most tasks. Switch to claude-opus-5-5 for harder
-  // problems, or claude-haiku-4-5-20251001 for speed.
-  agent: claudeCode('claude-opus-5-5'),
+  // The agent provider. O modelo vem de SANDCASTLE_MODEL (ver acima).
+  agent: claudeCode(MODEL),
 
   // Path to the prompt file. Shell expressions inside are evaluated inside the
   // sandbox at the start of each iteration, so the agent always sees fresh data.

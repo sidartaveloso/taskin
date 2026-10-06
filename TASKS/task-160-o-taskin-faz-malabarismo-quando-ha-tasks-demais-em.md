@@ -1,0 +1,62 @@
+# 🧩 Task 160 — O Taskin faz malabarismo quando ha tasks demais em andamento
+
+- Status: done
+- Type: feat
+- Assignee: sidartaveloso
+- Group: movimentos-lote-3
+- Priority: 14250
+- Difficulty: 3
+
+## Description
+Um aviso de WIP que se le sem texto: com tasks demais em andamento, o polvo faz malabarismo, uma bolinha por task a mais. Dura enquanto durar, entao e prop, e nao acao. So do Taskin: o Sapin ignora.
+
+## Tasks
+<!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
+- [x] Prop `juggling?: 0 | 1 | 2 | 3` no `Taskin` (e em `TaskinProps`): quantas bolinhas no ar; so a variante `taskin` desenha — `Taskin.ts` (prop `juggling`, efeito so com `!sapin`) e `Taskin.types.ts`; prova: `Taskin.spec.ts` › `Taskin juggling`
+- [x] Efeito novo `packages/design-vue/src/components/molecules/taskin-effect-juggle/` (no molde do `TaskinEffectZzz`): bolinhas coloridas em arco acima dos bracos, defasadas entre si, em laco; os bracos alternam subindo e descendo no ritmo (classe no grupo) — `TaskinEffectJuggle.ts` (arco de mao a mao por cima da cabeca, `animateMotion` ida e volta de 1,6s, `begin` defasado por bolinha) e classe `taskin-juggling` no `#taskin-motion` (bracos 0,8s, direito meio ciclo atras); prova: `TaskinEffectJuggle.spec.ts` › "as bolinhas andam no arco, defasadas entre si", `Taskin.spec.ts` › "o polvo faz malabarismo com %i bolinha(s)"
+- [x] Com `animationsEnabled=false`, as bolinhas paradas no alto do arco — sem `animateMotion`, espalhadas em volta de `JUGGLE_PEAK`, e sem a classe dos bracos; prova: `TaskinEffectJuggle.spec.ts` › "sem animacao, as bolinhas ficam paradas no alto do arco", `Taskin.spec.ts` › "sem animacao, as bolinhas ficam no ar e os bracos parados"; imagem: ![juggling 3 parado](assets/task-160/taskin-juggling-3-parado.png)
+- [x] Testes: o numero de bolinhas segue a prop; nada no Sapin; nada com `0` — `Taskin.spec.ts` › `Taskin juggling` ("o polvo faz malabarismo com 1/2/3", "nada com 0", "o Sapin ignora") e `TaskinEffectJuggle.spec.ts` ("desenha %i bolinha(s)", "nao desenha nada com 0")
+- [x] Evidencia visual em `TASKS/assets/task-160/`: `juggling` 1 e 3 — so taskin. ![juggling 1: a bolinha saindo da mao esquerda](assets/task-160/taskin-juggling-1.png) ![juggling 3: bolinhas defasadas no arco, braco esquerdo subindo](assets/task-160/taskin-juggling-3.png) — spec temporario pela receita de Notes, apagado antes do commit
+- [x] Changeset minor no `@opentask/taskin-design-vue` (efeito novo) — `.changeset/o-taskin-faz-malabarismo.md`
+
+## Notes
+### Contexto da rodada
+Ler, e so isto:
+- `packages/design-vue/src/components/organisms/taskin/Taskin.ts` — as props, o bloco dos efeitos e o grupo de movimento no `render`
+- `packages/design-vue/src/components/organisms/taskin/Taskin.types.ts` — `TaskinProps`
+- `packages/design-vue/src/components/molecules/taskin-effect-zzz/` inteiro — o molde de efeito
+- `packages/design-vue/src/components/atoms/taskin-arms/TaskinArms.vue` — `ARM_GEOMETRY` do Taskin
+Nao precisa ler: o Sapin, os olhos, a boca e os wrappers.
+
+### Evidencia visual
+A task e de componente visual: a evidencia e imagem, e nao so contagem de teste. O agente nao ve o desenho, mas tira o screenshot no Chromium do container, por um spec temporario em `packages/design-vue/src/components/organisms/taskin/` (apague-o antes do commit; fica so a imagem):
+```ts
+import { mount } from '@vue/test-utils';
+import { it } from 'vitest';
+import { page } from 'vitest/browser';
+import { nextTick } from 'vue';
+import Taskin from './Taskin';
+
+it('evidencia visual', async () => {
+  for (const variant of ['taskin'] as const) {
+    const wrapper = mount(Taskin, { attachTo: document.body, props: { variant, size: 320, idleAnimation: false } });
+    // a prop ja entra no mount (ex.: listening: true)
+    await nextTick();
+    // relativo ao spec: seis niveis acima fica a raiz do repositorio (o Vite recusa caminho fora dele)
+    await page.screenshot({ path: `../../../../../../TASKS/assets/task-160/${variant}-<nome>.png`, element: wrapper.element as HTMLElement });
+    wrapper.unmount();
+  }
+});
+```
+Rode so ele (`pnpm --filter @opentask/taskin-design-vue exec vitest run src/components/organisms/taskin/<spec-temporario>.spec.ts`), confira que as imagens existem e registre-as no checklist. Receita provada na task-147 (o screenshot da task-146 saiu assim).
+
+### Verificacao
+```bash
+pnpm --filter @opentask/taskin-design-vue typecheck
+pnpm --filter @opentask/taskin-design-vue lint
+pnpm --filter @opentask/taskin-design-vue test
+```
+O `test` roda os specs e as stories no Chromium; na imagem do sandcastle, depende da task-147.
+
+### Onde executar
+Sandcastle, lote 3: `SANDCASTLE_GROUP=movimentos-lote-3 SANDCASTLE_MODEL=claude-opus-5-5 npx tsx .sandcastle/main.ts`. Maquina: o `sidarta-desktop` da tailnet (Manjaro, i5-12600K com 16 threads, 31 GB, Docker nativo amd64, onde ja existe a imagem `sandcastle:taskin` e o `.sandcastle/.env`), no clone `~/repositorios/sidartaveloso/taskin`, depois de trazer a branch do Mac. Sem camada de VM e isolado das sessoes interativas do Mac. Ele divide a maquina com os containers do geohub e do mapgrid (sobravam 8,6 GB de RAM e 30 GB de disco na sondagem de 29/09): rode um lote por vez. Reserva: o Mac, pelo perfil Colima `sandcastle`, so a partir de um clone dedicado sob `$HOME` (o `merge-to-head` mescla no HEAD e troca a branch do diretorio). A revisao visual e no Mac, depois do lote: o agente no container nao ve o desenho, so os testes.

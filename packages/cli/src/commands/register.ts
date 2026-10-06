@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { configCommand } from './config.js';
 import { dashboardCommand } from './dashboard.js';
 import { difficultyCommand } from './difficulty.js';
+import { estimateCommand } from './estimate.js';
 import { registerExportCommand } from './export.js';
 import { finishCommand } from './finish.js';
 import { registerGroupCommand } from './group.js';
@@ -42,6 +43,7 @@ export function registerCommands(program: Command): void {
   prioritizeCommand(program);
   priorityCommand(program);
   difficultyCommand(program);
+  estimateCommand(program);
   registerGroupCommand(program);
   dashboardCommand(program);
   mcpInstallCommand(program);

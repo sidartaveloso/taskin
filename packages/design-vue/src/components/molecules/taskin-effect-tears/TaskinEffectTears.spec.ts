@@ -23,4 +23,18 @@ describe('TaskinEffectTears', () => {
     const wrapper = mount(TaskinEffectTears, { props: { animationsEnabled: false } });
     expect(wrapper.find('circle').attributes('style')).not.toContain('animation');
   });
+
+  it('cai dos olhos do sapin, que ficam mais altos e mais afastados', () => {
+    const taskin = mount(TaskinEffectTears).findAll('circle');
+    const sapin = mount(TaskinEffectTears, { props: { variant: 'sapin' } }).findAll('circle');
+
+    expect(taskin.map((c) => [c.attributes('cx'), c.attributes('cy')])).toEqual([
+      ['148', '105'],
+      ['172', '105'],
+    ]);
+    expect(sapin.map((c) => [c.attributes('cx'), c.attributes('cy')])).toEqual([
+      ['134', '86'],
+      ['186', '86'],
+    ]);
+  });
 });

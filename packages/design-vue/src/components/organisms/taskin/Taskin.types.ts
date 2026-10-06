@@ -1,6 +1,7 @@
 import type { Ref } from 'vue';
 import type { TaskinEyesProps } from '../../atoms/taskin-eyes/TaskinEyes.types';
 import type { TASKIN_MOODS } from './Taskin.moods';
+import type { TaskinVariant } from './Taskin.variants';
 
 export type TaskinArmSide = 'left' | 'right';
 
@@ -31,6 +32,12 @@ export interface TaskinProps {
   mood?: TaskinMood;
 
   /**
+   * Which character to draw: the Taskin octopus (default) or the Sapin frog.
+   * Same moods, behaviours and movements; only the drawing changes.
+   */
+  variant?: TaskinVariant;
+
+  /**
    * If true, small idle animations will occur.
    */
   idleAnimation?: boolean;
@@ -39,6 +46,35 @@ export interface TaskinProps {
    * Master switch for animations.
    */
   animationsEnabled?: boolean;
+
+  /**
+   * The microphone is on: while true the mascot holds a listening pose (tilted,
+   * wide-eyed; Taskin cups the right hand by the head). A running action wins over it.
+   */
+  listening?: boolean;
+
+  /**
+   * What the mascot is saying: with text, a speech bubble comes out of the
+   * mouth and the thought bubble steps aside (speaking wins over thinking).
+   * Empty or undefined changes nothing. The mouth itself only moves with
+   * `speaking`; the two are independent.
+   */
+  speechText?: string;
+
+  /**
+   * Speech is playing (the shhh voice, an answer read aloud): the mouth
+   * alternates between the current expression and open, and the Sapin's throat
+   * pulses with each syllable. Off with `animationsEnabled=false`.
+   */
+  speaking?: boolean;
+
+  /**
+   * Too many tasks in progress: the octopus juggles, one ball per task over the
+   * limit. Lasts while the prop does. Only the `taskin` variant draws it; the
+   * Sapin ignores it. With `animationsEnabled=false` the balls hold still at the
+   * top of the arc.
+   */
+  juggling?: 0 | 1 | 2 | 3;
 
   /**
    * Eye tracking mode configuration

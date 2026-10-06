@@ -1,4 +1,6 @@
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, type PropType } from 'vue';
+import { eyeShift } from '../../atoms/taskin-eyes/TaskinEyes.types';
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 
 export default defineComponent({
   name: 'TaskinEffectTears',
@@ -7,21 +9,30 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    /** Which character the effect sits on: it follows that character's face. */
+    variant: {
+      type: String as PropType<TaskinVariant>,
+      default: 'taskin',
+    },
   },
   setup(props) {
-    return () =>
-      h('g', { id: 'effect-tears' }, [
+    return () => {
+      // Cada lagrima cai do seu olho: anda com ele de uma variante para outra.
+      const left = eyeShift(props.variant, 'left');
+      const right = eyeShift(props.variant, 'right');
+
+      return h('g', { id: 'effect-tears' }, [
         h('circle', {
-          cx: '148',
-          cy: '105',
+          cx: String(148 + left.x),
+          cy: String(105 + left.y),
           r: '2',
           fill: '#4A90E2',
           opacity: '0.8',
           style: props.animationsEnabled ? 'animation: tear-drop 1.5s ease-in-out infinite;' : '',
         }),
         h('circle', {
-          cx: '172',
-          cy: '105',
+          cx: String(172 + right.x),
+          cy: String(105 + right.y),
           r: '2',
           fill: '#4A90E2',
           opacity: '0.8',
@@ -38,5 +49,6 @@ export default defineComponent({
         `,
         ),
       ]);
+    };
   },
 });

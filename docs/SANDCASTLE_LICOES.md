@@ -3,7 +3,7 @@
 Notas de quem colocou o [Sandcastle](https://github.com/ai-hero-dev/sandcastle)
 do Matt Pocock para rodar num monorepo pnpm real, com o
 [Taskin](https://github.com/sidartaveloso/taskin) como rastreador de tarefas.
-São seis defeitos de ambiente e três de prompt, cada um escondendo o seguinte.
+São sete defeitos de ambiente e cinco de prompt, cada um escondendo o seguinte.
 O objetivo aqui é que a sua primeira execução funcione, em vez de custar uma
 tarde.
 
@@ -168,6 +168,33 @@ Ensine a ferramenta a ignorá-lo:
 Vale conferir o mesmo para ESLint, Prettier, `tsconfig` e qualquer varredura
 `**/*`.
 
+## 9. Teste de navegador precisa do navegador na imagem
+
+Os testes do design-vue rodam no Chromium, pelo Vitest em modo navegador com
+Playwright. A imagem base do Sandcastle não traz navegador, e o agente, sem ele,
+não verifica o próprio trabalho: numa task de componente visual, ou ele desiste
+da verificação, ou documenta em vez de testar.
+
+São dois passos, porque são dois donos:
+
+```dockerfile
+# como root: as bibliotecas de sistema, pelo apt
+ARG PLAYWRIGHT_VERSION=1.57.0
+RUN npx -y playwright@${PLAYWRIGHT_VERSION} install-deps chromium
+
+# ... USER agent ...
+
+# como agent: o navegador, no ~/.cache/ms-playwright de quem roda os testes
+RUN npx -y playwright@${PLAYWRIGHT_VERSION} install chromium
+```
+
+A versão tem que ser a do lockfile. Cada versão do Playwright procura um build
+exato do Chromium: com o 1.57 do projeto, um navegador baixado por outra versão
+não serve, e o erro diz só que o executável não existe.
+
+Prove antes de rodar, com a receita do fim deste texto trocando o `pnpm build`
+pelo teste do pacote de navegador.
+
 ---
 
 ## O prompt é o produto
@@ -221,6 +248,40 @@ Se o seu rastreador tem prioridade própria, diga ao prompt que ela decide:
 Depois dessa mudança, a rodada seguinte fechou três tarefas na ordem exata de
 prioridade.
 
+### Cada rodada lê só o que a task diz
+
+O prompt injeta a fila no começo de **toda** iteração, e o agente, sem
+orientação, explora o repositório por conta própria antes de escrever uma
+linha. As duas coisas custam tokens a cada rodada, e a segunda custa mais.
+
+Três medidas, que funcionam juntas:
+
+- **Um grupo por lote.** Com `SANDCASTLE_GROUP`, a fila é só a do lote. Neste
+  repositório, o bloco caiu de ~5.000 tokens (as 61 tasks abertas inteiras)
+  para ~125, e só com `id`, `title`, `status`, `type` e `priority`: o resto do
+  objeto a rodada não usa.
+- **A task diz o que ler.** Uma seção `### Contexto da rodada` com os arquivos,
+  e as partes deles, que bastam para o trabalho. O prompt manda ler só isso, e
+  sair da lista só quando faltar algo, dizendo no commit o que faltou: isso é
+  defeito da task, e vale conhecer.
+- **A task diz como verificar.** Uma seção `### Verificacao` com os comandos
+  do pacote tocado, no lugar de lint, typecheck e testes do monorepo inteiro.
+
+### O filtro que a mudança de formato quebrou
+
+O recorte por grupo parou de funcionar calado quando o `list --json` passou a
+aninhar as tasks nos grupos (`{ group, groups, tasks }`), com `groupId` em cada
+task. O filtro antigo procurava `.group.id` numa lista plana, e com um subgrupo
+a rodada recebia fila vazia e encerrava dizendo que não havia nada a fazer. O
+filtro atual achata a árvore antes de recortar:
+
+```bash
+jq '[.. | objects | select(has("title") and has("status"))] | map(select(.groupId == $g))'
+```
+
+Quando o formato de saída da ferramenta muda, confira o filtro do prompt contra
+a saída de verdade, e não contra a lembrança dela.
+
 **E diga em que direção.** Eu escrevi "maior vence" e estava errado: no Taskin a
 prioridade é uma **posição** na fila, e a ordem manual põe o menor número no
 topo. Uma rodada inteira fechou as tarefas de um grupo na ordem inversa à que o
@@ -265,7 +326,8 @@ some sozinho depois do primeiro build completo.
 
 **Teste de navegador não roda no sandbox** sem instalar as bibliotecas de
 sistema do Chromium. O agente contorna com elegância — documenta em vez de
-tentar —, mas isso limita quais tarefas são acionáveis.
+tentar —, mas isso limita quais tarefas são acionáveis. A seção 9 diz como pôr
+o navegador na imagem.
 
 ---
 

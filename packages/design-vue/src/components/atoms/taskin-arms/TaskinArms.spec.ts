@@ -28,4 +28,49 @@ describe('TaskinArms', () => {
     expect(neutral.find('#left-arm').attributes('d')).not.toBe(raised.find('#left-arm').attributes('d'));
     expect(neutral.find('#right-arm').attributes('d')).not.toBe(raised.find('#right-arm').attributes('d'));
   });
+
+  it('comeca os bracos do sapin nos ombros dele, na borda do corpo mais largo', () => {
+    const wrapper = mount(TaskinArms, { props: { variant: 'sapin' } });
+
+    expect(wrapper.find('#left-arm').attributes('d')).toMatch(/^M90 113 /);
+    expect(wrapper.find('#right-arm').attributes('d')).toMatch(/^M230 113 /);
+  });
+
+  it('mantem os ombros do taskin como padrao', () => {
+    const wrapper = mount(TaskinArms);
+
+    expect(wrapper.find('#left-arm').attributes('d')).toMatch(/^M95 120 /);
+    expect(wrapper.find('#right-arm').attributes('d')).toMatch(/^M225 120 /);
+  });
+
+  it('segue a pose tambem no sapin', () => {
+    const neutral = mount(TaskinArms, { props: { variant: 'sapin' } });
+    const raised = mount(TaskinArms, {
+      props: { variant: 'sapin', leftArmPosition: armPosition(-60, -80) },
+    });
+
+    expect(raised.find('#left-arm').attributes('d')).not.toBe(neutral.find('#left-arm').attributes('d'));
+    expect(raised.find('#left-arm').attributes('d')).toMatch(/^M90 113 /);
+  });
+
+  it('desenha os bracos do sapin mais grossos, e os do taskin como sempre', () => {
+    expect(
+      mount(TaskinArms, { props: { variant: 'sapin' } })
+        .find('#left-arm')
+        .attributes('stroke-width'),
+    ).toBe('11');
+    expect(mount(TaskinArms).find('#left-arm').attributes('stroke-width')).toBe('8');
+  });
+
+  it('pendura os bracos do sapin num arco mais aberto, que desce mais', () => {
+    const ponta = (d: string | undefined) => (d ?? '').trim().split(/\s+/).slice(-2).map(Number);
+    const [x, y] = ponta(
+      mount(TaskinArms, { props: { variant: 'sapin' } })
+        .find('#left-arm')
+        .attributes('d'),
+    );
+
+    expect(x).toBeCloseTo(54.5, 0);
+    expect(y).toBeCloseTo(160.5, 0);
+  });
 });

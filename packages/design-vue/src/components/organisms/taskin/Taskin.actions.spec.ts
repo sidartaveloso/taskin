@@ -1,0 +1,1097 @@
+import { mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
+import Taskin, { ACTIONS, actionDuration } from './Taskin';
+import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
+import { TASKIN_VARIANTS, type TaskinVariant } from './Taskin.variants';
+
+interface TaskinComAcoes {
+  play: (action: TaskinAction) => Promise<boolean>;
+}
+
+function mountTaskin(overrides: Record<string, unknown> = {}) {
+  const wrapper = mount(Taskin, { props: { idleAnimation: false, ...overrides }, attachTo: document.body });
+  return { wrapper, vm: wrapper.vm as unknown as TaskinComAcoes };
+}
+
+/** Cada variante com as acoes que ela tem: nem toda acao existe nos dois bichos. */
+const pares = TASKIN_VARIANTS.flatMap((variant) =>
+  TASKIN_ACTIONS.filter((action) => ACTIONS[variant][action]).map((action) => [variant, action] as const),
+);
+
+/** Os pontos do `d` de um braco: ombro, cotovelo (o controle da curva) e ponta. */
+function pontosDoBraco(wrapper: ReturnType<typeof mountTaskin>['wrapper'], id: string) {
+  const n = (wrapper.find(id).attributes('d') ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+  return {
+    ombro: { x: n[0] ?? 0, y: n[1] ?? 0 },
+    cotovelo: { x: n[2] ?? 0, y: n[3] ?? 0 },
+    ponta: { x: n[4] ?? 0, y: n[5] ?? 0 },
+  };
+}
+
+/** Se a ponta do braco cai dentro do contorno do corpo, no sistema do proprio `#body-main`. */
+function pontaDentroDoCorpo(wrapper: ReturnType<typeof mountTaskin>['wrapper'], id: string): boolean {
+  const braco = wrapper.find(id).element as SVGGraphicsElement;
+  const corpo = wrapper.find('#body-main').element as SVGGeometryElement;
+  const { ponta } = pontosDoBraco(wrapper, id);
+  const naTela = new DOMPoint(ponta.x, ponta.y).matrixTransform(braco.getScreenCTM() ?? undefined);
+  const noCorpo = naTela.matrixTransform(corpo.getScreenCTM()?.inverse());
+  return corpo.isPointInFill(noCorpo);
+}
+
+describe('TASKIN_ACTIONS', () => {
+  it('nao repete acao', () => {
+    expect(new Set(TASKIN_ACTIONS).size).toBe(TASKIN_ACTIONS.length);
+  });
+
+  it('comeca pelo sim e pelo nao', () => {
+    expect(TASKIN_ACTIONS).toEqual(expect.arrayContaining(['nod', 'shake']));
+  });
+});
+
+describe('Taskin.play', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.innerHTML = '';
+  });
+
+  it.each(pares)('%s: a classe de %s entra no grupo, sai no fim e a do humor volta', async (variant, action) => {
+    const config = ACTIONS[variant][action];
+    expect(config).toBeDefined();
+    const { wrapper, vm } = mountTaskin({ variant, mood: 'dancing' });
+    const grupo = () => wrapper.find(`#${variant}-motion`);
+    const doHumor = grupo()
+      .classes()
+      .find((classe) => classe !== `${variant}-motion`);
+    expect(doHumor).toBeDefined();
+
+    const fim = vm.play(action);
+    await nextTick();
+    expect(grupo().classes()).toEqual([`${variant}-motion`, config?.className]);
+
+    vi.advanceTimersByTime((config?.durationMs ?? 0) - 1);
+    await nextTick();
+    expect(grupo().classes()).toContain(config?.className);
+
+    vi.advanceTimersByTime(1);
+    await expect(fim).resolves.toBe(true);
+    await nextTick();
+    expect(grupo().classes()).toEqual([`${variant}-motion`, doHumor]);
+    wrapper.unmount();
+  });
+
+  it.each(pares)('%s: %s anima de verdade, uma vez so', async (variant, action) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play(action);
+    await nextTick();
+
+    const animacoes = wrapper.find(`#${variant}-motion`).element.getAnimations() as CSSAnimation[];
+    expect(animacoes.map((animacao) => animacao.animationName)).toEqual([`taskin-${variant}-${action}`]);
+    expect(animacoes[0]?.effect?.getTiming().iterations).toBe(1);
+    wrapper.unmount();
+  });
+
+  it('emite action-start e action-end', async () => {
+    const { wrapper, vm } = mountTaskin();
+    const fim = vm.play('nod');
+    expect(wrapper.emitted('action-start')).toEqual([['nod']]);
+    expect(wrapper.emitted('action-end')).toBeUndefined();
+
+    vi.advanceTimersByTime(ACTIONS.taskin.nod?.durationMs ?? 0);
+    await fim;
+    expect(wrapper.emitted('action-end')).toEqual([[{ action: 'nod', completed: true }]]);
+  });
+
+  it('uma acao nova no meio de outra substitui a atual, que resolve false', async () => {
+    const { wrapper, vm } = mountTaskin();
+    const primeira = vm.play('nod');
+    vi.advanceTimersByTime(100);
+    const segunda = vm.play('shake');
+
+    await expect(primeira).resolves.toBe(false);
+    await nextTick();
+    expect(wrapper.find('#taskin-motion').classes()).toContain(ACTIONS.taskin.shake?.className);
+    expect(wrapper.emitted('action-end')).toEqual([[{ action: 'nod', completed: false }]]);
+
+    vi.advanceTimersByTime(ACTIONS.taskin.shake?.durationMs ?? 0);
+    await expect(segunda).resolves.toBe(true);
+    expect(wrapper.emitted('action-end')?.[1]).toEqual([{ action: 'shake', completed: true }]);
+  });
+
+  it('com as animacoes desligadas nao ha classe, e a promessa resolve no mesmo tempo', async () => {
+    const { wrapper, vm } = mountTaskin({ animationsEnabled: false });
+    let resolvida = false;
+    const fim = vm.play('shake').then((valor) => {
+      resolvida = true;
+      return valor;
+    });
+    await nextTick();
+    expect(wrapper.find('#taskin-motion').classes()).toEqual(['taskin-motion']);
+
+    vi.advanceTimersByTime((ACTIONS.taskin.shake?.durationMs ?? 0) - 1);
+    await Promise.resolve();
+    expect(resolvida).toBe(false);
+    vi.advanceTimersByTime(1);
+    await expect(fim).resolves.toBe(true);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a pose troca a boca durante a acao', async (variant: TaskinVariant) => {
+    const sorrindo = mountTaskin({ variant, mouthExpression: 'smile' }).wrapper.find('#mouth').attributes('d');
+    const { wrapper, vm } = mountTaskin({ variant });
+    const neutra = wrapper.find('#mouth').attributes('d');
+    expect(neutra).not.toBe(sorrindo);
+
+    const fim = vm.play('nod');
+    await nextTick();
+    expect(wrapper.find('#mouth').attributes('d')).toBe(sorrindo);
+
+    vi.advanceTimersByTime(ACTIONS[variant].nod?.durationMs ?? 0);
+    await fim;
+    await nextTick();
+    expect(wrapper.find('#mouth').attributes('d')).toBe(neutra);
+  });
+
+  it('a prop explicita do consumidor ganha da pose', async () => {
+    const aberta = mountTaskin({ mouthExpression: 'wide-open' }).wrapper.find('#mouth').attributes('d');
+    const { wrapper, vm } = mountTaskin({ mouthExpression: 'wide-open' });
+    void vm.play('nod');
+    await nextTick();
+    expect(wrapper.find('#mouth').attributes('d')).toBe(aberta);
+  });
+
+  it('acao que a variante nao tem resolve false na hora, sem mexer no grupo', async () => {
+    const { wrapper, vm } = mountTaskin();
+    await expect(vm.play('inexistente' as TaskinAction)).resolves.toBe(false);
+    expect(wrapper.emitted('action-start')).toBeUndefined();
+    expect(wrapper.find('#taskin-motion').classes()).toEqual(['taskin-motion']);
+  });
+
+  it('desmontar no meio resolve false', async () => {
+    const { wrapper, vm } = mountTaskin();
+    const fim = vm.play('nod');
+    wrapper.unmount();
+    await expect(fim).resolves.toBe(false);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: prefers-reduced-motion desliga o grupo de movimento pelo CSS', (variant) => {
+    const { wrapper } = mountTaskin({ variant });
+    const regras = wrapper
+      .findAll('style')
+      .flatMap((estilo) => [...((estilo.element as HTMLStyleElement).sheet?.cssRules ?? [])])
+      .filter(
+        (regra): regra is CSSMediaRule =>
+          regra instanceof CSSMediaRule && regra.conditionText.includes('prefers-reduced-motion: reduce'),
+      );
+    const dentro = regras.flatMap((regra) => [...regra.cssRules]) as CSSStyleRule[];
+    const doGrupo = dentro.find((regra) => regra.selectorText === `.${variant}-motion`);
+
+    expect(doGrupo?.style.getPropertyValue('animation-name')).toBe('none');
+    expect(doGrupo?.style.getPropertyPriority('animation-name')).toBe('important');
+  });
+});
+
+describe('celebrate', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  /** A escala horizontal de um `transform` computado, `none` contando como 1. */
+  const escala = (el: Element) => {
+    const transform = getComputedStyle(el).transform;
+    return transform === 'none' ? 1 : new DOMMatrix(transform).a;
+  };
+
+  /** O `y` do ombro e o do punho, lidos do `d` do braco: `M x y Q ... x y`. */
+  const alturas = (d: string | undefined) => {
+    const numeros = (d ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+    return { ombro: numeros[1] ?? Number.NaN, punho: numeros[numeros.length - 1] ?? Number.NaN };
+  };
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,2s', (variant) => {
+    expect(ACTIONS[variant].celebrate?.durationMs).toBe(1200);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a pose ergue os dois bracos acima dos ombros', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    for (const lado of ['left', 'right']) {
+      const { ombro, punho } = alturas(wrapper.find(`#${lado}-arm`).attributes('d'));
+      expect(punho).toBeGreaterThan(ombro);
+    }
+
+    void vm.play('celebrate');
+    await nextTick();
+    for (const lado of ['left', 'right']) {
+      const { ombro, punho } = alturas(wrapper.find(`#${lado}-arm`).attributes('d'));
+      expect(punho).toBeLessThan(ombro - 40);
+    }
+    wrapper.unmount();
+  });
+
+  it('o papo e so do Sapin', () => {
+    expect(mountTaskin({ variant: 'taskin' }).wrapper.find('#body-throat').exists()).toBe(false);
+    expect(mountTaskin({ variant: 'sapin' }).wrapper.find('#body-throat').exists()).toBe(true);
+  });
+
+  it('o papo fica murcho fora da acao e infla no topo do pulo', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const papo = wrapper.find('#body-throat').element;
+    expect(escala(papo)).toBe(0);
+
+    void vm.play('celebrate');
+    await nextTick();
+    const [animacao] = papo.getAnimations();
+    expect((animacao as CSSAnimation | undefined)?.animationName).toBe('taskin-sapin-throat');
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 600;
+    expect(escala(papo)).toBeGreaterThan(0.9);
+
+    const [pulo] = wrapper.find('#sapin-motion').element.getAnimations();
+    pulo?.pause();
+    if (pulo) pulo.currentTime = 600;
+    expect(new DOMMatrix(getComputedStyle(wrapper.find('#sapin-motion').element).transform).f).toBeCloseTo(-24, 0);
+    wrapper.unmount();
+  });
+
+  it('o papo inflado comeca abaixo da boca, no Sapin', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('celebrate');
+    await nextTick();
+    for (const el of [wrapper.find('#sapin-motion').element, wrapper.find('#body-throat').element]) {
+      const [animacao] = el.getAnimations();
+      animacao?.pause();
+      if (animacao) animacao.currentTime = 600;
+    }
+    const papo = wrapper.find('#body-throat').element.getBoundingClientRect();
+    const boca = wrapper.find('#mouth').element.getBoundingClientRect();
+    expect(papo.top).toBeGreaterThanOrEqual(boca.bottom);
+    wrapper.unmount();
+  });
+
+  it('o Taskin gira no maximo 12 graus', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    void vm.play('celebrate');
+    await nextTick();
+    const grupo = wrapper.find('#taskin-motion').element;
+    const [animacao] = grupo.getAnimations();
+    animacao?.pause();
+    const graus = [0, 200, 400, 480, 600, 840, 1000, 1200].map((t) => {
+      if (animacao) animacao.currentTime = t;
+      const m = new DOMMatrix(getComputedStyle(grupo).transform);
+      return Math.abs((Math.atan2(m.b, m.a) * 180) / Math.PI);
+    });
+    expect(Math.max(...graus)).toBeGreaterThan(10);
+    expect(Math.max(...graus)).toBeLessThanOrEqual(12.5);
+    wrapper.unmount();
+  });
+});
+
+describe('point-up e point-down', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  /** Os numeros do `d` do braco: `M x y Q ex ey x y`. */
+  const numeros = (d: string | undefined) => (d ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+
+  /** O `y` do ombro e o da ponta do braco. */
+  const alturas = (d: string | undefined) => {
+    const n = numeros(d);
+    return { ombro: n[1] ?? Number.NaN, ponta: n[n.length - 1] ?? Number.NaN };
+  };
+
+  /** O centro da barriga de cada bicho: o do corpo no Taskin, o de `#body-belly` no Sapin. */
+  const BARRIGA: Record<TaskinVariant, number> = { taskin: 110, sapin: 158 };
+
+  const pupilas = (wrapper: ReturnType<typeof mountTaskin>['wrapper']) =>
+    wrapper.findAll('#eyes circle').map((pupila) => Number(pupila.attributes('cy')));
+
+  it.each(TASKIN_VARIANTS)('%s: cada um dura cerca de 0,9s', (variant) => {
+    expect(ACTIONS[variant]['point-up']?.durationMs).toBe(900);
+    expect(ACTIONS[variant]['point-down']?.durationMs).toBe(900);
+  });
+
+  it.each(TASKIN_VARIANTS)(
+    '%s: point-up leva a ponta do braco direito acima do ombro, quase vertical',
+    async (variant) => {
+      const { wrapper, vm } = mountTaskin({ variant });
+      const esquerdo = wrapper.find('#left-arm').attributes('d');
+      void vm.play('point-up');
+      await nextTick();
+
+      const d = wrapper.find('#right-arm').attributes('d');
+      const { ombro, ponta } = alturas(d);
+      expect(ponta).toBeLessThan(ombro - 40);
+      const n = numeros(d);
+      expect(Math.abs((n[4] ?? 0) - (n[0] ?? 0))).toBeLessThan(15);
+      expect(wrapper.find('#left-arm').attributes('d')).toBe(esquerdo);
+      wrapper.unmount();
+    },
+  );
+
+  it.each(TASKIN_VARIANTS)('%s: point-down leva a ponta do braco direito abaixo da barriga', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    const esquerdo = wrapper.find('#left-arm').attributes('d');
+    const repouso = alturas(wrapper.find('#right-arm').attributes('d')).ponta;
+    void vm.play('point-down');
+    await nextTick();
+
+    const { ponta } = alturas(wrapper.find('#right-arm').attributes('d'));
+    expect(ponta).toBeGreaterThan(BARRIGA[variant]);
+    expect(ponta).toBeGreaterThan(repouso);
+    expect(wrapper.find('#left-arm').attributes('d')).toBe(esquerdo);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: as pupilas sobem no point-up e descem no point-down', async (variant) => {
+    const centro = pupilas(mountTaskin({ variant }).wrapper);
+
+    const acima = mountTaskin({ variant });
+    void acima.vm.play('point-up');
+    await nextTick();
+    for (const [i, cy] of pupilas(acima.wrapper).entries()) {
+      expect(cy).toBeLessThan(centro[i] ?? 0);
+    }
+
+    const abaixo = mountTaskin({ variant });
+    void abaixo.vm.play('point-down');
+    await nextTick();
+    for (const [i, cy] of pupilas(abaixo.wrapper).entries()) {
+      expect(cy).toBeGreaterThan(centro[i] ?? 0);
+    }
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o bicho da um empurraozinho de 3px na direcao', async (variant) => {
+    for (const [action, dy] of [
+      ['point-up', -3],
+      ['point-down', 3],
+    ] as const) {
+      const { wrapper, vm } = mountTaskin({ variant });
+      void vm.play(action);
+      await nextTick();
+      const grupo = wrapper.find(`#${variant}-motion`).element;
+      const [animacao] = grupo.getAnimations();
+      animacao?.pause();
+      if (animacao) animacao.currentTime = 450;
+      expect(new DOMMatrix(getComputedStyle(grupo).transform).f).toBeCloseTo(dy, 0);
+      wrapper.unmount();
+    }
+  });
+});
+
+describe('wave', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  /** Os numeros do `d` do braco: `M x y Q ex ey x y`. */
+  const numeros = (d: string | undefined) => (d ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+
+  /** O angulo, em graus, do `transform` computado de um elemento. */
+  const angulo = (el: Element) => {
+    const transform = getComputedStyle(el).transform;
+    if (transform === 'none') return 0;
+    const m = new DOMMatrix(transform);
+    return (Math.atan2(m.b, m.a) * 180) / Math.PI;
+  };
+
+  /** Onde o ombro — o `M` do braco — cai na tela, com o giro do CSS aplicado. */
+  const ombroNaTela = (braco: SVGGraphicsElement) => {
+    const [x = 0, y = 0] = numeros(braco.getAttribute('d') ?? undefined);
+    const ponto = new DOMPoint(x, y).matrixTransform(braco.getScreenCTM() ?? undefined);
+    return { x: ponto.x, y: ponto.y };
+  };
+
+  async function acenando(variant: TaskinVariant) {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wave');
+    await nextTick();
+    const braco = wrapper.find('#right-arm').element as unknown as SVGGraphicsElement;
+    const [animacao] = braco.getAnimations() as CSSAnimation[];
+    animacao?.pause();
+    return { wrapper, braco, animacao };
+  }
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,4s e sorri', (variant) => {
+    expect(ACTIONS[variant].wave?.durationMs).toBe(1400);
+    expect(ACTIONS[variant].wave?.pose?.mouthExpression).toBe('smile');
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a classe entra no grupo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wave');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-wave`);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a pose ergue o braco direito, a mao ao lado da cabeca', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    const esquerdo = wrapper.find('#left-arm').attributes('d');
+    void vm.play('wave');
+    await nextTick();
+    const n = numeros(wrapper.find('#right-arm').attributes('d'));
+    expect(n[n.length - 1] ?? 0).toBeLessThan((n[1] ?? 0) - 30);
+    expect(wrapper.find('#left-arm').attributes('d')).toBe(esquerdo);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o braco balanca 15 graus para cada lado, tres vezes', async (variant) => {
+    const { wrapper, braco, animacao } = await acenando(variant);
+    expect(animacao?.animationName).toBe(`taskin-${variant}-wave-arm`);
+    expect(animacao?.effect?.getTiming().iterations).toBe(1);
+
+    const graus = [140, 350, 560, 770, 980, 1190].map((t) => {
+      if (animacao) animacao.currentTime = t;
+      return angulo(braco);
+    });
+    expect(graus[0]).toBeCloseTo(-15, 0);
+    expect(graus[1]).toBeCloseTo(15, 0);
+    expect(new Set(graus.map((g) => Math.sign(Math.round(g)))).size).toBe(2);
+    expect(graus.filter((g) => g < -14)).toHaveLength(3);
+    expect(graus.filter((g) => g > 14)).toHaveLength(3);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o ombro nao sai do lugar no balanco', async (variant) => {
+    const { wrapper, braco, animacao } = await acenando(variant);
+    const grupo = wrapper.find(`#${variant}-motion`).element;
+    const [doGrupo] = grupo.getAnimations();
+    doGrupo?.pause();
+    if (doGrupo) doGrupo.currentTime = 0;
+
+    if (animacao) animacao.currentTime = 0;
+    const parado = ombroNaTela(braco);
+    for (const t of [140, 350]) {
+      if (animacao) animacao.currentTime = t;
+      expect(Math.abs(angulo(braco))).toBeGreaterThan(14);
+      const agora = ombroNaTela(braco);
+      expect(agora.x).toBeCloseTo(parado.x, 1);
+      expect(agora.y).toBeCloseTo(parado.y, 1);
+    }
+    wrapper.unmount();
+  });
+});
+
+describe('start', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,1s, de olhos bem abertos', (variant) => {
+    expect(ACTIONS[variant].start?.durationMs).toBe(1100);
+    expect(ACTIONS[variant].start?.pose?.eyeState).toBe('wide');
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a classe entra no grupo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('start');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-start`);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a pose dobra os dois bracos', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    const antes = wrapper.find('#left-arm').attributes('d');
+    void vm.play('start');
+    await nextTick();
+    expect(wrapper.find('#left-arm').attributes('d')).not.toBe(antes);
+    expect(wrapper.find('#right-arm').attributes('d')).not.toBe(antes);
+    wrapper.unmount();
+  });
+
+  it('sapin: no meio da agachada a escala vertical e menor que 1', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('start');
+    await nextTick();
+    const el = wrapper.find('#sapin-motion').element;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 400;
+    const m = new DOMMatrix(getComputedStyle(el).transform);
+    expect(m.d).toBeLessThan(1);
+    wrapper.unmount();
+  });
+
+  it('taskin: os bracos puxam duas vezes, cada um para um lado', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    void vm.play('start');
+    await nextTick();
+    const esq = wrapper.find('#left-arm').element;
+    const dir = wrapper.find('#right-arm').element;
+    const [a] = esq.getAnimations();
+    const [b] = dir.getAnimations();
+    a?.pause();
+    b?.pause();
+    const graus = (el: Element) => {
+      const m = new DOMMatrix(getComputedStyle(el).transform);
+      return (Math.atan2(m.b, m.a) * 180) / Math.PI;
+    };
+    const puxoes = [220, 660].map((t) => {
+      if (a) a.currentTime = t;
+      if (b) b.currentTime = t;
+      return [graus(esq), graus(dir)];
+    });
+    for (const [e = 0, d = 0] of puxoes) expect(Math.sign(e)).toBe(-Math.sign(d));
+    wrapper.unmount();
+  });
+});
+
+describe('blocked', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,6s, de cenho franzido', (variant) => {
+    expect(ACTIONS[variant].blocked?.durationMs).toBe(1600);
+    expect(ACTIONS[variant].blocked?.pose?.mouthExpression).toBe('frown');
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a classe entra no grupo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('blocked');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-blocked`);
+    wrapper.unmount();
+  });
+
+  it('taskin: vira a cara para a esquerda, de franzido', () => {
+    expect(ACTIONS.taskin.blocked?.pose?.lookDirection).toBe('left');
+  });
+
+  it('taskin: maos na cintura, de cotovelos para fora e pontas fora do corpo', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    void vm.play('blocked');
+    await nextTick();
+    const esq = pontosDoBraco(wrapper, '#left-arm');
+    const dir = pontosDoBraco(wrapper, '#right-arm');
+    expect(esq.ombro.x - esq.cotovelo.x).toBeGreaterThanOrEqual(15);
+    expect(dir.cotovelo.x - dir.ombro.x).toBeGreaterThanOrEqual(15);
+    expect(esq.ponta.x).toBeGreaterThan(esq.cotovelo.x);
+    expect(dir.ponta.x).toBeLessThan(dir.cotovelo.x);
+    expect(pontaDentroDoCorpo(wrapper, '#left-arm')).toBe(false);
+    expect(pontaDentroDoCorpo(wrapper, '#right-arm')).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('taskin: recua um pouco e volta', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    void vm.play('blocked');
+    await nextTick();
+    const el = wrapper.find('#taskin-motion').element;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 500;
+    expect(new DOMMatrix(getComputedStyle(el).transform).e).toBeCloseTo(-4, 0);
+    if (animacao) animacao.currentTime = 1500;
+    expect(Math.abs(new DOMMatrix(getComputedStyle(el).transform).e)).toBeLessThan(0.5);
+    wrapper.unmount();
+  });
+
+  it('sapin: no meio da acao esta sentado, com a escala vertical menor que 1', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('blocked');
+    await nextTick();
+    const el = wrapper.find('#sapin-motion').element;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 800;
+    const m = new DOMMatrix(getComputedStyle(el).transform);
+    expect(m.d).toBeLessThan(1);
+    expect(m.f).toBeCloseTo(4, 0);
+    wrapper.unmount();
+  });
+});
+
+describe('effort', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 2s, de olhos apertados e bracos para o alto', (variant) => {
+    const config = ACTIONS[variant].effort;
+    expect(config?.durationMs).toBe(2000);
+    expect(config?.pose?.eyeState).toBe('squint');
+    expect(config?.pose?.leftArm).toBeDefined();
+    expect(config?.pose?.rightArm).toBeDefined();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o peso e o suor so aparecem durante a acao', async (variant) => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin({ variant });
+    expect(wrapper.find('#effect-weight').exists()).toBe(false);
+    expect(wrapper.find('#effect-sweat').exists()).toBe(false);
+
+    void vm.play('effort');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-effort`);
+    expect(wrapper.find('#effect-weight').exists()).toBe(true);
+    expect(wrapper.find('#effect-sweat').exists()).toBe(true);
+
+    vi.advanceTimersByTime(2000);
+    await nextTick();
+    expect(wrapper.find('#effect-weight').exists()).toBe(false);
+    expect(wrapper.find('#effect-sweat').exists()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a ponta de cada braco fica perto de um disco', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('effort');
+    await nextTick();
+    const discos = wrapper.findAll('rect.weight-disc').map((d) => ({
+      x: Number(d.attributes('x')) + Number(d.attributes('width')) / 2,
+      y: Number(d.attributes('y')) + Number(d.attributes('height')) / 2,
+    }));
+    for (const [i, id] of ['#left-arm', '#right-arm'].entries()) {
+      const n = (wrapper.find(id).attributes('d') ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+      const ponta = { x: n[4] ?? 0, y: n[5] ?? 0 };
+      expect(Math.hypot(ponta.x - (discos[i]?.x ?? 0), ponta.y - (discos[i]?.y ?? 0))).toBeLessThan(8);
+    }
+  });
+});
+
+describe('wake', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: dura cerca de 2s, de olhos semiabertos e bracos para o alto', (variant) => {
+    const config = ACTIONS[variant].wake;
+    expect(config?.durationMs).toBe(2000);
+    expect(config?.pose?.eyeState).toBe('squint');
+    expect(config?.pose?.leftArm).toBeDefined();
+    expect(config?.pose?.rightArm).toBeDefined();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a boca boceja durante a acao e volta ao humor no fim', async (variant) => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wake');
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-wake`);
+    expect(ACTIONS[variant].wake?.pose?.mouthExpression).toBe('o-shape');
+    const boca = wrapper.find('#mouth').html();
+    vi.advanceTimersByTime(2000);
+    await nextTick();
+    expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-wake`);
+    expect(wrapper.find('#mouth').html()).not.toBe(boca);
+    vi.useRealTimers();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: bracos em V, para o alto e para fora, com as pontas fora do corpo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wake');
+    await nextTick();
+    const esq = pontosDoBraco(wrapper, '#left-arm');
+    const dir = pontosDoBraco(wrapper, '#right-arm');
+    expect(esq.ponta.y).toBeLessThan(esq.ombro.y);
+    expect(dir.ponta.y).toBeLessThan(dir.ombro.y);
+    expect(esq.ponta.x).toBeLessThan(esq.ombro.x);
+    expect(dir.ponta.x).toBeGreaterThan(dir.ombro.x);
+    expect(pontaDentroDoCorpo(wrapper, '#left-arm')).toBe(false);
+    expect(pontaDentroDoCorpo(wrapper, '#right-arm')).toBe(false);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: o corpo alonga no meio da acao', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play('wake');
+    await nextTick();
+    const el = wrapper.find(`#${variant}-motion`).element as HTMLElement;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 1000;
+    const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+    expect(m.a).toBeCloseTo(0.97, 2);
+    expect(m.d).toBeCloseTo(1.06, 2);
+    wrapper.unmount();
+  });
+});
+
+describe('listening', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: sem listening, nem a classe nem os olhos arregalados', (variant) => {
+    const arregalados = mountTaskin({ variant, eyeState: 'wide' }).wrapper.find('#left-eye').html();
+    const { wrapper } = mountTaskin({ variant });
+    expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-listening`);
+    expect(wrapper.find('#left-eye').html()).not.toBe(arregalados);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: ouvindo, a classe em laco ganha do humor e os olhos arregalam', (variant) => {
+    const arregalados = mountTaskin({ variant, eyeState: 'wide' }).wrapper.find('#left-eye').html();
+    const { wrapper } = mountTaskin({ variant, mood: 'dancing', listening: true });
+    expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`, `${variant}-listening`]);
+    expect(wrapper.find('#left-eye').html()).toBe(arregalados);
+
+    const animacoes = wrapper.find(`#${variant}-motion`).element.getAnimations() as CSSAnimation[];
+    expect(animacoes.map((animacao) => animacao.animationName)).toEqual([`taskin-${variant}-listening`]);
+    expect(animacoes[0]?.effect?.getTiming().iterations).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it('taskin: o braco direito dobra e a mao sobe para junto da cabeca', () => {
+    const parado = pontosDoBraco(mountTaskin().wrapper, '#right-arm');
+    const ouvindo = pontosDoBraco(mountTaskin({ listening: true }).wrapper, '#right-arm');
+    expect(ouvindo.ponta.y).toBeLessThan(parado.ponta.y - 30);
+    expect(ouvindo.ponta.x).toBeLessThan(ouvindo.ombro.x);
+  });
+
+  it('sapin: so os olhos, o braco fica como estava', () => {
+    const parado = mountTaskin({ variant: 'sapin' }).wrapper.find('#right-arm').attributes('d');
+    const ouvindo = mountTaskin({ variant: 'sapin', listening: true }).wrapper.find('#right-arm').attributes('d');
+    expect(ouvindo).toBe(parado);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: sem animacao fica so a pose, sem laco', (variant) => {
+    const arregalados = mountTaskin({ variant, eyeState: 'wide', animationsEnabled: false })
+      .wrapper.find('#left-eye')
+      .html();
+    const { wrapper } = mountTaskin({ variant, listening: true, animationsEnabled: false });
+    expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`]);
+    expect(wrapper.find('#left-eye').html()).toBe(arregalados);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: uma acao por cima ganha, e no fim a escuta volta', async (variant) => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin({ variant, listening: true });
+    const grupo = () => wrapper.find(`#${variant}-motion`);
+    const ouvindo = wrapper.find('#right-arm').attributes('d');
+
+    const fim = vm.play('wave');
+    await nextTick();
+    expect(grupo().classes()).toEqual([`${variant}-motion`, ACTIONS[variant].wave?.className]);
+
+    vi.advanceTimersByTime(ACTIONS[variant].wave?.durationMs ?? 0);
+    await expect(fim).resolves.toBe(true);
+    await nextTick();
+    expect(grupo().classes()).toEqual([`${variant}-motion`, `${variant}-listening`]);
+    expect(wrapper.find('#right-arm').attributes('d')).toBe(ouvindo);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: desligar a escuta devolve o humor', async (variant) => {
+    const { wrapper } = mountTaskin({ variant, mood: 'dancing', listening: true });
+    await wrapper.setProps({ listening: false });
+    expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-listening`);
+  });
+});
+
+describe('speaking', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: a boca acompanha a fala so com speaking', (variant) => {
+    expect(mountTaskin({ variant }).wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
+    expect(mountTaskin({ variant, speaking: true }).wrapper.find('#mouth').classes()).toContain('mouth-speaking');
+  });
+
+  it('sapin: o papo pulsa enquanto fala, em laco', () => {
+    const { wrapper } = mountTaskin({ variant: 'sapin', speaking: true });
+    expect(wrapper.find('#sapin-motion').classes()).toContain('sapin-speaking');
+
+    const animacoes = wrapper.find('#body-throat').element.getAnimations() as CSSAnimation[];
+    expect(animacoes.map((animacao) => animacao.animationName)).toEqual(['taskin-sapin-speaking-throat']);
+    expect(animacoes[0]?.effect?.getTiming().iterations).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it('taskin: nao tem papo, nem a classe', () => {
+    const { wrapper } = mountTaskin({ speaking: true });
+    expect(wrapper.find('#taskin-motion').classes()).toEqual(['taskin-motion']);
+    expect(wrapper.find('#body-throat').exists()).toBe(false);
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: sem animacao, nem a boca alterna nem o papo pulsa', (variant) => {
+    const { wrapper } = mountTaskin({ variant, speaking: true, animationsEnabled: false });
+    expect(wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
+    expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`]);
+  });
+
+  it('sapin: parar de falar desliga o papo', async () => {
+    const { wrapper } = mountTaskin({ variant: 'sapin', speaking: true });
+    await wrapper.setProps({ speaking: false });
+    expect(wrapper.find('#sapin-motion').classes()).not.toContain('sapin-speaking');
+    expect(wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
+  });
+});
+
+describe('catch-fly', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.innerHTML = '';
+  });
+
+  /** Congela a primeira animacao de um elemento no instante `t`. */
+  const congelar = (el: Element, t: number) => {
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = t;
+    return animacao as CSSAnimation | undefined;
+  };
+
+  it('so o Sapin tem a acao, com cerca de 1,6s', async () => {
+    expect(ACTIONS.sapin['catch-fly']?.durationMs).toBe(1600);
+    expect(ACTIONS.taskin['catch-fly']).toBeUndefined();
+
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    await expect(vm.play('catch-fly')).resolves.toBe(false);
+    await nextTick();
+    expect(wrapper.find('#effect-fly').exists()).toBe(false);
+    expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
+  });
+
+  it('a mosca e a lingua so aparecem durante a acao', async () => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    expect(wrapper.find('#effect-fly').exists()).toBe(false);
+    expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
+
+    const fim = vm.play('catch-fly');
+    await nextTick();
+    expect(wrapper.find('#effect-fly').exists()).toBe(true);
+    expect(wrapper.find('#sapin-tongue').exists()).toBe(true);
+
+    vi.advanceTimersByTime(1600);
+    await expect(fim).resolves.toBe(true);
+    await nextTick();
+    expect(wrapper.find('#effect-fly').exists()).toBe(false);
+    expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
+  });
+
+  it('os olhos seguem a mosca: a direita no voo, ao centro no bote', async () => {
+    vi.useFakeTimers();
+    const direita = mountTaskin({ variant: 'sapin', eyeLookDirection: 'right' }).wrapper.find('#left-eye').html();
+    const centro = mountTaskin({ variant: 'sapin', eyeLookDirection: 'center' }).wrapper.find('#left-eye').html();
+    expect(direita).not.toBe(centro);
+
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('catch-fly');
+    await nextTick();
+    expect(wrapper.find('#left-eye').html()).toBe(direita);
+
+    vi.advanceTimersByTime(960);
+    await nextTick();
+    expect(wrapper.find('#left-eye').html()).toBe(centro);
+  });
+
+  it('a mosca voa, some depois do bote e bate as asas', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('catch-fly');
+    await nextTick();
+    const mosca = wrapper.find('#effect-fly').element;
+    const voo = congelar(mosca, 300);
+    expect(voo?.animationName).toBe('taskin-fly-catch');
+    expect(Number(getComputedStyle(mosca).opacity)).toBe(1);
+    const antes = mosca.getBoundingClientRect();
+    if (voo) voo.currentTime = 700;
+    const depois = mosca.getBoundingClientRect();
+    expect(depois.left).toBeLessThan(antes.left);
+
+    if (voo) voo.currentTime = 1400;
+    expect(Number(getComputedStyle(mosca).opacity)).toBe(0);
+
+    const asas = wrapper.findAll('#effect-fly .fly-wing');
+    expect(asas).toHaveLength(2);
+    expect(asas[0]?.element.getAnimations().length).toBe(1);
+  });
+
+  it('a lingua sai da boca do Sapin ate a mosca e volta', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin', idleAnimation: false });
+    void vm.play('catch-fly');
+    await nextTick();
+    congelar(wrapper.find('#sapin-motion').element, 1056);
+    const lingua = wrapper.find('#sapin-tongue-reach').element;
+    const lambida = congelar(lingua, 1056);
+    expect(lambida?.animationName).toBe('taskin-sapin-tongue');
+    congelar(wrapper.find('#effect-fly').element, 1056);
+
+    const boca = wrapper.find('#mouth').element.getBoundingClientRect();
+    const noBote = lingua.getBoundingClientRect();
+    const mosca = wrapper.find('#effect-fly').element.getBoundingClientRect();
+    // Sai da boca: a raiz da lingua fica dentro da boca.
+    expect(noBote.left).toBeGreaterThanOrEqual(boca.left);
+    expect(noBote.left).toBeLessThanOrEqual(boca.right);
+    expect(noBote.top).toBeLessThanOrEqual(boca.bottom);
+    // Chega a mosca: a ponta encosta nela.
+    const centroMosca = { x: (mosca.left + mosca.right) / 2, y: (mosca.top + mosca.bottom) / 2 };
+    expect(centroMosca.x).toBeGreaterThanOrEqual(noBote.left);
+    expect(centroMosca.x).toBeLessThanOrEqual(noBote.right + 2);
+    expect(centroMosca.y).toBeLessThanOrEqual(noBote.bottom + 2);
+
+    if (lambida) lambida.currentTime = 300;
+    expect(lingua.getBoundingClientRect().width).toBeLessThan(1);
+    if (lambida) lambida.currentTime = 1500;
+    expect(lingua.getBoundingClientRect().width).toBeLessThan(1);
+  });
+
+  it('no fim o papo infla uma vez: o gole', async () => {
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    void vm.play('catch-fly');
+    await nextTick();
+    const papo = wrapper.find('#body-throat').element;
+    const gole = congelar(papo, 800);
+    expect(gole?.animationName).toBe('taskin-sapin-gulp');
+    expect(gole?.effect?.getTiming().iterations).toBe(1);
+    expect(new DOMMatrix(getComputedStyle(papo).transform).a).toBe(0);
+    if (gole) gole.currentTime = 1420;
+    expect(new DOMMatrix(getComputedStyle(papo).transform).a).toBeGreaterThan(0.9);
+  });
+});
+
+describe('ink', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.innerHTML = '';
+  });
+
+  it('so o Taskin tem a acao, com cerca de 1,6s, de olhos arregalados e boca em O', async () => {
+    const config = ACTIONS.taskin.ink;
+    expect(config?.durationMs).toBe(1600);
+    expect(config?.pose?.eyeState).toBe('wide');
+    expect(config?.pose?.mouthExpression).toBe('o-shape');
+    expect(ACTIONS.sapin.ink).toBeUndefined();
+
+    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    await expect(vm.play('ink')).resolves.toBe(false);
+    await nextTick();
+    expect(wrapper.find('#effect-ink').exists()).toBe(false);
+  });
+
+  it('a nuvem so aparece durante a acao', async () => {
+    vi.useFakeTimers();
+    const { wrapper, vm } = mountTaskin();
+    expect(wrapper.find('#effect-ink').exists()).toBe(false);
+
+    const fim = vm.play('ink');
+    await nextTick();
+    expect(wrapper.find('#taskin-motion').classes()).toContain('taskin-ink');
+    expect(wrapper.find('#effect-ink').exists()).toBe(true);
+
+    vi.advanceTimersByTime(1600);
+    await expect(fim).resolves.toBe(true);
+    await nextTick();
+    expect(wrapper.find('#effect-ink').exists()).toBe(false);
+  });
+
+  it('a nuvem fica atras do corpo e dos tentaculos: vem antes deles no DOM', async () => {
+    const { wrapper, vm } = mountTaskin();
+    void vm.play('ink');
+    await nextTick();
+    const tinta = wrapper.find('#effect-ink').element;
+    for (const id of ['#body-main', '#taskin-tentacles']) {
+      const outro = wrapper.find(id).element;
+      expect(tinta.compareDocumentPosition(outro) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
+  it('o polvo da um tranco de 8px para cima no susto', async () => {
+    const { wrapper, vm } = mountTaskin();
+    void vm.play('ink');
+    await nextTick();
+    const motion = wrapper.find('#taskin-motion').element;
+    const [animacao] = motion.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = 250;
+    const m = new DOMMatrix(getComputedStyle(motion).transform);
+    expect(m.f).toBeCloseTo(-8, 0);
+  });
+});
+
+describe('travel-left e travel-right', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const lados = [
+    ['travel-left', -1],
+    ['travel-right', 1],
+  ] as const;
+
+  /** O giro, em graus, e o deslocamento do grupo de movimento congelado no instante `t`. */
+  async function congelado(variant: TaskinVariant, action: TaskinAction, t: number) {
+    const { wrapper, vm } = mountTaskin({ variant });
+    void vm.play(action);
+    await nextTick();
+    const el = wrapper.find(`#${variant}-motion`).element;
+    const [animacao] = el.getAnimations();
+    animacao?.pause();
+    if (animacao) animacao.currentTime = t;
+    const m = new DOMMatrix(getComputedStyle(el).transform);
+    return { wrapper, m, graus: (Math.atan2(m.b, m.a) * 180) / Math.PI };
+  }
+
+  it.each(TASKIN_VARIANTS)('%s: as duas direcoes existem, com cerca de 0,9s', (variant) => {
+    expect(ACTIONS[variant]['travel-left']?.durationMs).toBe(900);
+    expect(ACTIONS[variant]['travel-right']?.durationMs).toBe(900);
+  });
+
+  it.each(lados)('sapin: em %s pula inclinado para o lado, a uns 20px do chao', async (action, sinal) => {
+    const { wrapper, m, graus } = await congelado('sapin', action, 450);
+    expect(Math.sign(graus)).toBe(sinal);
+    expect(graus).toBeCloseTo(8 * sinal, 0);
+    expect(m.f).toBeCloseTo(-20, 0);
+    wrapper.unmount();
+  });
+
+  it('sapin: agacha antes do pulo e amassa na aterrissagem', async () => {
+    const agachado = await congelado('sapin', 'travel-right', 180);
+    expect(agachado.m.d).toBeLessThan(0.95);
+    agachado.wrapper.unmount();
+    const aterrissando = await congelado('sapin', 'travel-right', 720);
+    expect(aterrissando.m.d).toBeLessThan(0.95);
+    expect(Math.abs(aterrissando.m.f)).toBeLessThan(0.5);
+    aterrissando.wrapper.unmount();
+  });
+
+  it.each(lados)('taskin: em %s inclina 12 graus e desliza 6px para o lado', async (action, sinal) => {
+    const { wrapper, m, graus } = await congelado('taskin', action, 405);
+    expect(Math.sign(graus)).toBe(sinal);
+    expect(graus).toBeCloseTo(12 * sinal, 0);
+    expect(m.e).toBeCloseTo(6 * sinal, 0);
+    wrapper.unmount();
+  });
+
+  it.each(lados)('taskin: em %s os tentaculos arrastam para o lado de tras, dentro do grupo', async (action, sinal) => {
+    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    void vm.play(action);
+    await nextTick();
+    const tentaculos = wrapper.find('#taskin-motion #taskin-tentacles').element;
+    const [arrasto] = tentaculos.getAnimations() as CSSAnimation[];
+    expect(arrasto?.animationName).toBe(`taskin-taskin-${action}-tentacles`);
+    arrasto?.pause();
+    if (arrasto) arrasto.currentTime = 495;
+    expect(Math.sign(new DOMMatrix(getComputedStyle(tentaculos).transform).e)).toBe(-sinal);
+    wrapper.unmount();
+  });
+
+  it.each(TASKIN_VARIANTS)('%s: no fim volta ao lugar', async (variant) => {
+    const { wrapper, m } = await congelado(variant, 'travel-left', 899);
+    expect(Math.abs(m.e)).toBeLessThan(0.5);
+    expect(Math.abs(m.b)).toBeLessThan(0.02);
+    wrapper.unmount();
+  });
+});
+
+describe('actionDuration', () => {
+  it.each(pares)('%s: %s dura o durationMs da tabela', (variant, action) => {
+    expect(actionDuration(variant, action)).toBe(ACTIONS[variant][action]?.durationMs);
+  });
+
+  it('acao que a variante nao tem dura zero: resolve na hora', () => {
+    expect(actionDuration('taskin', 'catch-fly')).toBe(0);
+    expect(actionDuration('sapin', 'ink')).toBe(0);
+  });
+
+  it('sai do pacote ao lado de TASKIN_ACTIONS', async () => {
+    const pacote = await import('./index');
+    expect(pacote.actionDuration).toBe(actionDuration);
+    expect(pacote.TASKIN_ACTIONS).toBe(TASKIN_ACTIONS);
+  });
+});

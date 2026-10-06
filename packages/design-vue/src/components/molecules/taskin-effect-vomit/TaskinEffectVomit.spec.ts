@@ -18,4 +18,13 @@ describe('TaskinEffectVomit', () => {
     const wrapper = mount(TaskinEffectVomit, { props: { animationsEnabled: false } });
     expect(wrapper.find('ellipse').attributes('style')).not.toContain('animation');
   });
+
+  it('sai da boca do sapin, mais alta', () => {
+    expect(mount(TaskinEffectVomit).find('g#effect-vomit').attributes('transform')).toBeUndefined();
+    expect(
+      mount(TaskinEffectVomit, { props: { variant: 'sapin' } })
+        .find('g#effect-vomit')
+        .attributes('transform'),
+    ).toBe('translate(0 -21)');
+  });
 });

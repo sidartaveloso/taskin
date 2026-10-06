@@ -2,7 +2,8 @@
   "version": "1.0.3",
   "automation": {
     "level": "autopilot",
-    "autoSync": true,
+    "autoSync": false,
+    "defaultBranch": "develop",
     "ciSkipTag": "[skip ci]"
   },
   "provider": {
@@ -13,13 +14,13 @@
   },
   "hooks": {
     "review": {
-      "pre": ["git fetch origin", "git status --porcelain"],
+      "pre": ["git fetch origin", "git status --porcelain", "git pull --rebase origin {{baseBranch}}"],
       "during": ["pnpm lint", "pnpm typecheck", "pnpm test"],
       "post": ["git push origin HEAD", "echo '✓ Task {{taskId}} ({{taskTitle}}) ready for review!'"]
     }
   },
   "hookConfig": {
-    "baseBranch": "main",
+    "baseBranch": "develop",
     "continueOnError": false,
     "timeout": 300000
   },
@@ -28,5 +29,6 @@
       "webhookUrl": "${DISCORD_TASKIN_WEBHOOK_URL}",
       "events": ["task:start", "task:done"]
     }
-  }
+  },
+  "labs": ["estimate"]
 }
