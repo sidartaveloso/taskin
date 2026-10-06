@@ -42,6 +42,7 @@ export * from './components/molecules/taskin-effect-sweat';
 export * from './components/molecules/taskin-effect-tears';
 export * from './components/molecules/taskin-effect-thought-bubble';
 export * from './components/molecules/taskin-effect-vomit';
+export * from './components/molecules/taskin-effect-weight';
 export * from './components/molecules/taskin-effect-zzz';
 export * from './components/molecules/taskin-tentacle-with-item';
 export * from './components/molecules/taskin-tentacles-fluid';
