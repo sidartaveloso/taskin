@@ -34,6 +34,58 @@ describe('TaskinMouth', () => {
     expect(wrapper.find('#mouth').attributes('fill')).toBe('none');
   });
 
+  it('fica no lugar de sempre e na tinta do polvo, sem offset nem ink', () => {
+    const wrapper = mount(TaskinMouth, { props: { expression: 'panting' } });
+
+    expect(wrapper.find('#mouth').attributes('transform')).toBeUndefined();
+    expect(wrapper.find('#mouth-tongue').attributes('transform')).toBeUndefined();
+    expect(wrapper.find('#mouth').attributes('stroke')).toBe('#2C3E50');
+  });
+
+  it('o offset leva a boca e a lingua juntas, e o ink pinta as duas', () => {
+    const wrapper = mount(TaskinMouth, {
+      props: { expression: 'panting', offset: { x: 0, y: -10 }, ink: '#123456' },
+    });
+    const polvo = mount(TaskinMouth, { props: { expression: 'panting' } });
+
+    expect(wrapper.find('#mouth').attributes('d')).toBe(polvo.find('#mouth').attributes('d'));
+    expect(wrapper.find('#mouth').attributes('transform')).toBe('translate(0 -10)');
+    expect(wrapper.find('#mouth-tongue').attributes('transform')).toBe('translate(0 -10)');
+    expect(wrapper.find('#mouth').attributes('stroke')).toBe('#123456');
+    expect(wrapper.find('#mouth-tongue path').attributes('stroke')).toBe('#123456');
+  });
+
+  describe('ofegante', () => {
+    it('poe a lingua para fora so no panting', () => {
+      expect(
+        mount(TaskinMouth, { props: { expression: 'panting' } })
+          .find('#mouth-tongue')
+          .exists(),
+      ).toBe(true);
+      expect(
+        mount(TaskinMouth, { props: { expression: 'wide-open' } })
+          .find('#mouth-tongue')
+          .exists(),
+      ).toBe(false);
+    });
+
+    it('nao e o sorriso escancarado do wide-open', () => {
+      const panting = mount(TaskinMouth, { props: { expression: 'panting' } });
+      const wideOpen = mount(TaskinMouth, { props: { expression: 'wide-open' } });
+      expect(panting.find('#mouth').attributes('d')).not.toBe(wideOpen.find('#mouth').attributes('d'));
+    });
+
+    it('mexe a lingua so com animacao ligada', () => {
+      const lingua = (animationsEnabled: boolean) =>
+        mount(TaskinMouth, { props: { expression: 'panting', animationsEnabled } })
+          .find('#mouth-tongue path')
+          .classes();
+
+      expect(lingua(true)).toContain('tongue-pant');
+      expect(lingua(false)).not.toContain('tongue-pant');
+    });
+  });
+
   describe('falando', () => {
     it('anima a boca so com speaking', () => {
       expect(mount(TaskinMouth).find('#mouth').classes()).not.toContain('mouth-speaking');

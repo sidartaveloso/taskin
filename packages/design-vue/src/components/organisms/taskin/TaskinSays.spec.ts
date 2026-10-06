@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
+import { SKELETON_CHARACTER } from './characters/skeleton/skeleton-character';
 import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
 import TaskinSays from './TaskinSays.vue';
 
@@ -59,6 +60,37 @@ describe('TaskinSays', () => {
   it('o balao e o atomo SpeechBubble', () => {
     const wrapper = mountSays({ text: 'Oi' });
     expect(wrapper.findComponent({ name: 'SpeechBubble' }).exists()).toBe(true);
+  });
+
+  it('a borda segue a tinta da boca do personagem', () => {
+    const polvo = mountSays({ text: 'Oi' }).find('[data-testid="taskin-says-bubble"]').element as HTMLElement;
+    expect(getComputedStyle(polvo).borderTopColor).toBe('rgb(44, 62, 80)');
+  });
+
+  it('as props bubble* pintam o balao, e a borda deixa de seguir a tinta', () => {
+    const wrapper = mountSays({
+      text: 'Oi',
+      bubbleBackground: '#FAEEDA',
+      bubbleBorderColor: '#854F0B',
+      bubbleTextColor: '#633806',
+      bubbleBorderWidth: 3,
+      bubbleFontSize: 18,
+    });
+    const balao = wrapper.find('[data-testid="taskin-says-bubble"]').element as HTMLElement;
+    const css = getComputedStyle(balao);
+
+    expect(css.backgroundColor).toBe('rgb(250, 238, 218)');
+    expect(css.borderTopColor).toBe('rgb(133, 79, 11)');
+    expect(css.color).toBe('rgb(99, 56, 6)');
+    expect(css.borderTopWidth).toBe('3px');
+    expect(css.fontSize).toBe('18px');
+  });
+
+  it('as outras props atravessam para o Taskin', () => {
+    const wrapper = mountSays({ text: 'Oi', character: SKELETON_CHARACTER, size: 200 });
+
+    expect(wrapper.find('svg g#skeleton-motion').exists()).toBe(true);
+    expect(wrapper.find('svg').attributes('width')).toBe('200');
   });
 
   it('o tema por variavel CSS, posto no style de quem usa, ganha da tinta da variante', () => {

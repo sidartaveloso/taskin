@@ -5,6 +5,7 @@ import { nextTick } from 'vue';
 vi.mock('@opentask/ui-sense', () => import('@opentask/ui-sense/mocks'));
 
 import { createFaceLandmarkerMock, useFaceLandmarker } from '@opentask/ui-sense/mocks';
+import { SKELETON_CHARACTER } from './characters/skeleton/skeleton-character';
 import TaskinWithFaceTracking from './TaskinWithFaceTracking.vue';
 
 const baseBlendShapes = {
@@ -45,6 +46,15 @@ describe('TaskinWithFaceTracking', () => {
 
     const shown = mount(TaskinWithFaceTracking, { props: { showWebcam: true } });
     expect(shown.find('video.webcam-video').classes()).toContain('visible');
+  });
+
+  it('repassa a personagem ao mascote: o Taskin por padrao, outra quando pedida', () => {
+    expect(mount(TaskinWithFaceTracking).find('svg[data-character]').attributes('data-character')).toBe('taskin');
+    expect(
+      mount(TaskinWithFaceTracking, { props: { character: SKELETON_CHARACTER } })
+        .find('svg[data-character]')
+        .attributes('data-character'),
+    ).toBe('skeleton');
   });
 
   it('renders the mascot', () => {

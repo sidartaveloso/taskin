@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@opentask/ui-sense', () => import('@opentask/ui-sense/mocks'));
 
 import { createFaceLandmarkerMock, shhhVoiceMock, useFaceLandmarker } from '@opentask/ui-sense/mocks';
+import { SKELETON_CHARACTER } from './characters/skeleton/skeleton-character';
 import TaskinWithShhh from './TaskinWithShhh.vue';
 
 describe('TaskinWithShhh', () => {
@@ -31,6 +32,15 @@ describe('TaskinWithShhh', () => {
 
     const shown = mount(TaskinWithShhh, { props: { showWebcam: true } });
     expect(shown.find('video.webcam-video').classes()).toContain('visible');
+  });
+
+  it('repassa a personagem ao mascote: o Taskin por padrao, outra quando pedida', () => {
+    expect(mount(TaskinWithShhh).find('svg[data-character]').attributes('data-character')).toBe('taskin');
+    expect(
+      mount(TaskinWithShhh, { props: { character: SKELETON_CHARACTER } })
+        .find('svg[data-character]')
+        .attributes('data-character'),
+    ).toBe('skeleton');
   });
 
   it('renders the mascot', () => {

@@ -120,6 +120,29 @@ describe('Taskin', () => {
     expect(wrapper.find('#body-main').attributes('fill')).toBe('#1f7acb');
   });
 
+  describe('com calor', () => {
+    it('sua, poe a lingua para fora e fica de olho pesado — nao sorri', () => {
+      const wrapper = mountTaskin({ mood: 'hot' });
+
+      expect(wrapper.find('g#effect-sweat').exists()).toBe(true);
+      expect(wrapper.find('#mouth-tongue').exists()).toBe(true);
+      expect(wrapper.find('#left-eye ellipse').attributes('ry')).toBe(String(TASKIN_CHARACTER.eyes.ry.squint));
+      expect(wrapper.find('#mouth').attributes('d')).not.toBe(
+        mountTaskin({ mouthExpression: 'wide-open' }).find('#mouth').attributes('d'),
+      );
+    });
+
+    it('so sua no hot', () => {
+      for (const mood of ['neutral', 'happy', 'tired', 'dancing', 'vomiting']) {
+        expect(mountTaskin({ mood }).find('g#effect-sweat').exists()).toBe(false);
+      }
+    });
+
+    it('leva o suor junto no movimento', () => {
+      expect(mountTaskin({ mood: 'hot' }).find('#taskin-motion g#effect-sweat').exists()).toBe(true);
+    });
+  });
+
   describe('variante taskin', () => {
     it('move o polvo inteiro conforme o humor', () => {
       const movimento = (mood: string) => mountTaskin({ mood }).find('#taskin-motion').classes();
@@ -148,6 +171,11 @@ describe('Taskin', () => {
       expect(wrapper.find('#taskin-motion').classes()).toEqual(['taskin-motion']);
     });
 
+    it('troca a cor inteira nos humores que tem cor propria', () => {
+      expect(mountTaskin({ mood: 'happy' }).find('#body-main').attributes('fill')).toBe('#FFD700');
+      expect(mountTaskin({ mood: 'furious' }).find('#body-main').attributes('fill')).toBe('#DC143C');
+    });
+
     it('leva tentaculos, corpo, bracos, olhos, boca e efeitos dentro do grupo de movimento, e deixa a sombra no chao', () => {
       const wrapper = mountTaskin({ mood: 'in-love' });
       const grupo = wrapper.find('#taskin-motion');
@@ -160,6 +188,7 @@ describe('Taskin', () => {
       expect(grupo.find('g#effect-hearts').exists()).toBe(true);
       expect(grupo.find('ellipse[fill="#d8e2f0"]').exists()).toBe(false);
       expect(wrapper.find('svg > ellipse').attributes('rx')).toBe('70');
+      expect(wrapper.find('svg > ellipse').attributes('fill')).toBe('#d8e2f0');
     });
 
     it('nao mexe so o corpo, nem deixa no corpo props que ele nao tem', () => {
