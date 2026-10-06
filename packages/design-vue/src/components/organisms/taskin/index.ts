@@ -3,6 +3,7 @@ import Taskin from './Taskin';
 export * from './character';
 export * from './character/poses';
 export * from './characters/sapin';
+export * from './characters/skeleton';
 export * from './characters/taskin';
 export { actionDuration, default as Taskin } from './Taskin';
 export * from './Taskin.actions';

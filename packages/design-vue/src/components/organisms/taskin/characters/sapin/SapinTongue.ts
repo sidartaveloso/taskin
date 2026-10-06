@@ -14,6 +14,8 @@ const TONGUE_ROOT = { x: 160, y: 124 };
  */
 export default defineComponent({
   name: 'SapinTongue',
+  // O motor passa todas as props de peca; as que esta parte nao usa nao viram atributo no SVG.
+  inheritAttrs: false,
   props: {
     character: { type: Object as PropType<TaskinCharacter>, required: true },
     action: { type: String as PropType<TaskinAction | null>, default: null },
