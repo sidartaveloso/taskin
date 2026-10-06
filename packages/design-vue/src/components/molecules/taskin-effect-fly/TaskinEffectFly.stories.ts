@@ -36,7 +36,7 @@ export const Default: Story = {
     docs: {
       description: {
         story:
-          "The fly of the Sapin's `catch-fly` action: an arc to the right of the head, a stop in front of the mouth, gone once the tongue catches it.",
+          'The fly of the `catch-fly` action: an arc to the right of the head, a stop in front of the mouth, gone once the tongue catches it.',
       },
     },
   },

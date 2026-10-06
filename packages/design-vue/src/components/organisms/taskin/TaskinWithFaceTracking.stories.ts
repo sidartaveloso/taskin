@@ -148,18 +148,15 @@ export const LargeMascot: Story = {
   },
 };
 
-/**
- * O Sapin espelhando o seu rosto: olhos, boca e expressoes chegam ao sapinho
- * pelo mesmo caminho do Taskin.
- */
-export const Sapin: Story = {
+/** O esqueleto espelhando o seu rosto: a personagem chega ao mascote de dentro. */
+export const Esqueleto: Story = {
   args: {
-    character: characterArg('sapin'),
+    character: characterArg('skeleton'),
     mascotSize: 300,
     showWebcam: false,
     showDebug: false,
   },
   play: async ({ canvasElement }) => {
-    expect(canvasElement.querySelector('svg[data-character]')?.getAttribute('data-character')).toBe('sapin');
+    expect(canvasElement.querySelector('svg[data-character]')?.getAttribute('data-character')).toBe('skeleton');
   },
 };

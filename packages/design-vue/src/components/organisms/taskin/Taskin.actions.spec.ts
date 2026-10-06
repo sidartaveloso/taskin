@@ -2,17 +2,15 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import type { ActionConfig } from './character/character.types';
-import { SAPIN_CHARACTER } from './characters/sapin/sapin-character';
 import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
 import Taskin, { actionDuration } from './Taskin';
 import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
 
-const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
+const CHARACTERS = { taskin: TASKIN_CHARACTER } as const;
 type CharacterId = keyof typeof CHARACTERS;
-const CHARACTER_IDS = ['taskin', 'sapin'] as const satisfies readonly CharacterId[];
+const CHARACTER_IDS = ['taskin'] as const satisfies readonly CharacterId[];
 const ACTIONS: Record<CharacterId, Partial<Record<TaskinAction, ActionConfig>>> = {
   taskin: TASKIN_CHARACTER.actions,
-  sapin: SAPIN_CHARACTER.actions,
 };
 
 interface TaskinComAcoes {
@@ -211,12 +209,6 @@ describe('celebrate', () => {
     document.body.innerHTML = '';
   });
 
-  /** A escala horizontal de um `transform` computado, `none` contando como 1. */
-  const escala = (el: Element) => {
-    const transform = getComputedStyle(el).transform;
-    return transform === 'none' ? 1 : new DOMMatrix(transform).a;
-  };
-
   /** O `y` do ombro e o do punho, lidos do `d` do braco: `M x y Q ... x y`. */
   const alturas = (d: string | undefined) => {
     const numeros = (d ?? '').match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
@@ -240,46 +232,6 @@ describe('celebrate', () => {
       const { ombro, punho } = alturas(wrapper.find(`#${lado}-arm`).attributes('d'));
       expect(punho).toBeLessThan(ombro - 40);
     }
-    wrapper.unmount();
-  });
-
-  it('o papo e so do Sapin', () => {
-    expect(mountTaskin({ character: TASKIN_CHARACTER }).wrapper.find('#body-throat').exists()).toBe(false);
-    expect(mountTaskin({ character: SAPIN_CHARACTER }).wrapper.find('#body-throat').exists()).toBe(true);
-  });
-
-  it('o papo fica murcho fora da acao e infla no topo do pulo', async () => {
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
-    const papo = wrapper.find('#body-throat').element;
-    expect(escala(papo)).toBe(0);
-
-    void vm.play('celebrate');
-    await nextTick();
-    const [animacao] = papo.getAnimations();
-    expect((animacao as CSSAnimation | undefined)?.animationName).toBe('taskin-sapin-throat');
-    animacao?.pause();
-    if (animacao) animacao.currentTime = 600;
-    expect(escala(papo)).toBeGreaterThan(0.9);
-
-    const [pulo] = wrapper.find('#sapin-motion').element.getAnimations();
-    pulo?.pause();
-    if (pulo) pulo.currentTime = 600;
-    expect(new DOMMatrix(getComputedStyle(wrapper.find('#sapin-motion').element).transform).f).toBeCloseTo(-24, 0);
-    wrapper.unmount();
-  });
-
-  it('o papo inflado comeca abaixo da boca, no Sapin', async () => {
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
-    void vm.play('celebrate');
-    await nextTick();
-    for (const el of [wrapper.find('#sapin-motion').element, wrapper.find('#body-throat').element]) {
-      const [animacao] = el.getAnimations();
-      animacao?.pause();
-      if (animacao) animacao.currentTime = 600;
-    }
-    const papo = wrapper.find('#body-throat').element.getBoundingClientRect();
-    const boca = wrapper.find('#mouth').element.getBoundingClientRect();
-    expect(papo.top).toBeGreaterThanOrEqual(boca.bottom);
     wrapper.unmount();
   });
 
@@ -315,8 +267,8 @@ describe('point-up e point-down', () => {
     return { ombro: n[1] ?? Number.NaN, ponta: n[n.length - 1] ?? Number.NaN };
   };
 
-  /** O centro da barriga de cada bicho: o do corpo no Taskin, o de `#body-belly` no Sapin. */
-  const BARRIGA: Record<CharacterId, number> = { taskin: 110, sapin: 158 };
+  /** O centro da barriga do polvo: o do corpo. */
+  const BARRIGA: Record<CharacterId, number> = { taskin: 110 };
 
   const pupilas = (wrapper: ReturnType<typeof mountTaskin>['wrapper']) =>
     wrapper.findAll('#eyes circle').map((pupila) => Number(pupila.attributes('cy')));
@@ -516,19 +468,6 @@ describe('start', () => {
     wrapper.unmount();
   });
 
-  it('sapin: no meio da agachada a escala vertical e menor que 1', async () => {
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
-    void vm.play('start');
-    await nextTick();
-    const el = wrapper.find('#sapin-motion').element;
-    const [animacao] = el.getAnimations();
-    animacao?.pause();
-    if (animacao) animacao.currentTime = 400;
-    const m = new DOMMatrix(getComputedStyle(el).transform);
-    expect(m.d).toBeLessThan(1);
-    wrapper.unmount();
-  });
-
   it('taskin: os bracos puxam duas vezes, cada um para um lado', async () => {
     const { wrapper, vm } = mountTaskin({ character: TASKIN_CHARACTER });
     void vm.play('start');
@@ -601,20 +540,6 @@ describe('blocked', () => {
     expect(new DOMMatrix(getComputedStyle(el).transform).e).toBeCloseTo(-4, 0);
     if (animacao) animacao.currentTime = 1500;
     expect(Math.abs(new DOMMatrix(getComputedStyle(el).transform).e)).toBeLessThan(0.5);
-    wrapper.unmount();
-  });
-
-  it('sapin: no meio da acao esta sentado, com a escala vertical menor que 1', async () => {
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
-    void vm.play('blocked');
-    await nextTick();
-    const el = wrapper.find('#sapin-motion').element;
-    const [animacao] = el.getAnimations();
-    animacao?.pause();
-    if (animacao) animacao.currentTime = 800;
-    const m = new DOMMatrix(getComputedStyle(el).transform);
-    expect(m.d).toBeLessThan(1);
-    expect(m.f).toBeCloseTo(4, 0);
     wrapper.unmount();
   });
 });
@@ -760,14 +685,6 @@ describe('listening', () => {
     expect(ouvindo.ponta.x).toBeLessThan(ouvindo.ombro.x);
   });
 
-  it('sapin: so os olhos, o braco fica como estava', () => {
-    const parado = mountTaskin({ character: SAPIN_CHARACTER }).wrapper.find('#right-arm').attributes('d');
-    const ouvindo = mountTaskin({ character: SAPIN_CHARACTER, listening: true })
-      .wrapper.find('#right-arm')
-      .attributes('d');
-    expect(ouvindo).toBe(parado);
-  });
-
   it.each(CHARACTER_IDS)('%s: sem animacao fica so a pose, sem laco', (variant) => {
     const arregalados = mountTaskin({ character: CHARACTERS[variant], eyeState: 'wide', animationsEnabled: false })
       .wrapper.find('#left-eye')
@@ -815,15 +732,6 @@ describe('speaking', () => {
     );
   });
 
-  it('sapin: o papo pulsa enquanto fala, em laco', () => {
-    const { wrapper } = mountTaskin({ character: SAPIN_CHARACTER, speaking: true });
-    expect(wrapper.find('#sapin-motion').classes()).toContain('sapin-speaking');
-
-    const animacoes = wrapper.find('#body-throat').element.getAnimations() as CSSAnimation[];
-    expect(animacoes.map((animacao) => animacao.animationName)).toEqual(['taskin-sapin-speaking-throat']);
-    expect(animacoes[0]?.effect?.getTiming().iterations).toBe(Number.POSITIVE_INFINITY);
-  });
-
   it('taskin: nao tem papo, nem a classe', () => {
     const { wrapper } = mountTaskin({ speaking: true });
     expect(wrapper.find('#taskin-motion').classes()).toEqual(['taskin-motion']);
@@ -835,159 +743,12 @@ describe('speaking', () => {
     expect(wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
     expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`]);
   });
-
-  it('sapin: parar de falar desliga o papo', async () => {
-    const { wrapper } = mountTaskin({ character: SAPIN_CHARACTER, speaking: true });
-    await wrapper.setProps({ speaking: false });
-    expect(wrapper.find('#sapin-motion').classes()).not.toContain('sapin-speaking');
-    expect(wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
-  });
-});
-
-describe('catch-fly', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-    document.body.innerHTML = '';
-  });
-
-  /** Congela a primeira animacao de um elemento no instante `t`. */
-  const congelar = (el: Element, t: number) => {
-    const [animacao] = el.getAnimations();
-    animacao?.pause();
-    if (animacao) animacao.currentTime = t;
-    return animacao as CSSAnimation | undefined;
-  };
-
-  it('so o Sapin tem a acao, com cerca de 1,6s', async () => {
-    expect(ACTIONS.sapin['catch-fly']?.durationMs).toBe(1600);
-    expect(ACTIONS.taskin['catch-fly']).toBeUndefined();
-
-    const { wrapper, vm } = mountTaskin({ character: TASKIN_CHARACTER });
-    await expect(vm.play('catch-fly')).resolves.toBe(false);
-    await nextTick();
-    expect(wrapper.find('#effect-fly').exists()).toBe(false);
-    expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
-  });
-
-  it('a mosca e a lingua so aparecem durante a acao', async () => {
-    vi.useFakeTimers();
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
-    expect(wrapper.find('#effect-fly').exists()).toBe(false);
-    expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
-
-    const fim = vm.play('catch-fly');
-    await nextTick();
-    expect(wrapper.find('#effect-fly').exists()).toBe(true);
-    expect(wrapper.find('#sapin-tongue').exists()).toBe(true);
-
-    vi.advanceTimersByTime(1600);
-    await expect(fim).resolves.toBe(true);
-    await nextTick();
-    expect(wrapper.find('#effect-fly').exists()).toBe(false);
-    expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
-  });
-
-  it('os olhos seguem a mosca: a direita no voo, ao centro no bote', async () => {
-    vi.useFakeTimers();
-    const direita = mountTaskin({ character: SAPIN_CHARACTER, eyeLookDirection: 'right' })
-      .wrapper.find('#left-eye')
-      .html();
-    const centro = mountTaskin({ character: SAPIN_CHARACTER, eyeLookDirection: 'center' })
-      .wrapper.find('#left-eye')
-      .html();
-    expect(direita).not.toBe(centro);
-
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
-    void vm.play('catch-fly');
-    await nextTick();
-    expect(wrapper.find('#left-eye').html()).toBe(direita);
-
-    vi.advanceTimersByTime(960);
-    await nextTick();
-    expect(wrapper.find('#left-eye').html()).toBe(centro);
-  });
-
-  it('a mosca voa, some depois do bote e bate as asas', async () => {
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
-    void vm.play('catch-fly');
-    await nextTick();
-    const mosca = wrapper.find('#effect-fly').element;
-    const voo = congelar(mosca, 300);
-    expect(voo?.animationName).toBe('taskin-fly-catch');
-    expect(Number(getComputedStyle(mosca).opacity)).toBe(1);
-    const antes = mosca.getBoundingClientRect();
-    if (voo) voo.currentTime = 700;
-    const depois = mosca.getBoundingClientRect();
-    expect(depois.left).toBeLessThan(antes.left);
-
-    if (voo) voo.currentTime = 1400;
-    expect(Number(getComputedStyle(mosca).opacity)).toBe(0);
-
-    const asas = wrapper.findAll('#effect-fly .fly-wing');
-    expect(asas).toHaveLength(2);
-    expect(asas[0]?.element.getAnimations().length).toBe(1);
-  });
-
-  it('a lingua sai da boca do Sapin ate a mosca e volta', async () => {
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER, idleAnimation: false });
-    void vm.play('catch-fly');
-    await nextTick();
-    congelar(wrapper.find('#sapin-motion').element, 1056);
-    const lingua = wrapper.find('#sapin-tongue-reach').element;
-    const lambida = congelar(lingua, 1056);
-    expect(lambida?.animationName).toBe('taskin-sapin-tongue');
-    congelar(wrapper.find('#effect-fly').element, 1056);
-
-    const boca = wrapper.find('#mouth').element.getBoundingClientRect();
-    const noBote = lingua.getBoundingClientRect();
-    const mosca = wrapper.find('#effect-fly').element.getBoundingClientRect();
-    // Sai da boca: a raiz da lingua fica dentro da boca.
-    expect(noBote.left).toBeGreaterThanOrEqual(boca.left);
-    expect(noBote.left).toBeLessThanOrEqual(boca.right);
-    expect(noBote.top).toBeLessThanOrEqual(boca.bottom);
-    // Chega a mosca: a ponta encosta nela.
-    const centroMosca = { x: (mosca.left + mosca.right) / 2, y: (mosca.top + mosca.bottom) / 2 };
-    expect(centroMosca.x).toBeGreaterThanOrEqual(noBote.left);
-    expect(centroMosca.x).toBeLessThanOrEqual(noBote.right + 2);
-    expect(centroMosca.y).toBeLessThanOrEqual(noBote.bottom + 2);
-
-    if (lambida) lambida.currentTime = 300;
-    expect(lingua.getBoundingClientRect().width).toBeLessThan(1);
-    if (lambida) lambida.currentTime = 1500;
-    expect(lingua.getBoundingClientRect().width).toBeLessThan(1);
-  });
-
-  it('no fim o papo infla uma vez: o gole', async () => {
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
-    void vm.play('catch-fly');
-    await nextTick();
-    const papo = wrapper.find('#body-throat').element;
-    const gole = congelar(papo, 800);
-    expect(gole?.animationName).toBe('taskin-sapin-gulp');
-    expect(gole?.effect?.getTiming().iterations).toBe(1);
-    expect(new DOMMatrix(getComputedStyle(papo).transform).a).toBe(0);
-    if (gole) gole.currentTime = 1420;
-    expect(new DOMMatrix(getComputedStyle(papo).transform).a).toBeGreaterThan(0.9);
-  });
 });
 
 describe('ink', () => {
   afterEach(() => {
     vi.useRealTimers();
     document.body.innerHTML = '';
-  });
-
-  it('so o Taskin tem a acao, com cerca de 1,6s, de olhos arregalados e boca em O', async () => {
-    const config = ACTIONS.taskin.ink;
-    expect(config?.durationMs).toBe(1600);
-    expect(config?.pose?.eyeState).toBe('wide');
-    expect(config?.pose?.mouthExpression).toBe('o-shape');
-    expect(ACTIONS.sapin.ink).toBeUndefined();
-
-    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
-    await expect(vm.play('ink')).resolves.toBe(false);
-    await nextTick();
-    expect(wrapper.find('#effect-ink').exists()).toBe(false);
   });
 
   it('a nuvem so aparece durante a acao', async () => {
@@ -1058,24 +819,6 @@ describe('travel-left e travel-right', () => {
     expect(ACTIONS[variant]['travel-right']?.durationMs).toBe(900);
   });
 
-  it.each(lados)('sapin: em %s pula inclinado para o lado, a uns 20px do chao', async (action, sinal) => {
-    const { wrapper, m, graus } = await congelado('sapin', action, 450);
-    expect(Math.sign(graus)).toBe(sinal);
-    expect(graus).toBeCloseTo(8 * sinal, 0);
-    expect(m.f).toBeCloseTo(-20, 0);
-    wrapper.unmount();
-  });
-
-  it('sapin: agacha antes do pulo e amassa na aterrissagem', async () => {
-    const agachado = await congelado('sapin', 'travel-right', 180);
-    expect(agachado.m.d).toBeLessThan(0.95);
-    agachado.wrapper.unmount();
-    const aterrissando = await congelado('sapin', 'travel-right', 720);
-    expect(aterrissando.m.d).toBeLessThan(0.95);
-    expect(Math.abs(aterrissando.m.f)).toBeLessThan(0.5);
-    aterrissando.wrapper.unmount();
-  });
-
   it.each(lados)('taskin: em %s inclina 12 graus e desliza 6px para o lado', async (action, sinal) => {
     const { wrapper, m, graus } = await congelado('taskin', action, 405);
     expect(Math.sign(graus)).toBe(sinal);
@@ -1108,11 +851,6 @@ describe('travel-left e travel-right', () => {
 describe('actionDuration', () => {
   it.each(pares)('%s: %s dura o durationMs da tabela', (variant, action) => {
     expect(actionDuration(CHARACTERS[variant], action)).toBe(ACTIONS[variant][action]?.durationMs);
-  });
-
-  it('acao que a variante nao tem dura zero: resolve na hora', () => {
-    expect(actionDuration(TASKIN_CHARACTER, 'catch-fly')).toBe(0);
-    expect(actionDuration(SAPIN_CHARACTER, 'ink')).toBe(0);
   });
 
   it('sai do pacote ao lado de TASKIN_ACTIONS', async () => {

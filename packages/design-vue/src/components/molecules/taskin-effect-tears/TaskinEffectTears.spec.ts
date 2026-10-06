@@ -1,6 +1,5 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
 import TaskinEffectTears from './TaskinEffectTears';
 
 describe('TaskinEffectTears', () => {
@@ -23,19 +22,5 @@ describe('TaskinEffectTears', () => {
   it('omits the animation when animations are disabled', () => {
     const wrapper = mount(TaskinEffectTears, { props: { animationsEnabled: false } });
     expect(wrapper.find('circle').attributes('style')).not.toContain('animation');
-  });
-
-  it('cai dos olhos do sapin, que ficam mais altos e mais afastados', () => {
-    const taskin = mount(TaskinEffectTears).findAll('circle');
-    const sapin = mount(TaskinEffectTears, { props: { character: SAPIN_CHARACTER } }).findAll('circle');
-
-    expect(taskin.map((c) => [c.attributes('cx'), c.attributes('cy')])).toEqual([
-      ['148', '105'],
-      ['172', '105'],
-    ]);
-    expect(sapin.map((c) => [c.attributes('cx'), c.attributes('cy')])).toEqual([
-      ['134', '86'],
-      ['186', '86'],
-    ]);
   });
 });

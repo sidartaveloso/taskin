@@ -1,13 +1,12 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
 import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 import TaskinEffectWeight from './TaskinEffectWeight';
 
-const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
+const CHARACTERS = { taskin: TASKIN_CHARACTER } as const;
 type CharacterId = keyof typeof CHARACTERS;
-const CHARACTER_IDS = ['taskin', 'sapin'] as const satisfies readonly CharacterId[];
-const WEIGHT_HANDS = { taskin: TASKIN_CHARACTER.effortHands, sapin: SAPIN_CHARACTER.effortHands } as const;
+const CHARACTER_IDS = ['taskin'] as const satisfies readonly CharacterId[];
+const WEIGHT_HANDS = { taskin: TASKIN_CHARACTER.effortHands } as const;
 
 describe('TaskinEffectWeight', () => {
   it.each(CHARACTER_IDS)('%s: renders a bar with a disc at each end', (variant) => {

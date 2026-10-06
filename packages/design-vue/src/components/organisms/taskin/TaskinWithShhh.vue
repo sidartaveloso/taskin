@@ -89,7 +89,6 @@ import type { TaskinMood } from './Taskin.types';
 
 export interface Props {
   mascotSize?: number;
-  /** Which character reacts: the Taskin octopus (default) or the Sapin frog. */
   /** Quem o mascote e. Padrao: o polvo Taskin. */
   character?: TaskinCharacter;
   /** The microphone is on: the mascot holds its listening pose. */

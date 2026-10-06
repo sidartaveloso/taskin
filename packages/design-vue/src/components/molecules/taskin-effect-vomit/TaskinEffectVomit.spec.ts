@@ -1,6 +1,5 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
 import TaskinEffectVomit from './TaskinEffectVomit';
 
 describe('TaskinEffectVomit', () => {
@@ -18,14 +17,5 @@ describe('TaskinEffectVomit', () => {
   it('omits the animation when animations are disabled', () => {
     const wrapper = mount(TaskinEffectVomit, { props: { animationsEnabled: false } });
     expect(wrapper.find('ellipse').attributes('style')).not.toContain('animation');
-  });
-
-  it('sai da boca do sapin, mais alta', () => {
-    expect(mount(TaskinEffectVomit).find('g#effect-vomit').attributes('transform')).toBeUndefined();
-    expect(
-      mount(TaskinEffectVomit, { props: { character: SAPIN_CHARACTER } })
-        .find('g#effect-vomit')
-        .attributes('transform'),
-    ).toBe('translate(0 -21)');
   });
 });

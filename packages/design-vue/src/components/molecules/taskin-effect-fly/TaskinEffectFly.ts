@@ -1,12 +1,13 @@
 import { defineComponent, h } from 'vue';
 
 /**
- * Onde a mosca para, na frente da boca do Sapin, e onde a lingua a pega. A
- * lingua (`#sapin-tongue`, no `Taskin`) le daqui a mesma ponta.
+ * Onde a mosca para, na frente da boca, e onde a lingua a pega, no quadro de
+ * referencia. A personagem que tem `catch-fly` desenha a lingua ate aqui,
+ * descontado o deslocamento da propria boca.
  */
 export const FLY_STOP = { x: 182, y: 124 };
 
-/** A boca do Sapin, para onde a lingua traz a mosca de volta. */
+/** Para onde a lingua traz a mosca de volta: o gole. */
 export const FLY_SWALLOW = { x: 160, y: 106 };
 
 // O voo casa com a acao `catch-fly` (1,6s): um arco a direita da cabeca, parada

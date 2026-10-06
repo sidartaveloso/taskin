@@ -16,7 +16,7 @@ export const TASKIN_MOTION_BY_MOOD: Partial<Record<TaskinMood, string>> = {
 };
 
 // O giro e a escala sao em volta do centro do corpo, em coordenadas do viewBox,
-// como no `dance()` do controller. O `fill-box` do Sapin nao serve aqui: com os
+// como no `dance()` do controller. O `fill-box` (bom para um bicho sem partes ondulando) nao serve aqui: com os
 // tentaculos ondulando dentro do grupo, a caixa — e o eixo — mudaria a cada
 // quadro. Os valores de danca e tremor tambem vem do controller. O arfar e curto
 // e rapido, no passo da lingua (`TaskinMouth`): inchando devagar, parecia suspiro.

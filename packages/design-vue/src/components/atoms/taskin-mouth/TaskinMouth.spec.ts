@@ -1,6 +1,5 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
 import { MOUTH_PATHS } from './TaskinMouth.types';
 import TaskinMouth from './TaskinMouth.vue';
 
@@ -33,70 +32,6 @@ describe('TaskinMouth', () => {
   it('leaves neutral expressions unfilled', () => {
     const wrapper = mount(TaskinMouth, { props: { expression: 'neutral' } });
     expect(wrapper.find('#mouth').attributes('fill')).toBe('none');
-  });
-
-  it('fica mais alta no sapin, com a mesma expressao', () => {
-    const taskin = mount(TaskinMouth, { props: { expression: 'smile' } });
-    const sapin = mount(TaskinMouth, {
-      props: { expression: 'smile', offset: SAPIN_CHARACTER.mouth.offset, ink: SAPIN_CHARACTER.mouth.ink },
-    });
-
-    expect(sapin.find('#mouth').attributes('d')).toBe(taskin.find('#mouth').attributes('d'));
-    expect(sapin.find('#mouth').attributes('transform')).toBe('translate(0 -21)');
-    expect(taskin.find('#mouth').attributes('transform')).toBeUndefined();
-  });
-
-  describe('ofegante', () => {
-    it('poe a lingua para fora so no panting', () => {
-      expect(
-        mount(TaskinMouth, { props: { expression: 'panting' } })
-          .find('#mouth-tongue')
-          .exists(),
-      ).toBe(true);
-      expect(
-        mount(TaskinMouth, { props: { expression: 'wide-open' } })
-          .find('#mouth-tongue')
-          .exists(),
-      ).toBe(false);
-    });
-
-    it('nao e o sorriso escancarado do wide-open', () => {
-      const panting = mount(TaskinMouth, { props: { expression: 'panting' } });
-      const wideOpen = mount(TaskinMouth, { props: { expression: 'wide-open' } });
-      expect(panting.find('#mouth').attributes('d')).not.toBe(wideOpen.find('#mouth').attributes('d'));
-    });
-
-    it('leva a lingua junto com a boca no sapin', () => {
-      const taskin = mount(TaskinMouth, { props: { expression: 'panting' } });
-      const sapin = mount(TaskinMouth, {
-        props: { expression: 'panting', offset: SAPIN_CHARACTER.mouth.offset, ink: SAPIN_CHARACTER.mouth.ink },
-      });
-
-      expect(sapin.find('#mouth-tongue').attributes('transform')).toBe('translate(0 -21)');
-      expect(taskin.find('#mouth-tongue').attributes('transform')).toBeUndefined();
-    });
-
-    it('mexe a lingua so com animacao ligada', () => {
-      const lingua = (animationsEnabled: boolean) =>
-        mount(TaskinMouth, { props: { expression: 'panting', animationsEnabled } })
-          .find('#mouth-tongue path')
-          .classes();
-
-      expect(lingua(true)).toContain('tongue-pant');
-      expect(lingua(false)).not.toContain('tongue-pant');
-    });
-  });
-
-  it('pinta a boca do sapin de verde-escuro, e a do taskin segue azul-escura', () => {
-    const sapin = mount(TaskinMouth, {
-      props: { expression: 'panting', offset: SAPIN_CHARACTER.mouth.offset, ink: SAPIN_CHARACTER.mouth.ink },
-    });
-    const taskin = mount(TaskinMouth, { props: { expression: 'panting' } });
-
-    expect(sapin.find('#mouth').attributes('stroke')).toBe('#134635');
-    expect(sapin.find('#mouth').attributes('fill')).toBe('#134635');
-    expect(sapin.find('#mouth-tongue path').attributes('stroke')).toBe('#134635');
-    expect(taskin.find('#mouth').attributes('stroke')).toBe('#2C3E50');
   });
 
   describe('falando', () => {

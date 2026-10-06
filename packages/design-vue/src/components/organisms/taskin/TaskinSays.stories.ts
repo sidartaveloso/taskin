@@ -59,8 +59,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Todos os modos de balao, cada um com o humor que combina, alternando Taskin e
- * Sapin. As cores dos Controls valem para todos.
+ * Todos os modos de balao, cada um com o humor que combina, alternando o polvo e
+ * o esqueleto. As cores dos Controls valem para todos.
  */
 export const AllKinds: Story = {
   render: (args) => ({
@@ -71,7 +71,7 @@ export const AllKinds: Story = {
         <div v-for="(kind, i) in kinds" :key="kind">
           <TaskinSays
             v-bind="args"
-            :character="i % 2 ? personagens.sapin : personagens.taskin"
+            :character="i % 2 ? personagens.skeleton : personagens.taskin"
             :mood="falas[kind].mood"
             :text="falas[kind].text"
             :bubble-kind="kind"
@@ -95,11 +95,6 @@ export const LongText: Story = {
   args: {
     text: 'Sidarta, a task 166 terminou, os 663 specs e as 300 stories passaram no Chromium, e o PR 16 esta aberto para o main esperando voce mesclar.',
   },
-};
-
-/** A borda segue a tinta do Sapin. */
-export const Sapin: Story = {
-  args: { character: characterArg('sapin'), text: 'Coaxei alguma coisa util?' },
 };
 
 /** Sem texto, o `Taskin` fica como esta: o pensamento continua no SVG. */

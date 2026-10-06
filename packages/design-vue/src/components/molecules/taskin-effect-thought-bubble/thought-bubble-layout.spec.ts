@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
 import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 import {
   BUBBLE_LEFT_LIMIT,
@@ -9,10 +8,9 @@ import {
   thoughtTrail,
 } from './thought-bubble-layout';
 
-const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
+const CHARACTERS = { taskin: TASKIN_CHARACTER } as const;
 
 const TASKIN_EYE_TOP = 72;
-const SAPIN_EYE_BUMP_RIGHT = 222;
 
 describe('layoutThoughtBubble', () => {
   it('mantem a geometria de sempre para o balao padrao', () => {
@@ -97,28 +95,6 @@ describe('layoutThoughtBubble', () => {
     expect(layout.lineY).toHaveLength(layout.lines.length);
   });
 
-  describe('variante sapin', () => {
-    it('nasce mais alto e mais a direita, fora do olho direito', () => {
-      const layout = layoutThoughtBubble('?', SAPIN_CHARACTER);
-
-      expect([layout.cx, layout.cy, layout.rx, layout.ry]).toEqual([268, 34, 35, 30]);
-      // O olho direito do sapin, com o calombo, vai ate x = 222.
-      expect(layout.cx - layout.rx).toBeGreaterThan(SAPIN_EYE_BUMP_RIGHT);
-    });
-
-    it('respeita os mesmos limites do quadro quando a frase cresce', () => {
-      const layout = layoutThoughtBubble('Bruno, Shhhhhhhhhhhh... fala mais baixo, por favor', SAPIN_CHARACTER);
-
-      expect(layout.cx + layout.rx).toBeLessThanOrEqual(BUBBLE_RIGHT_LIMIT);
-      expect(layout.cx - layout.rx).toBeGreaterThanOrEqual(BUBBLE_LEFT_LIMIT);
-      expect(layout.cy - layout.ry).toBeGreaterThanOrEqual(BUBBLE_TOP_LIMIT);
-    });
-
-    it('mantem o taskin como padrao', () => {
-      expect(layoutThoughtBubble('?')).toEqual(layoutThoughtBubble('?', TASKIN_CHARACTER));
-    });
-  });
-
   // A task-169: o balao nascia em cy 50 e, com duas linhas, descia ate y 88,
   // por cima do olho direito do Taskin; as bolinhas caiam na pupila.
   describe('acima do olho (task-169)', () => {
@@ -130,16 +106,11 @@ describe('layoutThoughtBubble', () => {
       expect(layout.cy + layout.ry).toBeLessThanOrEqual(TASKIN_EYE_TOP);
     });
 
-    it.each(frases)('sapin: a elipse fica a direita do calombo: %s', (frase) => {
-      const layout = layoutThoughtBubble(frase, SAPIN_CHARACTER);
-      expect(layout.cx - layout.rx).toBeGreaterThanOrEqual(SAPIN_EYE_BUMP_RIGHT);
-    });
-
-    it.each(['taskin', 'sapin'] as const)('%s: as bolinhas descem da borda de baixo, a direita do olho', (variant) => {
+    it.each(['taskin'] as const)('%s: as bolinhas descem da borda de baixo, a direita do olho', (variant) => {
       for (const frase of frases) {
         const layout = layoutThoughtBubble(frase, CHARACTERS[variant]);
         const [grande, pequena] = thoughtTrail(layout, CHARACTERS[variant]);
-        const limite = variant === 'taskin' ? 199 : SAPIN_EYE_BUMP_RIGHT;
+        const limite = 199;
 
         expect(grande?.y).toBeGreaterThan(layout.cy + layout.ry);
         expect(pequena?.y).toBeGreaterThan(grande?.y ?? 0);

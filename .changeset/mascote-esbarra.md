@@ -2,4 +2,4 @@
 '@opentask/taskin-design-vue': patch
 ---
 
-O mascote ganha a ação `blocked`: o Taskin cruza os braços e vira a cara, o Sapin senta e desanima.
+O mascote ganha a ação `blocked`: o Taskin põe as mãos na cintura e vira a cara.

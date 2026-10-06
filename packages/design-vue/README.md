@@ -61,31 +61,60 @@ The official Taskin mascot component with animations and moods.
 - `mood` (String, default: 'sarcastic') - Mood of the mascot
 - `idleAnimation` (Boolean, default: true) - Enable idle animations
 - `animationsEnabled` (Boolean, default: true) - Enable all animations
-- `variant` (`'taskin' | 'sapin'`, default: `'taskin'`) - Which character to draw
+- `character` (`TaskinCharacter`, default: `TASKIN_CHARACTER`) - Who the mascot is
 
-#### Variants: Taskin and Sapin
+#### Characters
 
-The mascot comes in two characters, and it is the same component for both:
-`<Taskin variant="sapin" />` draws Sapin, the frog of the SAP brand, in place
-of the Taskin octopus. The two share the same moods, idle behaviour, eye
-tracking and effects, and the same mood palette. The only difference is the
-base colour, which is green (`#4DB848`) instead of blue.
+`Taskin` is an engine. It owns the behaviour: moods, blinking, eye tracking,
+speech, one-shot actions (`play`) and the effects. Who the mascot is comes from
+`character`, a typed object built with `defineCharacter`:
 
-Both characters move as one piece: body, arms, eyes, mouth and effects go
-together, and the shadow stays on the ground. They float when `in-love`, sway
-when `tired`, shiver when `cold` and pant when `hot`.
+| Field | What it holds |
+| --- | --- |
+| `id`, `name` | Stable kebab-case id (names `#<id>-motion`, prefixes the CSS) and a human name |
+| `colors` | Base colours, for the moods that have none |
+| `eyes`, `mouth`, `arms` | Where the eyes, mouth and shoulders sit, and how they look |
+| `shadow` | The ellipse on the ground |
+| `parts` | The drawings: `body` (required), `back` (behind it) and `front` (after the mouth). Each receives `CharacterPartProps` |
+| `motion` | The CSS of the whole character, the class per mood, and the `listening`, `speaking` and `juggling` classes |
+| `actions` | What each one-shot action does on this character; a missing one resolves `false` |
+| `listening` | The pose held while the microphone is on |
+| `bubbles`, `effortHands` | Where the bubbles go and point, and where the bar of `effort` rests |
 
-What changes is the drawing and how the character moves:
+Three characters ship with the package:
 
-- The frog has legs instead of tentacles, and its eyes sit on bumps on top of
-  its head.
-- When `dancing`, the octopus rocks from side to side and the frog hops. The
-  octopus takes its tentacles along in every motion.
-- When idle, it taps its toes where the octopus wiggles a tentacle.
+- `TASKIN_CHARACTER`, the octopus: the default.
+- `SKELETON_CHARACTER`, the engine with no animal, drawn as markings of every
+  anchor. A new character starts from a copy of it.
+- `CharacterAnchors`, a part that draws any character's anchors: put it in
+  `parts.front` of a copy to check a drawing against its data.
 
-The list of variants is exported as `TASKIN_VARIANTS`, next to `TASKIN_MOODS`.
-`TaskinWithShhh` and `TaskinWithFaceTracking` pass `variant` through. The
-stories live under *Organisms/Taskin/Sapin*.
+```ts
+import { defineCharacter, SKELETON_CHARACTER, WAVE } from '@opentask/taskin-design-vue';
+import MyBody from './MyBody.vue';
+
+export const MY_CHARACTER = defineCharacter({
+  ...SKELETON_CHARACTER,
+  id: 'my-character',
+  name: 'My character',
+  colors: { bodyColor: '#e07a5f', bodyHighlight: '#f2cc8f', tentacleColor: '#e07a5f' },
+  parts: { body: MyBody },
+  motion: { byMood: {}, listeningClass: 'my-character-listening', css: '' },
+  actions: { wave: { className: 'my-character-wave', durationMs: 1400, pose: WAVE } },
+});
+```
+
+```vue
+<Taskin :character="MY_CHARACTER" mood="happy" />
+```
+
+`defineCharacter` refuses an id that is not kebab-case and a CSS class that is
+not prefixed with the id: the `<style>` inside the SVG applies to the whole
+page, so two characters would restyle each other. The effects tied to the face
+were drawn around the octopus' eyes, which are the engine's reference frame:
+they move by however much a character's eyes or mouth sit away from them
+(`eyeShift`). `TaskinSays`, `TaskinWithShhh` and `TaskinWithFaceTracking` pass
+`character` through. The stories live under *Organisms/Taskin/Characters*.
 
 #### Events
 

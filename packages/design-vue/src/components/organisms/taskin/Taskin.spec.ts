@@ -1,13 +1,11 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { SAPIN_CHARACTER } from './characters/sapin/sapin-character';
 import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
 import Taskin from './Taskin';
 import type { TaskinMood } from './Taskin.types';
 
-const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
+const CHARACTERS = { taskin: TASKIN_CHARACTER } as const;
 type CharacterId = keyof typeof CHARACTERS;
-const EYE_GEOMETRY = { taskin: TASKIN_CHARACTER.eyes, sapin: SAPIN_CHARACTER.eyes } as const;
 
 function mountTaskin(overrides: Record<string, unknown> = {}) {
   return mount(Taskin, {
@@ -70,7 +68,7 @@ describe('Taskin', () => {
       expect(mountTaskin({ speechText: '' }).find('g#effect-speech-bubble').exists()).toBe(false);
     });
 
-    it.each(['taskin', 'sapin'] as const)('%s: com texto, o balao de fala diz a frase', (variant) => {
+    it.each(['taskin'] as const)('%s: com texto, o balao de fala diz a frase', (variant) => {
       const wrapper = mountTaskin({ character: CHARACTERS[variant], speechText: 'Oi, Sidarta' });
       const balao = wrapper.find('g#effect-speech-bubble');
 
@@ -120,33 +118,6 @@ describe('Taskin', () => {
     const wrapper = mountTaskin();
     expect(wrapper.find('#tentacle-with-item').exists()).toBe(true);
     expect(wrapper.find('#body-main').attributes('fill')).toBe('#1f7acb');
-    expect(wrapper.find('#sapin-motion').exists()).toBe(false);
-  });
-
-  describe('com calor', () => {
-    it('sua, poe a lingua para fora e fica de olho pesado — nao sorri', () => {
-      const wrapper = mountTaskin({ mood: 'hot' });
-
-      expect(wrapper.find('g#effect-sweat').exists()).toBe(true);
-      expect(wrapper.find('#mouth-tongue').exists()).toBe(true);
-      expect(wrapper.find('#left-eye ellipse').attributes('ry')).toBe(String(EYE_GEOMETRY.taskin.ry.squint));
-      expect(wrapper.find('#mouth').attributes('d')).not.toBe(
-        mountTaskin({ mouthExpression: 'wide-open' }).find('#mouth').attributes('d'),
-      );
-    });
-
-    it('so sua no hot', () => {
-      for (const mood of ['neutral', 'happy', 'tired', 'dancing', 'vomiting']) {
-        expect(mountTaskin({ mood }).find('g#effect-sweat').exists()).toBe(false);
-      }
-    });
-
-    it('leva o suor junto no movimento, nas duas variantes', () => {
-      expect(mountTaskin({ mood: 'hot' }).find('#taskin-motion g#effect-sweat').exists()).toBe(true);
-      expect(
-        mountTaskin({ mood: 'hot', character: SAPIN_CHARACTER }).find('#sapin-motion g#effect-sweat').exists(),
-      ).toBe(true);
-    });
   });
 
   describe('variante taskin', () => {
@@ -205,96 +176,6 @@ describe('Taskin', () => {
       }
     });
   });
-
-  describe('variante sapin', () => {
-    const mountSapin = (overrides: Record<string, unknown> = {}) =>
-      mountTaskin({ character: SAPIN_CHARACTER, ...overrides });
-
-    it('desenha o sapo: sem tentaculos, com calombos, barriga e seis dedos', () => {
-      const wrapper = mountSapin();
-
-      expect(wrapper.find('#tentacle-with-item').exists()).toBe(false);
-      expect(wrapper.find('svg[data-character]').attributes('data-character')).toBe('sapin');
-      expect(wrapper.findAll('#body-eye-bumps circle')).toHaveLength(2);
-      expect(wrapper.find('#body-belly').exists()).toBe(true);
-      expect(wrapper.findAll('#body-toes .toe')).toHaveLength(6);
-      expect(wrapper.find('g#arms').exists()).toBe(true);
-    });
-
-    it('usa o verde de base nos humores sem cor propria', () => {
-      for (const mood of ['neutral', 'smirk', 'annoyed', 'sarcastic']) {
-        const wrapper = mountSapin({ mood });
-        expect(wrapper.find('#body-main').attributes('fill')).toBe('#4DB848');
-        expect(wrapper.find('#left-arm').attributes('stroke')).toBe('#4DB848');
-      }
-    });
-
-    it('troca a cor inteira nos outros humores, com a mesma paleta do Taskin', () => {
-      expect(mountSapin({ mood: 'happy' }).find('#body-main').attributes('fill')).toBe('#FFD700');
-      expect(mountSapin({ mood: 'furious' }).find('#body-main').attributes('fill')).toBe('#DC143C');
-      expect(mountTaskin({ mood: 'happy' }).find('#body-main').attributes('fill')).toBe('#FFD700');
-    });
-
-    it('poe os olhos nos calombos e a boca mais alta', () => {
-      const wrapper = mountSapin();
-
-      expect(wrapper.find('#left-eye ellipse').attributes('cx')).toBe('121');
-      expect(wrapper.find('#left-eye ellipse').attributes('cy')).toBe('71');
-      expect(wrapper.find('#right-eye ellipse').attributes('cx')).toBe('199');
-      expect(wrapper.find('#mouth').attributes('transform')).toBe('translate(0 -21)');
-    });
-
-    it('leva os efeitos do rosto junto: lagrimas, Zzz, coracoes e vomito', () => {
-      expect(mountSapin({ mood: 'crying' }).find('g#effect-tears circle').attributes('cy')).toBe('86');
-      expect(mountSapin({ mood: 'sleeping' }).find('g#effect-zzz path').attributes('d')).toMatch(/^M205\.2 54h/);
-      expect(mountSapin({ mood: 'in-love' }).find('g#effect-hearts text').attributes('y')).toBe('71');
-      expect(mountSapin({ mood: 'vomiting' }).find('g#effect-vomit').attributes('transform')).toBe('translate(0 -21)');
-    });
-
-    it('tira o balao de pensamento de cima do olho direito', () => {
-      const balao = mountSapin({ mood: 'thoughtful' }).find('g#effect-thought-bubble ellipse');
-      expect([balao.attributes('cx'), balao.attributes('cy')]).toEqual(['268', '34']);
-    });
-
-    it('move o sapo inteiro conforme o humor', () => {
-      const movimento = (mood: string) => mountSapin({ mood }).find('#sapin-motion').classes();
-
-      expect(movimento('dancing')).toContain('sapin-hop');
-      expect(movimento('in-love')).toContain('sapin-float');
-      expect(movimento('tired')).toContain('sapin-sway');
-      expect(movimento('cold')).toContain('sapin-shiver');
-      expect(movimento('hot')).toContain('sapin-pant');
-      expect(movimento('sleeping')).toEqual(['sapin-motion']);
-    });
-
-    it.each<[TaskinMood, string]>([
-      ['dancing', 'taskin-sapin-hop'],
-      ['in-love', 'taskin-sapin-float'],
-      ['tired', 'taskin-sapin-sway'],
-      ['cold', 'taskin-sapin-shiver'],
-      ['hot', 'taskin-sapin-pant'],
-    ])('anima de verdade no humor %s', (mood, animacao) => {
-      expect(animacoesDoMovimento('sapin', mood)).toEqual([animacao]);
-    });
-
-    it('fica parado com as animacoes desligadas', () => {
-      const wrapper = mountSapin({ mood: 'dancing', animationsEnabled: false });
-      expect(wrapper.find('#sapin-motion').classes()).toEqual(['sapin-motion']);
-    });
-
-    it('leva olhos, boca e corpo dentro do grupo de movimento, e deixa a sombra no chao', () => {
-      const wrapper = mountSapin();
-      const grupo = wrapper.find('#sapin-motion');
-
-      expect(grupo.find('g#body').exists()).toBe(true);
-      expect(grupo.find('g#eyes').exists()).toBe(true);
-      expect(grupo.find('#mouth').exists()).toBe(true);
-      expect(grupo.find('ellipse[fill="#d8e2f0"]').exists()).toBe(false);
-      expect(wrapper.find('svg > ellipse').attributes('rx')).toBe('82');
-      expect(wrapper.find('svg > ellipse').attributes('fill')).toBe('#E4E9ED');
-      expect(mountTaskin().find('svg > ellipse').attributes('fill')).toBe('#d8e2f0');
-    });
-  });
 });
 
 describe('Taskin juggling', () => {
@@ -308,12 +189,6 @@ describe('Taskin juggling', () => {
     const wrapper = mountTaskin({ juggling: 0 });
     expect(wrapper.find('#effect-juggle').exists()).toBe(false);
     expect(wrapper.find('#taskin-motion').classes()).not.toContain('taskin-juggling');
-  });
-
-  it('o Sapin ignora', () => {
-    const wrapper = mountTaskin({ character: SAPIN_CHARACTER, juggling: 3 });
-    expect(wrapper.find('#effect-juggle').exists()).toBe(false);
-    expect(wrapper.find('#sapin-motion').classes()).not.toContain('taskin-juggling');
   });
 
   it('sem animacao, as bolinhas ficam no ar e os bracos parados', () => {
