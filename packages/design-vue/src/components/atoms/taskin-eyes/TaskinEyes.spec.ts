@@ -1,7 +1,10 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { EYE_GEOMETRY } from './TaskinEyes.types';
+import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 import TaskinEyes from './TaskinEyes.vue';
+
+const EYE_GEOMETRY = { taskin: TASKIN_CHARACTER.eyes, sapin: SAPIN_CHARACTER.eyes } as const;
 
 vi.mock('@opentask/ui-sense', () => import('@opentask/ui-sense/mocks'));
 
@@ -45,7 +48,7 @@ describe('TaskinEyes', () => {
 
   describe('variante sapin', () => {
     it('poe os olhos no topo da cabeca, nos centros da geometria do sapin', () => {
-      const wrapper = mount(TaskinEyes, { props: { trackingMode: 'none', variant: 'sapin' } });
+      const wrapper = mount(TaskinEyes, { props: { trackingMode: 'none', geometry: SAPIN_CHARACTER.eyes } });
       const esquerdo = wrapper.find('#left-eye ellipse');
       const direito = wrapper.find('#right-eye ellipse');
 
@@ -55,7 +58,7 @@ describe('TaskinEyes', () => {
     });
 
     it('puxa as pupilas para o nariz, o olhar para a frente da referencia', () => {
-      const wrapper = mount(TaskinEyes, { props: { trackingMode: 'none', variant: 'sapin' } });
+      const wrapper = mount(TaskinEyes, { props: { trackingMode: 'none', geometry: SAPIN_CHARACTER.eyes } });
 
       expect(wrapper.find('#left-eye circle').attributes('cx')).toBe(String(EYE_GEOMETRY.sapin.left.x + 3));
       expect(wrapper.find('#right-eye circle').attributes('cx')).toBe(String(EYE_GEOMETRY.sapin.right.x - 3));
@@ -63,13 +66,15 @@ describe('TaskinEyes', () => {
     });
 
     it('olha para os lados a partir de onde a pupila descansa', () => {
-      const wrapper = mount(TaskinEyes, { props: { trackingMode: 'none', variant: 'sapin', lookDirection: 'left' } });
+      const wrapper = mount(TaskinEyes, {
+        props: { trackingMode: 'none', geometry: SAPIN_CHARACTER.eyes, lookDirection: 'left' },
+      });
 
       expect(wrapper.find('#left-eye circle').attributes('cx')).toBe(String(EYE_GEOMETRY.sapin.left.x + 3 - 3));
     });
 
     it('desenha a esclera sem contorno, um pouco mais alta que larga, e a pupila na tinta do sapin', () => {
-      const wrapper = mount(TaskinEyes, { props: { trackingMode: 'none', variant: 'sapin' } });
+      const wrapper = mount(TaskinEyes, { props: { trackingMode: 'none', geometry: SAPIN_CHARACTER.eyes } });
       const esclera = wrapper.find('#left-eye ellipse');
 
       expect(Number(esclera.attributes('ry'))).toBeGreaterThan(Number(esclera.attributes('rx')));
@@ -79,7 +84,9 @@ describe('TaskinEyes', () => {
     });
 
     it('desenha a palpebra quando fechado, para o olho nao sumir no verde', () => {
-      const wrapper = mount(TaskinEyes, { props: { trackingMode: 'none', variant: 'sapin', state: 'closed' } });
+      const wrapper = mount(TaskinEyes, {
+        props: { trackingMode: 'none', geometry: SAPIN_CHARACTER.eyes, state: 'closed' },
+      });
       const esclera = wrapper.find('#left-eye ellipse');
 
       expect(esclera.attributes('stroke')).toBe('#213037');

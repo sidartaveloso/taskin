@@ -45,7 +45,7 @@
 
     <div class="mascot-container" ref="mascotContainer">
       <Taskin
-        :variant="variant"
+        :character="character"
         :listening="listening"
         :speaking="speaking"
         :mood="currentMood"
@@ -82,14 +82,16 @@ import {
   WebcamVideo,
 } from '@opentask/ui-sense';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import type { TaskinCharacter } from './character/character.types';
+import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
 import Taskin from './Taskin';
 import type { TaskinMood } from './Taskin.types';
-import type { TaskinVariant } from './Taskin.variants';
 
 export interface Props {
   mascotSize?: number;
   /** Which character reacts: the Taskin octopus (default) or the Sapin frog. */
-  variant?: TaskinVariant;
+  /** Quem o mascote e. Padrao: o polvo Taskin. */
+  character?: TaskinCharacter;
   /** The microphone is on: the mascot holds its listening pose. */
   listening?: boolean;
   showWebcam?: boolean;
@@ -146,7 +148,7 @@ export interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   mascotSize: 300,
-  variant: 'taskin',
+  character: () => TASKIN_CHARACTER,
   listening: false,
   showWebcam: false,
   showDebug: false,

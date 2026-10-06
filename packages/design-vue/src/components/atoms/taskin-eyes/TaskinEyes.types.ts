@@ -1,5 +1,3 @@
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
-
 export type EyeState = 'normal' | 'closed' | 'squint' | 'wide';
 export type TrackingMode = 'none' | 'mouse' | 'element' | 'custom';
 
@@ -10,8 +8,8 @@ export interface TaskinEyesProps {
   trackingBounds?: number;
   trackingMode?: TrackingMode;
 
-  /** Which character the eyes belong to: they sit in a different place on each. */
-  variant?: TaskinVariant;
+  /** Where the eyes sit and how they look: the character's eye geometry. Default: the octopus'. */
+  geometry?: EyeGeometry;
 
   // Propriedades específicas de cada modo
   lookDirection?: 'center' | 'left' | 'right' | 'up' | 'down'; // usado quando trackingMode='none'
@@ -43,53 +41,17 @@ export interface EyeGeometry {
 }
 
 /**
- * A geometria dos olhos de cada variante. E a fonte das posicoes: o corpo do
- * Sapin desenha os calombos em volta destes centros, e as lagrimas caem deles —
- * quem precisa de onde o olho esta importa daqui, sem copiar o numero.
- *
- * O Sapin tem os olhos saltados no topo da cabeca, sem contorno e um pouco mais
- * altos que largos, com as pupilas puxadas para o nariz — o olhar para a frente
- * da referencia (`TASKS/assets/sapin/sapin-mascote.png`) — e uma tinta mais
- * escura que a do polvo.
+ * The octopus' eyes. They are also the engine's reference frame: the effects
+ * tied to the face were drawn around them, and move by however much a
+ * character's eyes sit away from these (`eyeShift`, in the character module).
  */
-export const EYE_GEOMETRY: Record<TaskinVariant, EyeGeometry> = {
-  taskin: {
-    left: { x: 135, y: 90 },
-    right: { x: 185, y: 90 },
-    rx: 12,
-    ry: { normal: 14, closed: 1, squint: 8, wide: 18 },
-    pupilRadius: { normal: 5, closed: 0, squint: 2, wide: 3 },
-    outline: true,
-    pupilRest: { left: { x: 0, y: 0 }, right: { x: 0, y: 0 } },
-    ink: '#2C3E50',
-  },
-  sapin: {
-    left: { x: 121, y: 71 },
-    right: { x: 199, y: 71 },
-    rx: 14.8,
-    ry: { normal: 15.5, closed: 1.5, squint: 9, wide: 18 },
-    pupilRadius: { normal: 6, closed: 0, squint: 3, wide: 4 },
-    outline: false,
-    pupilRest: { left: { x: 3, y: 0 }, right: { x: -3, y: 0 } },
-    ink: '#213037',
-  },
-};
-
-/**
- * Quanto um olho anda do Taskin para a variante; `center` e o meio dos dois.
- *
- * Os efeitos presos aos olhos (lagrimas, Zzz, coracoes) foram desenhados em
- * volta dos olhos do Taskin. Andando junto com o olho, ficam no mesmo lugar do
- * rosto em qualquer variante, sem uma tabela de posicoes por efeito.
- */
-export const eyeShift = (variant: TaskinVariant, side: 'left' | 'right' | 'center'): { x: number; y: number } => {
-  const delta = (lado: 'left' | 'right') => ({
-    x: EYE_GEOMETRY[variant][lado].x - EYE_GEOMETRY.taskin[lado].x,
-    y: EYE_GEOMETRY[variant][lado].y - EYE_GEOMETRY.taskin[lado].y,
-  });
-  if (side !== 'center') return delta(side);
-
-  const left = delta('left');
-  const right = delta('right');
-  return { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 };
+export const TASKIN_EYE_GEOMETRY: EyeGeometry = {
+  left: { x: 135, y: 90 },
+  right: { x: 185, y: 90 },
+  rx: 12,
+  ry: { normal: 14, closed: 1, squint: 8, wide: 18 },
+  pupilRadius: { normal: 5, closed: 0, squint: 2, wide: 3 },
+  outline: true,
+  pupilRest: { left: { x: 0, y: 0 }, right: { x: 0, y: 0 } },
+  ink: '#2C3E50',
 };

@@ -1,4 +1,4 @@
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
 
 export interface TaskinEffectVomitProps {
   /**
@@ -6,10 +6,8 @@ export interface TaskinEffectVomitProps {
    */
   animationsEnabled?: boolean;
 
-  /**
-   * Which character the effect sits on: it follows that character's face.
-   */
-  variant?: TaskinVariant;
+  /** Which character the effect sits on: it follows that character's anchors. Default: the octopus. */
+  character?: TaskinCharacter;
 }
 
 export interface TaskinEffectVomitController {

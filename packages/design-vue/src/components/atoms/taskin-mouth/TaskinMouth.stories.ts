@@ -1,7 +1,6 @@
 import { FaceTrackingDebug, TrackingControls, useFaceLandmarker, WebcamVideo } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
-import { TASKIN_VARIANTS } from '../../organisms/taskin/Taskin.variants';
 import type { MouthExpression, TaskinMouthProps } from './TaskinMouth.types';
 import TaskinMouth from './TaskinMouth.vue';
 
@@ -10,11 +9,6 @@ const meta = {
   component: TaskinMouth,
   tags: ['autodocs', 'design-vue'],
   argTypes: {
-    variant: {
-      control: { type: 'select' },
-      options: [...TASKIN_VARIANTS],
-      description: 'Which character: taskin (octopus) or sapin (frog)',
-    },
     expression: {
       control: { type: 'select' },
       options: ['neutral', 'smile', 'frown', 'open', 'wide-open', 'o-shape', 'smirk', 'surprised', 'panting'],
@@ -360,20 +354,6 @@ export const FaceTracking: Story = {
     docs: {
       description: {
         story: '📹 Mouth tracks your face expressions using webcam! Click "Start Detection" to start.',
-      },
-    },
-  },
-};
-
-export const Sapin: Story = {
-  args: {
-    variant: 'sapin',
-    expression: 'smile',
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'The same expressions, higher up: on the Sapin the mouth sits between the eyes and the belly.',
       },
     },
   },

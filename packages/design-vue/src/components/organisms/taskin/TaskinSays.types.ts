@@ -1,5 +1,5 @@
 import type { SpeechBubbleKind } from '../../atoms/speech-bubble/SpeechBubble.types';
-import type { TaskinVariant } from './Taskin.variants';
+import type { TaskinCharacter } from './character/character.types';
 
 /**
  * As props proprias do `TaskinSays`. Todo o resto (`mood`, `speaking`,
@@ -10,15 +10,15 @@ export interface TaskinSaysProps {
   text?: string;
   /** Tamanho do mascote, como no `Taskin`. */
   size?: number;
-  /** Qual bicho fala; sem `bubbleBorderColor`, a borda do balao segue a tinta dele. */
-  variant?: TaskinVariant;
+  /** Quem fala (padrao: o polvo); sem `bubbleBorderColor`, a borda do balao segue a tinta dele. */
+  character?: TaskinCharacter;
   /** Desliga o pop de entrada do balao, e as animacoes do `Taskin`. */
   animationsEnabled?: boolean;
   /** Largura maxima do balao, em px. O texto quebra dentro dela. */
   maxWidth?: number;
   /** Cor de fundo do balao. Sem ela, `--speech-bubble-bg` ou branco. */
   bubbleBackground?: string;
-  /** Cor da borda do balao. Sem ela, `--speech-bubble-border-color` ou a tinta da variante. */
+  /** Cor da borda do balao. Sem ela, `--speech-bubble-border-color` ou a tinta da personagem. */
   bubbleBorderColor?: string;
   /** Cor do texto do balao. Sem ela, `--speech-bubble-text-color` ou `#2c3e50`. */
   bubbleTextColor?: string;

@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { defineComponent, h, onMounted, onUnmounted, ref } from 'vue';
 import { type TaskinPlayer, type TaskinScriptStep, useTaskinScript } from '../../../composables/use-taskin-script';
+import { characterArgType } from '../../../storybook/character-control';
 import Taskin from './Taskin';
 import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
 import { TASKIN_MOODS } from './Taskin.moods';
 import type { TaskinMood } from './Taskin.types';
-import { TASKIN_VARIANTS } from './Taskin.variants';
 
 const meta = {
   title: 'Organisms/Taskin/Taskin',
@@ -25,11 +25,7 @@ const meta = {
       options: [...TASKIN_MOODS],
       description: 'The mood state of the Taskin mascot',
     },
-    variant: {
-      control: 'select',
-      options: [...TASKIN_VARIANTS],
-      description: 'Which character to draw: the Taskin octopus or the Sapin frog',
-    },
+    character: characterArgType,
     size: {
       control: { type: 'number', min: 50, max: 500, step: 10 },
       description: 'Size of the Taskin mascot in pixels',
@@ -74,13 +70,13 @@ export const AllMoods: Story = {
     template: `
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px;">
         <div v-for="mood in moods" :key="mood" style="text-align: center;">
-          <Taskin :mood="mood" :size="150" :variant="variant" />
+          <Taskin :mood="mood" :size="150" :character="character" />
           <p style="margin-top: 10px; font-size: 12px;">{{ mood }}</p>
         </div>
       </div>
     `,
     data() {
-      return { moods: TASKIN_MOODS, variant: args.variant };
+      return { moods: TASKIN_MOODS, character: args.character };
     },
   }),
 };
@@ -391,7 +387,7 @@ export const EyeTrackingElement: Story = {
             ],
           ),
           h(Taskin, {
-            variant: args.variant,
+            character: args.character,
             mood: 'neutral' as TaskinMood,
             size: 200,
             idleAnimation: true,
@@ -433,7 +429,7 @@ export const EyeTrackingCustomPosition: Story = {
             <Taskin
               mood="neutral"
               :size="150"
-              :variant="variant"
+              :character="character"
               eye-tracking-mode="custom"
               :eye-custom-position="customPosition"
             />
@@ -443,7 +439,7 @@ export const EyeTrackingCustomPosition: Story = {
     `,
       data() {
         return {
-          variant: args.variant,
+          character: args.character,
           customPosition: null as { x: number; y: number } | null,
           visualIndicator: null as { x: number; y: number } | null,
         };
@@ -488,7 +484,7 @@ export const Speaking: Story = {
     docs: {
       description: {
         story:
-          'Speech bubble from `speechText`, with the mouth moving from `speaking`. Switch the variant to see the Sapin speak.',
+          'Speech bubble from `speechText`, with the mouth moving from `speaking`. Switch the character to see another one speak.',
       },
     },
   },

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { TASKIN_VARIANTS } from '../../organisms/taskin/Taskin.variants';
+import { characterArg, characterArgType } from '../../../storybook/character-control';
 import TaskinEffectSpeechBubble from './TaskinEffectSpeechBubble';
 import type { TaskinEffectSpeechBubbleProps } from './TaskinEffectSpeechBubble.types';
 
@@ -8,11 +8,7 @@ const meta = {
   component: TaskinEffectSpeechBubble,
   tags: ['design-vue'],
   argTypes: {
-    variant: {
-      control: { type: 'select' },
-      options: [...TASKIN_VARIANTS],
-      description: 'Which character is speaking: the tail points at its mouth',
-    },
+    character: characterArgType,
     text: {
       control: { type: 'text' },
     },
@@ -65,7 +61,7 @@ export const NoAnimation: Story = {
 /** No Sapin, a caixa nasce mais alta e a direita, e o rabicho desce ate a boca do sapo. */
 export const Sapin: Story = {
   args: {
-    variant: 'sapin',
+    character: characterArg('sapin'),
     text: 'Coaxei?',
   },
 };

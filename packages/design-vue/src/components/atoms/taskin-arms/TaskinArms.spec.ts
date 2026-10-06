@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
 import { armPosition } from './TaskinArms.types';
 import TaskinArms from './TaskinArms.vue';
 
@@ -30,7 +31,7 @@ describe('TaskinArms', () => {
   });
 
   it('comeca os bracos do sapin nos ombros dele, na borda do corpo mais largo', () => {
-    const wrapper = mount(TaskinArms, { props: { variant: 'sapin' } });
+    const wrapper = mount(TaskinArms, { props: { geometry: SAPIN_CHARACTER.arms } });
 
     expect(wrapper.find('#left-arm').attributes('d')).toMatch(/^M90 113 /);
     expect(wrapper.find('#right-arm').attributes('d')).toMatch(/^M230 113 /);
@@ -44,9 +45,9 @@ describe('TaskinArms', () => {
   });
 
   it('segue a pose tambem no sapin', () => {
-    const neutral = mount(TaskinArms, { props: { variant: 'sapin' } });
+    const neutral = mount(TaskinArms, { props: { geometry: SAPIN_CHARACTER.arms } });
     const raised = mount(TaskinArms, {
-      props: { variant: 'sapin', leftArmPosition: armPosition(-60, -80) },
+      props: { geometry: SAPIN_CHARACTER.arms, leftArmPosition: armPosition(-60, -80) },
     });
 
     expect(raised.find('#left-arm').attributes('d')).not.toBe(neutral.find('#left-arm').attributes('d'));
@@ -55,7 +56,7 @@ describe('TaskinArms', () => {
 
   it('desenha os bracos do sapin mais grossos, e os do taskin como sempre', () => {
     expect(
-      mount(TaskinArms, { props: { variant: 'sapin' } })
+      mount(TaskinArms, { props: { geometry: SAPIN_CHARACTER.arms } })
         .find('#left-arm')
         .attributes('stroke-width'),
     ).toBe('11');
@@ -65,7 +66,7 @@ describe('TaskinArms', () => {
   it('pendura os bracos do sapin num arco mais aberto, que desce mais', () => {
     const ponta = (d: string | undefined) => (d ?? '').trim().split(/\s+/).slice(-2).map(Number);
     const [x, y] = ponta(
-      mount(TaskinArms, { props: { variant: 'sapin' } })
+      mount(TaskinArms, { props: { geometry: SAPIN_CHARACTER.arms } })
         .find('#left-arm')
         .attributes('d'),
     );

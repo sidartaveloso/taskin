@@ -22,63 +22,28 @@
 <script setup lang="ts">
 import { mirrorAngleForSide } from '@opentask/ui-sense';
 import { computed } from 'vue';
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 import {
+  type ArmGeometry,
   type ArmPosition,
   type ArmSide,
-  armPosition,
-  NEUTRAL_ARM_POSITION,
   type SideRelativeAngle,
+  TASKIN_ARM_GEOMETRY,
 } from './TaskinArms.types';
 
 export interface Props {
   color?: string;
   leftArmPosition?: ArmPosition;
   rightArmPosition?: ArmPosition;
-  variant?: TaskinVariant;
+  /** Where the arms start, how long and thick they are, and how they hang at rest. Default: the octopus'. */
+  geometry?: ArmGeometry;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   color: '#FF6B9D',
-  variant: 'taskin',
+  geometry: () => TASKIN_ARM_GEOMETRY,
 });
 
-interface ArmGeometry {
-  shoulder: Record<ArmSide, { x: number; y: number }>;
-  upperArmLength: number;
-  forearmLength: number;
-  strokeWidth: number;
-  /** How the arms hang when nothing (a pose, a story) positions them. */
-  restPose: ArmPosition;
-}
-
-/**
- * Where each character's arms start, how long and thick they are, and how they
- * hang at rest.
- *
- * The Sapin's shoulders sit on the edge of its wider body, a little higher; its
- * arms are thicker and hang in a wider arc, reaching lower, as in the reference.
- * Pose tracking passes explicit positions, so only the resting pose differs per
- * character: the angles a pose reports mean the same on both.
- */
-const ARM_GEOMETRY: Record<TaskinVariant, ArmGeometry> = {
-  taskin: {
-    shoulder: { left: { x: 95, y: 120 }, right: { x: 225, y: 120 } },
-    upperArmLength: 25,
-    forearmLength: 25,
-    strokeWidth: 8,
-    restPose: NEUTRAL_ARM_POSITION,
-  },
-  sapin: {
-    shoulder: { left: { x: 90, y: 113 }, right: { x: 230, y: 113 } },
-    upperArmLength: 29.7,
-    forearmLength: 33.4,
-    strokeWidth: 11,
-    restPose: armPosition(32, 72),
-  },
-};
-
-const geometry = computed(() => ARM_GEOMETRY[props.variant]);
+const geometry = computed(() => props.geometry);
 
 /**
  * Walks one segment from `origin`, in a side-relative direction.

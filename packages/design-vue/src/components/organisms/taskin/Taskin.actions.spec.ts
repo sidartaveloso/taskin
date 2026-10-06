@@ -1,9 +1,19 @@
 import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
-import Taskin, { ACTIONS, actionDuration } from './Taskin';
+import type { ActionConfig } from './character/character.types';
+import { SAPIN_CHARACTER } from './characters/sapin/sapin-character';
+import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
+import Taskin, { actionDuration } from './Taskin';
 import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
-import { TASKIN_VARIANTS, type TaskinVariant } from './Taskin.variants';
+
+const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
+type CharacterId = keyof typeof CHARACTERS;
+const CHARACTER_IDS = ['taskin', 'sapin'] as const satisfies readonly CharacterId[];
+const ACTIONS: Record<CharacterId, Partial<Record<TaskinAction, ActionConfig>>> = {
+  taskin: TASKIN_CHARACTER.actions,
+  sapin: SAPIN_CHARACTER.actions,
+};
 
 interface TaskinComAcoes {
   play: (action: TaskinAction) => Promise<boolean>;
@@ -15,7 +25,7 @@ function mountTaskin(overrides: Record<string, unknown> = {}) {
 }
 
 /** Cada variante com as acoes que ela tem: nem toda acao existe nos dois bichos. */
-const pares = TASKIN_VARIANTS.flatMap((variant) =>
+const pares = CHARACTER_IDS.flatMap((variant) =>
   TASKIN_ACTIONS.filter((action) => ACTIONS[variant][action]).map((action) => [variant, action] as const),
 );
 
@@ -62,7 +72,7 @@ describe('Taskin.play', () => {
   it.each(pares)('%s: a classe de %s entra no grupo, sai no fim e a do humor volta', async (variant, action) => {
     const config = ACTIONS[variant][action];
     expect(config).toBeDefined();
-    const { wrapper, vm } = mountTaskin({ variant, mood: 'dancing' });
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant], mood: 'dancing' });
     const grupo = () => wrapper.find(`#${variant}-motion`);
     const doHumor = grupo()
       .classes()
@@ -85,7 +95,7 @@ describe('Taskin.play', () => {
   });
 
   it.each(pares)('%s: %s anima de verdade, uma vez so', async (variant, action) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play(action);
     await nextTick();
 
@@ -139,9 +149,11 @@ describe('Taskin.play', () => {
     await expect(fim).resolves.toBe(true);
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a pose troca a boca durante a acao', async (variant: TaskinVariant) => {
-    const sorrindo = mountTaskin({ variant, mouthExpression: 'smile' }).wrapper.find('#mouth').attributes('d');
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: a pose troca a boca durante a acao', async (variant: CharacterId) => {
+    const sorrindo = mountTaskin({ character: CHARACTERS[variant], mouthExpression: 'smile' })
+      .wrapper.find('#mouth')
+      .attributes('d');
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     const neutra = wrapper.find('#mouth').attributes('d');
     expect(neutra).not.toBe(sorrindo);
 
@@ -177,8 +189,8 @@ describe('Taskin.play', () => {
     await expect(fim).resolves.toBe(false);
   });
 
-  it.each(TASKIN_VARIANTS)('%s: prefers-reduced-motion desliga o grupo de movimento pelo CSS', (variant) => {
-    const { wrapper } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: prefers-reduced-motion desliga o grupo de movimento pelo CSS', (variant) => {
+    const { wrapper } = mountTaskin({ character: CHARACTERS[variant] });
     const regras = wrapper
       .findAll('style')
       .flatMap((estilo) => [...((estilo.element as HTMLStyleElement).sheet?.cssRules ?? [])])
@@ -211,12 +223,12 @@ describe('celebrate', () => {
     return { ombro: numeros[1] ?? Number.NaN, punho: numeros[numeros.length - 1] ?? Number.NaN };
   };
 
-  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,2s', (variant) => {
+  it.each(CHARACTER_IDS)('%s: dura cerca de 1,2s', (variant) => {
     expect(ACTIONS[variant].celebrate?.durationMs).toBe(1200);
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a pose ergue os dois bracos acima dos ombros', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: a pose ergue os dois bracos acima dos ombros', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     for (const lado of ['left', 'right']) {
       const { ombro, punho } = alturas(wrapper.find(`#${lado}-arm`).attributes('d'));
       expect(punho).toBeGreaterThan(ombro);
@@ -232,12 +244,12 @@ describe('celebrate', () => {
   });
 
   it('o papo e so do Sapin', () => {
-    expect(mountTaskin({ variant: 'taskin' }).wrapper.find('#body-throat').exists()).toBe(false);
-    expect(mountTaskin({ variant: 'sapin' }).wrapper.find('#body-throat').exists()).toBe(true);
+    expect(mountTaskin({ character: TASKIN_CHARACTER }).wrapper.find('#body-throat').exists()).toBe(false);
+    expect(mountTaskin({ character: SAPIN_CHARACTER }).wrapper.find('#body-throat').exists()).toBe(true);
   });
 
   it('o papo fica murcho fora da acao e infla no topo do pulo', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
     const papo = wrapper.find('#body-throat').element;
     expect(escala(papo)).toBe(0);
 
@@ -257,7 +269,7 @@ describe('celebrate', () => {
   });
 
   it('o papo inflado comeca abaixo da boca, no Sapin', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
     void vm.play('celebrate');
     await nextTick();
     for (const el of [wrapper.find('#sapin-motion').element, wrapper.find('#body-throat').element]) {
@@ -272,7 +284,7 @@ describe('celebrate', () => {
   });
 
   it('o Taskin gira no maximo 12 graus', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    const { wrapper, vm } = mountTaskin({ character: TASKIN_CHARACTER });
     void vm.play('celebrate');
     await nextTick();
     const grupo = wrapper.find('#taskin-motion').element;
@@ -304,20 +316,20 @@ describe('point-up e point-down', () => {
   };
 
   /** O centro da barriga de cada bicho: o do corpo no Taskin, o de `#body-belly` no Sapin. */
-  const BARRIGA: Record<TaskinVariant, number> = { taskin: 110, sapin: 158 };
+  const BARRIGA: Record<CharacterId, number> = { taskin: 110, sapin: 158 };
 
   const pupilas = (wrapper: ReturnType<typeof mountTaskin>['wrapper']) =>
     wrapper.findAll('#eyes circle').map((pupila) => Number(pupila.attributes('cy')));
 
-  it.each(TASKIN_VARIANTS)('%s: cada um dura cerca de 0,9s', (variant) => {
+  it.each(CHARACTER_IDS)('%s: cada um dura cerca de 0,9s', (variant) => {
     expect(ACTIONS[variant]['point-up']?.durationMs).toBe(900);
     expect(ACTIONS[variant]['point-down']?.durationMs).toBe(900);
   });
 
-  it.each(TASKIN_VARIANTS)(
+  it.each(CHARACTER_IDS)(
     '%s: point-up leva a ponta do braco direito acima do ombro, quase vertical',
     async (variant) => {
-      const { wrapper, vm } = mountTaskin({ variant });
+      const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
       const esquerdo = wrapper.find('#left-arm').attributes('d');
       void vm.play('point-up');
       await nextTick();
@@ -332,8 +344,8 @@ describe('point-up e point-down', () => {
     },
   );
 
-  it.each(TASKIN_VARIANTS)('%s: point-down leva a ponta do braco direito abaixo da barriga', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: point-down leva a ponta do braco direito abaixo da barriga', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     const esquerdo = wrapper.find('#left-arm').attributes('d');
     const repouso = alturas(wrapper.find('#right-arm').attributes('d')).ponta;
     void vm.play('point-down');
@@ -346,17 +358,17 @@ describe('point-up e point-down', () => {
     wrapper.unmount();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: as pupilas sobem no point-up e descem no point-down', async (variant) => {
-    const centro = pupilas(mountTaskin({ variant }).wrapper);
+  it.each(CHARACTER_IDS)('%s: as pupilas sobem no point-up e descem no point-down', async (variant) => {
+    const centro = pupilas(mountTaskin({ character: CHARACTERS[variant] }).wrapper);
 
-    const acima = mountTaskin({ variant });
+    const acima = mountTaskin({ character: CHARACTERS[variant] });
     void acima.vm.play('point-up');
     await nextTick();
     for (const [i, cy] of pupilas(acima.wrapper).entries()) {
       expect(cy).toBeLessThan(centro[i] ?? 0);
     }
 
-    const abaixo = mountTaskin({ variant });
+    const abaixo = mountTaskin({ character: CHARACTERS[variant] });
     void abaixo.vm.play('point-down');
     await nextTick();
     for (const [i, cy] of pupilas(abaixo.wrapper).entries()) {
@@ -364,12 +376,12 @@ describe('point-up e point-down', () => {
     }
   });
 
-  it.each(TASKIN_VARIANTS)('%s: o bicho da um empurraozinho de 3px na direcao', async (variant) => {
+  it.each(CHARACTER_IDS)('%s: o bicho da um empurraozinho de 3px na direcao', async (variant) => {
     for (const [action, dy] of [
       ['point-up', -3],
       ['point-down', 3],
     ] as const) {
-      const { wrapper, vm } = mountTaskin({ variant });
+      const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
       void vm.play(action);
       await nextTick();
       const grupo = wrapper.find(`#${variant}-motion`).element;
@@ -405,8 +417,8 @@ describe('wave', () => {
     return { x: ponto.x, y: ponto.y };
   };
 
-  async function acenando(variant: TaskinVariant) {
-    const { wrapper, vm } = mountTaskin({ variant });
+  async function acenando(variant: CharacterId) {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play('wave');
     await nextTick();
     const braco = wrapper.find('#right-arm').element as unknown as SVGGraphicsElement;
@@ -415,21 +427,21 @@ describe('wave', () => {
     return { wrapper, braco, animacao };
   }
 
-  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,4s e sorri', (variant) => {
+  it.each(CHARACTER_IDS)('%s: dura cerca de 1,4s e sorri', (variant) => {
     expect(ACTIONS[variant].wave?.durationMs).toBe(1400);
     expect(ACTIONS[variant].wave?.pose?.mouthExpression).toBe('smile');
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a classe entra no grupo', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: a classe entra no grupo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play('wave');
     await nextTick();
     expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-wave`);
     wrapper.unmount();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a pose ergue o braco direito, a mao ao lado da cabeca', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: a pose ergue o braco direito, a mao ao lado da cabeca', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     const esquerdo = wrapper.find('#left-arm').attributes('d');
     void vm.play('wave');
     await nextTick();
@@ -439,7 +451,7 @@ describe('wave', () => {
     wrapper.unmount();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: o braco balanca 15 graus para cada lado, tres vezes', async (variant) => {
+  it.each(CHARACTER_IDS)('%s: o braco balanca 15 graus para cada lado, tres vezes', async (variant) => {
     const { wrapper, braco, animacao } = await acenando(variant);
     expect(animacao?.animationName).toBe(`taskin-${variant}-wave-arm`);
     expect(animacao?.effect?.getTiming().iterations).toBe(1);
@@ -456,7 +468,7 @@ describe('wave', () => {
     wrapper.unmount();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: o ombro nao sai do lugar no balanco', async (variant) => {
+  it.each(CHARACTER_IDS)('%s: o ombro nao sai do lugar no balanco', async (variant) => {
     const { wrapper, braco, animacao } = await acenando(variant);
     const grupo = wrapper.find(`#${variant}-motion`).element;
     const [doGrupo] = grupo.getAnimations();
@@ -481,21 +493,21 @@ describe('start', () => {
     document.body.innerHTML = '';
   });
 
-  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,1s, de olhos bem abertos', (variant) => {
+  it.each(CHARACTER_IDS)('%s: dura cerca de 1,1s, de olhos bem abertos', (variant) => {
     expect(ACTIONS[variant].start?.durationMs).toBe(1100);
     expect(ACTIONS[variant].start?.pose?.eyeState).toBe('wide');
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a classe entra no grupo', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: a classe entra no grupo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play('start');
     await nextTick();
     expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-start`);
     wrapper.unmount();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a pose dobra os dois bracos', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: a pose dobra os dois bracos', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     const antes = wrapper.find('#left-arm').attributes('d');
     void vm.play('start');
     await nextTick();
@@ -505,7 +517,7 @@ describe('start', () => {
   });
 
   it('sapin: no meio da agachada a escala vertical e menor que 1', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
     void vm.play('start');
     await nextTick();
     const el = wrapper.find('#sapin-motion').element;
@@ -518,7 +530,7 @@ describe('start', () => {
   });
 
   it('taskin: os bracos puxam duas vezes, cada um para um lado', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    const { wrapper, vm } = mountTaskin({ character: TASKIN_CHARACTER });
     void vm.play('start');
     await nextTick();
     const esq = wrapper.find('#left-arm').element;
@@ -546,13 +558,13 @@ describe('blocked', () => {
     document.body.innerHTML = '';
   });
 
-  it.each(TASKIN_VARIANTS)('%s: dura cerca de 1,6s, de cenho franzido', (variant) => {
+  it.each(CHARACTER_IDS)('%s: dura cerca de 1,6s, de cenho franzido', (variant) => {
     expect(ACTIONS[variant].blocked?.durationMs).toBe(1600);
     expect(ACTIONS[variant].blocked?.pose?.mouthExpression).toBe('frown');
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a classe entra no grupo', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: a classe entra no grupo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play('blocked');
     await nextTick();
     expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-blocked`);
@@ -564,7 +576,7 @@ describe('blocked', () => {
   });
 
   it('taskin: maos na cintura, de cotovelos para fora e pontas fora do corpo', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    const { wrapper, vm } = mountTaskin({ character: TASKIN_CHARACTER });
     void vm.play('blocked');
     await nextTick();
     const esq = pontosDoBraco(wrapper, '#left-arm');
@@ -579,7 +591,7 @@ describe('blocked', () => {
   });
 
   it('taskin: recua um pouco e volta', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    const { wrapper, vm } = mountTaskin({ character: TASKIN_CHARACTER });
     void vm.play('blocked');
     await nextTick();
     const el = wrapper.find('#taskin-motion').element;
@@ -593,7 +605,7 @@ describe('blocked', () => {
   });
 
   it('sapin: no meio da acao esta sentado, com a escala vertical menor que 1', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
     void vm.play('blocked');
     await nextTick();
     const el = wrapper.find('#sapin-motion').element;
@@ -612,7 +624,7 @@ describe('effort', () => {
     document.body.innerHTML = '';
   });
 
-  it.each(TASKIN_VARIANTS)('%s: dura cerca de 2s, de olhos apertados e bracos para o alto', (variant) => {
+  it.each(CHARACTER_IDS)('%s: dura cerca de 2s, de olhos apertados e bracos para o alto', (variant) => {
     const config = ACTIONS[variant].effort;
     expect(config?.durationMs).toBe(2000);
     expect(config?.pose?.eyeState).toBe('squint');
@@ -620,9 +632,9 @@ describe('effort', () => {
     expect(config?.pose?.rightArm).toBeDefined();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: o peso e o suor so aparecem durante a acao', async (variant) => {
+  it.each(CHARACTER_IDS)('%s: o peso e o suor so aparecem durante a acao', async (variant) => {
     vi.useFakeTimers();
-    const { wrapper, vm } = mountTaskin({ variant });
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     expect(wrapper.find('#effect-weight').exists()).toBe(false);
     expect(wrapper.find('#effect-sweat').exists()).toBe(false);
 
@@ -639,8 +651,8 @@ describe('effort', () => {
     vi.useRealTimers();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a ponta de cada braco fica perto de um disco', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: a ponta de cada braco fica perto de um disco', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play('effort');
     await nextTick();
     const discos = wrapper.findAll('rect.weight-disc').map((d) => ({
@@ -660,7 +672,7 @@ describe('wake', () => {
     document.body.innerHTML = '';
   });
 
-  it.each(TASKIN_VARIANTS)('%s: dura cerca de 2s, de olhos semiabertos e bracos para o alto', (variant) => {
+  it.each(CHARACTER_IDS)('%s: dura cerca de 2s, de olhos semiabertos e bracos para o alto', (variant) => {
     const config = ACTIONS[variant].wake;
     expect(config?.durationMs).toBe(2000);
     expect(config?.pose?.eyeState).toBe('squint');
@@ -668,9 +680,9 @@ describe('wake', () => {
     expect(config?.pose?.rightArm).toBeDefined();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a boca boceja durante a acao e volta ao humor no fim', async (variant) => {
+  it.each(CHARACTER_IDS)('%s: a boca boceja durante a acao e volta ao humor no fim', async (variant) => {
     vi.useFakeTimers();
-    const { wrapper, vm } = mountTaskin({ variant });
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play('wake');
     await nextTick();
     expect(wrapper.find(`#${variant}-motion`).classes()).toContain(`${variant}-wake`);
@@ -683,8 +695,8 @@ describe('wake', () => {
     vi.useRealTimers();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: bracos em V, para o alto e para fora, com as pontas fora do corpo', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: bracos em V, para o alto e para fora, com as pontas fora do corpo', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play('wake');
     await nextTick();
     const esq = pontosDoBraco(wrapper, '#left-arm');
@@ -698,8 +710,8 @@ describe('wake', () => {
     wrapper.unmount();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: o corpo alonga no meio da acao', async (variant) => {
-    const { wrapper, vm } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: o corpo alonga no meio da acao', async (variant) => {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play('wake');
     await nextTick();
     const el = wrapper.find(`#${variant}-motion`).element as HTMLElement;
@@ -719,16 +731,20 @@ describe('listening', () => {
     document.body.innerHTML = '';
   });
 
-  it.each(TASKIN_VARIANTS)('%s: sem listening, nem a classe nem os olhos arregalados', (variant) => {
-    const arregalados = mountTaskin({ variant, eyeState: 'wide' }).wrapper.find('#left-eye').html();
-    const { wrapper } = mountTaskin({ variant });
+  it.each(CHARACTER_IDS)('%s: sem listening, nem a classe nem os olhos arregalados', (variant) => {
+    const arregalados = mountTaskin({ character: CHARACTERS[variant], eyeState: 'wide' })
+      .wrapper.find('#left-eye')
+      .html();
+    const { wrapper } = mountTaskin({ character: CHARACTERS[variant] });
     expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-listening`);
     expect(wrapper.find('#left-eye').html()).not.toBe(arregalados);
   });
 
-  it.each(TASKIN_VARIANTS)('%s: ouvindo, a classe em laco ganha do humor e os olhos arregalam', (variant) => {
-    const arregalados = mountTaskin({ variant, eyeState: 'wide' }).wrapper.find('#left-eye').html();
-    const { wrapper } = mountTaskin({ variant, mood: 'dancing', listening: true });
+  it.each(CHARACTER_IDS)('%s: ouvindo, a classe em laco ganha do humor e os olhos arregalam', (variant) => {
+    const arregalados = mountTaskin({ character: CHARACTERS[variant], eyeState: 'wide' })
+      .wrapper.find('#left-eye')
+      .html();
+    const { wrapper } = mountTaskin({ character: CHARACTERS[variant], mood: 'dancing', listening: true });
     expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`, `${variant}-listening`]);
     expect(wrapper.find('#left-eye').html()).toBe(arregalados);
 
@@ -745,23 +761,25 @@ describe('listening', () => {
   });
 
   it('sapin: so os olhos, o braco fica como estava', () => {
-    const parado = mountTaskin({ variant: 'sapin' }).wrapper.find('#right-arm').attributes('d');
-    const ouvindo = mountTaskin({ variant: 'sapin', listening: true }).wrapper.find('#right-arm').attributes('d');
+    const parado = mountTaskin({ character: SAPIN_CHARACTER }).wrapper.find('#right-arm').attributes('d');
+    const ouvindo = mountTaskin({ character: SAPIN_CHARACTER, listening: true })
+      .wrapper.find('#right-arm')
+      .attributes('d');
     expect(ouvindo).toBe(parado);
   });
 
-  it.each(TASKIN_VARIANTS)('%s: sem animacao fica so a pose, sem laco', (variant) => {
-    const arregalados = mountTaskin({ variant, eyeState: 'wide', animationsEnabled: false })
+  it.each(CHARACTER_IDS)('%s: sem animacao fica so a pose, sem laco', (variant) => {
+    const arregalados = mountTaskin({ character: CHARACTERS[variant], eyeState: 'wide', animationsEnabled: false })
       .wrapper.find('#left-eye')
       .html();
-    const { wrapper } = mountTaskin({ variant, listening: true, animationsEnabled: false });
+    const { wrapper } = mountTaskin({ character: CHARACTERS[variant], listening: true, animationsEnabled: false });
     expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`]);
     expect(wrapper.find('#left-eye').html()).toBe(arregalados);
   });
 
-  it.each(TASKIN_VARIANTS)('%s: uma acao por cima ganha, e no fim a escuta volta', async (variant) => {
+  it.each(CHARACTER_IDS)('%s: uma acao por cima ganha, e no fim a escuta volta', async (variant) => {
     vi.useFakeTimers();
-    const { wrapper, vm } = mountTaskin({ variant, listening: true });
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant], listening: true });
     const grupo = () => wrapper.find(`#${variant}-motion`);
     const ouvindo = wrapper.find('#right-arm').attributes('d');
 
@@ -776,8 +794,8 @@ describe('listening', () => {
     expect(wrapper.find('#right-arm').attributes('d')).toBe(ouvindo);
   });
 
-  it.each(TASKIN_VARIANTS)('%s: desligar a escuta devolve o humor', async (variant) => {
-    const { wrapper } = mountTaskin({ variant, mood: 'dancing', listening: true });
+  it.each(CHARACTER_IDS)('%s: desligar a escuta devolve o humor', async (variant) => {
+    const { wrapper } = mountTaskin({ character: CHARACTERS[variant], mood: 'dancing', listening: true });
     await wrapper.setProps({ listening: false });
     expect(wrapper.find(`#${variant}-motion`).classes()).not.toContain(`${variant}-listening`);
   });
@@ -788,13 +806,17 @@ describe('speaking', () => {
     document.body.innerHTML = '';
   });
 
-  it.each(TASKIN_VARIANTS)('%s: a boca acompanha a fala so com speaking', (variant) => {
-    expect(mountTaskin({ variant }).wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
-    expect(mountTaskin({ variant, speaking: true }).wrapper.find('#mouth').classes()).toContain('mouth-speaking');
+  it.each(CHARACTER_IDS)('%s: a boca acompanha a fala so com speaking', (variant) => {
+    expect(mountTaskin({ character: CHARACTERS[variant] }).wrapper.find('#mouth').classes()).not.toContain(
+      'mouth-speaking',
+    );
+    expect(mountTaskin({ character: CHARACTERS[variant], speaking: true }).wrapper.find('#mouth').classes()).toContain(
+      'mouth-speaking',
+    );
   });
 
   it('sapin: o papo pulsa enquanto fala, em laco', () => {
-    const { wrapper } = mountTaskin({ variant: 'sapin', speaking: true });
+    const { wrapper } = mountTaskin({ character: SAPIN_CHARACTER, speaking: true });
     expect(wrapper.find('#sapin-motion').classes()).toContain('sapin-speaking');
 
     const animacoes = wrapper.find('#body-throat').element.getAnimations() as CSSAnimation[];
@@ -808,14 +830,14 @@ describe('speaking', () => {
     expect(wrapper.find('#body-throat').exists()).toBe(false);
   });
 
-  it.each(TASKIN_VARIANTS)('%s: sem animacao, nem a boca alterna nem o papo pulsa', (variant) => {
-    const { wrapper } = mountTaskin({ variant, speaking: true, animationsEnabled: false });
+  it.each(CHARACTER_IDS)('%s: sem animacao, nem a boca alterna nem o papo pulsa', (variant) => {
+    const { wrapper } = mountTaskin({ character: CHARACTERS[variant], speaking: true, animationsEnabled: false });
     expect(wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
     expect(wrapper.find(`#${variant}-motion`).classes()).toEqual([`${variant}-motion`]);
   });
 
   it('sapin: parar de falar desliga o papo', async () => {
-    const { wrapper } = mountTaskin({ variant: 'sapin', speaking: true });
+    const { wrapper } = mountTaskin({ character: SAPIN_CHARACTER, speaking: true });
     await wrapper.setProps({ speaking: false });
     expect(wrapper.find('#sapin-motion').classes()).not.toContain('sapin-speaking');
     expect(wrapper.find('#mouth').classes()).not.toContain('mouth-speaking');
@@ -840,7 +862,7 @@ describe('catch-fly', () => {
     expect(ACTIONS.sapin['catch-fly']?.durationMs).toBe(1600);
     expect(ACTIONS.taskin['catch-fly']).toBeUndefined();
 
-    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    const { wrapper, vm } = mountTaskin({ character: TASKIN_CHARACTER });
     await expect(vm.play('catch-fly')).resolves.toBe(false);
     await nextTick();
     expect(wrapper.find('#effect-fly').exists()).toBe(false);
@@ -849,7 +871,7 @@ describe('catch-fly', () => {
 
   it('a mosca e a lingua so aparecem durante a acao', async () => {
     vi.useFakeTimers();
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
     expect(wrapper.find('#effect-fly').exists()).toBe(false);
     expect(wrapper.find('#sapin-tongue').exists()).toBe(false);
 
@@ -867,11 +889,15 @@ describe('catch-fly', () => {
 
   it('os olhos seguem a mosca: a direita no voo, ao centro no bote', async () => {
     vi.useFakeTimers();
-    const direita = mountTaskin({ variant: 'sapin', eyeLookDirection: 'right' }).wrapper.find('#left-eye').html();
-    const centro = mountTaskin({ variant: 'sapin', eyeLookDirection: 'center' }).wrapper.find('#left-eye').html();
+    const direita = mountTaskin({ character: SAPIN_CHARACTER, eyeLookDirection: 'right' })
+      .wrapper.find('#left-eye')
+      .html();
+    const centro = mountTaskin({ character: SAPIN_CHARACTER, eyeLookDirection: 'center' })
+      .wrapper.find('#left-eye')
+      .html();
     expect(direita).not.toBe(centro);
 
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
     void vm.play('catch-fly');
     await nextTick();
     expect(wrapper.find('#left-eye').html()).toBe(direita);
@@ -882,7 +908,7 @@ describe('catch-fly', () => {
   });
 
   it('a mosca voa, some depois do bote e bate as asas', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
     void vm.play('catch-fly');
     await nextTick();
     const mosca = wrapper.find('#effect-fly').element;
@@ -903,7 +929,7 @@ describe('catch-fly', () => {
   });
 
   it('a lingua sai da boca do Sapin ate a mosca e volta', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin', idleAnimation: false });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER, idleAnimation: false });
     void vm.play('catch-fly');
     await nextTick();
     congelar(wrapper.find('#sapin-motion').element, 1056);
@@ -932,7 +958,7 @@ describe('catch-fly', () => {
   });
 
   it('no fim o papo infla uma vez: o gole', async () => {
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
     void vm.play('catch-fly');
     await nextTick();
     const papo = wrapper.find('#body-throat').element;
@@ -958,7 +984,7 @@ describe('ink', () => {
     expect(config?.pose?.mouthExpression).toBe('o-shape');
     expect(ACTIONS.sapin.ink).toBeUndefined();
 
-    const { wrapper, vm } = mountTaskin({ variant: 'sapin' });
+    const { wrapper, vm } = mountTaskin({ character: SAPIN_CHARACTER });
     await expect(vm.play('ink')).resolves.toBe(false);
     await nextTick();
     expect(wrapper.find('#effect-ink').exists()).toBe(false);
@@ -1015,8 +1041,8 @@ describe('travel-left e travel-right', () => {
   ] as const;
 
   /** O giro, em graus, e o deslocamento do grupo de movimento congelado no instante `t`. */
-  async function congelado(variant: TaskinVariant, action: TaskinAction, t: number) {
-    const { wrapper, vm } = mountTaskin({ variant });
+  async function congelado(variant: CharacterId, action: TaskinAction, t: number) {
+    const { wrapper, vm } = mountTaskin({ character: CHARACTERS[variant] });
     void vm.play(action);
     await nextTick();
     const el = wrapper.find(`#${variant}-motion`).element;
@@ -1027,7 +1053,7 @@ describe('travel-left e travel-right', () => {
     return { wrapper, m, graus: (Math.atan2(m.b, m.a) * 180) / Math.PI };
   }
 
-  it.each(TASKIN_VARIANTS)('%s: as duas direcoes existem, com cerca de 0,9s', (variant) => {
+  it.each(CHARACTER_IDS)('%s: as duas direcoes existem, com cerca de 0,9s', (variant) => {
     expect(ACTIONS[variant]['travel-left']?.durationMs).toBe(900);
     expect(ACTIONS[variant]['travel-right']?.durationMs).toBe(900);
   });
@@ -1059,7 +1085,7 @@ describe('travel-left e travel-right', () => {
   });
 
   it.each(lados)('taskin: em %s os tentaculos arrastam para o lado de tras, dentro do grupo', async (action, sinal) => {
-    const { wrapper, vm } = mountTaskin({ variant: 'taskin' });
+    const { wrapper, vm } = mountTaskin({ character: TASKIN_CHARACTER });
     void vm.play(action);
     await nextTick();
     const tentaculos = wrapper.find('#taskin-motion #taskin-tentacles').element;
@@ -1071,7 +1097,7 @@ describe('travel-left e travel-right', () => {
     wrapper.unmount();
   });
 
-  it.each(TASKIN_VARIANTS)('%s: no fim volta ao lugar', async (variant) => {
+  it.each(CHARACTER_IDS)('%s: no fim volta ao lugar', async (variant) => {
     const { wrapper, m } = await congelado(variant, 'travel-left', 899);
     expect(Math.abs(m.e)).toBeLessThan(0.5);
     expect(Math.abs(m.b)).toBeLessThan(0.02);
@@ -1081,12 +1107,12 @@ describe('travel-left e travel-right', () => {
 
 describe('actionDuration', () => {
   it.each(pares)('%s: %s dura o durationMs da tabela', (variant, action) => {
-    expect(actionDuration(variant, action)).toBe(ACTIONS[variant][action]?.durationMs);
+    expect(actionDuration(CHARACTERS[variant], action)).toBe(ACTIONS[variant][action]?.durationMs);
   });
 
   it('acao que a variante nao tem dura zero: resolve na hora', () => {
-    expect(actionDuration('taskin', 'catch-fly')).toBe(0);
-    expect(actionDuration('sapin', 'ink')).toBe(0);
+    expect(actionDuration(TASKIN_CHARACTER, 'catch-fly')).toBe(0);
+    expect(actionDuration(SAPIN_CHARACTER, 'ink')).toBe(0);
   });
 
   it('sai do pacote ao lado de TASKIN_ACTIONS', async () => {

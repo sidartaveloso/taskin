@@ -1,6 +1,7 @@
 import { defineComponent, h, type PropType } from 'vue';
-import { eyeShift } from '../../atoms/taskin-eyes/TaskinEyes.types';
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
+import { eyeShift } from '../../organisms/taskin/character/reference-frame';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 
 /** A gota, de ponta para cima, desenhada em volta da origem. */
 const DROP = 'M0 -8 C3 -3 6 1 6 4 A6 6 0 0 1 -6 4 C-6 1 -3 -3 0 -8 Z';
@@ -8,7 +9,7 @@ const DROP = 'M0 -8 C3 -3 6 1 6 4 A6 6 0 0 1 -6 4 C-6 1 -3 -3 0 -8 Z';
 /**
  * As gotas, logo fora da cabeca do Taskin: uma de cada lado da testa e uma
  * menor mais abaixo, a direita. Cada uma anda com o olho do seu lado, como as
- * lagrimas, e por isso fica no mesmo lugar do rosto em qualquer variante.
+ * lagrimas, e por isso fica no mesmo lugar do rosto em qualquer personagem.
  */
 const DROPS = [
   { side: 'left', x: 106, y: 62, scale: 1, delay: 0 },
@@ -24,16 +25,16 @@ export default defineComponent({
       default: true,
     },
     /** Which character the effect sits on: it follows that character's face. */
-    variant: {
-      type: String as PropType<TaskinVariant>,
-      default: 'taskin',
+    character: {
+      type: Object as PropType<TaskinCharacter>,
+      default: () => TASKIN_CHARACTER,
     },
   },
   setup(props) {
     return () =>
       h('g', { id: 'effect-sweat' }, [
         ...DROPS.map((drop) => {
-          const shift = eyeShift(props.variant, drop.side);
+          const shift = eyeShift(props.character, drop.side);
 
           // A animacao fica no grupo de dentro: no de fora, o `transform` dela
           // sobrescreveria a posicao da gota.

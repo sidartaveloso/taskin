@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect } from 'storybook/test';
+import { characterArg, characterArgType } from '../../../storybook/character-control';
 import { defaultTaskinProps } from './Taskin.mock';
-import { TASKIN_VARIANTS } from './Taskin.variants';
 import TaskinWithShhh from './TaskinWithShhh.vue';
 
 const meta = {
@@ -10,7 +10,7 @@ const meta = {
   tags: ['design-vue', 'webcam', 'microphone'],
   argTypes: {
     mascotSize: { control: { type: 'number' } },
-    variant: { control: { type: 'select' }, options: [...TASKIN_VARIANTS] },
+    character: characterArgType,
     showWebcam: { control: { type: 'boolean' } },
     showDebug: { control: { type: 'boolean' } },
     enableNoiseReactions: { control: { type: 'boolean' } },
@@ -184,9 +184,9 @@ export const BrunoShhh: Story = {
 export const Sapin: Story = {
   ...Default,
   args: {
-    variant: 'sapin',
+    character: characterArg('sapin'),
   },
   play: async ({ canvasElement }) => {
-    expect(canvasElement.querySelector('g#body')?.getAttribute('data-variant')).toBe('sapin');
+    expect(canvasElement.querySelector('svg[data-character]')?.getAttribute('data-character')).toBe('sapin');
   },
 };

@@ -1,6 +1,5 @@
 import type { ArmAngle, ArmSide, SideRelativeAngle } from '@opentask/ui-sense';
 import { mirrorAngleForSide, sideRelativeAngle, smoothAngle } from '@opentask/ui-sense';
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 
 export type { ArmSide, SideRelativeAngle } from '@opentask/ui-sense';
 
@@ -105,5 +104,25 @@ export interface TaskinArmsProps {
   leftArmPosition?: ArmPosition;
   rightArmPosition?: ArmPosition;
   /** Which character the arms belong to: the Sapin's start wider and reach further. */
-  variant?: TaskinVariant;
+  /** Where the arms start, how long and thick they are, and how they hang at rest. Default: the octopus'. */
+  geometry?: ArmGeometry;
 }
+
+/** Where a character's arms start, how long and thick they are, and how they hang at rest. */
+export interface ArmGeometry {
+  shoulder: Record<ArmSide, { x: number; y: number }>;
+  upperArmLength: number;
+  forearmLength: number;
+  strokeWidth: number;
+  /** How the arms hang when nothing (a pose, a story) positions them. */
+  restPose: ArmPosition;
+}
+
+/** The octopus' arms. */
+export const TASKIN_ARM_GEOMETRY: ArmGeometry = {
+  shoulder: { left: { x: 95, y: 120 }, right: { x: 225, y: 120 } },
+  upperArmLength: 25,
+  forearmLength: 25,
+  strokeWidth: 8,
+  restPose: NEUTRAL_ARM_POSITION,
+};

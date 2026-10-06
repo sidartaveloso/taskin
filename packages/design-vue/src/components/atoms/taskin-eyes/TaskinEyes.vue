@@ -1,5 +1,5 @@
 <template>
-  <g id="eyes" ref="eyesContainer" :data-variant="variant">
+  <g id="eyes" ref="eyesContainer">
     <g id="left-eye" :transform="leftEyeTransform">
       <ellipse
         :cx="geometry.left.x"
@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useElementTracking, useEyeTracking, useMouseTracking } from '../../../composables';
-import { EYE_GEOMETRY, type TaskinEyesProps } from './TaskinEyes.types';
+import { TASKIN_EYE_GEOMETRY, type TaskinEyesProps } from './TaskinEyes.types';
 
 const props = withDefaults(defineProps<TaskinEyesProps>(), {
   state: 'normal',
@@ -49,10 +49,10 @@ const props = withDefaults(defineProps<TaskinEyesProps>(), {
   trackingBounds: 6,
   trackingMode: 'mouse',
   lookDirection: 'center',
-  variant: 'taskin',
+  geometry: () => TASKIN_EYE_GEOMETRY,
 });
 
-const geometry = computed(() => EYE_GEOMETRY[props.variant]);
+const geometry = computed(() => props.geometry);
 
 // O olho fechado desenha sempre o traco: sem ele, no Sapin, que nao tem
 // contorno, a palpebra sumiria no verde.

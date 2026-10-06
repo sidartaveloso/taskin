@@ -4,7 +4,7 @@
       ref="taskinRef"
       v-bind="taskinAttrs"
       :size="size"
-      :variant="variant"
+      :character="character"
       :animations-enabled="animationsEnabled"
       :show-thought-bubble="text ? false : undefined"
     />
@@ -36,16 +36,15 @@
  * 6px e nao se le. Aqui o balao e o atomo `SpeechBubble`, ancorado ao
  * desenho, com texto em pixels de verdade e quebra de linha natural. As cores
  * vem das props `bubble*` ou das variaveis `--speech-bubble-*` herdadas; sem
- * nenhuma das duas, a borda segue a tinta da variante. O SVG continua para
+ * nenhuma das duas, a borda segue a tinta da personagem. O SVG continua para
  * renders isolados.
  */
 import { computed, ref, type StyleValue, useAttrs } from 'vue';
 import { speechBubbleTailDrop, speechBubbleTailReach } from '../../atoms/speech-bubble/SpeechBubble.types';
 import SpeechBubble from '../../atoms/speech-bubble/SpeechBubble.vue';
-import { MOUTH_INK } from '../../atoms/taskin-mouth/TaskinMouth.types';
+import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
 import Taskin from './Taskin';
 import type { TaskinAction } from './Taskin.actions';
-import type { TaskinVariant } from './Taskin.variants';
 import type { TaskinSaysProps } from './TaskinSays.types';
 
 defineOptions({ name: 'TaskinSays', inheritAttrs: false });
@@ -53,7 +52,7 @@ defineOptions({ name: 'TaskinSays', inheritAttrs: false });
 const props = withDefaults(defineProps<TaskinSaysProps>(), {
   text: '',
   size: 340,
-  variant: 'taskin',
+  character: () => TASKIN_CHARACTER,
   animationsEnabled: true,
   maxWidth: 260,
   bubbleBackground: undefined,
@@ -73,13 +72,12 @@ const taskinAttrs = computed(() => {
   return rest;
 });
 
-/**
+/*
  * Onde a ponta do rabicho encosta, no quadro de 320 do mascote: um pouco a
- * direita da beira da cabeca, na altura da ponta (y ~107). O quadro tem uma
- * margem vazia a direita do bicho, entao o balao entra nela em vez de nascer
- * depois dela; sem isso ficava longe demais de quem fala.
+ * direita da beira da cabeca da personagem (`character.bubbles.headRight`), na
+ * altura da ponta. O quadro tem uma margem vazia a direita do bicho, entao o
+ * balao entra nela em vez de nascer depois dela.
  */
-const HEAD_RIGHT: Record<TaskinVariant, number> = { taskin: 229, sapin: 233 };
 /** A altura, no quadro de 260, em que a ponta encosta: o meio da cabeca, abaixo dos olhos. */
 const HEAD_LEVEL = 100;
 /*
@@ -90,10 +88,10 @@ const HEAD_LEVEL = 100;
  */
 const rootStyle = computed(() => ({
   '--taskin-says-bubble-top': `${Math.max(0, Math.round((props.size * HEAD_LEVEL) / 320 - speechBubbleTailDrop(undefined, props.bubbleBorderWidth)))}px`,
-  '--taskin-says-bubble-offset': `${Math.round(speechBubbleTailReach(props.bubbleBorderWidth) - (props.size * (320 - HEAD_RIGHT[props.variant])) / 320)}px`,
-  // A tinta da variante entra como o padrao do tema: uma prop, ou a variavel
+  '--taskin-says-bubble-offset': `${Math.round(speechBubbleTailReach(props.bubbleBorderWidth) - (props.size * (320 - props.character.bubbles.headRight)) / 320)}px`,
+  // A tinta da personagem entra como o padrao do tema: uma prop, ou a variavel
   // posta por quem envolve (pelo `style`, que vem depois), ganha dela.
-  '--speech-bubble-border-color': MOUTH_INK[props.variant],
+  '--speech-bubble-border-color': props.character.mouth.ink,
 }));
 
 const taskinRef = ref<{ play: (action: TaskinAction) => Promise<boolean> } | null>(null);

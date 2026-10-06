@@ -1,11 +1,17 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { TASKIN_VARIANTS } from '../../organisms/taskin/Taskin.variants';
-import TaskinEffectWeight, { WEIGHT_HANDS } from './TaskinEffectWeight';
+import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
+import TaskinEffectWeight from './TaskinEffectWeight';
+
+const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
+type CharacterId = keyof typeof CHARACTERS;
+const CHARACTER_IDS = ['taskin', 'sapin'] as const satisfies readonly CharacterId[];
+const WEIGHT_HANDS = { taskin: TASKIN_CHARACTER.effortHands, sapin: SAPIN_CHARACTER.effortHands } as const;
 
 describe('TaskinEffectWeight', () => {
-  it.each(TASKIN_VARIANTS)('%s: renders a bar with a disc at each end', (variant) => {
-    const wrapper = mount(TaskinEffectWeight, { props: { variant } });
+  it.each(CHARACTER_IDS)('%s: renders a bar with a disc at each end', (variant) => {
+    const wrapper = mount(TaskinEffectWeight, { props: { character: CHARACTERS[variant] } });
     const bar = wrapper.find('line.weight-bar');
     const discs = wrapper.findAll('rect.weight-disc');
 
