@@ -54,8 +54,8 @@ const props = withDefaults(defineProps<TaskinEyesProps>(), {
 
 const geometry = computed(() => props.geometry);
 
-// O olho fechado desenha sempre o traco: sem ele, no Sapin, que nao tem
-// contorno, a palpebra sumiria no verde.
+// O olho fechado desenha sempre o traco: sem ele, num olho sem contorno, a
+// palpebra sumiria na cor do corpo.
 const outlineColor = computed(() => (geometry.value.outline || props.state === 'closed' ? geometry.value.ink : 'none'));
 
 // Referência ao container SVG

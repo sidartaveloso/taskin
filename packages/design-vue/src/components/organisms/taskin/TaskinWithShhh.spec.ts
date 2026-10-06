@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@opentask/ui-sense', () => import('@opentask/ui-sense/mocks'));
 
 import { createFaceLandmarkerMock, shhhVoiceMock, useFaceLandmarker } from '@opentask/ui-sense/mocks';
-import { SAPIN_CHARACTER } from './characters/sapin/sapin-character';
 import TaskinWithShhh from './TaskinWithShhh.vue';
 
 describe('TaskinWithShhh', () => {
@@ -38,15 +37,6 @@ describe('TaskinWithShhh', () => {
     const wrapper = mount(TaskinWithShhh);
     expect(wrapper.find('.mascot-container').exists()).toBe(true);
     expect(wrapper.find('g#body').exists()).toBe(true);
-  });
-
-  it('repassa a personagem ao mascote: o Taskin por padrao, o Sapin quando pedido', () => {
-    expect(mount(TaskinWithShhh).find('svg[data-character]').attributes('data-character')).toBe('taskin');
-    expect(
-      mount(TaskinWithShhh, { props: { character: SAPIN_CHARACTER } })
-        .find('svg[data-character]')
-        .attributes('data-character'),
-    ).toBe('sapin');
   });
 
   it('renders the noise controls', () => {

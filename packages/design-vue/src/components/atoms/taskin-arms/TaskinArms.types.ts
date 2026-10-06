@@ -103,7 +103,6 @@ export interface TaskinArmsProps {
   color?: string;
   leftArmPosition?: ArmPosition;
   rightArmPosition?: ArmPosition;
-  /** Which character the arms belong to: the Sapin's start wider and reach further. */
   /** Where the arms start, how long and thick they are, and how they hang at rest. Default: the octopus'. */
   geometry?: ArmGeometry;
 }

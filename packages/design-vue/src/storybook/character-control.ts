@@ -1,5 +1,4 @@
 import type { TaskinCharacter } from '../components/organisms/taskin/character/character.types';
-import { SAPIN_CHARACTER } from '../components/organisms/taskin/characters/sapin/sapin-character';
 import { SKELETON_CHARACTER } from '../components/organisms/taskin/characters/skeleton/skeleton-character';
 import { TASKIN_CHARACTER } from '../components/organisms/taskin/characters/taskin/taskin-character';
 
@@ -11,7 +10,6 @@ import { TASKIN_CHARACTER } from '../components/organisms/taskin/characters/task
 export const STORY_CHARACTERS = {
   taskin: TASKIN_CHARACTER,
   skeleton: SKELETON_CHARACTER,
-  sapin: SAPIN_CHARACTER,
 } as const;
 
 export type StoryCharacterId = keyof typeof STORY_CHARACTERS;

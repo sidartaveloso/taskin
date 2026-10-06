@@ -49,7 +49,7 @@ interface MoodConfig extends Partial<MoodColors> {
 
 /**
  * Quanto uma acao dura, sem toca-la: e o que deixa o mapa de tarefas casar o
- * trajeto com o pulo do Sapin ou o nado do Taskin, que se mexem no lugar. A acao
+ * trajeto com o pulo ou o nado da personagem, que se mexe no lugar. A acao
  * que a personagem nao tem dura zero, porque `play` resolve na hora.
  */
 export function actionDuration(character: TaskinCharacter, action: TaskinAction): number {

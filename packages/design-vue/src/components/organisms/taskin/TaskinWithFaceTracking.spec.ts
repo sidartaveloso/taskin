@@ -5,7 +5,6 @@ import { nextTick } from 'vue';
 vi.mock('@opentask/ui-sense', () => import('@opentask/ui-sense/mocks'));
 
 import { createFaceLandmarkerMock, useFaceLandmarker } from '@opentask/ui-sense/mocks';
-import { SAPIN_CHARACTER } from './characters/sapin/sapin-character';
 import TaskinWithFaceTracking from './TaskinWithFaceTracking.vue';
 
 const baseBlendShapes = {
@@ -52,15 +51,6 @@ describe('TaskinWithFaceTracking', () => {
     const wrapper = mount(TaskinWithFaceTracking);
     expect(wrapper.find('.mascot-container').exists()).toBe(true);
     expect(wrapper.find('g#body').exists()).toBe(true);
-  });
-
-  it('repassa a personagem ao mascote: o Taskin por padrao, o Sapin quando pedido', () => {
-    expect(mount(TaskinWithFaceTracking).find('svg[data-character]').attributes('data-character')).toBe('taskin');
-    expect(
-      mount(TaskinWithFaceTracking, { props: { character: SAPIN_CHARACTER } })
-        .find('svg[data-character]')
-        .attributes('data-character'),
-    ).toBe('sapin');
   });
 
   it('shows the debug panel when showDebug and detection data exists', async () => {

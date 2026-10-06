@@ -12,7 +12,7 @@
   />
   <!--
     A lingua para fora do ofegante. Mora num grupo com o deslocamento da boca:
-    a animacao mexe no `transform` do path, e sobrescreveria o do Sapin.
+    a animacao mexe no `transform` do path, e sobrescreveria o deslocamento.
   -->
   <g v-if="props.expression === 'panting'" id="mouth-tongue" :transform="mouthTransform(props.offset)">
     <path

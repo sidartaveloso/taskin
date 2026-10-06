@@ -180,13 +180,13 @@ export const BrunoShhh: Story = {
   },
 };
 
-/** O mesmo shhh, feito pelo Sapin: a reacao e do mascote, e nao do bicho. */
-export const Sapin: Story = {
+/** O mesmo shhh, feito pelo esqueleto: a reacao e do motor do mascote, e nao do bicho. */
+export const Esqueleto: Story = {
   ...Default,
   args: {
-    character: characterArg('sapin'),
+    character: characterArg('skeleton'),
   },
   play: async ({ canvasElement }) => {
-    expect(canvasElement.querySelector('svg[data-character]')?.getAttribute('data-character')).toBe('sapin');
+    expect(canvasElement.querySelector('svg[data-character]')?.getAttribute('data-character')).toBe('skeleton');
   },
 };

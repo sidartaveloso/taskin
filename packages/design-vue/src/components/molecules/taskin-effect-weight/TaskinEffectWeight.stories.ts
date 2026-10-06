@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { characterArg, characterArgType } from '../../../storybook/character-control';
+import { characterArgType } from '../../../storybook/character-control';
 import TaskinEffectWeight from './TaskinEffectWeight';
 import type { TaskinEffectWeightProps } from './TaskinEffectWeight.types';
 
@@ -51,19 +51,6 @@ export const NoAnimation: Story = {
     docs: {
       description: {
         story: 'The weight without the strain (static)',
-      },
-    },
-  },
-};
-
-export const Sapin: Story = {
-  args: {
-    character: characterArg('sapin'),
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: "On the Sapin the bar sits between the frog's raised hands.",
       },
     },
   },

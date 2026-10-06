@@ -1,11 +1,10 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
-import { SAPIN_CHARACTER } from './characters/sapin/sapin-character';
 import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
 import TaskinSays from './TaskinSays.vue';
 
-const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
+const CHARACTERS = { taskin: TASKIN_CHARACTER } as const;
 
 const mountSays = (props: Record<string, unknown> = {}, attrs: Record<string, unknown> = {}) =>
   mount(TaskinSays, {
@@ -46,7 +45,7 @@ describe('TaskinSays', () => {
 
   // O quadro do mascote tem margem vazia a direita do bicho: o balao entra
   // nela, e a ponta do rabicho para junto da cabeca, nao depois do quadro.
-  it.each(['taskin', 'sapin'] as const)('%s: o rabicho encosta na cabeca, dentro do quadro do mascote', (variant) => {
+  it.each(['taskin'] as const)('%s: o rabicho encosta na cabeca, dentro do quadro do mascote', (variant) => {
     const wrapper = mountSays({ text: 'Oi, Sidarta!', character: CHARACTERS[variant], size: 180 });
     const quadro = (wrapper.find('.taskin-mascot-composed svg').element as SVGElement).getBoundingClientRect();
     const rabicho = (wrapper.find('svg.speech-bubble__tail').element as SVGElement).getBoundingClientRect();
@@ -57,38 +56,9 @@ describe('TaskinSays', () => {
     expect(ponta).toBeGreaterThan(quadro.left + quadro.width * 0.65);
   });
 
-  it('a borda segue a tinta da variante', () => {
-    const polvo = mountSays({ text: 'Oi' }).find('[data-testid="taskin-says-bubble"]').element as HTMLElement;
-    const sapo = mountSays({ text: 'Oi', character: SAPIN_CHARACTER }).find('[data-testid="taskin-says-bubble"]')
-      .element as HTMLElement;
-
-    expect(getComputedStyle(polvo).borderTopColor).toBe('rgb(44, 62, 80)');
-    expect(getComputedStyle(sapo).borderTopColor).toBe('rgb(19, 70, 53)');
-  });
-
   it('o balao e o atomo SpeechBubble', () => {
     const wrapper = mountSays({ text: 'Oi' });
     expect(wrapper.findComponent({ name: 'SpeechBubble' }).exists()).toBe(true);
-  });
-
-  it('as props bubble* pintam o balao, e a borda deixa de seguir a variante', () => {
-    const wrapper = mountSays({
-      text: 'Oi',
-      character: SAPIN_CHARACTER,
-      bubbleBackground: '#FAEEDA',
-      bubbleBorderColor: '#854F0B',
-      bubbleTextColor: '#633806',
-      bubbleBorderWidth: 3,
-      bubbleFontSize: 18,
-    });
-    const balao = wrapper.find('[data-testid="taskin-says-bubble"]').element as HTMLElement;
-    const css = getComputedStyle(balao);
-
-    expect(css.backgroundColor).toBe('rgb(250, 238, 218)');
-    expect(css.borderTopColor).toBe('rgb(133, 79, 11)');
-    expect(css.color).toBe('rgb(99, 56, 6)');
-    expect(css.borderTopWidth).toBe('3px');
-    expect(css.fontSize).toBe('18px');
   });
 
   it('o tema por variavel CSS, posto no style de quem usa, ganha da tinta da variante', () => {
@@ -106,13 +76,6 @@ describe('TaskinSays', () => {
   it.each(['shout', 'whisper', 'thought', 'narration'] as const)('bubbleKind %s chega ao balao', (kind) => {
     const balao = mountSays({ text: 'Oi', bubbleKind: kind }).find('[data-testid="taskin-says-bubble"]');
     expect(balao.classes()).toContain(`speech-bubble--${kind}`);
-  });
-
-  it('as outras props atravessam para o Taskin', () => {
-    const wrapper = mountSays({ text: 'Oi', character: SAPIN_CHARACTER, size: 200 });
-
-    expect(wrapper.find('svg g#sapin-motion').exists()).toBe(true);
-    expect(wrapper.find('svg').attributes('width')).toBe('200');
   });
 
   it('class e style ficam na raiz, nao no Taskin', () => {

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { characterArg, characterArgType } from '../../../storybook/character-control';
+import { characterArgType } from '../../../storybook/character-control';
 import TaskinEffectZzz from './TaskinEffectZzz';
 import type { TaskinEffectZzzProps } from './TaskinEffectZzz.types';
 
@@ -51,19 +51,6 @@ export const NoAnimation: Story = {
     docs: {
       description: {
         story: 'Z letters without animation (static)',
-      },
-    },
-  },
-};
-
-export const Sapin: Story = {
-  args: {
-    character: characterArg('sapin'),
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: "On the Sapin the effect follows the frog's face.",
       },
     },
   },

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { characterArg, characterArgType } from '../../../storybook/character-control';
+import { characterArgType } from '../../../storybook/character-control';
 import TaskinEffectSpeechBubble from './TaskinEffectSpeechBubble';
 import type { TaskinEffectSpeechBubbleProps } from './TaskinEffectSpeechBubble.types';
 
@@ -55,13 +55,5 @@ export const NoAnimation: Story = {
   args: {
     text: 'Oi!',
     animationsEnabled: false,
-  },
-};
-
-/** No Sapin, a caixa nasce mais alta e a direita, e o rabicho desce ate a boca do sapo. */
-export const Sapin: Story = {
-  args: {
-    character: characterArg('sapin'),
-    text: 'Coaxei?',
   },
 };

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { characterArg, characterArgType } from '../../../storybook/character-control';
+import { characterArgType } from '../../../storybook/character-control';
 import TaskinEffectThoughtBubble from './TaskinEffectThoughtBubble';
 import type { TaskinEffectThoughtBubbleProps } from './TaskinEffectThoughtBubble.types';
 
@@ -110,18 +110,5 @@ export const SingleLongWord: Story = {
 export const VeryLongPhrase: Story = {
   args: {
     text: 'Pessoal, silencio total agora por favor que ja passou da hora',
-  },
-};
-
-export const Sapin: Story = {
-  args: {
-    character: characterArg('sapin'),
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: "On the Sapin the effect follows the frog's face.",
-      },
-    },
   },
 };

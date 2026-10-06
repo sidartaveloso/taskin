@@ -105,13 +105,13 @@ export const NoTail: Story = {
   args: { tail: 'none', text: 'Sem rabicho, so a caixa.' },
 };
 
-/** Algumas paletas lado a lado: o Sapin, um aviso, um modo escuro e uma borda grossa. */
+/** Algumas paletas lado a lado: um verde escuro, um aviso, um modo escuro e uma borda grossa. */
 export const Themes: Story = {
   render: () => ({
     components: { SpeechBubble },
     template: `
       <div style="display: flex; flex-direction: column; gap: 20px; align-items: flex-start;">
-        <SpeechBubble text="Verde da tinta do Sapin." border-color="#134635" text-color="#134635" />
+        <SpeechBubble text="Verde escuro na tinta." border-color="#134635" text-color="#134635" />
         <SpeechBubble text="Cuidado: a task 165 esta bloqueada." background="#FAEEDA" border-color="#854F0B" text-color="#633806" />
         <SpeechBubble text="Modo escuro, sem trocar de componente." background="#2C2C2A" border-color="#B4B2A9" text-color="#F1EFE8" />
         <SpeechBubble text="Borda grossa e canto reto." :border-width="4" :radius="4" border-color="#534AB7" text-color="#26215C" background="#EEEDFE" />
