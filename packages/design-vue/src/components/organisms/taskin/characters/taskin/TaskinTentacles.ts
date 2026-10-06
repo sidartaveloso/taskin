@@ -22,6 +22,8 @@ const TENTACLES = [
  */
 export default defineComponent({
   name: 'TaskinTentacles',
+  // O motor passa todas as props de peca; as que esta parte nao usa nao viram atributo no SVG.
+  inheritAttrs: false,
   props: {
     character: { type: Object as PropType<TaskinCharacter>, required: true },
     colors: { type: Object as PropType<MoodColors>, required: true },
