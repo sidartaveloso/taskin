@@ -11,7 +11,7 @@
  *
  * Nem toda variante precisa ter toda acao: a que nao tem resolve `false` na hora.
  *
- * Este arquivo nao importa nada, como `Taskin.variants.ts`.
+ * Este arquivo nao importa nada.
  */
 export const TASKIN_ACTIONS = [
   'nod',

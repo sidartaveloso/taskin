@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
 import TaskinEffectHearts from './TaskinEffectHearts';
 
 describe('TaskinEffectHearts', () => {
@@ -24,7 +25,7 @@ describe('TaskinEffectHearts', () => {
   });
 
   it('acompanha os olhos do sapin', () => {
-    const sapin = mount(TaskinEffectHearts, { props: { variant: 'sapin' } }).findAll('text');
+    const sapin = mount(TaskinEffectHearts, { props: { character: SAPIN_CHARACTER } }).findAll('text');
 
     expect(sapin.map((t) => [t.attributes('x'), t.attributes('y')])).toEqual([
       ['106', '71'],

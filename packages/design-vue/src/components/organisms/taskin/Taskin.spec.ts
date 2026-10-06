@@ -1,9 +1,13 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { EYE_GEOMETRY } from '../../atoms/taskin-eyes/TaskinEyes.types';
+import { SAPIN_CHARACTER } from './characters/sapin/sapin-character';
+import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
 import Taskin from './Taskin';
 import type { TaskinMood } from './Taskin.types';
-import type { TaskinVariant } from './Taskin.variants';
+
+const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
+type CharacterId = keyof typeof CHARACTERS;
+const EYE_GEOMETRY = { taskin: TASKIN_CHARACTER.eyes, sapin: SAPIN_CHARACTER.eyes } as const;
 
 function mountTaskin(overrides: Record<string, unknown> = {}) {
   return mount(Taskin, {
@@ -16,8 +20,11 @@ function mountTaskin(overrides: Record<string, unknown> = {}) {
  * documento, para o `<style>` do SVG valer: a classe sozinha nao prova nada — o
  * bug era justamente o humor pedir um movimento que ninguem desenhava.
  */
-function animacoesDoMovimento(variant: TaskinVariant, mood: TaskinMood) {
-  const wrapper = mount(Taskin, { props: { idleAnimation: false, variant, mood }, attachTo: document.body });
+function animacoesDoMovimento(variant: CharacterId, mood: TaskinMood) {
+  const wrapper = mount(Taskin, {
+    props: { idleAnimation: false, character: CHARACTERS[variant], mood },
+    attachTo: document.body,
+  });
   try {
     return wrapper
       .find(`#${variant}-motion`)
@@ -64,7 +71,7 @@ describe('Taskin', () => {
     });
 
     it.each(['taskin', 'sapin'] as const)('%s: com texto, o balao de fala diz a frase', (variant) => {
-      const wrapper = mountTaskin({ variant, speechText: 'Oi, Sidarta' });
+      const wrapper = mountTaskin({ character: CHARACTERS[variant], speechText: 'Oi, Sidarta' });
       const balao = wrapper.find('g#effect-speech-bubble');
 
       expect(balao.exists()).toBe(true);
@@ -136,7 +143,9 @@ describe('Taskin', () => {
 
     it('leva o suor junto no movimento, nas duas variantes', () => {
       expect(mountTaskin({ mood: 'hot' }).find('#taskin-motion g#effect-sweat').exists()).toBe(true);
-      expect(mountTaskin({ mood: 'hot', variant: 'sapin' }).find('#sapin-motion g#effect-sweat').exists()).toBe(true);
+      expect(
+        mountTaskin({ mood: 'hot', character: SAPIN_CHARACTER }).find('#sapin-motion g#effect-sweat').exists(),
+      ).toBe(true);
     });
   });
 
@@ -198,13 +207,14 @@ describe('Taskin', () => {
   });
 
   describe('variante sapin', () => {
-    const mountSapin = (overrides: Record<string, unknown> = {}) => mountTaskin({ variant: 'sapin', ...overrides });
+    const mountSapin = (overrides: Record<string, unknown> = {}) =>
+      mountTaskin({ character: SAPIN_CHARACTER, ...overrides });
 
     it('desenha o sapo: sem tentaculos, com calombos, barriga e seis dedos', () => {
       const wrapper = mountSapin();
 
       expect(wrapper.find('#tentacle-with-item').exists()).toBe(false);
-      expect(wrapper.find('g#body').attributes('data-variant')).toBe('sapin');
+      expect(wrapper.find('svg[data-character]').attributes('data-character')).toBe('sapin');
       expect(wrapper.findAll('#body-eye-bumps circle')).toHaveLength(2);
       expect(wrapper.find('#body-belly').exists()).toBe(true);
       expect(wrapper.findAll('#body-toes .toe')).toHaveLength(6);
@@ -301,7 +311,7 @@ describe('Taskin juggling', () => {
   });
 
   it('o Sapin ignora', () => {
-    const wrapper = mountTaskin({ variant: 'sapin', juggling: 3 });
+    const wrapper = mountTaskin({ character: SAPIN_CHARACTER, juggling: 3 });
     expect(wrapper.find('#effect-juggle').exists()).toBe(false);
     expect(wrapper.find('#sapin-motion').classes()).not.toContain('taskin-juggling');
   });

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { TASKIN_VARIANTS } from '../../organisms/taskin/Taskin.variants';
+import { characterArg, characterArgType } from '../../../storybook/character-control';
 import TaskinEffectThoughtBubble from './TaskinEffectThoughtBubble';
 import type { TaskinEffectThoughtBubbleProps } from './TaskinEffectThoughtBubble.types';
 
@@ -8,11 +8,7 @@ const meta = {
   component: TaskinEffectThoughtBubble,
   tags: ['design-vue'],
   argTypes: {
-    variant: {
-      control: { type: 'select' },
-      options: [...TASKIN_VARIANTS],
-      description: 'Which character: taskin (octopus) or sapin (frog)',
-    },
+    character: characterArgType,
     text: {
       control: { type: 'text' },
     },
@@ -119,7 +115,7 @@ export const VeryLongPhrase: Story = {
 
 export const Sapin: Story = {
   args: {
-    variant: 'sapin',
+    character: characterArg('sapin'),
   },
   parameters: {
     docs: {

@@ -1,5 +1,6 @@
 import { computed, defineComponent, h, type PropType } from 'vue';
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 import { layoutSpeechBubble, SPEECH_CORNER_RADIUS } from './speech-bubble-layout';
 
 const INK = '#2C3E50';
@@ -21,13 +22,13 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
-    variant: {
-      type: String as PropType<TaskinVariant>,
-      default: 'taskin',
+    character: {
+      type: Object as PropType<TaskinCharacter>,
+      default: () => TASKIN_CHARACTER,
     },
   },
   setup(props) {
-    const layout = computed(() => layoutSpeechBubble(props.text, props.variant));
+    const layout = computed(() => layoutSpeechBubble(props.text, props.character));
 
     return () => {
       const { x, y, width, height, tail, lines, lineY, fontSize, cx } = layout.value;

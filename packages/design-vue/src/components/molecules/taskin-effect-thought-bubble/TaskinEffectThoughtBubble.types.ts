@@ -1,4 +1,4 @@
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
 
 export interface TaskinEffectThoughtBubbleProps {
   /**
@@ -11,10 +11,8 @@ export interface TaskinEffectThoughtBubbleProps {
    */
   animationsEnabled?: boolean;
 
-  /**
-   * Which character the bubble comes from: it sits clear of that character's eyes.
-   */
-  variant?: TaskinVariant;
+  /** Which character the effect sits on: it follows that character's anchors. Default: the octopus. */
+  character?: TaskinCharacter;
 }
 
 export interface TaskinEffectThoughtBubbleController {

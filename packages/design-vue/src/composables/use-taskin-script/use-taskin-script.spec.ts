@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { TASKIN_CHARACTER } from '../../components/organisms/taskin/characters/taskin/taskin-character';
 import { actionDuration } from '../../components/organisms/taskin/Taskin';
 import type { TaskinAction } from '../../components/organisms/taskin/Taskin.actions';
 import {
@@ -49,8 +50,8 @@ describe('stepHold', () => {
 describe('scriptDuration', () => {
   it('soma a acao de cada passo, pela variante, e a pausa dele', () => {
     const steps = [{ action: 'wave' as const, say: 'Oi' }, { mood: 'happy' as const }];
-    expect(scriptDuration('taskin', steps)).toBe(
-      actionDuration('taskin', 'wave') + SCRIPT_MIN_HOLD_MS + SCRIPT_EMPTY_HOLD_MS,
+    expect(scriptDuration(TASKIN_CHARACTER, steps)).toBe(
+      actionDuration(TASKIN_CHARACTER, 'wave') + SCRIPT_MIN_HOLD_MS + SCRIPT_EMPTY_HOLD_MS,
     );
   });
 });

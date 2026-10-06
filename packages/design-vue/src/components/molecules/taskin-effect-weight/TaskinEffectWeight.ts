@@ -1,15 +1,6 @@
 import { defineComponent, h, type PropType } from 'vue';
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
-
-/**
- * Onde ficam as maos erguidas de cada bicho na acao `effort` (bracos a -70/-100
- * graus): a barra passa entre elas e cada disco fica em cima de uma mao.
- */
-export const WEIGHT_HANDS: Record<TaskinVariant, { left: { x: number; y: number }; right: { x: number; y: number } }> =
-  {
-    taskin: { left: { x: 91, y: 72 }, right: { x: 229, y: 72 } },
-    sapin: { left: { x: 86, y: 52 }, right: { x: 234, y: 52 } },
-  };
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 
 const DISC_WIDTH = 9;
 const DISC_HEIGHT = 32;
@@ -22,14 +13,14 @@ export default defineComponent({
       default: true,
     },
     /** Which character the effect sits on: the bar sits between that character's raised hands. */
-    variant: {
-      type: String as PropType<TaskinVariant>,
-      default: 'taskin',
+    character: {
+      type: Object as PropType<TaskinCharacter>,
+      default: () => TASKIN_CHARACTER,
     },
   },
   setup(props) {
     return () => {
-      const { left, right } = WEIGHT_HANDS[props.variant];
+      const { left, right } = props.character.effortHands;
       const disc = (x: number, y: number) =>
         h('rect', {
           class: 'weight-disc',

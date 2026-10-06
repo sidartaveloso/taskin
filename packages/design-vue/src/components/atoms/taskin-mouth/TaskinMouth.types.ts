@@ -1,5 +1,3 @@
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
-
 export type MouthExpression =
   | 'neutral'
   | 'smile'
@@ -17,34 +15,18 @@ export interface TaskinMouthProps {
   animationsEnabled?: boolean;
   /** Falando: a boca alterna entre a expressao e aberta, silaba a silaba. */
   speaking?: boolean;
-  /** Which character the mouth belongs to: it sits higher on the Sapin. */
-  variant?: TaskinVariant;
+  /** How far the mouth sits from the reference drawing below. Default: where the octopus' is. */
+  offset?: { x: number; y: number };
+  /** Colour of the lips and the open mouth. Default: the octopus' ink. */
+  ink?: string;
 }
 
-/**
- * Quanto a boca de cada variante anda a partir do desenho do Taskin. As
- * expressoes sao as mesmas; no Sapin a boca fica mais alta, entre os olhos e a
- * barriga, como na referencia. O vomito sai da boca e le daqui a mesma ancora.
- */
-export const MOUTH_OFFSET: Record<TaskinVariant, { x: number; y: number }> = {
-  taskin: { x: 0, y: 0 },
-  sapin: { x: 0, y: -21 },
-};
+/** The octopus' mouth: the reference drawing (no offset) and its dark-blue ink. */
+export const TASKIN_MOUTH = { offset: { x: 0, y: 0 }, ink: '#2C3E50' } as const;
 
-/**
- * A tinta da boca de cada variante: o azul-escuro do polvo, e o verde-escuro da
- * referencia no Sapin.
- */
-export const MOUTH_INK: Record<TaskinVariant, string> = {
-  taskin: '#2C3E50',
-  sapin: '#134635',
-};
-
-/** O `transform` que leva um desenho preso a boca do Taskin para a boca da variante. */
-export const mouthTransform = (variant: TaskinVariant): string | undefined => {
-  const { x, y } = MOUTH_OFFSET[variant];
-  return x === 0 && y === 0 ? undefined : `translate(${x} ${y})`;
-};
+/** The `transform` that moves a drawing tied to the reference mouth to a character's mouth. */
+export const mouthTransform = (offset: { x: number; y: number }): string | undefined =>
+  offset.x === 0 && offset.y === 0 ? undefined : `translate(${offset.x} ${offset.y})`;
 
 /**
  * O desenho da boca em cada expressao. A fala alterna entre duas linhas daqui —

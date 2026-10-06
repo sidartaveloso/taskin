@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { characterArg, characterArgType, STORY_CHARACTERS } from '../../../storybook/character-control';
 import { SPEECH_BUBBLE_KINDS, type SpeechBubbleKind } from '../../atoms/speech-bubble/SpeechBubble.types';
 import { TASKIN_MOODS } from './Taskin.moods';
 import type { TaskinMood } from './Taskin.types';
-import { TASKIN_VARIANTS } from './Taskin.variants';
 import type { TaskinSaysProps } from './TaskinSays.types';
 import TaskinSays from './TaskinSays.vue';
 
@@ -28,7 +28,7 @@ const meta: Meta<TaskinSaysProps & { mood?: TaskinMood }> = {
     },
   },
   argTypes: {
-    variant: { control: { type: 'select' }, options: [...TASKIN_VARIANTS] },
+    character: characterArgType,
     mood: { control: { type: 'select' }, options: [...TASKIN_MOODS] },
     text: { control: { type: 'text' } },
     size: { control: { type: 'range', min: 80, max: 400, step: 10 } },
@@ -40,7 +40,7 @@ const meta: Meta<TaskinSaysProps & { mood?: TaskinMood }> = {
       description: 'Como fala: fala, grito, sussurro, pensamento, narracao',
     },
     bubbleBackground: { control: 'color', description: 'Fundo do balao' },
-    bubbleBorderColor: { control: 'color', description: 'Borda do balao; sem ela, a tinta da variante' },
+    bubbleBorderColor: { control: 'color', description: 'Borda do balao; sem ela, a tinta da personagem' },
     bubbleTextColor: { control: 'color', description: 'Texto do balao' },
     bubbleBorderWidth: { control: { type: 'range', min: 1, max: 6, step: 1 } },
     bubbleFontSize: { control: { type: 'range', min: 11, max: 28, step: 1 } },
@@ -49,7 +49,7 @@ const meta: Meta<TaskinSaysProps & { mood?: TaskinMood }> = {
     text: 'As duas tasks estao fechadas, com testes e evidencia visual.',
     size: 180,
     mood: 'happy',
-    variant: 'taskin',
+    character: characterArg('taskin'),
     animationsEnabled: true,
     maxWidth: 260,
   },
@@ -65,13 +65,13 @@ type Story = StoryObj<typeof meta>;
 export const AllKinds: Story = {
   render: (args) => ({
     components: { TaskinSays },
-    setup: () => ({ args, kinds: SPEECH_BUBBLE_KINDS, falas: FALAS }),
+    setup: () => ({ args, kinds: SPEECH_BUBBLE_KINDS, falas: FALAS, personagens: STORY_CHARACTERS }),
     template: `
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 8px 24px;">
         <div v-for="(kind, i) in kinds" :key="kind">
           <TaskinSays
             v-bind="args"
-            :variant="i % 2 ? 'sapin' : 'taskin'"
+            :character="i % 2 ? personagens.sapin : personagens.taskin"
             :mood="falas[kind].mood"
             :text="falas[kind].text"
             :bubble-kind="kind"
@@ -99,7 +99,7 @@ export const LongText: Story = {
 
 /** A borda segue a tinta do Sapin. */
 export const Sapin: Story = {
-  args: { variant: 'sapin', text: 'Coaxei alguma coisa util?' },
+  args: { character: characterArg('sapin'), text: 'Coaxei alguma coisa util?' },
 };
 
 /** Sem texto, o `Taskin` fica como esta: o pensamento continua no SVG. */

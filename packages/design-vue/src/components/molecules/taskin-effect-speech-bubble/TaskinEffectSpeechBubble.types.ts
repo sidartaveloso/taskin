@@ -1,4 +1,4 @@
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
 
 export interface TaskinEffectSpeechBubbleProps {
   /**
@@ -12,8 +12,6 @@ export interface TaskinEffectSpeechBubbleProps {
    */
   animationsEnabled?: boolean;
 
-  /**
-   * Which character is speaking: the tail points at that character's mouth.
-   */
-  variant?: TaskinVariant;
+  /** Which character the effect sits on: it follows that character's anchors. Default: the octopus. */
+  character?: TaskinCharacter;
 }

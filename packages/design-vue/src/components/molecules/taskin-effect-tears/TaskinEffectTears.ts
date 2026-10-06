@@ -1,6 +1,7 @@
 import { defineComponent, h, type PropType } from 'vue';
-import { eyeShift } from '../../atoms/taskin-eyes/TaskinEyes.types';
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
+import { eyeShift } from '../../organisms/taskin/character/reference-frame';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 
 export default defineComponent({
   name: 'TaskinEffectTears',
@@ -10,16 +11,16 @@ export default defineComponent({
       default: true,
     },
     /** Which character the effect sits on: it follows that character's face. */
-    variant: {
-      type: String as PropType<TaskinVariant>,
-      default: 'taskin',
+    character: {
+      type: Object as PropType<TaskinCharacter>,
+      default: () => TASKIN_CHARACTER,
     },
   },
   setup(props) {
     return () => {
-      // Cada lagrima cai do seu olho: anda com ele de uma variante para outra.
-      const left = eyeShift(props.variant, 'left');
-      const right = eyeShift(props.variant, 'right');
+      // Cada lagrima cai do seu olho: anda com ele de uma personagem para outra.
+      const left = eyeShift(props.character, 'left');
+      const right = eyeShift(props.character, 'right');
 
       return h('g', { id: 'effect-tears' }, [
         h('circle', {

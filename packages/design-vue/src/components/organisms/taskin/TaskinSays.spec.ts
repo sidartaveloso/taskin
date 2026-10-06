@@ -1,7 +1,11 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
+import { SAPIN_CHARACTER } from './characters/sapin/sapin-character';
+import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
 import TaskinSays from './TaskinSays.vue';
+
+const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
 
 const mountSays = (props: Record<string, unknown> = {}, attrs: Record<string, unknown> = {}) =>
   mount(TaskinSays, {
@@ -43,7 +47,7 @@ describe('TaskinSays', () => {
   // O quadro do mascote tem margem vazia a direita do bicho: o balao entra
   // nela, e a ponta do rabicho para junto da cabeca, nao depois do quadro.
   it.each(['taskin', 'sapin'] as const)('%s: o rabicho encosta na cabeca, dentro do quadro do mascote', (variant) => {
-    const wrapper = mountSays({ text: 'Oi, Sidarta!', variant, size: 180 });
+    const wrapper = mountSays({ text: 'Oi, Sidarta!', character: CHARACTERS[variant], size: 180 });
     const quadro = (wrapper.find('.taskin-mascot-composed svg').element as SVGElement).getBoundingClientRect();
     const rabicho = (wrapper.find('svg.speech-bubble__tail').element as SVGElement).getBoundingClientRect();
 
@@ -55,7 +59,7 @@ describe('TaskinSays', () => {
 
   it('a borda segue a tinta da variante', () => {
     const polvo = mountSays({ text: 'Oi' }).find('[data-testid="taskin-says-bubble"]').element as HTMLElement;
-    const sapo = mountSays({ text: 'Oi', variant: 'sapin' }).find('[data-testid="taskin-says-bubble"]')
+    const sapo = mountSays({ text: 'Oi', character: SAPIN_CHARACTER }).find('[data-testid="taskin-says-bubble"]')
       .element as HTMLElement;
 
     expect(getComputedStyle(polvo).borderTopColor).toBe('rgb(44, 62, 80)');
@@ -70,7 +74,7 @@ describe('TaskinSays', () => {
   it('as props bubble* pintam o balao, e a borda deixa de seguir a variante', () => {
     const wrapper = mountSays({
       text: 'Oi',
-      variant: 'sapin',
+      character: SAPIN_CHARACTER,
       bubbleBackground: '#FAEEDA',
       bubbleBorderColor: '#854F0B',
       bubbleTextColor: '#633806',
@@ -105,7 +109,7 @@ describe('TaskinSays', () => {
   });
 
   it('as outras props atravessam para o Taskin', () => {
-    const wrapper = mountSays({ text: 'Oi', variant: 'sapin', size: 200 });
+    const wrapper = mountSays({ text: 'Oi', character: SAPIN_CHARACTER, size: 200 });
 
     expect(wrapper.find('svg g#sapin-motion').exists()).toBe(true);
     expect(wrapper.find('svg').attributes('width')).toBe('200');

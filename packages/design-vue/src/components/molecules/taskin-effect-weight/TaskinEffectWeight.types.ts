@@ -1,4 +1,4 @@
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
 
 export interface TaskinEffectWeightProps {
   /**
@@ -6,8 +6,6 @@ export interface TaskinEffectWeightProps {
    */
   animationsEnabled?: boolean;
 
-  /**
-   * Which character the effect sits on: the bar sits between that character's raised hands.
-   */
-  variant?: TaskinVariant;
+  /** Which character the effect sits on: it follows that character's anchors. Default: the octopus. */
+  character?: TaskinCharacter;
 }

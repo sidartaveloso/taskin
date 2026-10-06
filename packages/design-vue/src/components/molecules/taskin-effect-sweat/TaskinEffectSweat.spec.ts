@@ -1,6 +1,10 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { SAPIN_CHARACTER } from '../../organisms/taskin/characters/sapin/sapin-character';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 import TaskinEffectSweat from './TaskinEffectSweat';
+
+const CHARACTERS = { taskin: TASKIN_CHARACTER, sapin: SAPIN_CHARACTER } as const;
 
 describe('TaskinEffectSweat', () => {
   it('desenha tres gotas', () => {
@@ -20,7 +24,7 @@ describe('TaskinEffectSweat', () => {
 
   it('fica fora da cabeca do taskin, e anda com o rosto do sapin', () => {
     const posicao = (variant: 'taskin' | 'sapin') =>
-      mount(TaskinEffectSweat, { props: { variant } })
+      mount(TaskinEffectSweat, { props: { character: CHARACTERS[variant] } })
         .findAll('#effect-sweat > g')
         .map((gota) => gota.attributes('transform'));
 

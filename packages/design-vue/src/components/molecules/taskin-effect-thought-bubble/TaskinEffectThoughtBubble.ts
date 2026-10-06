@@ -1,5 +1,6 @@
 import { computed, defineComponent, h, type PropType } from 'vue';
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 import { layoutThoughtBubble, thoughtTrail } from './thought-bubble-layout';
 
 export default defineComponent({
@@ -14,15 +15,15 @@ export default defineComponent({
       default: true,
     },
     /** Which character the bubble comes from: it sits clear of that character's eyes. */
-    variant: {
-      type: String as PropType<TaskinVariant>,
-      default: 'taskin',
+    character: {
+      type: Object as PropType<TaskinCharacter>,
+      default: () => TASKIN_CHARACTER,
     },
   },
   setup(props) {
     // A frase e configuravel, entao o tamanho do balao vem dela. Ver
     // `thought-bubble-layout.ts` para o porque de estimar a largura do texto.
-    const layout = computed(() => layoutThoughtBubble(props.text, props.variant));
+    const layout = computed(() => layoutThoughtBubble(props.text, props.character));
 
     return () =>
       h(
@@ -44,7 +45,7 @@ export default defineComponent({
           // As duas bolhas da ponta descem para o mesmo ponto do rabicho da
           // fala, a direita do olho: proporcionais a elipse, elas caiam na
           // pupila assim que a frase crescia.
-          ...thoughtTrail(layout.value, props.variant).map((bolha) =>
+          ...thoughtTrail(layout.value, props.character).map((bolha) =>
             h('circle', {
               cx: String(bolha.x),
               cy: String(bolha.y),

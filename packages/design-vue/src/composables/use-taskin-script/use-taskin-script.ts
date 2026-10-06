@@ -11,9 +11,9 @@
  */
 
 import { type Ref, ref } from 'vue';
+import type { TaskinCharacter } from '../../components/organisms/taskin/character/character.types';
 import { actionDuration } from '../../components/organisms/taskin/Taskin';
 import type { TaskinMood } from '../../components/organisms/taskin/Taskin.types';
-import type { TaskinVariant } from '../../components/organisms/taskin/Taskin.variants';
 import type { TaskinPlayer, TaskinScript, TaskinScriptStep, UseTaskinScriptOptions } from './use-taskin-script.types';
 
 /** Quanto tempo de leitura cada caractere da frase compra. */
@@ -39,11 +39,11 @@ export const stepHold = (step: TaskinScriptStep): number => {
 
 /**
  * Quanto o roteiro inteiro dura sem toca-lo: a acao de cada passo (pela
- * variante, como `actionDuration`) mais a pausa dele. Para quem sincroniza
+ * personagem, como `actionDuration`) mais a pausa dele. Para quem sincroniza
  * algo por fora, como o balao HTML de um chat.
  */
-export const scriptDuration = (variant: TaskinVariant, steps: TaskinScriptStep[]): number =>
-  steps.reduce((total, step) => total + (step.action ? actionDuration(variant, step.action) : 0) + stepHold(step), 0);
+export const scriptDuration = (character: TaskinCharacter, steps: TaskinScriptStep[]): number =>
+  steps.reduce((total, step) => total + (step.action ? actionDuration(character, step.action) : 0) + stepHold(step), 0);
 
 export function useTaskinScript(
   taskin: Ref<TaskinPlayer | null | undefined>,

@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import { characterArg, STORY_CHARACTERS } from '../../../storybook/character-control';
 import Taskin from './Taskin';
 import { TASKIN_MOODS } from './Taskin.moods';
 import * as TaskinStories from './Taskin.stories';
-import { TASKIN_VARIANTS } from './Taskin.variants';
 
 /**
- * O Sapin nao e outro componente: e o `Taskin` com `variant="sapin"`. Por isso as
- * stories sao as do Taskin, reaproveitadas uma a uma — o `variant` vem dos
- * `args` do meta, e cada story nova do Taskin so precisa de uma linha aqui para
- * existir no sapinho tambem.
+ * O Sapin nao e outro componente: e o `Taskin` com `character={SAPIN_CHARACTER}`.
+ * Por isso as stories sao as do Taskin, reaproveitadas uma a uma — a personagem
+ * vem dos `args` do meta, e cada story nova do Taskin so precisa de uma linha
+ * aqui para existir no sapinho tambem.
  */
 const meta = {
   ...TaskinStories.default,
@@ -18,13 +18,13 @@ const meta = {
     docs: {
       description: {
         component:
-          'O Sapin, sapinho da marca para SAP: a variante `sapin` do mascote Taskin. Mesmo componente (`<Taskin variant="sapin">`), com os mesmos humores, comportamentos e movimentos — no lugar dos tentaculos, pernas; o sapo inteiro pula, flutua, balanca, treme e arfa.',
+          'O Sapin, sapinho da marca para SAP: uma personagem do motor do mascote. Mesmo componente (`<Taskin :character="SAPIN_CHARACTER">`), com os mesmos humores, comportamentos e movimentos — no lugar dos tentaculos, pernas; o sapo inteiro pula, flutua, balanca, treme e arfa.',
       },
     },
   },
   args: {
     ...TaskinStories.default.args,
-    variant: 'sapin',
+    character: characterArg('sapin'),
   },
 } satisfies Meta<typeof Taskin>;
 
@@ -74,14 +74,14 @@ export const Variantes: Story = {
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 28px; padding: 20px;">
         <div v-for="mood in moods" :key="mood" style="text-align: center;">
           <div style="display: flex; gap: 4px; align-items: flex-end;">
-            <Taskin v-for="variant in variants" :key="variant" :variant="variant" :mood="mood" :size="110" />
+            <Taskin v-for="c in characters" :key="c.id" :character="c" :mood="mood" :size="110" />
           </div>
           <p style="margin-top: 6px; font-size: 12px;">{{ mood }}</p>
         </div>
       </div>
     `,
     data() {
-      return { moods: TASKIN_MOODS, variants: TASKIN_VARIANTS };
+      return { moods: TASKIN_MOODS, characters: Object.values(STORY_CHARACTERS) };
     },
   }),
   parameters: {

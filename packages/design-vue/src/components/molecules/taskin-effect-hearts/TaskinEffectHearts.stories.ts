@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import { TASKIN_VARIANTS } from '../../organisms/taskin/Taskin.variants';
+import { characterArg, characterArgType } from '../../../storybook/character-control';
 import TaskinEffectHearts from './TaskinEffectHearts';
 import type { TaskinEffectHeartsProps } from './TaskinEffectHearts.types';
 
@@ -8,11 +8,7 @@ const meta = {
   component: TaskinEffectHearts,
   tags: ['design-vue'],
   argTypes: {
-    variant: {
-      control: { type: 'select' },
-      options: [...TASKIN_VARIANTS],
-      description: 'Which character: taskin (octopus) or sapin (frog)',
-    },
+    character: characterArgType,
     animationsEnabled: {
       control: { type: 'boolean' },
     },
@@ -62,7 +58,7 @@ export const NoAnimation: Story = {
 
 export const Sapin: Story = {
   args: {
-    variant: 'sapin',
+    character: characterArg('sapin'),
   },
   parameters: {
     docs: {

@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { h } from 'vue';
-import { TASKIN_VARIANTS } from '../../organisms/taskin/Taskin.variants';
 import type { TaskinBodyProps } from './TaskinBody.types';
 import TaskinBody from './TaskinBody.vue';
 
@@ -9,11 +8,6 @@ const meta = {
   component: TaskinBody,
   tags: ['autodocs', 'design-vue'],
   argTypes: {
-    variant: {
-      control: { type: 'select' },
-      options: [...TASKIN_VARIANTS],
-      description: 'Which character: taskin (octopus) or sapin (frog)',
-    },
     bodyColor: {
       control: { type: 'color' },
       description: 'Main body color',
@@ -41,8 +35,7 @@ const meta = {
   },
   render: (args: TaskinBodyProps) => ({
     setup() {
-      // O Sapin desce ate os pes: precisa do quadro inteiro do mascote.
-      const height = args.variant === 'sapin' ? '260' : '220';
+      const height = '220';
       return () =>
         h(
           'svg',
@@ -181,37 +174,5 @@ export const Sway: Story = {
     bodyHighlight: '#C9B6FF',
     animationsEnabled: true,
     sway: true,
-  },
-};
-
-export const Sapin: Story = {
-  args: {
-    variant: 'sapin',
-    bodyColor: '#4DB848',
-    animationsEnabled: true,
-  },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'The Sapin frog body: thighs, body, eye bumps, belly and feet with toes. The belly is a translucent white over the body colour, so it stays light in every mood.',
-      },
-    },
-  },
-};
-
-export const SapinTapToes: Story = {
-  args: {
-    variant: 'sapin',
-    bodyColor: '#4DB848',
-    animationsEnabled: true,
-    tapToes: true,
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: "The Sapin's idle wiggle: its toes tap, where the Taskin wiggles a tentacle.",
-      },
-    },
   },
 };

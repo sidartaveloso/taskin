@@ -1,6 +1,7 @@
 import { defineComponent, h, type PropType } from 'vue';
-import { eyeShift } from '../../atoms/taskin-eyes/TaskinEyes.types';
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { TaskinCharacter } from '../../organisms/taskin/character/character.types';
+import { eyeShift } from '../../organisms/taskin/character/reference-frame';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 
 /**
  * O contorno de um "Z" em negrito de 24px, com a origem na linha de base a
@@ -27,15 +28,15 @@ export default defineComponent({
       default: true,
     },
     /** Which character the effect sits on: it follows that character's face. */
-    variant: {
-      type: String as PropType<TaskinVariant>,
-      default: 'taskin',
+    character: {
+      type: Object as PropType<TaskinCharacter>,
+      default: () => TASKIN_CHARACTER,
     },
   },
   setup(props) {
     return () => {
-      // Os Z sobem do olho direito: andam com ele de uma variante para outra.
-      const shift = eyeShift(props.variant, 'right');
+      // Os Z sobem do olho direito: andam com ele de uma personagem para outra.
+      const shift = eyeShift(props.character, 'right');
 
       return h('g', { id: 'effect-zzz' }, [
         letraZ(190 + shift.x, 90 + shift.y, props.animationsEnabled ? '0s' : null),

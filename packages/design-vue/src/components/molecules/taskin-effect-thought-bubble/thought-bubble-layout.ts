@@ -13,7 +13,8 @@
  * texto latino; o excesso de folga fica por conta do preenchimento.
  */
 
-import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import type { CharacterBubbles, TaskinCharacter } from '../../organisms/taskin/character/character.types';
+import { TASKIN_CHARACTER } from '../../organisms/taskin/characters/taskin/taskin-character';
 
 /** Quadro do mascote: `viewBox="0 0 320 260"`. */
 export const BUBBLE_RIGHT_LIMIT = 316;
@@ -22,39 +23,16 @@ export const BUBBLE_LEFT_LIMIT = 150;
 export const BUBBLE_TOP_LIMIT = 4;
 
 /**
- * O olho direito manda em tudo: no Taskin ele vai de `y` 72 a 108 e ate `x` 199;
- * no Sapin e um calombo em cima da cabeca, ate `x` 222. Um balao por cima dele
- * nao se le, e o rabicho por cima da pupila e pior ainda.
- */
-export const TASKIN_EYE_TOP = 72;
-export const SAPIN_EYE_BUMP_RIGHT = 222;
-
-/**
- * Onde um balao fica sem tapar o olho: colado no topo do quadro e, no Taskin,
- * acabando antes do olho (com fonte de 20px, duas linhas acabam em `y` 70); no
- * Sapin, inteiro a direita do calombo, por isso mais estreito. A caixa curta
- * nasce a direita do rosto e cresce para a direita antes de crescer para a
- * esquerda. Os dois baloes, o de pensamento e o de fala, usam isto.
+ * Como os baloes ficam acima do olho direito, sem tapa-lo: colados no topo do
+ * quadro, com a fonte ate 20px. Onde fica cada balao, ate onde vai para a
+ * esquerda e para onde aponta e da personagem (`character.bubbles`): o olho
+ * direito de cada bicho mora num lugar. A caixa curta nasce a direita do rosto
+ * e cresce para a direita antes de crescer para a esquerda. Os dois baloes, o
+ * de pensamento e o de fala, usam isto.
  */
 export const BUBBLE_ABOVE_EYE: BubbleLayoutOptions = {
-  base: {
-    taskin: { cx: 243, cy: 34 },
-    sapin: { cx: 268, cy: 34 },
-  },
-  leftLimit: { taskin: 170, sapin: SAPIN_EYE_BUMP_RIGHT + 2 },
   maxFontSize: 20,
   hugTop: true,
-  maxBottom: { taskin: TASKIN_EYE_TOP },
-};
-
-/**
- * Onde o rabicho de um balao encosta: dentro da cabeca, a direita do olho
- * direito, no lugar de ir ate a boca (o caminho ate a boca cruza o olho).
- * Taskin: a cabeca chega a `x` 220 nessa altura. Sapin: a beira da cabeca.
- */
-export const BUBBLE_TIP: Record<TaskinVariant, { x: number; y: number }> = {
-  taskin: { x: 210, y: 86 },
-  sapin: { x: 226, y: 90 },
 };
 
 const MIN_RX = 35;
@@ -69,26 +47,18 @@ const PADDING_Y = 10;
 const MAX_LINES = 3;
 
 /**
- * O que muda de um balao para outro. O de pensamento usa os padroes; o de fala
- * (`speech-bubble-layout.ts`) cola no topo e para antes dos olhos.
+ * O que muda de um balao para outro, alem das ancoras da personagem. O de
+ * pensamento e o de fala usam `BUBBLE_ABOVE_EYE`.
  */
 export interface BubbleLayoutOptions {
-  /** Posicao de sempre, preservada enquanto a frase couber no balao minimo. */
-  base: Record<TaskinVariant, { cx: number; cy: number }>;
-  /** O balao nao avanca para a esquerda disto. Padrao: `BUBBLE_LEFT_LIMIT`. */
-  leftLimit?: Partial<Record<TaskinVariant, number>>;
   /** A maior fonte que a frase curta ganha. Padrao: 24. */
   maxFontSize?: number;
   /**
    * Cola o balao no topo do quadro (`cy = ry + BUBBLE_TOP_LIMIT`), em vez de
-   * preservar `base.cy`: e como o balao de fala fica acima dos olhos.
+   * preservar `bubbles.base.cy`: e como o balao fica acima dos olhos. Com isto,
+   * `bubbles.maxBottom` vale: a fonte cede ate as linhas caberem acima dele.
    */
   hugTop?: boolean;
-  /**
-   * A borda de baixo nao passa disto (com `hugTop`): a fonte cede ate as
-   * linhas caberem acima. So se nem a menor fonte couber e que o balao passa.
-   */
-  maxBottom?: Partial<Record<TaskinVariant, number>>;
 }
 
 export interface ThoughtBubbleLayout {
@@ -157,14 +127,14 @@ const maxCharsPara = (fontSize: number, maxTextWidth: number) =>
 
 export const layoutBubble = (
   texto: string,
-  variant: TaskinVariant,
+  bubbles: CharacterBubbles,
   options: BubbleLayoutOptions,
 ): ThoughtBubbleLayout => {
-  const base = options.base[variant];
-  const leftLimit = options.leftLimit?.[variant] ?? BUBBLE_LEFT_LIMIT;
+  const base = bubbles.base;
+  const leftLimit = bubbles.leftLimit ?? BUBBLE_LEFT_LIMIT;
   const maxFontSize = options.maxFontSize ?? MAX_FONT_SIZE;
   const maxTextWidth = BUBBLE_RIGHT_LIMIT - leftLimit - 2 * PADDING_X;
-  const maxBottom = options.hugTop ? options.maxBottom?.[variant] : undefined;
+  const maxBottom = options.hugTop ? bubbles.maxBottom : undefined;
   const maxRy = maxBottom === undefined ? Number.POSITIVE_INFINITY : (maxBottom - BUBBLE_TOP_LIMIT) / 2;
   const ryPara = (quantasLinhas: number, tamanho: number) =>
     Math.max(MIN_RY, (quantasLinhas * tamanho * LINE_HEIGHT_RATIO) / 2 + PADDING_Y);
@@ -219,8 +189,10 @@ export const layoutBubble = (
 };
 
 /** O balao de pensamento: a elipse, acima do olho. */
-export const layoutThoughtBubble = (texto: string, variant: TaskinVariant = 'taskin'): ThoughtBubbleLayout =>
-  layoutBubble(texto, variant, BUBBLE_ABOVE_EYE);
+export const layoutThoughtBubble = (
+  texto: string,
+  character: TaskinCharacter = TASKIN_CHARACTER,
+): ThoughtBubbleLayout => layoutBubble(texto, character.bubbles, BUBBLE_ABOVE_EYE);
 
 export interface ThoughtTrailBubble {
   x: number;
@@ -234,9 +206,12 @@ export interface ThoughtTrailBubble {
  * descem da borda de baixo em direcao ao mesmo ponto do rabicho da fala, a
  * direita do olho, e a frase pode crescer que elas ficam no lugar.
  */
-export const thoughtTrail = (layout: ThoughtBubbleLayout, variant: TaskinVariant = 'taskin'): ThoughtTrailBubble[] => {
+export const thoughtTrail = (
+  layout: ThoughtBubbleLayout,
+  character: TaskinCharacter = TASKIN_CHARACTER,
+): ThoughtTrailBubble[] => {
   const bottom = layout.cy + layout.ry;
-  const tip = BUBBLE_TIP[variant];
+  const tip = character.bubbles.tip;
   return [
     { x: arredondar(tip.x + 10), y: arredondar(bottom + 4), r: 8 },
     { x: arredondar(tip.x + 3), y: arredondar(bottom + 17), r: 5 },

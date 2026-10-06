@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import type { TaskinEyesProps } from '../../atoms/taskin-eyes/TaskinEyes.types';
+import type { TaskinCharacter } from './character/character.types';
 import type { TASKIN_MOODS } from './Taskin.moods';
-import type { TaskinVariant } from './Taskin.variants';
 
 export type TaskinArmSide = 'left' | 'right';
 
@@ -32,10 +32,11 @@ export interface TaskinProps {
   mood?: TaskinMood;
 
   /**
-   * Which character to draw: the Taskin octopus (default) or the Sapin frog.
-   * Same moods, behaviours and movements; only the drawing changes.
+   * Who the mascot is: the Taskin octopus (default) or any character built
+   * with `defineCharacter`. Moods, behaviours and movements are the engine's;
+   * the drawing and the anchors are the character's.
    */
-  variant?: TaskinVariant;
+  character?: TaskinCharacter;
 
   /**
    * If true, small idle animations will occur.
@@ -63,16 +64,16 @@ export interface TaskinProps {
 
   /**
    * Speech is playing (the shhh voice, an answer read aloud): the mouth
-   * alternates between the current expression and open, and the Sapin's throat
-   * pulses with each syllable. Off with `animationsEnabled=false`.
+   * alternates between the current expression and open, and the character may
+   * react too (`motion.speakingClass`). Off with `animationsEnabled=false`.
    */
   speaking?: boolean;
 
   /**
    * Too many tasks in progress: the octopus juggles, one ball per task over the
-   * limit. Lasts while the prop does. Only the `taskin` variant draws it; the
-   * Sapin ignores it. With `animationsEnabled=false` the balls hold still at the
-   * top of the arc.
+   * limit. Lasts while the prop does. Only characters with `motion.jugglingClass`
+   * juggle; the others ignore it. With `animationsEnabled=false` the balls hold
+   * still at the top of the arc.
    */
   juggling?: 0 | 1 | 2 | 3;
 
