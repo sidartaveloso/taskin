@@ -95,6 +95,10 @@ describe('layoutThoughtBubble', () => {
     expect(layout.lineY).toHaveLength(layout.lines.length);
   });
 
+  it('mantem o taskin como padrao', () => {
+    expect(layoutThoughtBubble('?')).toEqual(layoutThoughtBubble('?', TASKIN_CHARACTER));
+  });
+
   // A task-169: o balao nascia em cy 50 e, com duas linhas, descia ate y 88,
   // por cima do olho direito do Taskin; as bolinhas caiam na pupila.
   describe('acima do olho (task-169)', () => {

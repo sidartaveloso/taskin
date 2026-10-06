@@ -41,4 +41,14 @@ describe('TaskinEyes', () => {
     const right = mount(TaskinEyes, { props: { trackingMode: 'none', lookDirection: 'right' } });
     expect(left.find('#left-eye circle').attributes('cx')).not.toBe(right.find('#left-eye circle').attributes('cx'));
   });
+  it('mantem o taskin como padrao, com contorno e nos centros de sempre', () => {
+    const wrapper = mount(TaskinEyes, { props: { trackingMode: 'none' } });
+    const esclera = wrapper.find('#left-eye ellipse');
+
+    expect(esclera.attributes('cx')).toBe('135');
+    expect(esclera.attributes('cy')).toBe('90');
+    expect(esclera.attributes('stroke')).toBe('#2C3E50');
+    expect(wrapper.find('#left-eye circle').attributes('cx')).toBe('135');
+    expect(wrapper.find('#left-eye circle').attributes('fill')).toBe('#2C3E50');
+  });
 });

@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import type { ActionConfig } from './character/character.types';
+import { SKELETON_CHARACTER } from './characters/skeleton/skeleton-character';
 import { TASKIN_CHARACTER } from './characters/taskin/taskin-character';
 import Taskin, { actionDuration } from './Taskin';
 import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
@@ -751,6 +752,22 @@ describe('ink', () => {
     document.body.innerHTML = '';
   });
 
+  it('o polvo tem a acao, com cerca de 1,6s, de olhos arregalados e boca em O', async () => {
+    const config = ACTIONS.taskin.ink;
+    expect(config?.durationMs).toBe(1600);
+    expect(config?.pose?.eyeState).toBe('wide');
+    expect(config?.pose?.mouthExpression).toBe('o-shape');
+  });
+
+  it('um personagem sem a acao resolve false e nao solta tinta', async () => {
+    expect(SKELETON_CHARACTER.actions).not.toHaveProperty('ink');
+
+    const { wrapper, vm } = mountTaskin({ character: SKELETON_CHARACTER });
+    await expect(vm.play('ink')).resolves.toBe(false);
+    await nextTick();
+    expect(wrapper.find('#effect-ink').exists()).toBe(false);
+  });
+
   it('a nuvem so aparece durante a acao', async () => {
     vi.useFakeTimers();
     const { wrapper, vm } = mountTaskin();
@@ -851,6 +868,11 @@ describe('travel-left e travel-right', () => {
 describe('actionDuration', () => {
   it.each(pares)('%s: %s dura o durationMs da tabela', (variant, action) => {
     expect(actionDuration(CHARACTERS[variant], action)).toBe(ACTIONS[variant][action]?.durationMs);
+  });
+
+  it('acao que o personagem nao tem dura zero: resolve na hora', () => {
+    expect(actionDuration(TASKIN_CHARACTER, 'catch-fly')).toBe(0);
+    expect(actionDuration(SKELETON_CHARACTER, 'ink')).toBe(0);
   });
 
   it('sai do pacote ao lado de TASKIN_ACTIONS', async () => {
