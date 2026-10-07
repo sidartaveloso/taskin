@@ -23,7 +23,12 @@
       :border-width="bubbleBorderWidth"
       :font-size="bubbleFontSize"
       :kind="bubbleKind"
-    />
+    >
+      <!-- O conteudo do balao, quando quem usa quer mais que o texto (palavras que aparecem com a voz, por exemplo). -->
+      <template v-if="$slots.bubble" #default>
+        <slot name="bubble" :text="text" />
+      </template>
+    </SpeechBubble>
   </div>
 </template>
 
@@ -38,6 +43,10 @@
  * vem das props `bubble*` ou das variaveis `--speech-bubble-*` herdadas; sem
  * nenhuma das duas, a borda segue a tinta da personagem. O SVG continua para
  * renders isolados.
+ *
+ * O slot `bubble` troca o conteudo do balao, que continua medido e posicionado
+ * pelo `text`: quem usa pode, por exemplo, revelar as palavras no ritmo de um
+ * audio, com o texto inteiro ja ocupando o espaco.
  */
 import { computed, ref, type StyleValue, useAttrs } from 'vue';
 import { speechBubbleTailDrop, speechBubbleTailReach } from '../../atoms/speech-bubble/SpeechBubble.types';

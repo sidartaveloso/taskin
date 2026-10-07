@@ -57,6 +57,22 @@ describe('TaskinSays', () => {
     expect(ponta).toBeGreaterThan(quadro.left + quadro.width * 0.65);
   });
 
+  it('o slot bubble troca o conteudo do balao, que so existe com texto', () => {
+    const wrapper = mount(TaskinSays, {
+      props: { idleAnimation: false, animationsEnabled: false, text: 'abap abap' },
+      slots: { bubble: '<span class="palavra">abap</span> <span class="palavra">abap</span>' },
+      attachTo: document.body,
+    });
+    const texto = wrapper.get('[data-testid="taskin-says-bubble"] .speech-bubble__text');
+    expect(texto.findAll('.palavra')).toHaveLength(2);
+
+    const semTexto = mount(TaskinSays, {
+      props: { idleAnimation: false, animationsEnabled: false, text: '' },
+      slots: { bubble: '<span class="palavra">abap</span>' },
+    });
+    expect(semTexto.find('[data-testid="taskin-says-bubble"]').exists()).toBe(false);
+  });
+
   it('o balao e o atomo SpeechBubble', () => {
     const wrapper = mountSays({ text: 'Oi' });
     expect(wrapper.findComponent({ name: 'SpeechBubble' }).exists()).toBe(true);

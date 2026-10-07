@@ -16,6 +16,7 @@ O `Taskin` sabia desenhar dois bichos, o polvo e o Sapin, com doze tabelas index
 - [x] O Sapin sai: codigo, stories e testes do sapo vao para `sidartaveloso/sapin` (`packages/mascote`). Os testes que rodavam para os dois bichos ficam aqui com o polvo e la com o sapo; os so do sapo vao so para la. Sem o Sapin: 572 specs e 290 stories verdes, e os 18 pacotes que dependem do design-vue compilam
 - [x] Changesets reescritos: saem os tres do Sapin, a correcao do braco da selfie ganha changeset proprio, entra `motor-e-personagens.md` (minor), e nenhum fala mais em variante ou Sapin
 - [x] README: secao "Characters" no lugar de "Variants: Taskin and Sapin"
+- [x] `TaskinSays` repassa o slot `bubble` ao `SpeechBubble`: quem usa troca o conteúdo do balão (por exemplo, palavras que aparecem no ritmo de um áudio) sem perder o tamanho e a posição medidos pelo `text`. Pedido do Sapin (task-030 de `sidartaveloso/sapin`)
 - [ ] Claudin e Boizin como personagens abertas, sobre o esqueleto, cada uma com a sua referencia visual — tasks proprias
 - [ ] Os registros historicos (tasks 142 a 169 e `TASKS/assets/sapin/`) ficam como estao: sao historia, e nao se reescreve historia
 
