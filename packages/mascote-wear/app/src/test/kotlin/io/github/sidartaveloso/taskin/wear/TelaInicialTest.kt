@@ -2,7 +2,7 @@ package io.github.sidartaveloso.taskin.wear
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,9 +16,9 @@ class TelaInicialTest {
     val compose = createComposeRule()
 
     @Test
-    fun `a tela inicial mostra o nome do Taskin`() {
+    fun `a tela inicial mostra o mascote, descrito como Taskin para o leitor de tela`() {
         compose.setContent { TelaInicial() }
 
-        compose.onNodeWithText("Taskin").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Taskin").assertIsDisplayed()
     }
 }
