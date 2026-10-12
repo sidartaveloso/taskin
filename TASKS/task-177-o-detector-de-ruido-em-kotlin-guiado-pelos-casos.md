@@ -26,7 +26,7 @@ Depende da task-175 (modulo `core`) e da task-176 (a tabela).
 
 ### Verificacao
 ```bash
-pnpm --filter @opentask/taskin-mascote-wear test:core
+pnpm --filter @opentask/taskin-mascote-wear wear:test:core
 ```
 
 ### Onde executar
