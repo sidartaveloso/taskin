@@ -1,6 +1,6 @@
 # 🧩 Task 179 — O Taskin desenhado em Compose na tela redonda, com os mesmos tracos do SVG
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: taskin-no-pulso
