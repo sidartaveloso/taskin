@@ -1,6 +1,6 @@
 # 🧩 Task 176 — Os casos do detector de ruido viram tabela compartilhada, lida pelo TypeScript
 
-- Status: pending
+- Status: in-progress
 - Type: test
 - Assignee: sidartaveloso
 - Group: taskin-no-pulso
