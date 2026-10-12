@@ -1,6 +1,6 @@
 # 🧩 Task 175 — Esqueleto do app Wear OS em Kotlin e Compose, com teste rodando pelo pnpm
 
-- Status: in-progress
+- Status: done
 - Type: chore
 - Assignee: sidartaveloso
 - Group: taskin-no-pulso
