@@ -12,14 +12,19 @@ Desenhar o mascote em Compose Canvas reaproveitando os paths do SVG do design-vu
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] **O mascote e o novo**, o `Taskin` de `organisms/taskin/Taskin.ts`, montado pelos atomos — e nao o `TaskinV1` (`TaskinV1.ts`, que desenha o `taskin.svg` inteiro e esta em `Organisms/Taskin/V1` no Storybook). Nada do `taskin.svg` entra no relogio
-- [ ] Gerar, a partir dos componentes do design-vue, um arquivo Kotlin com os paths do mascote (strings `d` do SVG, `viewBox` 320x260, cores) por um script do repositorio, e nao copiando a mao. O teste do script confere que todo path dos atomos `taskin-body`, `taskin-eyes`, `taskin-mouth`, `taskin-arms`, `taskin-tentacle` usados nos humores do shhh esta no arquivo gerado
-- [ ] Teste primeiro, em `app`: teste de captura de tela (Roborazzi 1.76 sobre Robolectric 4.17) do mascote nos humores neutro e shhh, em telas redondas de 432, 454 e 480 px — vermelho antes do desenho
-- [ ] `TaskinCanvas` em Compose: desenha os paths com `PathParser().parsePathString(d).toPath()`, escala o `viewBox` para caber inteiro no circulo inscrito da tela (nada cortado nos cantos), rosto centrado
-- [ ] Os humores que o shhh usa: neutro, atento e shhh (boca e dedo/tentaculo). Os demais humores ficam fora — anotar quais
-- [ ] Pupilas como estado separado (deslocamento x, y normalizado em -1..1), sem sensor ainda: e a costura que a task-180 usa
-- [ ] Trocar o icone do launcher: o provisorio da task-175 veio de `packages/mascote/public/icone-512.png`, que e gerado do `taskin.svg` (o V1). O novo sai do proprio desenho em Compose (captura do Roborazzi, recortada para o circulo), nas cinco densidades de `mipmap-*`
-- [ ] Evidencia visual: as capturas do Roborazzi copiadas para `TASKS/assets/task-179/` e, ao lado, a captura do mesmo humor no Storybook do design-vue para comparar; referenciadas aqui
+- [x] **O mascote e o novo**, o `Taskin` de `organisms/taskin/Taskin.ts`, montado pelos atomos — e nao o `TaskinV1`. O gerador renderiza o proprio `Taskin` (SSR do Vue pelo Vite do design-vue); nada do `taskin.svg` entra no relogio
+- [x] Desenho gerado, e nao copiado: `pnpm mascote-wear:desenho` (`dev/scripts/gerar-desenho-do-mascote-no-relogio.ts`) renderiza os quadros `NEUTRO` (`neutral`) e `SHHH` (`thoughtful` + boca `o-shape`, os do `TaskinWithShhh`) e escreve `app/src/main/kotlin/.../desenho/DesenhoGerado.kt`: 18 formas por quadro, com a transformacao dos grupos acumulada, as cores herdadas e as pupilas marcadas. `--check` falha se o arquivo estiver velho em relacao ao componente. O conversor (`dev/scripts/desenho-do-mascote-no-relogio/converter.ts`) tem 15 testes, inclusive os que derrubam a geracao diante de cor, transform ou elemento que ele nao entende — foi assim que apareceram o `rgba(...)` do brilho do corpo e o `<text>` do balao
+- [x] Teste primeiro: `TaskinCanvasCapturaTest` (Roborazzi 1.76 sobre Robolectric 4.17, graficos nativos), `FormasComOlharTest` e `EncaixeTest` escritos antes do desenho, vermelhos por compilacao. As capturas ficam em `app/src/test/snapshots/` e o `verifyRoborazziDebug` compara contra elas
+- [x] `TaskinCanvas` em Compose: `PathParser` para os `d`, `addOval` para elipses e circulos, a matriz de cada forma aplicada ao caminho e o traco escalado por ela. Encaixe pela **area que o mascote ocupa** (uniao dos dois quadros), e nao pelo `viewBox` 320x260, que tem folga para baloes e deixava o mascote pequeno; `encaixarNoCirculo` (no `core`) poe a diagonal dessa area no diametro da tela, menos 4%
+- [x] Os humores do shhh: neutro e shhh. O balao de pensamento fica de fora do desenho gerado (`ignorarGrupos: ['effect-thought-bubble']`): ele leva a frase que a pessoa configura, e o relogio vai desenha-lo com texto nativo na task-182. Os outros 15 humores ficam fora
+- [x] Pupilas como estado separado: `Olhar(x, y)` em -1..1 no `core`, e `formasComOlhar` desloca so as formas marcadas como pupila, no alcance `ALCANCE_DA_PUPILA = 6` lido do `trackingBounds` do `TaskinEyes`. E a costura que a task-180 usa
+- [x] Icone do launcher trocado: sai da captura `neutro-480` do proprio Compose, recortado em circulo, nas cinco densidades. O provisorio vinha do `taskin.svg` (o V1). Com isso o `lintDebug` ficou sem nenhum aviso
+- [x] Tela inicial mostra o mascote (`TelaInicialTest` agora procura a descricao "Taskin" para o leitor de tela; falhou antes da troca)
+- [x] Evidencia visual, comparando com o componente do design-vue renderizado no Chromium:
+  - ![neutro: design-vue x relogio](assets/task-179/comparacao-neutro.png)
+  - ![shhh: design-vue x relogio](assets/task-179/comparacao-shhh.png)
+  - ![40 mm, 432 px](assets/task-179/neutro-432.png) ![44 mm, 480 px](assets/task-179/neutro-480.png) ![olhando para baixo e a direita](assets/task-179/olhar-baixo-direita-454.png)
+  - ![o app no emulador](assets/task-179/app-no-emulador.png) ![o icone na lista de apps](assets/task-179/icone-na-lista-de-apps.png)
 
 ## Notes
 Depende da task-175. O desenho e o ponto onde a versao nativa mais corre risco de virar "outro mascote": por isso os tracos vem do SVG por geracao, e a comparacao lado a lado com o Storybook e a evidencia exigida.
@@ -41,3 +46,15 @@ pnpm --filter @opentask/taskin-mascote-wear wear:build
 `sidarta-desktop` (Tailscale): e a maquina com JDK 21 (asdf, Temurin), Android SDK em `~/Android/Sdk` (plataforma 36, build-tools 36, emulador e a imagem Wear OS 36 no AVD `taskin_wear`, redondo 454x454) e Docker nativo. O Mac nao tem Android SDK. Abrir um shell interativo (o `.bashrc` so exporta `ANDROID_HOME` e o PATH do SDK em shell interativo).
 
 Fechar a task so com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).
+
+### Resultado
+
+```
+./gradlew test → core 63 · app 11 (TaskinCanvasCapturaTest 5, FormasComOlharTest 3, ArmazenamentoDoRelogioTest 2, TelaInicialTest 1) — 0 falhas
+./gradlew :app:verifyRoborazziDebug → capturas iguais as gravadas
+./gradlew :app:lintDebug → No issues found
+pnpm test:dev-scripts → 15 arquivos, 120 testes
+pnpm mascote-wear:desenho --check → em dia com o Taskin do design-vue
+```
+
+O icone foi recortado por um script avulso do Playwright a partir de `app/src/test/snapshots/neutro-480.png`; nao ficou um gerador versionado. Se o mascote mudar, o caminho e regravar as capturas e recortar de novo — anotado para a task-185, que cuida do build.

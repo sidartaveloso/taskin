@@ -9,6 +9,7 @@ kotlin {
 
 dependencies {
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter.params)
     api(libs.kotlinx.serialization.json)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
