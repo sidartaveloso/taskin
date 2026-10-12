@@ -1,0 +1,16 @@
+{
+  "name": "@opentask/taskin-mascote-wear",
+  "version": "0.0.0",
+  "description": "O Taskin no pulso: o mascote como app nativo de Wear OS, olhando pela inclinacao do relogio e pedindo silencio quando a sala fica alta.",
+  "motivation": "O PWA do mascote nao instala num relogio: o Wear OS nao tem WebView nem navegador, entao o mascote precisa ser um app nativo para viver no pulso.",
+  "solve": "Um app Wear OS em Kotlin e Compose que reproduz o shhh do mascote, com as regras testadas contra as mesmas tabelas de casos do TypeScript.",
+  "scope": "app",
+  "status": "active",
+  "private": true,
+  "scripts": {
+    "wear:test": "./gradlew test",
+    "wear:test:core": "./gradlew :core:test",
+    "wear:lint": "./gradlew :app:lintDebug",
+    "wear:build": "./gradlew :app:assembleDebug"
+  }
+}

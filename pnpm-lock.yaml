@@ -466,6 +466,8 @@ importers:
         specifier: ^3.3.11
         version: 3.3.11(typescript@6.0.3)
 
+  packages/mascote-wear: {}
+
   packages/n8n-plugin: {}
 
   packages/py-sdk: {}

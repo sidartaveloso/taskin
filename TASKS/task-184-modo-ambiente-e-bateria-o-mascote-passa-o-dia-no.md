@@ -29,9 +29,9 @@ O relogio conecta ao `sidarta-desktop` por depuracao sem fio passando por tunel 
 
 ### Verificacao
 ```bash
-pnpm --filter @opentask/taskin-mascote-wear test
-pnpm --filter @opentask/taskin-mascote-wear lint
-pnpm --filter @opentask/taskin-mascote-wear build
+pnpm --filter @opentask/taskin-mascote-wear wear:test
+pnpm --filter @opentask/taskin-mascote-wear wear:lint
+pnpm --filter @opentask/taskin-mascote-wear wear:build
 ```
 
 ### Onde executar

@@ -29,8 +29,8 @@ Depende das tasks 176, 177, 179 e 181.
 ### Verificacao
 ```bash
 pnpm --filter @opentask/taskin-ui-sense test
-pnpm --filter @opentask/taskin-mascote-wear test
-pnpm --filter @opentask/taskin-mascote-wear lint
+pnpm --filter @opentask/taskin-mascote-wear wear:test
+pnpm --filter @opentask/taskin-mascote-wear wear:lint
 ```
 
 ### Onde executar
