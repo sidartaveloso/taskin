@@ -30,6 +30,10 @@
       "id": "movimentos-lote-3",
       "name": "Movimentos, lote 3: voz, mapa e assinaturas",
       "parentId": "movimentos-do-mascote"
+    },
+    "taskin-no-pulso": {
+      "id": "taskin-no-pulso",
+      "name": "O Taskin no pulso: Wear OS nativo"
     }
   }
 }
