@@ -1,5 +1,15 @@
 # taskin
 
+## 5.0.1
+
+### Patch Changes
+
+- Updated dependencies [570e727]
+  - @opentask/taskin-utils@1.1.2
+  - @opentask/taskin-git-utils@3.1.1
+  - @opentask/taskin-file-system-provider@3.4.1
+  - @opentask/taskin-task-server-mcp@0.6.1
+
 ## 5.0.0
 
 ### Major Changes
