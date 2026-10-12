@@ -1,4 +1,5 @@
 plugins {
+    `java-library`
     alias(libs.plugins.kotlin.jvm)
 }
 
@@ -8,7 +9,7 @@ kotlin {
 
 dependencies {
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.kotlinx.serialization.json)
+    api(libs.kotlinx.serialization.json)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
