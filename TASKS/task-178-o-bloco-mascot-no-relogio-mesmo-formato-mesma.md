@@ -1,6 +1,6 @@
 # 🧩 Task 178 — O bloco mascot no relogio: mesmo formato, mesma validacao, guardado no aparelho
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: taskin-no-pulso
