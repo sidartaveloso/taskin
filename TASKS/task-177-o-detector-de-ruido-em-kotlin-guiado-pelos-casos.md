@@ -1,6 +1,6 @@
 # 🧩 Task 177 — O detector de ruido em Kotlin, guiado pelos casos compartilhados
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: taskin-no-pulso
