@@ -61,6 +61,31 @@ The official Taskin mascot component with animations and moods.
 - `mood` (String, default: 'sarcastic') - Mood of the mascot
 - `idleAnimation` (Boolean, default: true) - Enable idle animations
 - `animationsEnabled` (Boolean, default: true) - Enable all animations
+- `variant` (`'taskin' | 'sapin'`, default: `'taskin'`) - Which character to draw
+
+#### Variants: Taskin and Sapin
+
+The mascot comes in two characters, and it is the same component for both:
+`<Taskin variant="sapin" />` draws Sapin, the frog of the SAP brand, in place
+of the Taskin octopus. The two share the same moods, idle behaviour, eye
+tracking and effects, and the same mood palette. The only difference is the
+base colour, which is green (`#4DB848`) instead of blue.
+
+Both characters move as one piece: body, arms, eyes, mouth and effects go
+together, and the shadow stays on the ground. They float when `in-love`, sway
+when `tired`, shiver when `cold` and pant when `hot`.
+
+What changes is the drawing and how the character moves:
+
+- The frog has legs instead of tentacles, and its eyes sit on bumps on top of
+  its head.
+- When `dancing`, the octopus rocks from side to side and the frog hops. The
+  octopus takes its tentacles along in every motion.
+- When idle, it taps its toes where the octopus wiggles a tentacle.
+
+The list of variants is exported as `TASKIN_VARIANTS`, next to `TASKIN_MOODS`.
+`TaskinWithShhh` and `TaskinWithFaceTracking` pass `variant` through. The
+stories live under *Organisms/Taskin/Sapin*.
 
 #### Events
 

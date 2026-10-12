@@ -1,38 +1,38 @@
 <template>
-  <g id="eyes" ref="eyesContainer">
+  <g id="eyes" ref="eyesContainer" :data-variant="variant">
     <g id="left-eye" :transform="leftEyeTransform">
       <ellipse
-        cx="135"
-        cy="90"
-        rx="12"
+        :cx="geometry.left.x"
+        :cy="geometry.left.y"
+        :rx="geometry.rx"
         :ry="eyeHeight"
         fill="white"
-        stroke="#2C3E50"
+        :stroke="outlineColor"
         stroke-width="2"
       />
       <circle
-        :cx="135 + leftPupilOffsetX"
-        :cy="90 + leftPupilOffsetY"
+        :cx="geometry.left.x + geometry.pupilRest.left.x + leftPupilOffsetX"
+        :cy="geometry.left.y + geometry.pupilRest.left.y + leftPupilOffsetY"
         :r="pupilRadius"
-        fill="#2C3E50"
+        :fill="geometry.ink"
       />
     </g>
 
     <g id="right-eye" :transform="rightEyeTransform">
       <ellipse
-        cx="185"
-        cy="90"
-        rx="12"
+        :cx="geometry.right.x"
+        :cy="geometry.right.y"
+        :rx="geometry.rx"
         :ry="eyeHeight"
         fill="white"
-        stroke="#2C3E50"
+        :stroke="outlineColor"
         stroke-width="2"
       />
       <circle
-        :cx="185 + rightPupilOffsetX"
-        :cy="90 + rightPupilOffsetY"
+        :cx="geometry.right.x + geometry.pupilRest.right.x + rightPupilOffsetX"
+        :cy="geometry.right.y + geometry.pupilRest.right.y + rightPupilOffsetY"
         :r="pupilRadius"
-        fill="#2C3E50"
+        :fill="geometry.ink"
       />
     </g>
   </g>
@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useElementTracking, useEyeTracking, useMouseTracking } from '../../../composables';
-import type { TaskinEyesProps } from './TaskinEyes.types';
+import { EYE_GEOMETRY, type TaskinEyesProps } from './TaskinEyes.types';
 
 const props = withDefaults(defineProps<TaskinEyesProps>(), {
   state: 'normal',
@@ -49,37 +49,22 @@ const props = withDefaults(defineProps<TaskinEyesProps>(), {
   trackingBounds: 6,
   trackingMode: 'mouse',
   lookDirection: 'center',
+  variant: 'taskin',
 });
+
+const geometry = computed(() => EYE_GEOMETRY[props.variant]);
+
+// O olho fechado desenha sempre o traco: sem ele, no Sapin, que nao tem
+// contorno, a palpebra sumiria no verde.
+const outlineColor = computed(() => (geometry.value.outline || props.state === 'closed' ? geometry.value.ink : 'none'));
 
 // Referência ao container SVG
 const eyesContainer = ref<SVGElement | null>(null);
 
 // Eye appearance based on state
-const eyeHeight = computed(() => {
-  switch (props.state) {
-    case 'closed':
-      return 1;
-    case 'squint':
-      return 8;
-    case 'wide':
-      return 18;
-    default:
-      return 14;
-  }
-});
+const eyeHeight = computed(() => geometry.value.ry[props.state]);
 
-const pupilRadius = computed(() => {
-  switch (props.state) {
-    case 'wide':
-      return 3;
-    case 'squint':
-      return 2;
-    case 'closed':
-      return 0;
-    default:
-      return 5;
-  }
-});
+const pupilRadius = computed(() => geometry.value.pupilRadius[props.state]);
 
 // Tracking logic
 const trackingMode = computed(() => props.trackingMode || 'mouse');
@@ -110,18 +95,20 @@ const targetPosition = computed<{ x: number; y: number }>(() => {
   }
 });
 
+// O useEyeTracking le os centros uma vez, no setup: quem troca a variante com o
+// componente montado precisa remonta-lo (o `Taskin` faz isso pela `key`).
 // Eye tracking para o olho esquerdo
 const leftEyeTracking = useEyeTracking(targetPosition, {
-  eyeCenterX: 135,
-  eyeCenterY: 90,
+  eyeCenterX: geometry.value.left.x,
+  eyeCenterY: geometry.value.left.y,
   maxOffset: props.trackingBounds,
   containerElement: eyesContainer,
 });
 
 // Eye tracking para o olho direito
 const rightEyeTracking = useEyeTracking(targetPosition, {
-  eyeCenterX: 185,
-  eyeCenterY: 90,
+  eyeCenterX: geometry.value.right.x,
+  eyeCenterY: geometry.value.right.y,
   maxOffset: props.trackingBounds,
   containerElement: eyesContainer,
 });

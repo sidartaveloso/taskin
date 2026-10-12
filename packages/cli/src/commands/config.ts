@@ -3,11 +3,12 @@
  */
 
 import { CI_SKIP_TAGS, DEFAULT_CI_SKIP_TAG, isRecognizedCiSkipTag } from '@opentask/taskin-git-utils';
-import type { AutomationLevel, NotificationEvent } from '@opentask/taskin-types';
+import { type AutomationLevel, LABS_FEATURES, type NotificationEvent } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
+import { isLabsFeature, LABS_DESCRIPTIONS } from '../lib/labs/index.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
 
@@ -24,6 +25,8 @@ interface ConfigOptions {
   discordWebhook?: string;
   notificationEvents?: string;
   ciSkipTag?: string;
+  labs?: string;
+  labsOff?: string;
 }
 
 /**
@@ -73,6 +76,14 @@ export const configCommand = defineCommand({
       description: 'Comma-separated events (task:start,task:done,task:review)',
     },
     {
+      flags: '--labs <feature>',
+      description: `Turn on a labs (beta) feature in this project: ${LABS_FEATURES.join(', ')}`,
+    },
+    {
+      flags: '--labs-off <feature>',
+      description: 'Turn a labs feature off again',
+    },
+    {
       flags: '--ci-skip-tag <tag>',
       description: `Tag appended to Taskin's own commits so they skip CI (default "${DEFAULT_CI_SKIP_TAG}"; "none" to run CI)`,
     },
@@ -96,6 +107,12 @@ async function handleConfigCommand(options: ConfigOptions): Promise<void> {
   // Set automation level
   if (options.level) {
     await setAutomationLevel(configManager, options.level);
+    return;
+  }
+
+  // Labs features
+  if (options.labs !== undefined || options.labsOff !== undefined) {
+    setLabs(configManager, options.labs ?? options.labsOff ?? '', options.labs !== undefined);
     return;
   }
 
@@ -136,6 +153,17 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
     console.log(`  Auto-commit on finish: ${behavior.autoCommitFinish ? chalk.green('✓ Yes') : chalk.red('✗ No')}`);
     console.log(`  CI skip tag: ${chalk.cyan(describeCiSkipTag(configManager.getCiSkipTag()))}\n`);
 
+    console.log(chalk.bold('🧪 Labs'));
+    const labs = configManager.getLabs();
+    for (const feature of LABS_FEATURES) {
+      const marca = labs.includes(feature) ? chalk.green('✓ On ') : chalk.dim('✗ Off');
+      console.log(`  ${marca} ${chalk.cyan(feature)} — ${LABS_DESCRIPTIONS[feature]}`);
+    }
+    for (const desconhecida of configManager.getUnknownLabs()) {
+      console.log(`  ${chalk.yellow('? ')}   ${desconhecida} — not a labs feature of this taskin; ignored`);
+    }
+    console.log();
+
     console.log(chalk.bold('🔔 Notifications'));
     const notifications = configManager.getNotifications();
     if (notifications?.discord) {
@@ -168,6 +196,25 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
       console.error(chalk.dim(err.message));
     }
     process.exit(1);
+  }
+}
+
+/**
+ * Liga ou desliga uma funcionalidade de labs. Nome que nao e de labs e recusado
+ * sem gravar: um erro de digitacao nao pode virar uma entrada que nada le.
+ */
+function setLabs(configManager: ConfigManager, nome: string, ligar: boolean): void {
+  if (!isLabsFeature(nome)) {
+    error(`'${nome}' is not a labs feature. Labs features: ${LABS_FEATURES.join(', ')}.`);
+    process.exit(1);
+  }
+  configManager.setLabs(nome, ligar);
+  if (ligar) {
+    success(`Labs feature '${nome}' is on in this project.`);
+    info(LABS_DESCRIPTIONS[nome]);
+    info('Labs features are beta: what they say is a hint, not the truth.');
+  } else {
+    success(`Labs feature '${nome}' is off.`);
   }
 }
 

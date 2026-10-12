@@ -1,6 +1,7 @@
 import { FaceTrackingDebug, TrackingControls, usePoseLandmarker, WebcamVideo } from '@opentask/ui-sense';
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
+import { TASKIN_VARIANTS } from '../../organisms/taskin/Taskin.variants';
 import type { ArmPosition, TaskinArmsProps } from './TaskinArms.types';
 import { armPosition, armPositionFromPose } from './TaskinArms.types';
 import TaskinArms from './TaskinArms.vue';
@@ -10,6 +11,11 @@ const meta = {
   component: TaskinArms,
   tags: ['autodocs', 'design-vue'],
   argTypes: {
+    variant: {
+      control: { type: 'select' },
+      options: [...TASKIN_VARIANTS],
+      description: 'Which character: taskin (octopus) or sapin (frog)',
+    },
     color: {
       control: { type: 'color' },
       description: 'Color of the arms',
@@ -550,6 +556,20 @@ export const PoseTracking: Story = {
       description: {
         story:
           '📹 Arms track your body pose using webcam! Click "Start Detection" to start. Move your arms to see Taskin\'s arms move.',
+      },
+    },
+  },
+};
+
+export const Sapin: Story = {
+  args: {
+    variant: 'sapin',
+    color: '#4DB848',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "The Sapin's arms: the same angles (and pose tracking) from wider shoulders, with a longer upper arm.",
       },
     },
   },

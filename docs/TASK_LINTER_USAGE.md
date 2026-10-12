@@ -201,31 +201,37 @@ chmod +x .git/hooks/pre-commit
 
 ### Estrutura do Arquivo
 
+O formato que o `taskin new` gera, e o que o lint confere. Os campos de
+metadado ficam logo abaixo do título, cada um como item de lista (`- `):
+
 ```markdown
-Status: pending
-Type: feat
-Assignee: joao-silva
-Priority: high
-Due: 2024-12-31
-Tags: api, backend
+# 🧩 Task 001 — Criar endpoint de usuários
 
-# task-001-criar-endpoint-usuarios
+- Status: pending
+- Type: feat
+- Assignee: joao-silva
+- Priority: 150
+- Group: g-api
+- Difficulty: 3
 
-## Descrição
+## Description
 
 Implementar endpoint REST para gerenciamento de usuários.
 
-## Critérios de Aceite
+## Tasks
 
 - [ ] Endpoint POST /users criado
 - [ ] Validação de dados implementada
 - [ ] Testes unitários escritos
 
-## Notas Técnicas
+## Notes
 
 - Usar Express.js
 - Validar com Zod
 ```
+
+Crie tasks com `taskin new`, e não à mão: a CLI numera, resolve o responsável
+pelo registro de usuários e monta o cabeçalho neste formato.
 
 ### Regras de Validação
 
@@ -235,46 +241,55 @@ Implementar endpoint REST para gerenciamento de usuários.
 - Exemplos válidos:
   - ✅ `task-001-criar-api.md`
   - ✅ `task-042-refatorar-testes.md`
+  - ✅ `task-001.md` (sem descrição também vale)
   - ❌ `tarefa-01.md` (formato errado)
   - ❌ `task-1.md` (número deve ter 3 dígitos)
 
 #### Título (H1)
 
-- Deve corresponder ao filename (sem extensão)
-- Exemplo: arquivo `task-001-criar-api.md` → título `# task-001-criar-api`
+- O arquivo começa com um título de nível 1 no formato `# Task NNN — Título`
+  (o `taskin new` põe um 🧩 na frente)
+- Pede ao menos uma seção `##`; sem nenhuma, é aviso
 
-#### Metadata (Campos Obrigatórios)
+#### Metadata
+
+Cada campo é um item de lista (`- Status: pending`). Escrito sem o `- `, o
+campo não é lido — a task aparece sem status.
 
 **Status** (obrigatório)
 
-- Valores válidos: `pending`, `in-progress`, `done`, `blocked`
-- Exemplo: `Status: pending`
+- Valores válidos: `pending`, `in-progress`, `paused`, `in-review`, `blocked`, `done`, `canceled`
+- Exemplo: `- Status: pending`
 
 **Type** (obrigatório)
 
 - Valores válidos: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
-- Exemplo: `Type: feat`
+- Exemplo: `- Type: feat`
 
 **Assignee** (opcional)
 
 - Formato: o **id** do usuário em `.taskin/.taskin-users.json`, e não o nome de exibição — o nome muda, o id é a chave do registro
-- Exemplo: `Assignee: joao-silva`
-- `Assignee: João Silva` (nome de exibição) gera aviso, e `taskin lint --fix` o reescreve para o id
+- Exemplo: `- Assignee: joao-silva`
+- `- Assignee: João Silva` (nome de exibição) gera aviso, e `taskin lint --fix` o reescreve para o id
 
 **Priority** (opcional)
 
-- Valores sugeridos: `low`, `medium`, `high`, `critical`
-- Exemplo: `Priority: high`
+- Um inteiro a partir de 1, e é uma **posição na fila**, não uma nota: o
+  **número menor vem primeiro**. Tarefa sem `Priority` fica atrás de todas as
+  numeradas
+- Exemplo: `- Priority: 150`
+- Prefira `taskin priority <id> --top`, `--before <id>` ou `--after <id>` a
+  escrever o número à mão: a CLI escolhe um número que cabe entre os vizinhos
 
-**Due** (opcional)
+**Group** (opcional)
 
-- Formato de data (YYYY-MM-DD recomendado)
-- Exemplo: `Due: 2024-12-31`
+- O id de um grupo do registro (`.taskin/.taskin-groups.json`), criado com `taskin group create`
+- Exemplo: `- Group: g-api`
 
-**Tags** (opcional)
+**Difficulty** (opcional)
 
-- Lista separada por vírgulas
-- Exemplo: `Tags: api, backend, urgent`
+- Um inteiro de 1 a 5
+- Exemplo: `- Difficulty: 3`
 
 ## 🎯 CI/CD Integration
 

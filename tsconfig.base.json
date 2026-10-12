@@ -12,6 +12,7 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@opentask/taskin-core": ["packages/core/src"],
+      "@opentask/taskin-difficulty-estimator": ["packages/difficulty-estimator/src"],
       "@opentask/taskin-file-system-provider": ["packages/file-system-task-provider/src"],
       "@opentask/taskin-git-utils": ["packages/git-utils/src"],
       "@opentask/taskin-task-manager": ["packages/task-manager/src"],

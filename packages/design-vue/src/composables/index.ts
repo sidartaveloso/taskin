@@ -34,3 +34,4 @@ export {
   usePoseLandmarker,
 } from '@opentask/ui-sense';
 export * from './use-prioritization';
+export * from './use-taskin-script';

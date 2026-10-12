@@ -1,4 +1,6 @@
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, type PropType } from 'vue';
+import { mouthTransform } from '../../atoms/taskin-mouth/TaskinMouth.types';
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 
 export default defineComponent({
   name: 'TaskinEffectVomit',
@@ -6,6 +8,11 @@ export default defineComponent({
     animationsEnabled: {
       type: Boolean,
       default: true,
+    },
+    /** Which character the effect sits on: it follows that character's face. */
+    variant: {
+      type: String as PropType<TaskinVariant>,
+      default: 'taskin',
     },
   },
   setup(props) {
@@ -15,7 +22,8 @@ export default defineComponent({
     }));
 
     return () =>
-      h('g', { id: 'effect-vomit' }, [
+      // O vomito sai da boca: anda com ela de uma variante para outra.
+      h('g', { id: 'effect-vomit', transform: mouthTransform(props.variant) }, [
         ...drops.map((drop, idx) =>
           h('ellipse', {
             key: idx,

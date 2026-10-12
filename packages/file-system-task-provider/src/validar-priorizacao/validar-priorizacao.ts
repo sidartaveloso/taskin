@@ -1,5 +1,6 @@
 import { problemasDeAninhamento, type ValidationIssue } from '@opentask/taskin-task-manager';
 import { type Group, TaskSchema } from '@opentask/taskin-types';
+import { nivelDaPrioridade } from '../prioridade-textual/index.js';
 
 /** Contexto opcional: sem ele, a validacao nao opina sobre o que nao sabe. */
 export interface OpcoesDeValidacao {
@@ -93,6 +94,10 @@ function valorDe(conteudo: string, rotulo: string): string | undefined {
  * humana, de forma irreversivel. Numerar e ato deliberado, e vive em
  * `taskin prioritize`.
  *
+ * `Priority: medium` e outro caso: a decisao foi tomada, so esta por extenso. O
+ * `--fix` a traduz (`corrigirPrioridadesTextuais`, task-144), e por isso so ela
+ * sai daqui sem `fixable: false`.
+ *
  * @public
  */
 export function validarPriorizacao(
@@ -105,11 +110,18 @@ export function validarPriorizacao(
 
   const prioridade = valorDe(texto, 'Priority');
   if (prioridade !== undefined && !Number.isFinite(Number(prioridade))) {
+    const nivel = nivelDaPrioridade(prioridade) !== undefined;
     issues.push({
       file: filePath,
       line: linhaDo(texto, 'Priority'),
       message: `Priority "${prioridade}" is not a number — it is silently discarded, and the task reads as unprioritised.`,
       severity: 'error',
+      ...(nivel
+        ? { suggestion: 'lint --fix numbers it by level, after the tasks that already have a number.' }
+        : {
+            fixable: false,
+            suggestion: `Not a level --fix can read. Give it a number: taskin priority <task-id> <n>.`,
+          }),
     });
   }
 
@@ -125,6 +137,8 @@ export function validarPriorizacao(
         line: linhaDo(texto, 'Difficulty'),
         message: `Difficulty "${dificuldade}" is outside ${FAIXA_DE_DIFICULDADE.min}–${FAIXA_DE_DIFICULDADE.max} — the board cannot render it.`,
         severity: 'error',
+        fixable: false,
+        suggestion: `Score it again: taskin difficulty <task-id> <${FAIXA_DE_DIFICULDADE.min}-${FAIXA_DE_DIFICULDADE.max}>.`,
       });
     }
   }
