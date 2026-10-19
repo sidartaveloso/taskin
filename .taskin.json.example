@@ -27,8 +27,8 @@
     "discord": {
       "webhookUrl": "${DISCORD_TASKIN_WEBHOOK_URL}",
       "mentions": {
-        "Sidarta Veloso": "<@123456789>",
-        "Joris Veloso": "<@987654321>"
+        "Pessoa A": "<@123456789>",
+        "Pessoa B": "<@987654321>"
       },
       "events": ["task:start", "task:done", "task:review"]
     },
