@@ -78,6 +78,10 @@ export interface IGitService {
    * Commit task status change to a specific branch.
    * If defaultBranch is provided and different from current branch,
    * will temporarily switch to it, commit, and return to original branch.
+   * @deprecated Stashes and checks out the branch, which fails from a worktree
+   *   while another checkout has it open, and the stash is shared by every
+   *   worktree. Use {@link IGitService.commitTaskStatusChange} on the current
+   *   branch and {@link IGitService.publishTaskStatusChange} to publish.
    * @param taskId - Task identifier (e.g., "014")
    * @param status - New status (e.g., "in-progress", "paused", "done")
    * @param defaultBranch - Optional target branch for the commit
