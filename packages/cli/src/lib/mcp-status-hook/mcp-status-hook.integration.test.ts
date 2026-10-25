@@ -9,8 +9,8 @@
  */
 
 import { parseTaskId } from '@opentask/taskin-types';
-import { execSync } from 'child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { execFileSync, execSync } from 'child_process';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -86,5 +86,74 @@ describe('createMcpStatusCommitHook — effect on git', () => {
     await hook?.({ taskId: parseTaskId('052'), status: 'done' });
 
     expect(git('log -1 --pretty=%s')).toContain('[skip ci]');
+  });
+});
+
+/**
+ * A porta MCP numa worktree (task-135): com `autoSync` e `defaultBranch`, o
+ * status vai para `origin/<defaultBranch>` sem trocar de branch, como no CLI.
+ */
+describe('createMcpStatusCommitHook — numa worktree, com autoSync', () => {
+  let root: string;
+  let remote: string;
+  let worktree: string;
+
+  const run = (cwd: string, ...args: string[]): string =>
+    execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' }).trim();
+
+  beforeEach(() => {
+    root = realpathSync(mkdtempSync(join(tmpdir(), 'taskin-mcp-hook-worktree-')));
+    remote = join(root, 'remote.git');
+    const main = join(root, 'main');
+    worktree = join(root, 'rodada');
+
+    run(root, 'init', '--bare', '-b', 'develop', remote);
+    run(root, 'clone', remote, main);
+    run(main, 'config', 'user.email', 'test@taskin.dev');
+    run(main, 'config', 'user.name', 'Taskin Test');
+    run(main, 'checkout', '-b', 'develop');
+    writeFileSync(
+      join(main, '.taskin.json'),
+      JSON.stringify(
+        {
+          version: '1.0.0',
+          automation: { level: 'autopilot', autoSync: true, defaultBranch: 'develop' },
+          provider: { type: 'fs', config: {} },
+        },
+        null,
+        2,
+      ),
+    );
+    mkdirSync(join(main, 'TASKS'), { recursive: true });
+    writeFileSync(join(main, 'TASKS', 'task-052-test.md'), '# Task 052\n\nStatus: pending\n');
+    run(main, 'add', '.');
+    run(main, 'commit', '-m', 'seed');
+    run(main, 'push', '-u', 'origin', 'develop');
+    run(main, 'worktree', 'add', '-b', 'sandcastle/rodada-1', worktree, 'develop');
+    run(worktree, 'config', 'user.email', 'test@taskin.dev');
+    run(worktree, 'config', 'user.name', 'Taskin Test');
+    writeFileSync(join(worktree, 'TASKS', 'task-052-test.md'), '# Task 052\n\nStatus: in-progress\n');
+  });
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('publica o status na develop do remoto e comita na branch da worktree', async () => {
+    const hook = createMcpStatusCommitHook({ monorepoRoot: worktree, cwd: worktree });
+    await hook?.({ taskId: parseTaskId('052'), status: 'in-progress' });
+
+    expect(run(remote, 'show', 'develop:TASKS/task-052-test.md')).toContain('Status: in-progress');
+    expect(run(worktree, 'rev-parse', '--abbrev-ref', 'HEAD')).toBe('sandcastle/rodada-1');
+    expect(run(worktree, 'log', '-1', '--format=%s')).toContain('task-052');
+  });
+
+  it('falha de publicacao rejeita com o motivo, e o commit local fica', async () => {
+    run(worktree, 'remote', 'set-url', 'origin', join(root, 'nao-existe.git'));
+
+    const hook = createMcpStatusCommitHook({ monorepoRoot: worktree, cwd: worktree });
+
+    await expect(hook?.({ taskId: parseTaskId('052'), status: 'in-progress' })).rejects.toThrow(/could not fetch/);
+    expect(run(worktree, 'log', '-1', '--format=%s')).toContain('task-052');
   });
 });
