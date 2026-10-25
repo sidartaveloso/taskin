@@ -127,7 +127,9 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
   }
 
   if (behavior.autoSync && !behavior.defaultBranch) {
-    warning('autoSync is enabled but no defaultBranch is configured. Nothing will be synced.');
+    warning(
+      'autoSync is enabled but no defaultBranch is configured. Nothing will be synced. Set it with: taskin config --default-branch <branch>',
+    );
   }
 
   // Initialize Git service
