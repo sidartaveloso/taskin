@@ -1,8 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { defineComponent, h, onMounted, onUnmounted, ref } from 'vue';
+import { type TaskinPlayer, type TaskinScriptStep, useTaskinScript } from '../../../composables/use-taskin-script';
 import Taskin from './Taskin';
+import { TASKIN_ACTIONS, type TaskinAction } from './Taskin.actions';
 import { TASKIN_MOODS } from './Taskin.moods';
 import type { TaskinMood } from './Taskin.types';
+import { TASKIN_VARIANTS } from './Taskin.variants';
 
 const meta = {
   title: 'Organisms/Taskin/Taskin',
@@ -21,6 +24,11 @@ const meta = {
       control: 'select',
       options: [...TASKIN_MOODS],
       description: 'The mood state of the Taskin mascot',
+    },
+    variant: {
+      control: 'select',
+      options: [...TASKIN_VARIANTS],
+      description: 'Which character to draw: the Taskin octopus or the Sapin frog',
     },
     size: {
       control: { type: 'number', min: 50, max: 500, step: 10 },
@@ -61,20 +69,48 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const AllMoods: Story = {
-  render: () => ({
+  render: (args) => ({
     components: { Taskin },
     template: `
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px;">
         <div v-for="mood in moods" :key="mood" style="text-align: center;">
-          <Taskin :mood="mood" :size="150" />
+          <Taskin :mood="mood" :size="150" :variant="variant" />
           <p style="margin-top: 10px; font-size: 12px;">{{ mood }}</p>
         </div>
       </div>
     `,
     data() {
-      return { moods: TASKIN_MOODS };
+      return { moods: TASKIN_MOODS, variant: args.variant };
     },
   }),
+};
+
+/**
+ * Um botao por acao de `TASKIN_ACTIONS`, chamando `play()` pela ref: as acoes
+ * novas aparecem aqui sozinhas. Ao lado, a ultima que terminou.
+ */
+export const Actions: Story = {
+  render: (args) =>
+    defineComponent({
+      components: { Taskin },
+      setup() {
+        const taskin = ref<{ play: (action: TaskinAction) => Promise<boolean> } | null>(null);
+        const ultima = ref<string>('-');
+        const tocar = async (action: TaskinAction) => {
+          if (await taskin.value?.play(action)) ultima.value = action;
+        };
+        return { args, actions: TASKIN_ACTIONS, taskin, ultima, tocar };
+      },
+      template: `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+          <Taskin ref="taskin" v-bind="args" />
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button v-for="action in actions" :key="action" type="button" @click="tocar(action)">{{ action }}</button>
+            <span style="font-size: 12px;">ultima: <strong data-testid="ultima-acao">{{ ultima }}</strong></span>
+          </div>
+        </div>
+      `,
+    }),
 };
 
 export const Default: Story = {
@@ -260,7 +296,7 @@ export const EyeTrackingMouse: Story = {
 };
 
 export const EyeTrackingElement: Story = {
-  render: () => {
+  render: (args) => {
     const targetElement = ref<HTMLElement | undefined>(undefined);
     const buttonPos = ref({ x: 0, y: 0 });
     const isDragging = ref(false);
@@ -355,6 +391,7 @@ export const EyeTrackingElement: Story = {
             ],
           ),
           h(Taskin, {
+            variant: args.variant,
             mood: 'neutral' as TaskinMood,
             size: 200,
             idleAnimation: true,
@@ -375,7 +412,7 @@ export const EyeTrackingElement: Story = {
 };
 
 export const EyeTrackingCustomPosition: Story = {
-  render: () =>
+  render: (args) =>
     // Options API com `this`: defineComponent e o que o tipa, sem cast manual
     defineComponent({
       components: { Taskin },
@@ -396,6 +433,7 @@ export const EyeTrackingCustomPosition: Story = {
             <Taskin
               mood="neutral"
               :size="150"
+              :variant="variant"
               eye-tracking-mode="custom"
               :eye-custom-position="customPosition"
             />
@@ -405,6 +443,7 @@ export const EyeTrackingCustomPosition: Story = {
     `,
       data() {
         return {
+          variant: args.variant,
           customPosition: null as { x: number; y: number } | null,
           visualIndicator: null as { x: number; y: number } | null,
         };
@@ -432,4 +471,60 @@ export const EyeTrackingCustomPosition: Story = {
       },
     },
   },
+};
+
+/**
+ * O mascote fala: `speechText` poe a frase num balao saindo da boca, e
+ * `speaking` mexe a boca junto. O balao de pensamento, se o humor tiver um,
+ * espera a fala acabar.
+ */
+export const Speaking: Story = {
+  args: {
+    mood: 'happy',
+    speechText: 'Oi, Sidarta! Agora eu falo.',
+    speaking: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Speech bubble from `speechText`, with the mouth moving from `speaking`. Switch the variant to see the Sapin speak.',
+      },
+    },
+  },
+};
+
+/**
+ * O roteiro: `useTaskinScript` encadeia humor, acao e fala, esperando o fim de
+ * cada acao pelo `play()` e dimensionando a pausa pela frase. E assim que o
+ * mascote conversa.
+ */
+export const Script: Story = {
+  render: (args) =>
+    defineComponent({
+      components: { Taskin },
+      setup() {
+        const taskin = ref<TaskinPlayer | null>(null);
+        const { mood, speechText, speaking, running, run, stop } = useTaskinScript(taskin, {
+          initialMood: args.mood,
+        });
+        const roteiro: TaskinScriptStep[] = [
+          { mood: 'happy', action: 'wave', say: 'Oi, Sidarta!' },
+          { mood: 'thoughtful', say: 'Deixa eu ver a task 166...' },
+          { mood: 'happy', action: 'celebrate', say: 'Terminou, e os testes passaram!' },
+          { mood: 'sarcastic', say: 'Agora e so publicar. Facil.' },
+        ];
+        return { args, taskin, mood, speechText, speaking, running, stop, tocar: () => run(roteiro) };
+      },
+      template: `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+          <Taskin ref="taskin" v-bind="args" :mood="mood" :speech-text="speechText" :speaking="speaking" />
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" data-testid="tocar-roteiro" @click="tocar">tocar o roteiro</button>
+            <button type="button" @click="stop()">parar</button>
+            <span style="font-size: 12px;" data-testid="estado-roteiro">{{ running ? 'tocando' : 'parado' }}</span>
+          </div>
+        </div>
+      `,
+    }),
 };

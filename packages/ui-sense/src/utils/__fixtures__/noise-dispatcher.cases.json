@@ -1,0 +1,848 @@
+{
+  "$comment": "Contrato entre createNoiseDispatcher (TypeScript) e NoiseDispatcher (Kotlin, packages/mascote-wear). Veja o README ao lado.",
+  "cases": [
+    {
+      "nome": "dispara quando a amostra alcanca o limiar",
+      "threshold": 0.5,
+      "timing": 1000,
+      "samples": [[0, 0.6]],
+      "expected": {
+        "fires": [0],
+        "lastLevel": 0.6
+      }
+    },
+    {
+      "nome": "nao dispara abaixo do limiar",
+      "threshold": 0.5,
+      "timing": 1000,
+      "samples": [[0, 0.4]],
+      "expected": {
+        "fires": [],
+        "lastLevel": 0.4
+      }
+    },
+    {
+      "nome": "amostra exatamente no limiar conta como alta",
+      "threshold": 0.5,
+      "timing": 1000,
+      "samples": [[0, 0.5]],
+      "expected": {
+        "fires": [0],
+        "lastLevel": 0.5
+      }
+    },
+    {
+      "nome": "debounce segura amostras altas dentro da janela",
+      "threshold": 0.5,
+      "timing": 1000,
+      "samples": [[0, 0.9], [500, 0.9], [1000, 0.9]],
+      "expected": {
+        "fires": [0],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "dispara de novo quando o debounce passa",
+      "threshold": 0.5,
+      "timing": 1000,
+      "samples": [[0, 0.9], [1001, 0.9]],
+      "expected": {
+        "fires": [0, 1001],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "usa o debounce padrao sem timing",
+      "threshold": 0.5,
+      "timing": null,
+      "samples": [[0, 0.9], [1500, 0.9], [1501, 0.9]],
+      "expected": {
+        "fires": [0, 1501],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "para de disparar depois de cancelada a inscricao",
+      "threshold": 0.5,
+      "timing": 1000,
+      "samples": [[0, 0.9], [2000, 0.9]],
+      "unsubscribeAt": 1000,
+      "expected": {
+        "fires": [0],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "sustentacao: nao dispara antes de completar o tempo",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 1000
+      },
+      "samples": [[0, 0.9], [400, 0.9], [999, 0.9]],
+      "expected": {
+        "fires": [],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "sustentacao: dispara quando o nivel se mantem pelo tempo pedido",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 1000
+      },
+      "samples": [[0, 0.9], [500, 0.9], [1000, 0.9]],
+      "expected": {
+        "fires": [1000],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "sustentacao: uma pausa curta nao desfaz o que ja foi medido",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 1000
+      },
+      "samples": [[0, 0.9], [900, 0.9], [950, 0.1], [1000, 0.9]],
+      "expected": {
+        "fires": [1000],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "sem sustentacao dispara na primeira amostra alta",
+      "threshold": 0.5,
+      "timing": {
+        "debounceMs": 1000
+      },
+      "samples": [[0, 0.9]],
+      "expected": {
+        "fires": [0],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "o debounce conta do disparo, nao do inicio do barulho",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 500,
+        "debounceMs": 1000
+      },
+      "samples": [[0, 0.9], [500, 0.9], [1200, 0.9], [1600, 0.9]],
+      "expected": {
+        "fires": [500, 1600],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "so a sustentacao no objeto usa o debounce padrao",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 200
+      },
+      "samples": [[0, 0.9], [200, 0.9], [1699, 0.9], [1701, 0.9]],
+      "expected": {
+        "fires": [200, 1701],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "fracao: fala alta com pausas entre as palavras dispara",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 2000,
+        "sustainRatio": 0.6
+      },
+      "samples": [
+        [0, 0.9],
+        [40, 0.9],
+        [80, 0.9],
+        [120, 0.9],
+        [160, 0.01],
+        [200, 0.9],
+        [240, 0.9],
+        [280, 0.9],
+        [320, 0.9],
+        [360, 0.01],
+        [400, 0.9],
+        [440, 0.9],
+        [480, 0.9],
+        [520, 0.9],
+        [560, 0.01],
+        [600, 0.9],
+        [640, 0.9],
+        [680, 0.9],
+        [720, 0.9],
+        [760, 0.01],
+        [800, 0.9],
+        [840, 0.9],
+        [880, 0.9],
+        [920, 0.9],
+        [960, 0.01],
+        [1000, 0.9],
+        [1040, 0.9],
+        [1080, 0.9],
+        [1120, 0.9],
+        [1160, 0.01],
+        [1200, 0.9],
+        [1240, 0.9],
+        [1280, 0.9],
+        [1320, 0.9],
+        [1360, 0.01],
+        [1400, 0.9],
+        [1440, 0.9],
+        [1480, 0.9],
+        [1520, 0.9],
+        [1560, 0.01],
+        [1600, 0.9],
+        [1640, 0.9],
+        [1680, 0.9],
+        [1720, 0.9],
+        [1760, 0.01],
+        [1800, 0.9],
+        [1840, 0.9],
+        [1880, 0.9],
+        [1920, 0.9],
+        [1960, 0.01],
+        [2000, 0.9],
+        [2040, 0.9],
+        [2080, 0.9],
+        [2120, 0.9],
+        [2160, 0.01],
+        [2200, 0.9],
+        [2240, 0.9],
+        [2280, 0.9],
+        [2320, 0.9],
+        [2360, 0.01]
+      ],
+      "expected": {
+        "fires": [2000],
+        "lastLevel": 0.01
+      }
+    },
+    {
+      "nome": "fracao: porta batendo no silencio nao dispara",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 2000,
+        "sustainRatio": 0.6
+      },
+      "samples": [
+        [0, 0.9],
+        [40, 0.01],
+        [80, 0.01],
+        [120, 0.01],
+        [160, 0.01],
+        [200, 0.01],
+        [240, 0.01],
+        [280, 0.01],
+        [320, 0.01],
+        [360, 0.01],
+        [400, 0.01],
+        [440, 0.01],
+        [480, 0.01],
+        [520, 0.01],
+        [560, 0.01],
+        [600, 0.01],
+        [640, 0.01],
+        [680, 0.01],
+        [720, 0.01],
+        [760, 0.01],
+        [800, 0.9],
+        [840, 0.01],
+        [880, 0.01],
+        [920, 0.01],
+        [960, 0.01],
+        [1000, 0.01],
+        [1040, 0.01],
+        [1080, 0.01],
+        [1120, 0.01],
+        [1160, 0.01],
+        [1200, 0.01],
+        [1240, 0.01],
+        [1280, 0.01],
+        [1320, 0.01],
+        [1360, 0.01],
+        [1400, 0.01],
+        [1440, 0.01],
+        [1480, 0.01],
+        [1520, 0.01],
+        [1560, 0.01],
+        [1600, 0.9],
+        [1640, 0.01],
+        [1680, 0.01],
+        [1720, 0.01],
+        [1760, 0.01],
+        [1800, 0.01],
+        [1840, 0.01],
+        [1880, 0.01],
+        [1920, 0.01],
+        [1960, 0.01],
+        [2000, 0.01],
+        [2040, 0.01],
+        [2080, 0.01],
+        [2120, 0.01],
+        [2160, 0.01],
+        [2200, 0.01],
+        [2240, 0.01],
+        [2280, 0.01],
+        [2320, 0.01],
+        [2360, 0.01],
+        [2400, 0.9],
+        [2440, 0.01],
+        [2480, 0.01],
+        [2520, 0.01],
+        [2560, 0.01],
+        [2600, 0.01],
+        [2640, 0.01],
+        [2680, 0.01],
+        [2720, 0.01],
+        [2760, 0.01],
+        [2800, 0.01],
+        [2840, 0.01],
+        [2880, 0.01],
+        [2920, 0.01],
+        [2960, 0.01],
+        [3000, 0.01],
+        [3040, 0.01],
+        [3080, 0.01],
+        [3120, 0.01],
+        [3160, 0.01],
+        [3200, 0.9],
+        [3240, 0.01],
+        [3280, 0.01],
+        [3320, 0.01],
+        [3360, 0.01],
+        [3400, 0.01],
+        [3440, 0.01],
+        [3480, 0.01],
+        [3520, 0.01],
+        [3560, 0.01],
+        [3600, 0.01],
+        [3640, 0.01],
+        [3680, 0.01],
+        [3720, 0.01],
+        [3760, 0.01],
+        [3800, 0.01],
+        [3840, 0.01],
+        [3880, 0.01],
+        [3920, 0.01],
+        [3960, 0.01],
+        [4000, 0.9],
+        [4040, 0.01],
+        [4080, 0.01],
+        [4120, 0.01],
+        [4160, 0.01],
+        [4200, 0.01],
+        [4240, 0.01],
+        [4280, 0.01],
+        [4320, 0.01],
+        [4360, 0.01],
+        [4400, 0.01],
+        [4440, 0.01],
+        [4480, 0.01],
+        [4520, 0.01],
+        [4560, 0.01],
+        [4600, 0.01],
+        [4640, 0.01],
+        [4680, 0.01],
+        [4720, 0.01],
+        [4760, 0.01]
+      ],
+      "expected": {
+        "fires": [],
+        "lastLevel": 0.01
+      }
+    },
+    {
+      "nome": "fracao: nao dispara antes de a janela encher",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 2000,
+        "sustainRatio": 0.6
+      },
+      "samples": [
+        [0, 0.9],
+        [40, 0.9],
+        [80, 0.9],
+        [120, 0.9],
+        [160, 0.9],
+        [200, 0.9],
+        [240, 0.9],
+        [280, 0.9],
+        [320, 0.9],
+        [360, 0.9],
+        [400, 0.9],
+        [440, 0.9],
+        [480, 0.9],
+        [520, 0.9],
+        [560, 0.9],
+        [600, 0.9],
+        [640, 0.9],
+        [680, 0.9],
+        [720, 0.9],
+        [760, 0.9],
+        [800, 0.9],
+        [840, 0.9],
+        [880, 0.9],
+        [920, 0.9],
+        [960, 0.9],
+        [1000, 0.9],
+        [1040, 0.9],
+        [1080, 0.9],
+        [1120, 0.9],
+        [1160, 0.9],
+        [1200, 0.9],
+        [1240, 0.9],
+        [1280, 0.9],
+        [1320, 0.9],
+        [1360, 0.9],
+        [1400, 0.9],
+        [1440, 0.9],
+        [1480, 0.9],
+        [1520, 0.9],
+        [1560, 0.9],
+        [1600, 0.9],
+        [1640, 0.9],
+        [1680, 0.9],
+        [1720, 0.9],
+        [1760, 0.9],
+        [1800, 0.9],
+        [1840, 0.9],
+        [1880, 0.9],
+        [1920, 0.9],
+        [1960, 0.9],
+        [2000, 0.9]
+      ],
+      "expected": {
+        "fires": [2000],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "fracao: ratio 1 exige barulho ininterrupto",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 1000,
+        "sustainRatio": 1
+      },
+      "samples": [
+        [0, 0.9],
+        [40, 0.9],
+        [80, 0.9],
+        [120, 0.9],
+        [160, 0.01],
+        [200, 0.9],
+        [240, 0.9],
+        [280, 0.9],
+        [320, 0.9],
+        [360, 0.01],
+        [400, 0.9],
+        [440, 0.9],
+        [480, 0.9],
+        [520, 0.9],
+        [560, 0.01],
+        [600, 0.9],
+        [640, 0.9],
+        [680, 0.9],
+        [720, 0.9],
+        [760, 0.01],
+        [800, 0.9],
+        [840, 0.9],
+        [880, 0.9],
+        [920, 0.9],
+        [960, 0.01],
+        [1000, 0.9],
+        [1040, 0.9],
+        [1080, 0.9],
+        [1120, 0.9],
+        [1160, 0.01],
+        [1200, 0.9],
+        [1240, 0.9],
+        [1280, 0.9],
+        [1320, 0.9],
+        [1360, 0.01],
+        [1400, 0.9],
+        [1440, 0.9],
+        [1480, 0.9],
+        [1520, 0.9],
+        [1560, 0.01],
+        [1600, 0.9],
+        [1640, 0.9],
+        [1680, 0.9],
+        [1720, 0.9],
+        [1760, 0.01],
+        [1800, 0.9],
+        [1840, 0.9],
+        [1880, 0.9],
+        [1920, 0.9],
+        [1960, 0.01],
+        [2000, 0.9],
+        [2040, 0.9],
+        [2080, 0.9],
+        [2120, 0.9],
+        [2160, 0.01],
+        [2200, 0.9],
+        [2240, 0.9],
+        [2280, 0.9],
+        [2320, 0.9],
+        [2360, 0.01]
+      ],
+      "expected": {
+        "fires": [],
+        "lastLevel": 0.01
+      }
+    },
+    {
+      "nome": "fracao: ignorada sem janela de sustentacao",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 0,
+        "sustainRatio": 0.6
+      },
+      "samples": [[0, 0.9]],
+      "expected": {
+        "fires": [0],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "fracao: esquece o barulho que saiu da janela",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 1000,
+        "sustainRatio": 0.6
+      },
+      "samples": [
+        [0, 0.9],
+        [40, 0.9],
+        [80, 0.9],
+        [120, 0.9],
+        [160, 0.9],
+        [200, 0.9],
+        [240, 0.9],
+        [280, 0.9],
+        [320, 0.9],
+        [360, 0.9],
+        [400, 0.9],
+        [440, 0.9],
+        [480, 0.9],
+        [520, 0.9],
+        [560, 0.9],
+        [600, 0.9],
+        [640, 0.9],
+        [680, 0.9],
+        [720, 0.9],
+        [760, 0.9],
+        [800, 0.9],
+        [840, 0.9],
+        [880, 0.9],
+        [920, 0.9],
+        [960, 0.9],
+        [1000, 0.9],
+        [1040, 0.01],
+        [1080, 0.01],
+        [1120, 0.01],
+        [1160, 0.01],
+        [1200, 0.01],
+        [1240, 0.01],
+        [1280, 0.01],
+        [1320, 0.01],
+        [1360, 0.01],
+        [1400, 0.01],
+        [1440, 0.01],
+        [1480, 0.01],
+        [1520, 0.01],
+        [1560, 0.01],
+        [1600, 0.01],
+        [1640, 0.01],
+        [1680, 0.01],
+        [1720, 0.01],
+        [1760, 0.01],
+        [1800, 0.01],
+        [1840, 0.01],
+        [1880, 0.01],
+        [1920, 0.01],
+        [1960, 0.01],
+        [2000, 0.01],
+        [2040, 0.9],
+        [2080, 0.01],
+        [2120, 0.01],
+        [2160, 0.9],
+        [2200, 0.01],
+        [2240, 0.01],
+        [2280, 0.9],
+        [2320, 0.01],
+        [2360, 0.01],
+        [2400, 0.9],
+        [2440, 0.01],
+        [2480, 0.01],
+        [2520, 0.9],
+        [2560, 0.01],
+        [2600, 0.01],
+        [2640, 0.9],
+        [2680, 0.01],
+        [2720, 0.01],
+        [2760, 0.9],
+        [2800, 0.01],
+        [2840, 0.01],
+        [2880, 0.9],
+        [2920, 0.01],
+        [2960, 0.01]
+      ],
+      "expected": {
+        "fires": [1000],
+        "lastLevel": 0.01
+      }
+    },
+    {
+      "nome": "progresso: sem sustentacao relata ocupacao 0 ou 1 e o debounce",
+      "threshold": 0.5,
+      "timing": {
+        "debounceMs": 300
+      },
+      "samples": [[0, 0.9], [100, 0.1], [200, 0.9], [400, 0.9]],
+      "trackProgress": true,
+      "expected": {
+        "fires": [0, 400],
+        "progress": [
+          {
+            "t": 0,
+            "ratio": 1,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 300,
+            "msUntilFire": 300
+          },
+          {
+            "t": 100,
+            "ratio": 0,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 200,
+            "msUntilFire": 200
+          },
+          {
+            "t": 200,
+            "ratio": 1,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 100,
+            "msUntilFire": 100
+          },
+          {
+            "t": 400,
+            "ratio": 1,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 300,
+            "msUntilFire": 300
+          }
+        ],
+        "lastLevel": 0.9
+      }
+    },
+    {
+      "nome": "progresso: janela enchendo, previsao e disparo",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 400,
+        "sustainRatio": 0.6,
+        "debounceMs": 300
+      },
+      "samples": [
+        [0, 0.9],
+        [40, 0.9],
+        [80, 0.01],
+        [120, 0.9],
+        [160, 0.9],
+        [200, 0.01],
+        [240, 0.9],
+        [280, 0.9],
+        [320, 0.01],
+        [360, 0.9],
+        [400, 0.9],
+        [440, 0.01],
+        [480, 0.9],
+        [520, 0.9],
+        [560, 0.01],
+        [600, 0.9],
+        [640, 0.9],
+        [680, 0.01]
+      ],
+      "trackProgress": true,
+      "expected": {
+        "fires": [400],
+        "progress": [
+          {
+            "t": 0,
+            "ratio": 1,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 400,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": null
+          },
+          {
+            "t": 40,
+            "ratio": 1,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 360,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": 360
+          },
+          {
+            "t": 80,
+            "ratio": 0.6666666666666666,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 320,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": 320
+          },
+          {
+            "t": 120,
+            "ratio": 0.75,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 280,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": 280
+          },
+          {
+            "t": 160,
+            "ratio": 0.8,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 240,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": 240
+          },
+          {
+            "t": 200,
+            "ratio": 0.6666666666666666,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 200,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": 200
+          },
+          {
+            "t": 240,
+            "ratio": 0.7142857142857143,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 160,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": 160
+          },
+          {
+            "t": 280,
+            "ratio": 0.75,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 120,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": 120
+          },
+          {
+            "t": 320,
+            "ratio": 0.6666666666666666,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 80,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": 80
+          },
+          {
+            "t": 360,
+            "ratio": 0.7,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 40,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": 40
+          },
+          {
+            "t": 400,
+            "ratio": 0.7272727272727273,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 300,
+            "msUntilFire": 300
+          },
+          {
+            "t": 440,
+            "ratio": 0.6363636363636364,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 260,
+            "msUntilFire": 260
+          },
+          {
+            "t": 480,
+            "ratio": 0.6363636363636364,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 220,
+            "msUntilFire": 220
+          },
+          {
+            "t": 520,
+            "ratio": 0.7272727272727273,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 180,
+            "msUntilFire": 180
+          },
+          {
+            "t": 560,
+            "ratio": 0.6363636363636364,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 140,
+            "msUntilFire": 140
+          },
+          {
+            "t": 600,
+            "ratio": 0.6363636363636364,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 100,
+            "msUntilFire": 100
+          },
+          {
+            "t": 640,
+            "ratio": 0.7272727272727273,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 60,
+            "msUntilFire": 60
+          },
+          {
+            "t": 680,
+            "ratio": 0.6363636363636364,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 0,
+            "msUntilDebounceOver": 20,
+            "msUntilFire": 20
+          }
+        ],
+        "lastLevel": 0.01
+      }
+    },
+    {
+      "nome": "progresso: uma amostra so nao permite previsao",
+      "threshold": 0.5,
+      "timing": {
+        "sustainMs": 1000
+      },
+      "samples": [[0, 0.9]],
+      "trackProgress": true,
+      "expected": {
+        "fires": [],
+        "progress": [
+          {
+            "t": 0,
+            "ratio": 1,
+            "requiredRatio": 0.6,
+            "msUntilWindowFull": 1000,
+            "msUntilDebounceOver": 0,
+            "msUntilFire": null
+          }
+        ],
+        "lastLevel": 0.9
+      }
+    }
+  ]
+}

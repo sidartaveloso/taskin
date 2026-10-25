@@ -32,7 +32,7 @@ export const listCommand = defineCommand({
   options: [
     {
       flags: '--sort <mode>',
-      description: 'Order: manual (priority), diff-asc or diff-desc',
+      description: 'Order: manual (by priority, lower first), diff-asc or diff-desc',
       defaultValue: 'manual',
     },
     ...filterCriteriaCliOptions(),

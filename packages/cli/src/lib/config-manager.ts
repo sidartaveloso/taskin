@@ -3,18 +3,24 @@
  * Handles loading, saving, and validating .taskin.json configuration
  */
 
-import { DEFAULT_CI_SKIP_TAG } from '@opentask/taskin-git-utils';
+import { DEFAULT_CI_SKIP_TAG, detectDefaultBranch } from '@opentask/taskin-git-utils';
 import type {
   AutomationConfig,
   AutomationLevel,
   CommandHooks,
   CommitAutomation,
   HookSettings,
+  LabsFeature,
   NotificationConfig,
   TaskinConfig,
   TaskinConfigInput,
 } from '@opentask/taskin-types';
-import { type MascotNoiseSettings, resolveMascotNoiseSettings, TaskinConfigSchema } from '@opentask/taskin-types';
+import {
+  LabsFeatureSchema,
+  type MascotNoiseSettings,
+  resolveMascotNoiseSettings,
+  TaskinConfigSchema,
+} from '@opentask/taskin-types';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
@@ -37,7 +43,10 @@ export interface AutomationBehavior {
   autoCommitPause: boolean;
   /** Auto-commit completed work (finish command) */
   autoCommitFinish: boolean;
-  /** Default branch for autocommits */
+  /**
+   * Branch that holds the shared task status. In autopilot, when
+   * `.taskin.json` leaves it out, it is detected (develop, main, master).
+   */
   defaultBranch?: string;
   /** Enable automatic fetch/rebase/push before creating tasks and after status changes */
   autoSync?: boolean;
@@ -90,7 +99,7 @@ export function getAutomationBehavior(level: AutomationLevel, commits?: CommitAu
 export class ConfigManager {
   private configPath: string;
 
-  constructor(projectRoot: string = process.cwd()) {
+  constructor(private readonly projectRoot: string = process.cwd()) {
     this.configPath = join(projectRoot, '.taskin.json');
   }
 
@@ -196,6 +205,44 @@ export class ConfigManager {
     }
   }
 
+  /**
+   * As funcionalidades de labs ligadas neste projeto, so as que este taskin
+   * conhece. Config ausente ou invalida nao liga nada: um experimento nunca
+   * aparece por acidente.
+   */
+  getLabs(): LabsFeature[] {
+    return this.labsNoArquivo().flatMap((nome) => {
+      const lido = LabsFeatureSchema.safeParse(nome);
+      return lido.success ? [lido.data] : [];
+    });
+  }
+
+  /** O que esta em `labs` e este taskin nao conhece — de uma versao mais nova, ou que saiu de labs. */
+  getUnknownLabs(): string[] {
+    return this.labsNoArquivo().filter((nome) => !LabsFeatureSchema.safeParse(nome).success);
+  }
+
+  isLabsEnabled(feature: LabsFeature): boolean {
+    return this.getLabs().includes(feature);
+  }
+
+  /** Liga ou desliga uma funcionalidade; as entradas desconhecidas ficam como estavam. */
+  setLabs(feature: LabsFeature, enabled: boolean): void {
+    const config = this.loadConfig();
+    const outras = (config.labs ?? []).filter((nome) => nome !== feature);
+    const labs = enabled ? [...outras, feature] : outras;
+    const { labs: _antes, ...resto } = config;
+    this.saveConfig(labs.length > 0 ? { ...resto, labs } : resto);
+  }
+
+  private labsNoArquivo(): string[] {
+    try {
+      return this.loadConfig().labs ?? [];
+    } catch {
+      return [];
+    }
+  }
+
   getCiSkipTag(): string {
     return this.getAutomationConfig().ciSkipTag ?? DEFAULT_CI_SKIP_TAG;
   }
@@ -216,6 +263,30 @@ export class ConfigManager {
   }
 
   /**
+   * Set the branch that holds the shared task status, preserving the rest of
+   * the automation block.
+   */
+  setDefaultBranch(defaultBranch: string): void {
+    const config = this.loadConfig();
+
+    config.automation = {
+      ...DEFAULT_AUTOMATION_CONFIG,
+      ...config.automation,
+      defaultBranch,
+    };
+
+    this.saveConfig(config);
+  }
+
+  /**
+   * The branch autopilot would use when none is configured: develop, main or
+   * master, from the refs this clone already knows. `null` when none exists.
+   */
+  detectDefaultBranch(): string | null {
+    return detectDefaultBranch(this.projectRoot);
+  }
+
+  /**
    * Set automation configuration
    */
   setAutomationConfig(automation: AutomationConfig): void {
@@ -231,7 +302,9 @@ export class ConfigManager {
     const automation = this.getAutomationConfig();
     return {
       ...getAutomationBehavior(automation.level, automation.commits),
-      defaultBranch: automation.defaultBranch,
+      defaultBranch:
+        automation.defaultBranch ??
+        (automation.level === 'autopilot' ? (this.detectDefaultBranch() ?? undefined) : undefined),
       autoSync: automation.autoSync,
       originBranch: automation.originBranch,
       ciSkipTag: automation.ciSkipTag ?? DEFAULT_CI_SKIP_TAG,

@@ -348,7 +348,7 @@ export class TaskMCPServer implements ITaskMCPServer {
              */
             sort: {
               type: 'string',
-              description: 'Order: manual (priority), diff-asc or diff-desc. Defaults to manual.',
+              description: 'Order: manual (by priority, lower first), diff-asc or diff-desc. Defaults to manual.',
             },
           },
         },

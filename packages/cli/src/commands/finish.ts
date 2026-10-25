@@ -13,6 +13,7 @@ import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
+import { statusPublishHint } from '../lib/status-publish-hint/index.js';
 import { normalizeTaskId } from '../lib/task-id.js';
 import { reportWorkCommit } from '../lib/work-commit/index.js';
 import { defineCommand } from './define-command/index.js';
@@ -127,7 +128,9 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
   }
 
   if (behavior.autoSync && !behavior.defaultBranch) {
-    warning('autoSync is enabled but no defaultBranch is configured. Nothing will be synced.');
+    warning(
+      'autoSync is enabled but no defaultBranch is configured. Nothing will be synced. Set it with: taskin config --default-branch <branch>',
+    );
   }
 
   // Initialize Git service
@@ -135,6 +138,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
 
   // So afirma "tudo comitado" quando o commit de trabalho nao foi recusado.
   let workCommitBlocked = false;
+  let publishHint: string | undefined;
 
   if (!options.skipUpdate) {
     info('Marking task as done...');
@@ -158,12 +162,15 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     success(`Status changed to: ${updatedTask.status}`);
 
     // Auto-commit status change if enabled
+    let statusCommitted = false;
     if (behavior.autoCommitStatusChange) {
-      const committed = await git.commitTaskStatusChangeOnBranch(normalizedId, 'done', behavior.defaultBranch);
-      if (committed) {
+      statusCommitted = await git.commitTaskStatusChangeOnBranch(normalizedId, 'done', behavior.defaultBranch);
+      if (statusCommitted) {
         success('Auto-committed status change');
       }
     }
+
+    let statusPublished = false;
 
     // Squash the task file into a single commit on originBranch when done
     if (behavior.autoSync && behavior.originBranch && behavior.defaultBranch) {
@@ -175,6 +182,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
           ciSkipTag,
         });
         if (squashed) {
+          statusPublished = true;
           success(`Squash commit pushed to ${behavior.originBranch}`);
         }
       } catch (squashError) {
@@ -184,6 +192,17 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
             : 'Squash failed. Task marked as done locally.',
         );
       }
+    }
+
+    if (!statusPublished) {
+      publishHint = await statusPublishHint({
+        provider: taskProvider,
+        git,
+        level: configManager.getAutomationLevel(),
+        taskId: normalizedId,
+        message: statusCommitMessage,
+        committed: statusCommitted,
+      });
     }
 
     // Auto-commit work if autopilot is enabled
@@ -207,10 +226,8 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     const commitType = task.type || 'feat';
 
     if (!options.skipUpdate) {
-      if (!behavior.autoCommitStatusChange) {
-        steps.push(
-          `Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "${statusCommitMessage}"`,
-        );
+      if (publishHint) {
+        steps.push(`Publish the task status: ${publishHint}`);
       }
       steps.push('Review your changes');
       if (!behavior.autoCommitFinish) {

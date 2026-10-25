@@ -43,6 +43,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@opentask/taskin-mascote", "run", "dev", "--port", "6130"],
       "port": 6130
+    },
+    {
+      "name": "storybook-design-vue-6109",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@opentask/taskin-design-vue", "exec", "storybook", "dev", "-p", "6109", "--ci"],
+      "port": 6109
     }
   ]
 }

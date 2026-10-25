@@ -1,5 +1,6 @@
 import { computed, defineComponent, h, type PropType } from 'vue';
-import { layoutThoughtBubble } from './thought-bubble-layout';
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+import { layoutThoughtBubble, thoughtTrail } from './thought-bubble-layout';
 
 export default defineComponent({
   name: 'TaskinEffectThoughtBubble',
@@ -12,11 +13,16 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    /** Which character the bubble comes from: it sits clear of that character's eyes. */
+    variant: {
+      type: String as PropType<TaskinVariant>,
+      default: 'taskin',
+    },
   },
   setup(props) {
     // A frase e configuravel, entao o tamanho do balao vem dela. Ver
     // `thought-bubble-layout.ts` para o porque de estimar a largura do texto.
-    const layout = computed(() => layoutThoughtBubble(props.text));
+    const layout = computed(() => layoutThoughtBubble(props.text, props.variant));
 
     return () =>
       h(
@@ -35,24 +41,19 @@ export default defineComponent({
             stroke: '#2C3E50',
             'stroke-width': '2',
           }),
-          // As duas bolhas da ponta acompanham o balao: com posicao fixa, elas
-          // se descolavam dele assim que ele crescia ou se deslocava.
-          h('circle', {
-            cx: String(Math.round((layout.value.cx - layout.value.rx * 0.55) * 100) / 100),
-            cy: String(Math.round((layout.value.cy + layout.value.ry * 0.8) * 100) / 100),
-            r: '8',
-            fill: '#ffffff',
-            stroke: '#2C3E50',
-            'stroke-width': '2',
-          }),
-          h('circle', {
-            cx: String(Math.round((layout.value.cx - layout.value.rx * 0.75) * 100) / 100),
-            cy: String(Math.round((layout.value.cy + layout.value.ry * 1.15) * 100) / 100),
-            r: '5',
-            fill: '#ffffff',
-            stroke: '#2C3E50',
-            'stroke-width': '2',
-          }),
+          // As duas bolhas da ponta descem para o mesmo ponto do rabicho da
+          // fala, a direita do olho: proporcionais a elipse, elas caiam na
+          // pupila assim que a frase crescia.
+          ...thoughtTrail(layout.value, props.variant).map((bolha) =>
+            h('circle', {
+              cx: String(bolha.x),
+              cy: String(bolha.y),
+              r: String(bolha.r),
+              fill: '#ffffff',
+              stroke: '#2C3E50',
+              'stroke-width': '2',
+            }),
+          ),
           h(
             'text',
             {

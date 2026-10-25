@@ -3,6 +3,7 @@ import { type Component, h } from 'vue';
 import TaskinEffectFartCloud from './taskin-effect-fart-cloud/TaskinEffectFartCloud';
 import TaskinEffectHearts from './taskin-effect-hearts/TaskinEffectHearts';
 import TaskinEffectPhone from './taskin-effect-phone/TaskinEffectPhone';
+import TaskinEffectSweat from './taskin-effect-sweat/TaskinEffectSweat';
 import TaskinEffectTears from './taskin-effect-tears/TaskinEffectTears';
 import TaskinEffectThoughtBubble from './taskin-effect-thought-bubble/TaskinEffectThoughtBubble';
 import TaskinEffectVomit from './taskin-effect-vomit/TaskinEffectVomit';
@@ -34,6 +35,11 @@ export const Documentation: Story = {
           name: 'Zzz',
           component: TaskinEffectZzz,
           description: 'Sleeping effect',
+        },
+        {
+          name: 'Sweat',
+          component: TaskinEffectSweat,
+          description: 'Hot effect',
         },
         {
           name: 'Thought Bubble',

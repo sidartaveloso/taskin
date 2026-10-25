@@ -12,6 +12,7 @@ import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
+import { statusPublishHint } from '../lib/status-publish-hint/index.js';
 import { normalizeTaskId } from '../lib/task-id.js';
 import { defineCommand } from './define-command/index.js';
 
@@ -55,7 +56,7 @@ export const startCommand = defineCommand({
   },
 });
 
-async function startTask(taskId: string, options: StartTaskOptions, gitService?: IGitService): Promise<void> {
+export async function startTask(taskId: string, options: StartTaskOptions, gitService?: IGitService): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -143,33 +144,35 @@ async function startTask(taskId: string, options: StartTaskOptions, gitService?:
   const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
 
   // Auto-commit status change if enabled
+  let committed = false;
   if (behavior.autoCommitStatusChange) {
-    const committed = await git.commitTaskStatusChangeOnBranch(normalizedId, 'in-progress', behavior.defaultBranch);
+    committed = await git.commitTaskStatusChangeOnBranch(normalizedId, 'in-progress', behavior.defaultBranch);
     if (committed) {
       success('Auto-committed status change');
-      // Ignore if nothing to commit
     }
   }
 
+  const publishHint = await statusPublishHint({
+    provider: taskProvider,
+    git,
+    level: configManager.getAutomationLevel(),
+    taskId: normalizedId,
+    message: statusCommitMessage,
+    committed,
+  });
+
   console.log();
 
-  // Show suggestions only if not auto-committing
-  if (!behavior.autoCommitStatusChange) {
-    info('Next steps (suggestions):');
-    console.log(
-      colors.secondary(
-        `  1. Commit the status change: git add TASKS/task-${normalizedId}-*.md && git commit -m "${statusCommitMessage}"`,
-      ),
-    );
-    console.log(colors.secondary(`  2. Create a branch: git checkout -b feat/task-${normalizedId}`));
-    console.log(colors.secondary('  3. Start coding! 💻'));
-    console.log(colors.secondary('  4. Use "taskin pause" to save progress'));
-  } else {
-    info('Next steps:');
-    console.log(colors.secondary(`  1. Create a branch: git checkout -b feat/task-${normalizedId}`));
-    console.log(colors.secondary('  2. Start coding! 💻'));
-    console.log(colors.secondary('  3. Use "taskin pause" to save progress'));
-  }
+  const steps = [
+    ...(publishHint ? [`Publish the task status: ${publishHint}`] : []),
+    `Create a branch: git checkout -b feat/task-${normalizedId}`,
+    'Start coding! 💻',
+    'Use "taskin pause" to save progress',
+  ];
+  info(behavior.autoCommitStatusChange ? 'Next steps:' : 'Next steps (suggestions):');
+  steps.forEach((step, index) => {
+    console.log(colors.secondary(`  ${index + 1}. ${step}`));
+  });
   console.log();
 
   // Send notification

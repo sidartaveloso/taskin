@@ -43,6 +43,7 @@
     "lint:tasks": "tsx dev/scripts/lint-tasks.ts",
     "mascote": "pnpm --filter @opentask/taskin-mascote dev",
     "mascote:icons": "tsx dev/scripts/gerar-icones-do-mascote.ts",
+    "mascote-wear:desenho": "tsx dev/scripts/gerar-desenho-do-mascote-no-relogio.ts",
     "pnpm:update": "pnpm install pnpm@latest -Dw",
     "publish:beta": "node scripts/publish-packages.js --tag beta",
     "publish:latest": "node scripts/publish-packages.js --tag latest",

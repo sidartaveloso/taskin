@@ -1,4 +1,6 @@
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, type PropType } from 'vue';
+import { eyeShift } from '../../atoms/taskin-eyes/TaskinEyes.types';
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
 
 export default defineComponent({
   name: 'TaskinEffectHearts',
@@ -7,29 +9,40 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    /** Which character the effect sits on: it follows that character's face. */
+    variant: {
+      type: String as PropType<TaskinVariant>,
+      default: 'taskin',
+    },
   },
   setup(props) {
-    return () =>
-      h('g', { id: 'effect-hearts' }, [
+    return () => {
+      // Um coracao em cada olho e um entre eles: andam com os olhos de uma
+      // variante para outra.
+      const left = eyeShift(props.variant, 'left');
+      const right = eyeShift(props.variant, 'right');
+      const center = eyeShift(props.variant, 'center');
+
+      return h('g', { id: 'effect-hearts' }, [
         h('text', {
-          x: '120',
-          y: '90',
+          x: String(120 + left.x),
+          y: String(90 + left.y),
           fill: '#FF1493',
           'font-size': '20',
           textContent: '❤',
           style: props.animationsEnabled ? 'animation: heart-float-1 2s ease-in-out infinite;' : '',
         }),
         h('text', {
-          x: '195',
-          y: '90',
+          x: String(195 + right.x),
+          y: String(90 + right.y),
           fill: '#FF1493',
           'font-size': '20',
           textContent: '❤',
           style: props.animationsEnabled ? 'animation: heart-float-2 2s ease-in-out infinite 0.3s;' : '',
         }),
         h('text', {
-          x: '150',
-          y: '70',
+          x: String(150 + center.x),
+          y: String(70 + center.y),
           fill: '#FF1493',
           'font-size': '20',
           textContent: '❤',
@@ -53,5 +66,6 @@ export default defineComponent({
         `,
         ),
       ]);
+    };
   },
 });

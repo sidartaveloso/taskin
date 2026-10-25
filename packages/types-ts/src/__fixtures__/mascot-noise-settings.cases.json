@@ -1,0 +1,344 @@
+{
+  "$comment": "Contrato entre resolveMascotNoiseSettings (TypeScript) e o porte em Kotlin de packages/mascote-wear. Veja o README ao lado.",
+  "cases": [
+    {
+      "nome": "sem bloco mascot usa os padroes",
+      "mascot": null,
+      "expected": {
+        "settings": {
+          "enabled": false,
+          "threshold": 0.06,
+          "debounceMs": 1500,
+          "sustainMs": 0,
+          "sustainRatio": 0.6,
+          "sound": false,
+          "name": "",
+          "phrase": "Shhhhhh...",
+          "volume": 1
+        }
+      }
+    },
+    {
+      "nome": "bloco vazio usa os padroes",
+      "mascot": {},
+      "expected": {
+        "settings": {
+          "enabled": false,
+          "threshold": 0.06,
+          "debounceMs": 1500,
+          "sustainMs": 0,
+          "sustainRatio": 0.6,
+          "sound": false,
+          "name": "",
+          "phrase": "Shhhhhh...",
+          "volume": 1
+        }
+      }
+    },
+    {
+      "nome": "reactions vazio usa os padroes",
+      "mascot": {
+        "reactions": {}
+      },
+      "expected": {
+        "settings": {
+          "enabled": false,
+          "threshold": 0.06,
+          "debounceMs": 1500,
+          "sustainMs": 0,
+          "sustainRatio": 0.6,
+          "sound": false,
+          "name": "",
+          "phrase": "Shhhhhh...",
+          "volume": 1
+        }
+      }
+    },
+    {
+      "nome": "so enabled",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "enabled": true
+          }
+        }
+      },
+      "expected": {
+        "settings": {
+          "enabled": true,
+          "threshold": 0.06,
+          "debounceMs": 1500,
+          "sustainMs": 0,
+          "sustainRatio": 0.6,
+          "sound": false,
+          "name": "",
+          "phrase": "Shhhhhh...",
+          "volume": 1
+        }
+      }
+    },
+    {
+      "nome": "tudo personalizado",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "enabled": true,
+            "threshold": 0.2,
+            "debounceMs": 4000,
+            "sustainMs": 2000,
+            "sustainRatio": 0.75,
+            "sound": true,
+            "name": "Joris",
+            "phrase": "Silencio, por favor",
+            "volume": 0.5
+          }
+        }
+      },
+      "expected": {
+        "settings": {
+          "enabled": true,
+          "threshold": 0.2,
+          "debounceMs": 4000,
+          "sustainMs": 2000,
+          "sustainRatio": 0.75,
+          "sound": true,
+          "name": "Joris",
+          "phrase": "Silencio, por favor",
+          "volume": 0.5
+        }
+      }
+    },
+    {
+      "nome": "nome e frase perdem os espacos das pontas",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "name": "  Joris  ",
+            "phrase": "  Psiu  "
+          }
+        }
+      },
+      "expected": {
+        "settings": {
+          "enabled": false,
+          "threshold": 0.06,
+          "debounceMs": 1500,
+          "sustainMs": 0,
+          "sustainRatio": 0.6,
+          "sound": false,
+          "name": "Joris",
+          "phrase": "Psiu",
+          "volume": 1
+        }
+      }
+    },
+    {
+      "nome": "chaves desconhecidas sao ignoradas",
+      "mascot": {
+        "outra": 1,
+        "reactions": {
+          "outra": 2,
+          "noise": {
+            "enabled": true,
+            "outra": 3
+          }
+        }
+      },
+      "expected": {
+        "settings": {
+          "enabled": true,
+          "threshold": 0.06,
+          "debounceMs": 1500,
+          "sustainMs": 0,
+          "sustainRatio": 0.6,
+          "sound": false,
+          "name": "",
+          "phrase": "Shhhhhh...",
+          "volume": 1
+        }
+      }
+    },
+    {
+      "nome": "limites inclusivos: threshold 0, sustainRatio 1, volume 0",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "threshold": 0,
+            "sustainRatio": 1,
+            "volume": 0
+          }
+        }
+      },
+      "expected": {
+        "settings": {
+          "enabled": false,
+          "threshold": 0,
+          "debounceMs": 1500,
+          "sustainMs": 0,
+          "sustainRatio": 1,
+          "sound": false,
+          "name": "",
+          "phrase": "Shhhhhh...",
+          "volume": 0
+        }
+      }
+    },
+    {
+      "nome": "limites inclusivos: threshold 1, sustainRatio 0, volume 1, tempos 0",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "threshold": 1,
+            "sustainRatio": 0,
+            "volume": 1,
+            "debounceMs": 0,
+            "sustainMs": 0
+          }
+        }
+      },
+      "expected": {
+        "settings": {
+          "enabled": false,
+          "threshold": 1,
+          "debounceMs": 0,
+          "sustainMs": 0,
+          "sustainRatio": 0,
+          "sound": false,
+          "name": "",
+          "phrase": "Shhhhhh...",
+          "volume": 1
+        }
+      }
+    },
+    {
+      "nome": "threshold acima de 1 e invalido",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "threshold": 1.5
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    },
+    {
+      "nome": "threshold negativo e invalido",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "threshold": -0.1
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    },
+    {
+      "nome": "debounceMs fracionario e invalido",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "debounceMs": 1.5
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    },
+    {
+      "nome": "debounceMs negativo e invalido",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "debounceMs": -1
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    },
+    {
+      "nome": "sustainMs fracionario e invalido",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "sustainMs": 10.5
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    },
+    {
+      "nome": "sustainRatio acima de 1 e invalido",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "sustainRatio": 2
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    },
+    {
+      "nome": "volume acima de 1 e invalido",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "volume": 2
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    },
+    {
+      "nome": "frase so de espacos e invalida",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "phrase": "   "
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    },
+    {
+      "nome": "enabled que nao e booleano e invalido",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "enabled": "yes"
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    },
+    {
+      "nome": "name que nao e texto e invalido",
+      "mascot": {
+        "reactions": {
+          "noise": {
+            "name": 42
+          }
+        }
+      },
+      "expected": {
+        "invalid": true
+      }
+    }
+  ]
+}
