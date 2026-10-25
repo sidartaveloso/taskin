@@ -1,3 +1,4 @@
+import { parseTaskId } from '@opentask/taskin-types';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -35,7 +36,7 @@ afterEach(() => {
 
 describe('FileSystemTaskProvider.describePublish', () => {
   it('devolve o arquivo da task, relativo a raiz do projeto', async () => {
-    const hint = await makeProvider().describePublish('001', { message: MESSAGE, branch: 'develop' });
+    const hint = await makeProvider().describePublish(parseTaskId('001'), { message: MESSAGE, branch: 'develop' });
 
     expect(hint?.paths).toEqual([TASK_FILE]);
   });
@@ -45,13 +46,13 @@ describe('FileSystemTaskProvider.describePublish', () => {
     writeFileSync(join(tasksDir, 'assets', 'task-001', 'evidencia.png'), 'png');
     mkdirSync(join(tasksDir, 'assets', 'task-002'), { recursive: true });
 
-    const hint = await makeProvider().describePublish('001', { message: MESSAGE, branch: 'develop' });
+    const hint = await makeProvider().describePublish(parseTaskId('001'), { message: MESSAGE, branch: 'develop' });
 
     expect(hint?.paths).toEqual([TASK_FILE, 'TASKS/assets/task-001/']);
   });
 
   it('o comando adiciona e comita so os caminhos da task, e empurra para a branch', async () => {
-    const hint = await makeProvider().describePublish('001', { message: MESSAGE, branch: 'develop' });
+    const hint = await makeProvider().describePublish(parseTaskId('001'), { message: MESSAGE, branch: 'develop' });
 
     expect(hint?.command).toBe(
       `git add -- ${TASK_FILE} && git commit -m "${MESSAGE}" -- ${TASK_FILE} && git push origin HEAD:develop`,
@@ -61,18 +62,22 @@ describe('FileSystemTaskProvider.describePublish', () => {
   });
 
   it('com o status ja comitado, ensina so o push', async () => {
-    const hint = await makeProvider().describePublish('001', { message: MESSAGE, branch: 'main', committed: true });
+    const hint = await makeProvider().describePublish(parseTaskId('001'), {
+      message: MESSAGE,
+      branch: 'main',
+      committed: true,
+    });
 
     expect(hint?.command).toBe('git push origin HEAD:main');
   });
 
   it('sem branch, empurra a HEAD para a branch de mesmo nome', async () => {
-    const hint = await makeProvider().describePublish('001', { message: MESSAGE });
+    const hint = await makeProvider().describePublish(parseTaskId('001'), { message: MESSAGE });
 
     expect(hint?.command).toMatch(/&& git push origin HEAD$/);
   });
 
   it('task que nao existe nao tem o que publicar', async () => {
-    expect(await makeProvider().describePublish('999', { message: MESSAGE })).toBeUndefined();
+    expect(await makeProvider().describePublish(parseTaskId('999'), { message: MESSAGE })).toBeUndefined();
   });
 });
