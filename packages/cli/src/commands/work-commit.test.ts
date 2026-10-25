@@ -20,6 +20,7 @@ function createMockGitService(): IGitService {
     addAndCommit: vi.fn().mockResolvedValue(true),
     commitTaskStatusChange: vi.fn().mockResolvedValue(true),
     commitTaskStatusChangeOnBranch: vi.fn().mockResolvedValue(true),
+    publishTaskStatusChange: vi.fn().mockResolvedValue({ published: true }),
     hasUncommittedChanges: vi.fn().mockResolvedValue(false),
     getCurrentBranch: vi.fn().mockResolvedValue('main'),
     isGitRepository: vi.fn().mockResolvedValue(true),

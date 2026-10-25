@@ -25,7 +25,7 @@ Teste de contrato (vermelho, escrito primeiro): `packages/git-utils/src/git-serv
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
 - [x] Teste vermelho do contrato de `publishTaskStatusChange` (git-utils, worktree + remoto bare): publica, sem checkout/stash, so o arquivo da task, preserva trabalho local, sobrevive a non-fast-forward, falha de push avisa
-- [ ] Implementar `publishTaskStatusChange` sem checkout (verde) e declarar em `IGitService`
+- [x] Implementar `publishTaskStatusChange` sem checkout (verde) e declarar em `IGitService` (feito junto da task-204)
 - [ ] Teste vermelho: `review` com autopilot, `autoSync` e `defaultBranch` publica o status na `defaultBranch`
 - [ ] Idem para `start`, para o commit de status do `finish` e para a porta MCP (`mcp-status-hook`)
 - [ ] Sem `autoSync`, ou sem `defaultBranch`, nenhum push acontece

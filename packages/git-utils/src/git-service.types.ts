@@ -12,6 +12,16 @@ export type WorkCommitResult =
   | { status: 'failed' };
 
 /**
+ * Outcome of {@link IGitService.publishTaskStatusChange}.
+ *
+ * A failure carries the reason, so the command can say why the remote did not
+ * get the status while the local change stays.
+ *
+ * @public
+ */
+export type TaskStatusPublishResult = { published: true; reason?: never } | { published: false; reason: string };
+
+/**
  * Git service interface for dependency injection and testing.
  * Provides high-level Git operations for task management.
  *
@@ -71,6 +81,23 @@ export interface IGitService {
    * @returns True if commit was created successfully
    */
   commitTaskStatusChangeOnBranch(taskId: string, status: string, defaultBranch?: string): Promise<boolean>;
+
+  /**
+   * Publish a task status change straight to `origin/<defaultBranch>`, the
+   * status board every clone and worktree reads.
+   *
+   * Builds the commit with plumbing on top of a freshly fetched
+   * `origin/<defaultBranch>`, carrying only the task file
+   * (`TASKS/task-<id>-*.md`) and `TASKS/assets/task-<id>/`, and pushes the sha.
+   * HEAD, the index, the working tree, the stash and the local
+   * `<defaultBranch>` are left untouched, so it works from a worktree whose
+   * main checkout has the default branch open. A non-fast-forward push is
+   * rebuilt over the new remote tip, up to three attempts.
+   * @param taskId - Task identifier (e.g., "014")
+   * @param status - New status (e.g., "in-progress", "done")
+   * @param defaultBranch - Remote branch that holds the status board
+   */
+  publishTaskStatusChange(taskId: string, status: string, defaultBranch: string): Promise<TaskStatusPublishResult>;
 
   /**
    * Check if repository has uncommitted changes.
