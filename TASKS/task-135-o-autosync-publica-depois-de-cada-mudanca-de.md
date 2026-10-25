@@ -1,6 +1,6 @@
 # 🧩 Task 135 — O autoSync publica depois de cada mudanca de status, como o contrato promete
 
-- Status: pending
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 
@@ -26,13 +26,24 @@ Teste de contrato (vermelho, escrito primeiro): `packages/git-utils/src/git-serv
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
 - [x] Teste vermelho do contrato de `publishTaskStatusChange` (git-utils, worktree + remoto bare): publica, sem checkout/stash, so o arquivo da task, preserva trabalho local, sobrevive a non-fast-forward, falha de push avisa
 - [x] Implementar `publishTaskStatusChange` sem checkout (verde) e declarar em `IGitService` (feito junto da task-204)
-- [ ] Teste vermelho: `review` com autopilot, `autoSync` e `defaultBranch` publica o status na `defaultBranch`
-- [ ] Idem para `start`, para o commit de status do `finish` e para a porta MCP (`mcp-status-hook`)
-- [ ] Sem `autoSync`, ou sem `defaultBranch`, nenhum push acontece
-- [ ] Falha de push avisa e mantem o status e o commit locais; o aviso diz o motivo
-- [ ] Trocar o desvio por checkout (`commitTaskStatusChangeOnBranch`) pelo novo metodo nos comandos, ou removê-lo se ficar sem uso
-- [ ] Documentar a relacao com o hook `review.post` (`git push origin HEAD`) e a regra de fonte da verdade do status
-- [ ] TSDoc do `autoSync` descreve exatamente o que passa a acontecer
+- [x] Teste vermelho: `review` com autopilot, `autoSync` e `defaultBranch` publica o status na `defaultBranch`
+  — `packages/cli/src/commands/status.worktree.integration.test.ts`, git de verdade com remoto bare e a rodada numa worktree
+- [x] Idem para `start`, para o commit de status do `finish` e para a porta MCP (`mcp-status-hook`)
+  — o mesmo arquivo para `start` e `finish` (o commit de trabalho do `finish` nao leva o arquivo da task); `mcp-status-hook.integration.test.ts` para o MCP
+- [x] Sem `autoSync`, ou sem `defaultBranch`, nenhum push acontece
+  — `packages/cli/src/lib/status-commit/status-commit.test.ts` e o caso "sem autoSync" da integracao; sem remoto `origin` tambem nao, e basta o commit local
+- [x] Falha de push avisa e mantem o status e o commit locais; o aviso diz o motivo
+  — CLI imprime `Status not published to origin/<branch>: <motivo>`; o MCP rejeita com o motivo, e o servidor registra sem desfazer o status
+- [x] Trocar o desvio por checkout (`commitTaskStatusChangeOnBranch`) pelo novo metodo nos comandos, ou removê-lo se ficar sem uso
+  — os comandos e o MCP passam por `recordTaskStatusChange` (`packages/cli/src/lib/status-commit/`); o metodo fica `@deprecated` no `git-utils`, que e pacote publicado: remove-lo pediria versao major
+- [x] Documentar a relacao com o hook `review.post` (`git push origin HEAD`) e a regra de fonte da verdade do status
+  — README, "Status from a worktree"
+- [x] TSDoc do `autoSync` descreve exatamente o que passa a acontecer
+  — `AutomationBehavior.autoSync` no CLI e o schema em `taskin.schemas.ts`
 
 ## Notes
 Achado ao tentar publicar as rodadas do Sandcastle do mapgrid pelo proprio taskin: com `automation.level: autopilot` e `defaultBranch: develop`, nenhum comando alem do `new` faz push. Enquanto esta task nao existir, o `rodada.ts` do mapgrid publica o `develop` por conta propria, marcado como provisorio.
+
+**Mudanca no item 6 do desenho, ao implementar (25/10).** A ideia era que a branch de feature nao comitasse o arquivo da task e que ele ficasse alterado na arvore. Testado com git de verdade, isso trava a worktree: com o arquivo sujo, `git merge develop` e `git rebase develop` recusam ("local changes would be overwritten"), e o proprio `taskin new` com `autoSync` faz rebase. Por isso o commit de status tambem vai para a branch corrente, com o mesmo conteudo do publicado: o merge da `defaultBranch` entra limpo nos dois sentidos, e o rebase descarta o duplicado. O que continua valendo: a `defaultBranch` e a fonte da verdade, e o status nao se edita a mao numa branch de feature.
+
+**O squash do `done`** (`originBranch`, `squashTaskFileOnDone`) ainda faz checkout do `originBranch`. Numa worktree, funciona se essa branch nao estiver aberta em outro checkout. Fica para outra task, se aparecer o caso.

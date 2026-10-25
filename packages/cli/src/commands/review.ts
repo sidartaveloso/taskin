@@ -3,7 +3,7 @@
  * Executes quality checks and transitions task to 'in-review' status
  */
 
-import { appendCiSkipTag, GitService } from '@opentask/taskin-git-utils';
+import { GitService } from '@opentask/taskin-git-utils';
 import { TaskManager } from '@opentask/taskin-task-manager';
 import type { HookContext, HookOptions } from '@opentask/taskin-types';
 import path from 'path';
@@ -15,6 +15,7 @@ import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
+import { recordTaskStatusChange, reportStatusChangeRecord } from '../lib/status-commit/index.js';
 import { normalizeTaskId } from '../lib/task-id.js';
 import { defineCommand } from './define-command/index.js';
 
@@ -58,7 +59,7 @@ export const reviewCommand = defineCommand({
   },
 });
 
-async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<void> {
+export async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
 
@@ -219,14 +220,13 @@ async function reviewTask(taskId: string, options: ReviewTaskOptions): Promise<v
   const updatedTask = await taskManager.reviewTask(task.id);
   success(`Task ${updatedTask.id} status changed to: ${updatedTask.status}`);
 
-  // Auto-commit status change if enabled
-  if (behavior.autoCommitStatusChange) {
-    // Pelo GitService, que comita so o arquivo da task e nao o resto do index.
-    const message = appendCiSkipTag(`docs(TASKS): task-${normalizedId} - mark as ready for review`, ciSkipTag);
-    if (await new GitService(monorepoRoot).addAndCommit(`TASKS/task-${normalizedId}-*.md`, message)) {
-      success('Auto-committed status change');
-    }
-  }
+  const record = await recordTaskStatusChange(
+    new GitService(process.cwd(), { ciSkipTag }),
+    normalizedId,
+    updatedTask.status,
+    behavior,
+  );
+  reportStatusChangeRecord(record, behavior.defaultBranch);
 
   console.log();
 

@@ -15,11 +15,14 @@ export type WorkCommitResult =
  * Outcome of {@link IGitService.publishTaskStatusChange}.
  *
  * A failure carries the reason, so the command can say why the remote did not
- * get the status while the local change stays.
+ * get the status while the local change stays. `noRemote` marks a repository
+ * without an `origin`: there is nowhere to publish, which is not a failure.
  *
  * @public
  */
-export type TaskStatusPublishResult = { published: true; reason?: never } | { published: false; reason: string };
+export type TaskStatusPublishResult =
+  | { published: true; reason?: never; noRemote?: never }
+  | { published: false; reason: string; noRemote?: true };
 
 /**
  * Git service interface for dependency injection and testing.
@@ -75,6 +78,10 @@ export interface IGitService {
    * Commit task status change to a specific branch.
    * If defaultBranch is provided and different from current branch,
    * will temporarily switch to it, commit, and return to original branch.
+   * @deprecated Stashes and checks out the branch, which fails from a worktree
+   *   while another checkout has it open, and the stash is shared by every
+   *   worktree. Use {@link IGitService.commitTaskStatusChange} on the current
+   *   branch and {@link IGitService.publishTaskStatusChange} to publish.
    * @param taskId - Task identifier (e.g., "014")
    * @param status - New status (e.g., "in-progress", "paused", "done")
    * @param defaultBranch - Optional target branch for the commit
