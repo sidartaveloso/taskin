@@ -1,6 +1,6 @@
 # 🧩 Task 208 — O pnpm test fica verde com a suite inteira em paralelo
 
-- Status: in-progress
+- Status: done
 - Type: test
 - Assignee: sidartaveloso
 
