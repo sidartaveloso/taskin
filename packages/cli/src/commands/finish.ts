@@ -13,6 +13,7 @@ import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
+import { isStatusCommitted, recordTaskStatusChange, reportStatusChangeRecord } from '../lib/status-commit/index.js';
 import { statusPublishHint } from '../lib/status-publish-hint/index.js';
 import { normalizeTaskId } from '../lib/task-id.js';
 import { reportWorkCommit } from '../lib/work-commit/index.js';
@@ -161,16 +162,10 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
     success(`Task ${updatedTask.id} completed successfully! 🎉`);
     success(`Status changed to: ${updatedTask.status}`);
 
-    // Auto-commit status change if enabled
-    let statusCommitted = false;
-    if (behavior.autoCommitStatusChange) {
-      statusCommitted = await git.commitTaskStatusChangeOnBranch(normalizedId, 'done', behavior.defaultBranch);
-      if (statusCommitted) {
-        success('Auto-committed status change');
-      }
-    }
+    const record = await recordTaskStatusChange(git, normalizedId, 'done', behavior);
+    reportStatusChangeRecord(record, behavior.defaultBranch);
 
-    let statusPublished = false;
+    let statusPublished = record.outcome === 'published';
 
     // Squash the task file into a single commit on originBranch when done
     if (behavior.autoSync && behavior.originBranch && behavior.defaultBranch) {
@@ -201,7 +196,7 @@ export async function finishTask(taskId: string, options: FinishTaskOptions, git
         level: configManager.getAutomationLevel(),
         taskId: normalizedId,
         message: statusCommitMessage,
-        committed: statusCommitted,
+        committed: isStatusCommitted(record),
       });
     }
 

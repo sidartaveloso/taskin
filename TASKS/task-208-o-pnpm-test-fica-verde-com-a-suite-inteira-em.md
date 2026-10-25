@@ -20,3 +20,5 @@ Com pnpm test (turbo, pacotes em paralelo), tres pacotes falham sem relacao com 
 
 ## Notes
 Achado ao rodar os gates das tasks 204 e 205: `Failed: @opentask/taskin-git-utils#test, @opentask/taskin-types#test, taskin#test`. Isolados, os arquivos que falharam passam (cli 31/31, git-utils 16/16). O `SyntaxError` do `list.json.test.ts` e cascata: o primeiro teste estoura os 5s e o comando dele termina durante o segundo, escrevendo no mesmo `console.log` espionado.
+
+**Depois de fechada (25/10).** Os gates da task-135 pegaram o mesmo estouro no `sync.integration.test.ts` do `file-system-task-provider` (cenarios 2, 5 e 6, `Test timed out in 5000ms`), que nas duas rodadas forcadas tinha passado. Ganhou o mesmo prazo de 30s. Com isso ficam cobertos os tres pacotes cujos testes abrem processos: CLI, `git-utils` e o provider de arquivos.

@@ -12,6 +12,7 @@ import { sendTaskNotification } from '../lib/notification/notify-helper.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { playSound } from '../lib/sound-player.js';
+import { isStatusCommitted, recordTaskStatusChange, reportStatusChangeRecord } from '../lib/status-commit/index.js';
 import { statusPublishHint } from '../lib/status-publish-hint/index.js';
 import { normalizeTaskId } from '../lib/task-id.js';
 import { defineCommand } from './define-command/index.js';
@@ -143,23 +144,20 @@ export async function startTask(taskId: string, options: StartTaskOptions, gitSe
   // Initialize Git service
   const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
 
-  // Auto-commit status change if enabled
-  let committed = false;
-  if (behavior.autoCommitStatusChange) {
-    committed = await git.commitTaskStatusChangeOnBranch(normalizedId, 'in-progress', behavior.defaultBranch);
-    if (committed) {
-      success('Auto-committed status change');
-    }
-  }
+  const record = await recordTaskStatusChange(git, normalizedId, 'in-progress', behavior);
+  reportStatusChangeRecord(record, behavior.defaultBranch);
 
-  const publishHint = await statusPublishHint({
-    provider: taskProvider,
-    git,
-    level: configManager.getAutomationLevel(),
-    taskId: normalizedId,
-    message: statusCommitMessage,
-    committed,
-  });
+  const publishHint =
+    record.outcome === 'published'
+      ? undefined
+      : await statusPublishHint({
+          provider: taskProvider,
+          git,
+          level: configManager.getAutomationLevel(),
+          taskId: normalizedId,
+          message: statusCommitMessage,
+          committed: isStatusCommitted(record),
+        });
 
   console.log();
 

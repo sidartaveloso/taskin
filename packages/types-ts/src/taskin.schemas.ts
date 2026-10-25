@@ -491,9 +491,9 @@ export const AutomationConfigSchema = z.object({
   level: AutomationLevelSchema.default('assisted'),
   /** Granular commit settings (overrides level if provided) */
   commits: CommitAutomationSchema.optional(),
-  /** Default branch for task commits (e.g., 'main', 'develop'). When set, autocommits will always commit to this branch regardless of current branch. */
+  /** Branch on `origin` that holds the shared task status (e.g., 'develop', 'main'). With `autoSync`, every status change is published there; in autopilot an unset value is detected (develop, main, master). */
   defaultBranch: z.string().optional(),
-  /** Enable automatic fetch/rebase/push before creating tasks and after status changes. Default true. */
+  /** With `defaultBranch`: `taskin new` fetches, rebases and pushes, and every status change is published to `origin/<defaultBranch>` without checking it out. Default true. */
   autoSync: z.boolean().default(true),
   /** Target branch for squash commits when a task is marked as done (e.g., 'main', 'develop'). Optional. */
   originBranch: z.string().optional(),

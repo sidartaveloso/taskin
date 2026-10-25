@@ -238,7 +238,7 @@ With this config:
 
 1. `tasks` is a long-lived shared branch (branched once from `develop`) where every `taskin new` and status-change commit lands — regardless of which local branch the user is on.
 2. **`taskin new`**: before computing the next task number, `autoSync` does `fetch` + `rebase` on `tasks`, then commits the new task file and pushes. If the push is rejected (another user pushed first), it retries the whole cycle (fetch → rebase → renumber → commit → push) up to 3 times.
-3. **Status changes (`taskin start`/`taskin pause`/`taskin finish`)**: committed to `tasks` automatically (`commitTaskStatusChangeOnBranch`).
+3. **Status changes (`taskin start`/`taskin review`/`taskin finish`, and the MCP `start_task`/`finish_task`)**: committed on the current branch, with only the task file, and published to `origin/tasks` (`publishTaskStatusChange`). No checkout and no stash: the commit is built over `origin/tasks` with plumbing and pushed by sha, so it works from a worktree while another checkout has `tasks` open. A rejected push is rebuilt over the new remote tip, up to 3 times; if publishing still fails, the command says why and the status stays committed locally. See [Status from a worktree](#status-from-a-worktree).
 4. **When a task's status becomes `done`** (`taskin finish`): taskin takes the final content of *that task's file only* from `tasks` and creates a single squash commit directly on `develop` (`originBranch`) — without dragging in other tasks still open on `tasks`.
 5. `tasks` keeps accumulating many small bookkeeping commits; `develop` only ever receives one clean commit per finished task.
 
@@ -266,7 +266,16 @@ gitGraph
 ```
 
 - `develop` (`originBranch`) only ever sees the two squash commits — one per finished task — no matter how many `pending`/`in-progress` commits happened on `tasks` in between.
-- Disabling `autoSync` (or leaving `defaultBranch`/`originBranch` unset) falls back to today's behavior: fully local commits, no push/pull/squash.
+- Disabling `autoSync` (or leaving `defaultBranch`/`originBranch` unset) falls back to fully local commits: status changes are committed on the current branch, with no push/pull/squash. In autopilot, an unset `defaultBranch` is detected (`develop`, else `main`, else `master`); `taskin config --level autopilot` saves it.
+
+### Status from a worktree
+
+The remote `defaultBranch` is the shared status board: anyone running `taskin list` in any clone or worktree sees where each task stands without waiting for a feature merge. Implemented in [TASKS/task-135](./TASKS/task-135-o-autosync-publica-depois-de-cada-mudanca-de.md).
+
+- **The `defaultBranch` is the source of truth for status.** Each status change lands there as its own `docs(TASKS)` commit, tagged to skip CI.
+- **The current branch gets the same change.** The task file is committed there too, so the working tree stays clean and the branch keeps taking the `defaultBranch` by merge (identical change on both sides, no conflict) or rebase (the duplicate commit is dropped). Do not edit a task's status by hand on a feature branch: a different value there would conflict with the board.
+- **`hooks.review.post` with `git push origin HEAD`** publishes the *work* branch, not the status. It is still the way to push the work for review; status publication no longer depends on it.
+- **The squash on `done`** (`originBranch`) still checks out the `originBranch`, so from a worktree it needs that branch not to be open in another checkout.
 
 ## 📦 Packages
 
