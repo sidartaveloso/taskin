@@ -1,6 +1,6 @@
 # Task 205 — Fora do autopilot o provider de arquivos ensina a publicar so o arquivo da task
 
-Status: in-progress
+Status: done
 Type: feat
 Assignee: sidartaveloso
 
