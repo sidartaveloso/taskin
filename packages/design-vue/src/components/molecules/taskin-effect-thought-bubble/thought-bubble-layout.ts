@@ -1,5 +1,5 @@
 /**
- * Layout do balao de pensamento do mascote.
+ * Layout dos baloes do mascote: o de pensamento, e a caixa do de fala.
  *
  * `<text>` em SVG nao quebra linha: o balao era uma elipse fixa de `rx: 35` com
  * uma linha de 24px, entao qualquer frase maior que meia duzia de caracteres
@@ -13,15 +13,50 @@
  * texto latino; o excesso de folga fica por conta do preenchimento.
  */
 
+import type { TaskinVariant } from '../../organisms/taskin/Taskin.variants';
+
 /** Quadro do mascote: `viewBox="0 0 320 260"`. */
 export const BUBBLE_RIGHT_LIMIT = 316;
 /** A cabeca do mascote vive a esquerda disto; o balao nao a cobre. */
 export const BUBBLE_LEFT_LIMIT = 150;
 export const BUBBLE_TOP_LIMIT = 4;
 
-/** Posicao e tamanho de sempre, preservados enquanto a frase couber neles. */
-const BASE_CX = 210;
-const BASE_CY = 50;
+/**
+ * O olho direito manda em tudo: no Taskin ele vai de `y` 72 a 108 e ate `x` 199;
+ * no Sapin e um calombo em cima da cabeca, ate `x` 222. Um balao por cima dele
+ * nao se le, e o rabicho por cima da pupila e pior ainda.
+ */
+export const TASKIN_EYE_TOP = 72;
+export const SAPIN_EYE_BUMP_RIGHT = 222;
+
+/**
+ * Onde um balao fica sem tapar o olho: colado no topo do quadro e, no Taskin,
+ * acabando antes do olho (com fonte de 20px, duas linhas acabam em `y` 70); no
+ * Sapin, inteiro a direita do calombo, por isso mais estreito. A caixa curta
+ * nasce a direita do rosto e cresce para a direita antes de crescer para a
+ * esquerda. Os dois baloes, o de pensamento e o de fala, usam isto.
+ */
+export const BUBBLE_ABOVE_EYE: BubbleLayoutOptions = {
+  base: {
+    taskin: { cx: 243, cy: 34 },
+    sapin: { cx: 268, cy: 34 },
+  },
+  leftLimit: { taskin: 170, sapin: SAPIN_EYE_BUMP_RIGHT + 2 },
+  maxFontSize: 20,
+  hugTop: true,
+  maxBottom: { taskin: TASKIN_EYE_TOP },
+};
+
+/**
+ * Onde o rabicho de um balao encosta: dentro da cabeca, a direita do olho
+ * direito, no lugar de ir ate a boca (o caminho ate a boca cruza o olho).
+ * Taskin: a cabeca chega a `x` 220 nessa altura. Sapin: a beira da cabeca.
+ */
+export const BUBBLE_TIP: Record<TaskinVariant, { x: number; y: number }> = {
+  taskin: { x: 210, y: 86 },
+  sapin: { x: 226, y: 90 },
+};
+
 const MIN_RX = 35;
 const MIN_RY = 30;
 
@@ -34,10 +69,27 @@ const PADDING_Y = 10;
 const MAX_LINES = 3;
 
 /**
- * Largura util maxima do texto: o balao inteiro cabe entre os dois limites, e o
- * preenchimento e descontado dos dois lados.
+ * O que muda de um balao para outro. O de pensamento usa os padroes; o de fala
+ * (`speech-bubble-layout.ts`) cola no topo e para antes dos olhos.
  */
-const MAX_TEXT_WIDTH = BUBBLE_RIGHT_LIMIT - BUBBLE_LEFT_LIMIT - 2 * PADDING_X;
+export interface BubbleLayoutOptions {
+  /** Posicao de sempre, preservada enquanto a frase couber no balao minimo. */
+  base: Record<TaskinVariant, { cx: number; cy: number }>;
+  /** O balao nao avanca para a esquerda disto. Padrao: `BUBBLE_LEFT_LIMIT`. */
+  leftLimit?: Partial<Record<TaskinVariant, number>>;
+  /** A maior fonte que a frase curta ganha. Padrao: 24. */
+  maxFontSize?: number;
+  /**
+   * Cola o balao no topo do quadro (`cy = ry + BUBBLE_TOP_LIMIT`), em vez de
+   * preservar `base.cy`: e como o balao de fala fica acima dos olhos.
+   */
+  hugTop?: boolean;
+  /**
+   * A borda de baixo nao passa disto (com `hugTop`): a fonte cede ate as
+   * linhas caberem acima. So se nem a menor fonte couber e que o balao passa.
+   */
+  maxBottom?: Partial<Record<TaskinVariant, number>>;
+}
 
 export interface ThoughtBubbleLayout {
   /** Linhas ja quebradas, na ordem. */
@@ -96,9 +148,26 @@ const quebrarEmLinhas = (texto: string, maxChars: number): string[] => {
   return linhas;
 };
 
-const maxCharsPara = (fontSize: number) => Math.max(1, Math.floor(MAX_TEXT_WIDTH / (fontSize * GLYPH_WIDTH_RATIO)));
+/**
+ * Largura util maxima do texto: o balao inteiro cabe entre os dois limites, e o
+ * preenchimento e descontado dos dois lados.
+ */
+const maxCharsPara = (fontSize: number, maxTextWidth: number) =>
+  Math.max(1, Math.floor(maxTextWidth / (fontSize * GLYPH_WIDTH_RATIO)));
 
-export const layoutThoughtBubble = (texto: string): ThoughtBubbleLayout => {
+export const layoutBubble = (
+  texto: string,
+  variant: TaskinVariant,
+  options: BubbleLayoutOptions,
+): ThoughtBubbleLayout => {
+  const base = options.base[variant];
+  const leftLimit = options.leftLimit?.[variant] ?? BUBBLE_LEFT_LIMIT;
+  const maxFontSize = options.maxFontSize ?? MAX_FONT_SIZE;
+  const maxTextWidth = BUBBLE_RIGHT_LIMIT - leftLimit - 2 * PADDING_X;
+  const maxBottom = options.hugTop ? options.maxBottom?.[variant] : undefined;
+  const maxRy = maxBottom === undefined ? Number.POSITIVE_INFINITY : (maxBottom - BUBBLE_TOP_LIMIT) / 2;
+  const ryPara = (quantasLinhas: number, tamanho: number) =>
+    Math.max(MIN_RY, (quantasLinhas * tamanho * LINE_HEIGHT_RATIO) / 2 + PADDING_Y);
   const frase = texto.trim() || '?';
   const maiorPalavra = frase
     .split(/\s+/)
@@ -112,12 +181,12 @@ export const layoutThoughtBubble = (texto: string): ThoughtBubbleLayout => {
    * o "Shhhh" no meio — o que se le pior do que a mesma frase um pouco menor.
    */
   let fontSize = MIN_FONT_SIZE;
-  let lines = quebrarEmLinhas(frase, maxCharsPara(MIN_FONT_SIZE));
+  let lines = quebrarEmLinhas(frase, maxCharsPara(MIN_FONT_SIZE, maxTextWidth));
 
-  for (let tamanho = MAX_FONT_SIZE; tamanho >= MIN_FONT_SIZE; tamanho--) {
-    const maxChars = maxCharsPara(tamanho);
+  for (let tamanho = maxFontSize; tamanho >= MIN_FONT_SIZE; tamanho--) {
+    const maxChars = maxCharsPara(tamanho, maxTextWidth);
     const candidatas = quebrarEmLinhas(frase, maxChars);
-    if (candidatas.length <= MAX_LINES && maiorPalavra <= maxChars) {
+    if (candidatas.length <= MAX_LINES && maiorPalavra <= maxChars && ryPara(candidatas.length, tamanho) <= maxRy) {
       fontSize = tamanho;
       lines = candidatas;
       break;
@@ -128,16 +197,13 @@ export const layoutThoughtBubble = (texto: string): ThoughtBubbleLayout => {
   const larguraDaMaiorLinha = lines.reduce((maior, l) => Math.max(maior, l.length), 0) * larguraDoGlifo;
   const alturaDaLinha = fontSize * LINE_HEIGHT_RATIO;
 
-  const rx = Math.min(
-    (BUBBLE_RIGHT_LIMIT - BUBBLE_LEFT_LIMIT) / 2,
-    Math.max(MIN_RX, larguraDaMaiorLinha / 2 + PADDING_X),
-  );
-  const ry = Math.max(MIN_RY, (lines.length * alturaDaLinha) / 2 + PADDING_Y);
+  const rx = Math.min((BUBBLE_RIGHT_LIMIT - leftLimit) / 2, Math.max(MIN_RX, larguraDaMaiorLinha / 2 + PADDING_X));
+  const ry = ryPara(lines.length, fontSize);
 
   // Cresce para a direita antes de crescer para a esquerda: a esquerda e onde
   // esta a cabeca do mascote, e um balao por cima dela nao se le.
-  const cx = Math.min(BUBBLE_RIGHT_LIMIT - rx, Math.max(BASE_CX, BUBBLE_LEFT_LIMIT + rx));
-  const cy = Math.max(BASE_CY, ry + BUBBLE_TOP_LIMIT);
+  const cx = Math.min(BUBBLE_RIGHT_LIMIT - rx, Math.max(base.cx, leftLimit + rx));
+  const cy = options.hugTop ? ry + BUBBLE_TOP_LIMIT : Math.max(base.cy, ry + BUBBLE_TOP_LIMIT);
 
   const primeiraLinha = cy - ((lines.length - 1) * alturaDaLinha) / 2;
 
@@ -150,4 +216,29 @@ export const layoutThoughtBubble = (texto: string): ThoughtBubbleLayout => {
     rx: arredondar(rx),
     ry: arredondar(ry),
   };
+};
+
+/** O balao de pensamento: a elipse, acima do olho. */
+export const layoutThoughtBubble = (texto: string, variant: TaskinVariant = 'taskin'): ThoughtBubbleLayout =>
+  layoutBubble(texto, variant, BUBBLE_ABOVE_EYE);
+
+export interface ThoughtTrailBubble {
+  x: number;
+  y: number;
+  r: number;
+}
+
+/**
+ * As duas bolinhas que ligam o balao de pensamento a cabeca. Antes elas eram
+ * proporcionais a elipse e, quando ela crescia, caiam em cima da pupila; agora
+ * descem da borda de baixo em direcao ao mesmo ponto do rabicho da fala, a
+ * direita do olho, e a frase pode crescer que elas ficam no lugar.
+ */
+export const thoughtTrail = (layout: ThoughtBubbleLayout, variant: TaskinVariant = 'taskin'): ThoughtTrailBubble[] => {
+  const bottom = layout.cy + layout.ry;
+  const tip = BUBBLE_TIP[variant];
+  return [
+    { x: arredondar(tip.x + 10), y: arredondar(bottom + 4), r: 8 },
+    { x: arredondar(tip.x + 3), y: arredondar(bottom + 17), r: 5 },
+  ];
 };

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import { expect } from 'storybook/test';
+import { TASKIN_VARIANTS } from './Taskin.variants';
 import TaskinWithFaceTracking from './TaskinWithFaceTracking.vue';
 
 function getWebcam(canvasElement: HTMLElement): HTMLVideoElement | null {
@@ -57,6 +58,11 @@ which keeps latency low and the data private — nothing is sent to a server.
     mascotSize: {
       control: { type: 'number', min: 100, max: 500, step: 10 },
       description: 'Tamanho do mascote Taskin',
+    },
+    variant: {
+      control: 'select',
+      options: [...TASKIN_VARIANTS],
+      description: 'Which character mirrors your face: taskin (octopus) or sapin (frog)',
     },
     showWebcam: {
       control: 'boolean',
@@ -143,5 +149,21 @@ export const LargeMascot: Story = {
     expect(getWebcam(canvasElement)?.classList.contains('visible')).toBe(true);
     const svg = canvasElement.querySelector('.mascot-container svg');
     expect(svg?.getAttribute('width')).toBe('400');
+  },
+};
+
+/**
+ * O Sapin espelhando o seu rosto: olhos, boca e expressoes chegam ao sapinho
+ * pelo mesmo caminho do Taskin.
+ */
+export const Sapin: Story = {
+  args: {
+    variant: 'sapin',
+    mascotSize: 300,
+    showWebcam: false,
+    showDebug: false,
+  },
+  play: async ({ canvasElement }) => {
+    expect(canvasElement.querySelector('g#body')?.getAttribute('data-variant')).toBe('sapin');
   },
 };

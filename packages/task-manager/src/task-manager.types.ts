@@ -158,6 +158,44 @@ export interface ITaskProvider<TTask extends Task = Task> {
    * representacao e de provider.
    */
   getCompletionBlockers?: (task: TTask) => Promise<CriterioEmAberto[]>;
+
+  /**
+   * Como publicar so esta tarefa depois de uma mudanca de status, para quem
+   * nao esta em autopilot.
+   *
+   * **Opcional de proposito**, como `getCompletionBlockers`: so um provider
+   * de arquivos sabe quais caminhos a tarefa ocupa. Um provider remoto ja
+   * publica ao gravar e nao implementa.
+   *
+   * @returns A dica, ou `undefined` quando a tarefa nao existe
+   */
+  describePublish?: (taskId: TaskId, options: TaskPublishOptions) => Promise<TaskPublishHint | undefined>;
+}
+
+/**
+ * What {@link ITaskProvider.describePublish} needs to spell the command.
+ *
+ * @public
+ */
+export interface TaskPublishOptions {
+  /** Commit message for the status change */
+  message: string;
+  /** Branch on `origin` that receives the push; without it, the branch named like HEAD */
+  branch?: string;
+  /** The status change is already committed, so only the push is left */
+  committed?: boolean;
+}
+
+/**
+ * How to publish one task and nothing else.
+ *
+ * @public
+ */
+export interface TaskPublishHint {
+  /** What the task occupies, relative to the project root */
+  paths: string[];
+  /** A command ready to paste, restricted to {@link TaskPublishHint.paths} */
+  command: string;
 }
 
 /**

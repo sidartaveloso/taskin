@@ -212,6 +212,10 @@ agent:  → finish_task(taskId: "042")
 The agent doesn't know — and doesn't need to know — whether that became an edited
 file or a REST call. The provider settles that.
 
+The priority is a position in the queue, not a score: the **lower number comes
+first**, and a task with no number sits behind every numbered one. `--top` gives
+a task a number below the first one's.
+
 The agent can also arrange the queue it works through. `set_priority` places a
 task by number, right `before` or `after` another one, or at the `top` or
 `bottom` of the queue, `join_group` / `leave_group` move it between groups, and

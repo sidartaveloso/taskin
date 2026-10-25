@@ -1,0 +1,69 @@
+{
+  "$comment": "Contrato entre resolveShhhReactionPlan (TypeScript) e o porte em Kotlin de packages/mascote-wear. Veja o README ao lado.",
+  "cases": [
+    {
+      "input": {
+        "sound": false
+      },
+      "expected": {
+        "animate": true,
+        "playSound": false,
+        "showBadge": false
+      }
+    },
+    {
+      "input": {
+        "sound": true
+      },
+      "expected": {
+        "animate": true,
+        "playSound": true,
+        "showBadge": false
+      }
+    },
+    {
+      "input": {
+        "sound": false,
+        "prefersReducedMotion": false
+      },
+      "expected": {
+        "animate": true,
+        "playSound": false,
+        "showBadge": false
+      }
+    },
+    {
+      "input": {
+        "sound": true,
+        "prefersReducedMotion": false
+      },
+      "expected": {
+        "animate": true,
+        "playSound": true,
+        "showBadge": false
+      }
+    },
+    {
+      "input": {
+        "sound": false,
+        "prefersReducedMotion": true
+      },
+      "expected": {
+        "animate": false,
+        "playSound": false,
+        "showBadge": true
+      }
+    },
+    {
+      "input": {
+        "sound": true,
+        "prefersReducedMotion": true
+      },
+      "expected": {
+        "animate": false,
+        "playSound": true,
+        "showBadge": true
+      }
+    }
+  ]
+}

@@ -205,6 +205,10 @@ agente:  → finish_task(taskId: "042")
 O agente não sabe — nem precisa saber — se aquilo virou um arquivo alterado ou
 uma chamada REST. Quem resolve isso é o provider.
 
+A prioridade é uma posição na fila, e não uma nota: o **número menor vem
+primeiro**, e uma tarefa sem número fica atrás de todas as numeradas. O `--top`
+dá à tarefa um número menor que o da primeira.
+
 O agente também organiza a fila que ele mesmo executa. `set_priority` coloca uma
 tarefa por número, logo `before` ou `after` de outra, ou no `top` ou no
 `bottom` da fila, `join_group` / `leave_group` a movem entre grupos, e

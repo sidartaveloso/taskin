@@ -1,0 +1,67 @@
+{
+  "name": "@opentask/taskin-difficulty-estimator",
+  "version": "0.0.0",
+  "description": "Suggests how hard a task is by asking Jev and Laya through layerall, and benchmarks them against human scores with rinhany",
+  "type": "module",
+  "motivation": "Difficulty is scored by hand on the prioritization board, and every new task is born without one.",
+  "solve": "Asks two System One decision models (Jev, hosted; Laya, local) for a 1-5 score in one layerall fan_out, and runs a rinha against the tasks a human already scored to tell which one to trust.",
+  "scope": "internal",
+  "status": "active",
+  "since": "2026-09-29",
+  "keywords": [
+    "taskin",
+    "difficulty",
+    "estimation",
+    "jev",
+    "laya",
+    "layerall",
+    "rinhany"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sidartaveloso/taskin.git",
+    "directory": "packages/difficulty-estimator"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && node ../../scripts/fix-esm-extensions.mjs dist",
+    "clean": "rm -rf dist coverage .turbo",
+    "dev": "tsc --watch",
+    "format": "biome check --write .",
+    "format:check": "biome check .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@layerall/core": "^2.1.0",
+    "@opentask/taskin-task-manager": "workspace:*",
+    "@opentask/taskin-types": "workspace:*",
+    "@rinhany/core": "link:../../../rinhany/packages/core",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@rinhany/testing": "link:../../../rinhany/packages/testing",
+    "@types/node": "^26.6.2",
+    "typescript": "^6.0.0",
+    "vitest": "^5.0.1"
+  }
+}

@@ -45,6 +45,9 @@
 
     <div class="mascot-container" ref="mascotContainer">
       <Taskin
+        :variant="variant"
+        :listening="listening"
+        :speaking="speaking"
         :mood="currentMood"
         :size="mascotSize"
         :eye-tracking-mode="eyeTrackingMode"
@@ -81,9 +84,14 @@ import {
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import Taskin from './Taskin';
 import type { TaskinMood } from './Taskin.types';
+import type { TaskinVariant } from './Taskin.variants';
 
 export interface Props {
   mascotSize?: number;
+  /** Which character reacts: the Taskin octopus (default) or the Sapin frog. */
+  variant?: TaskinVariant;
+  /** The microphone is on: the mascot holds its listening pose. */
+  listening?: boolean;
   showWebcam?: boolean;
   showDebug?: boolean;
   /**
@@ -138,6 +146,8 @@ export interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   mascotSize: 300,
+  variant: 'taskin',
+  listening: false,
   showWebcam: false,
   showDebug: false,
   showControls: true,
@@ -196,6 +206,9 @@ const eyeState = ref<'normal' | 'closed' | 'squint' | 'wide'>('normal');
 const mouthExpression = ref<'neutral' | 'smile' | 'frown' | 'open' | 'wide-open' | 'o-shape' | 'smirk' | 'surprised'>(
   'neutral',
 );
+
+/** A voz do shhh esta tocando: o mascote mexe a boca junto. */
+const speaking = ref(false);
 
 const showThoughtBubble = ref(false);
 const thoughtBubbleText = ref<string>('');
@@ -261,11 +274,18 @@ const triggerShhhReaction = () => {
   // interruptor que nao faz nada.
   if (plan.playSound) {
     voz ??= criarVozDoShhhDoNavegador();
-    void voz?.shush({
-      name: shhhNameRef.value,
-      phrase: shhhPhraseRef.value,
-      volume: shhhVolumeRef.value,
-    });
+    if (voz) {
+      speaking.value = true;
+      void voz
+        .shush({
+          name: shhhNameRef.value,
+          phrase: shhhPhraseRef.value,
+          volume: shhhVolumeRef.value,
+        })
+        .finally(() => {
+          speaking.value = false;
+        });
+    }
   }
   if (plan.animate) {
     mouthExpression.value = 'o-shape';

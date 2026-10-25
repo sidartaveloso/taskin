@@ -3,11 +3,12 @@
  */
 
 import { CI_SKIP_TAGS, DEFAULT_CI_SKIP_TAG, isRecognizedCiSkipTag } from '@opentask/taskin-git-utils';
-import type { AutomationLevel, NotificationEvent } from '@opentask/taskin-types';
+import { type AutomationLevel, LABS_FEATURES, type NotificationEvent } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
+import { isLabsFeature, LABS_DESCRIPTIONS } from '../lib/labs/index.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { defineCommand } from './define-command/index.js';
 
@@ -24,6 +25,9 @@ interface ConfigOptions {
   discordWebhook?: string;
   notificationEvents?: string;
   ciSkipTag?: string;
+  defaultBranch?: string;
+  labs?: string;
+  labsOff?: string;
 }
 
 /**
@@ -73,6 +77,18 @@ export const configCommand = defineCommand({
       description: 'Comma-separated events (task:start,task:done,task:review)',
     },
     {
+      flags: '--labs <feature>',
+      description: `Turn on a labs (beta) feature in this project: ${LABS_FEATURES.join(', ')}`,
+    },
+    {
+      flags: '--labs-off <feature>',
+      description: 'Turn a labs feature off again',
+    },
+    {
+      flags: '--default-branch <branch>',
+      description: 'Branch that holds the shared task status (autopilot detects develop, main or master)',
+    },
+    {
       flags: '--ci-skip-tag <tag>',
       description: `Tag appended to Taskin's own commits so they skip CI (default "${DEFAULT_CI_SKIP_TAG}"; "none" to run CI)`,
     },
@@ -96,6 +112,17 @@ async function handleConfigCommand(options: ConfigOptions): Promise<void> {
   // Set automation level
   if (options.level) {
     await setAutomationLevel(configManager, options.level);
+    return;
+  }
+
+  // Labs features
+  if (options.labs !== undefined || options.labsOff !== undefined) {
+    setLabs(configManager, options.labs ?? options.labsOff ?? '', options.labs !== undefined);
+    return;
+  }
+
+  if (options.defaultBranch !== undefined) {
+    setDefaultBranch(configManager, options.defaultBranch);
     return;
   }
 
@@ -134,7 +161,19 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
     );
     console.log(`  Auto-commit on pause: ${behavior.autoCommitPause ? chalk.green('✓ Yes') : chalk.red('✗ No')}`);
     console.log(`  Auto-commit on finish: ${behavior.autoCommitFinish ? chalk.green('✓ Yes') : chalk.red('✗ No')}`);
+    console.log(`  Default branch: ${describeDefaultBranch(configManager)}`);
     console.log(`  CI skip tag: ${chalk.cyan(describeCiSkipTag(configManager.getCiSkipTag()))}\n`);
+
+    console.log(chalk.bold('🧪 Labs'));
+    const labs = configManager.getLabs();
+    for (const feature of LABS_FEATURES) {
+      const marca = labs.includes(feature) ? chalk.green('✓ On ') : chalk.dim('✗ Off');
+      console.log(`  ${marca} ${chalk.cyan(feature)} — ${LABS_DESCRIPTIONS[feature]}`);
+    }
+    for (const desconhecida of configManager.getUnknownLabs()) {
+      console.log(`  ${chalk.yellow('? ')}   ${desconhecida} — not a labs feature of this taskin; ignored`);
+    }
+    console.log();
 
     console.log(chalk.bold('🔔 Notifications'));
     const notifications = configManager.getNotifications();
@@ -168,6 +207,73 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
       console.error(chalk.dim(err.message));
     }
     process.exit(1);
+  }
+}
+
+function describeDefaultBranch(configManager: ConfigManager): string {
+  const configured = configManager.getAutomationConfig().defaultBranch;
+  if (configured) return chalk.cyan(configured);
+
+  const effective = configManager.getAutomationBehavior().defaultBranch;
+  if (effective) return `${chalk.cyan(effective)} ${chalk.dim('(detected, not saved)')}`;
+
+  return chalk.dim('not set');
+}
+
+function setDefaultBranch(configManager: ConfigManager, rawBranch: string): void {
+  printHeader('Configure Default Branch', '⚙️');
+
+  const branch = rawBranch.trim();
+  if (branch.length === 0) {
+    error('The default branch cannot be empty.');
+    process.exit(1);
+  }
+
+  configManager.setDefaultBranch(branch);
+  success(`Default branch set to ${colors.highlight(branch)}`);
+}
+
+/**
+ * Autopilot publishes task status to the default branch, so choosing it
+ * fills the branch in when the project has none: develop, main or master.
+ * With none of them, it does not guess.
+ */
+function ensureAutopilotDefaultBranch(configManager: ConfigManager): void {
+  const configured = configManager.getAutomationConfig().defaultBranch;
+  if (configured) {
+    info(`Default branch: ${colors.highlight(configured)}`);
+    return;
+  }
+
+  const detected = configManager.detectDefaultBranch();
+  if (!detected) {
+    console.log();
+    console.log(chalk.yellow('⚠️  Autopilot needs a default branch, and none of develop, main or master exists here.'));
+    console.log(chalk.dim('   Set it with: taskin config --default-branch <branch>'));
+    return;
+  }
+
+  configManager.setDefaultBranch(detected);
+  success(`Default branch set to ${colors.highlight(detected)} (detected)`);
+  console.log(chalk.dim('   Change it with: taskin config --default-branch <branch>'));
+}
+
+/**
+ * Liga ou desliga uma funcionalidade de labs. Nome que nao e de labs e recusado
+ * sem gravar: um erro de digitacao nao pode virar uma entrada que nada le.
+ */
+function setLabs(configManager: ConfigManager, nome: string, ligar: boolean): void {
+  if (!isLabsFeature(nome)) {
+    error(`'${nome}' is not a labs feature. Labs features: ${LABS_FEATURES.join(', ')}.`);
+    process.exit(1);
+  }
+  configManager.setLabs(nome, ligar);
+  if (ligar) {
+    success(`Labs feature '${nome}' is on in this project.`);
+    info(LABS_DESCRIPTIONS[nome]);
+    info('Labs features are beta: what they say is a hint, not the truth.');
+  } else {
+    success(`Labs feature '${nome}' is off.`);
   }
 }
 
@@ -247,11 +353,13 @@ async function setAutomationLevel(configManager: ConfigManager, level: string): 
 
     if (currentLevel === level) {
       info(`Automation level is already set to ${colors.highlight(level)}`);
+      if (level === 'autopilot') ensureAutopilotDefaultBranch(configManager);
       return;
     }
 
     configManager.setAutomationLevel(level as AutomationLevel);
     success(`Automation level set to ${colors.highlight(level)}`);
+    if (level === 'autopilot') ensureAutopilotDefaultBranch(configManager);
 
     // Show what changed
     const behavior = configManager.getAutomationBehavior();
@@ -331,19 +439,41 @@ async function configureAutomation(configManager: ConfigManager): Promise<void> 
     },
   ]);
 
+  const defaultBranch = level === 'autopilot' ? await askDefaultBranch(configManager) : undefined;
+
   if (level === currentLevel) {
     info(`Keeping current automation level: ${colors.highlight(level)}`);
-    return;
+  } else {
+    configManager.setAutomationLevel(level);
+    success(`Automation level set to ${colors.highlight(level)}`);
+
+    const behavior = configManager.getAutomationBehavior();
+    console.log(chalk.dim('\nNew behavior:'));
+    console.log(chalk.dim(`  Auto-commit status changes: ${behavior.autoCommitStatusChange ? '✓' : '✗'}`));
+    console.log(chalk.dim(`  Auto-commit on pause: ${behavior.autoCommitPause ? '✓' : '✗'}`));
+    console.log(chalk.dim(`  Auto-commit on finish: ${behavior.autoCommitFinish ? '✓' : '✗'}`));
   }
 
-  configManager.setAutomationLevel(level);
-  success(`Automation level set to ${colors.highlight(level)}`);
+  if (defaultBranch && defaultBranch !== configManager.getAutomationConfig().defaultBranch) {
+    configManager.setDefaultBranch(defaultBranch);
+    success(`Default branch set to ${colors.highlight(defaultBranch)}`);
+  }
+}
 
-  const behavior = configManager.getAutomationBehavior();
-  console.log(chalk.dim('\nNew behavior:'));
-  console.log(chalk.dim(`  Auto-commit status changes: ${behavior.autoCommitStatusChange ? '✓' : '✗'}`));
-  console.log(chalk.dim(`  Auto-commit on pause: ${behavior.autoCommitPause ? '✓' : '✗'}`));
-  console.log(chalk.dim(`  Auto-commit on finish: ${behavior.autoCommitFinish ? '✓' : '✗'}`));
+async function askDefaultBranch(configManager: ConfigManager): Promise<string> {
+  console.log(chalk.dim('\nAutopilot publishes every task status change to this branch on origin.'));
+
+  const { defaultBranch } = await inquirer.prompt<{ defaultBranch: string }>([
+    {
+      type: 'input',
+      name: 'defaultBranch',
+      message: 'Default branch:',
+      default: configManager.getAutomationConfig().defaultBranch ?? configManager.detectDefaultBranch() ?? undefined,
+      validate: (input: string) => (input.trim().length > 0 ? true : 'The default branch is required in autopilot'),
+    },
+  ]);
+
+  return defaultBranch.trim();
 }
 
 async function configureCiSkipTag(configManager: ConfigManager): Promise<void> {

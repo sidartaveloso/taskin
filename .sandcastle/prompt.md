@@ -2,7 +2,7 @@
 
 ## Open issues
 
-!`node packages/cli/dist/index.js list --json --open | jq --arg g '{{GROUP}}' 'if $g == "" then . else map(select(.group.id == $g)) end'`
+!`node packages/cli/dist/index.js list --json --open | jq -c --arg g '{{GROUP}}' '[.. | objects | select(has("title") and has("status"))] | (if $g == "" then . else map(select(.groupId == $g or .group.id? == $g)) end) | sort_by(.priority // 1e12) | map({id, title, status, type, priority})'`
 
 The list above has already been filtered to issues ready for work and is the sole source of truth for what work exists. Do not run your own unfiltered query to find more issues — if the list is empty, there is nothing to do.
 
@@ -67,10 +67,21 @@ have been started.
 
 ## Workflow
 
-1. **Explore** — read the issue carefully. The listing above gives you id, title, status and type; the full body is the markdown file itself — read it with `cat TASKS/task-<ID>-*.md`. Pull in the parent PRD if referenced. Read the relevant source files and tests before writing any code.
+1. **Explore** — read the issue carefully. The listing above gives you id, title, status, type and priority; the full body is the markdown file itself — read it with `cat TASKS/task-<ID>-*.md`. Pull in the parent PRD if referenced. Read the relevant source files and tests before writing any code.
+
+   **If the task has a `### Contexto da rodada` section, that section is the
+   whole reading list.** Read the files it names — and the parts of them it
+   points at — plus their tests, and nothing else: no repository-wide `find`,
+   `grep` or directory walk. The task was written so that this is enough, and
+   every file read beyond it is paid for in tokens on every iteration. Leave the
+   list only when something it names is missing, or plainly not enough to do
+   the work — and then say, in the commit message, what was missing and what
+   you read instead, because that is a defect in the task worth fixing.
 2. **Plan** — decide what to change and why. Keep the change as small as possible.
 3. **Execute** — use RGR (Red → Green → Repeat → Refactor): write a failing test first, then write the implementation to pass it.
-4. **Verify** — run `pnpm lint`, `pnpm typecheck` and `pnpm test` before committing. Fix any failures before proceeding.
+4. **Verify** — if the task has a `### Verificacao` section, run exactly those
+   commands; they replace the repository-wide ones. Otherwise run `pnpm lint`,
+   `pnpm typecheck` and `pnpm test`. Fix any failures before proceeding.
 5. **Commit** — make a single git commit. The message MUST:
    - Start with `RALPH:` prefix
    - Include the task completed and any PRD reference
@@ -81,6 +92,15 @@ have been started.
    checklist items you completed, and write next to them **what proves it** —
    the test names, the command someone can run, the file where the thing lives.
    An item you did not do stays unticked, with the reason in the notes.
+
+   **A task about a visual component needs visual evidence**, not only a test
+   count. You cannot see the drawing, but Chromium in this container can: take
+   a screenshot from a temporary Vitest browser-mode spec (`page.screenshot`
+   from `vitest/browser`), save it under `TASKS/assets/task-<ID>/`, delete the
+   temporary spec before committing, and reference each image in the task file
+   next to the item it proves: `![what it shows](assets/task-<ID>/<name>.png)`.
+   If the task has an `### Evidencia visual` section, it says what to capture
+   and how.
 
    This is not bookkeeping. Neither `finish_task` nor the CLI touches the body
    of a task — they only change the `Status` field. A task that says `done` with

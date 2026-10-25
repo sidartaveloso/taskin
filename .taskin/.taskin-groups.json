@@ -11,6 +11,48 @@
     "antes-da-5": {
       "id": "antes-da-5",
       "name": "Antes da 5.0.0"
+    },
+    "movimentos-do-mascote": {
+      "id": "movimentos-do-mascote",
+      "name": "Movimentos do mascote"
+    },
+    "movimentos-lote-1": {
+      "id": "movimentos-lote-1",
+      "name": "Movimentos, lote 1: a base e os gestos",
+      "parentId": "movimentos-do-mascote"
+    },
+    "movimentos-lote-2": {
+      "id": "movimentos-lote-2",
+      "name": "Movimentos, lote 2: os estados do trabalho",
+      "parentId": "movimentos-do-mascote"
+    },
+    "movimentos-lote-3": {
+      "id": "movimentos-lote-3",
+      "name": "Movimentos, lote 3: voz, mapa e assinaturas",
+      "parentId": "movimentos-do-mascote"
+    },
+    "taskin-no-pulso": {
+      "id": "taskin-no-pulso",
+      "name": "O Taskin no pulso: Wear OS nativo"
+    },
+    "taskin-na-alexa": {
+      "id": "taskin-na-alexa",
+      "name": "O Taskin na Alexa: tasks por voz"
+    },
+    "alexa-etapa-1": {
+      "id": "alexa-etapa-1",
+      "name": "Alexa, etapa 1: a voz entende o taskin?",
+      "parentId": "taskin-na-alexa"
+    },
+    "alexa-etapa-2": {
+      "id": "alexa-etapa-2",
+      "name": "Alexa, etapa 2: o serviço para todo mundo",
+      "parentId": "taskin-na-alexa"
+    },
+    "alexa-etapa-3": {
+      "id": "alexa-etapa-3",
+      "name": "Alexa, etapa 3: beta e loja",
+      "parentId": "taskin-na-alexa"
     }
   }
 }

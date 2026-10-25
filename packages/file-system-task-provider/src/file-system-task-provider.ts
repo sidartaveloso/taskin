@@ -4,16 +4,17 @@ import type {
   ITaskProvider,
   IUserRegistry,
   LintResult,
+  TaskPublishHint,
+  TaskPublishOptions,
   ValidationIssue,
 } from '@opentask/taskin-task-manager';
 import type { GroupId, TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
 import { parseGroupId, parseTaskId } from '@opentask/taskin-types';
-import { slugify } from '@opentask/taskin-utils';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
 import { AttachmentValidator } from './attachment-validator/index.js';
-import { criteriosEmAberto, validarConclusao } from './criterios-de-conclusao/index.js';
+import { corrigirConclusao, criteriosEmAberto, validarConclusao } from './criterios-de-conclusao/index.js';
 import { FileSystemGroupRegistry } from './group-registry.js';
 import { detectLocale, getI18n, type Locale } from './i18n.js';
 import {
@@ -23,7 +24,10 @@ import {
   readMetadataField,
   resolveMetadataStyle,
 } from './metadata-style/index.js';
+import { corrigirPrioridadesTextuais } from './prioridade-textual/index.js';
+import { renomearNomesLongos, validarNomeDoArquivo } from './renomear-nomes-longos.js';
 import type { CreateTaskFileResult, TaskFile } from './task-file.types.js';
+import { nomeDoArquivoDaTask } from './task-file-name.js';
 import { createLintResult, fixTaskFile, validateTaskFile } from './task-validator.js';
 import type { ILogger } from './user-registry.js';
 import { NullLogger } from './user-registry.js';
@@ -134,6 +138,8 @@ export interface FileSystemTaskProviderOptions {
    */
   readonly maxAttachmentKb?: number;
 }
+
+export { TASK_FILE_SLUG_MAX_LENGTH } from './task-file-name.js';
 
 export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
   private locale: Locale;
@@ -285,6 +291,32 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const conteudo = task.content || (await fs.readFile(task.filePath, 'utf-8'));
 
     return criteriosEmAberto(conteudo).map((c) => ({ texto: c.texto, linha: c.linha }));
+  }
+
+  /**
+   * O arquivo da task e `assets/task-<id>/`, se houver, e o comando que publica
+   * so eles: `git commit -- <caminhos>` deixa de fora o resto do index
+   * (task-110), ao contrario de um `git add .`.
+   */
+  async describePublish(taskId: TaskId, options: TaskPublishOptions): Promise<TaskPublishHint | undefined> {
+    const task = await this.findTask(taskId);
+    if (!task) return undefined;
+
+    const assets = path.join(this.tasksDirectory, 'assets', `task-${taskId}`);
+    const paths = [
+      this.relativeToProject(task.filePath),
+      ...((await this.pathExists(assets)) ? [`${this.relativeToProject(assets)}/`] : []),
+    ];
+    const push = `git push origin HEAD${options.branch ? `:${options.branch}` : ''}`;
+    if (options.committed) return { paths, command: push };
+
+    const pathspec = paths.join(' ');
+    const message = options.message.replace(/["$`\\]/g, '\\$&');
+    return { paths, command: `git add -- ${pathspec} && git commit -m "${message}" -- ${pathspec} && ${push}` };
+  }
+
+  private relativeToProject(target: string): string {
+    return path.relative(this.projectRoot, target).split(path.sep).join('/');
   }
 
   private async reassignGroup(de: GroupId, para: GroupId | undefined): Promise<number> {
@@ -506,10 +538,8 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const nextNumber = taskNumbers.length > 0 ? Math.max(...taskNumbers) + 1 : 1;
     const taskId = parseTaskId(String(nextNumber).padStart(3, '0'));
 
-    // Create task file name with slugified title (removes accents)
-    const titleSlug = slugify(options.title);
-
-    const fileName = `task-${taskId}-${titleSlug}.md`;
+    // O numero, que e unico, e so o comeco do titulo (tasks 139 e 140).
+    const fileName = nomeDoArquivoDaTask(taskId, options.title);
     const filePath = path.join(this.tasksDirectory, fileName);
 
     // Check if file already exists
@@ -584,10 +614,11 @@ ${i18n.notesPlaceholder}
   }
 
   async lint(fix?: boolean): Promise<LintResult> {
-    const files = await fs.readdir(this.tasksDirectory);
-    const taskFiles = files
-      .filter((file) => file.startsWith('task-') && file.endsWith('.md'))
-      .map((file) => path.join(this.tasksDirectory, file));
+    const listarArquivos = async () =>
+      (await fs.readdir(this.tasksDirectory))
+        .filter((file) => file.startsWith('task-') && file.endsWith('.md'))
+        .map((file) => path.join(this.tasksDirectory, file));
+    let taskFiles = await listarArquivos();
 
     const allIssues: ValidationIssue[] = [];
 
@@ -635,11 +666,87 @@ ${i18n.notesPlaceholder}
       if (fixedCount > 0) {
         this.logger.info(`✨ Fixed ${fixedCount} task file(s)`);
       }
+
+      /*
+       * Decisao ja escrita, so no formato errado (task-144): `Priority: medium`
+       * vira numero, e item de `done` que se anota como fora vira `— adiado:`.
+       * Cada conversao sai como info — o --fix nao muda prioridade calado.
+       */
+      const io = {
+        readFile: (alvo: string) => fs.readFile(alvo, 'utf-8'),
+        writeFile: (alvo: string, conteudo: string) => fs.writeFile(alvo, conteudo, 'utf-8'),
+      };
+      const convertidas = await corrigirPrioridadesTextuais(
+        (await this.getAllTasks()).map((t) => ({
+          file: t.filePath,
+          prioridade: this.readInlineMetadata(t.content).priority,
+        })),
+        io,
+      );
+      for (const { file, de, para } of convertidas) {
+        allIssues.push({
+          file,
+          severity: 'info',
+          message: `Priority "${de}" → ${para} (by level, after the tasks that already had a number)`,
+        });
+      }
+
+      for (const filePath of taskFiles) {
+        const { conteudo, adiados } = corrigirConclusao(await io.readFile(filePath));
+        if (adiados.length === 0) continue;
+
+        await io.writeFile(filePath, conteudo);
+        for (const { texto, razao } of adiados) {
+          allIssues.push({
+            file: filePath,
+            severity: 'info',
+            message: `Deferred "${texto}" — its own note said it was left out: "${razao}"`,
+          });
+        }
+      }
+
+      // Nome de arquivo longo: renomeia para o que o createTask daria, por
+      // git mv quando versionado, e reescreve as referencias (task-140).
+      const renome = await renomearNomesLongos(
+        this.projectRoot,
+        this.tasksDirectory,
+        (await this.getAllTasks()).map((t) => ({ filePath: t.filePath, id: String(t.id), title: t.title })),
+      );
+      for (const { de, para, viaGit } of renome.renomeados) {
+        allIssues.push({
+          file: para,
+          severity: 'info',
+          message: `Renamed ${path.basename(de)} → ${path.basename(para)}${viaGit ? ' (git mv, rename kept in history)' : ''}`,
+        });
+      }
+      for (const { arquivo, alvo } of renome.recusados) {
+        allIssues.push({
+          file: arquivo,
+          severity: 'warning',
+          message: `Not renamed: ${path.basename(alvo)} already exists`,
+          suggestion: 'Rename one of the two by hand; the --fix never overwrites a task file.',
+        });
+      }
+      const referencias = renome.referenciasReescritas.reduce((total, r) => total + r.quantas, 0);
+      if (referencias > 0) {
+        allIssues.push({
+          file: this.tasksDirectory,
+          severity: 'info',
+          message: `Rewrote ${referencias} reference(s) to renamed task files in ${renome.referenciasReescritas.length} file(s)`,
+        });
+      }
+      if (renome.renomeados.length > 0) {
+        this.logger.info(`✨ Renamed ${renome.renomeados.length} task file(s) with a long name`);
+        taskFiles = await listarArquivos();
+      }
     }
 
     // Assignee que nao resolve nao quebra o arquivo, mas vira usuario temporario
     // fabricado — invisivel na tela e contado como pessoa nas metricas.
     const tasks = await this.getAllTasks();
+    allIssues.push(
+      ...tasks.flatMap((t) => validarNomeDoArquivo({ filePath: t.filePath, id: String(t.id), title: t.title })),
+    );
     const assignees = tasks.map((task) => ({ file: task.filePath, assignee: this.readAssigneeLine(task.content) }));
     allIssues.push(...validateAssignees(assignees, this.userRegistry));
     allIssues.push(

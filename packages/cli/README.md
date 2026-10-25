@@ -128,6 +128,8 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   - `--period <day|week|month|year>` - Time period for stats
 - `taskin config [options]` - Configure automation level
   - `--level <manual|assisted|autopilot>` - Set commit automation level
+  - `--labs <feature>` / `--labs-off <feature>` - Turn a labs feature on or off
+    in this project (see [Labs](#labs)). `--show` lists them
 - `taskin lint` - Validate task files. Exits `1` when an error is left — with `--fix` too, which corrects what it can and reports what it cannot (an attachment over the size limit, for instance)
 - `taskin group` - Manage task groups (alias: `groups`)
   - `list` - List the groups as a tree: each subgroup indented two spaces under
@@ -170,6 +172,30 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
   (trivial) to 5 (very hard) — the command for the queue `taskin list --unscored`
   shows. Anything else is refused without writing. There is no way to clear a
   score: a wrong one is corrected by scoring again, as on the dashboard.
+- `taskin estimate [task-ids...]` - **Labs** (`taskin config --labs estimate`).
+  Ask Jev and Laya how hard tasks are. Without
+  ids, it asks about the open tasks with no difficulty. It shows what each model
+  said, its confidence, and whether they agree — and writes nothing.
+  - `--rinha` - **Beta.** Benchmark Jev and Laya against every task a human already scored,
+    next to their calibrated versions and two baselines (`always-2` and a
+    heuristic), and save the scoreboard to
+    `.taskin/rinhas/`. A model that does not run (no key, server down) is listed
+    with the reason, and the other wins by walkover. The scoreboard comes from
+    however many human scores the project has (39 here) and changes with every
+    new one: it is a hint for whoever prioritizes, not the truth.
+  - `--apply` - Write the suggestion to the tasks that have no difficulty. The
+    suggestion is the last rinha winner's, and only if it beat the baselines;
+    a human score is never overwritten.
+  - `--by <source>` - Choose whose suggestion counts, whatever the rinha said:
+    `jev`, `laya`, or `jev-calibrated` / `laya-calibrated` — the model's score
+    read by position against the tasks a human scored, which takes out a model
+    that always scores high or low and keeps its order
+  - `--no-cache` - Ask again even when an answer is stored
+
+  Jev is hosted: set `TYPESAFE_API_KEY` in the project `.env` (optionally
+  `JEV_URL`, `JEV_MODEL`). Laya runs locally:
+  `uvx --from "laya[serve]" laya-serve` serves it on `http://localhost:8000`
+  (`LAYA_URL`, `LAYA_MODEL` and `LAYA_MAX_LEN` override the defaults).
 
   A provider without groups does not offer `join` and `leave`, and the CLI says
   so in one line instead of failing. A provider with groups but without groups
@@ -456,3 +482,22 @@ Found a bug? Have a feature request? Please [open an issue](https://github.com/s
 ## 📄 License
 
 MIT © [OpenTask](https://opentask.com.br)
+
+## Labs
+
+Some features are experiments still in beta. Like Google Labs, they are off
+until a project asks for them, one by one, in `.taskin.json`:
+
+```json
+{ "labs": ["estimate"] }
+```
+
+`taskin config --labs <feature>` turns one on, `--labs-off <feature>` turns it
+off, and `taskin config --show` lists them. A labs command stays in `--help`,
+marked `(labs)`; run while off, it exits `1` saying how to turn it on. What a
+labs feature says is a hint, not the truth.
+
+Labs features today:
+
+- **estimate** — `taskin estimate`: Jev and Laya suggest task difficulty, judged
+  by a rinha against the human scores (task-141)

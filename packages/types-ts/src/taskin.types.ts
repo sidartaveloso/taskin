@@ -21,6 +21,7 @@ import type {
   HookOptionsSchema,
   HookResultSchema,
   HookSettingsSchema,
+  LabsFeatureSchema,
   MascotConfigSchema,
   MascotNoiseReactionConfigSchema,
   NotificationConfigSchema,
@@ -374,6 +375,12 @@ export type AutomationConfig = z.infer<typeof AutomationConfigSchema>;
  * @public
  */
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
+
+/**
+ * A feature in labs, see {@link LabsFeatureSchema}.
+ * @public
+ */
+export type LabsFeature = z.infer<typeof LabsFeatureSchema>;
 
 /**
  * Taskin configuration file (.taskin.json)

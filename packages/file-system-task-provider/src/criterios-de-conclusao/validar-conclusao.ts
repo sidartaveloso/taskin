@@ -1,5 +1,5 @@
 import type { ValidationIssue } from '@opentask/taskin-task-manager';
-import { criteriosEmAberto } from './criterios-de-conclusao.js';
+import { anotacaoDeAdiamento, criteriosEmAberto } from './criterios-de-conclusao.js';
 
 /**
  * So `done` exige o checklist.
@@ -52,12 +52,62 @@ export function validarConclusao(filePath: string, conteudo: string): Validation
   const status = statusDe(conteudo);
   if (status === undefined || !EXIGE_CHECKLIST.includes(status)) return [];
 
-  return criteriosEmAberto(conteudo).map((criterio) => ({
-    file: filePath,
-    line: criterio.linha,
-    message:
-      `Task is ${status} but "${criterio.texto}" is still open. ` +
-      'Tick it, or say why it was dropped: "— adiado: <reason>".',
-    severity: 'error' as const,
-  }));
+  return criteriosEmAberto(conteudo).map((criterio) => {
+    const anotacao = anotacaoDeAdiamento(criterio.texto);
+    return {
+      file: filePath,
+      line: criterio.linha,
+      message:
+        `Task is ${status} but "${criterio.texto}" is still open. ` +
+        'Tick it, or say why it was dropped: "— adiado: <reason>".',
+      severity: 'error' as const,
+      ...(anotacao
+        ? { suggestion: `Its own note says it was left out — lint --fix rewrites it as "— adiado: ${anotacao.razao}".` }
+        : {
+            fixable: false,
+            suggestion: 'Only you know which it was: tick it if it was done, or write "— adiado: <reason>" if not.',
+          }),
+    };
+  });
+}
+
+/** Um item que o `--fix` passou de aberto para adiado. */
+export interface ItemAdiado {
+  readonly linha: number;
+  readonly texto: string;
+  readonly razao: string;
+}
+
+/**
+ * Reescreve como `— adiado: <razao>` o item em aberto que ja se anota como fora.
+ *
+ * So toca tarefa `done`, que e onde o portao cobra, e so item cuja anotacao
+ * `anotacaoDeAdiamento` reconhece. A anotacao sai do texto e vira a razao,
+ * palavra por palavra; linhas de continuacao ficam onde estao.
+ *
+ * **Nunca** marca `[x]`, e nunca adia item sem anotacao: so quem fez sabe se
+ * fez, e um item nao feito escondido entre os feitos foi exatamente o que a
+ * auditoria da task-075 achou.
+ *
+ * @returns O conteudo, igual ao de entrada quando nao ha o que fazer, e os itens
+ *   adiados
+ * @public
+ */
+export function corrigirConclusao(conteudo: string): { conteudo: string; adiados: ItemAdiado[] } {
+  const status = statusDe(conteudo);
+  if (status === undefined || !EXIGE_CHECKLIST.includes(status)) return { conteudo, adiados: [] };
+
+  const linhas = conteudo.split('\n');
+  const adiados: ItemAdiado[] = [];
+
+  for (const criterio of criteriosEmAberto(conteudo)) {
+    const anotacao = anotacaoDeAdiamento(criterio.texto);
+    const marca = linhas[criterio.linha - 1]?.match(/^(\s*[-*]\s*\[ \]\s*)/)?.[1];
+    if (!anotacao || marca === undefined) continue;
+
+    linhas[criterio.linha - 1] = `${marca}${anotacao.texto} — adiado: ${anotacao.razao}`;
+    adiados.push({ linha: criterio.linha, ...anotacao });
+  }
+
+  return adiados.length === 0 ? { conteudo, adiados } : { conteudo: linhas.join('\n'), adiados };
 }
