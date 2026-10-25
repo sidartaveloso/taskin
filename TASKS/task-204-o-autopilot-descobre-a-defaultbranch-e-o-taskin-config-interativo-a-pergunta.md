@@ -1,6 +1,6 @@
 # Task 204 — O autopilot descobre a defaultBranch e o taskin config interativo a pergunta
 
-Status: pending
+Status: in-progress
 Type: feat
 Assignee: sidartaveloso
 
