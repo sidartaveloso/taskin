@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -38,7 +38,7 @@ describe('detectDefaultBranch', () => {
   });
 
   function repoOn(branch: string): void {
-    git(root, 'init', '-q', repo);
+    mkdirSync(repo);
     initRepo(repo, branch);
   }
 
