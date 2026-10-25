@@ -10,11 +10,14 @@ Em manual e assisted o status nao e publicado sozinho. Depois de uma mudanca de 
 
 ## Tasks
 
-- [ ] Teste vermelho: o provider de filesystem devolve os caminhos da task (`TASKS/task-<id>-*.md` e `TASKS/assets/task-<id>/`) e o comando de publicar so eles
-- [ ] Declarar o metodo (ex.: `describePublish(taskId)`) na interface de provider; provider que nao e arquivo devolve outra dica ou nada
-- [ ] Teste vermelho: em `manual` e `assisted`, depois de mudar o status, o CLI imprime a dica do provider; em autopilot nao
-- [ ] Trocar as sugestoes `git add .` de `finish.ts` e `start.ts` pela dica do provider
+- [x] Teste vermelho: o provider de filesystem devolve os caminhos da task (`TASKS/task-<id>-*.md` e `TASKS/assets/task-<id>/`) e o comando de publicar so eles
+- [x] Declarar o metodo (ex.: `describePublish(taskId)`) na interface de provider; provider que nao e arquivo devolve outra dica ou nada
+- [x] Teste vermelho: em `manual` e `assisted`, depois de mudar o status, o CLI imprime a dica do provider; em autopilot nao
+- [x] Trocar as sugestoes `git add .` de `finish.ts` e `start.ts` pela dica do provider
+  — as sugestoes de status (`git add TASKS/task-<id>-*.md && git commit`, sem pathspec) viraram "Publish the task status: <dica>" em `start.ts` e `finish.ts`; testes em `packages/cli/src/commands/status-publish-hint.test.ts` e `file-system-task-provider.describe-publish.test.ts`. O `Commit your work: git add .` do `finish` continua: comita o trabalho, e vem depois da publicacao do status
 
 ## Notes
 
 Parte do desenho da task-135: a `defaultBranch` e o quadro de status compartilhado.
+
+O push da dica vai para a branch corrente (`git push origin HEAD:<branch-corrente>`), e nao para a `defaultBranch`: numa branch de feature, `HEAD:<defaultBranch>` empurraria a feature inteira para la. Publicar so o status na `defaultBranch` a partir de outra branch e o que o `GitService.publishTaskStatusChange` faz, e ligar os comandos a ele e da task-135. O `review` tem a mesma sugestao antiga (`git add TASKS/... && git commit` sem pathspec) e ficou fora desta task.

@@ -4,6 +4,8 @@ import type {
   ITaskProvider,
   IUserRegistry,
   LintResult,
+  TaskPublishHint,
+  TaskPublishOptions,
   ValidationIssue,
 } from '@opentask/taskin-task-manager';
 import type { GroupId, TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
@@ -289,6 +291,32 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const conteudo = task.content || (await fs.readFile(task.filePath, 'utf-8'));
 
     return criteriosEmAberto(conteudo).map((c) => ({ texto: c.texto, linha: c.linha }));
+  }
+
+  /**
+   * O arquivo da task e `assets/task-<id>/`, se houver, e o comando que publica
+   * so eles: `git commit -- <caminhos>` deixa de fora o resto do index
+   * (task-110), ao contrario de um `git add .`.
+   */
+  async describePublish(taskId: TaskId, options: TaskPublishOptions): Promise<TaskPublishHint | undefined> {
+    const task = await this.findTask(taskId);
+    if (!task) return undefined;
+
+    const assets = path.join(this.tasksDirectory, 'assets', `task-${taskId}`);
+    const paths = [
+      this.relativeToProject(task.filePath),
+      ...((await this.pathExists(assets)) ? [`${this.relativeToProject(assets)}/`] : []),
+    ];
+    const push = `git push origin HEAD${options.branch ? `:${options.branch}` : ''}`;
+    if (options.committed) return { paths, command: push };
+
+    const pathspec = paths.join(' ');
+    const message = options.message.replace(/["$`\\]/g, '\\$&');
+    return { paths, command: `git add -- ${pathspec} && git commit -m "${message}" -- ${pathspec} && ${push}` };
+  }
+
+  private relativeToProject(target: string): string {
+    return path.relative(this.projectRoot, target).split(path.sep).join('/');
   }
 
   private async reassignGroup(de: GroupId, para: GroupId | undefined): Promise<number> {
