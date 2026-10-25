@@ -14,9 +14,9 @@ Em autopilot a defaultBranch deve estar configurada. Ao escolher autopilot (task
 - [x] Teste vermelho: sem nenhuma das tres nao adivinha; avisa e aponta `--default-branch`
 - [x] Teste vermelho: `taskin config --level autopilot` grava `automation.defaultBranch` e imprime a escolha
 - [x] Teste vermelho: no interativo, escolher autopilot pergunta a `defaultBranch` com a detectada como sugestao
-- [ ] Flag `--default-branch <branch>` no `taskin config`, valor visivel no `--show`
-- [ ] `.taskin.json` autopilot sem o campo usa a deteccao em memoria em vez do aviso de nada sincronizado
-- [ ] Fora do autopilot o campo continua opcional e nada e preenchido sozinho
+- [x] Flag `--default-branch <branch>` no `taskin config`, valor visivel no `--show`
+- [x] `.taskin.json` autopilot sem o campo usa a deteccao em memoria em vez do aviso de nada sincronizado
+- [x] Fora do autopilot o campo continua opcional e nada e preenchido sozinho
 
 ## Notes
 

@@ -1,4 +1,5 @@
 export * from './commit-message';
+export * from './default-branch';
 export * from './git';
 export * from './git.types';
 export * from './git-analyzer';

@@ -3,7 +3,7 @@
  * Handles loading, saving, and validating .taskin.json configuration
  */
 
-import { DEFAULT_CI_SKIP_TAG } from '@opentask/taskin-git-utils';
+import { DEFAULT_CI_SKIP_TAG, detectDefaultBranch } from '@opentask/taskin-git-utils';
 import type {
   AutomationConfig,
   AutomationLevel,
@@ -43,7 +43,10 @@ export interface AutomationBehavior {
   autoCommitPause: boolean;
   /** Auto-commit completed work (finish command) */
   autoCommitFinish: boolean;
-  /** Default branch for autocommits */
+  /**
+   * Branch that holds the shared task status. In autopilot, when
+   * `.taskin.json` leaves it out, it is detected (develop, main, master).
+   */
   defaultBranch?: string;
   /** Enable automatic fetch/rebase/push before creating tasks and after status changes */
   autoSync?: boolean;
@@ -96,7 +99,7 @@ export function getAutomationBehavior(level: AutomationLevel, commits?: CommitAu
 export class ConfigManager {
   private configPath: string;
 
-  constructor(projectRoot: string = process.cwd()) {
+  constructor(private readonly projectRoot: string = process.cwd()) {
     this.configPath = join(projectRoot, '.taskin.json');
   }
 
@@ -260,6 +263,30 @@ export class ConfigManager {
   }
 
   /**
+   * Set the branch that holds the shared task status, preserving the rest of
+   * the automation block.
+   */
+  setDefaultBranch(defaultBranch: string): void {
+    const config = this.loadConfig();
+
+    config.automation = {
+      ...DEFAULT_AUTOMATION_CONFIG,
+      ...config.automation,
+      defaultBranch,
+    };
+
+    this.saveConfig(config);
+  }
+
+  /**
+   * The branch autopilot would use when none is configured: develop, main or
+   * master, from the refs this clone already knows. `null` when none exists.
+   */
+  detectDefaultBranch(): string | null {
+    return detectDefaultBranch(this.projectRoot);
+  }
+
+  /**
    * Set automation configuration
    */
   setAutomationConfig(automation: AutomationConfig): void {
@@ -275,7 +302,9 @@ export class ConfigManager {
     const automation = this.getAutomationConfig();
     return {
       ...getAutomationBehavior(automation.level, automation.commits),
-      defaultBranch: automation.defaultBranch,
+      defaultBranch:
+        automation.defaultBranch ??
+        (automation.level === 'autopilot' ? (this.detectDefaultBranch() ?? undefined) : undefined),
       autoSync: automation.autoSync,
       originBranch: automation.originBranch,
       ciSkipTag: automation.ciSkipTag ?? DEFAULT_CI_SKIP_TAG,
