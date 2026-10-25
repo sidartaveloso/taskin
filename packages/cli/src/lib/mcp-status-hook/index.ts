@@ -7,13 +7,16 @@
  * depending on which door you went through (task-066). The fix keeps the
  * `@opentask/taskin-task-server-mcp` package git-agnostic — it only calls an
  * injected `onStatusChange` hook — and builds that hook here, in the CLI, where
- * the config and git already live. The commit produced is byte-for-byte the one
- * `commitTaskStatusChangeOnBranch` writes for the CLI, so the two doors agree.
+ * the config and git already live. It records the change through the same
+ * `recordTaskStatusChange` the CLI uses, so the two doors agree — including,
+ * with `autoSync` and `defaultBranch`, publishing to `origin/<defaultBranch>`
+ * (task-135).
  */
 
 import { GitService, type IGitService } from '@opentask/taskin-git-utils';
 import type { TaskStatusChangeHook } from '@opentask/taskin-task-server-mcp';
 import { ConfigManager } from '../config-manager.js';
+import { recordTaskStatusChange } from '../status-commit/index.js';
 
 export interface McpStatusCommitHookOptions {
   /** Project root that holds `.taskin.json`, used to resolve automation. */
@@ -40,7 +43,15 @@ export function createMcpStatusCommitHook(options: McpStatusCommitHookOptions): 
 
   const git = options.gitService ?? new GitService(options.cwd ?? process.cwd(), { ciSkipTag: behavior.ciSkipTag });
 
+  /*
+   * O stdout do servidor MCP e o protocolo, entao nada de imprimir aqui: uma
+   * publicacao que falha vira erro, e o servidor o registra sem desfazer o
+   * status.
+   */
   return async ({ taskId, status }) => {
-    await git.commitTaskStatusChangeOnBranch(taskId, status, behavior.defaultBranch);
+    const record = await recordTaskStatusChange(git, taskId, status, behavior);
+    if (record.outcome === 'not-published') {
+      throw new Error(`Status not published to origin/${behavior.defaultBranch}: ${record.reason}`);
+    }
   };
 }

@@ -302,6 +302,12 @@ export class GitService implements IGitService {
     const remoteRef = `refs/remotes/origin/${defaultBranch}`;
     const message = buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag });
 
+    try {
+      this.git(['remote', 'get-url', 'origin']);
+    } catch {
+      return { published: false, reason: 'no remote named origin', noRemote: true };
+    }
+
     let lastFailure = 'push failed';
     for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt++) {
       try {

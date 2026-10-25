@@ -151,6 +151,15 @@ describe('GitService.publishTaskStatusChange - integration', () => {
     expect(git(worktree, 'rev-parse', '--abbrev-ref', 'HEAD')).toBe('sandcastle/rodada-1');
   });
 
+  it('sem remoto origin nao ha onde publicar, e o resultado diz isso', async () => {
+    writeFileSync(join(worktree, TASK_FILE), taskContent('in-progress'));
+    git(worktree, 'remote', 'remove', 'origin');
+
+    const result = await new GitService(worktree).publishTaskStatusChange('001', 'in-progress', 'develop');
+
+    expect(result).toEqual({ published: false, reason: expect.any(String), noRemote: true });
+  });
+
   it('sem mudanca no arquivo da task nao cria commit nem empurra nada', async () => {
     const antes = git(remote, 'rev-parse', 'develop');
 

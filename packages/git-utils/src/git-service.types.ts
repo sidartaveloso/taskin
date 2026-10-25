@@ -15,11 +15,14 @@ export type WorkCommitResult =
  * Outcome of {@link IGitService.publishTaskStatusChange}.
  *
  * A failure carries the reason, so the command can say why the remote did not
- * get the status while the local change stays.
+ * get the status while the local change stays. `noRemote` marks a repository
+ * without an `origin`: there is nowhere to publish, which is not a failure.
  *
  * @public
  */
-export type TaskStatusPublishResult = { published: true; reason?: never } | { published: false; reason: string };
+export type TaskStatusPublishResult =
+  | { published: true; reason?: never; noRemote?: never }
+  | { published: false; reason: string; noRemote?: true };
 
 /**
  * Git service interface for dependency injection and testing.
