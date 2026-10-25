@@ -1,13 +1,25 @@
 import { execFileSync, execSync } from 'child_process';
-import { readFileSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync, statSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
 import { buildTaskStatusCommitMessage, DEFAULT_CI_SKIP_TAG } from './commit-message';
 import { createBranch as createBranchUtil, isGitRepository as isGitRepositoryUtil } from './git';
-import type { IGitService, WorkCommitResult } from './git-service.types';
+import type { IGitService, TaskStatusPublishResult, WorkCommitResult } from './git-service.types';
 import { addedLinesFromDiff, findSecretsInLine, type SensitiveFinding, sensitivePathReason } from './sensitive-changes';
 
 /** Acima disso o arquivo e gerado ou binario; nao vale ler linha a linha. */
 const MAX_SCANNED_BYTES = 1024 * 1024;
+
+/** O mesmo limite do `pushAfterCreate`: outra rodada pode empurrar no meio. */
+const MAX_PUBLISH_ATTEMPTS = 3;
+
+class NothingToPublish extends Error {}
+
+function gitFailureReason(err: unknown): string {
+  const stderr = (err as { stderr?: unknown }).stderr;
+  const text = typeof stderr === 'string' && stderr.trim() ? stderr : err instanceof Error ? err.message : String(err);
+  return text.trim().split('\n').filter(Boolean).at(-1) ?? 'git failed';
+}
 
 interface WorkingTreeChange {
   path: string;
@@ -106,8 +118,14 @@ export class GitService implements IGitService {
   }
 
   /** Roda o git sem shell: nada na mensagem ou no caminho e interpretado. */
-  private git(args: string[]): string {
-    return execFileSync('git', args, { cwd: this.cwd, encoding: 'utf8', stdio: 'pipe', maxBuffer: 64 * 1024 * 1024 });
+  private git(args: string[], env?: NodeJS.ProcessEnv): string {
+    return execFileSync('git', args, {
+      cwd: this.cwd,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      maxBuffer: 64 * 1024 * 1024,
+      env: env ? { ...process.env, ...env } : undefined,
+    });
   }
 
   private workingTreeChanges(): WorkingTreeChange[] {
@@ -273,6 +291,89 @@ export class GitService implements IGitService {
       }
     } catch {
       return false;
+    }
+  }
+
+  async publishTaskStatusChange(
+    taskId: string,
+    status: string,
+    defaultBranch: string,
+  ): Promise<TaskStatusPublishResult> {
+    const remoteRef = `refs/remotes/origin/${defaultBranch}`;
+    const message = buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag });
+
+    let lastFailure = 'push failed';
+    for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt++) {
+      try {
+        this.git(['fetch', '--quiet', 'origin', `+refs/heads/${defaultBranch}:${remoteRef}`]);
+      } catch (err) {
+        return { published: false, reason: `could not fetch origin/${defaultBranch}: ${gitFailureReason(err)}` };
+      }
+
+      let commit: string;
+      try {
+        commit = this.buildTaskStatusCommit(taskId, remoteRef, message);
+      } catch (err) {
+        if (err instanceof NothingToPublish) {
+          return { published: false, reason: `origin/${defaultBranch} already has task-${taskId} as it is here` };
+        }
+        return { published: false, reason: `could not build the status commit: ${gitFailureReason(err)}` };
+      }
+
+      try {
+        this.git(['push', '--quiet', 'origin', `${commit}:refs/heads/${defaultBranch}`]);
+        return { published: true };
+      } catch (err) {
+        // Non-fast-forward: outra rodada publicou antes. Busca de novo e
+        // remonta o commit sobre a ponta nova.
+        lastFailure = gitFailureReason(err);
+      }
+    }
+    return { published: false, reason: `could not push to origin/${defaultBranch}: ${lastFailure}` };
+  }
+
+  /**
+   * Monta, num indice temporario, a arvore de `base` com os arquivos da task
+   * como estao no disco, e devolve o commit sobre `base`. O indice, a arvore e
+   * o HEAD de quem chamou nao sao tocados.
+   */
+  private buildTaskStatusCommit(taskId: string, base: string, message: string): string {
+    const root = this.git(['rev-parse', '--show-toplevel']).trim();
+    const files = this.git([
+      'ls-files',
+      '-z',
+      '--full-name',
+      '--cached',
+      '--others',
+      '--exclude-standard',
+      '--',
+      `:(top)TASKS/task-${taskId}-*.md`,
+      `:(top)TASKS/assets/task-${taskId}/`,
+    ])
+      .split('\0')
+      .filter((path) => path.length > 0);
+
+    const scratch = mkdtempSync(join(tmpdir(), 'taskin-publish-'));
+    try {
+      const env = { GIT_INDEX_FILE: join(scratch, 'index') };
+      this.git(['read-tree', base], env);
+      for (const path of [...new Set(files)]) {
+        const absolute = join(root, path);
+        let mode: string;
+        try {
+          mode = statSync(absolute).mode & 0o111 ? '100755' : '100644';
+        } catch {
+          continue;
+        }
+        const blob = this.git(['hash-object', '-w', '--', absolute]).trim();
+        this.git(['update-index', '--add', '--cacheinfo', `${mode},${blob},${path}`], env);
+      }
+      const tree = this.git(['write-tree'], env).trim();
+      if (tree === this.git(['rev-parse', `${base}^{tree}`]).trim()) throw new NothingToPublish();
+
+      return this.git(['commit-tree', tree, '-p', base, '-m', message]).trim();
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
     }
   }
 
