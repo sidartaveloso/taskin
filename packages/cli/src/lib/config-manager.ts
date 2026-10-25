@@ -48,7 +48,11 @@ export interface AutomationBehavior {
    * `.taskin.json` leaves it out, it is detected (develop, main, master).
    */
   defaultBranch?: string;
-  /** Enable automatic fetch/rebase/push before creating tasks and after status changes */
+  /**
+   * With `defaultBranch`: `taskin new` fetches, rebases and pushes, and every
+   * status change (start, review, finish, MCP) is committed on the current
+   * branch and published to `origin/<defaultBranch>` without a checkout.
+   */
   autoSync?: boolean;
   /** Target branch for squash commits when a task is marked as done */
   originBranch?: string;
