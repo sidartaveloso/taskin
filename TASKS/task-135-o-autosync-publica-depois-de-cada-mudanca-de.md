@@ -1,6 +1,6 @@
 # 🧩 Task 135 — O autoSync publica depois de cada mudanca de status, como o contrato promete
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 
