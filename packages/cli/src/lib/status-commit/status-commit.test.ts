@@ -109,6 +109,24 @@ describe('recordTaskStatusChange', () => {
     expect(record).toEqual({ outcome: 'not-published', committed: true, reason: 'could not fetch' });
   });
 
+  it('sem remoto origin, o commit local basta: nao ha onde publicar', async () => {
+    const git = createMockGitService();
+    vi.mocked(git.publishTaskStatusChange).mockResolvedValue({
+      published: false,
+      reason: 'no remote named origin',
+      noRemote: true,
+    });
+
+    const record = await recordTaskStatusChange(
+      git,
+      TASK,
+      'in-progress',
+      behavior({ autoSync: true, defaultBranch: 'main' }),
+    );
+
+    expect(record).toEqual({ outcome: 'committed' });
+  });
+
   it('sem autoSync, commit que falha diz que falhou', async () => {
     const git = createMockGitService();
     vi.mocked(git.commitTaskStatusChange).mockResolvedValue(false);
