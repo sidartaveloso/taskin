@@ -1,6 +1,6 @@
 # 🧩 Task 207 — Idioma configurável nas mensagens de commit de status
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: To be defined
 
