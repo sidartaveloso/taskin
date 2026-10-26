@@ -258,6 +258,21 @@ The flag only turns the tag off. There is no way to force it on in a project
 that configured an empty string: a project that asked for "CI always" has no use
 for skipping case by case.
 
+### The language of status commits
+
+Status commits are written in English by default —
+`docs(TASKS): task-042 - update status to in-progress [skip ci]`. A project that
+prefers Portuguese sets `automation.commitLanguage` to `pt-BR` in `.taskin.json`,
+or runs:
+
+```bash
+taskin config --commit-language pt-BR
+```
+
+The languages are `en` and `pt-BR`. The command refuses any other value; one
+written into `.taskin.json` by hand falls back to English instead of breaking
+the command.
+
 ### Automation Levels
 
 Taskin supports three automation levels for git commits:

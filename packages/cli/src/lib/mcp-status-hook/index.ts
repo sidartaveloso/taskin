@@ -41,7 +41,12 @@ export function createMcpStatusCommitHook(options: McpStatusCommitHookOptions): 
     return undefined;
   }
 
-  const git = options.gitService ?? new GitService(options.cwd ?? process.cwd(), { ciSkipTag: behavior.ciSkipTag });
+  const git =
+    options.gitService ??
+    new GitService(options.cwd ?? process.cwd(), {
+      ciSkipTag: behavior.ciSkipTag,
+      commitLanguage: behavior.commitLanguage,
+    });
 
   /*
    * O stdout do servidor MCP e o protocolo, entao nada de imprimir aqui: uma

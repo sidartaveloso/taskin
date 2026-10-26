@@ -2,7 +2,15 @@
  * config command - Configure Taskin settings
  */
 
-import { CI_SKIP_TAGS, DEFAULT_CI_SKIP_TAG, isRecognizedCiSkipTag } from '@opentask/taskin-git-utils';
+import {
+  CI_SKIP_TAGS,
+  COMMIT_LANGUAGES,
+  type CommitLanguage,
+  DEFAULT_CI_SKIP_TAG,
+  DEFAULT_COMMIT_LANGUAGE,
+  isCommitLanguage,
+  isRecognizedCiSkipTag,
+} from '@opentask/taskin-git-utils';
 import { type AutomationLevel, LABS_FEATURES, type NotificationEvent } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -25,6 +33,7 @@ interface ConfigOptions {
   discordWebhook?: string;
   notificationEvents?: string;
   ciSkipTag?: string;
+  commitLanguage?: string;
   defaultBranch?: string;
   labs?: string;
   labsOff?: string;
@@ -92,6 +101,10 @@ export const configCommand = defineCommand({
       flags: '--ci-skip-tag <tag>',
       description: `Tag appended to Taskin's own commits so they skip CI (default "${DEFAULT_CI_SKIP_TAG}"; "none" to run CI)`,
     },
+    {
+      flags: '--commit-language <language>',
+      description: `Language of the status commits: ${COMMIT_LANGUAGES.join(' or ')} (default "${DEFAULT_COMMIT_LANGUAGE}")`,
+    },
   ],
   handler: async (options: ConfigOptions) => {
     await handleConfigCommand(options);
@@ -132,6 +145,11 @@ async function handleConfigCommand(options: ConfigOptions): Promise<void> {
     return;
   }
 
+  if (options.commitLanguage !== undefined) {
+    setCommitLanguage(configManager, options.commitLanguage);
+    return;
+  }
+
   // Set Discord notification
   if (options.discordWebhook) {
     await setDiscordNotification(configManager, options.discordWebhook, options.notificationEvents);
@@ -162,7 +180,8 @@ async function showConfiguration(configManager: ConfigManager): Promise<void> {
     console.log(`  Auto-commit on pause: ${behavior.autoCommitPause ? chalk.green('✓ Yes') : chalk.red('✗ No')}`);
     console.log(`  Auto-commit on finish: ${behavior.autoCommitFinish ? chalk.green('✓ Yes') : chalk.red('✗ No')}`);
     console.log(`  Default branch: ${describeDefaultBranch(configManager)}`);
-    console.log(`  CI skip tag: ${chalk.cyan(describeCiSkipTag(configManager.getCiSkipTag()))}\n`);
+    console.log(`  CI skip tag: ${chalk.cyan(describeCiSkipTag(configManager.getCiSkipTag()))}`);
+    console.log(`  Commit language: ${chalk.cyan(configManager.getCommitLanguage())}\n`);
 
     console.log(chalk.bold('🧪 Labs'));
     const labs = configManager.getLabs();
@@ -310,6 +329,20 @@ function setCiSkipTag(configManager: ConfigManager, rawTag: string): void {
   warnAboutUnrecognizedCiSkipTag(tag);
 }
 
+/**
+ * Unlike the CI-skip tag, an unknown language is refused: there is no message
+ * to write in it, and storing it would only fall back to English in silence.
+ */
+function setCommitLanguage(configManager: ConfigManager, language: string): void {
+  if (!isCommitLanguage(language)) {
+    error(`'${language}' is not a commit language. Commit languages: ${COMMIT_LANGUAGES.join(', ')}.`);
+    process.exit(1);
+  }
+
+  configManager.setCommitLanguage(language);
+  success(`Status commits will be written in ${colors.highlight(language)}`);
+}
+
 async function setDiscordNotification(
   configManager: ConfigManager,
   webhookUrl: string,
@@ -388,6 +421,7 @@ async function interactiveConfig(configManager: ConfigManager): Promise<void> {
         choices: [
           { name: '🤖 Automation level', value: 'automation' },
           { name: '⏭️  CI skip tag', value: 'ciSkipTag' },
+          { name: '🌐 Commit language', value: 'commitLanguage' },
           { name: '🔔 Discord notification', value: 'discord' },
           { name: '🔔 Telegram notification', value: 'telegram' },
         ],
@@ -398,6 +432,8 @@ async function interactiveConfig(configManager: ConfigManager): Promise<void> {
       await configureAutomation(configManager);
     } else if (section === 'ciSkipTag') {
       await configureCiSkipTag(configManager);
+    } else if (section === 'commitLanguage') {
+      await configureCommitLanguage(configManager);
     } else if (section === 'discord') {
       await configureDiscordNotification(configManager);
     } else if (section === 'telegram') {
@@ -517,6 +553,28 @@ async function configureCiSkipTag(configManager: ConfigManager): Promise<void> {
       : choice;
 
   setCiSkipTag(configManager, tag);
+}
+
+async function configureCommitLanguage(configManager: ConfigManager): Promise<void> {
+  printHeader('Configure Commit Language', '🌐');
+
+  const current = configManager.getCommitLanguage();
+  console.log(`Current language: ${chalk.cyan(current)}\n`);
+
+  const { language } = await inquirer.prompt<{ language: CommitLanguage }>([
+    {
+      type: 'list',
+      name: 'language',
+      message: 'Language of the status commits:',
+      default: current,
+      choices: [
+        { name: 'en — docs(TASKS): task-001 - update status to in-progress', value: 'en' },
+        { name: 'pt-BR — docs(TASKS): task-001 - atualiza status para in-progress', value: 'pt-BR' },
+      ],
+    },
+  ]);
+
+  setCommitLanguage(configManager, language);
 }
 
 async function configureDiscordNotification(configManager: ConfigManager): Promise<void> {

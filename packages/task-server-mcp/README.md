@@ -121,7 +121,8 @@ existed, and still do not.
 `taskin finish` — including the side effects the project's `automation.level`
 asks for. When the level auto-commits status changes (`assisted`, `autopilot`,
 or a `commits.taskStatusChanges` override), both doors write the same
-`docs(TASKS): task-… - atualiza status para …` commit; under `manual`, neither
+`docs(TASKS): task-… - update status to …` commit (in the project's
+`automation.commitLanguage`); under `manual`, neither
 does. This used to differ: the MCP path changed the status and committed
 nothing, so the project history depended on which door you used (task-066).
 
