@@ -210,7 +210,7 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
   }
 
   // Initialize Git service
-  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag, commitLanguage: behavior.commitLanguage });
 
   // Sync with remote before numbering (fetch + rebase) when autoSync is active
   if (autoSyncActive) {

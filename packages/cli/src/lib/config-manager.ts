@@ -3,7 +3,12 @@
  * Handles loading, saving, and validating .taskin.json configuration
  */
 
-import { DEFAULT_CI_SKIP_TAG, detectDefaultBranch } from '@opentask/taskin-git-utils';
+import {
+  type CommitLanguage,
+  DEFAULT_CI_SKIP_TAG,
+  detectDefaultBranch,
+  resolveCommitLanguage,
+} from '@opentask/taskin-git-utils';
 import type {
   AutomationConfig,
   AutomationLevel,
@@ -58,6 +63,8 @@ export interface AutomationBehavior {
   originBranch?: string;
   /** Tag appended to the commits Taskin writes on its own. Empty means none. */
   ciSkipTag?: string;
+  /** Language of the status commits; `en` unless `.taskin.json` says otherwise. */
+  commitLanguage?: CommitLanguage;
 }
 
 /**
@@ -267,6 +274,29 @@ export class ConfigManager {
   }
 
   /**
+   * Language of the status commits. A missing or unknown value is `en`.
+   */
+  getCommitLanguage(): CommitLanguage {
+    return resolveCommitLanguage(this.getAutomationConfig().commitLanguage);
+  }
+
+  /**
+   * Set the language of the status commits, preserving the rest of the
+   * automation block.
+   */
+  setCommitLanguage(commitLanguage: CommitLanguage): void {
+    const config = this.loadConfig();
+
+    config.automation = {
+      ...DEFAULT_AUTOMATION_CONFIG,
+      ...config.automation,
+      commitLanguage,
+    };
+
+    this.saveConfig(config);
+  }
+
+  /**
    * Set the branch that holds the shared task status, preserving the rest of
    * the automation block.
    */
@@ -312,6 +342,7 @@ export class ConfigManager {
       autoSync: automation.autoSync,
       originBranch: automation.originBranch,
       ciSkipTag: automation.ciSkipTag ?? DEFAULT_CI_SKIP_TAG,
+      commitLanguage: resolveCommitLanguage(automation.commitLanguage),
     };
   }
 

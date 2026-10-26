@@ -138,13 +138,7 @@ describe('GitService', () => {
       expect(result).toBe(true);
       expect(gitCalls()).toEqual([
         ['add', '--', 'TASKS/task-014-*.md'],
-        [
-          'commit',
-          '-m',
-          'docs(TASKS): task-014 - atualiza status para in-progress [skip ci]',
-          '--',
-          'TASKS/task-014-*.md',
-        ],
+        ['commit', '-m', 'docs(TASKS): task-014 - update status to in-progress [skip ci]', '--', 'TASKS/task-014-*.md'],
       ]);
     });
 
@@ -154,7 +148,7 @@ describe('GitService', () => {
 
       await service.commitTaskStatusChange('042', 'done');
 
-      expect(commitMessages()).toEqual(['docs(TASKS): task-042 - atualiza status para done [skip ci]']);
+      expect(commitMessages()).toEqual(['docs(TASKS): task-042 - update status to done [skip ci]']);
     });
 
     it('should never emit the hyphenated tag, which no platform recognizes', async () => {
@@ -172,7 +166,7 @@ describe('GitService', () => {
 
       await service.commitTaskStatusChange('014', 'done');
 
-      expect(commitMessages()).toEqual(['docs(TASKS): task-014 - atualiza status para done [ci skip]']);
+      expect(commitMessages()).toEqual(['docs(TASKS): task-014 - update status to done [ci skip]']);
     });
 
     it('should append no tag when the service is configured with an empty one', async () => {
@@ -181,7 +175,7 @@ describe('GitService', () => {
 
       await service.commitTaskStatusChange('014', 'done');
 
-      expect(commitMessages()).toEqual(['docs(TASKS): task-014 - atualiza status para done']);
+      expect(commitMessages()).toEqual(['docs(TASKS): task-014 - update status to done']);
     });
   });
 

@@ -12,7 +12,7 @@ import { TASKIN_DIR_NAME } from './users-file-location';
  * publicar so a task e o provider de arquivos, o unico que sabe onde ela mora.
  */
 
-const MESSAGE = 'docs(TASKS): task-001 - atualiza status para in-progress [skip ci]';
+const MESSAGE = 'docs(TASKS): task-001 - update status to in-progress [skip ci]';
 const TASK_FILE = 'TASKS/task-001-exemplo.md';
 
 let projectRoot: string;
