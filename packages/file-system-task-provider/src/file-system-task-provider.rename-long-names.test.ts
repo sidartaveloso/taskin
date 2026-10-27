@@ -106,7 +106,12 @@ describe('FileSystemTaskProvider.lint — nome de arquivo longo', () => {
     expect(resultado.issues.some((i) => i.severity === 'info' && i.message.includes('Renamed'))).toBe(false);
   });
 
-  it('quando o nome novo ja existe, o --fix recusa e diz por que', async () => {
+  /*
+   * O nome novo so pode existir com o mesmo numero — e numero repetido o
+   * --fix renumera antes (task-209): a mais nova sai do caminho, e o renome
+   * segue. A recusa em si continua coberta em `renomear-nomes-longos.test.ts`.
+   */
+  it('quando o nome novo ja existe, a mais nova e renumerada antes, e o renome segue', async () => {
     writeFileSync(
       join(tasks, CURTO),
       `# 🧩 Task 129 — Outra\n\n- Status: pending\n- Type: feat\n\n## Description\ny\n`,
@@ -114,8 +119,10 @@ describe('FileSystemTaskProvider.lint — nome de arquivo longo', () => {
 
     const resultado = await (await provider()).lint(true);
 
-    expect(readdirSync(tasks)).toContain(LONGO);
-    const recusa = resultado.issues.find((i) => i.file.endsWith(LONGO) && i.message.includes('already exists'));
-    expect(recusa?.severity).toBe('warning');
+    const renumerada = CURTO.replace('task-129-', 'task-131-');
+    expect(readdirSync(tasks).sort()).toEqual([CURTO, OUTRA, renumerada].sort());
+    expect(readFileSync(join(tasks, renumerada), 'utf-8')).toContain('# 🧩 Task 131 — Outra');
+    expect(readFileSync(join(tasks, CURTO), 'utf-8')).toContain(`# 🧩 Task 129 — ${TITULO}`);
+    expect(resultado.issues.some((i) => i.message.includes('already exists'))).toBe(false);
   });
 });

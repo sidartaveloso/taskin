@@ -1,4 +1,4 @@
-# 🧩 Task 141 — taskin list e list_tasks aceitam limit e offset, aplicados depois de filtrar e ordenar
+# 🧩 Task 211 — taskin list e list_tasks aceitam limit e offset, aplicados depois de filtrar e ordenar
 
 - Status: pending
 - Type: feat
@@ -15,3 +15,5 @@ Um consumidor que pega X tarefas por vez nao precisa receber a fila inteira. Cas
 
 ## Notes
 Add any relevant notes or links here.
+
+> Renumbered by `taskin lint --fix`: this task was task-141, a number another task file also had.
