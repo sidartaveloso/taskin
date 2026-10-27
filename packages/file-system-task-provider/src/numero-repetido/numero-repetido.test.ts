@@ -3,7 +3,13 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mensagemDoNumeroRepetido, renumerarRepetidos, type TaskNumerada, validarNumerosRepetidos } from './index';
+import {
+  issuesDaRenumeracao,
+  mensagemDoNumeroRepetido,
+  renumerarRepetidos,
+  type TaskNumerada,
+  validarNumerosRepetidos,
+} from './index';
 
 let raiz: string;
 let tasks: string;
@@ -301,5 +307,21 @@ describe('renumerarRepetidos', () => {
 
     expect(resultado).toEqual({ renumerados: [], referenciasAjustadas: [], mencoesSoltas: [], branches: [] });
     expect(git('status', '--porcelain')).toBe('');
+  });
+});
+
+describe('issuesDaRenumeracao', () => {
+  it('a linha longa da mencao solta sai cortada na mensagem, com o arquivo e a linha inteiros', () => {
+    const longa = `Antes ${'x'.repeat(300)} task-027 depois`;
+    const [issue] = issuesDaRenumeracao(raiz, {
+      renumerados: [],
+      referenciasAjustadas: [],
+      mencoesSoltas: [{ arquivo: join(raiz, 'README.md'), linha: 7, numero: '027', texto: longa }],
+      branches: [],
+    });
+
+    expect(issue?.message).toContain('README.md:7');
+    expect(issue?.message.length).toBeLessThan(200);
+    expect(issue?.message).toContain('…');
   });
 });

@@ -245,6 +245,10 @@ export async function renumerarRepetidos(
   return resultado;
 }
 
+/** A linha citada, cortada: o arquivo e o numero da linha ja levam a ela. */
+const MAXIMO_DA_CITACAO = 100;
+const citar = (texto: string) => (texto.length > MAXIMO_DA_CITACAO ? `${texto.slice(0, MAXIMO_DA_CITACAO)}…` : texto);
+
 /** O que o `--fix` fez e o que deixou para alguem decidir, como issues do lint. */
 export function issuesDaRenumeracao(raiz: string, resultado: ResultadoDaRenumeracao): ValidationIssue[] {
   const nomesDoNumero = (numero: string) =>
@@ -272,7 +276,7 @@ export function issuesDaRenumeracao(raiz: string, resultado: ResultadoDaRenumera
       ({ arquivo, linha, numero, texto }): ValidationIssue => ({
         file: arquivo,
         severity: 'warning',
-        message: `Loose mention of task-${numero} left as is at ${relativo(raiz, arquivo)}:${linha}: "${texto}"`,
+        message: `Loose mention of task-${numero} left as is at ${relativo(raiz, arquivo)}:${linha}: "${citar(texto)}"`,
         suggestion: `It may mean the task that kept ${numero} or the renumbered one (${nomesDoNumero(numero)}); point it at the right file by hand.`,
       }),
     ),
