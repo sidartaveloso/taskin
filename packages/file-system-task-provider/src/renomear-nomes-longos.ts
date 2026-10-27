@@ -45,14 +45,14 @@ export function validarNomeDoArquivo(task: TaskParaRenomear): ValidationIssue[] 
   ];
 }
 
-const escapar = (texto: string) => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export const escapar = (texto: string) => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /*
  * O nome antigo sem o `.md`, cercado por algo que nao pode continuar um nome de
  * arquivo de task. Assim a referencia com `.md`, com caminho e sem extensao sao
  * todas trocadas, e um nome mais longo que so comeca igual fica intacto.
  */
-function padraoDoNome(stem: string): RegExp {
+export function padraoDoNome(stem: string): RegExp {
   return new RegExp(`(?<![a-z0-9-])${escapar(stem)}(?![a-z0-9-])`, 'g');
 }
 

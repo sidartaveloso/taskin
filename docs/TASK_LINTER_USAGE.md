@@ -244,6 +244,15 @@ pelo registro de usuários e monta o cabeçalho neste formato.
   - ✅ `task-001.md` (sem descrição também vale)
   - ❌ `tarefa-01.md` (formato errado)
   - ❌ `task-1.md` (número deve ter 3 dígitos)
+- O número é único: dois arquivos `task-027-*.md` são **erro**, com os
+  caminhos dos dois. O `start`, o `review` e o `finish` recusam o número
+  repetido com a mesma mensagem, em vez de pegar um dos arquivos.
+- O `--fix` renumera todos menos o mais antigo (data do commit que criou o
+  arquivo; sem histórico, a data do arquivo; no empate, fica com o número o que
+  não está `done`) para o próximo número livre: nome do arquivo, por `git mv`,
+  título e uma nota no fim. Ajusta os links ao arquivo renomeado em todo arquivo
+  versionado, e só lista o que pede alguém para decidir: menções soltas como
+  `task-027`, com arquivo e linha, e as branches `*/task-027*`, que não mexe.
 
 #### Título (H1)
 
