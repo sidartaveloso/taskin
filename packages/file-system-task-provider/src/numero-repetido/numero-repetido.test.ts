@@ -107,7 +107,7 @@ describe('renumerarRepetidos', () => {
       { de: join(tasks, B), para: join(tasks, novo), numeroAntigo: '027', numeroNovo: '031', viaGit: true },
     ]);
     expect(readdirSync(tasks).sort()).toEqual([A, 'task-030-outra.md', novo].sort());
-    expect(git('status', '--porcelain')).toContain(`R  TASKS/${B} -> TASKS/${novo}`);
+    expect(git('status', '--porcelain')).toMatch(new RegExp(`^R. TASKS/${B} -> TASKS/${novo}$`, 'm'));
 
     const texto = readFileSync(join(tasks, novo), 'utf-8');
     expect(texto.startsWith('# 🧩 Task 031 — Fechar portas\n')).toBe(true);
@@ -165,6 +165,22 @@ describe('renumerarRepetidos', () => {
       [join(tasks, A), '028'],
       [join(tasks, C), '029'],
     ]);
+  });
+
+  it('a idade atravessa o renome por git mv, mas nao a copia do modelo', async () => {
+    iniciarGit();
+    escrever('task-027-abrir-portas-com-um-nome-antigo.md', '027', 'Abrir portas');
+    git('add', '.');
+    commitarEm('2026-01-01T10:00:00', 'A nasce com outro nome');
+    escrever(B, '027', 'Fechar portas');
+    git('add', '.');
+    commitarEm('2026-02-01T10:00:00', 'B nasce, quase igual a A');
+    git('mv', 'TASKS/task-027-abrir-portas-com-um-nome-antigo.md', `TASKS/${A}`);
+    commitarEm('2026-03-01T10:00:00', 'A muda de nome');
+
+    const resultado = await renumerarRepetidos(raiz, tasks, lidas());
+
+    expect(resultado.renumerados.map((r) => r.de)).toEqual([join(tasks, B)]);
   });
 
   it('sem historico, a data do arquivo decide', async () => {

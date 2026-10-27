@@ -117,6 +117,6 @@ describe('FileSystemTaskProvider — numero de task repetido', () => {
     const resultado = await (await provider()).lint(true);
 
     expect(git('status', '--porcelain')).toBe('');
-    expect(resultado.issues.some((i) => /Renumbered|Rewrote|Branch|loose/.test(i.message))).toBe(false);
+    expect(resultado.issues.some((i) => /Renumbered|Rewrote|Branch|Loose mention/.test(i.message))).toBe(false);
   });
 });

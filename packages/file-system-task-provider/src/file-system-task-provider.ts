@@ -24,6 +24,13 @@ import {
   readMetadataField,
   resolveMetadataStyle,
 } from './metadata-style/index.js';
+import {
+  issuesDaRenumeracao,
+  mensagemDoNumeroRepetido,
+  renumerarRepetidos,
+  SUGESTAO_DO_NUMERO_REPETIDO,
+  validarNumerosRepetidos,
+} from './numero-repetido/index.js';
 import { corrigirPrioridadesTextuais } from './prioridade-textual/index.js';
 import { renomearNomesLongos, validarNomeDoArquivo } from './renomear-nomes-longos.js';
 import type { CreateTaskFileResult, TaskFile } from './task-file.types.js';
@@ -341,8 +348,18 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
   async findTask(taskId: TaskId): Promise<TaskFile | undefined> {
     const files = await fs.readdir(this.tasksDirectory);
-    const taskFile = files.find((file) => extractTaskIdFromFileName(file) === taskId);
+    const doNumero = files.filter((file) => extractTaskIdFromFileName(file) === taskId);
 
+    // Numero repetido (task-209): escolher um dos arquivos era como o review
+    // pegava a task errada. Recusa com a mesma mensagem do lint.
+    if (doNumero.length > 1) {
+      const arquivos = doNumero.sort().map((file) => path.join(this.tasksDirectory, file));
+      throw new Error(
+        `${mensagemDoNumeroRepetido(this.projectRoot, taskId, arquivos)}. ${SUGESTAO_DO_NUMERO_REPETIDO}`,
+      );
+    }
+
+    const taskFile = doNumero[0];
     if (!taskFile) {
       return undefined;
     }
@@ -705,6 +722,19 @@ ${i18n.notesPlaceholder}
         }
       }
 
+      // Numero repetido: todas menos a mais antiga vao para o proximo numero
+      // livre, com as referencias ao arquivo ajustadas (task-209).
+      const renumeracao = await renumerarRepetidos(
+        this.projectRoot,
+        this.tasksDirectory,
+        (await this.getAllTasks()).map((t) => ({ filePath: t.filePath, id: String(t.id), status: t.status })),
+      );
+      allIssues.push(...issuesDaRenumeracao(this.projectRoot, renumeracao));
+      if (renumeracao.renumerados.length > 0) {
+        this.logger.info(`✨ Renumbered ${renumeracao.renumerados.length} task file(s) with a repeated number`);
+        taskFiles = await listarArquivos();
+      }
+
       // Nome de arquivo longo: renomeia para o que o createTask daria, por
       // git mv quando versionado, e reescreve as referencias (task-140).
       const renome = await renomearNomesLongos(
@@ -797,6 +827,7 @@ ${i18n.notesPlaceholder}
         todas.map((t) => ({ file: t.filePath, ...(t.order !== undefined && { priority: t.order }) })),
       ),
     );
+    allIssues.push(...validarNumerosRepetidos(this.projectRoot, taskFiles));
 
     if (this.maxAttachmentKb !== undefined) {
       const attachments = new AttachmentValidator({
