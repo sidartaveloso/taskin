@@ -83,7 +83,10 @@ describe('numero de task repetido', () => {
     expect(saida).toContain('TASKS/task-027-abrir-portas.md');
     expect(saida).toContain('TASKS/task-027-fechar-portas.md');
     expect(saida).toContain('lint --fix');
-    expect(git('status', '--porcelain')).toBe('');
+    // O start semeia `.taskin/` com o usuario corrente antes de procurar a task;
+    // o que importa e nenhuma das duas 027 ter sido tocada nem commitada.
+    expect(git('status', '--porcelain', '--untracked-files=no')).toBe('');
+    expect(git('rev-list', '--count', 'HEAD').trim()).toBe('1');
   });
 
   it('o lint acusa o numero repetido como erro e sai com 1', async () => {
