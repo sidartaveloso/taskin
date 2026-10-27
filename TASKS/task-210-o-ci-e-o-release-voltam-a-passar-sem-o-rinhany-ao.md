@@ -1,0 +1,39 @@
+# 🧩 Task 210 — O CI e o Release voltam a passar sem o rinhany ao lado do taskin
+
+- Status: pending
+- Type: fix
+- Assignee: sidartaveloso
+
+## Description
+
+O `packages/difficulty-estimator` (task-141) depende do rinhany por `link:` para uma pasta irmã do taskin:
+
+- `"@rinhany/core": "link:../../../rinhany/packages/core"` em `dependencies`
+- `"@rinhany/testing": "link:../../../rinhany/packages/testing"` em `devDependencies`
+
+Na máquina local a pasta existe e tudo passa. No runner do GitHub ela não existe, e o typecheck para com `Cannot find module '@rinhany/core'`. O CI (`Verificar`) falha na develop desde pelo menos 05/10, e o `Release` falha na main desde 12/10 (`b48ff48`, `e7348da`, `74a6ffa`). Nenhuma versão foi publicada desde a `taskin` 5.0.0, de 25/09.
+
+Fazer o CI passar não basta. O `taskin` publicado depende do `@opentask/taskin-difficulty-estimator` (`workspace:*`), que nunca foi publicado, e o estimator leva o `link:` para o npm. Um pacote publicado com `link:` não instala em lugar nenhum.
+
+### O caminho
+
+A task-003 do rinhany ("Publicar os pacotes no npm", in-progress) já deixou os pacotes publicáveis. Falta a primeira publicação, manual e com login no npm, porque o trusted publishing só pode ser configurado num pacote que já existe. Com `@rinhany/core` e `@rinhany/testing` 0.1.0 no registro, o estimator passa a depender da versão publicada.
+
+## Tasks
+<!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
+- [ ] No rinhany: conciliar a `main` local com a `origin` (hoje 2 commits à frente, `900bbe5` e `f5aa9b4`, e 4 atrás) e publicar a 0.1.0 (task-003 de lá)
+- [ ] `@rinhany/core` e `@rinhany/testing` em `^0.1.0` no `packages/difficulty-estimator/package.json`, com o `pnpm-lock.yaml` atualizado
+- [ ] O typecheck, o build e os testes do estimator passam num clone sem o `../rinhany` ao lado
+- [ ] O `lint:manifests` recusa `link:` nas dependências de um pacote publicável, para isso não voltar
+- [ ] O `Verificar` passa na develop
+
+## Acceptance criteria
+
+- [ ] **A** — Num clone limpo, sem a pasta do rinhany ao lado, `pnpm install && pnpm run ci` passa.
+- [ ] **A** — O `Verificar` fica verde na develop depois do push.
+- [ ] **A** — Nenhum manifesto publicável tem dependência `link:`. Há teste no `lint:manifests`.
+
+## Notes
+
+- Depende da task-003 do rinhany: `../rinhany/TASKS/task-003-publicar-os-pacotes-no-npm.md`.
+- O token do npm desta máquina estava expirado em 27/10 (`pnpm whoami` respondeu 401). A primeira publicação precisa de `pnpm login`.
