@@ -1,6 +1,6 @@
 # 🧩 Task 209 — O lint acusa número de task repetido e o --fix renumera a mais nova
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: To be defined
 - Difficulty: 2
