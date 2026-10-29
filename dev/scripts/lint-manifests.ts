@@ -1,5 +1,6 @@
 import { readdir, readFile } from 'fs/promises';
 import path from 'path';
+import { encontrarDependenciasLocais } from './dependencias-locais';
 
 const requiredFields = ['motivation', 'solve', 'scope', 'status'];
 const packagesDir = path.resolve(process.cwd(), 'packages');
@@ -15,9 +16,18 @@ const checkManifests = async () => {
       const content = await readFile(manifestPath, 'utf-8');
       const manifest = JSON.parse(content);
       const missingFields = requiredFields.filter((field) => !manifest[field]);
+      const localDependencies = encontrarDependenciasLocais(manifest);
 
       if (missingFields.length > 0) {
         console.error(`❌ ${manifest.name} → missing fields: ${missingFields.join(', ')}`);
+      }
+      for (const { campo, nome, versao } of localDependencies) {
+        console.error(
+          `❌ ${manifest.name} → ${campo}.${nome} points to a local folder (${versao}); it only exists on this machine. Use a published version or workspace:.`,
+        );
+      }
+
+      if (missingFields.length > 0 || localDependencies.length > 0) {
         failed++;
       } else {
         console.log(`✅ ${manifest.name} → OK`);

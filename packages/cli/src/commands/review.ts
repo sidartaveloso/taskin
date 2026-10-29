@@ -221,7 +221,7 @@ export async function reviewTask(taskId: string, options: ReviewTaskOptions): Pr
   success(`Task ${updatedTask.id} status changed to: ${updatedTask.status}`);
 
   const record = await recordTaskStatusChange(
-    new GitService(process.cwd(), { ciSkipTag }),
+    new GitService(process.cwd(), { ciSkipTag, commitLanguage: behavior.commitLanguage }),
     normalizedId,
     updatedTask.status,
     behavior,

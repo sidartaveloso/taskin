@@ -4,7 +4,9 @@ import {
   buildTaskStatusCommitMessage,
   CI_SKIP_TAGS,
   DEFAULT_CI_SKIP_TAG,
+  DEFAULT_COMMIT_LANGUAGE,
   isRecognizedCiSkipTag,
+  resolveCommitLanguage,
 } from './commit-message';
 
 describe('CI_SKIP_TAGS', () => {
@@ -71,17 +73,47 @@ describe('appendCiSkipTag', () => {
   });
 });
 
+describe('resolveCommitLanguage', () => {
+  it('defaults to English', () => {
+    expect(DEFAULT_COMMIT_LANGUAGE).toBe('en');
+    expect(resolveCommitLanguage(undefined)).toBe('en');
+  });
+
+  it('keeps a language Taskin knows', () => {
+    expect(resolveCommitLanguage('pt-BR')).toBe('pt-BR');
+    expect(resolveCommitLanguage('en')).toBe('en');
+  });
+
+  it('falls back to English for a value it does not know', () => {
+    expect(resolveCommitLanguage('fr')).toBe('en');
+    expect(resolveCommitLanguage('pt-br')).toBe('en');
+    expect(resolveCommitLanguage(42)).toBe('en');
+  });
+});
+
 describe('buildTaskStatusCommitMessage', () => {
   it('builds the status subject with the configured tag', () => {
     expect(buildTaskStatusCommitMessage({ taskId: '052', status: 'in-progress', ciSkipTag: '[skip ci]' })).toBe(
-      'docs(TASKS): task-052 - atualiza status para in-progress [skip ci]',
+      'docs(TASKS): task-052 - update status to in-progress [skip ci]',
     );
   });
 
   it('uses the default tag when the caller passes none', () => {
     expect(buildTaskStatusCommitMessage({ taskId: '014', status: 'done' })).toBe(
-      'docs(TASKS): task-014 - atualiza status para done [skip ci]',
+      'docs(TASKS): task-014 - update status to done [skip ci]',
     );
+  });
+
+  it('writes the subject in Portuguese when asked to', () => {
+    expect(
+      buildTaskStatusCommitMessage({ taskId: '001', status: 'in-progress', ciSkipTag: '[skip ci]', language: 'pt-BR' }),
+    ).toBe('docs(TASKS): task-001 - atualiza status para in-progress [skip ci]');
+  });
+
+  it('keeps the configured tag in Portuguese too', () => {
+    expect(
+      buildTaskStatusCommitMessage({ taskId: '014', status: 'done', ciSkipTag: '[ci skip]', language: 'pt-BR' }),
+    ).toBe('docs(TASKS): task-014 - atualiza status para done [ci skip]');
   });
 
   it('never emits the hyphenated form', () => {
@@ -91,7 +123,7 @@ describe('buildTaskStatusCommitMessage', () => {
 
   it('omits the tag entirely when it is configured empty', () => {
     expect(buildTaskStatusCommitMessage({ taskId: '001', status: 'done', ciSkipTag: '' })).toBe(
-      'docs(TASKS): task-001 - atualiza status para done',
+      'docs(TASKS): task-001 - update status to done',
     );
   });
 });

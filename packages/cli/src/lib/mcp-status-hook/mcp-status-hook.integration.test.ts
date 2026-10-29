@@ -63,7 +63,7 @@ describe('createMcpStatusCommitHook — effect on git', () => {
     expect(hook).toBeDefined();
     await hook?.({ taskId: parseTaskId('052'), status: 'in-progress' });
 
-    expect(commitLog()).toContain('docs(TASKS): task-052 - atualiza status para in-progress');
+    expect(commitLog()).toContain('docs(TASKS): task-052 - update status to in-progress');
   });
 
   it('manual: no hook is wired, so no status commit is made', async () => {
@@ -74,7 +74,7 @@ describe('createMcpStatusCommitHook — effect on git', () => {
 
     expect(hook).toBeUndefined();
     // The working tree still carries the change, but nothing was committed.
-    expect(commitLog()).not.toContain('atualiza status');
+    expect(commitLog()).not.toContain('update status');
     expect(git('status --porcelain')).toContain('task-052-test.md');
   });
 

@@ -19,6 +19,20 @@ export function git(projectRoot: string, args: string[]): boolean {
   }
 }
 
+/** A saida de um comando git, ou `undefined` quando ele falhou. Nunca lanca. */
+export function saidaDoGit(projectRoot: string, args: string[]): string | undefined {
+  try {
+    return execFileSync('git', args, {
+      cwd: projectRoot,
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 export function isGitWorkTree(projectRoot: string): boolean {
   return git(projectRoot, ['rev-parse', '--is-inside-work-tree']);
 }

@@ -97,6 +97,7 @@ export async function startTask(taskId: string, options: StartTaskOptions, gitSe
     taskId: normalizedId,
     status: 'in-progress',
     ciSkipTag,
+    language: behavior.commitLanguage,
   });
 
   // Dry run mode - show what would be executed
@@ -142,7 +143,7 @@ export async function startTask(taskId: string, options: StartTaskOptions, gitSe
   success(`Status changed to: ${updatedTask.status}`);
 
   // Initialize Git service
-  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag });
+  const git = gitService ?? new GitService(process.cwd(), { ciSkipTag, commitLanguage: behavior.commitLanguage });
 
   const record = await recordTaskStatusChange(git, normalizedId, 'in-progress', behavior);
   reportStatusChangeRecord(record, behavior.defaultBranch);

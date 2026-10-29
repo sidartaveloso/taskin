@@ -510,6 +510,15 @@ export const AutomationConfigSchema = z.object({
    * anything. The CLI warns about an unrecognized value instead of refusing it.
    */
   ciSkipTag: z.string().default('[skip ci]'),
+  /**
+   * Language of the status commits Taskin writes on its own: `en` (the
+   * default) or `pt-BR`.
+   *
+   * An open `string` rather than an enum, like `ciSkipTag`: an unknown value
+   * would otherwise invalidate the whole file and silently drop every other
+   * automation setting. The CLI falls back to `en` instead.
+   */
+  commitLanguage: z.string().optional(),
 });
 
 /**

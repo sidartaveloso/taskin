@@ -38,7 +38,7 @@ function createMockGitService(statusCommitted: boolean): IGitService {
   };
 }
 
-const statusMessage = (status: string): string => `docs(TASKS): task-001 - atualiza status para ${status} [skip ci]`;
+const statusMessage = (status: string): string => `docs(TASKS): task-001 - update status to ${status} [skip ci]`;
 
 const fullHint = (status: string): string =>
   `git add -- ${TASK_FILE} && git commit -m "${statusMessage(status)}" -- ${TASK_FILE} && git push origin HEAD:main`;

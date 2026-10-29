@@ -247,7 +247,7 @@ describe('Taskin CLI E2E Tests', { concurrent: false }, () => {
 
       const { stdout } = await execAsync(`node ${CLI_PATH} start 001 --dry-run`, { cwd: TEST_DIR });
 
-      expect(stdout).toContain('atualiza status para in-progress"');
+      expect(stdout).toContain('update status to in-progress"');
     }, 60000);
 
     it('should suggest [skip ci] in the finish dry run', async () => {
@@ -262,7 +262,7 @@ describe('Taskin CLI E2E Tests', { concurrent: false }, () => {
 
       const { stdout } = await execAsync('git log -1 --pretty=%s', { cwd: TEST_DIR });
 
-      expect(stdout.trim()).toBe('docs(TASKS): task-001 - atualiza status para in-progress [skip ci]');
+      expect(stdout.trim()).toBe('docs(TASKS): task-001 - update status to in-progress [skip ci]');
     }, 60000);
 
     it('should mark the auto-committed status change with the configured tag', async () => {
@@ -276,7 +276,21 @@ describe('Taskin CLI E2E Tests', { concurrent: false }, () => {
 
       const { stdout } = await execAsync('git log -1 --pretty=%s', { cwd: TEST_DIR });
 
-      expect(stdout.trim()).toBe('docs(TASKS): task-001 - atualiza status para in-progress [no ci]');
+      expect(stdout.trim()).toBe('docs(TASKS): task-001 - update status to in-progress [no ci]');
+    }, 60000);
+
+    it('should write the auto-committed status change in the configured language', async () => {
+      const configPath = join(TEST_DIR, '.taskin.json');
+      const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+      config.automation.level = 'assisted';
+      config.automation.commitLanguage = 'pt-BR';
+      writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+
+      await execAsync(`node ${CLI_PATH} start 001`, { cwd: TEST_DIR });
+
+      const { stdout } = await execAsync('git log -1 --pretty=%s', { cwd: TEST_DIR });
+
+      expect(stdout.trim()).toBe('docs(TASKS): task-001 - atualiza status para in-progress [skip ci]');
     }, 60000);
   });
 

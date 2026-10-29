@@ -72,6 +72,54 @@ export function appendCiSkipTag(subject: string, ciSkipTag: string = DEFAULT_CI_
 }
 
 /**
+ * Languages Taskin can write its status commits in.
+ *
+ * @public
+ */
+export const COMMIT_LANGUAGES = ['en', 'pt-BR'] as const;
+
+/**
+ * A language Taskin can write its status commits in.
+ *
+ * @public
+ */
+export type CommitLanguage = (typeof COMMIT_LANGUAGES)[number];
+
+/**
+ * The language of status commits when a project has not chosen one.
+ *
+ * @public
+ */
+export const DEFAULT_COMMIT_LANGUAGE: CommitLanguage = 'en';
+
+/**
+ * Whether a string is one of the languages Taskin writes commits in.
+ *
+ * @public
+ */
+export function isCommitLanguage(value: unknown): value is CommitLanguage {
+  return COMMIT_LANGUAGES.some((language) => language === value);
+}
+
+/**
+ * The language to write in, given what `.taskin.json` holds.
+ *
+ * A missing or unknown value falls back to {@link DEFAULT_COMMIT_LANGUAGE}
+ * instead of failing: the file is edited by hand, and a typo in the language
+ * is no reason for a status change to stop.
+ *
+ * @public
+ */
+export function resolveCommitLanguage(value: unknown): CommitLanguage {
+  return isCommitLanguage(value) ? value : DEFAULT_COMMIT_LANGUAGE;
+}
+
+const STATUS_SUBJECTS: Record<CommitLanguage, (taskId: string, status: string) => string> = {
+  en: (taskId, status) => `docs(TASKS): task-${taskId} - update status to ${status}`,
+  'pt-BR': (taskId, status) => `docs(TASKS): task-${taskId} - atualiza status para ${status}`,
+};
+
+/**
  * Options for {@link buildTaskStatusCommitMessage}.
  *
  * @public
@@ -83,6 +131,8 @@ export interface TaskStatusCommitMessageOptions {
   status: string;
   /** Tag to append. Defaults to {@link DEFAULT_CI_SKIP_TAG}; empty means none. */
   ciSkipTag?: string;
+  /** Language of the subject. Defaults to {@link DEFAULT_COMMIT_LANGUAGE}. */
+  language?: CommitLanguage;
 }
 
 /**
@@ -91,7 +141,7 @@ export interface TaskStatusCommitMessageOptions {
  * @public
  */
 export function buildTaskStatusCommitMessage(options: TaskStatusCommitMessageOptions): string {
-  const subject = `docs(TASKS): task-${options.taskId} - atualiza status para ${options.status}`;
+  const subject = STATUS_SUBJECTS[resolveCommitLanguage(options.language)](options.taskId, options.status);
 
   return appendCiSkipTag(subject, options.ciSkipTag);
 }
