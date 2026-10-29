@@ -43,7 +43,7 @@ escreve.
   modelo local responde e diz o motivo quando não responde. É o precedente de
   sondar um recurso antes de usá-lo.
 - **O plano da Alexa** ([taskin-na-alexa.md](taskin-na-alexa.md)) já desenha
-  três peças: o taskin em segundo plano (task-200), a conexão que a máquina abre
+  três peças: o taskin em segundo plano (task-200, hoje fora do grupo da Alexa), a conexão que a máquina abre
   de dentro para fora (task-198) e a configuração por máquina num arquivo do
   usuário, fora do `.taskin.json`. A task-195 ("qual máquina responde quando
   duas têm o repositório") já é uma pergunta deste RDT.
@@ -164,7 +164,7 @@ consentimento explícito.
 
 ### Um processo em segundo plano só
 
-O batimento do taskin em segundo plano (tasks 198 e 200) é o veículo da
+O taskin em segundo plano (task-200, `taskin daemon`) é o veículo da
 percepção viva: cada máquina anuncia que está ligada e o que oferece. Criar um
 segundo daemon só para isso duplicaria o trabalho. A conexão entre as máquinas
 usa a rede privada que a pessoa já tem, sem descoberta por mDNS.
@@ -205,8 +205,9 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
    - O `taskin list` sugere o como de cada task, e "Onde executar" passa a ser
      derivada.
    - O lint avisa quando uma task cita pelo nome um recurso do inventário.
-3. **Percepção viva.** O batimento do taskin em segundo plano (task-200) mantém
-   o quadro atualizado entre as máquinas.
+3. **Percepção viva.** Um serviço do taskin em segundo plano (task-200) mantém
+   o quadro atualizado entre as máquinas. A task-200 não depende da Alexa: a
+   Alexa ficou sem prioridade, e o processo virou peça comum aos dois.
 4. **Canais por presença.** O aviso vai pelo canal que os sensores dizem que a
    pessoa está vendo. Depende da task-162.
 5. **Projeção.**
