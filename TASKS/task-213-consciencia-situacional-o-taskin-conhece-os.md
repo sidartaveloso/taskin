@@ -1,6 +1,6 @@
 # 🧩 Task 213 — Consciência situacional: o taskin conhece os recursos à disposição e as restrições
 
-- Status: in-progress
+- Status: done
 - Type: docs
 - Assignee: sidartaveloso
 
