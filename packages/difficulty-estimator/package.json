@@ -55,11 +55,11 @@
     "@layerall/core": "^2.1.0",
     "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-types": "workspace:*",
-    "@rinhany/core": "link:../../../rinhany/packages/core",
+    "@rinhany/core": "^0.1.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@rinhany/testing": "link:../../../rinhany/packages/testing",
+    "@rinhany/testing": "^0.1.0",
     "@types/node": "^26.6.2",
     "typescript": "^6.0.0",
     "vitest": "^5.0.1"
