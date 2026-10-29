@@ -1,5 +1,120 @@
 # taskin
 
+## 5.1.0
+
+### Minor Changes
+
+- 7a43f57: O status de uma task tem a branch padrão do remoto como quadro compartilhado.
+  
+  - `@opentask/taskin-git-utils`: `detectDefaultBranch(cwd)` escolhe `develop`, senão `main`, senão `master`, olhando as refs locais e as de `origin/*`, sem rede, e devolve `null` em vez de adivinhar. `GitService.publishTaskStatusChange(taskId, status, defaultBranch)` publica só o arquivo da task (e `TASKS/assets/task-<id>/`) em `origin/<defaultBranch>`, sem trocar de branch, sem stash e sem tocar no índice nem na árvore; funciona numa worktree com a branch padrão aberta em outro checkout.
+  - `@opentask/taskin-task-manager`: `ITaskProvider.describePublish`, opcional, diz como publicar só uma task.
+  - `@opentask/taskin-file-system-provider`: `describePublish` devolve os caminhos da task e o comando `git add`/`git commit` restrito a eles.
+  - `taskin`: `taskin config --level autopilot` detecta e grava `automation.defaultBranch`; o menu interativo a pergunta; `--default-branch <branch>` grava e o `--show` mostra. Em autopilot sem o campo, a detecção vale em memória. Fora do autopilot, `start` e `finish` ensinam a publicar só a task, no lugar do `git add TASKS/… && git commit` sem pathspec.
+- ad0d07c: `taskin estimate` sugere a dificuldade das tasks perguntando ao Jev (TypeSafe,
+  hospedado) e ao Laya (local, pelo `laya-serve`), que falam o mesmo
+  `/v1/systemone`; o layerall chama os dois em `fan_out`. Com `--rinha`, o
+  rinhany põe os dois, as versões calibradas deles (a nota lida pela posição
+  contra as notas humanas) e dois pisos (`always-2` e uma heurística), contra as
+  tasks que já têm nota humana, e salva o placar em `.taskin/rinhas/`. Quem não
+  roda (sem `TYPESAFE_API_KEY`, `laya-serve` fora do ar) aparece com o motivo, e o
+  outro ganha por W.O. `--apply` grava a sugestão do vencedor, só se ele bater os
+  pisos, e nunca por cima de uma nota humana. Pacote novo:
+  `@opentask/taskin-difficulty-estimator`. A rinha é beta: o placar é uma pista, não
+  a verdade, e a CLI diz isso ao mostrá-lo.
+  
+  O `taskin estimate` é a primeira funcionalidade de labs: só roda no projeto que
+  a liga (`"labs": ["estimate"]` no `.taskin.json`, por `taskin config --labs
+  estimate`; `--labs-off` desliga, `--show` lista). O schema da configuração
+  ganha `labs` e o `LabsFeatureSchema`.
+- 8934ce2: **Mudança de comportamento:** os commits de status que o taskin grava sozinho
+  (`start`, `review`, `finish`, `new` e o caminho pelo MCP) passam a sair em
+  **inglês** — `docs(TASKS): task-042 - update status to in-progress [skip ci]`
+  no lugar de `atualiza status para in-progress`. Para continuar em português,
+  declare `"commitLanguage": "pt-BR"` no bloco `automation` do `.taskin.json`, ou
+  rode `taskin config --commit-language pt-BR`.
+  
+  - `@opentask/taskin-git-utils`: `buildTaskStatusCommitMessage` aceita
+    `language` (`en`, o padrão, ou `pt-BR`) e o `GitService` aceita
+    `commitLanguage`. Novos `COMMIT_LANGUAGES`, `DEFAULT_COMMIT_LANGUAGE`,
+    `isCommitLanguage` e `resolveCommitLanguage`, que devolve `en` para um valor
+    desconhecido.
+  - `@opentask/taskin-types`: `automation.commitLanguage`, opcional e de texto
+    livre, para que um valor errado escrito a mão não invalide o arquivo inteiro.
+  - `taskin`: `taskin config --commit-language <en|pt-BR>` grava o idioma e recusa
+    os outros; o menu interativo o pergunta e o `--show` o mostra. Um valor
+    desconhecido no `.taskin.json` cai no inglês sem derrubar o comando.
+- fbc3417: **Número de task repetido.** Dois arquivos com o mesmo número em `TASKS/`
+  (`task-027-a.md` e `task-027-b.md`) passam a ser **erro** no `taskin lint`, com
+  os caminhos dos dois. O `start`, o `review`, o `finish` e o `pause` recusam o
+  número repetido com a mesma mensagem, em vez de agir sobre um dos arquivos.
+  
+  O `taskin lint --fix` renumera todos menos o mais antigo para o próximo número
+  livre — nome do arquivo (por `git mv` quando versionado), título e uma nota no
+  fim dizendo qual era o número. Fica com o número o arquivo criado primeiro
+  (data do commit que o criou, atravessando renomes; sem histórico, a data do
+  arquivo; no empate, o que não está `done`). Os links ao arquivo renomeado são
+  ajustados em todo arquivo versionado do repositório, inclusive por caminho
+  relativo. Menções soltas como `task-027` e as branches `*/task-027*` só são
+  listadas, para alguém decidir.
+  
+  - `@opentask/taskin-file-system-provider`: `findTask` lança quando o número é
+    repetido, em vez de devolver o primeiro arquivo que o `readdir` listar.
+- 5ca0c91: `taskin start`, `review`, `finish` e o MCP funcionam numa worktree. O commit de status vai para a branch corrente, só com o arquivo da task, sem stash nem `git checkout` da branch padrão. Com `autoSync` e `defaultBranch`, o mesmo status é publicado em `origin/<defaultBranch>`; falha de publicação avisa o motivo e o status fica comitado. Sem remoto `origin`, basta o commit local.
+  
+  - `@opentask/taskin-git-utils`: `publishTaskStatusChange` devolve `noRemote: true` quando não há `origin`. `commitTaskStatusChangeOnBranch` fica obsoleto: faz stash e checkout, o que falha numa worktree.
+  - `@opentask/taskin-types`: a documentação de `autoSync` e `defaultBranch` descreve o que passa a acontecer.
+
+### Patch Changes
+
+- cec2cad: A ajuda do `taskin priority` e do `taskin list --sort`, e a descrição do `sort`
+  no `list_tasks` do MCP, dizem a direção da prioridade: número menor vem
+  primeiro.
+- 18b1680: `taskin lint --fix` traduz decisão que já estava escrita, só no formato errado.
+  `Priority: high/medium/low` (e `alta/média/baixa`) vira número por nível, depois
+  de quem já tem número, sem tocar em nenhuma prioridade numérica. Em tarefa
+  `done`, item aberto que se anota como fora (`(galeria — pendente)`, `(fora do
+  escopo …)`) vira `— adiado: <a própria anotação>`, sem nunca marcar `[x]`. Cada
+  conversão sai como info. O que o `--fix` não sabe ler (`Priority: amanhã`, item
+  sem anotação, `Difficulty` fora da faixa) continua erro, agora com sugestão e
+  sem o `💡 Run with --fix` que mandava rodar um conserto que não existia.
+- d1231a7: O nome do arquivo de uma task nova leva só o começo do título: até 50
+  caracteres depois do `task-NNN-`, cortados numa fronteira de palavra. O título
+  completo continua no arquivo. O número, único, garante que dois títulos iguais
+  — ou que só diferem depois do corte — nunca geram o mesmo nome. Um título sem
+  letra nem dígito gera `task-NNN.md`; antes gerava `task-NNN-.md` e o
+  `taskin new` falhava ao ler o próprio arquivo.
+  
+  - `@opentask/taskin-utils`: `slugify(text, { maxLength })`.
+  - `@opentask/taskin-file-system-provider`: `TASK_FILE_SLUG_MAX_LENGTH`.
+- 9328b25: O `taskin lint` avisa o arquivo de task cujo nome passa do limite da task-139,
+  e o `taskin lint --fix` o renomeia para o nome que o `taskin new` daria — mesmo
+  número, começo do título lido do cabeçalho. O renome vai por `git mv` quando o
+  arquivo está versionado, e o histórico atravessa (`git log --follow`); sem Git,
+  ou com o arquivo fora do índice, vai por rename comum. As referências ao nome
+  antigo dentro de `TASKS/` são reescritas, com e sem `.md`. Se o nome novo já
+  existe, o `--fix` recusa e não mexe em nenhum dos dois.
+  
+  - `@opentask/taskin-file-system-provider`: `TASK_FILE_SLUG_MAX_LENGTH` passa a
+    viver em `task-file-name`, com `nomeDoArquivoDaTask`, a regra única de quem
+    cria e de quem renomeia.
+- Updated dependencies [7a43f57]
+- Updated dependencies [cec2cad]
+- Updated dependencies [ad0d07c]
+- Updated dependencies [8934ce2]
+- Updated dependencies [18b1680]
+- Updated dependencies [d1231a7]
+- Updated dependencies [fbc3417]
+- Updated dependencies [9328b25]
+- Updated dependencies [5ca0c91]
+  - @opentask/taskin-git-utils@3.2.0
+  - @opentask/taskin-task-manager@4.1.0
+  - @opentask/taskin-file-system-provider@3.5.0
+  - @opentask/taskin-task-server-mcp@0.6.2
+  - @opentask/taskin-difficulty-estimator@0.1.0
+  - @opentask/taskin-types@2.7.0
+  - @opentask/taskin-utils@1.2.0
+  - @opentask/taskin-task-server-ws@0.4.1
+
 ## 5.0.1
 
 ### Patch Changes

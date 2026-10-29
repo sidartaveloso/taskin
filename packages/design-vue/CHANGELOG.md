@@ -1,5 +1,112 @@
 # @opentask/taskin-design-vue
 
+## 0.7.0
+
+### Minor Changes
+
+- 178cb31: Os baloes dos quadrinhos: a prop `kind` do `SpeechBubble` escolhe a forma pelo
+  jeito de falar — `speech` (fala), `shout` (grito, contorno em estrela e texto
+  em negrito), `whisper` (sussurro, tracejado e em italico), `thought`
+  (pensamento, nuvem com bolinhas) e `narration` (narracao, caixa reta e
+  amarelada, sem rabicho). O grito e a nuvem sao desenhados no tamanho medido
+  do balao, com a ponta no mesmo lugar do rabicho de fala; as formas saem de
+  funcoes puras exportadas (`shoutOutline`, `thoughtCloud`, `tailAnchor`). O
+  `TaskinSays` ganha `bubbleKind`. O balao passa a abracar o texto.
+- 0acf321: O mascote ganha acoes de uma vez so, alem dos humores em laco: `play(acao)`,
+  exposto pelo `Taskin`, faz o gesto, devolve o bicho ao humor em que estava e
+  resolve `true` no fim — ou `false`, se outra acao o interrompe ou a variante
+  nao a tem. Os eventos `action-start` e `action-end` (`{ action, completed }`)
+  avisam o comeco e o fim, e `TASKIN_ACTIONS` lista as acoes. As primeiras sao o
+  sim (`nod`, sorrindo) e o nao (`shake`, de cara fechada), no Taskin e no Sapin.
+  
+  Com `prefers-reduced-motion: reduce`, o grupo de movimento para, humores e
+  acoes, e quem espera o fim de uma acao continua recebendo-o no tempo dela.
+- de8f2ef: As acoes `travel-left` e `travel-right` do mascote: o Sapin agacha, pula num arco inclinado para o lado e aterrissa amassando; o Taskin inclina, desliza e volta, com os tentaculos arrastando atras. E `actionDuration(variant, action)`, exportado ao lado de `TASKIN_ACTIONS`, devolve quanto uma acao dura sem toca-la, para o mapa de tarefas sincronizar o deslocamento.
+- 3af7f73: O mascote fala em balao: a prop `speechText` do `Taskin` mostra o que ele esta
+  dizendo num balao de fala que sai da boca, dimensionado pela frase como o de
+  pensamento, no Taskin e no Sapin. Enquanto fala, o balao de pensamento sai de
+  cena. Efeito novo `TaskinEffectSpeechBubble`, com `layoutSpeechBubble`.
+- 5f83edc: A acao `effort` do mascote: ergue um peso acima da cabeca, sujando de suor e tremendo. Novo efeito `TaskinEffectWeight`.
+- c284b04: Efeito novo `TaskinEffectJuggle` e prop `juggling` (0 a 3) no `Taskin`: com tasks demais em andamento, o polvo faz malabarismo, uma bolinha por task a mais, e os bracos sobem e descem alternados. O Sapin ignora.
+- 6209a7b: A acao `ink`, so do Taskin: quando algo falha, o polvo se assusta — olhos arregalados, boca em O, um tranco para cima — e solta uma nuvem de tinta de entre os tentaculos. Efeito novo `TaskinEffectInk`. No Sapin, `play('ink')` resolve `false`.
+- a423a1c: O roteiro do mascote: `useTaskinScript(taskin)` devolve as props reativas
+  (`mood`, `speechText`, `speaking`, `running`) para ligar no `<Taskin>` e um
+  `run(steps)` que toca os passos em ordem — troca o humor, toca a acao pelo
+  `play()` e espera o fim dela, mostra a fala no balao e segura uma pausa
+  dimensionada pela frase. `stop()` interrompe e limpa a fala; um `run` novo
+  interrompe o anterior. `scriptDuration(variant, steps)` diz quanto o roteiro
+  dura sem toca-lo.
+- d520fb2: A acao `catch-fly`, so do Sapin: uma mosca (o efeito novo `TaskinEffectFly`) voa a direita da cabeca, os olhos a seguem, a lingua sai da boca, pega a mosca e volta, e o papo engole. No Taskin, `play('catch-fly')` resolve `false`. As acoes ganham `steps`, para a pose mudar no meio.
+- 3a5130d: O mascote ganha a variante `sapin`: `<Taskin variant="sapin">` desenha o
+  Sapin, o sapinho da marca para SAP, com os mesmos humores, comportamentos,
+  movimentos e stories do Taskin. `TASKIN_VARIANTS` e o tipo `TaskinVariant`
+  entram nos exports, e `TaskinWithShhh` e `TaskinWithFaceTracking` repassam o
+  `variant`. Junto, o braço da selfie passa a sair na cor do humor, e não mais
+  sempre rosa.
+- d6eb3e3: Atomo novo `SpeechBubble`: o balao de fala do `TaskinSays`, reutilizavel. Texto
+  ou slot, rabicho a esquerda, a direita ou nenhum, e fundo, borda, texto,
+  espessura, fonte, raio e largura por props, ou pelas variaveis
+  `--speech-bubble-*` de quem envolve. O rabicho cresce com a borda e a junta
+  com ela fica continua em qualquer espessura. O `TaskinSays` passa a usa-lo e
+  ganha as props `bubbleBackground`, `bubbleBorderColor`, `bubbleTextColor`,
+  `bubbleBorderWidth` e `bubbleFontSize`; as variaveis `--taskin-says-*` saem.
+- 97f9b98: `TaskinSays`: o balao de fala em HTML, fora do SVG do mascote. O balao em SVG
+  escala com o desenho e, no tamanho de um chat, nao se le; este envolve o
+  `Taskin`, poe o texto num balao ancorado a cabeca com fonte em pixels de
+  verdade, quebra natural e cores trocaveis pelas variaveis `--taskin-says-*`, e
+  repassa as outras props e o `play()`.
+- 3a5130d: O Taskin volta a tremer no `cold`, arfar no `hot` e dançar no `dancing`: o
+  organismo passava ao corpo as props `shiver`, `pant` e `dance`, que ele não
+  tem, e o polvo ficava parado. Agora o polvo se mexe inteiro, como o Sapin —
+  corpo, tentáculos, braços, olhos, boca e efeitos juntos, com a sombra no chão.
+  Junto, o `float` do `in-love` e o `sway` do `tired` deixam de mexer só o
+  círculo do corpo, que deixava o brilho e o rosto para trás. O movimento do
+  Sapin não muda.
+  
+  O humor `hot` passa a parecer calor, e não contentamento: a boca `wide-open`
+  desenhava um sorriso escancarado. Agora é olho pesado, a boca nova `panting`,
+  de língua para fora, e gotas de suor, pelo efeito novo `TaskinEffectSweat` —
+  nas duas variantes.
+
+### Patch Changes
+
+- e44d692: O contraste do texto no grito e no pensamento do `SpeechBubble` fica
+  mensuravel pelo axe (o painel de acessibilidade do Storybook o dava como
+  inconclusivo): o texto leva o proprio fundo, da cor do balao, e fica por cima
+  do SVG da forma por `z-index` positivo. O desenho nao muda.
+- b3fab29: O mascote aponta para cima e para baixo: `play('point-up')` e `play('point-down')` erguem ou baixam o braco direito, com os olhos e um empurraozinho do corpo na mesma direcao, no Taskin e no Sapin.
+- 1a5af30: O mascote comemora: `play('celebrate')` faz o Taskin pular de bracos para o alto com meio giro, e o Sapin pular alto e inflar o papo (`#body-throat`, novo no corpo do Sapin).
+- c580005: O mascote ganha a ação `blocked`: o Taskin cruza os braços e vira a cara, o Sapin senta e desanima.
+- 82483e3: O mascote ganha a ação `start`: o Taskin dobra os braços e puxa duas vezes; o Sapin se agacha e dá um pulinho de largada.
+- 47556f3: A acao `wake` do mascote: acorda de olhos semiabertos, boceja e se espreguica de bracos para o alto.
+- a6db913: A prop `speaking` do mascote: enquanto ha fala, a boca alterna entre a expressao e aberta, e o papo do Sapin pulsa a cada silaba. O `TaskinWithShhh` a liga enquanto a voz do shhh toca.
+- c523ed3: A prop `listening` do mascote: enquanto o microfone esta ligado, ele inclina a cabeca, respira devagar e arregala os olhos; o Taskin leva a mao para junto da cabeca. Uma acao por cima ganha, e no fim a escuta volta. `TaskinWithShhh` e `TaskinWithFaceTracking` repassam a prop.
+- cf2d2b6: Os tres "Z" do humor `sleeping` (`TaskinEffectZzz`) deixam de sair
+  inconclusivos no `color-contrast` do axe (o painel de acessibilidade do
+  Storybook dizia "conteudo curto demais"): sao decorativos, e passam a ser
+  desenhados como `<path>` com o contorno do glifo que o `<text>` desenhava, em
+  vez de `<text>`. O desenho nao muda.
+- dc53958: O papo do Sapin (`#body-throat`) infla abaixo da boca, a partir do queixo, e nao mais por cima dela.
+- ea805d7: O balao de pensamento segue a regra do olho: cola no topo do quadro, acaba
+  antes do olho direito do Taskin e fica a direita do calombo do Sapin, e as
+  bolinhas descem para a beira da cabeca em vez de cair na pupila. A geometria
+  (`BUBBLE_ABOVE_EYE`, `BUBBLE_TIP`) e a mesma do balao de fala, que tambem
+  passa a respeitar o calombo do Sapin ate `x` 222.
+- 327cf20: O Sapin fica mais perto da referência: cada calombo dos olhos projeta no corpo
+  uma meia-lua de sombra, as pupilas olham para a frente, puxadas para o nariz, o
+  corpo é mais cheio embaixo dos olhos, os braços são mais grossos e caem num
+  arco mais aberto, as coxas recolhem até o tornozelo e os pés abrem em três
+  dedos grossos. Boca, pupilas, pontas dos dedos, canela e sombra no chão ganham
+  as cores da referência. O desenho do Taskin não muda.
+- 9d1229b: Os bracos aparecem no bloqueado e no despertar: o `blocked` do Taskin vira maos na cintura, de cotovelos para fora, e o `wake` dos dois bichos abre os bracos em V, para o alto e para fora, em vez de sumirem sobre o corpo.
+- 00be71f: O mascote acena: a acao `wave` ergue o braco direito, com a mao ao lado da cabeca, e o balanca tres vezes em volta do ombro, sorrindo, no Taskin e no Sapin.
+- Updated dependencies [7a43f57]
+- Updated dependencies [ad0d07c]
+- Updated dependencies [8934ce2]
+- Updated dependencies [5ca0c91]
+  - @opentask/taskin-task-manager@4.1.0
+  - @opentask/taskin-types@2.7.0
+
 ## 0.6.0
 
 ### Minor Changes
