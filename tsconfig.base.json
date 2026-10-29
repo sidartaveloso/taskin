@@ -15,6 +15,7 @@
       "@opentask/taskin-difficulty-estimator": ["packages/difficulty-estimator/src"],
       "@opentask/taskin-file-system-provider": ["packages/file-system-task-provider/src"],
       "@opentask/taskin-git-utils": ["packages/git-utils/src"],
+      "@opentask/taskin-situation": ["packages/situation/src"],
       "@opentask/taskin-task-manager": ["packages/task-manager/src"],
       "@opentask/taskin-types": ["packages/types-ts/src"],
       "@opentask/taskin-utils": ["packages/utils/src"]
