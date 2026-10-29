@@ -162,7 +162,7 @@ texto das tasks, dos RDTs e dos commits segue em português.
 | Camada da pessoa | `~/.config/taskin/resources.json` |
 | Requisitos de uma task | campo `- Requires:` no cabeçalho |
 | Valores dos requisitos e das capacidades | lista fechada em inglês, no `types-ts`: `docker`, `android-sdk`, `gpu`, `interactive`, `microphone`, `visual-review`… |
-| O quadro da situação | `taskin status` |
+| O quadro da situação | `taskin status`, com `--format` (`text`, o padrão, `json`, `html` ou `md`) e o atalho `--json` |
 | O processo em segundo plano | `taskin daemon` (task-200); `taskin daemon status` fala só do processo |
 
 **`taskin status` abre pela task em andamento.** Status já é um campo de toda
@@ -173,6 +173,32 @@ explicação, e `status` segue o costume de `git status` e `systemctl status`.
 
 A lista fechada de valores deixa o `taskin lint` acusar um requisito digitado
 errado. Valor novo entra por PR, com o motivo.
+
+### Os formatos do `taskin status`
+
+O padrão é texto direto no terminal, como no exemplo do quadro. Outros
+formatos saem pelo mesmo comando, também na saída padrão:
+
+```bash
+taskin status                  # texto, o padrão
+taskin status --format json    # para agentes, scripts e o sandcastle
+taskin status --format html    # página autocontida, para abrir ou exibir numa tela
+taskin status --format md      # para colar numa issue, num PR ou num chat
+taskin status --json           # atalho de --format json, como no taskin list
+```
+
+- **A opção segue o que a CLI já tem.** `taskin export` usa
+  `-f, --format <formato>`, e `taskin list` usa `--json`. O `status` aceita as
+  duas: `--format` para escolher, e `--json` como atalho.
+- **Um quadro, vários desenhos.** O quadro da situação é montado uma vez, como
+  dado, e cada formato é uma função pura que o desenha. Nenhum formato consulta
+  recurso por conta própria. Formato novo é só mais uma função.
+- **O JSON é contrato.** O formato dele tem schema no `types-ts` e um campo
+  `version`. Os agentes, o MCP e o dashboard dependem dele, então mudança que
+  quebra sobe a versão.
+- **Nada privado a mais.** Os formatos mostram o mesmo que o texto. O HTML e o
+  Markdown, feitos para serem compartilhados, também não incluem endereços nem
+  credenciais, só nomes lógicos.
 
 ### Fato percebido tem data
 
