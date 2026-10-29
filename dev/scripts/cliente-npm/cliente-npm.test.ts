@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { versaoAtende } from './cliente-npm';
+import { argumentosDeConfianca, versaoAtende } from './cliente-npm';
 
 describe('versaoAtende', () => {
   it.each([
@@ -15,5 +15,30 @@ describe('versaoAtende', () => {
   it('compara o menor numericamente, nao como texto', () => {
     expect(versaoAtende('11.9.0')).toBe(false);
     expect(versaoAtende('11.100.0')).toBe(true);
+  });
+});
+
+describe('argumentosDeConfianca', () => {
+  const alvo = { pacote: '@rinhany/core', repositorio: 'sidartaveloso/rinhany', workflow: 'release.yml' };
+
+  it('monta o npm trust github do pacote', () => {
+    expect(argumentosDeConfianca(alvo)).toEqual([
+      'trust',
+      'github',
+      '@rinhany/core',
+      '--repo',
+      'sidartaveloso/rinhany',
+      '--file',
+      'release.yml',
+      '--allow-publish',
+      '--yes',
+    ]);
+  });
+
+  it('passa o codigo de 2FA num argumento so, que o npm trust nao le como posicional', () => {
+    const argumentos = argumentosDeConfianca(alvo, '123456');
+
+    expect(argumentos.at(-1)).toBe('--otp=123456');
+    expect(argumentos).not.toContain('123456');
   });
 });
