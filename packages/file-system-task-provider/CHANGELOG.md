@@ -1,5 +1,72 @@
 # @opentask/taskin-file-system-provider
 
+## 3.5.0
+
+### Minor Changes
+
+- 7a43f57: O status de uma task tem a branch padrão do remoto como quadro compartilhado.
+  
+  - `@opentask/taskin-git-utils`: `detectDefaultBranch(cwd)` escolhe `develop`, senão `main`, senão `master`, olhando as refs locais e as de `origin/*`, sem rede, e devolve `null` em vez de adivinhar. `GitService.publishTaskStatusChange(taskId, status, defaultBranch)` publica só o arquivo da task (e `TASKS/assets/task-<id>/`) em `origin/<defaultBranch>`, sem trocar de branch, sem stash e sem tocar no índice nem na árvore; funciona numa worktree com a branch padrão aberta em outro checkout.
+  - `@opentask/taskin-task-manager`: `ITaskProvider.describePublish`, opcional, diz como publicar só uma task.
+  - `@opentask/taskin-file-system-provider`: `describePublish` devolve os caminhos da task e o comando `git add`/`git commit` restrito a eles.
+  - `taskin`: `taskin config --level autopilot` detecta e grava `automation.defaultBranch`; o menu interativo a pergunta; `--default-branch <branch>` grava e o `--show` mostra. Em autopilot sem o campo, a detecção vale em memória. Fora do autopilot, `start` e `finish` ensinam a publicar só a task, no lugar do `git add TASKS/… && git commit` sem pathspec.
+- 18b1680: `taskin lint --fix` traduz decisão que já estava escrita, só no formato errado.
+  `Priority: high/medium/low` (e `alta/média/baixa`) vira número por nível, depois
+  de quem já tem número, sem tocar em nenhuma prioridade numérica. Em tarefa
+  `done`, item aberto que se anota como fora (`(galeria — pendente)`, `(fora do
+  escopo …)`) vira `— adiado: <a própria anotação>`, sem nunca marcar `[x]`. Cada
+  conversão sai como info. O que o `--fix` não sabe ler (`Priority: amanhã`, item
+  sem anotação, `Difficulty` fora da faixa) continua erro, agora com sugestão e
+  sem o `💡 Run with --fix` que mandava rodar um conserto que não existia.
+- fbc3417: **Número de task repetido.** Dois arquivos com o mesmo número em `TASKS/`
+  (`task-027-a.md` e `task-027-b.md`) passam a ser **erro** no `taskin lint`, com
+  os caminhos dos dois. O `start`, o `review`, o `finish` e o `pause` recusam o
+  número repetido com a mesma mensagem, em vez de agir sobre um dos arquivos.
+  
+  O `taskin lint --fix` renumera todos menos o mais antigo para o próximo número
+  livre — nome do arquivo (por `git mv` quando versionado), título e uma nota no
+  fim dizendo qual era o número. Fica com o número o arquivo criado primeiro
+  (data do commit que o criou, atravessando renomes; sem histórico, a data do
+  arquivo; no empate, o que não está `done`). Os links ao arquivo renomeado são
+  ajustados em todo arquivo versionado do repositório, inclusive por caminho
+  relativo. Menções soltas como `task-027` e as branches `*/task-027*` só são
+  listadas, para alguém decidir.
+  
+  - `@opentask/taskin-file-system-provider`: `findTask` lança quando o número é
+    repetido, em vez de devolver o primeiro arquivo que o `readdir` listar.
+- 9328b25: O `taskin lint` avisa o arquivo de task cujo nome passa do limite da task-139,
+  e o `taskin lint --fix` o renomeia para o nome que o `taskin new` daria — mesmo
+  número, começo do título lido do cabeçalho. O renome vai por `git mv` quando o
+  arquivo está versionado, e o histórico atravessa (`git log --follow`); sem Git,
+  ou com o arquivo fora do índice, vai por rename comum. As referências ao nome
+  antigo dentro de `TASKS/` são reescritas, com e sem `.md`. Se o nome novo já
+  existe, o `--fix` recusa e não mexe em nenhum dos dois.
+  
+  - `@opentask/taskin-file-system-provider`: `TASK_FILE_SLUG_MAX_LENGTH` passa a
+    viver em `task-file-name`, com `nomeDoArquivoDaTask`, a regra única de quem
+    cria e de quem renomeia.
+
+### Patch Changes
+
+- d1231a7: O nome do arquivo de uma task nova leva só o começo do título: até 50
+  caracteres depois do `task-NNN-`, cortados numa fronteira de palavra. O título
+  completo continua no arquivo. O número, único, garante que dois títulos iguais
+  — ou que só diferem depois do corte — nunca geram o mesmo nome. Um título sem
+  letra nem dígito gera `task-NNN.md`; antes gerava `task-NNN-.md` e o
+  `taskin new` falhava ao ler o próprio arquivo.
+  
+  - `@opentask/taskin-utils`: `slugify(text, { maxLength })`.
+  - `@opentask/taskin-file-system-provider`: `TASK_FILE_SLUG_MAX_LENGTH`.
+- Updated dependencies [7a43f57]
+- Updated dependencies [ad0d07c]
+- Updated dependencies [8934ce2]
+- Updated dependencies [d1231a7]
+- Updated dependencies [5ca0c91]
+  - @opentask/taskin-git-utils@3.2.0
+  - @opentask/taskin-task-manager@4.1.0
+  - @opentask/taskin-types@2.7.0
+  - @opentask/taskin-utils@1.2.0
+
 ## 3.4.1
 
 ### Patch Changes

@@ -1,5 +1,50 @@
 # @opentask/taskin-types
 
+## 2.7.0
+
+### Minor Changes
+
+- ad0d07c: `taskin estimate` sugere a dificuldade das tasks perguntando ao Jev (TypeSafe,
+  hospedado) e ao Laya (local, pelo `laya-serve`), que falam o mesmo
+  `/v1/systemone`; o layerall chama os dois em `fan_out`. Com `--rinha`, o
+  rinhany põe os dois, as versões calibradas deles (a nota lida pela posição
+  contra as notas humanas) e dois pisos (`always-2` e uma heurística), contra as
+  tasks que já têm nota humana, e salva o placar em `.taskin/rinhas/`. Quem não
+  roda (sem `TYPESAFE_API_KEY`, `laya-serve` fora do ar) aparece com o motivo, e o
+  outro ganha por W.O. `--apply` grava a sugestão do vencedor, só se ele bater os
+  pisos, e nunca por cima de uma nota humana. Pacote novo:
+  `@opentask/taskin-difficulty-estimator`. A rinha é beta: o placar é uma pista, não
+  a verdade, e a CLI diz isso ao mostrá-lo.
+  
+  O `taskin estimate` é a primeira funcionalidade de labs: só roda no projeto que
+  a liga (`"labs": ["estimate"]` no `.taskin.json`, por `taskin config --labs
+  estimate`; `--labs-off` desliga, `--show` lista). O schema da configuração
+  ganha `labs` e o `LabsFeatureSchema`.
+- 8934ce2: **Mudança de comportamento:** os commits de status que o taskin grava sozinho
+  (`start`, `review`, `finish`, `new` e o caminho pelo MCP) passam a sair em
+  **inglês** — `docs(TASKS): task-042 - update status to in-progress [skip ci]`
+  no lugar de `atualiza status para in-progress`. Para continuar em português,
+  declare `"commitLanguage": "pt-BR"` no bloco `automation` do `.taskin.json`, ou
+  rode `taskin config --commit-language pt-BR`.
+  
+  - `@opentask/taskin-git-utils`: `buildTaskStatusCommitMessage` aceita
+    `language` (`en`, o padrão, ou `pt-BR`) e o `GitService` aceita
+    `commitLanguage`. Novos `COMMIT_LANGUAGES`, `DEFAULT_COMMIT_LANGUAGE`,
+    `isCommitLanguage` e `resolveCommitLanguage`, que devolve `en` para um valor
+    desconhecido.
+  - `@opentask/taskin-types`: `automation.commitLanguage`, opcional e de texto
+    livre, para que um valor errado escrito a mão não invalide o arquivo inteiro.
+  - `taskin`: `taskin config --commit-language <en|pt-BR>` grava o idioma e recusa
+    os outros; o menu interativo o pergunta e o `--show` o mostra. Um valor
+    desconhecido no `.taskin.json` cai no inglês sem derrubar o comando.
+
+### Patch Changes
+
+- 5ca0c91: `taskin start`, `review`, `finish` e o MCP funcionam numa worktree. O commit de status vai para a branch corrente, só com o arquivo da task, sem stash nem `git checkout` da branch padrão. Com `autoSync` e `defaultBranch`, o mesmo status é publicado em `origin/<defaultBranch>`; falha de publicação avisa o motivo e o status fica comitado. Sem remoto `origin`, basta o commit local.
+  
+  - `@opentask/taskin-git-utils`: `publishTaskStatusChange` devolve `noRemote: true` quando não há `origin`. `commitTaskStatusChangeOnBranch` fica obsoleto: faz stash e checkout, o que falha numa worktree.
+  - `@opentask/taskin-types`: a documentação de `autoSync` e `defaultBranch` descreve o que passa a acontecer.
+
 ## 2.6.0
 
 ### Minor Changes

@@ -1,5 +1,44 @@
 # @opentask/taskin-git-utils
 
+## 3.2.0
+
+### Minor Changes
+
+- 7a43f57: O status de uma task tem a branch padrão do remoto como quadro compartilhado.
+  
+  - `@opentask/taskin-git-utils`: `detectDefaultBranch(cwd)` escolhe `develop`, senão `main`, senão `master`, olhando as refs locais e as de `origin/*`, sem rede, e devolve `null` em vez de adivinhar. `GitService.publishTaskStatusChange(taskId, status, defaultBranch)` publica só o arquivo da task (e `TASKS/assets/task-<id>/`) em `origin/<defaultBranch>`, sem trocar de branch, sem stash e sem tocar no índice nem na árvore; funciona numa worktree com a branch padrão aberta em outro checkout.
+  - `@opentask/taskin-task-manager`: `ITaskProvider.describePublish`, opcional, diz como publicar só uma task.
+  - `@opentask/taskin-file-system-provider`: `describePublish` devolve os caminhos da task e o comando `git add`/`git commit` restrito a eles.
+  - `taskin`: `taskin config --level autopilot` detecta e grava `automation.defaultBranch`; o menu interativo a pergunta; `--default-branch <branch>` grava e o `--show` mostra. Em autopilot sem o campo, a detecção vale em memória. Fora do autopilot, `start` e `finish` ensinam a publicar só a task, no lugar do `git add TASKS/… && git commit` sem pathspec.
+- 8934ce2: **Mudança de comportamento:** os commits de status que o taskin grava sozinho
+  (`start`, `review`, `finish`, `new` e o caminho pelo MCP) passam a sair em
+  **inglês** — `docs(TASKS): task-042 - update status to in-progress [skip ci]`
+  no lugar de `atualiza status para in-progress`. Para continuar em português,
+  declare `"commitLanguage": "pt-BR"` no bloco `automation` do `.taskin.json`, ou
+  rode `taskin config --commit-language pt-BR`.
+  
+  - `@opentask/taskin-git-utils`: `buildTaskStatusCommitMessage` aceita
+    `language` (`en`, o padrão, ou `pt-BR`) e o `GitService` aceita
+    `commitLanguage`. Novos `COMMIT_LANGUAGES`, `DEFAULT_COMMIT_LANGUAGE`,
+    `isCommitLanguage` e `resolveCommitLanguage`, que devolve `en` para um valor
+    desconhecido.
+  - `@opentask/taskin-types`: `automation.commitLanguage`, opcional e de texto
+    livre, para que um valor errado escrito a mão não invalide o arquivo inteiro.
+  - `taskin`: `taskin config --commit-language <en|pt-BR>` grava o idioma e recusa
+    os outros; o menu interativo o pergunta e o `--show` o mostra. Um valor
+    desconhecido no `.taskin.json` cai no inglês sem derrubar o comando.
+- 5ca0c91: `taskin start`, `review`, `finish` e o MCP funcionam numa worktree. O commit de status vai para a branch corrente, só com o arquivo da task, sem stash nem `git checkout` da branch padrão. Com `autoSync` e `defaultBranch`, o mesmo status é publicado em `origin/<defaultBranch>`; falha de publicação avisa o motivo e o status fica comitado. Sem remoto `origin`, basta o commit local.
+  
+  - `@opentask/taskin-git-utils`: `publishTaskStatusChange` devolve `noRemote: true` quando não há `origin`. `commitTaskStatusChangeOnBranch` fica obsoleto: faz stash e checkout, o que falha numa worktree.
+  - `@opentask/taskin-types`: a documentação de `autoSync` e `defaultBranch` descreve o que passa a acontecer.
+
+### Patch Changes
+
+- Updated dependencies [ad0d07c]
+- Updated dependencies [8934ce2]
+- Updated dependencies [5ca0c91]
+  - @opentask/taskin-types@2.7.0
+
 ## 3.1.1
 
 ### Patch Changes
