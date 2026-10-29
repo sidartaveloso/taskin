@@ -9,7 +9,6 @@ Levar para o design-vue, com story, os componentes de um painel de bandeja já u
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Antes de copiar qualquer linha: a autorização de quem detém o código de origem para publicá-lo sob a licença MIT do `design-vue`, anotada aqui (quem autorizou e quando, sem dado pessoal). Sem ela, os itens seguintes viram reescrita do zero, usando o painel de origem só como referência visual
 - [ ] Atom `AlarmAudio`: toca o som de alerta em laço enquanto `active` e não `muted`, e para ao desmontar
 - [ ] Atom `ErrorMessage`: a mensagem de erro com o botão de abrir as configurações
 - [ ] Organism `CounterPanel`: a lista de contadores (rótulo, valor com zero-pad e transição de dígito para cima ou para baixo, marca de alerta, link opcional), o estado de conexão, a borda pulsando enquanto `alerting`, o carregando e o erro. O estado de conexão reaproveita ou estende a molecule `ConnectionStatus` que já existe, em vez de criar outra
@@ -32,6 +31,6 @@ pnpm --filter @opentask/taskin-design-vue test
 ```
 
 ### Onde executar
-Interativo, fora do sandcastle: o código de origem não está neste repositório, e o primeiro item é uma autorização. A revisão das stories é visual.
+Interativo, fora do sandcastle: o código de origem não está neste repositório. A revisão das stories é visual.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).
