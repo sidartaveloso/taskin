@@ -25,6 +25,7 @@ A task-003 do rinhany ("Publicar os pacotes no npm", in-progress) já deixou os 
 - [x] `@rinhany/core` e `@rinhany/testing` em `^0.1.0` no `packages/difficulty-estimator/package.json`, com o `pnpm-lock.yaml` atualizado. As duas versões entraram em `minimumReleaseAgeExclude` porque tinham minutos de vida; podem sair dali quando passarem da idade mínima
 - [x] O typecheck, o build e os testes do estimator passam num clone sem o `../rinhany` ao lado (worktree fora da pasta do repositório, `pnpm run ci` verde)
 - [x] O `lint:manifests` recusa `link:` e `file:` em qualquer campo de dependências de qualquer pacote, para isso não voltar (`dev/scripts/dependencias-locais`)
+- [x] O `ci.yml` e o `release.yml` rodam em `ubuntu-24.04`: com o rinhany resolvido, o `Verificar` passou do lint e do typecheck e parou no Chromium, porque o `ubuntu-latest` virou 26.04 e o Playwright 1.57 não instala nele
 - [ ] O `Verificar` passa na develop
 
 ## Acceptance criteria
