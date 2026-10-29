@@ -472,6 +472,12 @@ importers:
 
   packages/py-sdk: {}
 
+  packages/situation:
+    devDependencies:
+      typescript:
+        specifier: ^6.0.0
+        version: 6.0.3
+
   packages/task-manager:
     dependencies:
       '@opentask/taskin-types':
