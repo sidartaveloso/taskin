@@ -1,6 +1,6 @@
 # 🧩 Task 210 — O CI e o Release voltam a passar sem o rinhany ao lado do taskin
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: sidartaveloso
 
