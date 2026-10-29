@@ -256,6 +256,158 @@ O que se decidiu:
   tempo ocioso do sistema diz se a pessoa está no computador, que é a presença
   de que a etapa 4 precisa.
 
+### Escalonamento: uma função objetivo com restrições
+
+O "como" de cada task deixa de ser escolhido à mão (o `SANDCASTLE_MODEL` de
+cada lote) e vira um problema de otimização: atribuir a cada task um acesso a
+LLM, uma máquina e um momento, ou deixá-la para depois, maximizando uma função
+objetivo sob restrições.
+
+**Os acessos a LLM são recursos do papel "quem".** Cada acesso tem dono,
+credencial, custo, cota, janela de uso e uma classificação de dados:
+
+| Acesso | Custo | Limite | Como se percebe |
+| --- | --- | --- | --- |
+| Assinatura de agente (o token do sandcastle) | fixo por mês | janelas que reabrem e teto por período, conforme o plano | declarado (o plano) e o consumo observado |
+| API paga por token | por token | taxa e gasto | os cabeçalhos de limite de cada resposta |
+| Agregador com crédito | crédito pré-pago, preço por modelo | saldo e limite da chave | a consulta de saldo da chave |
+| Modelo local | zero em dinheiro | memória e GPU da máquina, e mais lento | sondagem, como o `probe()` |
+
+Os números de cada plano mudam e nem sempre têm API: o limite é fato
+declarado, o consumo é fato sondado, e a projeção trabalha com margem.
+
+**A função objetivo** é explícita e pura: recebe um plano e devolve uma nota.
+
+- mais: o valor entregue no horizonte (prioridade × probabilidade de concluir);
+- menos λ₁ × custo em dinheiro;
+- menos λ₂ × custo de preparo: levar à máquina o que a task precisa e ela não
+  tem (tempo de cópia, banda, disco);
+- menos λ₃ × risco de retrabalho, quando o modelo é fraco para a dificuldade;
+- menos λ₄ × interrupções da pessoa.
+
+**As restrições:**
+
+- **Cota:** os tokens estimados por acesso e por janela cabem no limite, com
+  margem.
+- **Requisito fixo:** hardware (GPU, microfone), presença física ou uma conta
+  específica. O requisito **móvel** (software, dados, imagem, SDK, clone do
+  repositório) não é restrição: se falta, entra como custo de preparo. Depois
+  da primeira vez ele fica na máquina, e por isso compensa agrupar tasks
+  parecidas onde o preparo já foi pago.
+- **Competência:** o modelo cobre a dificuldade da task.
+- **Dados:** a classificação do acesso cobre a sensibilidade da task. Não é
+  "só modelo local": é só acesso considerado seguro para aquele dado
+  (retenção zero, contrato sem treino, auto-hospedado), declarado pela
+  camada do repositório.
+- **Dependências** entre tasks, **concorrência** de lotes na memória da
+  máquina e **presença** para as tasks `interactive`.
+
+**Dificuldade estimada e dificuldade encontrada.** Cada execução guarda a
+dificuldade estimada no início e, ao fechar, o que aconteceu: tokens, tempo,
+iterações, retrabalho, o modelo e o acesso usados, se concluiu e a dificuldade
+encontrada. É o laço que calibra o estimador e deixa o escalonador prever o
+consumo pelo histórico. O registro é versionado no repositório e cita recursos
+só pelo nome lógico.
+
+**Calibração.** Uma task pequena e de resposta conhecida, rodada em broadcast
+em todos os recursos, mede latência, tokens por segundo, acerto, consumo de
+cota e tempo de build e de teste de cada máquina. Os resultados entram como
+fatos sondados, com data. Calibrar gasta cota, então roda com os recursos
+ociosos ou quando um fato expira.
+
+**O empréstimo de credenciais.** Para paralelizar, a pessoa pode ter mais de
+uma conta do mesmo tipo de acesso:
+
+- Cada conta é um acesso no inventário da pessoa, com cota e janela próprias.
+  O inventário guarda a referência ao segredo (gerenciador de segredos,
+  keychain, variável de ambiente), nunca o valor.
+- Quem executa (o sandcastle) pede um acesso pelo tipo. O daemon empresta a
+  conta com mais folga, lê o segredo e entrega o valor só no ambiente daquele
+  processo, sem gravar em disco. No fim, ou no prazo do empréstimo, a conta
+  volta.
+- O empréstimo espalha os lotes pelas contas livres. Sem conta livre, divide
+  a que existe: com uma conta só, as duas máquinas usam a mesma, e o custo é a
+  janela acabar mais cedo, que a projeção mostra. O único limite rígido é o do
+  provedor, quando declarado.
+- Somar o consumo de uma conta dividida pede que as máquinas se vejam (a
+  percepção viva). Até lá, a projeção dela vale como mínimo.
+- Quando todas as contas estão no limite, o escalonador espera a janela
+  reabrir ou pergunta pelo canal de aviso.
+- Antes de automatizar o rodízio entre contas, valem os termos de cada
+  provedor: cada conta é um recurso com dono, e o contrato diz o que se pode
+  fazer com ela.
+
+**Heurística antes de solver.** Um escalonamento guloso por prioridade,
+respeitando as restrições, resolve uma fila de dezenas de tasks. Como a
+função objetivo é pura, um solver entra depois sem mudar a regra. E vale o
+conselho antes do despacho: o `taskin status` mostra o plano sugerido, e o
+sandcastle passa a ler dele o acesso e o modelo.
+
+## Como se implementa: contrato antes do código, em dois níveis
+
+A consciência situacional segue o método dos padrões de engenharia que o
+repositório já cita (`padroes/referencia.md`): primeiro o que o sistema faz,
+como casos de uso com testes; depois o sistema como tipos, em plugins com uma
+suíte de contrato cada; só então as implementações, que passam todas pela
+mesma suíte. O padrão `contractTests(create)` de
+`padroes/estrutura-de-modulos.md` é o mesmo, aplicado ao sistema inteiro.
+
+**Nível 1: casos de uso.**
+
+- **Atores**, um contrato por papel, cada método uma história:
+  `IDeveloperActor` (declara, libera recursos para um repositório, pede o
+  quadro), `ITeamActor` (a camada do repositório: oferece, restringe,
+  classifica acessos) e `IExecutorActor` (quem roda a task: pede um acesso,
+  registra a execução).
+- **Fluxos em typestate**, com o caminho errado sem compilar:
+  `LeaseRequested → LeaseGranted → LeaseReturned | LeaseExpired` e
+  `RunPlanned → RunStarted → RunFinished`, em que fechar exige a dificuldade
+  encontrada.
+- **Portas**: o relógio, o gerenciador de segredos, a sondagem da máquina e o
+  consumo informado pelo provedor.
+- **Cenários**: uma máquina e uma conta; duas máquinas e duas contas; duas
+  máquinas e uma conta; repositório que restringe as máquinas pessoais.
+- **Prova negativa** em `*.test-d.ts`, com `@ts-expect-error`: devolver um
+  empréstimo que não foi concedido; fechar uma execução sem a dificuldade
+  encontrada; mandar dado sensível a um acesso que não o cobre.
+- **A suíte de contrato** falha contra a implementação vazia, caso a caso,
+  pelo motivo certo.
+
+**Nível 2: o sistema como tipos.**
+
+- `ISituation` agrega os plugins e os eventos.
+- `IPluginSituation<TEvents>`: chave (prefixo dos eventos), nome, descrição,
+  versão, ciclo de vida (`start`, `stop`, `running`) e `on`/`off`.
+- Os plugins: `IInventory` (as duas camadas, liberações, restrições e fatos),
+  `IProbe` (sondagem e calibração), `IAccessBroker` (o empréstimo),
+  `IRunLedger` (consumo e dificuldade estimada e encontrada), `IScheduler` (a
+  função objetivo e o plano sugerido), `IChannels` (aviso por presença) e
+  `IFlows` (o evento de um plugin acionando outro).
+- **Eventos em envelope**, nunca achatados:
+  `{ id, type, occurredAt, source: { plugin, version }, payload }`, com
+  `type` em `'<plugin>:<fato-no-passado>'` (`access:lease-granted`,
+  `ledger:run-finished`, `probe:calibration-finished`). O payload leva só o
+  fato; um mapa nome → payload por plugin é a fonte única; o envelope é
+  validado por Zod na fronteira.
+- Uma `*.contract.test.ts` por plugin e a suíte das jornadas que atravessam os
+  plugins.
+
+**As implementações**, todas pela mesma suíte:
+
+- **Em memória**, a primeira a ficar verde, para os testes e a simulação.
+- **Local**: inventário em `~/.config/taskin/` e na chave `resources`,
+  sondagem desta máquina, registro de execução versionado.
+- **Remota**: o mesmo contrato servido pelo `taskin daemon` (task-200) às
+  outras máquinas e ao taskinboard.
+- **Simulada**: provedores com janelas e limites falsos, para ensaiar o
+  escalonamento sem gastar cota.
+
+**Regras do método que valem aqui:** quem implementa não escreve a prova (os
+casos são de quem especifica, e mudar um caso é nova versão aprovada); os
+plugins não se importam entre si (o que um precisa de outro é porta, e quem
+liga é o sistema ou o `IFlows`); nada de primitivo solto onde cabe um tipo
+marcado com construtor (`AccessId`, `TokenCount`, `Instant`).
+
 ## Vocabulário
 
 - **Recurso**: qualquer coisa que pesa no como de uma task.
@@ -274,6 +426,14 @@ O que se decidiu:
   camadas somadas, o que está disponível, o que está indisponível para a
   pessoa e o que expirou.
 - **Como**: a combinação de recursos sugerida para uma task.
+- **Acesso**: uma credencial de LLM com dono, custo, cota, janela e
+  classificação de dados.
+- **Empréstimo**: o acesso entregue a uma execução, com prazo, e devolvido no
+  fim.
+- **Requisito fixo / requisito móvel**: o que não se leva a uma máquina e o
+  que se leva, com custo de preparo.
+- **Calibração**: a mesma task pequena rodada em todos os recursos para
+  medi-los.
 
 ## Etapas
 
@@ -303,6 +463,25 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
 5. **Projeção.**
    - A duração estimada vem da dificuldade e do histórico dos lotes.
    - Entram a carga das máquinas, a cota dos modelos e a bateria.
+6. **Escalonamento.**
+   - O registro de execução, com a dificuldade estimada e a encontrada.
+   - Os acessos a LLM no inventário e o empréstimo de credenciais pelo daemon.
+   - A calibração em broadcast.
+   - A função objetivo pura e a heurística gulosa, com o plano sugerido no
+     `taskin status` e lido pelo sandcastle.
+
+Cada etapa segue a ordem de "Como se implementa": casos de uso, tipos,
+implementação em memória e só então as reais.
+
+A primeira rodada, no grupo "Consciência situacional", cobre o núcleo das
+etapas 1, 2 e 6 nessa ordem:
+
+| Task | O que |
+| --- | --- |
+| 216 | Nível 1: atores, fluxos, cenários e a suíte de contrato vermelha |
+| 217 | Nível 2: o sistema, os plugins e os eventos em envelope |
+| 218 | Em memória: cada plugin verde contra a suíte |
+| 219 | Local: inventário, sondagem, registro de execução e o `taskin status` |
 
 ## Decisões em aberto
 
@@ -314,6 +493,9 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
 - **O que conta como "presente"**: rosto na câmera, relógio no pulso, teclado
   em uso.
 - **Horário de silêncio**, e quem pode furá-lo.
+- **Os pesos λ da função objetivo e o horizonte** do escalonamento.
+- **Quais gerenciadores de segredo entram primeiro** no empréstimo.
+- **Quem classifica a sensibilidade** de uma task e de um repositório.
 - **Quais repositórios o daemon e o board atendem.** Os dois são um por
   máquina, e precisam de uma lista de repositórios, que a task-200 ainda não
   define.
