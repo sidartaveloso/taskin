@@ -1,6 +1,6 @@
 # Consciência situacional: o taskin conhece os recursos à disposição e as restrições
 
-- Status: proposta (só a decisão; nada implementado)
+- Status: aprovada (em 2026-10-29; nada implementado, as etapas viram tasks uma a uma)
 - Data: 2026-10-29
 - Task: 213
 
@@ -103,18 +103,52 @@ Endsley define a consciência situacional como relativa a objetivos, e aqui as
 tasks são os objetivos. Trocar o nome da máquina pelo requisito resolve dois
 problemas de uma vez: a informação deixa de envelhecer e deixa de vazar.
 
-### O inventário é da pessoa
+### O inventário tem duas camadas: a do repositório e a da pessoa
 
-O inventário mora num arquivo do usuário, em `~/.config/taskin/`, ao lado da
-configuração por máquina que o plano da Alexa já prevê. Nunca vai para:
+| Camada | Quem decide | Onde mora | Exemplo |
+| --- | --- | --- | --- |
+| **Do repositório** | O time ou o projeto | Versionada, no repositório | "Este projeto pode rodar tasks nos servidores 1, 2 e 3." |
+| **Da pessoa** | Quem desenvolve | Num arquivo do usuário, em `~/.config/taskin/`, fora do repositório | "Tenho acesso a outro desktop." |
 
-- o `.taskin.json`;
-- as tasks;
-- os RDTs;
-- as mensagens de commit.
+Quando a pessoa roda o taskin na máquina dela, ele enxerga a soma das duas: os
+servidores 1, 2 e 3 e o desktop dela. A ideia é a mesma das camadas do
+`git config`, e a mesma do `.taskin.json` com `${VAR}`.
 
-O que é versionado fala só de requisitos e capacidades, nunca de nomes de
-máquinas, endereços, hardware ou projetos alheios.
+A soma não é uma união simples. Três regras:
+
+1. **O repositório oferece; o acesso é de cada pessoa.**
+   - O que é versionado pode ser público, então a camada do repositório
+     declara cada recurso por nome lógico e capacidades (`servidor-de-build`:
+     docker, gpu).
+   - O endereço e a credencial vêm do ambiente de cada pessoa, como o webhook
+     do Discord em `docs/NOTIFICATIONS.md`.
+   - Um recurso a que a pessoa não tem acesso continua no quadro da situação,
+     marcado como indisponível para ela e com o motivo.
+2. **Um recurso pessoal só entra num repositório que a pessoa liberou.**
+   - Sem essa regra, qualquer repositório clonado poderia mandar rodar código
+     no desktop de quem o clonou.
+   - A liberação é por repositório, no arquivo do usuário, como o "ativar" do
+     [RDT da Alexa](taskin-na-alexa.md).
+3. **O repositório também restringe, não só oferece.**
+   - Exemplo: "este projeto nunca roda fora dos servidores do time", porque o
+     código ou os dados são de cliente.
+   - A restrição do repositório vence: o desktop da pessoa fica de fora mesmo
+     liberado.
+
+O que o taskin pode usar, então:
+
+- os recursos do repositório a que a pessoa tem acesso;
+- mais os recursos pessoais liberados para aquele repositório;
+- menos o que a política do repositório proíbe.
+
+### O que pode ser versionado
+
+- **A camada do repositório** é do time e pode ser versionada, mas só com
+  nomes lógicos, capacidades e restrições. Nunca com endereços, hostnames ou
+  credenciais.
+- **A camada da pessoa** nunca entra no repositório: nem no `.taskin.json`, nem
+  nas tasks, nem nos RDTs, nem nas mensagens de commit.
+- **As tasks** falam só de requisitos, nunca do nome de um recurso concreto.
 
 ### Fato percebido tem data
 
@@ -143,8 +177,15 @@ usa a rede privada que a pessoa já tem, sem descoberta por mDNS.
 - **Requisito**: o que uma task precisa, dito sem nomear recurso.
 - **Fato declarado / fato sondado**: o que se sabe de um recurso e quando foi
   visto.
-- **Quadro da situação**: a visão do inventário naquele momento, com o que está
-  disponível e o que expirou.
+- **Camada do repositório / camada da pessoa**: quem oferece o recurso. A
+  primeira é do time e versionada; a segunda é de quem desenvolve e fica fora
+  do repositório.
+- **Liberação**: a pessoa permitindo que um repositório use um recurso dela.
+- **Restrição**: o repositório proibindo uma classe de recurso, como as
+  máquinas pessoais.
+- **Quadro da situação**: a visão do inventário naquele momento, com as duas
+  camadas somadas, o que está disponível, o que está indisponível para a
+  pessoa e o que expirou.
 - **Como**: a combinação de recursos sugerida para uma task.
 
 ## Etapas
@@ -152,8 +193,9 @@ usa a rede privada que a pessoa já tem, sem descoberta por mDNS.
 Cada etapa vira tasks quando a anterior fechar, não agora.
 
 1. **Percepção declarada.**
-   - O inventário no arquivo do usuário, e um comando que mostra o quadro da
-     situação.
+   - As duas camadas do inventário (a do repositório e a da pessoa), as
+     liberações e as restrições, e um comando que mostra o quadro da situação
+     já somado.
    - A máquina se descreve sozinha por sondagem: SO, CPU, memória, Docker,
      SDKs, imagem do sandcastle.
    - Entram também os agentes disponíveis (pelo `probe()` que já existe) e as
@@ -173,8 +215,12 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
 
 ## Decisões em aberto
 
-- **O formato do inventário** e o que a sondagem descobre sozinha versus o que
-  a pessoa declara.
+- **O formato do inventário**:
+  - em que arquivo do repositório mora a camada do time (dentro do
+    `.taskin.json` ou ao lado dele);
+  - o que a sondagem descobre sozinha e o que se declara.
+- **Uma terceira camada, de organização**, para times com vários
+  repositórios dividindo os mesmos servidores.
 - **Quem confirma uma execução remota**, e por qual canal.
 - **O que conta como "presente"**: rosto na câmera, relógio no pulso, teclado
   em uso.
@@ -190,8 +236,8 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
   [RDT da Alexa](taskin-na-alexa.md) deixou isso de fora; a percepção de
   presença é a base que faltava para reconsiderar, mas a reconsideração é outra
   decisão.
-- **Recursos de outras pessoas.** O inventário é de uma pessoa; um time
-  dividindo máquinas fica para depois.
+- **Usar o recurso pessoal de outra pessoa.** Cada pessoa soma só a própria
+  camada à do repositório; emprestar a máquina de um colega fica para depois.
 
 ## Ligações
 
