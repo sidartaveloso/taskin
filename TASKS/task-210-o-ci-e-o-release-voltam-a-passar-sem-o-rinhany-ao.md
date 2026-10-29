@@ -26,12 +26,12 @@ A task-003 do rinhany ("Publicar os pacotes no npm", in-progress) já deixou os 
 - [x] O typecheck, o build e os testes do estimator passam num clone sem o `../rinhany` ao lado (worktree fora da pasta do repositório, `pnpm run ci` verde)
 - [x] O `lint:manifests` recusa `link:` e `file:` em qualquer campo de dependências de qualquer pacote, para isso não voltar (`dev/scripts/dependencias-locais`)
 - [x] O `ci.yml` e o `release.yml` rodam em `ubuntu-24.04`: com o rinhany resolvido, o `Verificar` passou do lint e do typecheck e parou no Chromium, porque o `ubuntu-latest` virou 26.04 e o Playwright 1.57 não instala nele
-- [ ] O `Verificar` passa na develop
+- [x] O `Verificar` passa na develop (execução 40866343287, no `310b4ac`)
 
 ## Acceptance criteria
 
 - [x] **A** — Num clone limpo, sem a pasta do rinhany ao lado, `pnpm install && pnpm run ci` passa.
-- [ ] **A** — O `Verificar` fica verde na develop depois do push.
+- [x] **A** — O `Verificar` fica verde na develop depois do push.
 - [x] **A** — Nenhum manifesto publicável tem dependência `link:`. Há teste no `lint:manifests`.
 
 ## Notes
