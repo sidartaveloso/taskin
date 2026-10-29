@@ -219,6 +219,43 @@ percepção viva: cada máquina anuncia que está ligada e o que oferece. Criar 
 segundo daemon só para isso duplicaria o trabalho. A conexão entre as máquinas
 usa a rede privada que a pessoa já tem, sem descoberta por mDNS.
 
+### Onde a situação aparece: o taskinboard
+
+O `taskin status` é o quadro no terminal. O **taskinboard** é o mesmo quadro
+num app pequeno na barra de tarefas (Windows e Linux) ou na barra de menus
+(macOS), inspirado num painel de bandeja que já funciona em outro projeto.
+
+O taskinboard e o daemon são peças separadas:
+
+| | `taskin daemon` | taskinboard |
+| --- | --- | --- |
+| O que é | Processo de fundo, sem interface | App de bandeja |
+| Papel | Fonte: mantém os serviços e o quadro vivos | Vista: mostra o quadro e alerta |
+| Sem o outro | Funciona; o `taskin status` lê dele | Funciona, chamando `taskin status --json` de tempos em tempos |
+| Com o outro | Avisa o board quando algo muda | Troca a consulta pelo aviso do daemon |
+
+O que se decidiu:
+
+- **Tauri.** O app usa o WebView do sistema e pesa poucos MB, contra mais de
+  100 MB do Electron, para algo que fica aberto o dia inteiro. O Vue roda igual
+  nos dois.
+- **Os componentes vêm do `design-vue`.** O painel de contadores, o alarme e a
+  mensagem de erro vão para o Storybook do taskin, que é aberto, e servem ao
+  taskinboard e ao projeto de onde vieram (task-215).
+- **O board só desenha.** Ele lê o JSON do `taskin status`, que é contrato
+  versionado, e não consulta recurso nenhum por conta própria.
+- **Alerta é estado, não evento.** O número sobre o ícone conta o que pede
+  atenção agora: task em andamento há horas sem commit, lote que falhou, tasks
+  abertas sem nenhuma máquina capaz de rodá-las. Enquanto houver algo, o ícone
+  fica em alerta.
+- **Esconder em vez de quebrar.** No espaço pequeno da bandeja, um recurso
+  indisponível some. O motivo continua no `taskin status`.
+- **O mascote mora no board.** O componente `Taskin` do `design-vue`, com
+  humores e fala.
+- **O board também é recurso.** É um canal (avisar) e um sensor (perceber): o
+  tempo ocioso do sistema diz se a pessoa está no computador, que é a presença
+  de que a etapa 4 precisa.
+
 ## Vocabulário
 
 - **Recurso**: qualquer coisa que pesa no como de uma task.
@@ -258,8 +295,11 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
 3. **Percepção viva.** Um serviço do taskin em segundo plano (task-200) mantém
    o quadro atualizado entre as máquinas. A task-200 não depende da Alexa: a
    Alexa ficou sem prioridade, e o processo virou peça comum aos dois.
-4. **Canais por presença.** O aviso vai pelo canal que os sensores dizem que a
-   pessoa está vendo. Depende da task-162.
+4. **O taskinboard e os canais por presença.**
+   - Os componentes do painel no `design-vue` (task-215).
+   - O app Tauri lendo `taskin status --json`, e depois o aviso do daemon.
+   - O aviso vai pelo canal que os sensores dizem que a pessoa está vendo,
+     com o tempo ocioso do board como primeiro sensor. Depende da task-162.
 5. **Projeção.**
    - A duração estimada vem da dificuldade e do histórico dos lotes.
    - Entram a carga das máquinas, a cota dos modelos e a bateria.
@@ -274,6 +314,9 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
 - **O que conta como "presente"**: rosto na câmera, relógio no pulso, teclado
   em uso.
 - **Horário de silêncio**, e quem pode furá-lo.
+- **Quais repositórios o daemon e o board atendem.** Os dois são um por
+  máquina, e precisam de uma lista de repositórios, que a task-200 ainda não
+  define.
 - **As seções "Onde executar" antigas**, que já estão no histórico do git:
   reescrever as tasks abertas em requisitos e deixar as fechadas como estão, ou
   outra saída.
