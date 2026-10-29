@@ -22,6 +22,8 @@ As três decisões abertas da etapa 2, tomadas com o usuário e registradas no R
 ## Notes
 Abre a etapa 2, e só começa se a task-194 decidiu seguir.
 
+A pergunta do repositório em duas máquinas é um caso da consciência situacional: ver [docs/RDT/consciencia-situacional.md](../docs/RDT/consciencia-situacional.md) (task-213).
+
 ### Onde executar
 Em conversa com o usuário: são decisões dele. Não é task para o sandcastle.
 
