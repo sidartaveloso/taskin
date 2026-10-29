@@ -10,13 +10,13 @@ O `pnpm confianca:publicacao` (`dev/scripts/configurar-confianca-de-publicacao.t
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] O rinhany entra na lista de repositórios do configurador, com o mesmo listador de changesets do taskin; a pasta vem de `RINHANY_DIR`, com a irmã do taskin como padrão, como o `STORYTYPE_DIR`
-- [ ] O `--dry-run` lista os quatro pacotes publicáveis do rinhany (`@rinhany/core`, `@rinhany/testing`, `@rinhany/cli` e `rinhany`) e deixa o site de fora
+- [x] O rinhany entra na lista de repositórios do configurador, com o mesmo listador de changesets do taskin; a pasta vem de `RINHANY_DIR`, com a irmã do taskin como padrão, como o `STORYTYPE_DIR`. O `--repo=<dono/nome>` limita a um repositório: um pacote já configurado só se revela pelo 409 da escrita, depois do 2FA
+- [x] O `--dry-run` lista os quatro pacotes publicáveis do rinhany (`@rinhany/core`, `@rinhany/testing`, `@rinhany/cli` e `rinhany`) e deixa o site de fora
 - [ ] Os quatro pacotes do rinhany confiam no `release.yml` de `sidartaveloso/rinhany` (rodado por quem tem o 2FA da conta)
 
 ## Acceptance criteria
 
-- [ ] **A** — `pnpm confianca:publicacao --dry-run` mostra o rinhany com os quatro pacotes.
+- [x] **A** — `pnpm confianca:publicacao --dry-run` mostra o rinhany com os quatro pacotes.
 - [ ] **A** — Depois de rodar, `npm trust list` de cada pacote do rinhany mostra o `release.yml`.
 
 ## Notes
