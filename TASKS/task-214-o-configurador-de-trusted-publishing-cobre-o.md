@@ -1,6 +1,6 @@
 # 🧩 Task 214 — O configurador de trusted publishing cobre o rinhany
 
-- Status: pending
+- Status: in-progress
 - Type: chore
 - Assignee: sidartaveloso
 
