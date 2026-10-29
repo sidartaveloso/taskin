@@ -108,7 +108,7 @@ problemas de uma vez: a informação deixa de envelhecer e deixa de vazar.
 | Camada | Quem decide | Onde mora | Exemplo |
 | --- | --- | --- | --- |
 | **Do repositório** | O time ou o projeto | Versionada, no repositório | "Este projeto pode rodar tasks nos servidores 1, 2 e 3." |
-| **Da pessoa** | Quem desenvolve | Num arquivo do usuário, em `~/.config/taskin/`, fora do repositório | "Tenho acesso a outro desktop." |
+| **Da pessoa** | Quem desenvolve | Em `~/.config/taskin/resources.json`, fora do repositório | "Tenho acesso a outro desktop." |
 
 Quando a pessoa roda o taskin na máquina dela, ele enxerga a soma das duas: os
 servidores 1, 2 e 3 e o desktop dela. A ideia é a mesma das camadas do
@@ -149,6 +149,30 @@ O que o taskin pode usar, então:
 - **A camada da pessoa** nunca entra no repositório: nem no `.taskin.json`, nem
   nas tasks, nem nos RDTs, nem nas mensagens de commit.
 - **As tasks** falam só de requisitos, nunca do nome de um recurso concreto.
+
+### Os nomes
+
+O que a pessoa digita ou configura fica em inglês, como o resto do taskin (os
+comandos, as chaves do `.taskin.json` e os campos do cabeçalho das tasks). O
+texto das tasks, dos RDTs e dos commits segue em português.
+
+| O quê | Nome |
+| --- | --- |
+| Camada do repositório | chave `resources` no `.taskin.json` |
+| Camada da pessoa | `~/.config/taskin/resources.json` |
+| Requisitos de uma task | campo `- Requires:` no cabeçalho |
+| Valores dos requisitos e das capacidades | lista fechada em inglês, no `types-ts`: `docker`, `android-sdk`, `gpu`, `interactive`, `microphone`, `visual-review`… |
+| O quadro da situação | `taskin status` |
+| O processo em segundo plano | `taskin daemon` (task-200); `taskin daemon status` fala só do processo |
+
+**`taskin status` abre pela task em andamento.** Status já é um campo de toda
+task, e quem digita o comando espera ver em que está trabalhando. Por isso o
+quadro começa por aí e só depois mostra os recursos, os agentes e quais tasks
+abertas rodam onde. O nome militar, `sitrep`, foi descartado: pediria
+explicação, e `status` segue o costume de `git status` e `systemctl status`.
+
+A lista fechada de valores deixa o `taskin lint` acusar um requisito digitado
+errado. Valor novo entra por PR, com o motivo.
 
 ### Fato percebido tem data
 
@@ -194,14 +218,14 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
 
 1. **Percepção declarada.**
    - As duas camadas do inventário (a do repositório e a da pessoa), as
-     liberações e as restrições, e um comando que mostra o quadro da situação
-     já somado.
+     liberações e as restrições, e o `taskin status` mostrando o quadro da
+     situação já somado.
    - A máquina se descreve sozinha por sondagem: SO, CPU, memória, Docker,
      SDKs, imagem do sandcastle.
    - Entram também os agentes disponíveis (pelo `probe()` que já existe) e as
      bibliotecas do workspace e dos repositórios irmãos.
 2. **Requisitos nas tasks.**
-   - Um campo `- Requer:` no cabeçalho, conferido pelo `taskin lint`.
+   - O campo `- Requires:` no cabeçalho, conferido pelo `taskin lint`.
    - O `taskin list` sugere o como de cada task, e "Onde executar" passa a ser
      derivada.
    - O lint avisa quando uma task cita pelo nome um recurso do inventário.
@@ -216,10 +240,8 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
 
 ## Decisões em aberto
 
-- **O formato do inventário**:
-  - em que arquivo do repositório mora a camada do time (dentro do
-    `.taskin.json` ou ao lado dele);
-  - o que a sondagem descobre sozinha e o que se declara.
+- **O formato do inventário**: o que a sondagem descobre sozinha e o que se
+  declara. Onde cada camada mora já está decidido em "Os nomes".
 - **Uma terceira camada, de organização**, para times com vários
   repositórios dividindo os mesmos servidores.
 - **Quem confirma uma execução remota**, e por qual canal.
