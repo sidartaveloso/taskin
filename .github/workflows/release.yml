@@ -17,7 +17,10 @@ permissions:
 jobs:
   release:
     name: Release
-    runs-on: ubuntu-latest
+    # Fixo em 24.04: o ubuntu-latest virou 26.04, e o Playwright 1.57 do
+    # repositorio nao instala o Chromium nele (o suporte entrou entre 1.60 e
+    # 1.62). Volta para ubuntu-latest junto com a atualizacao do Playwright.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

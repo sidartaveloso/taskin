@@ -2,7 +2,12 @@ import { execFileSync, execSync } from 'child_process';
 import { mkdtempSync, readFileSync, rmSync, statSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { buildTaskStatusCommitMessage, DEFAULT_CI_SKIP_TAG } from './commit-message';
+import {
+  buildTaskStatusCommitMessage,
+  type CommitLanguage,
+  DEFAULT_CI_SKIP_TAG,
+  DEFAULT_COMMIT_LANGUAGE,
+} from './commit-message';
 import { createBranch as createBranchUtil, isGitRepository as isGitRepositoryUtil } from './git';
 import type { IGitService, TaskStatusPublishResult, WorkCommitResult } from './git-service.types';
 import { addedLinesFromDiff, findSecretsInLine, type SensitiveFinding, sensitivePathReason } from './sensitive-changes';
@@ -48,6 +53,8 @@ export interface GitServiceOptions {
    * without touching disk.
    */
   ciSkipTag?: string;
+  /** Language of the status commits. Defaults to {@link DEFAULT_COMMIT_LANGUAGE}. */
+  commitLanguage?: CommitLanguage;
 }
 
 /**
@@ -58,12 +65,14 @@ export interface GitServiceOptions {
  */
 export class GitService implements IGitService {
   private readonly ciSkipTag: string;
+  private readonly commitLanguage: CommitLanguage;
 
   constructor(
     private readonly cwd: string = process.cwd(),
     options: GitServiceOptions = {},
   ) {
     this.ciSkipTag = options.ciSkipTag ?? DEFAULT_CI_SKIP_TAG;
+    this.commitLanguage = options.commitLanguage ?? DEFAULT_COMMIT_LANGUAGE;
   }
 
   async addFiles(pattern: string): Promise<boolean> {
@@ -177,9 +186,13 @@ export class GitService implements IGitService {
     }
   }
 
+  private statusCommitMessage(taskId: string, status: string): string {
+    return buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag, language: this.commitLanguage });
+  }
+
   async commitTaskStatusChange(taskId: string, status: string): Promise<boolean> {
     const pattern = `TASKS/task-${taskId}-*.md`;
-    const message = buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag });
+    const message = this.statusCommitMessage(taskId, status);
 
     return this.addAndCommit(pattern, message);
   }
@@ -246,11 +259,11 @@ export class GitService implements IGitService {
         if (taskFileContent && taskFilePath) {
           const { writeFileSync } = await import('fs');
           writeFileSync(`${this.cwd}/${taskFilePath}`, taskFileContent, 'utf-8');
-          const message = buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag });
+          const message = this.statusCommitMessage(taskId, status);
           committed = await this.addAndCommit(taskPattern, message);
         } else {
           // Fallback: try to commit directly (task might already be staged)
-          const message = buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag });
+          const message = this.statusCommitMessage(taskId, status);
           committed = await this.addAndCommit(taskPattern, message);
         }
 
@@ -300,7 +313,7 @@ export class GitService implements IGitService {
     defaultBranch: string,
   ): Promise<TaskStatusPublishResult> {
     const remoteRef = `refs/remotes/origin/${defaultBranch}`;
-    const message = buildTaskStatusCommitMessage({ taskId, status, ciSkipTag: this.ciSkipTag });
+    const message = this.statusCommitMessage(taskId, status);
 
     try {
       this.git(['remote', 'get-url', 'origin']);

@@ -13,6 +13,29 @@ const capturar = promisify(execFile);
 
 export const VERSAO_MINIMA_DO_NPM = '11.15.0';
 
+/**
+ * Os argumentos do `npm trust github` para um pacote.
+ *
+ * O codigo vai como `--otp=<codigo>`, num argumento so: o `npm trust` nao
+ * declara `otp` entre as proprias opcoes, entao `--otp <codigo>` virava uma
+ * chave sem valor seguida de um argumento posicional, e o npm recusava com
+ * "Unknown positional argument".
+ */
+export function argumentosDeConfianca(alvo: AlvoDeConfianca, otp?: string): string[] {
+  return [
+    'trust',
+    'github',
+    alvo.pacote,
+    '--repo',
+    alvo.repositorio,
+    '--file',
+    alvo.workflow,
+    '--allow-publish',
+    '--yes',
+    ...(otp ? [`--otp=${otp}`] : []),
+  ];
+}
+
 export class ClienteNpm implements IClienteNpm {
   constructor(
     private readonly binario: string,
@@ -52,18 +75,7 @@ export class ClienteNpm implements IClienteNpm {
   }
 
   async confiarEmGithubActions(alvo: AlvoDeConfianca, otp?: string): Promise<ResultadoDeConfianca> {
-    const argumentos = [
-      'trust',
-      'github',
-      alvo.pacote,
-      '--repo',
-      alvo.repositorio,
-      '--file',
-      alvo.workflow,
-      '--allow-publish',
-      '--yes',
-      ...(otp ? ['--otp', otp] : []),
-    ];
+    const argumentos = argumentosDeConfianca(alvo, otp);
 
     if (this.modo.tipo === 'interativo') {
       const { codigo, saida } = await this.herdandoTerminal(argumentos);
