@@ -21,17 +21,17 @@ A task-003 do rinhany ("Publicar os pacotes no npm", in-progress) já deixou os 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] No rinhany: conciliar a `main` local com a `origin` (hoje 2 commits à frente, `900bbe5` e `f5aa9b4`, e 4 atrás) e publicar a 0.1.0 (task-003 de lá)
-- [ ] `@rinhany/core` e `@rinhany/testing` em `^0.1.0` no `packages/difficulty-estimator/package.json`, com o `pnpm-lock.yaml` atualizado
-- [ ] O typecheck, o build e os testes do estimator passam num clone sem o `../rinhany` ao lado
-- [ ] O `lint:manifests` recusa `link:` nas dependências de um pacote publicável, para isso não voltar
+- [x] No rinhany: conciliar a `main` local com a `origin` e publicar a 0.1.0 (task-003 de lá). Os quatro pacotes estão no npm, e o `release.yml` de lá passou a rodar sozinho a cada push na `main`
+- [x] `@rinhany/core` e `@rinhany/testing` em `^0.1.0` no `packages/difficulty-estimator/package.json`, com o `pnpm-lock.yaml` atualizado. As duas versões entraram em `minimumReleaseAgeExclude` porque tinham minutos de vida; podem sair dali quando passarem da idade mínima
+- [x] O typecheck, o build e os testes do estimator passam num clone sem o `../rinhany` ao lado (worktree fora da pasta do repositório, `pnpm run ci` verde)
+- [x] O `lint:manifests` recusa `link:` e `file:` em qualquer campo de dependências de qualquer pacote, para isso não voltar (`dev/scripts/dependencias-locais`)
 - [ ] O `Verificar` passa na develop
 
 ## Acceptance criteria
 
-- [ ] **A** — Num clone limpo, sem a pasta do rinhany ao lado, `pnpm install && pnpm run ci` passa.
+- [x] **A** — Num clone limpo, sem a pasta do rinhany ao lado, `pnpm install && pnpm run ci` passa.
 - [ ] **A** — O `Verificar` fica verde na develop depois do push.
-- [ ] **A** — Nenhum manifesto publicável tem dependência `link:`. Há teste no `lint:manifests`.
+- [x] **A** — Nenhum manifesto publicável tem dependência `link:`. Há teste no `lint:manifests`.
 
 ## Notes
 
