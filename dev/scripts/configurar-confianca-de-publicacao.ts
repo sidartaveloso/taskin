@@ -1,15 +1,22 @@
 #!/usr/bin/env tsx
 /**
- * Configura trusted publishing (OIDC) nos pacotes publicaveis do taskin e do
- * storytype, para que o release rode sem token e sem OTP.
+ * Configura trusted publishing (OIDC) nos pacotes publicaveis do taskin, do
+ * storytype e do rinhany, para que o release rode sem token e sem OTP.
  *
  *   pnpm confianca:publicacao                 interativo: loga e pergunta o 2FA
  *   pnpm confianca:publicacao --otp=123456    passa o codigo em vez de digitar
  *   pnpm confianca:publicacao --nao-interativo   falha em vez de perguntar
  *   pnpm confianca:publicacao --dry-run       so lista os pacotes
+ *   pnpm confianca:publicacao --repo=sidartaveloso/rinhany   so um repositorio
  *
  * Um codigo de 2FA vive cerca de 30 segundos, entao um `--otp` nao cobre os 15
  * pacotes. Serve para retomar os que faltaram: o relatorio final diz quais sao.
+ *
+ * Um pacote ja configurado so se revela pelo 409 da escrita, depois do 2FA, entao
+ * rodar tudo de novo custa um codigo por pacote. `--repo` limita a um repositorio.
+ *
+ * Os outros repositorios sao procurados ao lado do taskin; `STORYTYPE_DIR` e
+ * `RINHANY_DIR` apontam para outro lugar.
  */
 import { resolve } from 'node:path';
 import type { ModoDeExecucao } from './cliente-npm';
@@ -22,6 +29,7 @@ const WORKFLOW = 'release.yml';
 const binario = process.env.NPM_BIN ?? 'npm';
 const raizDoTaskin = resolve(__dirname, '..', '..');
 const raizDoStorytype = process.env.STORYTYPE_DIR ?? resolve(raizDoTaskin, '..', 'storytype');
+const raizDoRinhany = process.env.RINHANY_DIR ?? resolve(raizDoTaskin, '..', 'rinhany');
 
 const argumentos = process.argv.slice(2);
 const otp = argumentos.find((a) => a.startsWith('--otp='))?.slice('--otp='.length);
@@ -33,7 +41,7 @@ const modo: ModoDeExecucao = argumentos.includes('--nao-interativo')
     ? { tipo: 'interativo' }
     : { tipo: 'nao-interativo' };
 
-const repos: RepoAlvo[] = [
+const todosOsRepos: RepoAlvo[] = [
   {
     repositorio: 'sidartaveloso/storytype',
     workflow: WORKFLOW,
@@ -44,7 +52,15 @@ const repos: RepoAlvo[] = [
     workflow: WORKFLOW,
     listador: new ListadorDePacotesChangesets(raizDoTaskin),
   },
+  {
+    repositorio: 'sidartaveloso/rinhany',
+    workflow: WORKFLOW,
+    listador: new ListadorDePacotesChangesets(raizDoRinhany),
+  },
 ];
+
+const filtroDeRepo = argumentos.find((a) => a.startsWith('--repo='))?.slice('--repo='.length);
+const repos = filtroDeRepo ? todosOsRepos.filter((r) => r.repositorio === filtroDeRepo) : todosOsRepos;
 
 let repoImpresso: string | undefined;
 
@@ -94,6 +110,12 @@ async function garantirSessao(npm: ClienteNpm): Promise<string | undefined> {
 }
 
 async function principal(): Promise<number> {
+  if (repos.length === 0) {
+    console.error(`repositorio desconhecido: ${filtroDeRepo}`);
+    console.error(`repositorios: ${todosOsRepos.map((r) => r.repositorio).join(', ')}`);
+    return 1;
+  }
+
   const npm = new ClienteNpm(binario, modo);
 
   const versao = await npm.versao().catch(() => undefined);
