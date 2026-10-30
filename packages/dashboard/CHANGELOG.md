@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [178cb31]
+- Updated dependencies [e44d692]
+- Updated dependencies [7a43f57]
+- Updated dependencies [0acf321]
+- Updated dependencies [b3fab29]
+- Updated dependencies [1a5af30]
+- Updated dependencies [c580005]
+- Updated dependencies [82483e3]
+- Updated dependencies [47556f3]
+- Updated dependencies [de8f2ef]
+- Updated dependencies [3af7f73]
+- Updated dependencies [a6db913]
+- Updated dependencies [5f83edc]
+- Updated dependencies [c523ed3]
+- Updated dependencies [c284b04]
+- Updated dependencies [6209a7b]
+- Updated dependencies [cf2d2b6]
+- Updated dependencies [dc53958]
+- Updated dependencies [ea805d7]
+- Updated dependencies [a423a1c]
+- Updated dependencies [327cf20]
+- Updated dependencies [d520fb2]
+- Updated dependencies [3a5130d]
+- Updated dependencies [d6eb3e3]
+- Updated dependencies [9d1229b]
+- Updated dependencies [00be71f]
+- Updated dependencies [97f9b98]
+- Updated dependencies [3a5130d]
+  - @opentask/taskin-design-vue@0.7.0
+  - @opentask/taskin-task-manager@4.1.0
+  - @opentask/taskin-task-provider-pinia@4.0.1
+
 ## 0.2.0
 
 ### Minor Changes
