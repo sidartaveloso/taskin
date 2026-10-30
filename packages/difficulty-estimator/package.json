@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-difficulty-estimator",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Suggests how hard a task is by asking Jev and Laya through layerall, and benchmarks them against human scores with rinhany",
   "type": "module",
   "motivation": "Difficulty is scored by hand on the prioritization board, and every new task is born without one.",

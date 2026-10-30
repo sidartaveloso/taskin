@@ -1,5 +1,24 @@
 # @opentask/taskin-task-server-mcp
 
+## 0.6.2
+
+### Patch Changes
+
+- cec2cad: A ajuda do `taskin priority` e do `taskin list --sort`, e a descrição do `sort`
+  no `list_tasks` do MCP, dizem a direção da prioridade: número menor vem
+  primeiro.
+- Updated dependencies [7a43f57]
+- Updated dependencies [ad0d07c]
+- Updated dependencies [8934ce2]
+- Updated dependencies [18b1680]
+- Updated dependencies [d1231a7]
+- Updated dependencies [fbc3417]
+- Updated dependencies [9328b25]
+- Updated dependencies [5ca0c91]
+  - @opentask/taskin-task-manager@4.1.0
+  - @opentask/taskin-file-system-provider@3.5.0
+  - @opentask/taskin-types@2.7.0
+
 ## 0.6.1
 
 ### Patch Changes
