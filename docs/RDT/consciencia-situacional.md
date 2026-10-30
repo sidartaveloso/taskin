@@ -480,12 +480,30 @@ implementação em memória e só então as reais.
 A primeira rodada, no grupo "Consciência situacional", cobre o núcleo das
 etapas 1, 2 e 6 nessa ordem:
 
-| Task | O que |
-| --- | --- |
-| 216 | Nível 1: atores, fluxos, cenários e a suíte de contrato vermelha |
-| 217 | Nível 2: o sistema, os plugins e os eventos em envelope |
-| 218 | Em memória: cada plugin verde contra a suíte |
-| 219 | Local: inventário, sondagem, registro de execução e o `taskin status` |
+| Task | O que | Lote | Dificuldade |
+| --- | --- | --- | --- |
+| 216 | Nível 1: atores, fluxos, cenários e a suíte de contrato vermelha | interativo, fechada e aprovada | — |
+| 217 | Nível 2: o sistema, os plugins e os eventos em envelope | `situacao-lote-1` | 4 |
+| 218 | Em memória: cada plugin verde contra a suíte | `situacao-lote-2` | 4 |
+| 219 | Local: inventário, sondagem, registro de execução e segredo por ambiente | `situacao-lote-3` | 3 |
+| 220 | O `taskin status` e os desenhos do quadro | `situacao-lote-3` | 3 |
+| 200 | O `taskin daemon` | `situacao-lote-4` | 3 |
+
+Os lotes rodam pelo sandcastle, um por vez, com o grupo e o modelo de cada um:
+
+```bash
+SANDCASTLE_GROUP=situacao-lote-1 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx .sandcastle/main.ts
+```
+
+- **A dificuldade escolhe o modelo:** 4 vai com o modelo mais forte (é
+  especificação, ou lógica de verdade); 3 vai com um mais barato, porque
+  preenche uma estrutura que outra task já definiu.
+- **A prioridade ordena dentro do lote:** a 219 vem antes da 220.
+- **Entre um lote e o seguinte, o merge na `develop` é o portão.** Depois do
+  lote 1, o usuário revisa e aprova os tipos e as suítes, porque quem
+  implementa não escreve a prova. Os lotes 2 e 3 não editam casos nem suítes.
+- **O lote 4 não depende dos outros** e pode rodar em paralelo, noutra máquina
+  e com outra conta.
 
 ## Decisões em aberto
 

@@ -3,8 +3,9 @@
 - Status: pending
 - Type: feat
 - Assignee: sidartaveloso
-- Priority: 8600
+- Priority: 9400
 - Difficulty: 3
+- Group: situacao-lote-4
 
 ## Description
 Um processo do taskin que fica de pé enquanto a máquina está ligada, sobe sozinho com o login no macOS e no Linux e diz o que está rodando dentro dele. Não sabe nada de Alexa nem de rede: é a peça comum onde outras partes penduram o que precisa ficar rodando, como a conexão da Alexa (task-198) e a percepção viva da consciência situacional (`docs/RDT/consciencia-situacional.md`, etapa 3).
@@ -36,6 +37,6 @@ pnpm --filter taskin test
 ```
 
 ### Onde executar
-O código e os testes: sandcastle, em qualquer máquina. A instalação de verdade (`install`, login de novo, `status`) é conferida à mão numa máquina macOS e numa Linux, depois do lote.
+O código e os testes: sandcastle, lote `situacao-lote-4` (dificuldade 3, com o desenho do contrato de serviço): `SANDCASTLE_GROUP=situacao-lote-4 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx .sandcastle/main.ts`, em qualquer máquina com Docker. Não depende das tasks 217 a 220. A instalação de verdade (`install`, login de novo, `status`) é conferida à mão numa máquina macOS e numa Linux, depois do lote.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).
