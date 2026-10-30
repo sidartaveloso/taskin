@@ -1,6 +1,6 @@
 # 🧩 Task 216 — Os casos de uso da consciência situacional: atores, fluxos, cenários e a suíte de contrato vermelha
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: g-ebwuvrd1
