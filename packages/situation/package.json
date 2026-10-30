@@ -1,0 +1,45 @@
+{
+  "name": "@opentask/taskin-situation",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Situational awareness for Taskin: the resources at hand, the constraints, and how to run each task",
+  "type": "module",
+  "motivation": "Knowing which machines, LLM accesses, libraries, channels and sensors are available, and against what limits, is what decides how each task should run. Today that knowledge lives only in hand-written prose.",
+  "solve": "Specifies, as use cases with a contract suite and then as plugin types, the inventory, the probing, the credential lease, the run ledger and the scheduler, so every implementation is checked against the same contract.",
+  "scope": "core",
+  "status": "experimental",
+  "since": "2026-10-29",
+  "keywords": [
+    "taskin",
+    "situational-awareness",
+    "scheduling",
+    "resources"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sidartaveloso/taskin.git",
+    "directory": "packages/situation"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && node ../../scripts/fix-esm-extensions.mjs dist",
+    "clean": "rm -rf dist coverage .turbo",
+    "format": "biome check --write .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.0"
+  }
+}

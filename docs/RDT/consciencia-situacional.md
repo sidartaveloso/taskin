@@ -360,18 +360,22 @@ mesma suíte. O padrão `contractTests(create)` de
   classifica acessos) e `IExecutorActor` (quem roda a task: pede um acesso,
   registra a execução).
 - **Fluxos em typestate**, com o caminho errado sem compilar:
-  `LeaseRequested → LeaseGranted → LeaseReturned | LeaseExpired` e
+  `LeaseGranted | LeaseDenied → LeaseReturned | LeaseExpired` e
   `RunPlanned → RunStarted → RunFinished`, em que fechar exige a dificuldade
-  encontrada.
+  encontrada. O pedido de empréstimo é uma entrada, não um estado: ele já
+  volta concedido ou negado, com o motivo.
 - **Portas**: o relógio, o gerenciador de segredos, a sondagem da máquina e o
   consumo informado pelo provedor.
 - **Cenários**: uma máquina e uma conta; duas máquinas e duas contas; duas
   máquinas e uma conta; repositório que restringe as máquinas pessoais.
 - **Prova negativa** em `*.test-d.ts`, com `@ts-expect-error`: devolver um
   empréstimo que não foi concedido; fechar uma execução sem a dificuldade
-  encontrada; mandar dado sensível a um acesso que não o cobre.
+  encontrada; primitivo solto no lugar de um tipo marcado. Mandar dado
+  sensível a um acesso que não o cobre depende de dados, não de tipos, e por
+  isso é um caso da suíte (o pedido volta negado com o motivo).
 - **A suíte de contrato** falha contra a implementação vazia, caso a caso,
   pelo motivo certo.
+- Está em `packages/situation/src/use-cases/` (task-216).
 
 **Nível 2: o sistema como tipos.**
 
