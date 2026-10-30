@@ -57,6 +57,26 @@
     "g-ebwuvrd1": {
       "id": "g-ebwuvrd1",
       "name": "Consciência situacional"
+    },
+    "situacao-lote-1": {
+      "id": "situacao-lote-1",
+      "name": "Situação, lote 1: o sistema como tipos",
+      "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-2": {
+      "id": "situacao-lote-2",
+      "name": "Situação, lote 2: em memória",
+      "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-3": {
+      "id": "situacao-lote-3",
+      "name": "Situação, lote 3: local e o taskin status",
+      "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-4": {
+      "id": "situacao-lote-4",
+      "name": "Situação, lote 4: o taskin em segundo plano",
+      "parentId": "g-ebwuvrd1"
     }
   }
 }

@@ -3,26 +3,38 @@
 - Status: pending
 - Type: feat
 - Assignee: sidartaveloso
-- Group: g-ebwuvrd1
+- Group: situacao-lote-3
+- Difficulty: 3
+- Priority: 9200
 
 ## Description
-As implementações locais dos plugins de inventário, sondagem e registro de execução, passando pela mesma suíte, e o taskin status com --format lendo do sistema
+As implementações locais dos plugins que tocam o disco e a máquina: o inventário das duas camadas em arquivo, a sondagem desta máquina, o registro de execução versionado e a guarda de segredos por variável de ambiente. Todas passam pelas mesmas suítes de contrato.
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Inventário local: a camada do repositório na chave `resources` do `.taskin.json` e a da pessoa em `~/.config/taskin/resources.json`, com liberações e restrições, e os segredos só por referência
-- [ ] Sondagem desta máquina (SO, CPU, memória, Docker, SDKs, imagem do sandcastle) e dos agentes pelo `probe()` que já existe, com cada fato datado
-- [ ] Registro de execução versionado no repositório, com a dificuldade estimada e a encontrada, citando recursos só pelo nome lógico
-- [ ] As mesmas suítes de contrato verdes contra as implementações locais
-- [ ] `taskin status` com a task em andamento no topo e o quadro somado, e `--format text|json|html|md` com o atalho `--json`; o JSON com schema e `version`
-- [ ] Nada privado no que é versionado: o teste confere que o registro e a camada do repositório não levam endereço, hostname nem credencial
+- [ ] `packages/situation/src/local/inventory.local.ts`: a camada do repositório lida da chave `resources` do `.taskin.json` e a da pessoa de `~/.config/taskin/resources.json`, com os dois caminhos injetados (nos testes, uma pasta temporária)
+- [ ] `packages/situation/src/local/machine-probe.local.ts`: `IMachineProbePort` desta máquina pelo módulo `os` e por comandos (`docker info`, `java -version`, `ANDROID_HOME`, a imagem do sandcastle), com cada fato datado pelo relógio; comando que falha vira capacidade ausente, não erro
+- [ ] `packages/situation/src/local/run-ledger.local.ts`: o registro de execução em `.taskin/runs.jsonl`, uma linha por execução fechada, só com nomes lógicos
+- [ ] `packages/situation/src/local/secret-store.env.ts`: `ISecretStorePort` para referências `env:NOME`. As outras guardas (`op://`, `keychain:`) — adiado: entram quando a primeira pessoa precisar, cada uma com o seu teste
+- [ ] `packages/situation/src/local/local.test.ts`: as mesmas suítes de contrato verdes contra as implementações locais, montadas com as portas falsas onde a máquina não importa
+- [ ] Teste de privacidade: o `runs.jsonl` e a camada do repositório gravados não contêm endereço, hostname nem valor de segredo
 
 ## Notes
-Depende da task-218. A parte remota (o mesmo contrato servido pelo `taskin daemon` às outras máquinas e ao taskinboard) vem depois da task-200.
+Depende da task-218.
 
-O `### Contexto da rodada` desta task é escrito quando a task-218 fechar.
+### Contexto da rodada
+- Ler: `packages/situation/src/system/plugins/inventory/`, `packages/situation/src/system/plugins/run-ledger/`, `packages/situation/src/use-cases/ports.types.ts`, `packages/situation/src/memory/` (como a implementação em memória cumpre os mesmos contratos) e, em `docs/RDT/consciencia-situacional.md`, só a seção "O inventário tem duas camadas".
+- Não ler: a CLI, o escalonador, o `design-vue`.
+- Não editar casos nem suítes.
+
+### Verificacao
+```bash
+pnpm --filter @opentask/taskin-situation typecheck
+pnpm --filter @opentask/taskin-situation lint
+pnpm --filter @opentask/taskin-situation test
+```
 
 ### Onde executar
-Sandcastle para o código e os testes; a sondagem de verdade é conferida à mão numa máquina macOS e numa Linux.
+Sandcastle, lote `situacao-lote-3`, com modelo mais barato (dificuldade 3: dados numa estrutura que a task-217 já definiu): `SANDCASTLE_GROUP=situacao-lote-3 SANDCASTLE_MODEL=claude-sonnet-5-5 pnpm exec tsx .sandcastle/main.ts`. A sondagem de verdade é conferida à mão depois, numa máquina macOS e numa Linux.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).
