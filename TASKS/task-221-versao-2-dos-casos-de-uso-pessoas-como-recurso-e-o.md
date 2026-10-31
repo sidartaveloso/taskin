@@ -1,6 +1,6 @@
 # 🧩 Task 221 — Versão 2 dos casos de uso: pessoas como recurso e o pedido de ponto de vista
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-1
