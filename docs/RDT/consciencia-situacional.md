@@ -343,6 +343,55 @@ função objetivo é pura, um solver entra depois sem mudar a regra. E vale o
 conselho antes do despacho: o `taskin status` mostra o plano sugerido, e o
 sandcastle passa a ler dele o acesso e o modelo.
 
+### Pessoas também são recursos
+
+Quem trabalha no projeto é recurso do papel **quem**, ao lado dos agentes, e
+muitas vezes o único capaz de uma etapa: um olhar de design sobre um layout, a
+revisão de um esquemático de circuito, a leitura de um texto. O taskin já tem o
+começo disso: o registro de pessoas (`.taskin/.taskin-users.json`), o campo
+`Assignee` e o papel de revisor proposto na task-206.
+
+Uma pessoa não é uma máquina:
+
+| | Máquina ou LLM | Pessoa |
+| --- | --- | --- |
+| Como se usa | o taskin empresta e executa | o taskin **pede**, e a pessoa pode recusar |
+| Custo | dinheiro, cota, tempo | **atenção**: cada pedido interrompe alguém |
+| Latência | segundos a minutos | horas a dias |
+| Disponibilidade | ligada ou desligada | horário, presença e a carga que a própria pessoa declara |
+| Competência | declarada e calibrada | declarada **pela própria pessoa** |
+
+**O pedido de ponto de vista.** Uma task, ou uma etapa dela, pode exigir uma
+opinião humana: `- Requires: review:design`, `review:electronics`. O pedido é
+um fluxo em typestate, como o empréstimo:
+`ViewpointRequested → ViewpointAccepted | ViewpointDeclined → ViewpointDelivered`,
+e vence sozinho no prazo. Leva a pergunta, o material (link, captura,
+esquemático) e o prazo; a resposta volta registrada na task, como evidência.
+
+- **No escalonamento,** a interrupção é o custo λ₄ da função objetivo. O
+  escalonador agrupa pedidos para a mesma pessoa e respeita a carga e o
+  horário que ela declarou.
+- **No sandcastle,** a task que chega a uma etapa de opinião humana abre o
+  pedido e espera, em vez de adivinhar; o agente segue com a próxima do lote.
+- **Nos canais,** o pedido chega pelo canal que a pessoa prefere e quando ela
+  está presente: o taskinboard, o relógio, o Discord com menção (task-068).
+
+**Cuidados próprios de pessoas:**
+
+1. **Consentimento.** Cada pessoa decide se recebe pedidos, de que tipo e com
+   que frequência. Ninguém é consultado sem ter aceitado.
+2. **Privacidade.** Competência e disponibilidade são dados pessoais. A
+   competência que a pessoa aceitou divulgar pode ficar no registro de pessoas,
+   versionado; disponibilidade e presença ficam na camada da pessoa, fora do
+   repositório.
+3. **Nada de placar de gente.** O tempo de resposta e se a opinião foi usada
+   servem para planejar e são vistos só pela própria pessoa, nunca como
+   ranking.
+4. **Quem fez não revisa o próprio trabalho**, a regra de dois papéis da
+   task-206.
+5. **Gente de fora do projeto** (um especialista convidado) só entra por
+   convite explícito e só vê o material do pedido.
+
 ## Como se implementa: contrato antes do código, em dois níveis
 
 A consciência situacional segue o método dos padrões de engenharia que o
@@ -385,8 +434,9 @@ mesma suíte. O padrão `contractTests(create)` de
 - Os plugins: `IInventory` (as duas camadas, liberações, restrições e fatos),
   `IProbe` (sondagem e calibração), `IAccessBroker` (o empréstimo),
   `IRunLedger` (consumo e dificuldade estimada e encontrada), `IScheduler` (a
-  função objetivo e o plano sugerido), `IChannels` (aviso por presença) e
-  `IFlows` (o evento de um plugin acionando outro).
+  função objetivo e o plano sugerido), `IChannels` (aviso por presença),
+  `IPeople` (competência, consentimento, disponibilidade e os pedidos de
+  ponto de vista) e `IFlows` (o evento de um plugin acionando outro).
 - **Eventos em envelope**, nunca achatados:
   `{ id, type, occurredAt, source: { plugin, version }, payload }`, com
   `type` em `'<plugin>:<fato-no-passado>'` (`access:lease-granted`,
@@ -438,6 +488,8 @@ marcado com construtor (`AccessId`, `TokenCount`, `Instant`).
   que se leva, com custo de preparo.
 - **Calibração**: a mesma task pequena rodada em todos os recursos para
   medi-los.
+- **Pedido de ponto de vista**: a opinião humana que uma task pede a quem tem
+  a competência e aceitou receber pedidos.
 
 ## Etapas
 
@@ -483,6 +535,7 @@ etapas 1, 2 e 6 nessa ordem:
 | Task | O que | Lote | Dificuldade |
 | --- | --- | --- | --- |
 | 216 | Nível 1: atores, fluxos, cenários e a suíte de contrato vermelha | interativo, fechada e aprovada | — |
+| 221 | Nível 1, versão 2: pessoas como recurso e o pedido de ponto de vista | `situacao-lote-1`, antes da 217 | 3 |
 | 217 | Nível 2: o sistema, os plugins e os eventos em envelope | `situacao-lote-1` | 4 |
 | 218 | Em memória: cada plugin verde contra a suíte | `situacao-lote-2` | 4 |
 | 219 | Local: inventário, sondagem, registro de execução e segredo por ambiente | `situacao-lote-3` | 3 |
@@ -500,8 +553,8 @@ SANDCASTLE_GROUP=situacao-lote-1 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx 
   preenche uma estrutura que outra task já definiu.
 - **A prioridade ordena dentro do lote:** a 219 vem antes da 220.
 - **Entre um lote e o seguinte, o merge na `develop` é o portão.** Depois do
-  lote 1, o usuário revisa e aprova os tipos e as suítes, porque quem
-  implementa não escreve a prova. Os lotes 2 e 3 não editam casos nem suítes.
+  lote 1, o usuário revisa e aprova a versão 2 dos casos (221), os tipos e
+  as suítes, porque quem implementa não escreve a prova. Os lotes 2 e 3 não editam casos nem suítes.
 - **O lote 4 não depende dos outros** e pode rodar em paralelo, noutra máquina
   e com outra conta.
 
