@@ -36,6 +36,6 @@ pnpm --filter @opentask/taskin-situation test
 ```
 
 ### Onde executar
-Sandcastle, lote `situacao-lote-2`, com o modelo mais forte (dificuldade 4: o escalonador e o empréstimo têm lógica de verdade): `SANDCASTLE_GROUP=situacao-lote-2 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx .sandcastle/main.ts`, numa máquina Linux com Docker nativo.
+Sandcastle, lote `situacao-lote-2`, com o modelo mais forte (dificuldade 4: o escalonador e o empréstimo têm lógica de verdade): `SANDCASTLE_GROUP=situacao-lote-2 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx .sandcastle/main.ts`, numa máquina Linux com Docker nativo. Sempre a partir de um clone na `develop` atualizada (`git fetch origin && git switch develop && git pull --ff-only`), nunca de uma branch de task: o sandcastle mescla o resultado no HEAD de onde é chamado, e uma branch antiga nem tem o lote.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).

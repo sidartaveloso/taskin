@@ -37,6 +37,6 @@ pnpm --filter taskin test
 ```
 
 ### Onde executar
-O código e os testes: sandcastle, lote `situacao-lote-4` (dificuldade 3, com o desenho do contrato de serviço): `SANDCASTLE_GROUP=situacao-lote-4 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx .sandcastle/main.ts`, em qualquer máquina com Docker. Não depende das tasks 217 a 220. A instalação de verdade (`install`, login de novo, `status`) é conferida à mão numa máquina macOS e numa Linux, depois do lote.
+O código e os testes: sandcastle, lote `situacao-lote-4` (dificuldade 3, com o desenho do contrato de serviço): `SANDCASTLE_GROUP=situacao-lote-4 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx .sandcastle/main.ts`, em qualquer máquina com Docker. Não depende das tasks 217 a 220. A instalação de verdade (`install`, login de novo, `status`) é conferida à mão numa máquina macOS e numa Linux, depois do lote. Sempre a partir de um clone na `develop` atualizada (`git fetch origin && git switch develop && git pull --ff-only`), nunca de uma branch de task: o sandcastle mescla o resultado no HEAD de onde é chamado, e uma branch antiga nem tem o lote.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).

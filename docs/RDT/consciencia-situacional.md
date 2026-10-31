@@ -551,6 +551,8 @@ SANDCASTLE_GROUP=situacao-lote-1 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx 
 - **A dificuldade escolhe o modelo:** 4 vai com o modelo mais forte (é
   especificação, ou lógica de verdade); 3 vai com um mais barato, porque
   preenche uma estrutura que outra task já definiu.
+- **Sempre a partir de um clone na `develop` atualizada**, nunca de uma
+  branch de task: o sandcastle mescla o resultado no HEAD de onde é chamado.
 - **A prioridade ordena dentro do lote:** a 219 vem antes da 220.
 - **Entre um lote e o seguinte, o merge na `develop` é o portão.** Depois do
   lote 1, o usuário revisa e aprova a versão 2 dos casos (221), os tipos e
