@@ -1,9 +1,12 @@
-import { type Instant, instant, type PersonId, type ResourceId, type SecretRef } from './branded';
+import { type Instant, instant, type PersonId, type RepositoryId, type ResourceId, type SecretRef } from './branded';
 import type {
   IClockPort,
   IMachineProbePort,
+  IPeopleRegistryPort,
+  IPresencePort,
   IProviderUsagePort,
   ISecretStorePort,
+  PersonRecord,
   ProbedFacts,
   SituationPorts,
   SituationSettings,
@@ -64,11 +67,37 @@ export class FakeProviderUsage implements IProviderUsagePort {
   }
 }
 
+export class FakePeopleRegistry implements IPeopleRegistryPort {
+  private readonly records = new Map<RepositoryId, PersonRecord[]>();
+
+  add(repository: RepositoryId, record: PersonRecord): void {
+    this.records.set(repository, [...(this.records.get(repository) ?? []), record]);
+  }
+
+  async members(repository: RepositoryId): Promise<readonly PersonRecord[]> {
+    return this.records.get(repository) ?? [];
+  }
+}
+
+export class FakePresence implements IPresencePort {
+  private readonly presence = new Map<PersonId, boolean>();
+
+  set(person: PersonId, present: boolean): void {
+    this.presence.set(person, present);
+  }
+
+  async present(person: PersonId): Promise<boolean | undefined> {
+    return this.presence.get(person);
+  }
+}
+
 export interface FakePorts extends SituationPorts {
   readonly clock: FakeClock;
   readonly secrets: FakeSecretStore;
   readonly probe: FakeMachineProbe;
   readonly usage: FakeProviderUsage;
+  readonly people: FakePeopleRegistry;
+  readonly presence: FakePresence;
 }
 
 export const DEFAULT_TEST_SETTINGS: SituationSettings = {
@@ -82,6 +111,8 @@ export function createFakePorts(settings: SituationSettings = DEFAULT_TEST_SETTI
     secrets: new FakeSecretStore(),
     probe: new FakeMachineProbe(),
     usage: new FakeProviderUsage(),
+    people: new FakePeopleRegistry(),
+    presence: new FakePresence(),
     settings,
   };
 }

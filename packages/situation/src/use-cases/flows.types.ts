@@ -3,13 +3,16 @@ import type {
   DataClass,
   Difficulty,
   DurationMs,
+  Expertise,
   Instant,
   LeaseId,
+  PersonId,
   RepositoryId,
   ResourceId,
   RunId,
   TaskRef,
   TokenCount,
+  ViewpointId,
 } from './branded';
 
 /*
@@ -18,6 +21,9 @@ import type {
  *
  *   emprestimo: LeaseGranted | LeaseDenied  →  LeaseReturned | LeaseExpired
  *   execucao:   RunPlanned  →  RunStarted  →  RunFinished
+ *   ponto de vista: ViewpointRequested  →  ViewpointAccepted | ViewpointDeclined
+ *                   ViewpointAccepted   →  ViewpointDelivered
+ *                   e, em qualquer passo antes da entrega, ViewpointExpired no prazo
  */
 
 /** O pedido de um acesso pelo tipo, feito por quem vai executar uma task. */
@@ -103,3 +109,95 @@ export interface RunFinished extends Omit<RunStarted, 'state'>, RunOutcome {
   readonly finishedAt: Instant;
   readonly duration: DurationMs;
 }
+
+/* ─── O pedido de ponto de vista humano ─────────────────────────────────── */
+
+/** Uma peca do material do pedido: um link, uma captura, um esquematico. */
+export interface ViewpointMaterial {
+  readonly label: string;
+  /** Onde o material esta. E tudo o que a pessoa consultada ve do projeto. */
+  readonly uri: string;
+}
+
+/** O que quem executa pergunta, a uma competencia e nao a uma pessoa. */
+export interface ViewpointAsk {
+  readonly expertise: Expertise;
+  readonly question: string;
+  readonly material: readonly ViewpointMaterial[];
+  /** Depois disto o pedido vence sozinho. */
+  readonly dueAt: Instant;
+}
+
+/** O pedido aberto, ja com a pessoa escolhida. Pode estar esperando o horario dela. */
+export interface ViewpointRequested extends ViewpointAsk {
+  readonly state: 'requested';
+  readonly id: ViewpointId;
+  readonly repository: RepositoryId;
+  readonly task: TaskRef;
+  /** A execucao que chegou a etapa de opiniao humana: a resposta fica registrada nela. */
+  readonly run: RunId;
+  /** Para quem a execucao roda: a autora do trabalho, que nunca o revisa. */
+  readonly requestedBy: PersonId;
+  readonly reviewer: PersonId;
+  readonly requestedAt: Instant;
+  /**
+   * Quando o pedido chega a pessoa: o comeco do proximo horario em que ela esta
+   * presente. Igual a `requestedAt` quando ela ja esta.
+   */
+  readonly deliverableFrom: Instant;
+}
+
+export const VIEWPOINT_DENIAL_CODES = [
+  /** Ninguem que consentiu em receber pedidos daquela competencia esta a vista. */
+  'no-consenting-expert',
+  /** Quem consentiu ja esta na carga que declarou para a semana. */
+  'over-capacity',
+  /** A unica pessoa que consentiu e quem fez o trabalho. */
+  'only-the-author',
+] as const;
+
+export type ViewpointDenialCode = (typeof VIEWPOINT_DENIAL_CODES)[number];
+
+export interface ViewpointDenied {
+  readonly state: 'denied';
+  readonly reason: { readonly code: ViewpointDenialCode; readonly detail: string };
+}
+
+export interface ViewpointAccepted extends Omit<ViewpointRequested, 'state'> {
+  readonly state: 'accepted';
+  readonly acceptedAt: Instant;
+}
+
+/** A pessoa pode recusar, sempre, e diz por que. */
+export interface ViewpointDeclined extends Omit<ViewpointRequested, 'state'> {
+  readonly state: 'declined';
+  readonly reason: string;
+  readonly declinedAt: Instant;
+}
+
+/** O ponto de vista entregue, como fica registrado na execucao da task. */
+export interface ViewpointDelivered {
+  readonly state: 'delivered';
+  readonly id: ViewpointId;
+  readonly repository: RepositoryId;
+  readonly task: TaskRef;
+  readonly run: RunId;
+  readonly expertise: Expertise;
+  readonly question: string;
+  readonly reviewer: PersonId;
+  readonly answer: string;
+  readonly deliveredAt: Instant;
+}
+
+/** O prazo passou antes da entrega. Ninguem e cobrado por isso. */
+export interface ViewpointExpired {
+  readonly state: 'expired';
+  readonly id: ViewpointId;
+}
+
+export type ViewpointState =
+  | ViewpointRequested
+  | ViewpointAccepted
+  | ViewpointDeclined
+  | ViewpointDelivered
+  | ViewpointExpired;

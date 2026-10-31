@@ -28,6 +28,10 @@ export type DurationMs = Brand<number, 'DurationMs'>;
 export type TokenCount = Brand<number, 'TokenCount'>;
 /** A dificuldade de uma task, de 1 a 5, como no cabecalho das tasks. */
 export type Difficulty = Brand<1 | 2 | 3 | 4 | 5, 'Difficulty'>;
+/** Um pedido de ponto de vista humano. */
+export type ViewpointId = Brand<string, 'ViewpointId'>;
+/** Uma competencia que a pessoa aceita divulgar: `design`, `electronics`, `writing`... */
+export type Expertise = Brand<string, 'Expertise'>;
 
 const nonEmpty =
   <B extends string>(name: B) =>
@@ -52,6 +56,13 @@ export const runId = nonEmpty('RunId');
 export const capability = nonEmpty('Capability');
 export const accessKind = nonEmpty('AccessKind');
 export const secretRef = nonEmpty('SecretRef');
+export const viewpointId = nonEmpty('ViewpointId');
+
+/** Uma competencia, em minusculas e sem espaco, como em `- Requires: review:design`. */
+export function expertise(value: string): Expertise {
+  if (!/^[a-z][a-z0-9-]*$/.test(value)) throw new RangeError(`Expertise invalida: ${JSON.stringify(value)}`);
+  return value as Expertise;
+}
 export const instant = nonNegativeInteger('Instant');
 export const durationMs = nonNegativeInteger('DurationMs');
 export const tokenCount = nonNegativeInteger('TokenCount');
