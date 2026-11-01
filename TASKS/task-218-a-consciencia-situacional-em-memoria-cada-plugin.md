@@ -1,6 +1,6 @@
 # 🧩 Task 218 — A consciência situacional em memória: cada plugin verde contra a suíte de contrato
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-2
