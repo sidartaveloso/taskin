@@ -1,5 +1,18 @@
 // Nivel 1: os casos de uso.
 
+// A primeira implementacao: cada plugin em memoria, o sistema montado sobre eles e os provedores simulados.
+export * from './memory/access-broker.memory';
+export * from './memory/channels.memory';
+export * from './memory/flows.memory';
+export * from './memory/inventory.memory';
+export * from './memory/people.memory';
+export * from './memory/plugin.memory';
+export * from './memory/probe.memory';
+export * from './memory/run-ledger.memory';
+export * from './memory/scheduler.memory';
+export * from './memory/situation.memory';
+export * from './simulated/provider.simulated';
+
 // Nivel 2: o sistema como tipos. As suites ficam em `./testing`.
 export * from './system/actors-of.types';
 export * from './system/empty';
