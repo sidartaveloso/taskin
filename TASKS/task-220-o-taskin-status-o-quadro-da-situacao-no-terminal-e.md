@@ -1,6 +1,6 @@
 # 🧩 Task 220 — O taskin status: o quadro da situação no terminal e em json, html e md
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-3
