@@ -19,6 +19,7 @@ import { priorityCommand } from './priority.js';
 import { reviewCommand } from './review.js';
 import { startCommand } from './start.js';
 import { statsCommand } from './stats.js';
+import { statusCommand } from './status.js';
 import { registerUserCommand } from './user.js';
 
 /**
@@ -36,6 +37,7 @@ export function registerCommands(program: Command): void {
   pauseCommand(program);
   reviewCommand(program);
   finishCommand(program);
+  statusCommand(program);
   statsCommand(program);
   configCommand(program);
   registerExportCommand(program);

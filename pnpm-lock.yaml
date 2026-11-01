@@ -131,6 +131,9 @@ importers:
       '@opentask/taskin-git-utils':
         specifier: workspace:*
         version: link:../git-utils
+      '@opentask/taskin-situation':
+        specifier: workspace:*
+        version: link:../situation
       '@opentask/taskin-task-manager':
         specifier: workspace:*
         version: link:../task-manager

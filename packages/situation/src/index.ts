@@ -12,8 +12,8 @@ export * from './memory/probe.memory';
 export * from './memory/run-ledger.memory';
 export * from './memory/scheduler.memory';
 export * from './memory/situation.memory';
+export * from './report';
 export * from './simulated/provider.simulated';
-
 // Nivel 2: o sistema como tipos. As suites ficam em `./testing`.
 export * from './system/actors-of.types';
 export * from './system/empty';
