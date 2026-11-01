@@ -297,6 +297,31 @@ What the auto-commits never take:
   command to commit yourself once you've dealt with it.
 - The work commit's body lists every file it took.
 
+## 🛰️ Background daemon
+
+`taskin daemon` is a process that stays up while the machine is on. It knows
+nothing about any one integration: it is where other parts hang what must keep
+running (services implementing `IDaemonService`: `name`, `start`, `stop`,
+`status`). A service that fails to start does not bring the others down; it
+shows up in the status with the reason.
+
+```bash
+taskin daemon run        # foreground; stops cleanly on SIGINT / SIGTERM
+taskin daemon install    # start with your login: launchd (macOS) or systemd --user (Linux)
+taskin daemon uninstall  # stop starting with your login
+taskin daemon status     # up or not, since when, PID, each service and why it failed
+```
+
+- One instance per user: the lock is `$XDG_STATE_HOME/taskin/daemon.pid`
+  (default `~/.local/state/taskin/`, macOS included). A second `run` says the
+  daemon is already up and exits; a lock left by a dead process is reclaimed.
+- The short log is `daemon.log` in the same directory; the running daemon
+  writes what `status` reads to `daemon.json` there.
+- `install` writes `~/Library/LaunchAgents/br.com.opentask.taskin.plist` on
+  macOS or `~/.config/systemd/user/taskin.service` on Linux, and refuses on any
+  other system.
+- With no service registered, `status` says so instead of looking broken.
+
 ## 🤖 MCP Server (Model Context Protocol)
 
 Taskin includes an MCP server that allows AI assistants like Claude Desktop to interact with your tasks:
