@@ -1,6 +1,6 @@
 # 🧩 Task 200 — O taskin em segundo plano: começa com o sistema e diz o que está rodando
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Priority: 9400
