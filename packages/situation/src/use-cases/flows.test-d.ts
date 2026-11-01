@@ -1,4 +1,4 @@
-import type { IExecutorActor } from './actors.types';
+import type { IExecutorActor, IReviewerActor } from './actors.types';
 import {
   difficulty,
   type PersonId,
@@ -9,6 +9,7 @@ import {
   type TokenCount,
   taskRef,
   tokenCount,
+  type ViewpointId,
 } from './branded';
 import type {
   LeaseDenied,
@@ -18,6 +19,12 @@ import type {
   RunFinished,
   RunPlanned,
   RunStarted,
+  ViewpointAccepted,
+  ViewpointAsk,
+  ViewpointDeclined,
+  ViewpointDelivered,
+  ViewpointExpired,
+  ViewpointRequested,
 } from './flows.types';
 
 /*
@@ -34,6 +41,13 @@ declare const leaseGranted: LeaseGranted;
 declare const planned: RunPlanned;
 declare const started: RunStarted;
 declare const finished: RunFinished;
+declare const reviewer: IReviewerActor;
+declare const viewpointAsk: ViewpointAsk;
+declare const viewpointRequested: ViewpointRequested;
+declare const viewpointAccepted: ViewpointAccepted;
+declare const viewpointDeclined: ViewpointDeclined;
+declare const viewpointDelivered: ViewpointDelivered;
+declare const viewpointExpired: ViewpointExpired;
 
 export async function forbiddenPaths(): Promise<void> {
   // ─── emprestimo ─────────────────────────────────────────────────────────
@@ -69,6 +83,34 @@ export async function forbiddenPaths(): Promise<void> {
 
   // @ts-expect-error comecar uma execucao ja fechada
   await executor.startRun(finished, leaseGranted);
+
+  // ─── ponto de vista ──────────────────────────────────────────────────────
+
+  // @ts-expect-error entregar sem ter aceitado
+  await reviewer.deliver(viewpointRequested, 'resposta');
+
+  // @ts-expect-error aceitar um pedido ja recusado
+  await reviewer.accept(viewpointDeclined);
+
+  // @ts-expect-error aceitar um pedido vencido
+  await reviewer.accept(viewpointExpired);
+
+  // @ts-expect-error recusar um pedido vencido
+  await reviewer.decline(viewpointExpired, 'tarde demais');
+
+  // @ts-expect-error entregar de novo o que ja foi entregue
+  await reviewer.deliver(viewpointDelivered, 'outra resposta');
+
+  // @ts-expect-error pedir um ponto de vista numa execucao ja fechada
+  await executor.requestViewpoint(finished, viewpointAsk);
+
+  // @ts-expect-error competencia como texto cru, sem o construtor
+  await executor.requestViewpoint(planned, { ...viewpointAsk, expertise: 'design' });
+
+  // @ts-expect-error um pedido de emprestimo no lugar de um ponto de vista
+  const notAViewpoint: ViewpointId = leaseGranted.id;
+
+  void [viewpointAccepted, notAViewpoint];
 
   // ─── nada de primitivo solto ────────────────────────────────────────────
 

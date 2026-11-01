@@ -17,6 +17,22 @@ import {
   twoMachinesOneAccount,
   twoMachinesTwoAccounts,
 } from './scenarios';
+import {
+  acceptedViewpoint,
+  ask,
+  CARLA,
+  consent,
+  DAY,
+  DESIGN,
+  DORA,
+  ELECTRONICS,
+  hoursUtc,
+  openRun,
+  refused,
+  registerTeam,
+  requested,
+  WRITING,
+} from './viewpoint-scenarios';
 
 /**
  * A suite de contrato do nivel 1: o que a consciencia situacional faz, caso a
@@ -328,6 +344,169 @@ export const SITUATION_CONTRACT_CASES: readonly ContractCase[] = [
         reworked: false,
       });
       expect(JSON.stringify(await sys.developer(ANA).runs(REPO))).not.toContain(secretValueOf('conta-a'));
+    },
+  },
+
+  // ─── Versao 2: pessoas como recurso e o pedido de ponto de vista ────────
+  {
+    name: 'so quem consentiu e consultado, e so na competencia que aceitou divulgar',
+    async run(sys, ports) {
+      registerTeam(ports);
+      await sys.developer(ANA).consentToViewpoints(consent([DESIGN]));
+      await sys.developer(CARLA).consentToViewpoints(consent([WRITING]));
+      const { executor, run } = await openRun(sys, BRUNO);
+
+      const request = requested(await executor.requestViewpoint(run, ask(ports, DESIGN)));
+      expect(request).toMatchObject({ reviewer: ANA, requestedBy: BRUNO, expertise: DESIGN, run: run.id });
+      expect(await sys.reviewer(CARLA).requests()).toEqual([]);
+
+      const nobody = refused(await executor.requestViewpoint(run, ask(ports, ELECTRONICS)));
+      expect(nobody.reason.code).toBe('no-consenting-expert');
+
+      await sys.developer(ANA).withdrawViewpointConsent();
+      const withdrawn = refused(await executor.requestViewpoint(run, ask(ports, DESIGN)));
+      expect(withdrawn.reason.code).toBe('no-consenting-expert');
+    },
+  },
+  {
+    name: 'a carga semanal que a pessoa declarou e respeitada',
+    async run(sys, ports) {
+      registerTeam(ports);
+      await sys.developer(ANA).consentToViewpoints(consent([DESIGN], { weeklyLoad: 1 }));
+      const { executor, run } = await openRun(sys, BRUNO);
+
+      requested(await executor.requestViewpoint(run, ask(ports, DESIGN)));
+      const full = refused(await executor.requestViewpoint(run, ask(ports, DESIGN)));
+      expect(full.reason.code).toBe('over-capacity');
+
+      ports.clock.advance(7 * DAY + 1);
+      expect(requested(await executor.requestViewpoint(run, ask(ports, DESIGN))).reviewer).toBe(ANA);
+    },
+  },
+  {
+    name: 'quem fez a task nao revisa o proprio trabalho',
+    async run(sys, ports) {
+      registerTeam(ports);
+      await sys.developer(ANA).consentToViewpoints(consent([DESIGN]));
+      const { executor, run } = await openRun(sys, ANA);
+
+      const alone = refused(await executor.requestViewpoint(run, ask(ports, DESIGN)));
+      expect(alone.reason.code).toBe('only-the-author');
+
+      await sys.developer(BRUNO).consentToViewpoints(consent([DESIGN]));
+      expect(requested(await executor.requestViewpoint(run, ask(ports, DESIGN))).reviewer).toBe(BRUNO);
+    },
+  },
+  {
+    name: 'fora do horario, ou ausente, o pedido espera para chegar a pessoa',
+    async run(sys, ports) {
+      registerTeam(ports);
+      await sys.developer(ANA).consentToViewpoints(consent([DESIGN], { hours: hoursUtc(13, 18) }));
+      const { executor, run } = await openRun(sys, BRUNO);
+      const nineAm = ports.clock.now();
+
+      const request = requested(await executor.requestViewpoint(run, ask(ports, DESIGN)));
+      expect(request.requestedAt).toBe(nineAm);
+      expect(request.deliverableFrom).toBe(nineAm + 4 * HOUR);
+      expect(await sys.reviewer(ANA).requests()).toEqual([]);
+
+      ports.clock.advance(4 * HOUR);
+      expect((await sys.reviewer(ANA).requests()).map((r) => r.id)).toEqual([request.id]);
+
+      ports.presence.set(ANA, false);
+      expect(await sys.reviewer(ANA).requests()).toEqual([]);
+      ports.presence.set(ANA, true);
+      expect((await sys.reviewer(ANA).requests()).map((r) => r.id)).toEqual([request.id]);
+    },
+  },
+  {
+    name: 'o pedido vence sozinho no prazo, e aceitar depois diz que venceu',
+    async run(sys, ports) {
+      registerTeam(ports);
+      await sys.developer(ANA).consentToViewpoints(consent([DESIGN]));
+      const { executor, run } = await openRun(sys, BRUNO);
+      const request = requested(await executor.requestViewpoint(run, ask(ports, DESIGN, 2 * HOUR)));
+
+      ports.clock.advance(2 * HOUR + 1);
+
+      expect(await sys.reviewer(ANA).requests()).toEqual([]);
+      expect(await sys.reviewer(ANA).accept(request)).toEqual({ state: 'expired', id: request.id });
+      expect((await executor.followViewpoint(request)).state).toBe('expired');
+    },
+  },
+  {
+    name: 'o ponto de vista entregue fica registrado na execucao da task',
+    async run(sys, ports) {
+      registerTeam(ports);
+      await sys.developer(ANA).consentToViewpoints(consent([DESIGN]));
+      const { executor, run, task } = await openRun(sys, BRUNO, 'task-12');
+      const request = requested(await executor.requestViewpoint(run, ask(ports, DESIGN)));
+
+      const accepted = acceptedViewpoint(await sys.reviewer(ANA).accept(request));
+      const delivered = await sys.reviewer(ANA).deliver(accepted, 'Aumentar o respiro entre titulo e lista.');
+
+      expect(delivered).toMatchObject({
+        state: 'delivered',
+        id: request.id,
+        task,
+        run: run.id,
+        reviewer: ANA,
+        answer: 'Aumentar o respiro entre titulo e lista.',
+      });
+      expect(await sys.developer(BRUNO).viewpoints(REPO, task)).toEqual([delivered]);
+      expect(await executor.followViewpoint(request)).toEqual(delivered);
+      expect(await sys.reviewer(ANA).requests()).toEqual([]);
+    },
+  },
+  {
+    name: 'o tempo de resposta e visto so pela propria pessoa, nunca como placar',
+    async run(sys, ports) {
+      registerTeam(ports);
+      await sys.developer(ANA).consentToViewpoints(consent([DESIGN]));
+      const { executor, run, task } = await openRun(sys, BRUNO);
+      const first = requested(await executor.requestViewpoint(run, ask(ports, DESIGN)));
+      const second = requested(await executor.requestViewpoint(run, ask(ports, DESIGN)));
+
+      ports.clock.advance(2 * HOUR);
+      await sys.reviewer(ANA).deliver(acceptedViewpoint(await sys.reviewer(ANA).accept(first)), 'Esta bom.');
+      ports.clock.advance(HOUR);
+      const declined = await sys.reviewer(ANA).decline(second, 'Sem tempo esta semana.');
+      expect(declined).toMatchObject({ state: 'declined', reason: 'Sem tempo esta semana.' });
+
+      expect(await sys.reviewer(ANA).responseTimes()).toEqual([
+        { viewpoint: first.id, outcome: 'delivered', respondedIn: 2 * HOUR },
+        { viewpoint: second.id, outcome: 'declined', respondedIn: 3 * HOUR },
+      ]);
+      expect(await sys.reviewer(BRUNO).responseTimes()).toEqual([]);
+
+      const seenByOthers = [
+        await sys.developer(BRUNO).viewpoints(REPO, task),
+        await sys.developer(BRUNO).situation(REPO),
+        await executor.followViewpoint(first),
+      ];
+      expect(JSON.stringify(seenByOthers)).not.toMatch(/respondedIn|responseTime/);
+    },
+  },
+  {
+    name: 'gente de fora so entra por convite e so ve o material do pedido',
+    async run(sys, ports) {
+      registerTeam(ports);
+      await sys.team(REPO).offer(machine('servidor-1', 'docker'));
+      await sys.developer(DORA).consentToViewpoints(consent([ELECTRONICS]));
+      const { executor, run } = await openRun(sys, BRUNO);
+      const question = ask(ports, ELECTRONICS);
+
+      const uninvited = refused(await executor.requestViewpoint(run, question));
+      expect(uninvited.reason.code).toBe('no-consenting-expert');
+
+      await sys.team(REPO).invite(DORA);
+      const request = requested(await executor.requestViewpoint(run, question));
+      expect(request.reviewer).toBe(DORA);
+
+      const inbox = await sys.reviewer(DORA).requests();
+      expect(inbox.map((r) => [r.question, r.material])).toEqual([[question.question, question.material]]);
+      expect((await sys.developer(DORA).situation(REPO)).resources).toEqual([]);
+      expect(await sys.developer(DORA).runs(REPO)).toEqual([]);
     },
   },
 ];

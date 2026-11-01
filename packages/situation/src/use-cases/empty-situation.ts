@@ -1,4 +1,4 @@
-import type { CreateSituation, IDeveloperActor, IExecutorActor, ITeamActor } from './actors.types';
+import type { CreateSituation, IDeveloperActor, IExecutorActor, IReviewerActor, ITeamActor } from './actors.types';
 
 /** O motivo certo para um caso falhar antes da implementacao: ela ainda nao existe. */
 export class NotImplementedError extends Error {
@@ -22,12 +22,16 @@ export const createEmptySituation: CreateSituation = () => ({
     offer: notImplemented('team.offer'),
     restrictPersonalMachines: notImplemented('team.restrictPersonalMachines'),
     classify: notImplemented('team.classify'),
+    invite: notImplemented('team.invite'),
   }),
   developer: (): IDeveloperActor => ({
     declare: notImplemented('developer.declare'),
     release: notImplemented('developer.release'),
     situation: notImplemented('developer.situation'),
     runs: notImplemented('developer.runs'),
+    consentToViewpoints: notImplemented('developer.consentToViewpoints'),
+    withdrawViewpointConsent: notImplemented('developer.withdrawViewpointConsent'),
+    viewpoints: notImplemented('developer.viewpoints'),
   }),
   executor: (): IExecutorActor => ({
     requestLease: notImplemented('executor.requestLease'),
@@ -35,5 +39,14 @@ export const createEmptySituation: CreateSituation = () => ({
     planRun: notImplemented('executor.planRun'),
     startRun: notImplemented('executor.startRun'),
     finishRun: notImplemented('executor.finishRun'),
+    requestViewpoint: notImplemented('executor.requestViewpoint'),
+    followViewpoint: notImplemented('executor.followViewpoint'),
+  }),
+  reviewer: (): IReviewerActor => ({
+    requests: notImplemented('reviewer.requests'),
+    accept: notImplemented('reviewer.accept'),
+    decline: notImplemented('reviewer.decline'),
+    deliver: notImplemented('reviewer.deliver'),
+    responseTimes: notImplemented('reviewer.responseTimes'),
   }),
 });
