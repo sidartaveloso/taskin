@@ -1,6 +1,6 @@
 # 🧩 Task 217 — A consciência situacional como tipos: o sistema, os plugins e os eventos em envelope
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-1
