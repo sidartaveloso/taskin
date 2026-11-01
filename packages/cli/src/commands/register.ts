@@ -1,5 +1,6 @@
 import type { Command } from 'commander';
 import { configCommand } from './config.js';
+import { registerDaemonCommand } from './daemon.js';
 import { dashboardCommand } from './dashboard.js';
 import { difficultyCommand } from './difficulty.js';
 import { estimateCommand } from './estimate.js';
@@ -50,6 +51,7 @@ export function registerCommands(program: Command): void {
   dashboardCommand(program);
   mcpInstallCommand(program);
   mcpServerCommand(program);
+  registerDaemonCommand(program);
   notifyCommand(program);
   registerUserCommand(program);
 }
