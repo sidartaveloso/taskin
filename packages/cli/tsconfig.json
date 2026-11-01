@@ -14,6 +14,7 @@
     { "path": "../difficulty-estimator" },
     { "path": "../file-system-task-provider" },
     { "path": "../git-utils" },
+    { "path": "../situation" },
     { "path": "../task-manager" },
     { "path": "../types-ts" },
     { "path": "../utils" }

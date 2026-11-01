@@ -122,6 +122,9 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 
 `new`, `start`, `review` and `finish` each accept `--no-skip-ci`. See
 [The CI-skip tag](#the-ci-skip-tag).
+- `taskin status [options]` - Show the situation board: the task in progress first, then the machines (this one probed), the accesses, and which open tasks run here (from the `- Requires:` header field). Only logical names appear, never addresses or secrets
+  - `-f, --format <format>` - `text` (default), `json` (a contract with a `version` field), `html` (self-contained page) or `md`
+  - `--json` - Shortcut for `--format json`, as in `taskin list`
 - `taskin stats [options]` - Show statistics
   - `--user` - User statistics
   - `--team` - Team statistics
