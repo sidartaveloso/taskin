@@ -239,9 +239,11 @@ O que se decidiu:
 - **Tauri.** O app usa o WebView do sistema e pesa poucos MB, contra mais de
   100 MB do Electron, para algo que fica aberto o dia inteiro. O Vue roda igual
   nos dois.
-- **Os componentes vêm do `design-vue`.** O painel de contadores, o alarme e a
-  mensagem de erro vão para o Storybook do taskin, que é aberto, e servem ao
-  taskinboard e ao projeto de onde vieram (task-215).
+- **Os componentes vêm do `@storytype/components`.** O painel de contadores, o
+  alarme, a mensagem de erro e o indicador de estado vão para o storytype, a
+  biblioteca Vue genérica e aberta, e servem ao taskinboard e ao projeto de onde
+  vieram. O `design-vue` fica com o que é do taskin, como o mascote. A primeira
+  versão deles passou pelo `design-vue` numa branch nunca mesclada (task-215).
 - **O board só desenha.** Ele lê o JSON do `taskin status`, que é contrato
   versionado, e não consulta recurso nenhum por conta própria.
 - **Alerta é estado, não evento.** O número sobre o ícone conta o que pede
@@ -512,7 +514,8 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
    o quadro atualizado entre as máquinas. A task-200 não depende da Alexa: a
    Alexa ficou sem prioridade, e o processo virou peça comum aos dois.
 4. **O taskinboard e os canais por presença.**
-   - Os componentes do painel no `design-vue` (task-215).
+   - Os componentes do painel no `@storytype/components`, e o taskinboard
+     importando de lá (task-215).
    - O app Tauri lendo `taskin status --json`, e depois o aviso do daemon.
    - O aviso vai pelo canal que os sensores dizem que a pessoa está vendo,
      com o tempo ocioso do board como primeiro sensor. Depende da task-162.

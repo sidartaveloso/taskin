@@ -1,36 +1,22 @@
-# 🧩 Task 215 — O painel de bandeja no design-vue: contadores, alerta e alarme que o taskinboard e outros painéis usam
+# 🧩 Task 215 — O taskinboard importa o painel de bandeja do @storytype/components
 
 - Status: pending
 - Type: feat
 - Assignee: sidartaveloso
 
 ## Description
-Levar para o design-vue, com story, os componentes de um painel de bandeja já usado em outro projeto (painel de contadores com alerta pulsando, alarme sonoro e mensagem de erro), com nomes em inglês e sem nada do domínio de origem, para o taskinboard e o projeto de origem usarem a mesma peça
+O painel de bandeja (contadores com alerta, alarme, mensagem de erro e indicador de estado) vai para o `@storytype/components`, a biblioteca Vue genérica e aberta, e não para o `design-vue`: o `design-vue` é do taskin e traz o mascote e o CSS do ui-sense, que um painel genérico não precisa. Esta task fica com a parte do taskin: o taskinboard passa a importar o painel da versão publicada do storytype.
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Atom `AlarmAudio`: toca o som de alerta em laço enquanto `active` e não `muted`, e para ao desmontar
-- [ ] Atom `ErrorMessage`: a mensagem de erro com o botão de abrir as configurações
-- [ ] Organism `CounterPanel`: a lista de contadores (rótulo, valor com zero-pad e transição de dígito para cima ou para baixo, marca de alerta, link opcional), o estado de conexão, a borda pulsando enquanto `alerting`, o carregando e o erro. O estado de conexão reaproveita ou estende a molecule `ConnectionStatus` que já existe, em vez de criar outra
-- [ ] Template `TrayBoardScreen`: o `CounterPanel` com o `AlarmAudio`, o silenciar e o tamanho de janela de bandeja
-- [ ] Nada do domínio de origem: nenhum nome de produto, de coleção ou de contador, nos componentes, nas stories, nos mocks e nos comentários. Textos visíveis por prop, sem rótulo fixo
-- [ ] Cada componente com `*.types.ts`, `*.mock.ts`, teste e story, no padrão do `design-vue`; stories com o estado normal, alertando, silenciado, carregando, erro e sem permissão
-- [ ] Evidência visual: captura das stories em `TASKS/assets/task-215/` e o link do Storybook com cada story nova
-- [ ] Exportados no `index.ts` do `design-vue` e no changeset, para o projeto de origem trocar a cópia dele pelo pacote publicado
+- [ ] Os componentes publicados numa versão do `@storytype/components` (`AlarmAudio`, `ErrorMessage`, `CounterPanel`, `TrayBoardScreen` e o indicador de estado), feitos no repositório do storytype
+- [ ] O taskinboard depende da versão publicada (sem `link:` nem `file:`) e monta a tela de bandeja com ela
+- [ ] A branch `feat/task-215`, com a primeira versão no `design-vue`, apagada depois de o storytype publicar: nada dela entra na `develop`
 
 ## Notes
-Faz parte do taskinboard (`docs/RDT/consciencia-situacional.md`, seção "Onde a situação aparece"). Os componentes saem de um painel de bandeja de outro projeto, que é Vue 3 com componentes quase sem domínio: só os comentários citam o produto de origem.
-
-A troca do lado do projeto de origem (passar a importar do `@opentask/taskin-design-vue`) é trabalho no repositório dele, depois que esta task for publicada.
-
-### Verificacao
-```bash
-pnpm --filter @opentask/taskin-design-vue typecheck
-pnpm --filter @opentask/taskin-design-vue lint
-pnpm --filter @opentask/taskin-design-vue test
-```
+A primeira versão foi escrita no `design-vue` (branch `feat/task-215`, nunca mesclada) e serve de origem para o storytype. A troca no projeto de onde o painel veio, para importar do storytype, é feita no repositório dele.
 
 ### Onde executar
-Interativo, fora do sandcastle: o código de origem não está neste repositório. A revisão das stories é visual.
+Interativo: depende de o storytype publicar a versão com os componentes e de o taskinboard existir.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).
