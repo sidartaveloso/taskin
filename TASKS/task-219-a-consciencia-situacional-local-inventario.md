@@ -1,6 +1,6 @@
 # 🧩 Task 219 — A consciência situacional local: inventário, sondagem desta máquina, registro de execução e o taskin status
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-3
