@@ -50,7 +50,7 @@ export class NotTheOwnerError extends Error {
   }
 }
 
-class MemoryInventory extends MemoryPlugin<InventoryEvents> implements IInventory {
+export class MemoryInventory extends MemoryPlugin<InventoryEvents> implements IInventory {
   readonly key = pluginKey('inventory');
   readonly name = 'Inventory';
   readonly description = 'The two layers of resources, their releases, restrictions and facts';

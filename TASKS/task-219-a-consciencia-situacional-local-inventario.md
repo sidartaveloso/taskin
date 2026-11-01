@@ -12,12 +12,12 @@ As implementações locais dos plugins que tocam o disco e a máquina: o invent�
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] `packages/situation/src/local/inventory.local.ts`: a camada do repositório lida da chave `resources` do `.taskin.json` e a da pessoa de `~/.config/taskin/resources.json`, com os dois caminhos injetados (nos testes, uma pasta temporária)
-- [ ] `packages/situation/src/local/machine-probe.local.ts`: `IMachineProbePort` desta máquina pelo módulo `os` e por comandos (`docker info`, `java -version`, `ANDROID_HOME`, a imagem do sandcastle), com cada fato datado pelo relógio; comando que falha vira capacidade ausente, não erro
-- [ ] `packages/situation/src/local/run-ledger.local.ts`: o registro de execução em `.taskin/runs.jsonl`, uma linha por execução fechada, só com nomes lógicos
-- [ ] `packages/situation/src/local/secret-store.env.ts`: `ISecretStorePort` para referências `env:NOME`. As outras guardas (`op://`, `keychain:`) — adiado: entram quando a primeira pessoa precisar, cada uma com o seu teste
-- [ ] `packages/situation/src/local/local.test.ts`: as mesmas suítes de contrato verdes contra as implementações locais, montadas com as portas falsas onde a máquina não importa
-- [ ] Teste de privacidade: o `runs.jsonl` e a camada do repositório gravados não contêm endereço, hostname nem valor de segredo
+- [x] `packages/situation/src/local/inventory.local.ts`: a camada do repositório lida da chave `resources` do `.taskin.json` e a da pessoa de `~/.config/taskin/resources.json`, com os dois caminhos injetados (nos testes, uma pasta temporária) — prova: `inventory local` (suíte de contrato, 395→ verde) e `inventory local: persistencia` em `packages/situation/src/local/local.test.ts`
+- [x] `packages/situation/src/local/machine-probe.local.ts`: `IMachineProbePort` desta máquina pelo módulo `os` e por comandos (`docker info`, `java -version`, `ANDROID_HOME`, a imagem do sandcastle), com cada fato datado pelo relógio; comando que falha vira capacidade ausente, não erro — prova: testes `sondagem desta maquina` (fato datado pelo relógio; comando que falha vira capacidade ausente) em `local.test.ts`
+- [x] `packages/situation/src/local/run-ledger.local.ts`: o registro de execução em `.taskin/runs.jsonl`, uma linha por execução fechada, só com nomes lógicos — prova: `run-ledger local` (suíte de contrato) em `local.test.ts`
+- [x] `packages/situation/src/local/secret-store.env.ts`: `ISecretStorePort` para referências `env:NOME`. As outras guardas (`op://`, `keychain:`) — adiado: entram quando a primeira pessoa precisar, cada uma com o seu teste — prova: testes `guarda por variavel de ambiente` em `local.test.ts`; `op://` e `keychain:` seguem adiados
+- [x] `packages/situation/src/local/local.test.ts`: as mesmas suítes de contrato verdes contra as implementações locais, montadas com as portas falsas onde a máquina não importa — prova: `pnpm --filter @opentask/taskin-situation test` — 7 arquivos, 395 testes verdes
+- [x] Teste de privacidade: o `runs.jsonl` e a camada do repositório gravados não contêm endereço, hostname nem valor de segredo — prova: teste `privacidade` em `local.test.ts`
 
 ## Notes
 Depende da task-218.

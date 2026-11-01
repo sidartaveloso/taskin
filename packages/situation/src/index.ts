@@ -1,5 +1,6 @@
 // Nivel 1: os casos de uso.
 
+export * from './local';
 // A primeira implementacao: cada plugin em memoria, o sistema montado sobre eles e os provedores simulados.
 export * from './memory/access-broker.memory';
 export * from './memory/channels.memory';
