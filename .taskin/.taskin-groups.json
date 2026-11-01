@@ -77,6 +77,21 @@
       "id": "situacao-lote-4",
       "name": "Situação, lote 4: o taskin em segundo plano",
       "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-5": {
+      "id": "situacao-lote-5",
+      "name": "Situação, lote 5: requisitos nas tasks",
+      "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-6": {
+      "id": "situacao-lote-6",
+      "name": "Situação, lote 6: o plano e o empréstimo de verdade",
+      "parentId": "g-ebwuvrd1"
+    },
+    "situacao-interativas": {
+      "id": "situacao-interativas",
+      "name": "Situação: interativas, fora do sandcastle",
+      "parentId": "g-ebwuvrd1"
     }
   }
 }

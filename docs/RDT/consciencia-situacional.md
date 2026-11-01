@@ -563,6 +563,32 @@ SANDCASTLE_GROUP=situacao-lote-1 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx 
 - **O lote 4 não depende dos outros** e pode rodar em paralelo, noutra máquina
   e com outra conta.
 
+A primeira rodada está fechada: as tasks 216, 221, 217, 218, 219, 220 e 200
+estão na `develop`. A segunda rodada leva o que existe em memória para o uso de
+verdade:
+
+| Task | O que | Lote | Dificuldade |
+| --- | --- | --- | --- |
+| 222 | O `- Requires:` no cabeçalho, no provider e no lint | `situacao-lote-5` | 3 |
+| 223 | O `taskin list --where` diz onde cada task roda | `situacao-lote-5` | 3 |
+| 224 | As tasks abertas trocam o nome da máquina pelo `Requires` | `situacao-lote-5` | 2 |
+| 225 | O `taskin plan`, o escalonador sobre o que existe de verdade | `situacao-lote-6` | 4 |
+| 226 | O empréstimo local e o `taskin access run` | `situacao-lote-6` | 4 |
+| 229 | Decidir os pesos, o horizonte, a presença e o silêncio | interativa | 2 |
+| 228 | Decidir a percepção viva | interativa | 3 |
+| 227 | O sandcastle usa o plano, o empréstimo e o registro | interativa | 4 |
+| 230 | O esqueleto do taskinboard em Tauri | interativa | 4 |
+
+- **O lote 5 roda com o modelo mais barato e o lote 6 com o mais forte**, pela
+  dificuldade, como na primeira rodada.
+- **As interativas ficam no grupo `situacao-interativas`,** que o sandcastle não
+  roda: duas são decisões do usuário; a 227 muda o próprio sandcastle; a 230
+  precisa do toolchain do Tauri e de revisão visual.
+- **A 227 depende do lote 6, e a 230 depende do painel publicado no storytype**
+  (task-215).
+- **A percepção viva entre máquinas só vira tasks de implementação depois da
+  228,** porque depende de decidir o transporte e a autenticação.
+
 ## Decisões em aberto
 
 - **O formato do inventário**: o que a sondagem descobre sozinha e o que se
@@ -579,9 +605,9 @@ SANDCASTLE_GROUP=situacao-lote-1 SANDCASTLE_MODEL=claude-opus-5-5 pnpm exec tsx 
 - **Quais repositórios o daemon e o board atendem.** Os dois são um por
   máquina, e precisam de uma lista de repositórios, que a task-200 ainda não
   define.
-- **As seções "Onde executar" antigas**, que já estão no histórico do git:
-  reescrever as tasks abertas em requisitos e deixar as fechadas como estão, ou
-  outra saída.
+- **As seções "Onde executar" antigas:** decidido, só as das tasks abertas são
+  reescritas (task-224); as fechadas ficam, porque o histórico do git as guarda
+  de qualquer jeito.
 
 ## O que esta decisão não diz
 
