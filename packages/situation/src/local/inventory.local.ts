@@ -91,7 +91,8 @@ class LocalInventory extends MemoryInventory {
 
   private saveRepository(): void {
     const config = readJson(this.options.repositoryConfig);
-    writeJson(this.options.repositoryConfig, { ...config, resources: this.repositoryLayer });
+    const resources = config.resources as Record<string, unknown> | undefined;
+    writeJson(this.options.repositoryConfig, { ...config, resources: { ...resources, ...this.repositoryLayer } });
   }
 
   private savePersonal(): void {

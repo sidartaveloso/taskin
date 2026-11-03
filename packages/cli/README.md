@@ -125,6 +125,31 @@ Taskin is built as a modular ecosystem. Besides the CLI, you can use individual 
 - `taskin status [options]` - Show the situation board: the task in progress first, then the machines (this one probed), the accesses, and which open tasks run here (from the `- Requires:` header field). Only logical names appear, never addresses or secrets
   - `-f, --format <format>` - `text` (default), `json` (a contract with a `version` field), `html` (self-contained page) or `md`
   - `--json` - Shortcut for `--format json`, as in `taskin list`
+- `taskin plan [options]` - The scheduler's advice for the open tasks: for each one, the LLM access (and its model), the machine and the moment, or why it waits (`deferred`, with the constraint code: `quota`, `fixed-requirement`, `competence`, `data`, `dependency`, `concurrency`, `presence`). Nothing is executed. It reads the open tasks (the queue position becomes value; `Difficulty`, `Requires` and the `Depende da task-N` notes), the inventory (the accesses with a credential at hand, the machines with this one probed) and `.taskin/runs.jsonl` (completion rate per access, tokens per difficulty, consumption in the current window). Without runs it uses the declared estimates and says so
+  - `-f, --format <format>` - `text` (default, grouped by moment) or `json` (the suggested plan with a `version` field)
+  - `--json` - Shortcut for `--format json`
+
+  The tuning lives in `resources.scheduling` in `.taskin.json`; every key is optional:
+
+  ```json
+  {
+    "resources": {
+      "scheduling": {
+        "weights": { "money": 1, "setup": 1, "rework": 0.5, "interruptions": 1 },
+        "horizonHours": 24,
+        "quotaMargin": 0.1,
+        "tokensByDifficulty": { "1": 20000, "2": 50000, "3": 100000, "4": 200000, "5": 400000 },
+        "accesses": {
+          "claude-main": { "model": "claude-opus-5-5", "competence": 5, "completionRate": 0.9, "costPerThousandTokens": 0, "quota": 2000000, "windowHours": 5 }
+        },
+        "machines": { "this-machine": { "concurrency": 2 } },
+        "movable": { "android-sdk": 3 }
+      }
+    }
+  }
+  ```
+
+  The values above are the defaults, except under `accesses`, `machines` and `movable` (empty by default). An access without an entry has competence 3, completion rate 0.8, no cost and no declared quota; a machine runs one batch at a time; a capability not listed in `movable` is a fixed requirement. The default weights are provisional until they are calibrated from the history
 - `taskin stats [options]` - Show statistics
   - `--user` - User statistics
   - `--team` - Team statistics

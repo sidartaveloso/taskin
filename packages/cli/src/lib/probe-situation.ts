@@ -4,8 +4,12 @@ import {
   createLocalInventory,
   createLocalMachineProbe,
   type FactView,
+  type IInventory,
   instant,
+  type LocalInventoryPaths,
+  type PersonId,
   personId,
+  type RepositoryId,
   repositoryId,
   resourceId,
   type SituationView,
@@ -16,20 +20,35 @@ import path from 'path';
 const FACT_TTL_MS = 24 * 60 * 60 * 1000;
 const THIS_MACHINE = 'this-machine';
 
+export interface ProbedSituation {
+  readonly inventory: IInventory;
+  readonly person: PersonId;
+  readonly repository: RepositoryId;
+  readonly paths: LocalInventoryPaths;
+  /** O quadro com esta maquina sondada. */
+  readonly view: SituationView;
+}
+
 /** A situacao do repositorio em `root` com esta maquina sondada: usada pelo `status` e pelo `list --where`. */
 export async function probeSituation(root: string): Promise<SituationView> {
+  return (await probeLocalSituation(root)).view;
+}
+
+/** O inventario local e o quadro com esta maquina sondada: o `plan` precisa dos dois. */
+export async function probeLocalSituation(root: string): Promise<ProbedSituation> {
   const repository = path.basename(root);
   const clock = { now: () => instant(Date.now()) };
 
+  const paths: LocalInventoryPaths = {
+    repositoryConfig: path.join(root, '.taskin.json'),
+    personalResources: path.join(os.homedir(), '.config', 'taskin', 'resources.json'),
+  };
   const inventory = createLocalInventory(
     { clock, secrets: createEnvSecretStore(), settings: { leaseTtlMs: 60 * 60 * 1000, factTtlMs: FACT_TTL_MS } },
-    {
-      repository: repositoryId(repository),
-      repositoryConfig: path.join(root, '.taskin.json'),
-      personalResources: path.join(os.homedir(), '.config', 'taskin', 'resources.json'),
-    },
+    { repository: repositoryId(repository), ...paths },
   );
-  const view = await inventory.view(personId(os.userInfo().username), repositoryId(repository));
+  const person = personId(os.userInfo().username);
+  const view = await inventory.view(person, repositoryId(repository));
 
   const probed = await createLocalMachineProbe({
     clock,
@@ -43,7 +62,7 @@ export async function probeSituation(root: string): Promise<SituationView> {
     expired: false,
   }));
 
-  return {
+  const withThisMachine: SituationView = {
     ...view,
     resources: [
       {
@@ -57,4 +76,5 @@ export async function probeSituation(root: string): Promise<SituationView> {
       ...view.resources,
     ],
   };
+  return { inventory, person, repository: repositoryId(repository), paths, view: withThisMachine };
 }

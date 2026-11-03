@@ -12,12 +12,18 @@ O `taskin plan`: o escalonador do pacote `situation` montado sobre o que existe 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Montar o `SchedulingProblem` a partir das tasks abertas (prioridade vira valor, dificuldade, `requires`, dependências das notas "Depende da task-N"), dos acessos e máquinas do inventário local e do histórico do `.taskin/runs.jsonl` (taxa de conclusão e tokens por dificuldade, por acesso)
-- [ ] Os pesos λ e o horizonte lidos de `resources.scheduling` no `.taskin.json`, com padrões documentados quando a chave não existe
-- [ ] `taskin plan` em texto (a sugestão por momento e as tasks adiadas com o código da restrição) e `--json` (o `SuggestedPlan` com `version`)
-- [ ] Sem histórico, o plano usa as estimativas declaradas e diz que não há histórico
-- [ ] Testes com inventário e histórico em pasta temporária: uma conta perto do limite empurra a task para outro acesso; requisito fixo ausente adia com `fixed-requirement`; a mesma entrada dá o mesmo plano
-- [ ] `packages/cli/README.md` com o comando
+- [x] Montar o `SchedulingProblem` a partir das tasks abertas (prioridade vira valor, dificuldade, `requires`, dependências das notas "Depende da task-N"), dos acessos e máquinas do inventário local e do histórico do `.taskin/runs.jsonl` (taxa de conclusão e tokens por dificuldade, por acesso)
+  - `packages/situation/src/plan/build-problem.ts` (`buildSchedulingProblem`, `dependenciesOf`) e `packages/situation/src/local/plan.local.ts` (`localPlanResources`: acessos com credencial, maquinas disponiveis, `ledger.runs`). Testes em `packages/situation/src/plan/plan.test.ts`: "a fila vira valor e \"Depende da task-N\" vira dependencia entre as abertas", "o historico da a taxa de conclusao e os tokens por dificuldade", "dependenciesOf".
+- [x] Os pesos λ e o horizonte lidos de `resources.scheduling` no `.taskin.json`, com padrões documentados quando a chave não existe
+  - `packages/situation/src/plan/scheduling-settings.ts` (`DEFAULT_WEIGHTS`, `DEFAULT_HORIZON_HOURS`, `readSchedulingSettings`). Testes "sem a chave, os pesos e o horizonte padrao", "os pesos lidos do .taskin.json completam os padroes", "o que so caberia depois do horizonte fica fora do plano". De passagem: `inventory.local.ts` regravava `resources` inteiro e apagaria `resources.scheduling`; agora mescla (teste "o inventario regrava a camada do repositorio sem apagar resources.scheduling").
+- [x] `taskin plan` em texto (a sugestão por momento e as tasks adiadas com o código da restrição) e `--json` (o `SuggestedPlan` com `version`)
+  - `packages/cli/src/commands/plan.ts` + `renderPlan` em `packages/situation/src/plan/plan-report.ts`. `packages/cli/src/commands/plan.e2e.test.ts` ("o texto sugere acesso, modelo e maquina...", "--json e --format json dao o SuggestedPlan com version"). Rode `node packages/cli/dist/index.js plan`.
+- [x] Sem histórico, o plano usa as estimativas declaradas e diz que não há histórico
+  - Teste "sem historico, usa as estimativas declaradas e o diz" (texto: `No run history yet: using the declared estimates.`; JSON: `history: false`).
+- [x] Testes com inventário e histórico em pasta temporária: uma conta perto do limite empurra a task para outro acesso; requisito fixo ausente adia com `fixed-requirement`; a mesma entrada dá o mesmo plano
+  - `plan.test.ts`, pasta temporaria com `.taskin.json`, camada da pessoa e `.taskin/runs.jsonl`: "uma conta perto do limite empurra a task para outro acesso", "um requisito fixo ausente adia com fixed-requirement; o movel vira custo de preparo", "a mesma entrada da o mesmo plano".
+- [x] `packages/cli/README.md` com o comando
+  - A entrada `taskin plan [options]` com o exemplo de `resources.scheduling` e os padroes.
 
 ## Notes
 Escalonamento, etapa 6 do RDT. Os pesos padrão são provisórios até a task-229.

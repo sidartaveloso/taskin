@@ -15,6 +15,7 @@ import { mcpServerCommand } from './mcp-server.js';
 import { createCommand } from './new.js';
 import { notifyCommand } from './notify.js';
 import { pauseCommand } from './pause.js';
+import { planCommand } from './plan.js';
 import { prioritizeCommand } from './prioritize.js';
 import { priorityCommand } from './priority.js';
 import { reviewCommand } from './review.js';
@@ -39,6 +40,7 @@ export function registerCommands(program: Command): void {
   reviewCommand(program);
   finishCommand(program);
   statusCommand(program);
+  planCommand(program);
   statsCommand(program);
   configCommand(program);
   registerExportCommand(program);
