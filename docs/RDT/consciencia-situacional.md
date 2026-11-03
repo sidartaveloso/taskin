@@ -147,7 +147,13 @@ O que o taskin pode usar, então:
   nomes lógicos, capacidades e restrições. Nunca com endereços, hostnames ou
   credenciais.
 - **A camada da pessoa** nunca entra no repositório: nem no `.taskin.json`, nem
-  nas tasks, nem nos RDTs, nem nas mensagens de commit.
+  nas tasks, nem nos RDTs, nem nas mensagens de commit. Isso inclui o nome que
+  a pessoa deu a uma conta e os horários em que ela trabalha.
+- **O registro de execução** é versionado só no que serve ao time para
+  calibrar (o modelo, a dificuldade estimada e a encontrada, tokens, iterações,
+  conclusão, retrabalho e duração de execuções fechadas), sem a conta usada e
+  sem horário do dia. A conta de cada execução, o começo delas e o consumo com
+  horário ficam no estado da máquina, fora do repositório.
 - **As tasks** falam só de requisitos, nunca do nome de um recurso concreto.
 
 ### Os nomes
@@ -306,10 +312,19 @@ declarado, o consumo é fato sondado, e a projeção trabalha com margem.
 
 **Dificuldade estimada e dificuldade encontrada.** Cada execução guarda a
 dificuldade estimada no início e, ao fechar, o que aconteceu: tokens, tempo,
-iterações, retrabalho, o modelo e o acesso usados, se concluiu e a dificuldade
-encontrada. É o laço que calibra o estimador e deixa o escalonador prever o
-consumo pelo histórico. O registro é versionado no repositório e cita recursos
-só pelo nome lógico.
+iterações, retrabalho, o modelo usado, se concluiu e a dificuldade encontrada.
+É o laço que calibra o estimador e deixa o escalonador prever o consumo pelo
+histórico. O registro tem duas metades. O **histórico do time** é versionado
+no repositório (`.taskin/runs.jsonl`) e só leva o que serve para calibrar, de
+execuções fechadas: id, repositório, task, dificuldade estimada e encontrada,
+modelo, tokens, iterações, se concluiu, se refez e a duração; a taxa de
+conclusão e os tokens por dificuldade saem dele, **por modelo** (o `model` que
+o acesso declara em `resources.scheduling.accesses`, ou o tipo do acesso).
+Nele não há conta nem horário do dia. O **estado da máquina** fica no
+diretório de estado (`$XDG_STATE_HOME/taskin`, o mesmo do `leases.json`) e vale
+para todos os repositórios da máquina: qual conta cada execução usou, o começo
+das execuções (as em aberto, com corte de 24 h) e o consumo de cada conta com
+o horário, para a janela de cota e para a ocupação das contas.
 
 **Calibração.** Uma task pequena e de resposta conhecida, rodada em broadcast
 em todos os recursos, mede latência, tokens por segundo, acerto, consumo de
@@ -459,7 +474,8 @@ mesma suíte. O padrão `contractTests(create)` de
 
 - **Em memória**, a primeira a ficar verde, para os testes e a simulação.
 - **Local**: inventário em `~/.config/taskin/` e na chave `resources`,
-  sondagem desta máquina, registro de execução versionado.
+  sondagem desta máquina, registro de execução em duas metades (o histórico
+  do time, versionado, e o estado da máquina).
 - **Remota**: o mesmo contrato servido pelo `taskin daemon` (task-200) às
   outras máquinas e ao taskinboard.
 - **Simulada**: provedores com janelas e limites falsos, para ensaiar o

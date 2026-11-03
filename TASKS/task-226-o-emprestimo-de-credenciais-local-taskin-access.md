@@ -26,7 +26,7 @@ O acesso às contas sai da memória: um `access-broker` local, que passa pela me
 
 ## Notes
 ### O que ficou da rodada
-- O prazo da reserva no `taskin access run` e de 1 h (`LEASE_TTL_MS` em `access.ts`): se o processo morrer sem devolver (SIGKILL), a vaga volta sozinha nesse prazo; um comando que roda mais que isso perde a reserva no quadro, e o `returnLease` responde `expired`. So vale para conta com `concurrencyLimit`: conta sem capacidade declarada nao tem reserva, nem prazo (task 231). Sem leitura de consumo do provedor ainda: a escolha cai em "menos ocupada", pelas execucoes em aberto em `.taskin/runs.jsonl`.
+- O prazo da reserva no `taskin access run` e de 1 h (`LEASE_TTL_MS` em `access.ts`): se o processo morrer sem devolver (SIGKILL), a vaga volta sozinha nesse prazo; um comando que roda mais que isso perde a reserva no quadro, e o `returnLease` responde `expired`. So vale para conta com `concurrencyLimit`: conta sem capacidade declarada nao tem reserva, nem prazo (task 231). Sem leitura de consumo do provedor ainda: a escolha cai em "menos ocupada", pelas execucoes em aberto no estado da maquina (`runs.jsonl` no diretorio de estado, nao o `.taskin/runs.jsonl` versionado; task 232).
 - `--task` sem valor vira `manual`.
 
 ### Contexto da rodada
