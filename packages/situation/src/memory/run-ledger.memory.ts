@@ -13,6 +13,7 @@ import {
 } from '../use-cases/branded';
 import type {
   OpenRun,
+  RunAbandoned,
   RunFinished,
   RunOutcome,
   RunPlanned,
@@ -86,6 +87,14 @@ class MemoryRunLedger extends MemoryPlugin<RunLedgerEvents> implements IRunLedge
     this.finished.push(finished);
     this.emit('run-ledger:run-finished', fact);
     return finished;
+  }
+
+  async abandonRun(run: RunStarted): Promise<RunAbandoned> {
+    const { state: _, ...started } = run;
+    const fact = { ...started, abandonedAt: this.clock.now() };
+    this.open.delete(run.id);
+    this.emit('run-ledger:run-abandoned', fact);
+    return { state: 'abandoned', ...fact };
   }
 
   async openRuns(): Promise<readonly OpenRun[]> {

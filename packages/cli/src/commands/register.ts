@@ -20,6 +20,7 @@ import { planCommand } from './plan.js';
 import { prioritizeCommand } from './prioritize.js';
 import { priorityCommand } from './priority.js';
 import { reviewCommand } from './review.js';
+import { registerRunCommand } from './run.js';
 import { startCommand } from './start.js';
 import { statsCommand } from './stats.js';
 import { statusCommand } from './status.js';
@@ -58,4 +59,5 @@ export function registerCommands(program: Command): void {
   notifyCommand(program);
   registerUserCommand(program);
   registerAccessCommand(program);
+  registerRunCommand(program);
 }

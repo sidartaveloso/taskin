@@ -4,7 +4,7 @@ import type { Assignment, Plan } from '../system/plugins/scheduler/scheduler.typ
 import { accessKind, instant, type ResourceId, resourceId, type TaskRef, taskRef } from '../use-cases/branded';
 import { FakeClock } from '../use-cases/fake-ports';
 import { buildSchedulingProblem, type PlanAccessInput, type PlanTaskInput } from './build-problem';
-import { type DispatchSlot, decideDispatch, dispatchPlan } from './dispatch';
+import { type DispatchSlot, decideDispatch, dispatchPlan, runOutcomeFrom } from './dispatch';
 import { schedulingSettings } from './scheduling-settings';
 
 const HOUR = 60 * 60 * 1000;
@@ -366,5 +366,25 @@ describe('buildSchedulingProblem com exclude', () => {
 
     expect(problem.tasks.map((t) => t.task)).toEqual(['2', '3']);
     expect(problem.tasks[0]?.dependsOn).toEqual(['1']);
+  });
+});
+
+describe('runOutcomeFrom: o resultado que o comando escreveu', () => {
+  it('le o que o comando disse e poe o modelo do plano', () => {
+    const texto = JSON.stringify({ found: 4, tokens: 1234, iterations: 2, completed: true, reworked: false });
+    expect(runOutcomeFrom(texto, 'opus')).toEqual({
+      model: 'opus',
+      found: 4,
+      tokens: 1234,
+      iterations: 2,
+      completed: true,
+      reworked: false,
+    });
+  });
+
+  it('sem texto, com JSON quebrado ou incompleto, nao ha resultado', () => {
+    expect(runOutcomeFrom(undefined, 'opus')).toBeUndefined();
+    expect(runOutcomeFrom('{', 'opus')).toBeUndefined();
+    expect(runOutcomeFrom(JSON.stringify({ found: 4, tokens: 1 }), 'opus')).toBeUndefined();
   });
 });

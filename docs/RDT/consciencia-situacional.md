@@ -256,6 +256,29 @@ modelo barato ou ao local, e as duas correm juntas.
   cheia entra no escalonador como a máquina cheia (task-236), e o despacho não
   é recusado na hora.
 
+### O despacho nesta máquina
+
+O `taskin run` (task-238) é o passo que executa o plano. Ele não decide nada
+que o plano não tenha decidido:
+
+- **Lança só o que cai aqui e já pode começar.** A atribuição desta máquina
+  com momento até agora, sem dependência aberta, que não está rodando. As de
+  outras máquinas aparecem como esperando o despacho remoto (task-240).
+- **A capacidade vale no despacho também.** Nunca passa da `concurrency` da
+  máquina nem do `concurrencyLimit` da conta, contando o que já roda; o resto
+  espera o próximo plano.
+- **Quando uma termina, replaneja.** As tasks abertas e o consumo são lidos de
+  novo, e a próxima sai. Uma task sai no máximo uma vez por chamada: a que
+  termina sem fechar fica aberta e segura quem depende dela.
+- **O comando é do repositório.** `resources.dispatch.command` no
+  `.taskin.json`, com `{task}`, roda por dentro do `taskin access run` com a
+  conta e o modelo fixados, e recebe `TASKIN_TASK`, `TASKIN_MODEL` e
+  `TASKIN_RUN_RESULT`, o arquivo onde escreve o resultado.
+- **Sem resultado, a execução é abandonada.** Ela fecha só no estado da
+  máquina (`IRunLedger.abandonRun`), e nada vai ao histórico do time, que só
+  calibra com o que foi dito. O mesmo vale para o SIGINT, que encerra os
+  filhos e devolve as reservas.
+
 ### Um processo em segundo plano só
 
 O taskin em segundo plano (task-200, `taskin daemon`) é o veículo da

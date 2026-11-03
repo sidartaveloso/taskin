@@ -18,7 +18,8 @@ import os from 'os';
 import path from 'path';
 
 const FACT_TTL_MS = 24 * 60 * 60 * 1000;
-const THIS_MACHINE = 'this-machine';
+/** O id desta maquina no inventario local. */
+export const THIS_MACHINE = 'this-machine';
 
 export interface ProbedSituation {
   readonly inventory: IInventory;

@@ -7,6 +7,7 @@ import type { Instant, RepositoryId, ResourceId, RunId, TaskRef, TokenCount } fr
 import { tokenCount } from '../use-cases/branded';
 import type {
   OpenRun,
+  RunAbandoned,
   RunFinished,
   RunOutcome,
   RunPlanned,
@@ -53,7 +54,15 @@ interface FinishedLine {
   readonly finishedAt: Instant;
 }
 
-type MachineLine = StartedLine | FinishedLine;
+/** A execucao que fechou sem resultado: so deixa de estar em aberto. */
+interface AbandonedLine {
+  readonly state: 'abandoned';
+  readonly id: RunId;
+  readonly access: ResourceId;
+  readonly abandonedAt: Instant;
+}
+
+type MachineLine = StartedLine | FinishedLine | AbandonedLine;
 
 function readLines<T>(file: string): T[] {
   if (!existsSync(file)) return [];
@@ -123,6 +132,17 @@ export function createLocalRunLedger(
       };
       append(files.machine, line);
       return finished;
+    },
+    async abandonRun(run: RunStarted): Promise<RunAbandoned> {
+      const abandoned = await inner.abandonRun(run);
+      const line: AbandonedLine = {
+        state: 'abandoned',
+        id: abandoned.id,
+        access: abandoned.access,
+        abandonedAt: abandoned.abandonedAt,
+      };
+      append(files.machine, line);
+      return abandoned;
     },
     async openRuns(): Promise<readonly OpenRun[]> {
       const open = new Map<string, OpenRun>();

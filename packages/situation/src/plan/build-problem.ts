@@ -140,8 +140,9 @@ export function windowMsOf(access: PlanAccessInput, settings: SchedulingSettings
  */
 export function buildSchedulingProblem(input: PlanProblemInput): BuiltProblem {
   const { now, settings, runs } = input;
-  const queue = [...input.tasks].sort(byQueue);
-  const open = new Set(queue.map((t) => normalizeId(t.id)));
+  const excluded = new Set((input.exclude ?? []).map(normalizeId));
+  const open = new Set(input.tasks.map((t) => normalizeId(t.id)));
+  const queue = input.tasks.filter((t) => !excluded.has(normalizeId(t.id))).sort(byQueue);
 
   const tokensFor = (d: Difficulty): number => {
     const seen = runs.filter((r) => r.estimated === d);
