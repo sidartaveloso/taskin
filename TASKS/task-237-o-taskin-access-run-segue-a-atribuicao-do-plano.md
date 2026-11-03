@@ -1,6 +1,6 @@
 # 🧩 Task 237 — O taskin access run segue a atribuicao do plano
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-7
