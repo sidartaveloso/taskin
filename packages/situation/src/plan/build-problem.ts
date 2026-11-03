@@ -18,7 +18,7 @@ import {
   taskRef,
   tokenCount,
 } from '../use-cases/branded';
-import type { RunFinished } from '../use-cases/flows.types';
+import type { RunRecord } from '../use-cases/flows.types';
 import { DEFAULT_ACCESS_SETTINGS, type SchedulingSettings } from './scheduling-settings';
 
 const HOUR = 60 * 60 * 1000;
@@ -56,8 +56,10 @@ export interface PlanProblemInput {
   readonly tasks: readonly PlanTaskInput[];
   readonly accesses: readonly PlanAccessInput[];
   readonly machines: readonly PlanMachineInput[];
-  /** As execucoes fechadas do registro. */
-  readonly runs: readonly RunFinished[];
+  /** O historico do time: as execucoes fechadas, so com o que calibra (modelo, tokens, conclusao). */
+  readonly runs: readonly RunRecord[];
+  /** O que cada acesso gastou na janela dele, pelo id, contado no estado desta maquina. */
+  readonly spent: Readonly<Record<string, number>>;
   readonly settings: SchedulingSettings;
 }
 
@@ -83,13 +85,24 @@ function byQueue(a: PlanTaskInput, b: PlanTaskInput): number {
   return a.id.localeCompare(b.id, undefined, { numeric: true });
 }
 
-const ranOn = (run: RunFinished, access: PlanAccessInput) => run.access === access.id || run.access === access.name;
+/**
+ * O modelo de um acesso para o historico: o que `resources.scheduling` declara
+ * e, sem ele, o tipo do acesso. O historico do time e por modelo, nao por conta.
+ */
+export function modelOf(access: PlanAccessInput, settings: SchedulingSettings): string {
+  return settings.accesses[access.name]?.model ?? String(access.accessKind);
+}
+
+/** A janela, em milissegundos, em que o consumo de um acesso conta para a cota. */
+export function windowMsOf(access: PlanAccessInput, settings: SchedulingSettings): number {
+  return (settings.accesses[access.name]?.windowHours ?? DEFAULT_ACCESS_SETTINGS.windowHours) * HOUR;
+}
 
 /**
  * Monta o problema do escalonador com o que existe: as tasks abertas (a
  * posicao na fila vira valor, a primeira vale tantas quantas ha), o inventario
- * e o registro. O registro da a taxa de conclusao de cada acesso, os tokens
- * por dificuldade e o consumo da janela; sem ele, valem os numeros declarados
+ * e o registro. O historico do time da a taxa de conclusao de cada modelo e os
+ * tokens por dificuldade; o consumo da janela vem do estado desta maquina; sem ele, valem os numeros declarados
  * em `resources.scheduling`.
  */
 export function buildSchedulingProblem(input: PlanProblemInput): BuiltProblem {
@@ -131,9 +144,9 @@ export function buildSchedulingProblem(input: PlanProblemInput): BuiltProblem {
 
   const accesses: SchedulingAccess[] = input.accesses.map((a) => {
     const declared = { ...DEFAULT_ACCESS_SETTINGS, ...settings.accesses[a.name] };
-    const mine = runs.filter((r) => ranOn(r, a));
-    const windowMs = declared.windowHours * HOUR;
-    const spent = mine.filter((r) => r.finishedAt >= now - windowMs).reduce((sum, r) => sum + r.tokens, 0);
+    const mine = runs.filter((r) => r.model === modelOf(a, settings));
+    const windowMs = windowMsOf(a, settings);
+    const spent = input.spent[a.id] ?? 0;
     return {
       id: a.id,
       kind: a.accessKind,

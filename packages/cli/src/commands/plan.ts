@@ -18,6 +18,7 @@ import path from 'path';
 import { probeLocalSituation } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
+import { runLedgerFiles } from '../lib/run-ledger-files.js';
 import { defineCommand } from './define-command/index.js';
 
 interface PlanOptions {
@@ -60,7 +61,8 @@ async function showPlan(options: PlanOptions): Promise<void> {
   const clock = { now: () => instant(Date.now()) };
   const resources = await localPlanResources({
     ...situation,
-    ledger: createLocalRunLedger({ clock }, path.join(root, '.taskin', 'runs.jsonl')),
+    ledger: createLocalRunLedger({ clock }, runLedgerFiles(root)),
+    clock,
   });
 
   const { provider } = await resolveTaskProvider();

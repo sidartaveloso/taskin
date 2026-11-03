@@ -33,7 +33,7 @@ function project(fixture: Fixture = {}) {
     personalResources: join(dir, 'config', 'resources.json'),
   };
   const history = join(dir, '.taskin', 'runs.jsonl');
-  const machine = join(dir, 'state', 'taskin', 'runs.jsonl');
+  const machineState = join(dir, 'state', 'taskin', 'runs.jsonl');
   writeFileSync(
     paths.repositoryConfig,
     JSON.stringify({
@@ -57,7 +57,7 @@ function project(fixture: Fixture = {}) {
     mkdirSync(join(dir, '.taskin'), { recursive: true });
     writeFileSync(history, fixture.runs.map((r) => `${JSON.stringify(r)}\n`).join(''));
   }
-  return { dir, paths, files: { history, machine } };
+  return { dir, paths, files: { history, machine: machineState } };
 }
 
 async function plan(fixture: Fixture, tasks: readonly PlanTaskInput[]) {

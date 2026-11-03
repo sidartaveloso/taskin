@@ -251,7 +251,7 @@ describe('inventory local: o id da conta', () => {
     await second.release(ANA, id, repositoryId('repo-dois'));
 
     const idsIn = async (inventory: typeof first, repository: string) =>
-      (await inventory.accesses(ANA, repositoryId(repository), own.accessKind)).map((a) => [a.name, a.id]);
+      (await inventory.accesses(ANA, repositoryId(repository), own.accessKind)).map((a) => [a.name, a.id] as const);
     const inSecond = new Map(await idsIn(second, 'repo-dois'));
 
     expect(inSecond.get('conta-pessoal')).toBe(id);

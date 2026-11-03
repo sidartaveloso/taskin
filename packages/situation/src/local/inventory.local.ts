@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { MemoryInventory } from '../memory/inventory.memory';
+import { MemoryInventory, type NewResource } from '../memory/inventory.memory';
 import type { IInventory, InventoryPorts } from '../system/plugins/inventory/inventory.types';
 import type { ResourceDeclaration } from '../use-cases/actors.types';
 import type { DataClass, PersonId, RepositoryId, ResourceId } from '../use-cases/branded';
@@ -54,6 +54,17 @@ class LocalInventory extends MemoryInventory {
   private readonly entries = new Map<ResourceId, PersonalEntry>();
   private readonly offered = new Map<ResourceId, ResourceDeclaration>();
   private readonly loaded: Promise<void>;
+
+  /**
+   * O id de uma conta ou maquina e o mesmo em todo processo e em todo
+   * repositorio da maquina: quem guarda o consumo e as execucoes por conta
+   * (o estado da maquina) precisa reencontrar a conta pelo id. A da camada da
+   * pessoa leva a dona e o nome; a do repositorio, o repositorio e o nome.
+   */
+  protected override idFor(resource: NewResource, sequence: number): string {
+    const scope = resource.layer === 'personal' ? `personal:${resource.owner}` : `repository:${resource.repository}`;
+    return `${scope}:${resource.declaration.name}`;
+  }
 
   constructor(
     ports: InventoryPorts,

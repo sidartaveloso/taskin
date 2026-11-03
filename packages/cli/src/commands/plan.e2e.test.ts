@@ -116,7 +116,7 @@ describe('taskin plan, pelo binario', LENTO, () => {
       join(raiz, '.taskin', 'runs.jsonl'),
       `${JSON.stringify({
         id: 'run-1',
-        repository: 'repo',
+        repository: basename(raiz),
         task: '1',
         estimated: 2,
         found: 2,

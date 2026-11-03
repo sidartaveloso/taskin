@@ -11,15 +11,40 @@ import {
   type TokenCount,
   tokenCount,
 } from '../use-cases/branded';
-import type { RunFinished, RunOutcome, RunPlanned, RunStarted, ViewpointDelivered } from '../use-cases/flows.types';
+import type {
+  OpenRun,
+  RunFinished,
+  RunOutcome,
+  RunPlanned,
+  RunRecord,
+  RunStarted,
+  ViewpointDelivered,
+} from '../use-cases/flows.types';
 import { MemoryPlugin } from './plugin.memory';
+
+/** O que o time sabe de uma execucao fechada: sem a conta e sem horario. */
+export function toRunRecord(run: RunFinished): RunRecord {
+  return {
+    id: run.id,
+    repository: run.repository,
+    task: run.task,
+    estimated: run.estimated,
+    found: run.found,
+    model: run.model,
+    tokens: run.tokens,
+    iterations: run.iterations,
+    completed: run.completed,
+    reworked: run.reworked,
+    duration: run.duration,
+  };
+}
 
 class MemoryRunLedger extends MemoryPlugin<RunLedgerEvents> implements IRunLedger {
   readonly key = pluginKey('run-ledger');
   readonly name = 'Run ledger';
   readonly description = 'Estimated and found difficulty, consumption, and the viewpoints of each run';
 
-  private readonly open = new Map<string, RunStarted>();
+  private readonly open = new Map<string, OpenRun>();
   private readonly finished: RunFinished[] = [];
   private readonly recorded = new Map<string, ViewpointDelivered>();
 
@@ -48,7 +73,7 @@ class MemoryRunLedger extends MemoryPlugin<RunLedgerEvents> implements IRunLedge
     const fact = { ...planned, access, startedAt: this.clock.now() };
     this.emit('run-ledger:run-started', fact);
     const started: RunStarted = { state: 'started', ...fact };
-    this.open.set(started.id, started);
+    this.open.set(started.id, { id: started.id, access: started.access, startedAt: started.startedAt });
     return started;
   }
 
@@ -63,12 +88,12 @@ class MemoryRunLedger extends MemoryPlugin<RunLedgerEvents> implements IRunLedge
     return finished;
   }
 
-  async openRuns(): Promise<readonly RunStarted[]> {
+  async openRuns(): Promise<readonly OpenRun[]> {
     return [...this.open.values()];
   }
 
-  async runs(repository: RepositoryId): Promise<readonly RunFinished[]> {
-    return this.finished.filter((r) => r.repository === repository);
+  async runs(repository: RepositoryId): Promise<readonly RunRecord[]> {
+    return this.finished.filter((r) => r.repository === repository).map(toRunRecord);
   }
 
   async consumption(access: ResourceId, since: Instant): Promise<TokenCount> {

@@ -1,16 +1,18 @@
 import { existsSync, readFileSync } from 'node:fs';
-import type { PlanAccessInput, PlanMachineInput } from '../plan/build-problem';
+import { type PlanAccessInput, type PlanMachineInput, windowMsOf } from '../plan/build-problem';
 import { readSchedulingSettings, type SchedulingSettings } from '../plan/scheduling-settings';
 import type { IInventory } from '../system/plugins/inventory/inventory.types';
 import type { IRunLedger } from '../system/plugins/run-ledger/run-ledger.types';
 import type { ResourceDeclaration, SituationView } from '../use-cases/actors.types';
-import { type AccessKind, accessKind, type PersonId, type RepositoryId } from '../use-cases/branded';
-import type { RunFinished } from '../use-cases/flows.types';
+import { type AccessKind, accessKind, instant, type PersonId, type RepositoryId } from '../use-cases/branded';
+import type { RunRecord } from '../use-cases/flows.types';
+import type { IClockPort } from '../use-cases/ports.types';
 import type { LocalInventoryPaths } from './inventory.local';
 
 export interface LocalPlanSources {
   readonly inventory: IInventory;
   readonly ledger: IRunLedger;
+  readonly clock: IClockPort;
   readonly person: PersonId;
   readonly repository: RepositoryId;
   /** O quadro, ja com o que a sondagem desta maquina viu. */
@@ -21,7 +23,10 @@ export interface LocalPlanSources {
 export interface LocalPlanResources {
   readonly accesses: readonly PlanAccessInput[];
   readonly machines: readonly PlanMachineInput[];
-  readonly runs: readonly RunFinished[];
+  /** O historico do time. */
+  readonly runs: readonly RunRecord[];
+  /** O que cada acesso gastou na janela dele, pelo id, no estado desta maquina. */
+  readonly spent: Readonly<Record<string, number>>;
   readonly settings: SchedulingSettings;
 }
 
@@ -46,8 +51,9 @@ function accessKinds(paths: LocalInventoryPaths): AccessKind[] {
 
 /**
  * O que o `taskin plan` le do disco: os acessos disponiveis com a liberacao,
- * as maquinas disponiveis com os fatos validos, as execucoes do registro e
- * `resources.scheduling`.
+ * as maquinas disponiveis com os fatos validos, o historico do time (o
+ * `.taskin/runs.jsonl`), o consumo de cada acesso na janela dele (o estado
+ * desta maquina) e `resources.scheduling`.
  */
 export async function localPlanResources(sources: LocalPlanSources): Promise<LocalPlanResources> {
   const { inventory, person, repository, view } = sources;
@@ -70,10 +76,12 @@ export async function localPlanResources(sources: LocalPlanSources): Promise<Loc
       capabilities: m.facts.filter((f) => !f.expired).map((f) => String(f.capability)),
     }));
 
-  return {
-    accesses,
-    machines,
-    runs: await sources.ledger.runs(repository),
-    settings: readSchedulingSettings(sources.paths.repositoryConfig),
-  };
+  const settings = readSchedulingSettings(sources.paths.repositoryConfig);
+  const now = sources.clock.now();
+  const spent: Record<string, number> = {};
+  for (const a of accesses) {
+    spent[a.id] = await sources.ledger.consumption(a.id, instant(now - windowMsOf(a, settings)));
+  }
+
+  return { accesses, machines, runs: await sources.ledger.runs(repository), spent, settings };
 }

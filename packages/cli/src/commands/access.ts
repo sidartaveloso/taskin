@@ -23,6 +23,7 @@ import {
 import type { Command } from 'commander';
 import { openLocalInventory } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { runLedgerFiles } from '../lib/run-ledger-files.js';
 
 const SENSITIVITIES: readonly DataClass[] = ['public', 'internal', 'sensitive'];
 /** O prazo de uma reserva: se o processo morre sem devolver, a vaga volta sozinha depois disto. */
@@ -44,7 +45,7 @@ function openBroker(root: string) {
     usage: { usage: async () => undefined },
     settings: { leaseTtlMs: LEASE_TTL_MS, factTtlMs: FACT_TTL_MS },
     catalog: local.inventory,
-    runs: createLocalRunLedger({ clock }, join(root, '.taskin', 'runs.jsonl')),
+    runs: createLocalRunLedger({ clock }, runLedgerFiles(root)),
   };
   return { ...local, broker: createLocalAccessBroker(ports, leasesFile()) };
 }
