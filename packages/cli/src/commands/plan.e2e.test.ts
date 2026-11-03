@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -12,6 +12,7 @@ const SEGREDO = 'valor-secreto-9f8e7d';
 
 let raiz: string;
 let casa: string;
+let estado: string;
 
 const tarefa = (id: string, status: string, extra = '') => `# 🧩 Task ${id} — Tarefa ${id}
 
@@ -36,7 +37,7 @@ async function rodar(...args: string[]): Promise<{ code: number; stdout: string;
   try {
     const { stdout, stderr } = await execFileAsync('node', [CLI, ...args], {
       cwd: raiz,
-      env: { ...process.env, HOME: casa, SITUATION_TOKEN: SEGREDO },
+      env: { ...process.env, HOME: casa, XDG_STATE_HOME: estado, SITUATION_TOKEN: SEGREDO },
     });
     return { code: 0, stdout, saida: stdout + stderr };
   } catch (e) {
@@ -48,6 +49,7 @@ async function rodar(...args: string[]): Promise<{ code: number; stdout: string;
 beforeEach(() => {
   raiz = mkdtempSync(join(tmpdir(), 'taskin-plan-'));
   casa = mkdtempSync(join(tmpdir(), 'taskin-plan-home-'));
+  estado = mkdtempSync(join(tmpdir(), 'taskin-plan-state-'));
   mkdirSync(join(raiz, 'TASKS'), { recursive: true });
   writeFileSync(
     join(raiz, '.taskin.json'),
@@ -79,6 +81,7 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(raiz, { recursive: true, force: true });
   rmSync(casa, { recursive: true, force: true });
+  rmSync(estado, { recursive: true, force: true });
 });
 
 describe('taskin plan, pelo binario', LENTO, () => {
@@ -102,6 +105,43 @@ describe('taskin plan, pelo binario', LENTO, () => {
     expect(parsed.deferred).toEqual([{ task: '2', reason: 'fixed-requirement' }]);
     expect(parsed.plan.assignments.map((x: Json) => x.task)).toEqual(['1']);
     expect(Object.keys(JSON.parse(b.stdout))).toEqual(Object.keys(parsed));
+  });
+
+  it('o historico do time calibra por modelo e o consumo da cota vem do estado da maquina', async () => {
+    const config = JSON.parse(readFileSync(join(raiz, '.taskin.json'), 'utf8'));
+    config.resources.scheduling = { accesses: { 'claude-main': { model: 'claude-opus-5-5', quota: 100_000 } } };
+    writeFileSync(join(raiz, '.taskin.json'), JSON.stringify(config));
+    mkdirSync(join(raiz, '.taskin'), { recursive: true });
+    writeFileSync(
+      join(raiz, '.taskin', 'runs.jsonl'),
+      `${JSON.stringify({
+        id: 'run-1',
+        repository: 'repo',
+        task: '1',
+        estimated: 2,
+        found: 2,
+        model: 'claude-opus-5-5',
+        tokens: 12_345,
+        iterations: 1,
+        completed: true,
+        reworked: false,
+        duration: 1000,
+      })}\n`,
+    );
+    mkdirSync(join(estado, 'taskin'), { recursive: true });
+    const id = `repository:${basename(raiz)}:claude-main`;
+    writeFileSync(
+      join(estado, 'taskin', 'runs.jsonl'),
+      `${JSON.stringify({ state: 'finished', id: 'run-1', access: id, tokens: 90_000, finishedAt: Date.now() - 60_000 })}\n`,
+    );
+
+    const { code, stdout, saida } = await rodar('plan', '--json');
+
+    expect(code, saida).toBe(0);
+    const parsed: Json = JSON.parse(stdout);
+    expect(parsed.history).toBe(true);
+    expect(parsed.plan.problem.accesses[0].remaining).toBe(10_000);
+    expect(parsed.plan.problem.tasks[0].estimatedTokens).toBe(12_345);
   });
 
   it('recusa formato desconhecido', async () => {

@@ -26,6 +26,7 @@ const CONTA_B = resourceId('conta-b');
 const MINUTE = 60 * 1000;
 
 const outcome = (tokens: number, overrides: Partial<RunOutcome> = {}): RunOutcome => ({
+  model: 'sonnet',
   found: difficulty(3),
   tokens: tokenCount(tokens),
   iterations: 1,
@@ -94,7 +95,42 @@ export const RUN_LEDGER_CONTRACT_CASES: readonly PluginContractCase<IRunLedger>[
       const b = await ledger.finishRun(second, outcome(10));
       const a = await ledger.finishRun(first, outcome(20));
 
-      expect(await ledger.runs(REPO)).toEqual([b, a]);
+      expect((await ledger.runs(REPO)).map((r) => r.id)).toEqual([b.id, a.id]);
+    },
+  },
+  {
+    name: 'o historico do time leva o modelo e o que calibra, e nunca a conta nem um horario',
+    async run(ledger, ports) {
+      const run = await started(ledger, 'task-7', CONTA_A);
+      ports.clock.advance(25 * MINUTE);
+      await ledger.finishRun(run, outcome(180_000, { model: 'opus', found: difficulty(4), iterations: 3 }));
+
+      const [record] = await ledger.runs(REPO);
+
+      expect(record).toEqual({
+        id: run.id,
+        repository: REPO,
+        task: 'task-7',
+        estimated: 2,
+        found: 4,
+        model: 'opus',
+        tokens: 180_000,
+        iterations: 3,
+        completed: true,
+        reworked: false,
+        duration: 25 * MINUTE,
+      });
+      expect(JSON.stringify(record)).not.toContain(CONTA_A);
+    },
+  },
+  {
+    name: 'o consumo de um acesso soma as execucoes fechadas nele em todos os repositorios da maquina',
+    async run(ledger, ports) {
+      const since = ports.clock.now();
+      await ledger.finishRun(await started(ledger, 'task-1', CONTA_A), outcome(100));
+      await ledger.finishRun(await started(ledger, 'task-2', CONTA_A, repositoryId('outro-repo')), outcome(40));
+
+      expect(await ledger.consumption(CONTA_A, since)).toBe(140);
     },
   },
   {
@@ -105,10 +141,11 @@ export const RUN_LEDGER_CONTRACT_CASES: readonly PluginContractCase<IRunLedger>[
       const third = await started(ledger, 'task-3');
       await ledger.planRun(REPO, taskRef('task-4'), difficulty(2));
 
-      expect(await ledger.openRuns()).toEqual([first, second, third]);
+      const open = (run: RunStarted) => ({ id: run.id, access: run.access, startedAt: run.startedAt });
+      expect(await ledger.openRuns()).toEqual([open(first), open(second), open(third)]);
 
       await ledger.finishRun(second, outcome(10));
-      expect(await ledger.openRuns()).toEqual([first, third]);
+      expect(await ledger.openRuns()).toEqual([open(first), open(third)]);
     },
   },
   {

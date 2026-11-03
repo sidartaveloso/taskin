@@ -177,6 +177,7 @@ export const SYSTEM_CONTRACT_CASES: readonly SystemContractCase[] = [
       const lease = reserved(await situation.accessBroker.requestLease(ANA, leaseRequest('public', 'task-7')));
       const started = await situation.runLedger.startRun(planned, lease.access);
       const finished = await situation.runLedger.finishRun(started, {
+        model: 'sonnet',
         found: difficulty(3),
         tokens: tokenCount(5_000),
         iterations: 2,
@@ -192,7 +193,7 @@ export const SYSTEM_CONTRACT_CASES: readonly SystemContractCase[] = [
         'run-ledger:run-finished',
         'access-broker:lease-returned',
       ]);
-      expect(await situation.runLedger.runs(REPO)).toEqual([finished]);
+      expect((await situation.runLedger.runs(REPO)).map((r) => r.id)).toEqual([finished.id]);
       expect(await situation.runLedger.consumption(conta, planned.plannedAt)).toBe(5_000);
     },
   },
@@ -208,6 +209,7 @@ export const SYSTEM_CONTRACT_CASES: readonly SystemContractCase[] = [
       const started = await situation.runLedger.startRun(planned, grant.access);
       expect((await situation.runLedger.openRuns()).map((r) => [r.id, r.access])).toEqual([[started.id, conta]]);
       await situation.runLedger.finishRun(started, {
+        model: 'sonnet',
         found: difficulty(3),
         tokens: tokenCount(5_000),
         iterations: 2,

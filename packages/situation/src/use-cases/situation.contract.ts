@@ -232,6 +232,7 @@ export const SITUATION_CONTRACT_CASES: readonly ContractCase[] = [
       expect(other.access).not.toBe(first.access);
 
       await executor.finishRun(run, {
+        model: 'sonnet',
         found: difficulty(2),
         tokens: tokenCount(1_000),
         iterations: 1,
@@ -368,6 +369,7 @@ export const SITUATION_CONTRACT_CASES: readonly ContractCase[] = [
       const started = await executor.startRun(planned, lease);
       ports.clock.advance(25 * 60 * 1000);
       const finished = await executor.finishRun(started, {
+        model: 'sonnet',
         found: difficulty(4),
         tokens: tokenCount(180_000),
         iterations: 3,
@@ -380,28 +382,49 @@ export const SITUATION_CONTRACT_CASES: readonly ContractCase[] = [
         task: 'task-7',
         estimated: 2,
         found: 4,
+        model: 'sonnet',
         tokens: 180_000,
         duration: 25 * 60 * 1000,
         access: accounts[0],
       });
-      expect(await sys.developer(ANA).runs(REPO)).toEqual([finished]);
+      expect(await sys.developer(ANA).runs(REPO)).toEqual([
+        {
+          id: finished.id,
+          repository: REPO,
+          task: 'task-7',
+          estimated: 2,
+          found: 4,
+          model: 'sonnet',
+          tokens: 180_000,
+          iterations: 3,
+          completed: true,
+          reworked: false,
+          duration: 25 * 60 * 1000,
+        },
+      ]);
     },
   },
   {
-    name: 'o registro de execucao cita o acesso pelo nome logico, nunca pelo segredo',
+    name: 'o historico de execucoes do time nao cita a conta nem horario, e nunca o segredo',
     async run(sys, ports) {
       const { executors } = await oneMachineOneAccount(sys, ports);
       const executor = executors[0]!;
       const lease = granted(await executor.requestLease(leaseRequest()));
       const started = await executor.startRun(await executor.planRun(REPO, taskRef('task-1'), difficulty(1)), lease);
       await executor.finishRun(started, {
+        model: 'sonnet',
         found: difficulty(1),
         tokens: tokenCount(1_000),
         iterations: 1,
         completed: true,
         reworked: false,
       });
-      expect(JSON.stringify(await sys.developer(ANA).runs(REPO))).not.toContain(secretValueOf('conta-a'));
+      const history = await sys.developer(ANA).runs(REPO);
+      expect(history).toHaveLength(1);
+      for (const field of ['access', 'plannedAt', 'startedAt', 'finishedAt']) {
+        expect(history[0]).not.toHaveProperty(field);
+      }
+      expect(JSON.stringify(history)).not.toContain(secretValueOf('conta-a'));
     },
   },
 

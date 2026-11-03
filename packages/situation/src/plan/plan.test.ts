@@ -9,7 +9,7 @@ import { createEnvSecretStore } from '../local/secret-store.env';
 import { createFakePluginPorts } from '../system/system.fake-ports';
 import { secretRef } from '../use-cases/branded';
 import { FakeClock } from '../use-cases/fake-ports';
-import { ANA, account, machine, REPO } from '../use-cases/scenarios';
+import { ANA, account, CLAUDE_CODE, machine, REPO } from '../use-cases/scenarios';
 import { dependenciesOf, type PlanTaskInput } from './build-problem';
 import { buildPlanReport, PLAN_REPORT_VERSION, renderPlan } from './plan-report';
 import { DEFAULT_HORIZON_HOURS, DEFAULT_WEIGHTS, readSchedulingSettings } from './scheduling-settings';
@@ -18,7 +18,10 @@ const HOUR = 60 * 60 * 1000;
 
 interface Fixture {
   readonly scheduling?: unknown;
+  /** O historico do time, o `.taskin/runs.jsonl` versionado. */
   readonly runs?: readonly object[];
+  /** O que cada conta gastou, no estado desta maquina, uma hora antes do relogio falso. */
+  readonly spent?: Readonly<Record<string, number>>;
 }
 
 /** Uma pasta temporaria com o `.taskin.json`, a camada da pessoa e o registro. */
@@ -29,7 +32,8 @@ function project(fixture: Fixture = {}) {
     repositoryConfig: join(dir, '.taskin.json'),
     personalResources: join(dir, 'config', 'resources.json'),
   };
-  const runsFile = join(dir, '.taskin', 'runs.jsonl');
+  const history = join(dir, '.taskin', 'runs.jsonl');
+  const machine = join(dir, 'state', 'taskin', 'runs.jsonl');
   writeFileSync(
     paths.repositoryConfig,
     JSON.stringify({
@@ -51,19 +55,34 @@ function project(fixture: Fixture = {}) {
   );
   if (fixture.runs !== undefined) {
     mkdirSync(join(dir, '.taskin'), { recursive: true });
-    writeFileSync(runsFile, fixture.runs.map((r) => `${JSON.stringify(r)}\n`).join(''));
+    writeFileSync(history, fixture.runs.map((r) => `${JSON.stringify(r)}\n`).join(''));
   }
-  return { dir, paths, runsFile };
+  return { dir, paths, files: { history, machine } };
 }
 
 async function plan(fixture: Fixture, tasks: readonly PlanTaskInput[]) {
-  const { paths, runsFile } = project(fixture);
+  const { paths, files } = project(fixture);
   const clock = new FakeClock();
   const ports = { ...createFakePluginPorts(), clock, secrets: createEnvSecretStore({ CONTA_A: 'a', CONTA_B: 'b' }) };
   const inventory = createLocalInventory(ports, paths);
+  const ids = new Map((await inventory.accesses(ANA, REPO, CLAUDE_CODE)).map((a) => [a.name, String(a.id)]));
+  if (fixture.spent !== undefined) {
+    mkdirSync(join(files.machine, '..'), { recursive: true });
+    const finishedAt = clock.now() - HOUR;
+    writeFileSync(
+      files.machine,
+      Object.entries(fixture.spent)
+        .map(([name, tokens]) =>
+          JSON.stringify({ state: 'finished', id: `run-${name}`, access: ids.get(name), tokens, finishedAt }),
+        )
+        .map((line) => `${line}\n`)
+        .join(''),
+    );
+  }
   const resources = await localPlanResources({
     inventory,
-    ledger: createLocalRunLedger({ clock }, runsFile),
+    ledger: createLocalRunLedger({ clock }, files),
+    clock,
     person: ANA,
     repository: REPO,
     view: await inventory.view(ANA, REPO),
@@ -79,24 +98,19 @@ const task = (id: string, extra: Partial<PlanTaskInput> = {}): PlanTaskInput => 
   ...extra,
 });
 
-/** Uma execucao fechada no registro, uma hora antes do relogio falso. */
-function run(access: string, tokens: number) {
-  const finishedAt = new FakeClock().now() - HOUR;
+/** Uma execucao fechada no historico do time: o modelo, e nada da conta nem de horario. */
+function record(model: string, tokens: number, completed = true) {
   return {
-    state: 'finished',
-    id: `run-${access}`,
+    id: `run-${model}-${tokens}`,
     repository: REPO,
     task: '1',
     estimated: 3,
-    plannedAt: finishedAt - HOUR,
-    access,
-    startedAt: finishedAt - HOUR,
     found: 3,
+    model,
     tokens,
     iterations: 1,
-    completed: true,
+    completed,
     reworked: false,
-    finishedAt,
     duration: HOUR,
   };
 }
@@ -112,8 +126,7 @@ describe('taskin plan: o problema montado do que existe', () => {
   });
 
   it('uma conta perto do limite empurra a task para outro acesso', async () => {
-    const report = await plan({ runs: [run('conta-a', 195_000)] }, [task('1')]);
-    expect(report.history).toBe(true);
+    const report = await plan({ spent: { 'conta-a': 195_000 } }, [task('1')]);
     const access = report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === 'conta-a');
     expect(access?.remaining).toBe(5_000);
     const [assignment] = report.plan.assignments;
@@ -121,11 +134,36 @@ describe('taskin plan: o problema montado do que existe', () => {
     expect(renderPlan(report, 'text')).toContain('#1 task 1 → conta-b (sonnet) on servidor-1');
   });
 
-  it('o historico da a taxa de conclusao e os tokens por dificuldade', async () => {
-    const report = await plan({ runs: [run('conta-b', 30_000)] }, [task('1')]);
+  it('o historico do time da a taxa de conclusao por modelo e os tokens por dificuldade', async () => {
+    const report = await plan({ runs: [record('sonnet', 30_000)] }, [task('1')]);
+    expect(report.history).toBe(true);
     const contaB = report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === 'conta-b');
+    const contaA = report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === 'conta-a');
     expect(contaB?.completionRate).toBe(1);
+    expect(contaA?.completionRate).toBe(0.95);
     expect(report.plan.problem.tasks[0]?.estimatedTokens).toBe(30_000);
+  });
+
+  it('duas contas do mesmo modelo dividem a taxa de conclusao: o historico e do modelo, nao da conta', async () => {
+    const scheduling = { accesses: { 'conta-a': { model: 'sonnet' }, 'conta-b': { model: 'sonnet' } } };
+    const report = await plan({ scheduling, runs: [record('sonnet', 10_000, false)] }, [task('1')]);
+    const rates = report.plan.problem.accesses.map((a) => a.completionRate);
+    expect(rates).toEqual([0, 0]);
+  });
+
+  it('sem modelo declarado, o historico vale pelo tipo do acesso', async () => {
+    const report = await plan({ scheduling: {}, runs: [record(String(CLAUDE_CODE), 10_000, false)] }, [task('1')]);
+    expect(report.plan.problem.accesses.map((a) => a.completionRate)).toEqual([0, 0]);
+  });
+
+  it('o consumo da janela vem do estado da maquina, nao do historico do time', async () => {
+    const heavy = [record('opus', 190_000)];
+    const fromTeam = await plan({ runs: heavy }, [task('1')]);
+    const fromMachine = await plan({ spent: { 'conta-a': 190_000 } }, [task('1')]);
+    const remaining = (report: typeof fromTeam) =>
+      report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === 'conta-a')?.remaining;
+    expect(remaining(fromTeam)).toBe(200_000);
+    expect(remaining(fromMachine)).toBe(10_000);
   });
 
   it('um requisito fixo ausente adia com fixed-requirement; o movel vira custo de preparo', async () => {
@@ -138,8 +176,8 @@ describe('taskin plan: o problema montado do que existe', () => {
 
   it('a mesma entrada da o mesmo plano', async () => {
     const tasks = [task('3', { order: 2 }), task('1', { order: 1 }), task('2', { difficulty: 5 })];
-    const first = await plan({ runs: [run('conta-a', 10_000)] }, tasks);
-    const second = await plan({ runs: [run('conta-a', 10_000)] }, tasks);
+    const first = await plan({ runs: [record('opus', 10_000)] }, tasks);
+    const second = await plan({ runs: [record('opus', 10_000)] }, tasks);
     expect(renderPlan(second, 'json')).toBe(renderPlan(first, 'json'));
   });
 
@@ -170,6 +208,7 @@ describe('taskin plan: o problema montado do que existe', () => {
       accesses: [],
       machines: [],
       runs: [],
+      spent: {},
       settings: readSchedulingSettings(join(tmpdir(), 'nao-existe', '.taskin.json')),
     });
     const text = renderPlan(report, 'text');

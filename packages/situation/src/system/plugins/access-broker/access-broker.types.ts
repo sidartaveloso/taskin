@@ -14,7 +14,7 @@ import type {
   LeaseGranted,
   LeaseRequest,
   LeaseReturned,
-  RunStarted,
+  OpenRun,
 } from '../../../use-cases/flows.types';
 import type { SituationPorts } from '../../../use-cases/ports.types';
 import type { IPluginSituation, PluginKey } from '../../plugin.types';
@@ -60,7 +60,7 @@ export interface IAccessCatalogPort {
  * terminaram. No sistema, quem responde e o registro de execucoes.
  */
 export interface IOpenRunsPort {
-  openRuns(): Promise<readonly RunStarted[]>;
+  openRuns(): Promise<readonly OpenRun[]>;
 }
 
 export type AccessBrokerPorts = Pick<SituationPorts, 'clock' | 'secrets' | 'usage' | 'settings'> & {

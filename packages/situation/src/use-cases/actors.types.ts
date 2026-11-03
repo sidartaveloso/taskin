@@ -23,6 +23,7 @@ import type {
   RunFinished,
   RunOutcome,
   RunPlanned,
+  RunRecord,
   RunStarted,
   ViewpointAccepted,
   ViewpointAsk,
@@ -161,8 +162,11 @@ export interface IDeveloperActor {
   release(resource: ResourceId, repository: RepositoryId): Promise<void>;
   /** O quadro: as duas camadas somadas, com o que esta disponivel e por que nao. */
   situation(repository: RepositoryId): Promise<SituationView>;
-  /** As execucoes fechadas no repositorio, com a dificuldade estimada e a encontrada. */
-  runs(repository: RepositoryId): Promise<readonly RunFinished[]>;
+  /**
+   * As execucoes fechadas no repositorio, com a dificuldade estimada e a
+   * encontrada e o modelo: o historico do time, sem a conta e sem horario.
+   */
+  runs(repository: RepositoryId): Promise<readonly RunRecord[]>;
   /** Aceita receber pedidos de ponto de vista, nos termos que ela mesma da. Declarar de novo substitui. */
   consentToViewpoints(consent: ViewpointConsent): Promise<void>;
   /** Para de receber pedidos novos. */

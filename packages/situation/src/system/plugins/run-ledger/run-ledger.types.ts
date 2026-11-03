@@ -1,8 +1,10 @@
 import type { Difficulty, Instant, RepositoryId, ResourceId, TaskRef, TokenCount } from '../../../use-cases/branded';
 import type {
+  OpenRun,
   RunFinished,
   RunOutcome,
   RunPlanned,
+  RunRecord,
   RunStarted,
   ViewpointDelivered,
 } from '../../../use-cases/flows.types';
@@ -21,13 +23,20 @@ export interface IRunLedger extends IPluginSituation<RunLedgerEvents> {
   startRun(run: RunPlanned, access: ResourceId): Promise<RunStarted>;
   finishRun(run: RunStarted, outcome: RunOutcome): Promise<RunFinished>;
   /**
-   * As execucoes que comecaram e ainda nao terminaram, de qualquer repositorio,
-   * na ordem em que comecaram: e como o access broker sabe quanto cada conta esta ocupada.
+   * As execucoes que comecaram e ainda nao terminaram nesta maquina, de
+   * qualquer repositorio, na ordem em que comecaram: e como o access broker
+   * sabe quanto cada conta esta ocupada.
    */
-  openRuns(): Promise<readonly RunStarted[]>;
-  /** As execucoes fechadas no repositorio, na ordem em que fecharam. */
-  runs(repository: RepositoryId): Promise<readonly RunFinished[]>;
-  /** Os tokens das execucoes fechadas neste acesso desde um instante: a base da projecao de cota. */
+  openRuns(): Promise<readonly OpenRun[]>;
+  /**
+   * As execucoes fechadas no repositorio, na ordem em que fecharam, so com o
+   * que e do time: sem a conta e sem horario (o historico que se versiona).
+   */
+  runs(repository: RepositoryId): Promise<readonly RunRecord[]>;
+  /**
+   * Os tokens das execucoes fechadas neste acesso desde um instante, em todos
+   * os repositorios desta maquina: a base da projecao de cota. Fica so na maquina.
+   */
   consumption(access: ResourceId, since: Instant): Promise<TokenCount>;
   recordViewpoint(viewpoint: ViewpointDelivered): Promise<void>;
   viewpoints(repository: RepositoryId, task: TaskRef): Promise<readonly ViewpointDelivered[]>;

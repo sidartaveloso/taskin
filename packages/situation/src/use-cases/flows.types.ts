@@ -108,6 +108,11 @@ export interface RunStarted extends Omit<RunPlanned, 'state'> {
 
 /** O que aconteceu na execucao, dito por quem executou. */
 export interface RunOutcome {
+  /**
+   * O modelo que a execucao usou: o que o acesso declara, ou o tipo do acesso
+   * quando nao declara. E o que o historico do time sabe da conta.
+   */
+  readonly model: string;
   /** A dificuldade encontrada. Sem ela, a execucao nao fecha. */
   readonly found: Difficulty;
   readonly tokens: TokenCount;
@@ -122,6 +127,33 @@ export interface RunFinished extends Omit<RunStarted, 'state'>, RunOutcome {
   readonly finishedAt: Instant;
   readonly duration: DurationMs;
 }
+
+/**
+ * O que o time sabe de uma execucao fechada, e o unico que vai ao repositorio:
+ * o suficiente para calibrar a dificuldade e a taxa de conclusao por modelo.
+ * Nao leva a conta, que na camada da pessoa tem o nome que a pessoa escolheu,
+ * nem horario algum, que diria quando ela trabalha.
+ */
+export type RunRecord = Pick<
+  RunFinished,
+  | 'id'
+  | 'repository'
+  | 'task'
+  | 'estimated'
+  | 'found'
+  | 'model'
+  | 'tokens'
+  | 'iterations'
+  | 'completed'
+  | 'reworked'
+  | 'duration'
+>;
+
+/**
+ * Uma execucao que comecou e nao terminou, como esta maquina a conhece: qual
+ * conta ela usa e desde quando. Fica so na maquina, nunca no repositorio.
+ */
+export type OpenRun = Pick<RunStarted, 'id' | 'access' | 'startedAt'>;
 
 /* ─── O pedido de ponto de vista humano ─────────────────────────────────── */
 

@@ -1,7 +1,7 @@
 import { execFile, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -85,22 +85,17 @@ afterEach(() => {
   for (const dir of [raiz, casa, estado]) rmSync(dir, { recursive: true, force: true });
 });
 
-/** Uma execucao que comecou e nao fechou, no registro de execucoes, na conta de id `access`. */
-const execucaoEmAberto = (access: string, n: number) =>
-  JSON.stringify({
-    state: 'started',
-    id: `run-aberta-${access}-${n}`,
-    repository: 'repo',
-    task: `task-${n}`,
-    estimated: 2,
-    plannedAt: Date.now(),
-    access,
-    startedAt: Date.now(),
-  });
+/** O id de uma conta do repositorio no inventario local: o mesmo em todo repositorio e processo. */
+const idDaConta = (nome: string) => `repository:${basename(raiz)}:${nome}`;
+const execucoes = () => join(estado, 'taskin', 'runs.jsonl');
+
+/** Uma execucao que comecou e nao fechou, no estado desta maquina, na conta `nome`. */
+const execucaoEmAberto = (nome: string, n: number) =>
+  JSON.stringify({ state: 'started', id: `run-aberta-${nome}-${n}`, access: idDaConta(nome), startedAt: Date.now() });
 
 function registrarAbertas(...linhas: string[]): void {
-  mkdirSync(join(raiz, '.taskin'), { recursive: true });
-  writeFileSync(join(raiz, '.taskin', 'runs.jsonl'), `${linhas.join('\n')}\n`);
+  mkdirSync(join(estado, 'taskin'), { recursive: true });
+  writeFileSync(execucoes(), `${linhas.join('\n')}\n`);
 }
 
 const contaEscolhida = (stderr: string) => /Using "([^"]+)"/.exec(stderr)?.[1];
@@ -175,20 +170,19 @@ describe('taskin access', LENTO, () => {
     expect(existsSync(leases())).toBe(false);
   });
 
-  it('entre duas contas sem capacidade declarada, a rodada vai a que tem menos execucoes em aberto no registro', async () => {
-    // Os ids do inventario seguem a ordem das ofertas: resource-3 e claude-second, resource-4 e claude-third.
+  it('entre duas contas sem capacidade declarada, a rodada vai a que tem menos execucoes em aberto no estado da maquina', async () => {
     const escolha = async () =>
       contaEscolhida((await rodar('access', 'run', 'llm-pair', '--', 'node', '-e', '0')).stderr);
 
     const semNada = await escolha();
-    registrarAbertas(execucaoEmAberto('resource-3', 1));
+    registrarAbertas(execucaoEmAberto('claude-second', 1));
     const umaNaPrimeira = await escolha();
-    registrarAbertas(execucaoEmAberto('resource-4', 1));
+    registrarAbertas(execucaoEmAberto('claude-third', 1));
     const umaNaSegunda = await escolha();
     registrarAbertas(
-      execucaoEmAberto('resource-3', 1),
-      execucaoEmAberto('resource-3', 2),
-      execucaoEmAberto('resource-4', 1),
+      execucaoEmAberto('claude-second', 1),
+      execucaoEmAberto('claude-second', 2),
+      execucaoEmAberto('claude-third', 1),
     );
     const duasContraUma = await escolha();
 
@@ -197,6 +191,7 @@ describe('taskin access', LENTO, () => {
     expect(umaNaSegunda).toBe('claude-second');
     expect(duasContraUma).toBe('claude-third');
     expect(existsSync(leases())).toBe(false);
+    expect(existsSync(join(raiz, '.taskin', 'runs.jsonl'))).toBe(false);
   });
 
   it('o comando que falha tambem devolve a reserva', async () => {

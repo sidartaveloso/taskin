@@ -1,14 +1,6 @@
-import {
-  type AccessKind,
-  difficulty,
-  type PersonId,
-  type RepositoryId,
-  type ResourceId,
-  runId,
-  taskRef,
-} from '../use-cases/branded';
+import { type AccessKind, type PersonId, type RepositoryId, type ResourceId, runId } from '../use-cases/branded';
 import { createFakePorts, DEFAULT_TEST_SETTINGS, type FakePorts } from '../use-cases/fake-ports';
-import type { RunStarted } from '../use-cases/flows.types';
+import type { OpenRun } from '../use-cases/flows.types';
 import type { SituationSettings } from '../use-cases/ports.types';
 import { type EnvelopeOf, type EventHandler, eventId } from './envelope';
 import { pluginKey, pluginVersion } from './plugin.types';
@@ -69,27 +61,22 @@ export class FakeAccessCatalog implements IAccessCatalogPort {
 
 /** As execucoes em aberto de mentira: o que o registro de execucoes diria ao access broker. */
 export class FakeOpenRuns implements IOpenRunsPort {
-  private readonly open: RunStarted[] = [];
+  private readonly open: OpenRun[] = [];
   private sequence = 0;
 
   /** Comeca `count` execucoes (uma, por padrao) na conta, sem terminar nenhuma. */
-  begin(access: ResourceId, repository: RepositoryId, startedAt: RunStarted['startedAt'], count = 1): void {
+  begin(access: ResourceId, startedAt: OpenRun['startedAt'], count = 1): void {
     for (let i = 0; i < count; i += 1) {
       this.sequence += 1;
       this.open.push({
-        state: 'started',
         id: runId(`open-${this.sequence}`),
-        repository,
-        task: taskRef(`task-open-${this.sequence}`),
-        estimated: difficulty(2),
-        plannedAt: startedAt,
         access,
         startedAt,
       });
     }
   }
 
-  async openRuns(): Promise<readonly RunStarted[]> {
+  async openRuns(): Promise<readonly OpenRun[]> {
     return [...this.open];
   }
 }

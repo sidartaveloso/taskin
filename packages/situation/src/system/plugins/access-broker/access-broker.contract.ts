@@ -63,7 +63,7 @@ const request = (sensitivity: DataClass = 'public', task = 'task-1') => leaseReq
 
 /** Comecam `count` execucoes na conta, no registro de execucoes, e nenhuma termina. */
 function runsOpenOn(ports: FakePluginPorts, access: LendableAccess, count: number): void {
-  ports.runs.begin(access.id, REPO, ports.clock.now(), count);
+  ports.runs.begin(access.id, ports.clock.now(), count);
 }
 
 export const ACCESS_BROKER_CONTRACT_CASES: readonly PluginContractCase<IAccessBroker>[] = [

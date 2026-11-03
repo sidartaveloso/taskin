@@ -76,6 +76,7 @@ export async function forbiddenPaths(): Promise<void> {
 
   // @ts-expect-error fechar uma execucao que nem comecou
   await executor.finishRun(planned, {
+    model: 'sonnet',
     found: difficulty(1),
     tokens: tokenCount(1),
     iterations: 1,
