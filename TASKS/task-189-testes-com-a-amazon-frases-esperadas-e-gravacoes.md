@@ -6,6 +6,7 @@
 - Group: alexa-etapa-1
 - Priority: 7500
 - Difficulty: 2
+- Requires: interactive, microphone
 
 ## Description
 Um lote versionado de frases com o intent e os campos esperados, rodado contra o modelo publicado, e gravações de voz dos comandos com nomes de projeto para medir o que a Alexa ouve.
@@ -23,6 +24,6 @@ Um lote versionado de frases com o intent e os campos esperados, rodado contra o
 Depende das tasks 186 (quais ferramentas aceitam pt-BR) e 188 (o modelo publicado). Vem antes do código do executor de propósito: é a medida do maior risco do grupo, os nomes inventados.
 
 ### Onde executar
-Manual, no Mac, com o ASK CLI configurado e um microfone. O script de frases pode ir para o CI depois, se houver credenciais da Amazon nos segredos.
+Manual e interativo, com o ASK CLI configurado e um microfone. O script de frases pode ir para o CI depois, se houver credenciais da Amazon nos segredos.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).

@@ -34,6 +34,8 @@ export interface TaskFileI18n {
   groupName: string;
   /** Field name for difficulty rating */
   difficulty: string;
+  /** Field name for the task requirements */
+  requires: string;
 }
 
 /**
@@ -54,6 +56,7 @@ export const i18nConfig: Record<Locale, TaskFileI18n> = {
     group: 'Group',
     groupName: 'GroupName',
     difficulty: 'Difficulty',
+    requires: 'Requires',
   },
   'pt-BR': {
     status: 'Status',
@@ -69,6 +72,7 @@ export const i18nConfig: Record<Locale, TaskFileI18n> = {
     group: 'Grupo',
     groupName: 'NomeGrupo',
     difficulty: 'Dificuldade',
+    requires: 'Requer',
   },
 };
 

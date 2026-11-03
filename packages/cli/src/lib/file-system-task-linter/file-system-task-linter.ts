@@ -1,5 +1,5 @@
 import { readMetadataField } from '@opentask/taskin-file-system-provider';
-import { TASK_STATUSES, TASK_TYPES } from '@opentask/taskin-types';
+import { CAPABILITIES, isValidRequirement, TASK_STATUSES, TASK_TYPES } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import { readdir, readFile } from 'fs/promises';
 import { join } from 'path';
@@ -99,6 +99,29 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
     return errors;
   }
 
+  /** `Requires` accepts the closed capability list and `review:<competence>`; repeats only warn. */
+  private validateRequires(filename: string, content: string): void {
+    const raw = readMetadataField(content, 'Requires', 'Requer');
+    if (!raw) return;
+    const values = raw
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean);
+    const seen = new Set<string>();
+    for (const value of values) {
+      if (!isValidRequirement(value)) {
+        this.addError(
+          filename,
+          `Invalid requirement "${value}" in ${filename}. Valid: ${CAPABILITIES.join(', ')}, review:<competence>`,
+          'error',
+        );
+      } else if (seen.has(value)) {
+        this.addError(filename, `Duplicate requirement "${value}" in ${filename}`, 'warning');
+      }
+      seen.add(value);
+    }
+  }
+
   private validateContent(filename: string, content: string): void {
     const lines = content.split('\n');
 
@@ -117,6 +140,8 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
     metadataErrors.forEach((error) => {
       this.addError(error.file, error.message, error.severity, error.line);
     });
+
+    this.validateRequires(filename, content);
 
     const h2Sections = content.match(/^##\s+.+$/gm);
     if (!h2Sections || h2Sections.length === 0) {

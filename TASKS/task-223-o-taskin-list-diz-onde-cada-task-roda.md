@@ -1,6 +1,6 @@
 # 🧩 Task 223 — O taskin list diz onde cada task roda
 
-- Status: pending
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-5
@@ -12,11 +12,11 @@ Com `--where`, o `taskin list` mostra, para cada task aberta, se ela roda nesta 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] O cálculo de onde cada task roda (requisitos da task contra as capacidades sondadas e declaradas) sai do `taskin status` para uma função compartilhada, usada pelos dois comandos
-- [ ] `taskin list --where`: uma coluna com `✓ aqui` ou `✗ falta <requisitos>`; a sondagem roda uma vez por comando
-- [ ] `taskin list --where --json`: cada task ganha `runsHere` (booleano) e `missing` (os requisitos que faltam)
-- [ ] Sem `--where`, nenhuma sondagem: teste de que o `list` não chama a sondagem
-- [ ] Testes do texto e do json no padrão de `list.json.test.ts`, e o e2e do `taskin status` verde sem mudança
+- [x] O cálculo de onde cada task roda (requisitos da task contra as capacidades sondadas e declaradas) sai do `taskin status` para uma função compartilhada, usada pelos dois comandos — `placeTasks` em `packages/situation/src/report/build-status-report.ts`, usada por `buildStatusReport` (status) e por `list.ts`; `packages/situation` 404 testes verdes, e2e do status sem mudança
+- [x] `taskin list --where`: uma coluna com `✓ aqui` ou `✗ falta <requisitos>`; a sondagem roda uma vez por comando — `list.where.test.ts` › 'mostra a coluna no texto'; sondagem uma vez (`toHaveBeenCalledTimes(1)`); `probeSituation` em `cli/src/lib/probe-situation.ts`
+- [x] `taskin list --where --json`: cada task ganha `runsHere` (booleano) e `missing` (os requisitos que faltam) — `list.where.test.ts` › 'no json cada tarefa ganha runsHere e missing'
+- [x] Sem `--where`, nenhuma sondagem: teste de que o `list` não chama a sondagem — `list.where.test.ts` › 'sem --where nao sonda nada'
+- [x] Testes do texto e do json no padrão de `list.json.test.ts`, e o e2e do `taskin status` verde sem mudança — `list.where.test.ts` (3 testes); `pnpm --filter taskin test` 447 verdes
 
 ## Notes
 Depende da task-222, no mesmo lote.

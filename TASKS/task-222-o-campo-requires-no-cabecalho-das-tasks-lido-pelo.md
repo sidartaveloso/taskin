@@ -1,6 +1,6 @@
 # 🧩 Task 222 — O campo Requires no cabeçalho das tasks, lido pelo provider e conferido pelo lint
 
-- Status: pending
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-5
@@ -12,11 +12,11 @@ Os requisitos de cada task num campo do cabeçalho, `- Requires:`, com valores d
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Em `packages/types-ts/src/taskin.schemas.ts`: a lista fechada `CAPABILITIES` (`docker`, `android-sdk`, `jdk21`, `gpu`, `interactive`, `microphone`, `visual-review`), o padrão `review:<competência>` para os pedidos de ponto de vista (`review:design`, `review:electronics`), e `requires` opcional no `TaskSchema`, validado pela lista e pelo padrão
-- [ ] O provider de arquivos lê `- Requires: a, b` do cabeçalho (com o nome do campo pelo `i18n.ts`: `Requires` em inglês, `Requer` em português) e grava o campo sem tocar no resto do arquivo
-- [ ] O `taskin lint` acusa como erro um valor fora da lista, citando a task e os valores aceitos, e como aviso um valor repetido
-- [ ] `packages/cli/src/commands/status.ts` usa o `requires` da task e perde o `requiresOf`, que lia o arquivo com uma expressão regular
-- [ ] Testes no `types-ts`, no provider (leitura, escrita, as duas línguas) e no linter, e o e2e do `taskin status` verde sem mudança
+- [x] Em `packages/types-ts/src/taskin.schemas.ts`: a lista fechada `CAPABILITIES` (`docker`, `android-sdk`, `jdk21`, `gpu`, `interactive`, `microphone`, `visual-review`), o padrão `review:<competência>` para os pedidos de ponto de vista (`review:design`, `review:electronics`), e `requires` opcional no `TaskSchema`, validado pela lista e pelo padrão — `CAPABILITIES`, `REVIEW_REQUIREMENT_PATTERN`, `isValidRequirement`, `requires` no `TaskSchema` em `packages/types-ts/src/taskin.schemas.ts`; teste `describe('requires')` em `taskin.schemas.test.ts`
+- [x] O provider de arquivos lê `- Requires: a, b` do cabeçalho (com o nome do campo pelo `i18n.ts`: `Requires` em inglês, `Requer` em português) e grava o campo sem tocar no resto do arquivo — `requires` em `i18n.ts` (`Requires`/`Requer`) e no provider; testes `requires field` em `file-system-task-provider.test.ts` (leitura nas duas línguas, escrita sem tocar no resto; `requires` ausente no update não apaga a linha)
+- [x] O `taskin lint` acusa como erro um valor fora da lista, citando a task e os valores aceitos, e como aviso um valor repetido — `validateRequires` no linter; testes `Requires` em `file-system-task-linter.test.ts` (erro com task e valores aceitos, aviso de repetido)
+- [x] `packages/cli/src/commands/status.ts` usa o `requires` da task e perde o `requiresOf`, que lia o arquivo com uma expressão regular — `requiresOf` e `tasksDirOf` removidos de `status.ts`, que usa `t.requires ?? []`
+- [x] Testes no `types-ts`, no provider (leitura, escrita, as duas línguas) e no linter, e o e2e do `taskin status` verde sem mudança — testes acima; `pnpm --filter taskin test` (unit 444 + e2e 139) verde sem mudança no e2e do status
 
 ## Notes
 Primeira task da segunda rodada da consciência situacional (`docs/RDT/consciencia-situacional.md`, etapa 2).

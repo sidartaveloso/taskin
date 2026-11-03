@@ -164,6 +164,40 @@ export const UserSchema = z.object({
 });
 
 /**
+ * Closed list of capabilities a task may require of the machine that runs it.
+ * @public
+ */
+export const CAPABILITIES = [
+  'docker',
+  'android-sdk',
+  'jdk21',
+  'gpu',
+  'interactive',
+  'microphone',
+  'visual-review',
+] as const;
+
+/** A capability a task requires. @public */
+export type Capability = (typeof CAPABILITIES)[number];
+
+/** Pattern of a point-of-view request: `review:<competence>` (e.g. `review:design`). @public */
+export const REVIEW_REQUIREMENT_PATTERN = /^review:[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * Whether a value is accepted in a task's `Requires` field: a closed capability
+ * or a `review:<competence>` request.
+ * @public
+ */
+export function isValidRequirement(value: string): boolean {
+  return (CAPABILITIES as readonly string[]).includes(value) || REVIEW_REQUIREMENT_PATTERN.test(value);
+}
+
+/** One entry of a task's `requires`. @public */
+export const RequirementSchema = z.string().refine(isValidRequirement, {
+  message: `Invalid requirement. Valid: ${CAPABILITIES.join(', ')} or review:<competence>`,
+});
+
+/**
  * Runtime validator for task objects.
  * Use this to parse and validate task data from external sources (API, database, forms).
  *
@@ -204,6 +238,8 @@ export const TaskSchema = z.object({
   groupId: GroupIdSchema.optional(),
   /** Perceived difficulty from 1 (trivial) to 5 (very hard) */
   difficulty: z.number().int().min(1).max(5).optional(),
+  /** What the task needs to run: closed capabilities or `review:<competence>` requests */
+  requires: z.array(RequirementSchema).optional(),
 });
 
 /**

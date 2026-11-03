@@ -270,6 +270,51 @@ Test description`;
     });
   });
 
+  describe('requires field', () => {
+    it('reads Requires in English and Requer in Portuguese', async () => {
+      (fs.readdir as Mock).mockResolvedValue(['task-001-test.md']);
+      (fs.readFile as Mock).mockResolvedValue(
+        '# Task 001 — T\nStatus: pending\nType: feat\nRequires: docker, review:design\n',
+      );
+      expect((await provider.findTask('001'))?.requires).toEqual(['docker', 'review:design']);
+
+      (fs.readFile as Mock).mockResolvedValue(
+        '# Task 001 — T\n\n- Status: pending\n- Tipo: feat\n- Requer: gpu\n\n## Descrição\nx',
+      );
+      expect((await provider.findTask('001'))?.requires).toEqual(['gpu']);
+    });
+
+    it('leaves requires undefined when the field is absent', async () => {
+      (fs.readdir as Mock).mockResolvedValue(['task-001-test.md']);
+      (fs.readFile as Mock).mockResolvedValue('# Task 001 — T\nStatus: pending\nType: feat\n');
+      expect((await provider.findTask('001'))?.requires).toBeUndefined();
+    });
+
+    it('writes requires without touching the rest, and keeps it when absent from the update', async () => {
+      const original = '# Task 001 — T\nStatus: pending\nType: feat\n\n## Description\nbody';
+      (fs.readFile as Mock).mockResolvedValue(original);
+      const task: TaskFile = {
+        content: '',
+        createdAt: new Date().toISOString(),
+        filePath: '/fake/tasks/task-001.md',
+        id: '001' satisfies string as TaskId,
+        status: 'pending',
+        title: 'T',
+        type: 'feat',
+        requires: ['docker', 'jdk21'],
+      };
+      await provider.updateTask(task);
+      const written = (fs.writeFile as Mock).mock.calls[0][1] as string;
+      expect(written).toMatch(/^Requires: docker, jdk21$/m);
+      expect(written).toContain('## Description\nbody');
+
+      (fs.writeFile as Mock).mockClear();
+      (fs.readFile as Mock).mockResolvedValue(written);
+      await provider.updateTask({ ...task, requires: undefined });
+      expect((fs.writeFile as Mock).mock.calls[0][1]).toMatch(/^Requires: docker, jdk21$/m);
+    });
+  });
+
   describe('prioritization fields (Priority/Group/GroupName/Difficulty)', () => {
     it('should read Priority/Group/GroupName/Difficulty from an existing file', async () => {
       const content = `# Task 001 — Prioritized Task
