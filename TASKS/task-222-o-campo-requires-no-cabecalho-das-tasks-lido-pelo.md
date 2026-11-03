@@ -1,6 +1,6 @@
 # 🧩 Task 222 — O campo Requires no cabeçalho das tasks, lido pelo provider e conferido pelo lint
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-5
