@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { registerAccessCommand } from './access.js';
 import { configCommand } from './config.js';
 import { registerDaemonCommand } from './daemon.js';
 import { dashboardCommand } from './dashboard.js';
@@ -56,4 +57,5 @@ export function registerCommands(program: Command): void {
   registerDaemonCommand(program);
   notifyCommand(program);
   registerUserCommand(program);
+  registerAccessCommand(program);
 }

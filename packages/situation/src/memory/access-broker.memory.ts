@@ -36,30 +36,49 @@ interface Candidate {
   readonly headroom: number;
 }
 
+/** O que o emprestimo guarda: o contador dos ids e os emprestimos em curso, nunca o segredo. */
+export interface LeaseState {
+  sequence: number;
+  active: ActiveLease[];
+}
+
+/**
+ * Onde o estado dos emprestimos mora. Cada operacao le, decide e grava dentro
+ * de uma transacao: na memoria e so a variavel; no disco, o arquivo com trava.
+ */
+export interface ILeaseStore {
+  transaction<T>(work: (state: LeaseState) => Promise<T>): Promise<T>;
+}
+
+export function createMemoryLeaseStore(): ILeaseStore {
+  const state: LeaseState = { sequence: 0, active: [] };
+  return { transaction: (work) => work(state) };
+}
+
 class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAccessBroker {
   readonly key = pluginKey('access-broker');
   readonly name = 'Access broker';
   readonly description = 'Lends LLM accounts to runs, with the secret only in the run environment';
 
-  private sequence = 0;
-  private readonly active = new Map<string, ActiveLease>();
-
-  constructor(private readonly ports: AccessBrokerPorts) {
+  constructor(
+    private readonly ports: AccessBrokerPorts,
+    private readonly store: ILeaseStore,
+  ) {
     super(ports.clock);
   }
 
   /** Tira os emprestimos vencidos; ligado, cada um vira evento. */
-  private sweep(): void {
+  private sweep(state: LeaseState): void {
     const now = this.clock.now();
-    for (const lease of [...this.active.values()]) {
-      if (now <= lease.expiresAt) continue;
-      this.active.delete(lease.id);
+    const expired = state.active.filter((l) => now > l.expiresAt);
+    state.active = state.active.filter((l) => now <= l.expiresAt);
+    for (const lease of expired) {
       this.emit('access-broker:lease-expired', { lease: lease.id, access: lease.access });
     }
   }
 
-  private inUse(access: ResourceId): number {
-    return [...this.active.values()].filter((l) => l.access === access).length;
+  private inUse(state: LeaseState, access: ResourceId): number {
+    return state.active.filter((l) => l.access === access).length;
   }
 
   private deny(person: PersonId, request: LeaseRequest, reason: LeaseDenied['reason']): LeaseDenied {
@@ -73,8 +92,12 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
     return { state: 'denied', reason };
   }
 
-  async requestLease(person: PersonId, request: LeaseRequest): Promise<LeaseGranted | LeaseDenied> {
-    this.sweep();
+  requestLease(person: PersonId, request: LeaseRequest): Promise<LeaseGranted | LeaseDenied> {
+    return this.store.transaction((state) => this.lend(state, person, request));
+  }
+
+  private async lend(state: LeaseState, person: PersonId, request: LeaseRequest): Promise<LeaseGranted | LeaseDenied> {
+    this.sweep(state);
     const listed = await this.ports.catalog.accesses(person, request.repository, request.kind);
 
     const held: { access: LendableAccess; secret: string }[] = [];
@@ -99,7 +122,7 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
 
     const candidates: Candidate[] = [];
     for (const { access, secret } of cleared) {
-      const inUse = this.inUse(access.id);
+      const inUse = this.inUse(state, access.id);
       if (access.concurrencyLimit !== undefined && inUse >= access.concurrencyLimit) continue;
       candidates.push({ access, secret, inUse, headroom: headroom(await this.ports.usage.usage(access.id)) });
     }
@@ -113,11 +136,11 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
     const [chosen] = [...candidates].sort((a, b) => a.inUse - b.inUse || b.headroom - a.headroom);
     if (chosen === undefined) throw new Error('nenhum candidato');
 
-    this.sequence += 1;
+    state.sequence += 1;
     const grantedAt = this.clock.now();
     const lease: ActiveLease = {
       state: 'granted',
-      id: leaseId(`lease-${this.sequence}`),
+      id: leaseId(`lease-${state.sequence}`),
       access: chosen.access.id,
       grantedAt,
       expiresAt: instant(grantedAt + this.ports.settings.leaseTtlMs),
@@ -126,7 +149,7 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
       repository: request.repository,
       task: request.task,
     };
-    this.active.set(lease.id, lease);
+    state.active.push(lease);
     const { state: _, ...fact } = lease;
     this.emit('access-broker:lease-granted', fact);
 
@@ -141,16 +164,22 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
     };
   }
 
-  async returnLease(lease: LeaseGranted): Promise<LeaseReturned | LeaseExpired> {
-    this.sweep();
-    if (!this.active.delete(lease.id)) return { state: 'expired', id: lease.id };
-    this.emit('access-broker:lease-returned', { lease: lease.id, access: lease.access });
-    return { state: 'returned', id: lease.id };
+  returnLease(lease: LeaseGranted): Promise<LeaseReturned | LeaseExpired> {
+    return this.store.transaction(async (state) => {
+      this.sweep(state);
+      const before = state.active.length;
+      state.active = state.active.filter((l) => l.id !== lease.id);
+      if (state.active.length === before) return { state: 'expired', id: lease.id };
+      this.emit('access-broker:lease-returned', { lease: lease.id, access: lease.access });
+      return { state: 'returned', id: lease.id };
+    });
   }
 
-  async leases(): Promise<readonly ActiveLease[]> {
-    this.sweep();
-    return [...this.active.values()];
+  leases(): Promise<readonly ActiveLease[]> {
+    return this.store.transaction(async (state) => {
+      this.sweep(state);
+      return [...state.active];
+    });
   }
 }
 
@@ -158,6 +187,9 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
  * O emprestimo em memoria. A conta escolhida e a livre com mais folga na
  * janela; sem conta livre, a menos ocupada, dividida.
  */
-export function createMemoryAccessBroker(ports: AccessBrokerPorts): IAccessBroker {
-  return new MemoryAccessBroker(ports);
+export function createMemoryAccessBroker(
+  ports: AccessBrokerPorts,
+  store: ILeaseStore = createMemoryLeaseStore(),
+): IAccessBroker {
+  return new MemoryAccessBroker(ports, store);
 }

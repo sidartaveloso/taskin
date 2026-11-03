@@ -1,3 +1,4 @@
+export * from './access-broker.local';
 export * from './inventory.local';
 export * from './machine-probe.local';
 export * from './plan.local';

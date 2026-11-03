@@ -35,8 +35,11 @@ export async function probeSituation(root: string): Promise<SituationView> {
 }
 
 /** O inventario local e o quadro com esta maquina sondada: o `plan` precisa dos dois. */
-export async function probeLocalSituation(root: string): Promise<ProbedSituation> {
-  const repository = path.basename(root);
+export type LocalInventory = Omit<ProbedSituation, 'view'>;
+
+/** O inventario das duas camadas do repositorio em `root`, para a pessoa desta sessao, sem sondar nada. */
+export function openLocalInventory(root: string): LocalInventory {
+  const repository = repositoryId(path.basename(root));
   const clock = { now: () => instant(Date.now()) };
 
   const paths: LocalInventoryPaths = {
@@ -45,10 +48,15 @@ export async function probeLocalSituation(root: string): Promise<ProbedSituation
   };
   const inventory = createLocalInventory(
     { clock, secrets: createEnvSecretStore(), settings: { leaseTtlMs: 60 * 60 * 1000, factTtlMs: FACT_TTL_MS } },
-    { repository: repositoryId(repository), ...paths },
+    { repository, ...paths },
   );
-  const person = personId(os.userInfo().username);
-  const view = await inventory.view(person, repositoryId(repository));
+  return { inventory, person: personId(os.userInfo().username), repository, paths };
+}
+
+export async function probeLocalSituation(root: string): Promise<ProbedSituation> {
+  const clock = { now: () => instant(Date.now()) };
+  const { inventory, person, repository, paths } = openLocalInventory(root);
+  const view = await inventory.view(person, repository);
 
   const probed = await createLocalMachineProbe({
     clock,
@@ -76,5 +84,5 @@ export async function probeLocalSituation(root: string): Promise<ProbedSituation
       ...view.resources,
     ],
   };
-  return { inventory, person, repository: repositoryId(repository), paths, view: withThisMachine };
+  return { inventory, person, repository, paths, view: withThisMachine };
 }
