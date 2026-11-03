@@ -1,6 +1,6 @@
 # 🧩 Task 239 — Consentimento, horario e canais na camada da pessoa
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-7
