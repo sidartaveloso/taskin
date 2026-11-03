@@ -1,7 +1,8 @@
 /**
- * `taskin access` — o emprestimo de credenciais desta maquina: `run` empresta
- * um acesso, roda o comando com o segredo so no ambiente dele e devolve no
- * fim; `status` mostra os emprestimos em aberto, sem segredo.
+ * `taskin access` — os acessos desta maquina: `run` escolhe uma conta, roda o
+ * comando com o segredo so no ambiente dele e, se a conta declara capacidade,
+ * reserva uma vaga e a devolve no fim; `status` mostra as reservas em aberto,
+ * sem segredo.
  */
 
 import { spawn } from 'node:child_process';
@@ -12,6 +13,7 @@ import {
   accessKind,
   createEnvSecretStore,
   createLocalAccessBroker,
+  createLocalRunLedger,
   type DataClass,
   type IAccessBroker,
   instant,
@@ -23,7 +25,7 @@ import { openLocalInventory } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 
 const SENSITIVITIES: readonly DataClass[] = ['public', 'internal', 'sensitive'];
-/** O prazo de um emprestimo: se o processo morre sem devolver, a conta volta sozinha depois disto. */
+/** O prazo de uma reserva: se o processo morre sem devolver, a vaga volta sozinha depois disto. */
 const LEASE_TTL_MS = 60 * 60 * 1000;
 const FACT_TTL_MS = 24 * 60 * 60 * 1000;
 const FORWARDED_SIGNALS: readonly NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP'];
@@ -42,6 +44,7 @@ function openBroker(root: string) {
     usage: { usage: async () => undefined },
     settings: { leaseTtlMs: LEASE_TTL_MS, factTtlMs: FACT_TTL_MS },
     catalog: local.inventory,
+    runs: createLocalRunLedger({ clock }, join(root, '.taskin', 'runs.jsonl')),
   };
   return { ...local, broker: createLocalAccessBroker(ports, leasesFile()) };
 }
@@ -62,7 +65,7 @@ function exitCodeOf(code: number | null, signal: NodeJS.Signals | null): number 
   return 128 + (signal ? constants.signals[signal] : 1);
 }
 
-/** Roda o comando com o ambiente do emprestimo e repassa os sinais; resolve com o codigo de saida. */
+/** Roda o comando com o ambiente do acesso e repassa os sinais; resolve com o codigo de saida. */
 function runChild(command: string[], env: Readonly<Record<string, string>>): Promise<number> {
   return new Promise((resolve) => {
     const [file, ...args] = command as [string, ...string[]];
@@ -83,7 +86,7 @@ function runChild(command: string[], env: Readonly<Record<string, string>>): Pro
   });
 }
 
-async function runWithLease(kind: string, command: string[], options: RunOptions): Promise<void> {
+async function runWithAccess(kind: string, command: string[], options: RunOptions): Promise<void> {
   requireTaskinProject();
   if (command.length === 0) {
     console.error('Nothing to run. Usage: taskin access run <kind> -- <command> [args...]');
@@ -97,32 +100,34 @@ async function runWithLease(kind: string, command: string[], options: RunOptions
 
   const local = openBroker(process.cwd());
   const broker: IAccessBroker = local.broker;
-  const lease = await broker.requestLease(local.person, {
+  const grant = await broker.requestLease(local.person, {
     repository: local.repository,
     task: taskRef(options.task ?? 'manual'),
     kind: accessKind(kind),
     sensitivity,
   });
-  if (lease.state === 'denied') {
-    console.error(`Access denied (${lease.reason.code}): ${lease.reason.detail}`);
+  if (grant.state === 'denied') {
+    console.error(`Access denied (${grant.reason.code}): ${grant.reason.detail}`);
     process.exit(1);
   }
 
-  const name = (await accessNames(local)).get(String(lease.access)) ?? String(lease.access);
+  const name = (await accessNames(local)).get(String(grant.access)) ?? String(grant.access);
   console.error(
-    `Lent "${name}"${lease.shared ? ' (shared with another run)' : ''} until ${new Date(lease.expiresAt).toISOString()}.`,
+    grant.reserved
+      ? `Reserved "${name}"${grant.shared ? ' (shared with another run)' : ''} until ${new Date(grant.expiresAt).toISOString()}.`
+      : `Using "${name}".`,
   );
 
   let code: number;
   try {
-    code = await runChild(command, lease.env);
+    code = await runChild(command, grant.env);
   } finally {
-    await broker.returnLease(lease);
+    if (grant.reserved) await broker.returnLease(grant);
   }
   process.exit(code);
 }
 
-async function showLeases(options: { json?: boolean }): Promise<void> {
+async function showReservations(options: { json?: boolean }): Promise<void> {
   requireTaskinProject();
   const local = openBroker(process.cwd());
   const leases = await local.broker.leases();
@@ -140,7 +145,7 @@ async function showLeases(options: { json?: boolean }): Promise<void> {
     return;
   }
   if (rows.length === 0) {
-    console.log('No open leases.');
+    console.log('No accounts reserved.');
     return;
   }
   for (const r of rows) {
@@ -149,22 +154,28 @@ async function showLeases(options: { json?: boolean }): Promise<void> {
 }
 
 export function registerAccessCommand(program: Command): void {
-  const access = program.command('access').description('🔑 Lend credentials to commands on this machine');
+  const access = program
+    .command('access')
+    .description('🔑 Give commands on this machine the credentials of an account');
 
   access
     .command('run <kind> [command...]')
-    .description('Lend an access of <kind>, run the command with it in its environment, and return it at the end')
+    .description(
+      'Pick an account of <kind>, run the command with its secret in the environment, and, if the account declares capacity (concurrencyLimit), reserve a slot until the command ends',
+    )
     .option('--sensitivity <level>', `What the task shows the model: ${SENSITIVITIES.join(', ')}`, 'public')
     .option('--task <id>', 'The task this run is for')
     .action(async (kind: string, command: string[], options: RunOptions) => {
-      await runWithLease(kind, command, options);
+      await runWithAccess(kind, command, options);
     });
 
   access
     .command('status')
-    .description('The open leases on this machine, by the logical name of each access, without secrets')
+    .description(
+      'The accounts reserved on this machine (those that declare capacity), by logical name, without secrets',
+    )
     .option('--json', 'Output as JSON')
     .action(async (options: { json?: boolean }) => {
-      await showLeases(options);
+      await showReservations(options);
     });
 }

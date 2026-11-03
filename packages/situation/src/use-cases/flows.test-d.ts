@@ -115,7 +115,7 @@ export async function forbiddenPaths(): Promise<void> {
   // @ts-expect-error competencia como texto cru, sem o construtor
   await executor.requestViewpoint(planned, { ...viewpointAsk, expertise: 'design' });
 
-  // @ts-expect-error um pedido de emprestimo no lugar de um ponto de vista
+  // @ts-expect-error um pedido de acesso no lugar de um ponto de vista
   const notAViewpoint: ViewpointId = leaseGranted.id;
 
   void [viewpointAccepted, notAViewpoint];

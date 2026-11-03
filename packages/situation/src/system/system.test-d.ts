@@ -26,7 +26,7 @@ export function eventsAreTypedByTheMap() {
   inventory.on('access-broker:lease-granted', () => undefined);
 
   situation.on('access-broker:lease-granted', (envelope) => {
-    // @ts-expect-error o evento do emprestimo nunca leva o ambiente com o segredo
+    // @ts-expect-error o evento da reserva nunca leva o ambiente com o segredo
     envelope.payload.env;
   });
 }

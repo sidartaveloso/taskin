@@ -51,6 +51,28 @@ beforeEach(() => {
             secret: 'env:SITUATION_TOKEN',
             envVar: 'ANTHROPIC_API_KEY',
           },
+          {
+            kind: 'access',
+            name: 'claude-capped',
+            accessKind: 'llm-capped',
+            secret: 'env:SITUATION_TOKEN',
+            envVar: 'ANTHROPIC_API_KEY',
+            concurrencyLimit: 1,
+          },
+          {
+            kind: 'access',
+            name: 'claude-second',
+            accessKind: 'llm-pair',
+            secret: 'env:SITUATION_TOKEN',
+            envVar: 'ANTHROPIC_API_KEY',
+          },
+          {
+            kind: 'access',
+            name: 'claude-third',
+            accessKind: 'llm-pair',
+            secret: 'env:SITUATION_TOKEN',
+            envVar: 'ANTHROPIC_API_KEY',
+          },
         ],
         restrictPersonalMachines: false,
         clearances: {},
@@ -63,20 +85,49 @@ afterEach(() => {
   for (const dir of [raiz, casa, estado]) rmSync(dir, { recursive: true, force: true });
 });
 
+/** Uma execucao que comecou e nao fechou, no registro de execucoes, na conta de id `access`. */
+const execucaoEmAberto = (access: string, n: number) =>
+  JSON.stringify({
+    state: 'started',
+    id: `run-aberta-${access}-${n}`,
+    repository: 'repo',
+    task: `task-${n}`,
+    estimated: 2,
+    plannedAt: Date.now(),
+    access,
+    startedAt: Date.now(),
+  });
+
+function registrarAbertas(...linhas: string[]): void {
+  mkdirSync(join(raiz, '.taskin'), { recursive: true });
+  writeFileSync(join(raiz, '.taskin', 'runs.jsonl'), `${linhas.join('\n')}\n`);
+}
+
+const contaEscolhida = (stderr: string) => /Using "([^"]+)"/.exec(stderr)?.[1];
+
 describe('taskin access', LENTO, () => {
-  it('run empresta, o comando ve o segredo no ambiente, sai com o codigo do comando e devolve', async () => {
+  it('conta sem capacidade declarada: usa o segredo no ambiente, sai com o codigo do comando e nao grava reserva', async () => {
     const r = await rodar('access', 'run', 'llm', '--task', '7', '--', 'node', '-e', conferirSegredo(3));
 
     expect(r.code).toBe(3);
-    expect(r.stderr).toContain('claude-main');
-    expect(existsSync(leases())).toBe(true);
+    expect(r.stderr).toContain('Using "claude-main"');
+    expect(r.stderr).not.toContain('Reserved');
+    expect(existsSync(leases())).toBe(false);
+    expect((await rodar('access', 'status')).stdout).toContain('No accounts reserved');
+  });
+
+  it('conta com capacidade declarada: reserva a vaga, mostra no status e devolve no fim', async () => {
+    const r = await rodar('access', 'run', 'llm-capped', '--task', '7', '--', 'node', '-e', conferirSegredo(3));
+
+    expect(r.code).toBe(3);
+    expect(r.stderr).toContain('Reserved "claude-capped"');
     expect(JSON.parse(readFileSync(leases(), 'utf8')).active).toEqual([]);
   });
 
-  it('o segredo nunca aparece no stdout, no stderr nem no leases.json, e status mostra o nome logico', async () => {
+  it('o segredo nunca aparece no stdout, no stderr nem no leases.json, e status mostra a reserva pelo nome logico', async () => {
     const filho = spawn(
       'node',
-      [CLI, 'access', 'run', 'llm', '--task', '42', '--', 'node', '-e', 'setTimeout(() => {}, 20000)'],
+      [CLI, 'access', 'run', 'llm-capped', '--task', '42', '--', 'node', '-e', 'setTimeout(() => {}, 20000)'],
       { cwd: raiz, env: ambiente() },
     );
     let saidaDoFilho = '';
@@ -88,24 +139,68 @@ describe('taskin access', LENTO, () => {
 
     const status = await rodar('access', 'status');
     const json = await rodar('access', 'status', '--json');
+    const cheia = await rodar('access', 'run', 'llm-capped', '--', 'node', '-e', '0');
     const arquivo = readFileSync(leases(), 'utf8');
     const saiu = new Promise<number | null>((resolve) => filho.on('exit', (code) => resolve(code)));
     filho.kill('SIGINT');
     const codigo = await saiu;
 
-    expect(status.stdout).toContain('claude-main');
+    expect(status.stdout).toContain('claude-capped');
     expect(status.stdout).toContain('task 42');
-    expect(JSON.parse(json.stdout)).toMatchObject([{ access: 'claude-main', task: '42', shared: false }]);
+    expect(JSON.parse(json.stdout)).toMatchObject([{ access: 'claude-capped', task: '42', shared: false }]);
+    expect(cheia.code).toBe(1);
+    expect(cheia.stderr).toContain('all-at-provider-limit');
     for (const texto of [status.stdout, status.stderr, json.stdout, json.stderr, arquivo, saidaDoFilho]) {
       expect(texto).not.toContain(SEGREDO);
     }
     expect(codigo).toBe(130);
     expect(JSON.parse(readFileSync(leases(), 'utf8')).active).toEqual([]);
-    expect((await rodar('access', 'status')).stdout).toContain('No open leases');
+    expect((await rodar('access', 'status')).stdout).toContain('No accounts reserved');
   });
 
-  it('o comando que falha tambem devolve o emprestimo', async () => {
-    const r = await rodar('access', 'run', 'llm', '--', 'node', '-e', 'process.exit(1)');
+  it('o segredo de uma conta sem capacidade declarada tambem nao aparece, e nenhum arquivo de reserva nasce', async () => {
+    const r = await rodar(
+      'access',
+      'run',
+      'llm',
+      '--',
+      'node',
+      '-e',
+      'console.log(process.env.ANTHROPIC_API_KEY.length)',
+    );
+
+    expect(r.code).toBe(0);
+    expect(r.stdout.trim()).toBe(String(SEGREDO.length));
+    expect(r.stdout + r.stderr).not.toContain(SEGREDO);
+    expect(existsSync(leases())).toBe(false);
+  });
+
+  it('entre duas contas sem capacidade declarada, a rodada vai a que tem menos execucoes em aberto no registro', async () => {
+    // Os ids do inventario seguem a ordem das ofertas: resource-3 e claude-second, resource-4 e claude-third.
+    const escolha = async () =>
+      contaEscolhida((await rodar('access', 'run', 'llm-pair', '--', 'node', '-e', '0')).stderr);
+
+    const semNada = await escolha();
+    registrarAbertas(execucaoEmAberto('resource-3', 1));
+    const umaNaPrimeira = await escolha();
+    registrarAbertas(execucaoEmAberto('resource-4', 1));
+    const umaNaSegunda = await escolha();
+    registrarAbertas(
+      execucaoEmAberto('resource-3', 1),
+      execucaoEmAberto('resource-3', 2),
+      execucaoEmAberto('resource-4', 1),
+    );
+    const duasContraUma = await escolha();
+
+    expect(semNada).toBe('claude-second');
+    expect(umaNaPrimeira).toBe('claude-third');
+    expect(umaNaSegunda).toBe('claude-second');
+    expect(duasContraUma).toBe('claude-third');
+    expect(existsSync(leases())).toBe(false);
+  });
+
+  it('o comando que falha tambem devolve a reserva', async () => {
+    const r = await rodar('access', 'run', 'llm-capped', '--', 'node', '-e', 'process.exit(1)');
 
     expect(r.code).toBe(1);
     expect(JSON.parse(readFileSync(leases(), 'utf8')).active).toEqual([]);

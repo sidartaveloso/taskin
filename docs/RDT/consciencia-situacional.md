@@ -317,20 +317,26 @@ cota e tempo de build e de teste de cada máquina. Os resultados entram como
 fatos sondados, com data. Calibrar gasta cota, então roda com os recursos
 ociosos ou quando um fato expira.
 
-**O empréstimo de credenciais.** Para paralelizar, a pessoa pode ter mais de
+**O acesso às contas e a reserva.** Para paralelizar, a pessoa pode ter mais de
 uma conta do mesmo tipo de acesso:
 
 - Cada conta é um acesso no inventário da pessoa, com cota e janela próprias.
   O inventário guarda a referência ao segredo (gerenciador de segredos,
   keychain, variável de ambiente), nunca o valor.
-- Quem executa (o sandcastle) pede um acesso pelo tipo. O daemon empresta a
-  conta com mais folga, lê o segredo e entrega o valor só no ambiente daquele
-  processo, sem gravar em disco. No fim, ou no prazo do empréstimo, a conta
-  volta.
-- O empréstimo espalha os lotes pelas contas livres. Sem conta livre, divide
-  a que existe: com uma conta só, as duas máquinas usam a mesma, e o custo é a
-  janela acabar mais cedo, que a projeção mostra. O único limite rígido é o do
-  provedor, quando declarado.
+- Quem executa (o sandcastle) pede um acesso pelo tipo. O taskin escolhe a
+  conta liberada para a sensibilidade do dado, com folga na cota e, entre as
+  que sobram, a menos ocupada (as execuções em aberto no registro de
+  execuções: começaram e não terminaram), lê o segredo e entrega o valor só no
+  ambiente daquele processo, sem gravar em disco.
+- Nem todo recurso precisa de reserva. Uma LLM que aceita várias sessões é só
+  escolhida e entregue: nada é gravado, não há prazo nem devolução, e duas
+  máquinas podem usar a mesma conta, com o custo de a janela acabar mais
+  cedo, que a projeção mostra. A **reserva** (a vaga ocupada, com prazo e
+  devolução) só existe quando o recurso declara capacidade: o
+  `concurrencyLimit` de uma conta, o mesmo conceito da `concurrency` das
+  máquinas do escalonador. Com a capacidade cheia o pedido é negado, com o
+  motivo; ocupar uma vaga que outra execução já ocupa marca a reserva como
+  `shared`. No fim, ou no prazo da reserva, a vaga volta.
 - Somar o consumo de uma conta dividida pede que as máquinas se vejam (a
   percepção viva). Até lá, a projeção dela vale como mínimo.
 - Quando todas as contas estão no limite, o escalonador espera a janela
@@ -357,7 +363,7 @@ Uma pessoa não é uma máquina:
 
 | | Máquina ou LLM | Pessoa |
 | --- | --- | --- |
-| Como se usa | o taskin empresta e executa | o taskin **pede**, e a pessoa pode recusar |
+| Como se usa | o taskin escolhe e executa | o taskin **pede**, e a pessoa pode recusar |
 | Custo | dinheiro, cota, tempo | **atenção**: cada pedido interrompe alguém |
 | Latência | segundos a minutos | horas a dias |
 | Disponibilidade | ligada ou desligada | horário, presença e a carga que a própria pessoa declara |
@@ -365,7 +371,7 @@ Uma pessoa não é uma máquina:
 
 **O pedido de ponto de vista.** Uma task, ou uma etapa dela, pode exigir uma
 opinião humana: `- Requires: review:design`, `review:electronics`. O pedido é
-um fluxo em typestate, como o empréstimo:
+um fluxo em typestate, como a reserva:
 `ViewpointRequested → ViewpointAccepted | ViewpointDeclined → ViewpointDelivered`,
 e vence sozinho no prazo. Leva a pergunta, o material (link, captura,
 esquemático) e o prazo; a resposta volta registrada na task, como evidência.
@@ -411,16 +417,17 @@ mesma suíte. O padrão `contractTests(create)` de
   classifica acessos) e `IExecutorActor` (quem roda a task: pede um acesso,
   registra a execução).
 - **Fluxos em typestate**, com o caminho errado sem compilar:
-  `LeaseGranted | LeaseDenied → LeaseReturned | LeaseExpired` e
-  `RunPlanned → RunStarted → RunFinished`, em que fechar exige a dificuldade
-  encontrada. O pedido de empréstimo é uma entrada, não um estado: ele já
-  volta concedido ou negado, com o motivo.
+  `LeaseGranted → LeaseReturned | LeaseExpired` (só a reserva se devolve; o
+  acesso sem reserva, `AccessGranted`, não tem o que devolver e o tipo não
+  deixa tentar) e `RunPlanned → RunStarted → RunFinished`, em que fechar exige
+  a dificuldade encontrada. O pedido de acesso é uma entrada, não um estado:
+  ele já volta concedido, com ou sem reserva, ou negado, com o motivo.
 - **Portas**: o relógio, o gerenciador de segredos, a sondagem da máquina e o
   consumo informado pelo provedor.
 - **Cenários**: uma máquina e uma conta; duas máquinas e duas contas; duas
   máquinas e uma conta; repositório que restringe as máquinas pessoais.
 - **Prova negativa** em `*.test-d.ts`, com `@ts-expect-error`: devolver um
-  empréstimo que não foi concedido; fechar uma execução sem a dificuldade
+  reserva que não foi concedida; devolver um acesso que não tem reserva; fechar uma execução sem a dificuldade
   encontrada; primitivo solto no lugar de um tipo marcado. Mandar dado
   sensível a um acesso que não o cobre depende de dados, não de tipos, e por
   isso é um caso da suíte (o pedido volta negado com o motivo).
@@ -434,7 +441,7 @@ mesma suíte. O padrão `contractTests(create)` de
 - `IPluginSituation<TEvents>`: chave (prefixo dos eventos), nome, descrição,
   versão, ciclo de vida (`start`, `stop`, `running`) e `on`/`off`.
 - Os plugins: `IInventory` (as duas camadas, liberações, restrições e fatos),
-  `IProbe` (sondagem e calibração), `IAccessBroker` (o empréstimo),
+  `IProbe` (sondagem e calibração), `IAccessBroker` (o acesso e a reserva),
   `IRunLedger` (consumo e dificuldade estimada e encontrada), `IScheduler` (a
   função objetivo e o plano sugerido), `IChannels` (aviso por presença),
   `IPeople` (competência, consentimento, disponibilidade e os pedidos de
@@ -484,8 +491,9 @@ marcado com construtor (`AccessId`, `TokenCount`, `Instant`).
 - **Como**: a combinação de recursos sugerida para uma task.
 - **Acesso**: uma credencial de LLM com dono, custo, cota, janela e
   classificação de dados.
-- **Empréstimo**: o acesso entregue a uma execução, com prazo, e devolvido no
-  fim.
+- **Reserva**: a vaga que uma execução ocupa numa conta que declara capacidade
+  (`concurrencyLimit`), com prazo, devolvida no fim. Conta sem capacidade
+  declarada só é entregue, sem reserva.
 - **Requisito fixo / requisito móvel**: o que não se leva a uma máquina e o
   que se leva, com custo de preparo.
 - **Calibração**: a mesma task pequena rodada em todos os recursos para
@@ -524,7 +532,7 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
    - Entram a carga das máquinas, a cota dos modelos e a bateria.
 6. **Escalonamento.**
    - O registro de execução, com a dificuldade estimada e a encontrada.
-   - Os acessos a LLM no inventário e o empréstimo de credenciais pelo daemon.
+   - Os acessos a LLM no inventário e a escolha da conta, com reserva onde há capacidade declarada, pelo daemon.
    - A calibração em broadcast.
    - A função objetivo pura e a heurística gulosa, com o plano sugerido no
      `taskin status` e lido pelo sandcastle.
@@ -573,10 +581,11 @@ verdade:
 | 223 | O `taskin list --where` diz onde cada task roda | `situacao-lote-5` | 3 |
 | 224 | As tasks abertas trocam o nome da máquina pelo `Requires` | `situacao-lote-5` | 2 |
 | 225 | O `taskin plan`, o escalonador sobre o que existe de verdade | `situacao-lote-6` | 4 |
-| 226 | O empréstimo local e o `taskin access run` | `situacao-lote-6` | 4 |
+| 226 | O acesso local e o `taskin access run` | `situacao-lote-6` | 4 |
+| 231 | Só recurso com capacidade declarada gera reserva | `situacao-lote-6` | 4 |
 | 229 | Decidir os pesos, o horizonte, a presença e o silêncio | interativa | 2 |
 | 228 | Decidir a percepção viva | interativa | 3 |
-| 227 | O sandcastle usa o plano, o empréstimo e o registro | interativa | 4 |
+| 227 | O sandcastle usa o plano, o acesso à conta e o registro | interativa | 4 |
 | 230 | O esqueleto do taskinboard em Tauri | interativa | 4 |
 
 - **O lote 5 roda com o modelo mais barato e o lote 6 com o mais forte**, pela
@@ -600,7 +609,7 @@ verdade:
   em uso.
 - **Horário de silêncio**, e quem pode furá-lo.
 - **Os pesos λ da função objetivo e o horizonte** do escalonamento.
-- **Quais gerenciadores de segredo entram primeiro** no empréstimo.
+- **Quais gerenciadores de segredo entram primeiro** no acesso às contas.
 - **Quem classifica a sensibilidade** de uma task e de um repositório.
 - **Quais repositórios o daemon e o board atendem.** Os dois são um por
   máquina, e precisam de uma lista de repositórios, que a task-200 ainda não

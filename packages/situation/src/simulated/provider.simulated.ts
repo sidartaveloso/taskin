@@ -17,8 +17,8 @@ export class SimulatedAccountUnknownError extends Error {
 }
 
 /**
- * Um provedor de mentira, com janelas e limites falsos: o escalonador e o
- * emprestimo sao testados contra ele sem gastar cota de verdade. As janelas
+ * Um provedor de mentira, com janelas e limites falsos: o escalonador, o
+ * acesso e a reserva sao testados contra ele sem gastar cota de verdade. As janelas
  * contam a partir do instante em que o provedor nasce, pelo relogio injetado.
  */
 export class SimulatedProvider implements IProviderUsagePort {
