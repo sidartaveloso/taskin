@@ -2,6 +2,7 @@
  * list command - List the open tasks in the project, or every task with --all
  */
 
+import { placeTasks, type TaskPlacement } from '@opentask/taskin-situation';
 import {
   agruparTarefas,
   filterCriteriaCliOptions,
@@ -15,6 +16,7 @@ import {
 import type { ListTasksOptions, Task, TaskStatus, TaskType } from '@opentask/taskin-types';
 import path from 'path';
 import { colors, printHeader } from '../lib/colors.js';
+import { probeSituation } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
@@ -39,6 +41,10 @@ export const listCommand = defineCommand({
     {
       flags: '--json',
       description: 'Print the tasks as JSON, for other tools to consume',
+    },
+    {
+      flags: '--where',
+      description: 'Say whether each task runs on this machine, or what is missing (probes this machine)',
     },
   ],
   handler: async (filter: string | undefined, options: ListTasksOptions) => {
@@ -88,11 +94,11 @@ function totaisPorGrupo(tasks: readonly Task[]): Record<string, number> {
  */
 interface GrupoEmJson {
   group: { id: string; name: string | undefined; parentId?: string; hidden: number };
-  tasks: ReturnType<typeof summarizeTask>[];
+  tasks: Record<string, unknown>[];
   groups: GrupoEmJson[];
 }
 
-function grupoEmJson(no: GrupoDaListagem): GrupoEmJson {
+function grupoEmJson(no: GrupoDaListagem, resumir: (t: Task) => Record<string, unknown>): GrupoEmJson {
   return {
     group: {
       id: no.groupId,
@@ -100,9 +106,24 @@ function grupoEmJson(no: GrupoDaListagem): GrupoEmJson {
       ...(no.parentId !== undefined && { parentId: no.parentId }),
       hidden: no.hidden,
     },
-    tasks: no.tasks.map(summarizeTask),
-    groups: no.groups.map(grupoEmJson),
+    tasks: no.tasks.map(resumir),
+    groups: no.groups.map((g) => grupoEmJson(g, resumir)),
   };
+}
+
+/** Por id: `runsHere` e o que falta, a partir de `Requires` contra esta maquina. */
+async function ondeRodam(tasks: readonly Task[]): Promise<Map<string, TaskPlacement>> {
+  const view = await probeSituation(process.cwd());
+  const lugares = placeTasks(
+    view,
+    tasks.map((t) => t.requires ?? []),
+  );
+  return new Map(tasks.flatMap((t, i) => (lugares[i] ? [[String(t.id), lugares[i]] as const] : [])));
+}
+
+function textoDeOnde(lugar: TaskPlacement | undefined): string {
+  if (!lugar) return '';
+  return lugar.runsHere ? `✓ ${colors.success('aqui')}` : `✗ ${colors.error(`falta ${lugar.missing.join(', ')}`)}`;
 }
 
 async function listTasks(filter: string | undefined, options: ListTasksOptions): Promise<void> {
@@ -142,6 +163,13 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
 
   const filteredTasks = ordenarTarefas(filterTasks(tasks, criteria), options.sort);
 
+  /*
+   * A sondagem so roda com `--where`, e uma vez por comando; sem a flag o
+   * `list` nao toca a maquina.
+   */
+  const onde = options.where === true ? await ondeRodam(filteredTasks) : undefined;
+  const resumir = (t: Task) => ({ ...summarizeTask(t), ...onde?.get(String(t.id)) });
+
   if (comoJson) {
     /*
      * A saida de maquina leva os grupos, e nao tarefas planas.
@@ -157,7 +185,7 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
      */
     const { nomes, pais } = await dadosDosGrupos(taskProvider);
     const nos = agruparTarefas(filteredTasks, nomes, totaisPorGrupo(tasks), pais).map((no) =>
-      no.kind === 'task' ? summarizeTask(no.task) : grupoEmJson(no),
+      no.kind === 'task' ? resumir(no.task) : grupoEmJson(no, resumir),
     );
 
     console.log(JSON.stringify(nos, null, 2));
@@ -185,9 +213,9 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
 
   if (emArvore) {
     const { nomes, pais } = await dadosDosGrupos(taskProvider);
-    imprimirNos(agruparTarefas(filteredTasks, nomes, totaisPorGrupo(tasks), pais), 0);
+    imprimirNos(agruparTarefas(filteredTasks, nomes, totaisPorGrupo(tasks), pais), 0, onde);
   } else {
-    for (const task of filteredTasks) imprimirTarefa(task, 0);
+    for (const task of filteredTasks) imprimirTarefa(task, 0, onde);
   }
 
   console.log();
@@ -210,20 +238,20 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
   console.log();
 }
 
-function imprimirTarefa(task: Task, nivel: number): void {
+function imprimirTarefa(task: Task, nivel: number, onde?: Map<string, TaskPlacement>): void {
   const statusColor = getStatusColor(task.status);
   const typeColor = getTypeColor(task.type);
 
   console.log(
-    `${'  '.repeat(nivel)}${colors.info(task.id.padEnd(15))} ${statusColor(task.status.padEnd(15))} ${typeColor(task.type.padEnd(12))} ${colors.secondary((task.assignee?.name || 'unassigned').padEnd(15))} ${colors.normal(task.title)}`,
+    `${'  '.repeat(nivel)}${colors.info(task.id.padEnd(15))} ${statusColor(task.status.padEnd(15))} ${typeColor(task.type.padEnd(12))} ${colors.secondary((task.assignee?.name || 'unassigned').padEnd(15))} ${colors.normal(task.title)}${onde ? `  ${textoDeOnde(onde.get(String(task.id)))}` : ''}`,
   );
 }
 
 /** Os nos na ordem da fila; um grupo vira cabecalho, e o que tem dentro desce um nivel. */
-function imprimirNos(nos: readonly NoDaListagem[], nivel: number): void {
+function imprimirNos(nos: readonly NoDaListagem[], nivel: number, onde?: Map<string, TaskPlacement>): void {
   for (const no of nos) {
     if (no.kind === 'task') {
-      imprimirTarefa(no.task, nivel);
+      imprimirTarefa(no.task, nivel, onde);
       continue;
     }
 
@@ -231,7 +259,7 @@ function imprimirNos(nos: readonly NoDaListagem[], nivel: number): void {
     console.log(
       `${'  '.repeat(nivel)}${colors.highlight(`\u25B8 ${no.groupName ?? no.groupId} (${no.groupId})`)}${escondidas}`,
     );
-    imprimirNos(no.items, nivel + 1);
+    imprimirNos(no.items, nivel + 1, onde);
   }
 }
 

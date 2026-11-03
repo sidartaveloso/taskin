@@ -5,24 +5,14 @@
 
 import {
   buildStatusReport,
-  capability,
-  createEnvSecretStore,
-  createLocalInventory,
-  createLocalMachineProbe,
-  type FactView,
-  instant,
-  personId,
   renderStatus,
-  repositoryId,
-  resourceId,
-  type SituationView,
   STATUS_FORMATS,
   type StatusFormat,
   type StatusTaskInput,
 } from '@opentask/taskin-situation';
 import type { Task } from '@opentask/taskin-types';
-import os from 'os';
 import path from 'path';
+import { probeSituation } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
@@ -33,8 +23,6 @@ interface StatusOptions {
 }
 
 const OPEN = new Set(['pending', 'in-progress', 'paused', 'in-review', 'blocked']);
-const FACT_TTL_MS = 24 * 60 * 60 * 1000;
-const THIS_MACHINE = 'this-machine';
 
 export const statusCommand = defineCommand({
   name: 'status',
@@ -64,45 +52,8 @@ async function showStatus(options: StatusOptions): Promise<void> {
     process.exit(1);
   }
 
-  const root = process.cwd();
-  const repository = path.basename(root);
-  const clock = { now: () => instant(Date.now()) };
-
-  const inventory = createLocalInventory(
-    { clock, secrets: createEnvSecretStore(), settings: { leaseTtlMs: 60 * 60 * 1000, factTtlMs: FACT_TTL_MS } },
-    {
-      repository: repositoryId(repository),
-      repositoryConfig: path.join(root, '.taskin.json'),
-      personalResources: path.join(os.homedir(), '.config', 'taskin', 'resources.json'),
-    },
-  );
-  const view = await inventory.view(personId(os.userInfo().username), repositoryId(repository));
-
-  const probed = await createLocalMachineProbe({
-    clock,
-    machine: resourceId(THIS_MACHINE),
-    sandcastleImage: 'sandcastle:taskin',
-  }).probe(resourceId(THIS_MACHINE));
-  const facts: FactView[] = (probed?.capabilities ?? []).map((c) => ({
-    capability: capability(c),
-    origin: 'probed',
-    observedAt: probed?.observedAt,
-    expired: false,
-  }));
-  const withThisMachine: SituationView = {
-    ...view,
-    resources: [
-      {
-        id: resourceId(THIS_MACHINE),
-        name: THIS_MACHINE,
-        kind: 'machine',
-        layer: 'personal',
-        available: probed !== undefined,
-        facts,
-      },
-      ...view.resources,
-    ],
-  };
+  const repository = path.basename(process.cwd());
+  const withThisMachine = await probeSituation(process.cwd());
 
   const { provider } = await resolveTaskProvider();
   const tasks: Task[] = await provider.getAllTasks();

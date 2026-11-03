@@ -53,6 +53,8 @@ import type {
 export interface ListTasksOptions {
   /** Imprime as tarefas como JSON, para outra ferramenta consumir. */
   json?: boolean;
+  /** Diz, para cada tarefa, se ela roda nesta maquina ou o que falta (sonda a maquina). */
+  where?: boolean;
   assignee?: string;
   /**
    * Tipados pelo dominio, e nao como `string` solta: quem filtra compara com
