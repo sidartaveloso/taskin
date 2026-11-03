@@ -62,8 +62,8 @@ function systemRules(situation: Omit<ISituation, 'flows'>): FlowRule<SituationEv
 export function createMemorySituation(ports: SystemPorts): ISituation {
   const inventory = createMemoryInventory(ports);
   const probe = createMemoryProbe(ports);
-  const accessBroker = createMemoryAccessBroker({ ...ports, catalog: inventory });
   const runLedger = createMemoryRunLedger(ports);
+  const accessBroker = createMemoryAccessBroker({ ...ports, catalog: inventory, runs: runLedger });
   const scheduler = createMemoryScheduler(ports);
   const channels = createMemoryChannels(ports);
   const people = createMemoryPeople(ports);
@@ -190,7 +190,7 @@ export function memoryActorsOf(ports: Pick<SituationPorts, 'clock' | 'people'>):
         requestLease: (request) => situation.accessBroker.requestLease(person, request),
         returnLease: (lease) => situation.accessBroker.returnLease(lease),
         planRun: (repository, task, estimated) => situation.runLedger.planRun(repository, task, estimated),
-        startRun: (run, lease) => situation.runLedger.startRun(run, lease.access),
+        startRun: (run, access) => situation.runLedger.startRun(run, access.access),
         finishRun: (run, outcome) => situation.runLedger.finishRun(run, outcome),
         requestViewpoint: (run, ask) => situation.people.requestViewpoint(origin(person, run), ask),
         followViewpoint: (request) => situation.people.follow(request),

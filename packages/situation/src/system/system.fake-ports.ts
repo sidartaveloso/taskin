@@ -8,6 +8,7 @@ import {
   taskRef,
 } from '../use-cases/branded';
 import { createFakePorts, DEFAULT_TEST_SETTINGS, type FakePorts } from '../use-cases/fake-ports';
+import type { RunStarted } from '../use-cases/flows.types';
 import type { SituationSettings } from '../use-cases/ports.types';
 import { type EnvelopeOf, type EventHandler, eventId } from './envelope';
 import { pluginKey, pluginVersion } from './plugin.types';

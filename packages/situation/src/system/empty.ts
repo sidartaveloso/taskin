@@ -82,7 +82,11 @@ export const createEmptyAccessBroker = (): IAccessBroker => {
   const key = pluginKey('access-broker');
   const op = (name: string) => rejectNotImplemented(`${key}.${name}`);
   return Object.assign(
-    emptyBase(key, 'Access broker', 'Lends LLM accounts to runs, with the secret only in the run environment'),
+    emptyBase(
+      key,
+      'Access broker',
+      'Picks LLM accounts for runs, with the secret only in the run environment; reserves a slot only where the account declares capacity',
+    ),
     {
       requestLease: op('requestLease'),
       returnLease: op('returnLease'),

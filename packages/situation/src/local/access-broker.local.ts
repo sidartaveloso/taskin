@@ -76,15 +76,18 @@ function readState(file: string): LeaseState {
 }
 
 /**
- * Os emprestimos num arquivo JSON com trava: cada operacao pega a trava, le o
- * arquivo, decide e grava (num temporario renomeado por cima), e solta.
+ * As reservas num arquivo JSON com trava: cada operacao pega a trava, le o
+ * arquivo, decide e solta. So grava (num temporario renomeado por cima) se o
+ * estado mudou: sem reserva a guardar, o arquivo nem nasce.
  */
 export function createFileLeaseStore(file: string, options: FileLockOptions = {}): ILeaseStore {
   return {
     transaction: (work) =>
       withFileLock(`${file}.lock`, options, async () => {
         const state = readState(file);
+        const before = JSON.stringify(state);
         const result = await work(state);
+        if (JSON.stringify(state) === before) return result;
         const temporary = `${file}.${process.pid}.tmp`;
         writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
         renameSync(temporary, file);
@@ -94,10 +97,11 @@ export function createFileLeaseStore(file: string, options: FileLockOptions = {}
 }
 
 /**
- * O emprestimo local: o mesmo comportamento da memoria, com o estado em
- * `leasesFile` (o `leases.json` do diretorio de estado), para processos
- * diferentes da mesma maquina dividirem as contas. O arquivo so guarda o
- * nome logico do acesso e os prazos, nunca o segredo.
+ * O access broker local: o mesmo comportamento da memoria, com o estado das
+ * reservas em `leasesFile` (o `leases.json` do diretorio de estado), para
+ * processos diferentes da mesma maquina dividirem as vagas das contas que
+ * declaram capacidade. O arquivo so guarda o nome logico do acesso e os
+ * prazos, nunca o segredo; conta sem capacidade declarada nao grava nada.
  */
 export function createLocalAccessBroker(
   ports: AccessBrokerPorts,

@@ -68,7 +68,7 @@ function runsOpenOn(ports: FakePluginPorts, access: LendableAccess, count: numbe
 
 export const ACCESS_BROKER_CONTRACT_CASES: readonly PluginContractCase<IAccessBroker>[] = [
   ...lifecycleCases<AccessBrokerEvents, IAccessBroker>(async (broker, ports) => {
-    anaHas(ports, 'conta-a', { concurrencyLimit: 1 });
+    anaHas(ports, 'conta-a', { concurrencyLimit: 2 });
     await broker.requestLease(ANA, request());
     return 'access-broker:lease-granted';
   }, 'access-broker:lease-granted'),

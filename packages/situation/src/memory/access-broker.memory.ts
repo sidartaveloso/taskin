@@ -7,7 +7,14 @@ import type {
   LendableAccess,
 } from '../system/plugins/access-broker/access-broker.types';
 import { covers, type Instant, instant, leaseId, type PersonId, type ResourceId } from '../use-cases/branded';
-import type { LeaseDenied, LeaseExpired, LeaseGranted, LeaseRequest, LeaseReturned } from '../use-cases/flows.types';
+import type {
+  AccessGrant,
+  LeaseDenied,
+  LeaseExpired,
+  LeaseGranted,
+  LeaseRequest,
+  LeaseReturned,
+} from '../use-cases/flows.types';
 import type { UsageReading } from '../use-cases/ports.types';
 import { MemoryPlugin } from './plugin.memory';
 
@@ -32,19 +39,23 @@ function headroom(reading: UsageReading | undefined): number {
 interface Candidate {
   readonly access: LendableAccess;
   readonly secret: string;
-  readonly inUse: number;
+  /** As reservas em curso nesta conta. Zero para a conta sem capacidade declarada. */
+  readonly held: number;
+  /** Quanto a conta esta ocupada: as execucoes em aberto no registro de execucoes. */
+  readonly busy: number;
   readonly headroom: number;
 }
 
-/** O que o emprestimo guarda: o contador dos ids e os emprestimos em curso, nunca o segredo. */
+/** O que a reserva guarda: o contador dos ids e as reservas em curso, nunca o segredo. */
 export interface LeaseState {
   sequence: number;
   active: ActiveLease[];
 }
 
 /**
- * Onde o estado dos emprestimos mora. Cada operacao le, decide e grava dentro
- * de uma transacao: na memoria e so a variavel; no disco, o arquivo com trava.
+ * Onde o estado das reservas mora. Cada operacao le, decide e grava dentro de
+ * uma transacao: na memoria e so a variavel; no disco, o arquivo com trava.
+ * So as contas com capacidade declarada passam a ter o que guardar aqui.
  */
 export interface ILeaseStore {
   transaction<T>(work: (state: LeaseState) => Promise<T>): Promise<T>;
@@ -58,7 +69,8 @@ export function createMemoryLeaseStore(): ILeaseStore {
 class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAccessBroker {
   readonly key = pluginKey('access-broker');
   readonly name = 'Access broker';
-  readonly description = 'Lends LLM accounts to runs, with the secret only in the run environment';
+  readonly description =
+    'Picks LLM accounts for runs, with the secret only in the run environment; reserves a slot only where the account declares capacity';
 
   constructor(
     private readonly ports: AccessBrokerPorts,
@@ -67,7 +79,7 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
     super(ports.clock);
   }
 
-  /** Tira os emprestimos vencidos; ligado, cada um vira evento. */
+  /** Tira as reservas vencidas; ligado, cada uma vira evento. */
   private sweep(state: LeaseState): void {
     const now = this.clock.now();
     const expired = state.active.filter((l) => now > l.expiresAt);
@@ -77,7 +89,7 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
     }
   }
 
-  private inUse(state: LeaseState, access: ResourceId): number {
+  private held(state: LeaseState, access: ResourceId): number {
     return state.active.filter((l) => l.access === access).length;
   }
 
@@ -92,11 +104,11 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
     return { state: 'denied', reason };
   }
 
-  requestLease(person: PersonId, request: LeaseRequest): Promise<LeaseGranted | LeaseDenied> {
-    return this.store.transaction((state) => this.lend(state, person, request));
+  requestLease(person: PersonId, request: LeaseRequest): Promise<AccessGrant | LeaseDenied> {
+    return this.store.transaction((state) => this.pick(state, person, request));
   }
 
-  private async lend(state: LeaseState, person: PersonId, request: LeaseRequest): Promise<LeaseGranted | LeaseDenied> {
+  private async pick(state: LeaseState, person: PersonId, request: LeaseRequest): Promise<AccessGrant | LeaseDenied> {
     this.sweep(state);
     const listed = await this.ports.catalog.accesses(person, request.repository, request.kind);
 
@@ -120,31 +132,47 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
       });
     }
 
+    const openRuns = await this.ports.runs.openRuns();
     const candidates: Candidate[] = [];
     for (const { access, secret } of cleared) {
-      const inUse = this.inUse(state, access.id);
-      if (access.concurrencyLimit !== undefined && inUse >= access.concurrencyLimit) continue;
-      candidates.push({ access, secret, inUse, headroom: headroom(await this.ports.usage.usage(access.id)) });
+      const reserved = this.held(state, access.id);
+      if (access.concurrencyLimit !== undefined && reserved >= access.concurrencyLimit) continue;
+      const open = openRuns.filter((r) => r.access === access.id).length;
+      candidates.push({
+        access,
+        secret,
+        held: reserved,
+        // Uma reserva ainda sem execucao comecada tambem ocupa a conta; depois que a execucao comeca, e a mesma vaga.
+        busy: access.concurrencyLimit === undefined ? open : Math.max(open, reserved),
+        headroom: headroom(await this.ports.usage.usage(access.id)),
+      });
     }
     if (candidates.length === 0) {
       return this.deny(person, request, {
         code: 'all-at-provider-limit',
-        detail: `todos os acessos ${request.kind} estao no limite que o provedor declara`,
+        detail: `todos os acessos ${request.kind} declaram capacidade e estao com todas as vagas reservadas`,
       });
     }
 
-    const [chosen] = [...candidates].sort((a, b) => a.inUse - b.inUse || b.headroom - a.headroom);
+    const [chosen] = [...candidates].sort((a, b) => a.busy - b.busy || b.headroom - a.headroom);
     if (chosen === undefined) throw new Error('nenhum candidato');
+
+    const env = { [chosen.access.envVar]: chosen.secret };
+    // Sem capacidade declarada nao ha vaga a ocupar: o segredo vai, e nada e gravado.
+    if (chosen.access.concurrencyLimit === undefined) {
+      return { state: 'granted', reserved: false, access: chosen.access.id, env };
+    }
 
     state.sequence += 1;
     const grantedAt = this.clock.now();
     const lease: ActiveLease = {
       state: 'granted',
+      reserved: true,
       id: leaseId(`lease-${state.sequence}`),
       access: chosen.access.id,
       grantedAt,
       expiresAt: instant(grantedAt + this.ports.settings.leaseTtlMs),
-      shared: chosen.inUse > 0,
+      shared: chosen.held > 0,
       person,
       repository: request.repository,
       task: request.task,
@@ -155,9 +183,10 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
 
     return {
       state: 'granted',
+      reserved: true,
       id: lease.id,
       access: lease.access,
-      env: { [chosen.access.envVar]: chosen.secret },
+      env,
       grantedAt: lease.grantedAt,
       expiresAt: lease.expiresAt,
       shared: lease.shared,
@@ -184,8 +213,9 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
 }
 
 /**
- * O emprestimo em memoria. A conta escolhida e a livre com mais folga na
- * janela; sem conta livre, a menos ocupada, dividida.
+ * O access broker em memoria. Entre as contas liberadas, escolhe a menos
+ * ocupada (as execucoes em aberto no registro), e a de mais folga na janela
+ * quando empatam. So a conta com capacidade declarada gera reserva.
  */
 export function createMemoryAccessBroker(
   ports: AccessBrokerPorts,
