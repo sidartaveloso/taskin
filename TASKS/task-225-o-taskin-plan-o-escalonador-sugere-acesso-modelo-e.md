@@ -1,6 +1,6 @@
 # 🧩 Task 225 — O taskin plan: o escalonador sugere acesso, modelo e momento para as tasks abertas
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-6
