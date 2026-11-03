@@ -77,20 +77,27 @@ function parsePrioritizationFields(
   groupMatch: string | undefined,
   groupNameMatch: string | undefined,
   difficultyMatch: string | undefined,
+  requiresMatch?: string,
 ): {
   order?: number;
   groupId?: GroupId;
   groupName?: string;
   difficulty?: number;
+  requires?: string[];
 } {
   const order = priorityMatch ? Number(priorityMatch.trim()) : undefined;
   const difficulty = difficultyMatch ? Number(difficultyMatch.trim()) : undefined;
+  const requires = requiresMatch
+    ?.split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
 
   return {
     ...(order !== undefined && !Number.isNaN(order) && { order }),
     ...(groupMatch && { groupId: parseGroupId(groupMatch.trim()) }),
     ...(groupNameMatch && { groupName: groupNameMatch.trim() }),
     ...(difficulty !== undefined && !Number.isNaN(difficulty) && { difficulty }),
+    ...(requires && requires.length > 0 && { requires }),
   };
 }
 
@@ -200,6 +207,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     group?: string;
     groupName?: string;
     difficulty?: string;
+    requires?: string;
   } {
     const i18n = getI18n(detectLocale(content));
     const read = (english: string, localized: string) => readMetadataField(content, localized, english);
@@ -212,6 +220,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       group: read('Group', i18n.group),
       groupName: read('GroupName', i18n.groupName),
       difficulty: read('Difficulty', i18n.difficulty),
+      requires: read('Requires', i18n.requires),
     };
   }
 
@@ -378,6 +387,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       group: groupMatch,
       groupName: groupNameMatch,
       difficulty: difficultyMatch,
+      requires: requiresMatch,
     } = this.readInlineMetadata(content);
 
     // Resolve assignee from registry
@@ -403,7 +413,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
       type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
       createdAt: new Date().toISOString(),
-      ...parsePrioritizationFields(priorityMatch, groupMatch, groupNameMatch, difficultyMatch),
+      ...parsePrioritizationFields(priorityMatch, groupMatch, groupNameMatch, difficultyMatch, requiresMatch),
     };
 
     return task;
@@ -464,6 +474,18 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       task.difficulty !== undefined ? String(task.difficulty) : undefined,
       this.metadataStyle,
     );
+    /*
+     * `requires` nao faz parte do bloco de priorizacao que o cliente reenvia:
+     * ausente significa "nao mexa", nao "apague". So grava quando ha valor.
+     */
+    if (task.requires && task.requires.length > 0) {
+      updatedContent = setInlineField(
+        updatedContent,
+        this.labelFor(updatedContent, 'Requires', i18n.requires),
+        task.requires.join(', '),
+        this.metadataStyle,
+      );
+    }
 
     // Write the updated content back to the file
     await fs.writeFile(task.filePath, updatedContent, 'utf-8');
@@ -495,6 +517,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
         group: groupMatch,
         groupName: groupNameMatch,
         difficulty: difficultyMatch,
+        requires: requiresMatch,
       } = this.readInlineMetadata(content);
 
       // Resolve assignee from registry
@@ -518,7 +541,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
         status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
         type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
         createdAt: new Date().toISOString(),
-        ...parsePrioritizationFields(priorityMatch, groupMatch, groupNameMatch, difficultyMatch),
+        ...parsePrioritizationFields(priorityMatch, groupMatch, groupNameMatch, difficultyMatch, requiresMatch),
       };
 
       tasks.push(task);

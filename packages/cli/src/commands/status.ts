@@ -21,7 +21,6 @@ import {
   type StatusTaskInput,
 } from '@opentask/taskin-situation';
 import type { Task } from '@opentask/taskin-types';
-import { readdirSync, readFileSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import { requireTaskinProject } from '../lib/project-check.js';
@@ -55,37 +54,6 @@ export const statusCommand = defineCommand({
     await showStatus(options);
   },
 });
-
-/** O que a task pede, do campo `- Requires:` do cabecalho; o provider ainda nao conhece o campo. */
-function requiresOf(tasksDir: string, id: string): string[] {
-  try {
-    const file = readdirSync(tasksDir).find((f) => f.startsWith(`task-${id}-`) && f.endsWith('.md'));
-    if (!file) return [];
-    const match = /^[-*]\s*(?:\*\*)?Requires(?:\*\*)?:\s*(.+)$/im.exec(
-      readFileSync(path.join(tasksDir, file), 'utf-8'),
-    );
-    return match?.[1]
-      ? match[1]
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function tasksDirOf(root: string): string {
-  try {
-    const config = JSON.parse(readFileSync(path.join(root, '.taskin.json'), 'utf-8')) as {
-      provider?: { config?: { tasksDir?: unknown } };
-    };
-    const configured = config.provider?.config?.tasksDir;
-    return path.resolve(root, typeof configured === 'string' ? configured : 'TASKS');
-  } catch {
-    return path.resolve(root, 'TASKS');
-  }
-}
 
 async function showStatus(options: StatusOptions): Promise<void> {
   requireTaskinProject();
@@ -140,11 +108,10 @@ async function showStatus(options: StatusOptions): Promise<void> {
   const tasks: Task[] = await provider.getAllTasks();
   const open = tasks.filter((t) => OPEN.has(t.status));
   const current = open.find((t) => t.status === 'in-progress');
-  const tasksDir = tasksDirOf(root);
   const openTasks: StatusTaskInput[] = open.map((t) => ({
     id: String(t.id),
     title: t.title,
-    requires: requiresOf(tasksDir, String(t.id)),
+    requires: t.requires ?? [],
   }));
 
   const report = buildStatusReport({
