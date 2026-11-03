@@ -6,6 +6,7 @@
 - Difficulty: 2
 - Priority: 7100
 - Group: taskin-no-pulso
+- Requires: android-sdk, jdk21, interactive
 
 ## Description
 O fecho do grupo `taskin-no-pulso`: instalar no Samsung relógio Wear OS de verdade o app Wear OS nativo construido nas tasks 175 a 185, abrir pelo menu do relogio e ver o Taskin pedir silencio quando a sala fala alto, com o olhar seguindo a inclinacao do pulso. Esta task comecou prevendo Capacitor; o plano mudou para Kotlin com Compose for Wear OS porque o Wear OS nao tem `WebView` (detalhes nas notas).
@@ -71,4 +72,4 @@ E no desktop: `adb pair localhost:37000 <codigo>` e `adb connect localhost:37001
 
 ### Onde executar
 
-Manual, com o relogio na mao e o `maquina-linux` fazendo o `adb`. Nao e task para o sandcastle.
+Manual, com o relógio na mão, numa máquina com Android SDK e JDK 21 que faça o `adb`. Não é task para o sandcastle.

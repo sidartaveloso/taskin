@@ -3,6 +3,7 @@
 - Status: pending
 - Type: feat
 - Assignee: sidartaveloso
+- Requires: interactive, microphone
 
 ## Description
 Hoje o ui-sense so mede volume (RMS no noise-watcher): um secador de cabelo e uma conversa no mesmo volume sao iguais para ele, e o shhh chama um nome fixo, nao quem esta falando. Prototipo para responder se da para, no navegador e sem mandar audio para fora do aparelho: (1) detectar voz (VAD) em vez de so volume; (2) reconhecer, entre 2 ou 3 pessoas cadastradas, quem esta falando, comparando a voz com amostras gravadas antes. A referencia e o renfild (github.com/t0mer/renfild), assistente de voz para Raspberry Pi que encadeia wake word, Silero VAD e reconhecimento de quem fala por ECAPA-TDNN; daqui se tira a sequencia de etapas, nao o projeto como dependencia. O resultado e uma story com o microfone e uma conclusao: vira task de verdade, muda de rumo ou e descartado.
@@ -47,4 +48,4 @@ pnpm --filter @opentask/ui-sense test
 ```
 
 ### Onde executar
-Numa maquina com microfone e navegador, de forma interativa. O prototipo precisa de microfone, de gente falando e de alguem olhando a story, entao nao serve para o sandcastle.
+Interativo, numa máquina com microfone e navegador. O protótipo precisa de microfone, de gente falando e de alguém olhando a story, então não serve para o sandcastle.

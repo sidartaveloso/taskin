@@ -6,6 +6,7 @@
 - Group: taskin-no-pulso
 - Priority: 6900
 - Difficulty: 3
+- Requires: android-sdk, jdk21, docker, interactive
 
 ## Description
 No always-on o mascote vira um desenho simplificado e o acelerometro para; a escuta continua em cadencia reduzida, ou para, conforme o ajuste. Medir o consumo por hora no aparelho e registrar.
@@ -35,6 +36,6 @@ pnpm --filter @opentask/taskin-mascote-wear wear:build
 ```
 
 ### Onde executar
-`maquina-linux` (rede privada): e a maquina com JDK 21 (asdf, Temurin), Android SDK em `~/Android/Sdk` (plataforma 36, build-tools 36, emulador e a imagem Wear OS 36 no AVD `taskin_wear`, redondo 454x454) e Docker nativo. O Mac nao tem Android SDK. Abrir um shell interativo (o `.bashrc` so exporta `ANDROID_HOME` e o PATH do SDK em shell interativo). A medicao e manual, com o relogio; nao e task para o sandcastle.
+Uma máquina Linux com Docker nativo, JDK 21 e Android SDK (plataforma 36, build-tools 36, emulador com imagem Wear OS 36 num AVD redondo 454x454). Abrir um shell interativo (o `.bashrc` só exporta `ANDROID_HOME` e o PATH do SDK em shell interativo). A medição é manual, com o relógio; não é task para o sandcastle.
 
 Fechar a task so com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).

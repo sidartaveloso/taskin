@@ -6,6 +6,7 @@
 - Group: alexa-etapa-1
 - Priority: 7400
 - Difficulty: 2
+- Requires: interactive
 
 ## Description
 Escrever o modelo de interação pt-BR da skill (nome de invocação, intents, campos e frases) e um teste que quebra quando o modelo e a superfície alexa do contrato divergem.
@@ -37,6 +38,6 @@ pnpm lint:manifests
 ```
 
 ### Onde executar
-Sandcastle para o pacote, o modelo e o teste. O último item (publicar e conferir no simulador) é manual, no Mac, com o ASK CLI configurado na task-186.
+Sandcastle para o pacote, o modelo e o teste. O último item (publicar e conferir no simulador) é manual e interativo, com o ASK CLI configurado na task-186.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).
