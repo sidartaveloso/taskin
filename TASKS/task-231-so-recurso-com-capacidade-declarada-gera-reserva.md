@@ -1,6 +1,6 @@
 # 🧩 Task 231 — So recurso com capacidade declarada gera reserva no access broker
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: situacao-lote-6
