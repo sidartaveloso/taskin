@@ -1,6 +1,6 @@
 # 🧩 Task 223 — O taskin list diz onde cada task roda
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-5
