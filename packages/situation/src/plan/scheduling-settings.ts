@@ -34,7 +34,13 @@ export const DEFAULT_ACCESS_SETTINGS = {
 
 const difficultySchema = z.number().int().min(1).max(5);
 
-const accessSettingsSchema = z.object({
+/**
+ * Os ajustes de uma conta. Os de uma conta do repositorio moram em
+ * `resources.scheduling.accesses` do `.taskin.json`, pelo nome; os de uma
+ * conta da camada da pessoa, no `scheduling` ao lado da conta em
+ * `~/.config/taskin/resources.json`, para o nome dela nunca ir ao repositorio.
+ */
+export const accessSettingsSchema = z.object({
   /** O modelo que o acesso usa, so para dizer na sugestao. */
   model: z.string().optional(),
   competence: difficultySchema.optional(),
@@ -103,4 +109,24 @@ export function readSchedulingSettings(repositoryConfig: string): SchedulingSett
     resources?: { scheduling?: SchedulingSettingsInput };
   };
   return schedulingSettings(config.resources?.scheduling ?? {});
+}
+
+/**
+ * Os ajustes das contas da camada da pessoa, pelo nome: o `scheduling` que cada
+ * conta de `person` traz ao lado da declaracao em `resources.json`. Sem o
+ * arquivo ou sem a chave, nenhum.
+ */
+export function readPersonalAccessSettings(personalResources: string, person: string): Record<string, AccessSettings> {
+  if (!existsSync(personalResources)) return {};
+  const json = JSON.parse(readFileSync(personalResources, 'utf8')) as Record<
+    string,
+    { declaration?: { kind?: string; name?: string }; scheduling?: unknown }[] | undefined
+  >;
+  const settings: Record<string, AccessSettings> = {};
+  for (const entry of json[person] ?? []) {
+    const name = entry.declaration?.name;
+    if (entry.declaration?.kind !== 'access' || name === undefined || entry.scheduling === undefined) continue;
+    settings[name] = accessSettingsSchema.parse(entry.scheduling);
+  }
+  return settings;
 }

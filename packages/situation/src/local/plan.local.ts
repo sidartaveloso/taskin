@@ -1,6 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { type PlanAccessInput, type PlanMachineInput, windowMsOf } from '../plan/build-problem';
-import { readSchedulingSettings, type SchedulingSettings } from '../plan/scheduling-settings';
+import {
+  type AccessSettings,
+  readPersonalAccessSettings,
+  readSchedulingSettings,
+  type SchedulingSettings,
+} from '../plan/scheduling-settings';
 import type { IInventory } from '../system/plugins/inventory/inventory.types';
 import type { IRunLedger } from '../system/plugins/run-ledger/run-ledger.types';
 import type { ResourceDeclaration, SituationView } from '../use-cases/actors.types';
@@ -28,6 +33,8 @@ export interface LocalPlanResources {
   /** O que cada acesso gastou na janela dele, pelo id, no estado desta maquina. */
   readonly spent: Readonly<Record<string, number>>;
   readonly settings: SchedulingSettings;
+  /** Avisos para quem roda o plano (a saida local), nunca para um arquivo. */
+  readonly warnings: readonly string[];
 }
 
 function declarationsIn(path: string): ResourceDeclaration[] {
@@ -59,12 +66,30 @@ export async function localPlanResources(sources: LocalPlanSources): Promise<Loc
   const { inventory, person, repository, view } = sources;
   const available = new Set(view.resources.filter((r) => r.available).map((r) => r.id));
 
+  const settings = readSchedulingSettings(sources.paths.repositoryConfig);
+  const personalSettings = readPersonalAccessSettings(sources.paths.personalResources, person);
+  const warnings: string[] = [];
+
   const accesses: PlanAccessInput[] = [];
   for (const kind of accessKinds(sources.paths)) {
     for (const a of await inventory.accesses(person, repository, kind)) {
-      if (available.has(a.id)) {
-        accesses.push({ id: a.id, name: a.name, accessKind: a.accessKind, clearance: a.clearance });
+      // Uma conta da camada da pessoa so tem os ajustes do arquivo da pessoa:
+      // o nome dela nao deve estar no `.taskin.json`, que e versionado.
+      const personal = a.layer === 'personal';
+      if (personal && settings.accesses[a.name] !== undefined) {
+        warnings.push(
+          `resources.scheduling.accesses in .taskin.json names the personal-layer account "${a.name}" and is ignored for it: move its settings to a "scheduling" key next to the account in your personal resources.json, so the name stays out of the repository.`,
+        );
       }
+      if (!available.has(a.id)) continue;
+      const own: AccessSettings | undefined = personal ? personalSettings[a.name] : undefined;
+      accesses.push({
+        id: a.id,
+        name: a.name,
+        accessKind: a.accessKind,
+        clearance: a.clearance,
+        ...(personal ? { settings: own ?? {} } : {}),
+      });
     }
   }
 
@@ -76,12 +101,11 @@ export async function localPlanResources(sources: LocalPlanSources): Promise<Loc
       capabilities: m.facts.filter((f) => !f.expired).map((f) => String(f.capability)),
     }));
 
-  const settings = readSchedulingSettings(sources.paths.repositoryConfig);
   const now = sources.clock.now();
   const spent: Record<string, number> = {};
   for (const a of accesses) {
     spent[a.id] = await sources.ledger.consumption(a.id, instant(now - windowMsOf(a, settings)));
   }
 
-  return { accesses, machines, runs: await sources.ledger.runs(repository), spent, settings };
+  return { accesses, machines, runs: await sources.ledger.runs(repository), spent, settings, warnings };
 }

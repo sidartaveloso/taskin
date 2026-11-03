@@ -148,7 +148,17 @@ O que o taskin pode usar, então:
   credenciais.
 - **A camada da pessoa** nunca entra no repositório: nem no `.taskin.json`, nem
   nas tasks, nem nos RDTs, nem nas mensagens de commit. Isso inclui o nome que
-  a pessoa deu a uma conta e os horários em que ela trabalha.
+  a pessoa deu a uma conta e os horários em que ela trabalha. Por isso os
+  ajustes de uma conta pessoal (modelo, cota, custo...) moram junto dela, na
+  camada da pessoa, e o `.taskin.json` só cita as contas do time. O
+  `taskin plan` junta as duas camadas: para uma conta da pessoa vale só o
+  que a camada dela declara, para uma conta do repositório o `.taskin.json`; se
+  o `.taskin.json` citar uma conta da camada da pessoa, o plano avisa (no
+  stderr) e ignora a linha. Os ajustes gerais (pesos, horizonte, margem de
+  cota, tokens por dificuldade, máquinas) ficam só no `.taskin.json`: a pessoa
+  não os sobrescreve, porque o plano do time tem de ser reproduzível por todos
+  (a concorrência das máquinas dela pode ganhar um lugar na camada da pessoa
+  quando alguém precisar).
 - **O registro de execução** é versionado só no que serve ao time para
   calibrar (o modelo, a dificuldade estimada e a encontrada, tokens, iterações,
   conclusão, retrabalho e duração de execuções fechadas), sem a conta usada e
@@ -166,6 +176,9 @@ texto das tasks, dos RDTs e dos commits segue em português.
 | --- | --- |
 | Camada do repositório | chave `resources` no `.taskin.json` |
 | Camada da pessoa | `~/.config/taskin/resources.json` |
+| Ajustes de uma conta do repositório (modelo, cota, custo, competência, taxa de conclusão, janela) | `resources.scheduling.accesses.<nome>` no `.taskin.json` |
+| Ajustes de uma conta da pessoa | chave `scheduling` ao lado da conta, em `~/.config/taskin/resources.json` |
+| Ajustes gerais do plano (pesos, horizonte, margem de cota, tokens por dificuldade, máquinas, requisitos móveis) | `resources.scheduling` no `.taskin.json`, só |
 | Requisitos de uma task | campo `- Requires:` no cabeçalho |
 | Valores dos requisitos e das capacidades | lista fechada em inglês, no `types-ts`: `docker`, `android-sdk`, `gpu`, `interactive`, `microphone`, `visual-review`… |
 | O quadro da situação | `taskin status`, com `--format` (`text`, o padrão, `json`, `html` ou `md`) e o atalho `--json` |

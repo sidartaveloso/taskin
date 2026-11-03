@@ -1,7 +1,7 @@
 import { createMemoryScheduler, scorePlan } from '../memory/scheduler.memory';
 import type { ObjectiveWeights, Plan, SuggestedPlan } from '../system/plugins/scheduler/scheduler.types';
 import type { TaskRef } from '../use-cases/branded';
-import { buildSchedulingProblem, type PlanProblemInput } from './build-problem';
+import { accessSettingsOf, buildSchedulingProblem, type PlanProblemInput } from './build-problem';
 
 /** A versao do contrato JSON do `taskin plan`. Mudanca que quebra quem le sobe este numero. */
 export const PLAN_REPORT_VERSION = 1;
@@ -54,7 +54,7 @@ export async function buildPlanReport(input: PlanReportInput): Promise<PlanRepor
 
   const resources: Record<string, PlanResourceLabel> = {};
   for (const a of input.accesses) {
-    const model = input.settings.accesses[a.name]?.model;
+    const model = accessSettingsOf(a, input.settings)?.model;
     resources[a.id] = model === undefined ? { name: a.name } : { name: a.name, model };
   }
   for (const m of input.machines) resources[m.id] = { name: m.name };

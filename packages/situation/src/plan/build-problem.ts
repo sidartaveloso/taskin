@@ -19,7 +19,7 @@ import {
   tokenCount,
 } from '../use-cases/branded';
 import type { RunRecord } from '../use-cases/flows.types';
-import { DEFAULT_ACCESS_SETTINGS, type SchedulingSettings } from './scheduling-settings';
+import { type AccessSettings, DEFAULT_ACCESS_SETTINGS, type SchedulingSettings } from './scheduling-settings';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -43,6 +43,11 @@ export interface PlanAccessInput {
   readonly name: string;
   readonly accessKind: AccessKind;
   readonly clearance: DataClass;
+  /**
+   * Os ajustes deste acesso, ja resolvidos pela camada dele: os do arquivo da
+   * pessoa para uma conta pessoal. Sem eles, vale `resources.scheduling.accesses` pelo nome.
+   */
+  readonly settings?: AccessSettings;
 }
 
 export interface PlanMachineInput {
@@ -90,12 +95,17 @@ function byQueue(a: PlanTaskInput, b: PlanTaskInput): number {
  * e, sem ele, o tipo do acesso. O historico do time e por modelo, nao por conta.
  */
 export function modelOf(access: PlanAccessInput, settings: SchedulingSettings): string {
-  return settings.accesses[access.name]?.model ?? String(access.accessKind);
+  return accessSettingsOf(access, settings)?.model ?? String(access.accessKind);
+}
+
+/** Os ajustes de um acesso: os que a camada dele declarou, ou os de `resources.scheduling.accesses`. */
+export function accessSettingsOf(access: PlanAccessInput, settings: SchedulingSettings): AccessSettings | undefined {
+  return access.settings ?? settings.accesses[access.name];
 }
 
 /** A janela, em milissegundos, em que o consumo de um acesso conta para a cota. */
 export function windowMsOf(access: PlanAccessInput, settings: SchedulingSettings): number {
-  return (settings.accesses[access.name]?.windowHours ?? DEFAULT_ACCESS_SETTINGS.windowHours) * HOUR;
+  return (accessSettingsOf(access, settings)?.windowHours ?? DEFAULT_ACCESS_SETTINGS.windowHours) * HOUR;
 }
 
 /**
@@ -143,7 +153,7 @@ export function buildSchedulingProblem(input: PlanProblemInput): BuiltProblem {
   });
 
   const accesses: SchedulingAccess[] = input.accesses.map((a) => {
-    const declared = { ...DEFAULT_ACCESS_SETTINGS, ...settings.accesses[a.name] };
+    const declared = { ...DEFAULT_ACCESS_SETTINGS, ...accessSettingsOf(a, settings) };
     const mine = runs.filter((r) => r.model === modelOf(a, settings));
     const windowMs = windowMsOf(a, settings);
     const spent = input.spent[a.id] ?? 0;

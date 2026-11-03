@@ -65,6 +65,8 @@ async function showPlan(options: PlanOptions): Promise<void> {
     clock,
   });
 
+  for (const warning of resources.warnings) console.error(`Warning: ${warning}`);
+
   const { provider } = await resolveTaskProvider();
   const tasks: Task[] = await provider.getAllTasks();
   const open: PlanTaskInput[] = tasks
