@@ -1,6 +1,6 @@
 # 🧩 Task 238 — O taskin run despacha o plano nesta maquina, varias tasks ao mesmo tempo
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-7
