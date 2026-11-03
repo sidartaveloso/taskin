@@ -1,6 +1,6 @@
 # 🧩 Task 233 — Os ajustes de cada conta do plan moram na camada da pessoa
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: situacao-lote-6
