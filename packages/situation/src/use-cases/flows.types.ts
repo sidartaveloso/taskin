@@ -21,7 +21,7 @@ import type {
  *
  *   acesso:     AccessGranted | LeaseGranted | LeaseDenied
  *   reserva:    LeaseGranted  →  LeaseReturned | LeaseExpired
- *   execucao:   RunPlanned  →  RunStarted  →  RunFinished
+ *   execucao:   RunPlanned  →  RunStarted  →  RunFinished | RunAbandoned
  *   ponto de vista: ViewpointRequested  →  ViewpointAccepted | ViewpointDeclined
  *                   ViewpointAccepted   →  ViewpointDelivered
  *                   e, em qualquer passo antes da entrega, ViewpointExpired no prazo
@@ -133,6 +133,12 @@ export interface RunFinished extends Omit<RunStarted, 'state'>, RunOutcome {
   readonly state: 'finished';
   readonly finishedAt: Instant;
   readonly duration: DurationMs;
+}
+
+/** Uma execucao que fechou sem resultado: o comando morreu ou nao o escreveu. */
+export interface RunAbandoned extends Omit<RunStarted, 'state'> {
+  readonly state: 'abandoned';
+  readonly abandonedAt: Instant;
 }
 
 /**

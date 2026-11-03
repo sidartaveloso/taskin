@@ -149,6 +149,41 @@ export const RUN_LEDGER_CONTRACT_CASES: readonly PluginContractCase<IRunLedger>[
     },
   },
   {
+    name: 'a execucao sem resultado fecha como abandonada: sai das abertas, nao vai ao historico do time nem ao consumo',
+    async run(ledger, ports) {
+      const since = ports.clock.now();
+      const run = await started(ledger, 'task-5');
+      const other = await started(ledger, 'task-6');
+      ports.clock.advance(3 * MINUTE);
+
+      const abandoned = await ledger.abandonRun(run);
+
+      expect(abandoned).toMatchObject({
+        state: 'abandoned',
+        id: run.id,
+        task: 'task-5',
+        access: CONTA_A,
+        abandonedAt: ports.clock.now(),
+      });
+      expect((await ledger.openRuns()).map((r) => r.id)).toEqual([other.id]);
+      expect(await ledger.runs(REPO)).toEqual([]);
+      expect(await ledger.consumption(CONTA_A, since)).toBe(0);
+    },
+  },
+  {
+    name: 'abandonar uma execucao vira evento, sem resultado',
+    async run(ledger) {
+      await ledger.start();
+      const seen = recordEvents(ledger, ['run-ledger:run-abandoned', 'run-ledger:run-finished']);
+
+      const run = await started(ledger, 'task-1');
+      const abandoned = await ledger.abandonRun(run);
+
+      const { state: _, ...fact } = abandoned;
+      expect(seen.map((e) => [e.type, e.payload])).toEqual([['run-ledger:run-abandoned', fact]]);
+    },
+  },
+  {
     name: 'cada execucao tem id proprio',
     async run(ledger) {
       const a = await ledger.planRun(REPO, taskRef('task-1'), difficulty(2));

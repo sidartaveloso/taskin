@@ -74,6 +74,11 @@ export interface PlanProblemInput {
   /** O que cada acesso gastou na janela dele, pelo id, contado no estado desta maquina. */
   readonly spent: Readonly<Record<string, number>>;
   readonly settings: SchedulingSettings;
+  /**
+   * As tasks abertas que o plano nao atribui: as que ja rodam, ou que o
+   * despacho ja tentou. Continuam abertas para quem depende delas.
+   */
+  readonly exclude?: readonly string[];
 }
 
 export interface BuiltProblem {
