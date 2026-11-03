@@ -105,10 +105,10 @@ describe('taskin plan, pelo binario', LENTO, () => {
     const b = await rodar('plan', '--format', 'json');
     expect(a.code, a.saida).toBe(0);
     const parsed: Json = JSON.parse(a.stdout);
-    expect(parsed.version).toBe(1);
+    expect(parsed.version).toBe(2);
     expect(parsed.history).toBe(false);
     expect(parsed.deferred).toEqual([{ task: '2', reason: 'fixed-requirement' }]);
-    expect(parsed.plan.assignments.map((x: Json) => x.task)).toEqual(['1']);
+    expect(parsed.plan.assignments.map((x: Json) => [x.task, x.model])).toEqual([['1', 'claude-opus-5-5']]);
     expect(Object.keys(JSON.parse(b.stdout))).toEqual(Object.keys(parsed));
   });
 
@@ -188,7 +188,10 @@ describe('taskin plan, pelo binario', LENTO, () => {
       expect(code, saida).toBe(0);
       const parsed: Json = JSON.parse(stdout);
       const id = Object.keys(parsed.resources).find((k) => parsed.resources[k].name === PESSOAL) ?? '';
-      expect(parsed.resources[id]).toEqual({ name: PESSOAL, model: 'claude-haiku-5-5' });
+      expect(parsed.resources[id]).toEqual({ name: PESSOAL });
+      expect(parsed.plan.problem.accesses.find((a: Json) => a.id === id).models.map((m: Json) => m.name)).toEqual([
+        'claude-haiku-5-5',
+      ]);
       expect(parsed.plan.problem.accesses.find((a: Json) => a.id === id).remaining).toBe(10_000);
       expect(stderr).toBe('');
       expect(readFileSync(join(raiz, '.taskin.json'), 'utf8')).toBe(antes);

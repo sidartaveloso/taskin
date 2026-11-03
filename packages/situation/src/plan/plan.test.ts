@@ -154,7 +154,8 @@ describe('taskin plan: o problema montado do que existe', () => {
     const access = report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === 'conta-a');
     expect(access?.remaining).toBe(5_000);
     const [assignment] = report.plan.assignments;
-    expect(report.resources[assignment!.access]).toEqual({ name: 'conta-b', model: 'sonnet' });
+    expect(report.resources[assignment!.access]).toEqual({ name: 'conta-b' });
+    expect(assignment!.model).toBe('sonnet');
     expect(renderPlan(report, 'text')).toContain('#1 task 1 → conta-b (sonnet) on servidor-1');
   });
 
@@ -163,21 +164,21 @@ describe('taskin plan: o problema montado do que existe', () => {
     expect(report.history).toBe(true);
     const contaB = report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === 'conta-b');
     const contaA = report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === 'conta-a');
-    expect(contaB?.completionRate).toBe(1);
-    expect(contaA?.completionRate).toBe(0.95);
+    expect(contaB?.models[0]?.completionRate).toBe(1);
+    expect(contaA?.models[0]?.completionRate).toBe(0.95);
     expect(report.plan.problem.tasks[0]?.estimatedTokens).toBe(30_000);
   });
 
   it('duas contas do mesmo modelo dividem a taxa de conclusao: o historico e do modelo, nao da conta', async () => {
     const scheduling = { accesses: { 'conta-a': { model: 'sonnet' }, 'conta-b': { model: 'sonnet' } } };
     const report = await plan({ scheduling, runs: [record('sonnet', 10_000, false)] }, [task('1')]);
-    const rates = report.plan.problem.accesses.map((a) => a.completionRate);
+    const rates = report.plan.problem.accesses.flatMap((a) => a.models.map((m) => m.completionRate));
     expect(rates).toEqual([0, 0]);
   });
 
   it('sem modelo declarado, o historico vale pelo tipo do acesso', async () => {
     const report = await plan({ scheduling: {}, runs: [record(String(CLAUDE_CODE), 10_000, false)] }, [task('1')]);
-    expect(report.plan.problem.accesses.map((a) => a.completionRate)).toEqual([0, 0]);
+    expect(report.plan.problem.accesses.flatMap((a) => a.models.map((m) => m.completionRate))).toEqual([0, 0]);
   });
 
   it('o consumo da janela vem do estado da maquina, nao do historico do time', async () => {
@@ -248,6 +249,62 @@ describe('taskin plan: o problema montado do que existe', () => {
   });
 });
 
+describe('taskin plan: uma conta oferece varios modelos', () => {
+  const twoModels = {
+    accesses: {
+      'conta-a': {
+        models: [
+          { name: 'opus', competence: 5, costPerThousandTokens: 2, completionRate: 0.9 },
+          { name: 'haiku', competence: 2, costPerThousandTokens: 0.5, completionRate: 0.9 },
+        ],
+      },
+      'conta-b': { model: 'sonnet', competence: 1 },
+    },
+  };
+  const contaOf = (report: Awaited<ReturnType<typeof plan>>, name: string) =>
+    report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === name);
+
+  it('cada task vai ao modelo da conta que a cobre pelo menor custo, e o texto e o JSON dizem conta e modelo', async () => {
+    const report = await plan({ scheduling: twoModels }, [
+      task('1', { order: 1, difficulty: 4 }),
+      task('2', { order: 2, difficulty: 2 }),
+    ]);
+
+    const conta = contaOf(report, 'conta-a');
+    const byTask = Object.fromEntries(report.plan.assignments.map((a) => [a.task, [a.access, a.model]]));
+    expect(byTask).toEqual({ '1': [conta?.id, 'opus'], '2': [conta?.id, 'haiku'] });
+
+    const text = renderPlan(report, 'text');
+    expect(text).toContain('#1 task 1 → conta-a (opus) on servidor-1');
+    expect(text).toContain('#2 task 2 → conta-a (haiku) on servidor-1');
+
+    const json = JSON.parse(renderPlan(report, 'json'));
+    expect(json.plan.assignments.map((a: { model: string }) => a.model)).toEqual(['opus', 'haiku']);
+  });
+
+  it('o model de hoje continua valendo como a lista de um modelo so', async () => {
+    const report = await plan({}, [task('1')]);
+    expect(contaOf(report, 'conta-b')?.models).toEqual([
+      { name: 'sonnet', competence: 3, completionRate: 0.6, costPerThousandTokens: 0 },
+    ]);
+  });
+
+  it('o historico do time calibra cada modelo da conta pelo nome dele', async () => {
+    const report = await plan({ scheduling: twoModels, runs: [record('haiku', 10_000, false)] }, [task('1')]);
+    expect(contaOf(report, 'conta-a')?.models.map((m) => [m.name, m.completionRate])).toEqual([
+      ['opus', 0.9],
+      ['haiku', 0],
+    ]);
+  });
+
+  it('declarar model e models na mesma conta e recusado', () => {
+    const { paths } = project({
+      scheduling: { accesses: { 'conta-a': { model: 'opus', models: [{ name: 'haiku' }] } } },
+    });
+    expect(() => readSchedulingSettings(paths.repositoryConfig)).toThrow(/model/);
+  });
+});
+
 describe('taskin plan: os ajustes de uma conta moram na camada da pessoa', () => {
   const PERSONAL = 'claude-conta-pessoal-da-ana';
   const personalOf = (report: Awaited<ReturnType<typeof plan>>) =>
@@ -263,8 +320,10 @@ describe('taskin plan: os ajustes de uma conta moram na camada da pessoa', () =>
     );
 
     expect(personalOf(report)?.remaining).toBe(5_000);
-    expect(personalOf(report)?.completionRate).toBe(0.5);
-    expect(report.resources[personalOf(report)?.id ?? '']).toEqual({ name: PERSONAL, model: 'haiku' });
+    expect(personalOf(report)?.models).toEqual([
+      { name: 'haiku', competence: 3, completionRate: 0.5, costPerThousandTokens: 0 },
+    ]);
+    expect(report.resources[personalOf(report)?.id ?? '']).toEqual({ name: PERSONAL });
     expect(warnings).toEqual([]);
     expect(repositoryConfig).not.toContain(PERSONAL);
   });
@@ -292,6 +351,20 @@ describe('taskin plan: os ajustes de uma conta moram na camada da pessoa', () =>
     expect(warnings[0]).toContain(PERSONAL);
     expect(warnings[0]).toContain('resources.json');
     expect(personalOf(report)?.remaining).toBe(70_000);
+  });
+
+  it('a conta da pessoa declara os modelos dela no arquivo dela', async () => {
+    const report = await plan(
+      {
+        personal: [{ name: PERSONAL, scheduling: { models: [{ name: 'haiku' }, { name: 'sonnet', competence: 4 }] } }],
+      },
+      [task('1')],
+    );
+
+    expect(personalOf(report)?.models.map((m) => [m.name, m.competence])).toEqual([
+      ['haiku', 3],
+      ['sonnet', 4],
+    ]);
   });
 
   it('a conta do repositorio citada no .taskin.json nao gera aviso', async () => {

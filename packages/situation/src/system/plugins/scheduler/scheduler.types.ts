@@ -12,7 +12,7 @@ import type {
 import type { IPluginSituation, PluginKey } from '../../plugin.types';
 
 /**
- * O escalonador: atribui a cada task um acesso a LLM, uma maquina e um
+ * O escalonador: atribui a cada task uma conta de LLM, um modelo dela, uma maquina e um
  * momento, ou a deixa para depois, maximizando uma funcao objetivo pura sob
  * restricoes. Conselho antes de despacho: ele sugere, nao executa.
  */
@@ -56,17 +56,25 @@ export interface SchedulingTask {
   readonly interruptions: readonly PersonId[];
 }
 
+/** Um modelo que uma conta oferece. Os modelos de uma conta dividem a cota e a janela dela. */
+export interface SchedulingModel {
+  readonly name: string;
+  /** A maior dificuldade que o modelo cobre. */
+  readonly competence: Difficulty;
+  /** A fracao das execucoes que concluem, pelo registro do modelo: de 0 a 1. */
+  readonly completionRate: number;
+  /** Dinheiro por mil tokens. Zero na assinatura e no modelo local. */
+  readonly costPerThousandTokens: number;
+}
+
+/** Uma conta: a liberacao, os modelos que ela oferece, e a cota que eles dividem. */
 export interface SchedulingAccess {
   readonly id: ResourceId;
   readonly kind: AccessKind;
   readonly clearance: DataClass;
-  /** A maior dificuldade que o acesso cobre. */
-  readonly competence: Difficulty;
-  /** A fracao das execucoes que concluem, pelo registro: de 0 a 1. */
-  readonly completionRate: number;
-  /** Dinheiro por mil tokens. Zero na assinatura e no modelo local. */
-  readonly costPerThousandTokens: number;
-  /** O que resta na janela atual. */
+  /** Os modelos da conta, ao menos um. */
+  readonly models: readonly SchedulingModel[];
+  /** O que resta na janela atual, para todos os modelos da conta juntos. */
   readonly remaining: TokenCount;
   readonly windowEndsAt: Instant;
 }
@@ -99,6 +107,8 @@ export interface SchedulingProblem {
 export interface Assignment {
   readonly task: TaskRef;
   readonly access: ResourceId;
+  /** O modelo da conta que roda a task: um dos `models` do acesso. */
+  readonly model: string;
   readonly machine: ResourceId;
   readonly at: Instant;
 }
@@ -123,11 +133,11 @@ export interface ObjectiveWeights {
 /**
  * Os termos, cada um somado sobre as atribuicoes:
  *
- * - `value`: `task.value × access.completionRate`;
- * - `money`: `task.estimatedTokens / 1000 × access.costPerThousandTokens`;
+ * - `value`: `task.value × model.completionRate`, o modelo da atribuicao;
+ * - `money`: `task.estimatedTokens / 1000 × model.costPerThousandTokens`;
  * - `setup`: o `setupCost` de cada requisito movel que a maquina nao tem,
  *   contado uma vez por par maquina e requisito, por mais tasks que o usem;
- * - `rework`: `task.value × (1 − access.completionRate)`;
+ * - `rework`: `task.value × (1 − model.completionRate)`;
  * - `interruptions`: as pessoas distintas interrompidas no mesmo momento,
  *   somadas por momento: dois pedidos a mesma pessoa juntos contam um.
  *
@@ -145,11 +155,11 @@ export interface PlanScore {
 }
 
 export const CONSTRAINT_CODES = [
-  /** Os tokens estimados num acesso passam do que resta, descontada a margem. */
+  /** Os tokens estimados numa conta, somados os modelos dela, passam do que resta, descontada a margem. */
   'quota',
   /** A maquina nao tem um requisito fixo da task. */
   'fixed-requirement',
-  /** O acesso nao cobre a dificuldade estimada. */
+  /** O modelo nao cobre a dificuldade estimada. */
   'competence',
   /** A liberacao do acesso nao cobre a sensibilidade da task. */
   'data',
@@ -159,7 +169,7 @@ export const CONSTRAINT_CODES = [
   'concurrency',
   /** Task interativa num momento sem presenca. */
   'presence',
-  /** O plano cita task, acesso ou maquina que o problema nao tem, ou atribui a mesma task duas vezes. */
+  /** O plano cita task, acesso, modelo ou maquina que o problema nao tem, ou atribui a mesma task duas vezes. */
   'unknown-reference',
 ] as const;
 
