@@ -11,7 +11,7 @@
 ## Description
 O access broker do `@opentask/taskin-situation` grava uma reserva com prazo para toda rodada, mesmo quando a conta não declara `concurrencyLimit`. Uma LLM que aceita várias sessões não precisa de reserva: o registro sem limite só servia para espalhar rodadas entre contas, e o prazo fixo faz uma rodada longa perder a conta no meio. Nem todo recurso precisa de reserva.
 
-O desenho: escolher a conta e entregar o segredo vale para todo acesso (liberada para a sensibilidade do dado, com folga na cota, e entre as que sobram a menos ocupada, contada pelas execuções em aberto no registro de execuções: começou e não terminou). Ocupar uma vaga (reserva, com prazo e devolução) só existe quando o conta declara capacidade (`concurrencyLimit`; o mesmo conceito de `concurrency` das máquinas do escalonador). Sem capacidade declarada: nada é gravado, não há prazo, não há `shared`. Em português é "reserva"; no código segue `lease`.
+O desenho: escolher a conta e entregar o segredo vale para todo acesso (liberada para a sensibilidade do dado, com folga na cota, e entre as que sobram a menos ocupada, contada pelas execuções em aberto no registro de execuções: começou e não terminou). Ocupar uma vaga (reserva, com prazo e devolução) só existe quando a conta declara capacidade (`concurrencyLimit`; o mesmo conceito de `concurrency` das máquinas do escalonador). Sem capacidade declarada: nada é gravado, não há prazo, não há `shared`. Em português é "reserva"; no código segue `lease`.
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
