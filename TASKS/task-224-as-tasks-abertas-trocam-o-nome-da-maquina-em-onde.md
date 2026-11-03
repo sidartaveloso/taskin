@@ -1,6 +1,6 @@
 # 🧩 Task 224 — As tasks abertas trocam o nome da máquina em Onde executar pelo Requires
 
-- Status: pending
+- Status: in-progress
 - Type: docs
 - Assignee: sidartaveloso
 - Group: situacao-lote-5
