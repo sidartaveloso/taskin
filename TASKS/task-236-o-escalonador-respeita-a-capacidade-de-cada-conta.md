@@ -1,6 +1,6 @@
 # 🧩 Task 236 — O escalonador respeita a capacidade de cada conta
 
-- Status: in-progress
+- Status: done
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-7
