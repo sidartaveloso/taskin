@@ -264,6 +264,32 @@ export const SCHEDULER_CONTRACT_CASES: readonly PluginContractCase<IScheduler>[]
     },
   },
   {
+    name: 'uma conta nao roda ao mesmo tempo mais execucoes do que aceita',
+    async run(scheduler) {
+      const single: SchedulingAccess = { ...SUBSCRIPTION, concurrencyLimit: 1 };
+      const p = problem([task('task-1'), task('task-2')], { accesses: [single, PAID_API] });
+
+      const over = plan(p, assign('task-1', single, DESKTOP), assign('task-2', single, DESKTOP));
+      const violation = scheduler.violations(over);
+
+      expect(violation.map((v) => v.code)).toEqual(['concurrency']);
+      expect([...(violation[0]?.tasks ?? [])].sort()).toEqual(['task-1', 'task-2']);
+      expect(
+        codes(scheduler, plan(p, assign('task-1', single, DESKTOP), assign('task-2', single, DESKTOP, LATER))),
+      ).toEqual([]);
+    },
+  },
+  {
+    name: 'conta sem capacidade declarada nao limita as execucoes sobrepostas',
+    async run(scheduler) {
+      const p = problem([task('task-1'), task('task-2')]);
+
+      expect(
+        codes(scheduler, plan(p, assign('task-1', SUBSCRIPTION, DESKTOP), assign('task-2', SUBSCRIPTION, DESKTOP))),
+      ).toEqual([]);
+    },
+  },
+  {
     name: 'task interativa so roda num momento com a pessoa presente',
     async run(scheduler) {
       const p = problem([task('task-1', { interactive: true })]);
@@ -447,6 +473,35 @@ export const SCHEDULER_CONTRACT_CASES: readonly PluginContractCase<IScheduler>[]
 
       expect(suggested.plan.assignments.map((a) => [a.task, a.model])).toEqual([['task-1', STRONG.name]]);
       expect(suggested.deferred).toEqual([{ task: 'task-2', reason: 'quota' }]);
+    },
+  },
+  {
+    name: 'com a conta cheia, a segunda task vai a outra conta ou a outro momento',
+    async run(scheduler) {
+      const single: SchedulingAccess = { ...SUBSCRIPTION, concurrencyLimit: 1 };
+      const tasks = [task('task-1', { value: 9 }), task('task-2', { value: 3 })];
+      const p = problem(tasks, { accesses: [single] });
+
+      const suggested = await scheduler.suggest(p, ZERO);
+
+      expect(scheduler.violations(suggested.plan)).toEqual([]);
+      expect(suggested.deferred).toEqual([]);
+      const at = Object.fromEntries(suggested.plan.assignments.map((a) => [a.task, a.at]));
+      expect(at['task-1']).toBe(NOW);
+      expect(at['task-2']).toBeGreaterThan(NOW);
+    },
+  },
+  {
+    name: 'a conta cheia que segura a task interativa a adia por concurrency',
+    async run(scheduler) {
+      const single: SchedulingAccess = { ...SUBSCRIPTION, concurrencyLimit: 1 };
+      const tasks = [task('task-1', { value: 9, interactive: true }), task('task-2', { value: 3, interactive: true })];
+      const p = problem(tasks, { accesses: [single] });
+
+      const suggested = await scheduler.suggest(p, ZERO);
+
+      expect(suggested.plan.assignments.map((a) => a.task)).toEqual(['task-1']);
+      expect(suggested.deferred).toEqual([{ task: 'task-2', reason: 'concurrency' }]);
     },
   },
 ];

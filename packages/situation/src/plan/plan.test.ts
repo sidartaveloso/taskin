@@ -24,7 +24,14 @@ interface Fixture {
   readonly spent?: Readonly<Record<string, number>>;
   /** Contas da camada da pessoa (da Ana), liberadas para o repositorio, com os ajustes ao lado da conta. */
   readonly personal?: readonly { readonly name: string; readonly scheduling?: object }[];
+  /** A capacidade declarada no inventario de cada conta do repositorio, pelo nome. */
+  readonly limits?: Readonly<Record<string, number>>;
 }
+
+const limitOf = (fixture: Fixture, name: string) => {
+  const limit = fixture.limits?.[name];
+  return limit === undefined ? {} : { concurrencyLimit: limit };
+};
 
 /** Uma pasta temporaria com o `.taskin.json`, a camada da pessoa e o registro. */
 function project(fixture: Fixture = {}) {
@@ -42,8 +49,8 @@ function project(fixture: Fixture = {}) {
       resources: {
         offers: [
           machine('servidor-1', 'docker'),
-          account('conta-a', { secret: secretRef('env:CONTA_A') }),
-          account('conta-b', { secret: secretRef('env:CONTA_B') }),
+          account('conta-a', { secret: secretRef('env:CONTA_A'), ...limitOf(fixture, 'conta-a') }),
+          account('conta-b', { secret: secretRef('env:CONTA_B'), ...limitOf(fixture, 'conta-b') }),
         ],
         scheduling: fixture.scheduling ?? {
           accesses: {
@@ -223,6 +230,37 @@ describe('taskin plan: o problema montado do que existe', () => {
     expect(report.plan.assignments).toHaveLength(1);
     expect(report.beyondHorizon).toHaveLength(1);
     expect(renderPlan(report, 'text')).toContain('Beyond the 1h horizon:');
+  });
+
+  it('a capacidade da conta vem do concurrencyLimit do inventario; sem ele, nao ha teto', async () => {
+    const report = await plan({ limits: { 'conta-a': 2 } }, [task('1')]);
+    const limit = (name: string) =>
+      report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === name)?.concurrencyLimit;
+    expect(limit('conta-a')).toBe(2);
+    expect(limit('conta-b')).toBeUndefined();
+  });
+
+  it('a conta cheia que segura a task aparece como motivo de adiar: concurrency', async () => {
+    const scheduling = {
+      horizonHours: 1,
+      accesses: { 'conta-a': { model: 'opus' }, 'conta-b': { model: 'sonnet' } },
+      machines: { 'servidor-1': { concurrency: 3 } },
+    };
+    const report = await plan({ scheduling, limits: { 'conta-a': 1, 'conta-b': 1 } }, [
+      task('1'),
+      task('2'),
+      task('3'),
+    ]);
+    expect(report.plan.assignments.map((a) => a.task).sort()).toEqual(['1', '2']);
+    expect(report.deferred).toEqual([{ task: '3', reason: 'concurrency' }]);
+    expect(report.beyondHorizon).toEqual([]);
+    expect(renderPlan(report, 'text')).toMatch(/Deferred:\n {2}#3 task 3 — concurrency/);
+  });
+
+  it('a maquina cheia continua levando a task para depois do horizonte', async () => {
+    const report = await plan({ scheduling: { horizonHours: 1 }, limits: { 'conta-a': 1 } }, [task('1'), task('2')]);
+    expect(report.deferred).toEqual([]);
+    expect(report.beyondHorizon).toEqual(['2']);
   });
 
   it('sem acesso disponivel, o texto diz por que nada cabe', async () => {

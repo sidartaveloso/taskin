@@ -49,6 +49,8 @@ export interface PlanAccessInput {
   readonly name: string;
   readonly accessKind: AccessKind;
   readonly clearance: DataClass;
+  /** Quantas execucoes a conta aceita ao mesmo tempo, pelo inventario. Sem ele, nao ha teto. */
+  readonly concurrencyLimit?: number;
   /**
    * Os ajustes deste acesso, ja resolvidos pela camada dele: os do arquivo da
    * pessoa para uma conta pessoal. Sem eles, vale `resources.scheduling.accesses` pelo nome.

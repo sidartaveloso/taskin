@@ -77,6 +77,11 @@ export interface SchedulingAccess {
   /** O que resta na janela atual, para todos os modelos da conta juntos. */
   readonly remaining: TokenCount;
   readonly windowEndsAt: Instant;
+  /**
+   * Quantas execucoes a conta aceita ao mesmo tempo, somados os modelos dela: o
+   * `concurrencyLimit` do inventario. Sem ele, a conta nao tem teto.
+   */
+  readonly concurrencyLimit?: number;
 }
 
 export interface SchedulingMachine {
@@ -165,7 +170,7 @@ export const CONSTRAINT_CODES = [
   'data',
   /** Uma dependencia nao esta no plano, ou esta no mesmo momento ou depois. */
   'dependency',
-  /** Mais atribuicoes num momento do que a maquina comporta. */
+  /** Mais atribuicoes num momento do que a maquina comporta, ou do que a conta aceita. */
   'concurrency',
   /** Task interativa num momento sem presenca. */
   'presence',
