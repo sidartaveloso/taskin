@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { tmpdir, userInfo } from 'node:os';
 import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -33,16 +33,21 @@ Nada.
 // biome-ignore lint/suspicious/noExplicitAny: o JSON do plano lido sem o tipo
 type Json = any;
 
-async function rodar(...args: string[]): Promise<{ code: number; stdout: string; saida: string }> {
+async function rodar(...args: string[]): Promise<{ code: number; stdout: string; stderr: string; saida: string }> {
   try {
     const { stdout, stderr } = await execFileAsync('node', [CLI, ...args], {
       cwd: raiz,
       env: { ...process.env, HOME: casa, XDG_STATE_HOME: estado, SITUATION_TOKEN: SEGREDO },
     });
-    return { code: 0, stdout, saida: stdout + stderr };
+    return { code: 0, stdout, stderr, saida: stdout + stderr };
   } catch (e) {
     const falha = e as { code?: number; stdout?: string; stderr?: string };
-    return { code: falha.code ?? 1, stdout: falha.stdout ?? '', saida: `${falha.stdout ?? ''}${falha.stderr ?? ''}` };
+    return {
+      code: falha.code ?? 1,
+      stdout: falha.stdout ?? '',
+      stderr: falha.stderr ?? '',
+      saida: `${falha.stdout ?? ''}${falha.stderr ?? ''}`,
+    };
   }
 }
 
@@ -142,6 +147,67 @@ describe('taskin plan, pelo binario', LENTO, () => {
     expect(parsed.history).toBe(true);
     expect(parsed.plan.problem.accesses[0].remaining).toBe(10_000);
     expect(parsed.plan.problem.tasks[0].estimatedTokens).toBe(12_345);
+  });
+
+  describe('os ajustes de uma conta da camada da pessoa', () => {
+    const PESSOAL = 'conta-pessoal-da-pessoa';
+
+    function contaPessoal() {
+      mkdirSync(join(casa, '.config', 'taskin'), { recursive: true });
+      writeFileSync(
+        join(casa, '.config', 'taskin', 'resources.json'),
+        JSON.stringify({
+          [userInfo().username]: [
+            {
+              declaration: {
+                kind: 'access',
+                name: PESSOAL,
+                accessKind: 'llm',
+                secret: 'env:SITUATION_TOKEN',
+                envVar: 'ANTHROPIC_API_KEY',
+              },
+              releasedTo: [basename(raiz)],
+              scheduling: { model: 'claude-haiku-5-5', quota: 100_000 },
+            },
+          ],
+        }),
+      );
+      mkdirSync(join(estado, 'taskin'), { recursive: true });
+      writeFileSync(
+        join(estado, 'taskin', 'runs.jsonl'),
+        `${JSON.stringify({ state: 'finished', id: 'run-1', access: `personal:${userInfo().username}:${PESSOAL}`, tokens: 90_000, finishedAt: Date.now() - 60_000 })}\n`,
+      );
+    }
+
+    it('o modelo e a cota declarados so no arquivo da pessoa chegam ao plano, sem tocar no .taskin.json', async () => {
+      contaPessoal();
+      const antes = readFileSync(join(raiz, '.taskin.json'), 'utf8');
+
+      const { code, stdout, stderr, saida } = await rodar('plan', '--json');
+
+      expect(code, saida).toBe(0);
+      const parsed: Json = JSON.parse(stdout);
+      const id = Object.keys(parsed.resources).find((k) => parsed.resources[k].name === PESSOAL) ?? '';
+      expect(parsed.resources[id]).toEqual({ name: PESSOAL, model: 'claude-haiku-5-5' });
+      expect(parsed.plan.problem.accesses.find((a: Json) => a.id === id).remaining).toBe(10_000);
+      expect(stderr).toBe('');
+      expect(readFileSync(join(raiz, '.taskin.json'), 'utf8')).toBe(antes);
+      expect(antes).not.toContain(PESSOAL);
+    });
+
+    it('o .taskin.json que cita a conta da pessoa e avisado no stderr, sem sujar o stdout', async () => {
+      contaPessoal();
+      const config = JSON.parse(readFileSync(join(raiz, '.taskin.json'), 'utf8'));
+      config.resources.scheduling.accesses[PESSOAL] = { quota: 1 };
+      writeFileSync(join(raiz, '.taskin.json'), JSON.stringify(config));
+
+      const { code, stdout, stderr } = await rodar('plan', '--json');
+
+      expect(code).toBe(0);
+      expect(() => JSON.parse(stdout)).not.toThrow();
+      expect(stderr).toMatch(/personal/i);
+      expect(stderr).toContain('resources.json');
+    });
   });
 
   it('recusa formato desconhecido', async () => {

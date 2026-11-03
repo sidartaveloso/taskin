@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { hostname, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -257,6 +257,32 @@ describe('inventory local: o id da conta', () => {
     expect(inSecond.get('conta-pessoal')).toBe(id);
     expect(inSecond.get('so-esta')).not.toBe(id);
     expect(new Set((await idsIn(first, 'repo-um')).map(([, i]) => i)).size).toBe(2);
+  });
+});
+
+describe('inventory local: os ajustes da conta na camada da pessoa', () => {
+  it('o ajuste escrito ao lado da conta sobrevive a declarar outra, e nenhum comando grava o nome da conta no repositorio', async () => {
+    const dir = tempDir();
+    const options = paths(dir);
+    const PERSONAL = 'claude-conta-pessoal-da-ana';
+    mkdirSync(join(dir, 'config'), { recursive: true });
+    writeFileSync(
+      options.personalResources,
+      JSON.stringify({
+        [ANA]: [{ declaration: account(PERSONAL), releasedTo: [REPO], scheduling: { model: 'haiku', quota: 5 } }],
+      }),
+    );
+    writeFileSync(options.repositoryConfig, JSON.stringify({ resources: { offers: [machine('servidor-1')] } }));
+    const inventory = createLocalInventory(createFakePluginPorts(), options);
+
+    const other = await inventory.declare(ANA, account('outra-conta'));
+    await inventory.release(ANA, other, REPO);
+    await inventory.offer(REPO, account('conta-do-time'));
+
+    const personal = JSON.parse(readFileSync(options.personalResources, 'utf8'));
+    expect(personal[ANA][0].scheduling).toEqual({ model: 'haiku', quota: 5 });
+    expect(readFileSync(options.repositoryConfig, 'utf8')).not.toContain(PERSONAL);
+    expect(readFileSync(options.repositoryConfig, 'utf8')).not.toContain('outra-conta');
   });
 });
 

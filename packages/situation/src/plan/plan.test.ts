@@ -22,6 +22,8 @@ interface Fixture {
   readonly runs?: readonly object[];
   /** O que cada conta gastou, no estado desta maquina, uma hora antes do relogio falso. */
   readonly spent?: Readonly<Record<string, number>>;
+  /** Contas da camada da pessoa (da Ana), liberadas para o repositorio, com os ajustes ao lado da conta. */
+  readonly personal?: readonly { readonly name: string; readonly scheduling?: object }[];
 }
 
 /** Uma pasta temporaria com o `.taskin.json`, a camada da pessoa e o registro. */
@@ -53,6 +55,19 @@ function project(fixture: Fixture = {}) {
       },
     }),
   );
+  if (fixture.personal !== undefined) {
+    mkdirSync(join(dir, 'config'), { recursive: true });
+    writeFileSync(
+      paths.personalResources,
+      JSON.stringify({
+        [ANA]: fixture.personal.map((p) => ({
+          declaration: account(p.name, { secret: secretRef('env:CONTA_PESSOAL') }),
+          releasedTo: [REPO],
+          ...(p.scheduling === undefined ? {} : { scheduling: p.scheduling }),
+        })),
+      }),
+    );
+  }
   if (fixture.runs !== undefined) {
     mkdirSync(join(dir, '.taskin'), { recursive: true });
     writeFileSync(history, fixture.runs.map((r) => `${JSON.stringify(r)}\n`).join(''));
@@ -61,9 +76,17 @@ function project(fixture: Fixture = {}) {
 }
 
 async function plan(fixture: Fixture, tasks: readonly PlanTaskInput[]) {
+  return (await planWithWarnings(fixture, tasks)).report;
+}
+
+async function planWithWarnings(fixture: Fixture, tasks: readonly PlanTaskInput[]) {
   const { paths, files } = project(fixture);
   const clock = new FakeClock();
-  const ports = { ...createFakePluginPorts(), clock, secrets: createEnvSecretStore({ CONTA_A: 'a', CONTA_B: 'b' }) };
+  const ports = {
+    ...createFakePluginPorts(),
+    clock,
+    secrets: createEnvSecretStore({ CONTA_A: 'a', CONTA_B: 'b', CONTA_PESSOAL: 'p' }),
+  };
   const inventory = createLocalInventory(ports, paths);
   const ids = new Map((await inventory.accesses(ANA, REPO, CLAUDE_CODE)).map((a) => [a.name, String(a.id)]));
   if (fixture.spent !== undefined) {
@@ -88,7 +111,8 @@ async function plan(fixture: Fixture, tasks: readonly PlanTaskInput[]) {
     view: await inventory.view(ANA, REPO),
     paths,
   });
-  return buildPlanReport({ repository: 'repo-a', now: clock.now(), tasks, ...resources });
+  const report = await buildPlanReport({ repository: 'repo-a', now: clock.now(), tasks, ...resources });
+  return { report, warnings: resources.warnings, repositoryConfig: readFileSync(paths.repositoryConfig, 'utf8') };
 }
 
 const task = (id: string, extra: Partial<PlanTaskInput> = {}): PlanTaskInput => ({
@@ -221,6 +245,58 @@ describe('taskin plan: o problema montado do que existe', () => {
     const json = JSON.parse(renderPlan(await plan({}, [task('1')]), 'json'));
     expect(json.version).toBe(PLAN_REPORT_VERSION);
     expect(Object.keys(json)).toEqual(expect.arrayContaining(['plan', 'score', 'deferred']));
+  });
+});
+
+describe('taskin plan: os ajustes de uma conta moram na camada da pessoa', () => {
+  const PERSONAL = 'claude-conta-pessoal-da-ana';
+  const personalOf = (report: Awaited<ReturnType<typeof plan>>) =>
+    report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === PERSONAL);
+
+  it('o modelo e a cota declarados so no arquivo da pessoa chegam ao plano, e o repositorio nao ve o nome da conta', async () => {
+    const { report, warnings, repositoryConfig } = await planWithWarnings(
+      {
+        personal: [{ name: PERSONAL, scheduling: { model: 'haiku', quota: 50_000, completionRate: 0.5 } }],
+        spent: { [PERSONAL]: 45_000 },
+      },
+      [task('1')],
+    );
+
+    expect(personalOf(report)?.remaining).toBe(5_000);
+    expect(personalOf(report)?.completionRate).toBe(0.5);
+    expect(report.resources[personalOf(report)?.id ?? '']).toEqual({ name: PERSONAL, model: 'haiku' });
+    expect(warnings).toEqual([]);
+    expect(repositoryConfig).not.toContain(PERSONAL);
+  });
+
+  it('a conta do repositorio segue pelo .taskin.json, e a da pessoa pelo arquivo dela, na mesma rodada', async () => {
+    const report = await plan({ personal: [{ name: PERSONAL, scheduling: { quota: 70_000 } }] }, [task('1')]);
+
+    const quota = (name: string) =>
+      report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === name)?.remaining;
+    expect(quota('conta-a')).toBe(200_000);
+    expect(quota(PERSONAL)).toBe(70_000);
+  });
+
+  it('o .taskin.json que cita uma conta da camada da pessoa e avisado, e o ajuste dele nao vale para ela', async () => {
+    const { report, warnings } = await planWithWarnings(
+      {
+        scheduling: { accesses: { [PERSONAL]: { quota: 1_000, model: 'opus' }, 'conta-a': { quota: 200_000 } } },
+        personal: [{ name: PERSONAL, scheduling: { quota: 70_000 } }],
+      },
+      [task('1')],
+    );
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/personal/i);
+    expect(warnings[0]).toContain(PERSONAL);
+    expect(warnings[0]).toContain('resources.json');
+    expect(personalOf(report)?.remaining).toBe(70_000);
+  });
+
+  it('a conta do repositorio citada no .taskin.json nao gera aviso', async () => {
+    const { warnings } = await planWithWarnings({ personal: [{ name: PERSONAL }] }, [task('1')]);
+    expect(warnings).toEqual([]);
   });
 });
 
