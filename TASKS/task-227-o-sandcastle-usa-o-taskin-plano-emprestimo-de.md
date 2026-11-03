@@ -1,4 +1,4 @@
-# 🧩 Task 227 — O sandcastle usa o taskin: plano, acesso à credencial e registro de execução
+# 🧩 Task 227 — O sandcastle roda uma task a pedido do taskin run, com o modelo e a conta do plano
 
 - Status: pending
 - Type: feat
@@ -8,20 +8,21 @@
 - Priority: 9720
 
 ## Description
-O sandcastle passa a usar o que a consciência situacional já sabe: escolhe o modelo pelo `taskin plan` quando `SANDCASTLE_MODEL` não vem, pega a credencial pelo `taskin access run` (o que permite várias contas sem trocar o `.sandcastle/.env` à mão) e grava cada execução no registro, com a dificuldade estimada e a encontrada: o histórico do time vai ao `.taskin/runs.jsonl` (sem conta nem horário, com o modelo) e o resto (a conta, o começo e o consumo com horário) ao estado da máquina, tudo pelo `createLocalRunLedger` (task 232). Gravar o começo da execução, e não só o fim, é o que faz o `taskin access run` espalhar as rodadas pelas contas: a conta menos ocupada é a que tem menos execuções em aberto no estado da máquina (task 231).
+O sandcastle passa a ser o comando que o `taskin run` (task-238) chama para cada task do plano. Hoje ele pega um lote, roda uma task por iteração com um modelo só e lê o token do `.sandcastle/.env`. O taskin não precisa usar um modelo por vez: o plano distribui as tasks entre modelos, contas e máquinas, e várias rodam ao mesmo tempo. Então o sandcastle roda **uma task** por chamada, com a task, o modelo e o token que o `taskin run` entrega no ambiente (`TASKIN_TASK`, `TASKIN_MODEL`, a variável do acesso), cada chamada no seu próprio worktree, para duas rodarem em paralelo sem se pisar. Ao fechar, escreve o resultado em `TASKIN_RUN_RESULT` (dificuldade encontrada, tokens, iterações, se concluiu, se refez), e o `taskin run` grava o registro: o histórico do time no `.taskin/runs.jsonl` (sem conta nem horário, com o modelo) e o resto no estado da máquina (task-232). O modo de lote de hoje continua para quem roda o sandcastle à mão.
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
 - [ ] O campo da dificuldade encontrada: onde o agente a registra ao fechar a task (proposta: `- Difficulty found:` no cabeçalho, ao lado de `Difficulty`), decidido com o usuário, com o provider e o lint acompanhando
 - [ ] `.sandcastle/prompt.md` pede ao agente a dificuldade encontrada antes de fechar a task
-- [ ] `.sandcastle/main.ts`: sem `SANDCASTLE_MODEL`, o modelo vem do `taskin plan --json` para a primeira task do lote; com a variável, ela vale, como hoje
-- [ ] `.sandcastle/main.ts`: o token do agente vem do `taskin access run claude-code`, e não mais só do `.sandcastle/.env`
-- [ ] Ao começar cada iteração, a execução começada pelo `createLocalRunLedger` (`startRun` com o acesso que o `taskin access run` escolheu), e, ao fim dela, a execução fechada com o modelo, os tokens, as iterações, a duração e a dificuldade estimada e encontrada (o `.taskin/runs.jsonl` leva só isso, sem a conta)
-- [ ] Um lote pequeno rodado de verdade com isso, e o `taskin plan` seguinte já usando o histórico
+- [ ] `.sandcastle/main.ts`: com `TASKIN_TASK`, roda só aquela task, com o modelo de `TASKIN_MODEL` e o token que veio no ambiente; sem ela, o lote de hoje, como está
+- [ ] Cada chamada num worktree próprio e num container próprio, para duas tasks do mesmo repositório rodarem ao mesmo tempo; o merge do resultado segue a regra de hoje (no HEAD de onde o `taskin run` foi chamado), uma de cada vez
+- [ ] O resultado em `TASKIN_RUN_RESULT`: tokens e iterações medidos pelo sandcastle, a dificuldade encontrada lida da task, se concluiu e se refez
+- [ ] `resources.dispatch.command` deste repositório apontando para o sandcastle
+- [ ] Um lote real pelo `taskin run`: duas tasks ao mesmo tempo em modelos diferentes, e o `taskin plan` seguinte já usando o histórico
 - [ ] `docs/SANDCASTLE_LICOES.md` atualizado
 
 ## Notes
-Depende das tasks 225 e 226 (lote 6).
+Depende da task-238 (o `taskin run`), que depende das tasks 235, 236 e 237.
 
 ### Onde executar
 Interativo, fora do sandcastle: a task muda o próprio sandcastle, e o agente não testa a máquina em que roda. Testada numa máquina Linux com Docker nativo, a partir da `develop` atualizada.

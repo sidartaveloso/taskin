@@ -3,6 +3,7 @@
 - Status: aprovada (em 2026-10-29; nada implementado, as etapas viram tasks uma a uma)
 - Data: 2026-10-29
 - Task: 213
+- Mapa: [consciencia-situacional-mapa.html](consciencia-situacional-mapa.html), a página que mostra onde mora cada recurso e cada configuração (Git, camada da pessoa, estado da máquina, percepção viva), com exemplos e uma task atravessando tudo (task-234)
 
 ## O que motivou
 
@@ -230,6 +231,30 @@ sondado expira. Sem a data, informação velha passa por informação atual.
 A compreensão começa sugerindo o como. Executar uma task em outra máquina é
 execução remota de código, então fica para uma etapa posterior e sempre com
 consentimento explícito.
+
+O despacho chega em dois passos: primeiro nesta máquina (o `taskin run`,
+task-238), depois nas outras máquinas da mesma pessoa, com consentimento por
+máquina (task-240, depois da percepção viva da task-228).
+
+### Distribuir, não escolher a conta mais ociosa
+
+O taskin não usa um modelo por vez nem põe tudo na conta mais ociosa. O
+escalonador distribui: cada task vai para a combinação de conta, modelo e
+máquina que a cobre pelo menor custo, e várias rodam ao mesmo tempo, até a
+capacidade de cada máquina (`concurrency`) e de cada conta
+(`concurrencyLimit`). Uma task difícil vai ao modelo forte, uma simples ao
+modelo barato ou ao local, e as duas correm juntas.
+
+- **Uma conta oferece vários modelos.** Conta e modelo são coisas diferentes:
+  a assinatura tem uma cota e uma janela, e os modelos dela dividem essa cota,
+  cada um com a sua competência e o seu custo (task-235).
+- **O plano decide a conta e o modelo; o acesso segue.** O `taskin access run`
+  recebe a conta e o modelo fixados pela atribuição (task-237). A conta menos
+  ocupada, pelas execuções em aberto no estado da máquina, só decide quando não
+  há plano.
+- **A capacidade é restrição do plano, não surpresa do despacho.** A conta
+  cheia entra no escalonador como a máquina cheia (task-236), e o despacho não
+  é recusado na hora.
 
 ### Um processo em segundo plano só
 
@@ -627,6 +652,29 @@ verdade:
 - **A percepção viva entre máquinas só vira tasks de implementação depois da
   228,** porque depende de decidir o transporte e a autenticação.
 
+A terceira rodada leva o plano da sugestão ao despacho, distribuindo as tasks
+entre modelos, contas e máquinas:
+
+| Task | O que | Lote | Dificuldade |
+| --- | --- | --- | --- |
+| 232 | O registro de execuções em duas metades: o histórico do time e o estado da máquina | `situacao-lote-6` | 4 |
+| 233 | Os ajustes de cada conta do plano moram na camada da pessoa | `situacao-lote-6` | 3 |
+| 234 | O mapa dos recursos como página no repositório | `situacao-lote-6` | 1 |
+| 235 | Uma conta oferece vários modelos: o plano escolhe conta, modelo e máquina | `situacao-lote-7` | 4 |
+| 236 | O escalonador respeita a capacidade de cada conta | `situacao-lote-7` | 3 |
+| 237 | O `taskin access run` segue a atribuição do plano | `situacao-lote-7` | 3 |
+| 238 | O `taskin run` despacha o plano nesta máquina, várias tasks ao mesmo tempo | `situacao-lote-7` | 4 |
+| 239 | Consentimento, horário e canais na camada da pessoa | `situacao-lote-7` | 3 |
+| 227 | O sandcastle roda uma task a pedido do `taskin run` | interativa | 4 |
+| 240 | O despacho para as outras máquinas da pessoa | interativa | 4 |
+
+- **O lote 7 roda na ordem da prioridade:** 235, 236, 237, 238 e 239. A 238
+  depende das três anteriores; a 239 é independente e pode ir noutra frente.
+- **A 227 depende da 238,** porque o sandcastle passa a ser o comando que o
+  `taskin run` chama para cada task, com a task, o modelo e o token no
+  ambiente, cada chamada no seu worktree.
+- **A 240 depende da 228 e da 238.**
+
 ## Decisões em aberto
 
 - **O formato do inventário**: o que a sondagem descobre sozinha e o que se
@@ -664,5 +712,7 @@ verdade:
 - `INotificationProvider` e `NOTIFICATION_PROVIDERS` em
   `packages/types-ts/src/taskin.schemas.ts`.
 - `EstimatorRouter.probe()` em `packages/difficulty-estimator`.
+- [consciencia-situacional-mapa.html](consciencia-situacional-mapa.html): o
+  mapa de onde mora cada recurso, com exemplos.
 - [superficies-derivam-do-mesmo-contrato.md](superficies-derivam-do-mesmo-contrato.md):
   qualquer canal novo que receba comandos entra pelo mesmo contrato.

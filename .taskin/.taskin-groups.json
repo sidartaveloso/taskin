@@ -92,6 +92,11 @@
       "id": "situacao-interativas",
       "name": "Situação: interativas, fora do sandcastle",
       "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-7": {
+      "id": "situacao-lote-7",
+      "name": "Situação, lote 7: distribuir o plano entre modelos, contas e máquinas",
+      "parentId": "g-ebwuvrd1"
     }
   }
 }
