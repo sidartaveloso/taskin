@@ -1,6 +1,6 @@
 # 🧩 Task 226 — O empréstimo de credenciais local: taskin access run, com o estado guardado na camada da pessoa
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-6
