@@ -25,6 +25,7 @@ import { startCommand } from './start.js';
 import { statsCommand } from './stats.js';
 import { statusCommand } from './status.js';
 import { registerUserCommand } from './user.js';
+import { registerViewpointsCommand } from './viewpoints.js';
 
 /**
  * Registra todos os comandos no programa.
@@ -60,4 +61,5 @@ export function registerCommands(program: Command): void {
   registerUserCommand(program);
   registerAccessCommand(program);
   registerRunCommand(program);
+  registerViewpointsCommand(program);
 }

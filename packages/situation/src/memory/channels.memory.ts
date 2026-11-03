@@ -15,19 +15,21 @@ import type {
 import type { PersonId } from '../use-cases/branded';
 import { MemoryPlugin } from './plugin.memory';
 
-interface Waiting {
+/** Um aviso que espera a pessoa voltar. */
+export interface WaitingNotice {
   readonly held: NoticeHeld;
   readonly notice: Notice;
 }
 
-class MemoryChannels extends MemoryPlugin<ChannelsEvents> implements IChannels {
+/** Os canais em memoria; a versao local estende esta e guarda o estado em arquivo. */
+export class MemoryChannels extends MemoryPlugin<ChannelsEvents> implements IChannels {
   readonly key = pluginKey('channels');
   readonly name = 'Channels';
   readonly description = 'Notices through the channel each person prefers, when present';
 
-  private sequence = 0;
-  private readonly preferred = new Map<PersonId, readonly ChannelName[]>();
-  private readonly waiting: Waiting[] = [];
+  protected sequence = 0;
+  protected readonly preferred = new Map<PersonId, readonly ChannelName[]>();
+  protected readonly waiting: WaitingNotice[] = [];
 
   constructor(private readonly ports: ChannelsPorts) {
     super(ports.clock);

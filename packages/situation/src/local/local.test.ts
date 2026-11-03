@@ -1,15 +1,21 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { hostname, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { describeChannelsContract } from '../system/plugins/channels/channels.contract';
+import type { ChannelName } from '../system/plugins/channels/channels.types';
 import { describeInventoryContract } from '../system/plugins/inventory/inventory.contract';
+import { describePeopleContract } from '../system/plugins/people/people.contract';
 import { describeRunLedgerContract } from '../system/plugins/run-ledger/run-ledger.contract';
 import { createFakePluginPorts } from '../system/system.fake-ports';
-import { difficulty, repositoryId, resourceId, secretRef, taskRef, tokenCount } from '../use-cases/branded';
+import { difficulty, repositoryId, resourceId, runId, secretRef, taskRef, tokenCount } from '../use-cases/branded';
 import { FakeClock } from '../use-cases/fake-ports';
-import { ANA, account, machine, REPO } from '../use-cases/scenarios';
+import { ANA, account, BRUNO, machine, REPO } from '../use-cases/scenarios';
+import { ask, consent, DESIGN, hoursUtc, registerTeam } from '../use-cases/viewpoint-scenarios';
+import { createLocalChannels } from './channels.local';
 import { createLocalInventory } from './inventory.local';
 import { createLocalMachineProbe } from './machine-probe.local';
+import { createLocalPeople } from './people.local';
 import { createLocalRunLedger } from './run-ledger.local';
 import { createEnvSecretStore } from './secret-store.env';
 
@@ -30,6 +36,89 @@ describeRunLedgerContract('run-ledger local', (ports) =>
     machine: join(tempDir(), 'taskin', 'runs.jsonl'),
   }),
 );
+
+/** Os arquivos do people e do channels: a camada da pessoa e o diretorio de estado. */
+function personFiles(dir = tempDir()) {
+  return {
+    personalResources: join(dir, 'config', 'taskin', 'resources.json'),
+    viewpoints: join(dir, 'state', 'taskin', 'viewpoints.json'),
+    notices: join(dir, 'state', 'taskin', 'notices.json'),
+  };
+}
+
+describePeopleContract('people local', (ports) => {
+  const files = personFiles();
+  return createLocalPeople(ports, { personalResources: files.personalResources, state: files.viewpoints });
+});
+describeChannelsContract('channels local', (ports) => {
+  const files = personFiles();
+  return createLocalChannels(ports, { personalResources: files.personalResources, state: files.notices });
+});
+
+describe('people e channels local: persistencia na camada da pessoa', () => {
+  it('consentimento, pedidos e tempo de resposta sobrevivem a uma nova instancia sobre os mesmos arquivos', async () => {
+    const files = personFiles();
+    const paths = { personalResources: files.personalResources, state: files.viewpoints };
+    const ports = createFakePluginPorts();
+    registerTeam(ports);
+    const first = createLocalPeople(ports, paths);
+    await first.consent(ANA, consent([DESIGN], { weeklyLoad: 1 }));
+    const origin = { repository: REPO, task: taskRef('task-9'), run: runId('run-task-9'), requestedBy: BRUNO };
+    const request = await first.requestViewpoint(origin, ask(ports, DESIGN));
+    expect(request.state).toBe('requested');
+
+    const second = createLocalPeople(ports, paths);
+    expect(await second.consentOf(ANA)).toMatchObject({ weeklyLoad: 1 });
+    expect((await second.requests(ANA)).map((r) => r.id)).toEqual([request.state === 'requested' ? request.id : '']);
+    expect((await second.requestViewpoint(origin, ask(ports, DESIGN))).state).toBe('denied');
+    if (request.state !== 'requested') return;
+    const accepted = await second.accept(request);
+    if (accepted.state !== 'accepted') throw new Error('o pedido devia ter sido aceito');
+    await second.deliver(accepted, 'Esta bom.');
+
+    const third = createLocalPeople(ports, paths);
+    expect((await third.follow(request)).state).toBe('delivered');
+    expect((await third.responseTimes(ANA)).map((r) => r.outcome)).toEqual(['delivered']);
+  });
+
+  it('os canais preferidos e o aviso que espera sobrevivem a uma nova instancia', async () => {
+    const files = personFiles();
+    const paths = { personalResources: files.personalResources, state: files.notices };
+    const ports = createFakePluginPorts();
+    const watch = 'watch' as ChannelName;
+    await createLocalChannels(ports, paths).prefer(ANA, [watch]);
+    ports.presence.set(ANA, false);
+    const held = await createLocalChannels(ports, paths).notify(ANA, { subject: 'Pedido', body: 'Corpo' });
+
+    const again = createLocalChannels(ports, paths);
+    expect(await again.preferredBy(ANA)).toEqual([watch]);
+    expect(await again.pending(ANA)).toEqual([held]);
+    ports.presence.set(ANA, true);
+    expect((await createLocalChannels(ports, paths).flush()).map((s) => s.id)).toEqual([held.id]);
+    expect(await createLocalChannels(ports, paths).pending(ANA)).toEqual([]);
+  });
+
+  it('as contas, o consentimento e os canais dividem o resources.json sem um apagar o outro', async () => {
+    const dir = tempDir();
+    const files = personFiles(dir);
+    const options = { ...paths(dir), personalResources: files.personalResources };
+    const ports = createFakePluginPorts();
+    const people = createLocalPeople(ports, { personalResources: files.personalResources, state: files.viewpoints });
+    const channels = createLocalChannels(ports, { personalResources: files.personalResources, state: files.notices });
+
+    await people.consent(ANA, consent([DESIGN]));
+    const inventory = createLocalInventory(ports, options);
+    const id = await inventory.declare(ANA, account('conta-pessoal'));
+    await channels.prefer(ANA, ['watch' as ChannelName]);
+    await inventory.release(ANA, id, REPO);
+
+    const personal = JSON.parse(readFileSync(files.personalResources, 'utf8'));
+    expect(Object.keys(personal).sort()).toEqual([ANA, 'channels', 'viewpoints'].sort());
+    const reopened = createLocalInventory(ports, options);
+    expect((await reopened.view(ANA, REPO)).resources.map((r) => r.name)).toEqual(['conta-pessoal']);
+    expect(await people.consentOf(ANA)).toMatchObject({ expertise: [DESIGN] });
+  });
+});
 
 describe('inventory local: persistencia', () => {
   it('as duas camadas sobrevivem a uma nova instancia sobre os mesmos arquivos', async () => {
@@ -335,3 +424,50 @@ describe('privacidade', () => {
     expect(readFileSync(machineState, 'utf8')).not.toContain(SECRET);
   });
 });
+
+describe('privacidade: o que e da pessoa', () => {
+  it('consentimento, horario, carga e nome de canal nunca aparecem em arquivo versionado', async () => {
+    const dir = tempDir();
+    const files = personFiles(join(dir, 'casa'));
+    const repo = join(dir, 'repositorio');
+    const options = paths(repo);
+    mkdirSync(repo, { recursive: true });
+    writeFileSync(options.repositoryConfig, JSON.stringify({ name: 'projeto' }));
+    const CHANNEL = 'tv-da-sala-da-ana' as ChannelName;
+    const ports = createFakePluginPorts();
+    registerTeam(ports);
+
+    const people = createLocalPeople(ports, { personalResources: files.personalResources, state: files.viewpoints });
+    const channels = createLocalChannels(ports, { personalResources: files.personalResources, state: files.notices });
+    const inventory = createLocalInventory(ports, { ...options, personalResources: files.personalResources });
+    await inventory.offer(REPO, machine('servidor-1', 'docker'));
+    await people.consent(ANA, consent([DESIGN], { weeklyLoad: 7, hours: hoursUtc(13, 17) }));
+    await people.invite(REPO, BRUNO);
+    const origin = { repository: REPO, task: taskRef('task-9'), run: runId('run-task-9'), requestedBy: BRUNO };
+    await people.requestViewpoint(origin, ask(ports, DESIGN));
+    await channels.prefer(ANA, [CHANNEL]);
+    ports.presence.set(ANA, false);
+    await channels.notify(ANA, { subject: 'Pedido', body: 'Corpo' });
+
+    const versioned = readdirRecursive(repo)
+      .map((file) => readFileSync(file, 'utf8'))
+      .join('\n');
+    expect(versioned).toContain('servidor-1');
+    expect(versioned).not.toContain(CHANNEL);
+    expect(versioned).not.toMatch(/weeklyLoad|fromMinute|toMinute|utcOffsetMinutes|weekdays|viewpoints|channels/);
+    expect(versioned).not.toContain(String(DESIGN));
+    expect(versioned).not.toMatch(/respondedIn|deliverableFrom/);
+
+    const personal = readFileSync(files.personalResources, 'utf8');
+    expect(personal).toContain(CHANNEL);
+    expect(personal).toContain('weeklyLoad');
+    expect(readFileSync(files.viewpoints, 'utf8')).toContain('deliverableFrom');
+    expect(statSync(files.viewpoints).mode & 0o077).toBe(0);
+  });
+});
+
+function readdirRecursive(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? readdirRecursive(join(dir, entry.name)) : [join(dir, entry.name)],
+  );
+}

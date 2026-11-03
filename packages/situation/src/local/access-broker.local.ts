@@ -41,7 +41,8 @@ function isStale(lockFile: string, staleMs: number): boolean {
   }
 }
 
-async function withFileLock<T>(lockFile: string, options: FileLockOptions, work: () => Promise<T>): Promise<T> {
+/** Roda `work` com a trava em `lockFile`, para processos da mesma maquina nao se atropelarem. */
+export async function withFileLock<T>(lockFile: string, options: FileLockOptions, work: () => Promise<T>): Promise<T> {
   const timeoutMs = options.timeoutMs ?? 10_000;
   const staleMs = options.staleMs ?? 30_000;
   const deadline = Date.now() + timeoutMs;

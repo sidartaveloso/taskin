@@ -77,7 +77,10 @@ class LocalInventory extends MemoryInventory {
       restrictPersonalMachines: stored?.restrictPersonalMachines ?? false,
       clearances: { ...stored?.clearances },
     };
-    this.personalLayer = readJson(options.personalResources) as PersonalLayer;
+    // So as listas sao contas: `viewpoints` e `channels` sao do people e do channels.
+    this.personalLayer = Object.fromEntries(
+      Object.entries(readJson(options.personalResources)).filter(([, value]) => Array.isArray(value)),
+    ) as PersonalLayer;
     this.loaded = this.replay();
   }
 
@@ -106,8 +109,12 @@ class LocalInventory extends MemoryInventory {
     writeJson(this.options.repositoryConfig, { ...config, resources: { ...resources, ...this.repositoryLayer } });
   }
 
+  /** Regrava as contas e preserva o resto da camada da pessoa, como o consentimento e os canais. */
   private savePersonal(): void {
-    writeJson(this.options.personalResources, this.personalLayer);
+    const others = Object.entries(readJson(this.options.personalResources)).filter(
+      ([, value]) => !Array.isArray(value),
+    );
+    writeJson(this.options.personalResources, { ...Object.fromEntries(others), ...this.personalLayer });
   }
 
   override async declare(owner: PersonId, declaration: ResourceDeclaration): Promise<ResourceId> {

@@ -184,6 +184,10 @@ texto das tasks, dos RDTs e dos commits segue em português.
 | Valores dos requisitos e das capacidades | lista fechada em inglês, no `types-ts`: `docker`, `android-sdk`, `gpu`, `interactive`, `microphone`, `visual-review`… |
 | O quadro da situação | `taskin status`, com `--format` (`text`, o padrão, `json`, `html` ou `md`) e o atalho `--json` |
 | O processo em segundo plano | `taskin daemon` (task-200); `taskin daemon status` fala só do processo |
+| Consentimento para pontos de vista (competências, carga semanal, horário) | chave `viewpoints` em `~/.config/taskin/resources.json`, por pessoa; `taskin viewpoints consent\|withdraw\|status` (task-239) |
+| Canais preferidos de uma pessoa | chave `channels` em `~/.config/taskin/resources.json`, por pessoa; `taskin channels prefer\|status` (task-239) |
+| Pedidos de ponto de vista, convites e tempo de resposta | `viewpoints.json` no diretório de estado (`$XDG_STATE_HOME/taskin`) |
+| Avisos que esperam a pessoa voltar | `notices.json` no diretório de estado |
 
 **`taskin status` abre pela task em andamento.** Status já é um campo de toda
 task, e quem digita o comando espera ver em que está trabalhando. Por isso o
@@ -475,6 +479,22 @@ esquemático) e o prazo; a resposta volta registrada na task, como evidência.
    task-206.
 5. **Gente de fora do projeto** (um especialista convidado) só entra por
    convite explícito e só vê o material do pedido.
+
+**Onde mora cada coisa (task-239).** O `people` e o `channels` têm, além da
+versão em memória, uma versão local que passa pelas mesmas suítes de contrato
+(`createLocalPeople`, `createLocalChannels`). O que é da pessoa fica na camada
+dela: o consentimento (competências, carga semanal e horário) na chave
+`viewpoints` e os canais preferidos na chave `channels` do
+`~/.config/taskin/resources.json`, ao lado das contas, que continuam nas
+chaves com o id da dona; o inventário lê só essas listas e preserva o resto do
+arquivo. O que é da máquina e muda a cada pedido (os pedidos abertos, os
+convites, o tempo de resposta e os avisos que esperam) fica no diretório de
+estado, em `viewpoints.json` e `notices.json`, gravados só para a dona ler.
+Cada operação lê e grava sob trava, como o `leases.json`. O repositório guarda
+só o que já guardava: quem é do projeto e, no registro de pessoas, a
+competência que a pessoa aceitou divulgar. Um canal novo (a TV da sala, o
+relógio) entra pelo mesmo contrato de canal, como um `sender` a mais; o
+transporte de um pedido de uma pessoa para o taskin de outra é da task-228.
 
 ## Como se implementa: contrato antes do código, em dois níveis
 
