@@ -1,17 +1,19 @@
 import { createMemoryScheduler, scorePlan } from '../memory/scheduler.memory';
 import type { ObjectiveWeights, Plan, SuggestedPlan } from '../system/plugins/scheduler/scheduler.types';
 import type { TaskRef } from '../use-cases/branded';
-import { accessSettingsOf, buildSchedulingProblem, type PlanProblemInput } from './build-problem';
+import { buildSchedulingProblem, type PlanProblemInput } from './build-problem';
 
 /** A versao do contrato JSON do `taskin plan`. Mudanca que quebra quem le sobe este numero. */
-export const PLAN_REPORT_VERSION = 1;
+export const PLAN_REPORT_VERSION = 2;
 
 const HOUR = 60 * 60 * 1000;
 
-/** O nome logico e, nos acessos, o modelo: so o que se pode mostrar. */
+/**
+ * O nome logico: so o que se pode mostrar. O modelo de cada atribuicao vem
+ * nela (`Assignment.model`), e os que a conta oferece, no problema.
+ */
 export interface PlanResourceLabel {
   readonly name: string;
-  readonly model?: string;
 }
 
 /**
@@ -38,7 +40,7 @@ export interface PlanReportInput extends PlanProblemInput {
 }
 
 /**
- * Sugere, para cada task aberta, acesso, maquina e momento, pelo escalonador
+ * Sugere, para cada task aberta, conta, modelo, maquina e momento, pelo escalonador
  * do pacote. A mesma entrada da sempre o mesmo plano.
  */
 export async function buildPlanReport(input: PlanReportInput): Promise<PlanReport> {
@@ -53,10 +55,7 @@ export async function buildPlanReport(input: PlanReportInput): Promise<PlanRepor
   const plan: Plan = { problem, assignments: within };
 
   const resources: Record<string, PlanResourceLabel> = {};
-  for (const a of input.accesses) {
-    const model = accessSettingsOf(a, input.settings)?.model;
-    resources[a.id] = model === undefined ? { name: a.name } : { name: a.name, model };
-  }
+  for (const a of input.accesses) resources[a.id] = { name: a.name };
   for (const m of input.machines) resources[m.id] = { name: m.name };
 
   return {
@@ -106,8 +105,7 @@ export function renderPlan(report: PlanReport, format: PlanFormat): string {
     const hours = Math.round((at - now) / HOUR);
     lines.push('', `${hours === 0 ? 'Now' : `In ${hours}h`} (${new Date(at).toISOString()}):`);
     for (const a of byMoment.get(at) ?? []) {
-      const model = report.resources[a.access]?.model;
-      lines.push(`  ${task(a.task)} → ${name(a.access)}${model ? ` (${model})` : ''} on ${name(a.machine)}`);
+      lines.push(`  ${task(a.task)} → ${name(a.access)} (${a.model}) on ${name(a.machine)}`);
     }
   }
   if (report.plan.assignments.length === 0) lines.push('', 'Nothing fits right now.');

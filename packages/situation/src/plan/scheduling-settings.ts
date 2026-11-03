@@ -35,22 +35,42 @@ export const DEFAULT_ACCESS_SETTINGS = {
 const difficultySchema = z.number().int().min(1).max(5);
 
 /**
+ * Um modelo que a conta oferece. O que ele nao declara vem da conta e, sem
+ * ela, de `DEFAULT_ACCESS_SETTINGS`.
+ */
+export const modelSettingsSchema = z.object({
+  name: z.string().min(1),
+  competence: difficultySchema.optional(),
+  /** A taxa de conclusao declarada, usada sem historico do modelo. */
+  completionRate: z.number().min(0).max(1).optional(),
+  costPerThousandTokens: z.number().min(0).optional(),
+});
+
+/**
  * Os ajustes de uma conta. Os de uma conta do repositorio moram em
  * `resources.scheduling.accesses` do `.taskin.json`, pelo nome; os de uma
  * conta da camada da pessoa, no `scheduling` ao lado da conta em
  * `~/.config/taskin/resources.json`, para o nome dela nunca ir ao repositorio.
  */
-export const accessSettingsSchema = z.object({
-  /** O modelo que o acesso usa, so para dizer na sugestao. */
-  model: z.string().optional(),
-  competence: difficultySchema.optional(),
-  /** A taxa de conclusao declarada, usada sem historico do acesso. */
-  completionRate: z.number().min(0).max(1).optional(),
-  costPerThousandTokens: z.number().min(0).optional(),
-  /** Tokens por janela. Sem ele, o acesso nao tem teto declarado. */
-  quota: z.number().int().min(0).optional(),
-  windowHours: z.number().positive().optional(),
-});
+export const accessSettingsSchema = z
+  .object({
+    /** Um modelo so: o mesmo que `models` com um item. */
+    model: z.string().optional(),
+    /** Os modelos que a conta oferece; todos dividem a cota e a janela dela. */
+    models: z.array(modelSettingsSchema).min(1).optional(),
+    /** O padrao dos modelos que nao declaram a sua. */
+    competence: difficultySchema.optional(),
+    /** A taxa de conclusao declarada, usada sem historico do acesso. */
+    completionRate: z.number().min(0).max(1).optional(),
+    costPerThousandTokens: z.number().min(0).optional(),
+    /** Tokens por janela. Sem ele, o acesso nao tem teto declarado. */
+    quota: z.number().int().min(0).optional(),
+    windowHours: z.number().positive().optional(),
+  })
+  .refine((a) => a.model === undefined || a.models === undefined, {
+    message: 'Declare either model or models for an account, not both',
+    path: ['models'],
+  });
 
 export const schedulingSettingsSchema = z.object({
   weights: z
@@ -77,6 +97,7 @@ export const schedulingSettingsSchema = z.object({
 
 export type SchedulingSettingsInput = z.infer<typeof schedulingSettingsSchema>;
 export type AccessSettings = z.infer<typeof accessSettingsSchema>;
+export type ModelSettings = z.infer<typeof modelSettingsSchema>;
 
 export interface SchedulingSettings {
   readonly weights: ObjectiveWeights;

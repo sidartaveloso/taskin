@@ -1,6 +1,7 @@
 import type {
   SchedulingAccess,
   SchedulingMachine,
+  SchedulingModel,
   SchedulingProblem,
   SchedulingRequirement,
   SchedulingTask,
@@ -19,7 +20,12 @@ import {
   tokenCount,
 } from '../use-cases/branded';
 import type { RunRecord } from '../use-cases/flows.types';
-import { type AccessSettings, DEFAULT_ACCESS_SETTINGS, type SchedulingSettings } from './scheduling-settings';
+import {
+  type AccessSettings,
+  DEFAULT_ACCESS_SETTINGS,
+  type ModelSettings,
+  type SchedulingSettings,
+} from './scheduling-settings';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -91,11 +97,21 @@ function byQueue(a: PlanTaskInput, b: PlanTaskInput): number {
 }
 
 /**
- * O modelo de um acesso para o historico: o que `resources.scheduling` declara
- * e, sem ele, o tipo do acesso. O historico do time e por modelo, nao por conta.
+ * Os modelos que uma conta oferece, com o que cada um declara e, no que nao
+ * declara, o da conta e o padrao. `model` vale como a lista de um modelo so;
+ * sem nenhum dos dois, o modelo e o tipo do acesso. O historico do time e por
+ * modelo, nao por conta.
  */
-export function modelOf(access: PlanAccessInput, settings: SchedulingSettings): string {
-  return accessSettingsOf(access, settings)?.model ?? String(access.accessKind);
+export function modelsOf(access: PlanAccessInput, settings: SchedulingSettings): Required<ModelSettings>[] {
+  const own = accessSettingsOf(access, settings);
+  const declared = { ...DEFAULT_ACCESS_SETTINGS, ...own };
+  const list: readonly ModelSettings[] = own?.models ?? [{ name: own?.model ?? String(access.accessKind) }];
+  return list.map((m) => ({
+    name: m.name,
+    competence: m.competence ?? declared.competence,
+    completionRate: m.completionRate ?? declared.completionRate,
+    costPerThousandTokens: m.costPerThousandTokens ?? declared.costPerThousandTokens,
+  }));
 }
 
 /** Os ajustes de um acesso: os que a camada dele declarou, ou os de `resources.scheduling.accesses`. */
@@ -112,7 +128,7 @@ export function windowMsOf(access: PlanAccessInput, settings: SchedulingSettings
  * Monta o problema do escalonador com o que existe: as tasks abertas (a
  * posicao na fila vira valor, a primeira vale tantas quantas ha), o inventario
  * e o registro. O historico do time da a taxa de conclusao de cada modelo e os
- * tokens por dificuldade; o consumo da janela vem do estado desta maquina; sem ele, valem os numeros declarados
+ * tokens por dificuldade; cada conta traz os modelos que oferece, que dividem a cota dela; o consumo da janela vem do estado desta maquina; sem ele, valem os numeros declarados
  * em `resources.scheduling`.
  */
 export function buildSchedulingProblem(input: PlanProblemInput): BuiltProblem {
@@ -153,21 +169,24 @@ export function buildSchedulingProblem(input: PlanProblemInput): BuiltProblem {
   });
 
   const accesses: SchedulingAccess[] = input.accesses.map((a) => {
-    const declared = { ...DEFAULT_ACCESS_SETTINGS, ...accessSettingsOf(a, settings) };
-    const mine = runs.filter((r) => r.model === modelOf(a, settings));
+    const quota = accessSettingsOf(a, settings)?.quota;
     const windowMs = windowMsOf(a, settings);
     const spent = input.spent[a.id] ?? 0;
+    const models: SchedulingModel[] = modelsOf(a, settings).map((m) => {
+      const mine = runs.filter((r) => r.model === m.name);
+      return {
+        name: m.name,
+        competence: difficulty(m.competence),
+        completionRate: mine.length === 0 ? m.completionRate : mine.filter((r) => r.completed).length / mine.length,
+        costPerThousandTokens: m.costPerThousandTokens,
+      };
+    });
     return {
       id: a.id,
       kind: a.accessKind,
       clearance: a.clearance,
-      competence: difficulty(declared.competence),
-      completionRate:
-        mine.length === 0 ? declared.completionRate : mine.filter((r) => r.completed).length / mine.length,
-      costPerThousandTokens: declared.costPerThousandTokens,
-      remaining: tokenCount(
-        declared.quota === undefined ? Number.MAX_SAFE_INTEGER : Math.max(0, declared.quota - spent),
-      ),
+      models,
+      remaining: tokenCount(quota === undefined ? Number.MAX_SAFE_INTEGER : Math.max(0, quota - spent)),
       windowEndsAt: instant(now + Math.round(windowMs)),
     };
   });
