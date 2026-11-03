@@ -1,6 +1,6 @@
 # 🧩 Task 232 — O registro de execucoes separa o historico do time do estado da maquina
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: situacao-lote-6
