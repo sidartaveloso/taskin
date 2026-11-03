@@ -10,18 +10,23 @@ const HOUR = 60 * 60 * 1000;
 /** Mil tokens por minuto, por execucao. */
 const BURN = 1_000 / (60 * 1000);
 
-describe('o emprestimo dividido e a projecao da janela', () => {
-  it('sem conta livre, divide; e a projecao da conta dividida mostra a janela acabando antes', async () => {
+describe('a reserva dividida e a projecao da janela', () => {
+  it('com capacidade para duas, a segunda execucao divide a conta; e a projecao da conta dividida mostra a janela acabando antes', async () => {
     const ports = createFakePorts();
     const inventory = createMemoryInventory(ports);
-    const declaration = account('conta-a');
+    const declaration = account('conta-a', { concurrencyLimit: 2 });
     const conta = await inventory.declare(ANA, declaration);
     await inventory.release(ANA, conta, REPO);
     ports.secrets.set(ANA, declaration.secret, secretValueOf('conta-a'));
     const provider = new SimulatedProvider(ports.clock, [
       { id: conta, limit: tokenCount(120_000), windowMs: 5 * HOUR },
     ]);
-    const broker = createMemoryAccessBroker({ ...ports, usage: provider, catalog: inventory });
+    const broker = createMemoryAccessBroker({
+      ...ports,
+      usage: provider,
+      catalog: inventory,
+      runs: { openRuns: async () => [] },
+    });
 
     const first = await broker.requestLease(ANA, leaseRequest('public', 'task-1'));
     const reading = await provider.usage(conta);
@@ -32,7 +37,7 @@ describe('o emprestimo dividido e a projecao da janela', () => {
     const shared = projectWindowEnd(reading, ports.clock.now(), (await broker.leases()).length, BURN);
 
     expect([first.state, second.state]).toEqual(['granted', 'granted']);
-    expect(second.state === 'granted' && second.shared).toBe(true);
+    expect(second.state === 'granted' && second.reserved && second.shared).toBe(true);
     expect(alone).toBe(ports.clock.now() + 2 * HOUR);
     expect(shared).toBe(ports.clock.now() + HOUR);
     expect(shared).toBeLessThan(alone);

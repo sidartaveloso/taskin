@@ -17,9 +17,14 @@ import type { IPluginSituation, PluginKey } from '../../plugin.types';
 export interface IRunLedger extends IPluginSituation<RunLedgerEvents> {
   readonly key: PluginKey<'run-ledger'>;
   planRun(repository: RepositoryId, task: TaskRef, estimated: Difficulty): Promise<RunPlanned>;
-  /** Comeca com o acesso emprestado: o id, nunca o emprestimo com o ambiente. */
+  /** Comeca com o acesso entregue: o id, nunca o acesso com o ambiente. */
   startRun(run: RunPlanned, access: ResourceId): Promise<RunStarted>;
   finishRun(run: RunStarted, outcome: RunOutcome): Promise<RunFinished>;
+  /**
+   * As execucoes que comecaram e ainda nao terminaram, de qualquer repositorio,
+   * na ordem em que comecaram: e como o access broker sabe quanto cada conta esta ocupada.
+   */
+  openRuns(): Promise<readonly RunStarted[]>;
   /** As execucoes fechadas no repositorio, na ordem em que fecharam. */
   runs(repository: RepositoryId): Promise<readonly RunFinished[]>;
   /** Os tokens das execucoes fechadas neste acesso desde um instante: a base da projecao de cota. */

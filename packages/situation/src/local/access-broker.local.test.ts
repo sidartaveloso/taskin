@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -29,11 +29,11 @@ function anaHas(ports: FakePluginPorts, name: string, options: Partial<LendableA
 }
 
 describe('access-broker local: o arquivo de estado', () => {
-  it('dois brokers sobre o mesmo arquivo dividem as contas, como dois processos', async () => {
+  it('dois brokers sobre o mesmo arquivo reservam vagas diferentes, como dois processos', async () => {
     const file = leasesFile();
     const ports = createFakePluginPorts();
-    anaHas(ports, 'conta-a');
-    anaHas(ports, 'conta-b');
+    anaHas(ports, 'conta-a', { concurrencyLimit: 1 });
+    anaHas(ports, 'conta-b', { concurrencyLimit: 1 });
     const first = createLocalAccessBroker(ports, file);
     const second = createLocalAccessBroker(ports, file);
 
@@ -43,7 +43,7 @@ describe('access-broker local: o arquivo de estado', () => {
     ]);
 
     expect([a.state, b.state]).toEqual(['granted', 'granted']);
-    if (a.state !== 'granted' || b.state !== 'granted') return;
+    if (a.state !== 'granted' || !a.reserved || b.state !== 'granted' || !b.reserved) return;
     expect(a.access).not.toBe(b.access);
     expect(a.id).not.toBe(b.id);
     expect((await second.leases()).map((l) => l.task).sort()).toEqual(['task-1', 'task-2']);
@@ -52,7 +52,7 @@ describe('access-broker local: o arquivo de estado', () => {
     expect((await first.leases()).map((l) => l.id)).toEqual([b.id]);
   });
 
-  it('muitos pedidos ao mesmo tempo, com o limite do provedor: so um recebe a vaga', async () => {
+  it('muitos pedidos ao mesmo tempo, com a capacidade declarada: so um recebe a vaga', async () => {
     const file = leasesFile();
     const ports = createFakePluginPorts();
     anaHas(ports, 'conta-a', { concurrencyLimit: 1 });
@@ -65,24 +65,39 @@ describe('access-broker local: o arquivo de estado', () => {
     expect(results.filter((r) => r.state === 'granted')).toHaveLength(1);
   });
 
-  it('o arquivo guarda o nome logico e os prazos, nunca o segredo', async () => {
+  it('o arquivo guarda o nome logico e os prazos da reserva, nunca o segredo', async () => {
     const file = leasesFile();
     const ports = createFakePluginPorts();
-    anaHas(ports, 'conta-a');
+    anaHas(ports, 'conta-a', { concurrencyLimit: 1 });
     const broker = createLocalAccessBroker(ports, file);
 
     const lease = await broker.requestLease(ANA, leaseRequest());
 
-    expect(lease.state).toBe('granted');
+    expect(lease.state === 'granted' && lease.reserved).toBe(true);
     const stored = readFileSync(file, 'utf8');
     expect(stored).toContain('conta-a');
     expect(stored).not.toContain(secretValueOf('conta-a'));
   });
 
-  it('trava deixada por um processo que ja morreu nao prende ninguem', async () => {
+  it('conta sem capacidade declarada: nenhuma rodada grava reserva, nem o arquivo de estado nasce', async () => {
     const file = leasesFile();
     const ports = createFakePluginPorts();
     anaHas(ports, 'conta-a');
+    const broker = createLocalAccessBroker(ports, file);
+
+    const grants = await Promise.all(
+      Array.from({ length: 4 }, (_, i) => broker.requestLease(ANA, leaseRequest('public', `task-${i}`))),
+    );
+
+    expect(grants.map((g) => g.state === 'granted' && g.reserved)).toEqual([false, false, false, false]);
+    expect(existsSync(file)).toBe(false);
+    expect(await broker.leases()).toEqual([]);
+  });
+
+  it('trava deixada por um processo que ja morreu nao prende ninguem', async () => {
+    const file = leasesFile();
+    const ports = createFakePluginPorts();
+    anaHas(ports, 'conta-a', { concurrencyLimit: 1 });
     const broker = createLocalAccessBroker(ports, file, { timeoutMs: 500 });
     await broker.leases();
     writeFileSync(`${file}.lock`, '999999999\n');

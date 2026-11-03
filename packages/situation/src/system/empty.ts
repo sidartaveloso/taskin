@@ -100,6 +100,7 @@ export const createEmptyRunLedger = (): IRunLedger => {
       planRun: op('planRun'),
       startRun: op('startRun'),
       finishRun: op('finishRun'),
+      openRuns: op('openRuns'),
       runs: op('runs'),
       consumption: op('consumption'),
       recordViewpoint: op('recordViewpoint'),

@@ -98,6 +98,20 @@ export const RUN_LEDGER_CONTRACT_CASES: readonly PluginContractCase<IRunLedger>[
     },
   },
   {
+    name: 'as execucoes em aberto sao as que comecaram e nao terminaram, de qualquer repositorio, na ordem em que comecaram',
+    async run(ledger) {
+      const first = await started(ledger, 'task-1');
+      const second = await started(ledger, 'task-2', CONTA_B, repositoryId('outro-repo'));
+      const third = await started(ledger, 'task-3');
+      await ledger.planRun(REPO, taskRef('task-4'), difficulty(2));
+
+      expect(await ledger.openRuns()).toEqual([first, second, third]);
+
+      await ledger.finishRun(second, outcome(10));
+      expect(await ledger.openRuns()).toEqual([first, third]);
+    },
+  },
+  {
     name: 'cada execucao tem id proprio',
     async run(ledger) {
       const a = await ledger.planRun(REPO, taskRef('task-1'), difficulty(2));

@@ -19,7 +19,8 @@ import type {
  * Os fluxos em typestate. Cada estado e um handle no participio, e cada
  * operacao so aceita o handle do estado certo: o caminho errado nao compila.
  *
- *   emprestimo: LeaseGranted | LeaseDenied  →  LeaseReturned | LeaseExpired
+ *   acesso:     AccessGranted | LeaseGranted | LeaseDenied
+ *   reserva:    LeaseGranted  →  LeaseReturned | LeaseExpired
  *   execucao:   RunPlanned  →  RunStarted  →  RunFinished
  *   ponto de vista: ViewpointRequested  →  ViewpointAccepted | ViewpointDeclined
  *                   ViewpointAccepted   →  ViewpointDelivered
@@ -35,28 +36,40 @@ export interface LeaseRequest {
   readonly sensitivity: DataClass;
 }
 
-/** O acesso entregue a uma execucao, com prazo. */
-export interface LeaseGranted {
+/**
+ * O acesso entregue a uma execucao sem reserva: a conta nao declara capacidade,
+ * entao nenhuma vaga foi ocupada, nada foi gravado e nao ha prazo nem devolucao.
+ */
+export interface AccessGranted {
   readonly state: 'granted';
-  readonly id: LeaseId;
+  readonly reserved: false;
   readonly access: ResourceId;
   /**
    * O ambiente da execucao, com o segredo no nome de variavel que o acesso
    * declara. Vive so aqui: nunca no inventario, no quadro ou no registro.
    */
   readonly env: Readonly<Record<string, string>>;
+}
+
+/** A reserva: o acesso entregue a uma execucao com uma vaga ocupada, com prazo, numa conta que declara capacidade. */
+export interface LeaseGranted extends Omit<AccessGranted, 'reserved'> {
+  readonly reserved: true;
+  readonly id: LeaseId;
   readonly grantedAt: Instant;
   readonly expiresAt: Instant;
-  /** Se a conta foi dividida com outra execucao, por nao haver conta livre. */
+  /** Se a conta ja tinha outra reserva em curso: a vaga foi dividida com outra execucao. */
   readonly shared: boolean;
 }
+
+/** O que o pedido de um acesso entrega: a conta, com ou sem reserva. So a reserva tem o que devolver. */
+export type AccessGrant = AccessGranted | LeaseGranted;
 
 export const LEASE_DENIAL_CODES = [
   /** Nenhum acesso daquele tipo esta a vista desta pessoa neste repositorio. */
   'no-access-of-kind',
   /** Ha acesso do tipo, mas nenhum liberado para a sensibilidade pedida. */
   'no-cleared-access',
-  /** Todos os acessos que servem estao no limite que o provedor declara. */
+  /** Todos os acessos que servem declaram capacidade e estao com todas as vagas reservadas. */
   'all-at-provider-limit',
 ] as const;
 
@@ -72,7 +85,7 @@ export interface LeaseReturned {
   readonly id: LeaseId;
 }
 
-/** Devolvido depois do prazo: a conta ja tinha voltado sozinha. */
+/** Devolvida depois do prazo: a vaga ja tinha voltado sozinha. */
 export interface LeaseExpired {
   readonly state: 'expired';
   readonly id: LeaseId;

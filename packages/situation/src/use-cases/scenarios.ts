@@ -72,18 +72,26 @@ export interface Scenario {
 }
 
 /** Uma maquina e uma conta: o caso de quem esta comecando. */
-export async function oneMachineOneAccount(sys: ISituationActors, ports: FakePorts): Promise<Scenario> {
+export async function oneMachineOneAccount(
+  sys: ISituationActors,
+  ports: FakePorts,
+  options?: Partial<AccessDeclaration>,
+): Promise<Scenario> {
   const notebook = await anaMachine(sys, 'notebook', DOCKER);
-  const contaA = await anaAccount(sys, ports, 'conta-a');
+  const contaA = await anaAccount(sys, ports, 'conta-a', options);
   return { machines: [notebook], accounts: [contaA], executors: [sys.executor(ANA, notebook)] };
 }
 
 /** Duas maquinas e duas contas: cada lote numa conta, sem gargalo. */
-export async function twoMachinesTwoAccounts(sys: ISituationActors, ports: FakePorts): Promise<Scenario> {
+export async function twoMachinesTwoAccounts(
+  sys: ISituationActors,
+  ports: FakePorts,
+  options?: Partial<AccessDeclaration>,
+): Promise<Scenario> {
   const notebook = await anaMachine(sys, 'notebook', DOCKER);
   const desktop = await anaMachine(sys, 'desktop', DOCKER, ANDROID_SDK);
-  const contaA = await anaAccount(sys, ports, 'conta-a');
-  const contaB = await anaAccount(sys, ports, 'conta-b');
+  const contaA = await anaAccount(sys, ports, 'conta-a', options);
+  const contaB = await anaAccount(sys, ports, 'conta-b', options);
   return {
     machines: [notebook, desktop],
     accounts: [contaA, contaB],
@@ -91,7 +99,7 @@ export async function twoMachinesTwoAccounts(sys: ISituationActors, ports: FakeP
   };
 }
 
-/** Duas maquinas e uma conta: os lotes dividem a conta. */
+/** Duas maquinas e uma conta: os lotes usam a mesma conta. */
 export async function twoMachinesOneAccount(
   sys: ISituationActors,
   ports: FakePorts,

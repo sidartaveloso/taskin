@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { AccessDeclaration } from '../use-cases/actors.types';
 import { capability, difficulty, runId, taskRef, tokenCount } from '../use-cases/branded';
-import type { LeaseDenied, LeaseGranted } from '../use-cases/flows.types';
+import type { AccessGrant, LeaseDenied, LeaseGranted } from '../use-cases/flows.types';
 import { ANA, account, BRUNO, DOCKER, leaseRequest, machine, REPO, secretValueOf } from '../use-cases/scenarios';
 import { acceptedViewpoint, ask, consent, DESIGN, registerTeam, requested } from '../use-cases/viewpoint-scenarios';
 import type { ChannelName } from './plugins/channels/channels.types';
@@ -29,16 +30,27 @@ function record(situation: ISituation, types: readonly SituationEventType[]): Si
   return seen;
 }
 
-function granted(result: LeaseGranted | LeaseDenied): LeaseGranted {
+function granted(result: AccessGrant | LeaseDenied): AccessGrant {
   expect(result.state, result.state === 'denied' ? result.reason.detail : '').toBe('granted');
-  return result as LeaseGranted;
+  return result as AccessGrant;
+}
+
+/** O acesso entregue com reserva: a conta declara capacidade. */
+function reserved(result: AccessGrant | LeaseDenied): LeaseGranted {
+  const grant = granted(result);
+  expect(grant.reserved).toBe(true);
+  return grant as LeaseGranted;
 }
 
 /** Uma maquina e uma conta da Ana, liberadas para o repositorio, com o segredo na guarda dela. */
-async function anaWithOneAccount(situation: ISituation, ports: FakeSystemPorts) {
+async function anaWithOneAccount(
+  situation: ISituation,
+  ports: FakeSystemPorts,
+  options: Partial<AccessDeclaration> = {},
+) {
   const notebook = await situation.inventory.declare(ANA, machine('notebook', 'docker'));
   await situation.inventory.release(ANA, notebook, REPO);
-  const declaration = account('conta-a');
+  const declaration = account('conta-a', options);
   const conta = await situation.inventory.declare(ANA, declaration);
   await situation.inventory.release(ANA, conta, REPO);
   ports.secrets.set(ANA, declaration.secret, secretValueOf('conta-a'));
@@ -136,7 +148,7 @@ export const SYSTEM_CONTRACT_CASES: readonly SystemContractCase[] = [
     },
   },
   {
-    name: 'o emprestimo usa as contas do inventario: so as liberadas, com a classificacao do repositorio',
+    name: 'o acesso usa as contas do inventario: so as liberadas, com a classificacao do repositorio',
     async run(situation, ports) {
       const personal = account('conta-pessoal');
       const unreleased = await situation.inventory.declare(ANA, personal);
@@ -155,14 +167,14 @@ export const SYSTEM_CONTRACT_CASES: readonly SystemContractCase[] = [
     },
   },
   {
-    name: 'uma execucao inteira: planejada, emprestimo, iniciada, finalizada e devolvida, em ordem',
+    name: 'uma execucao inteira numa conta com capacidade declarada: planejada, reserva, iniciada, finalizada e devolvida, em ordem',
     async run(situation, ports) {
       await situation.start();
       const seen = record(situation, ALL_TYPES);
-      const { conta } = await anaWithOneAccount(situation, ports);
+      const { conta } = await anaWithOneAccount(situation, ports, { concurrencyLimit: 1 });
 
       const planned = await situation.runLedger.planRun(REPO, taskRef('task-7'), difficulty(2));
-      const lease = granted(await situation.accessBroker.requestLease(ANA, leaseRequest('public', 'task-7')));
+      const lease = reserved(await situation.accessBroker.requestLease(ANA, leaseRequest('public', 'task-7')));
       const started = await situation.runLedger.startRun(planned, lease.access);
       const finished = await situation.runLedger.finishRun(started, {
         found: difficulty(3),
@@ -185,13 +197,42 @@ export const SYSTEM_CONTRACT_CASES: readonly SystemContractCase[] = [
     },
   },
   {
+    name: 'uma execucao inteira numa conta sem capacidade declarada: nenhuma reserva nasce, e a execucao em aberto ocupa a conta',
+    async run(situation, ports) {
+      await situation.start();
+      const seen = record(situation, ALL_TYPES);
+      const { conta } = await anaWithOneAccount(situation, ports);
+
+      const planned = await situation.runLedger.planRun(REPO, taskRef('task-7'), difficulty(2));
+      const grant = granted(await situation.accessBroker.requestLease(ANA, leaseRequest('public', 'task-7')));
+      const started = await situation.runLedger.startRun(planned, grant.access);
+      expect((await situation.runLedger.openRuns()).map((r) => [r.id, r.access])).toEqual([[started.id, conta]]);
+      await situation.runLedger.finishRun(started, {
+        found: difficulty(3),
+        tokens: tokenCount(5_000),
+        iterations: 2,
+        completed: true,
+        reworked: false,
+      });
+
+      expect(grant.reserved).toBe(false);
+      expect(await situation.accessBroker.leases()).toEqual([]);
+      expect(await situation.runLedger.openRuns()).toEqual([]);
+      expect(seen.map((e) => e.type).filter((t) => !t.startsWith('inventory:'))).toEqual([
+        'run-ledger:run-planned',
+        'run-ledger:run-started',
+        'run-ledger:run-finished',
+      ]);
+    },
+  },
+  {
     name: 'nenhum envelope do sistema leva o valor de um segredo',
     async run(situation, ports) {
       await situation.start();
       const seen = record(situation, ALL_TYPES);
-      await anaWithOneAccount(situation, ports);
+      await anaWithOneAccount(situation, ports, { concurrencyLimit: 1 });
 
-      const lease = granted(await situation.accessBroker.requestLease(ANA, leaseRequest()));
+      const lease = reserved(await situation.accessBroker.requestLease(ANA, leaseRequest()));
       await situation.accessBroker.returnLease(lease);
 
       expect(JSON.stringify(seen)).not.toContain(secretValueOf('conta-a'));

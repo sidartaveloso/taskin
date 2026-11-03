@@ -109,6 +109,63 @@ describe('sondagem desta maquina', () => {
   });
 });
 
+describe('run-ledger local: o arquivo de execucoes', () => {
+  const runsFile = () => join(tempDir(), '.taskin', 'runs.jsonl');
+  const outcome = {
+    found: difficulty(3),
+    tokens: tokenCount(10),
+    iterations: 1,
+    completed: true,
+    reworked: false,
+  };
+
+  it('outro processo sobre o mesmo arquivo ve a execucao em aberto, e deixa de ver quando ela fecha', async () => {
+    const file = runsFile();
+    const ports = createFakePluginPorts();
+    const mine = createLocalRunLedger(ports, file);
+    const theirs = createLocalRunLedger(ports, file);
+
+    const run = await mine.startRun(await mine.planRun(REPO, taskRef('task-1'), difficulty(2)), resourceId('conta-a'));
+
+    expect((await theirs.openRuns()).map((r) => [r.id, r.access])).toEqual([[run.id, 'conta-a']]);
+    await mine.finishRun(run, outcome);
+    expect(await theirs.openRuns()).toEqual([]);
+    expect((await theirs.runs(REPO)).map((r) => r.id)).toEqual([run.id]);
+  });
+
+  it('dois processos nao confundem a execucao um do outro: os ids nao se repetem entre eles', async () => {
+    const file = runsFile();
+    const ports = createFakePluginPorts();
+    const first = createLocalRunLedger(ports, file);
+    const second = createLocalRunLedger(ports, file);
+
+    const a = await first.startRun(await first.planRun(REPO, taskRef('task-1'), difficulty(2)), resourceId('conta-a'));
+    const b = await second.startRun(
+      await second.planRun(REPO, taskRef('task-2'), difficulty(2)),
+      resourceId('conta-a'),
+    );
+    await second.finishRun(b, outcome);
+
+    expect(a.id).not.toBe(b.id);
+    expect((await first.openRuns()).map((r) => r.id)).toEqual([a.id]);
+  });
+
+  it('a execucao que ficou aberta alem do horizonte, porque o processo morreu, deixa de contar', async () => {
+    const file = runsFile();
+    const ports = createFakePluginPorts();
+    const ledger = createLocalRunLedger(ports, file, { openMaxAgeMs: 60_000 });
+    const abandoned = await ledger.startRun(
+      await ledger.planRun(REPO, taskRef('task-1'), difficulty(2)),
+      resourceId('conta-a'),
+    );
+
+    ports.clock.advance(30_000);
+    expect((await ledger.openRuns()).map((r) => r.id)).toEqual([abandoned.id]);
+    ports.clock.advance(31_000);
+    expect(await ledger.openRuns()).toEqual([]);
+  });
+});
+
 describe('privacidade', () => {
   it('runs.jsonl e a camada do repositorio nao levam endereco, hostname nem valor de segredo', async () => {
     const dir = tempDir();
@@ -135,7 +192,7 @@ describe('privacidade', () => {
     });
 
     const lines = readFileSync(runsFile, 'utf8').trim().split('\n');
-    expect(lines).toHaveLength(1);
+    expect(lines.map((line) => JSON.parse(line).state)).toEqual(['started', 'finished']);
     const written = `${lines.join('\n')}\n${readFileSync(options.repositoryConfig, 'utf8')}`;
     expect(written).not.toContain(SECRET);
     expect(written).not.toMatch(/\d{1,3}(\.\d{1,3}){3}/);
