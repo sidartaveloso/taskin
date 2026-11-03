@@ -1,6 +1,6 @@
 # 🧩 Task 234 — O mapa dos recursos como pagina no repositorio
 
-- Status: in-progress
+- Status: done
 - Type: docs
 - Assignee: sidartaveloso
 - Group: situacao-lote-6
