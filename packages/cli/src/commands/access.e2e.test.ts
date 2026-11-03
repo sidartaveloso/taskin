@@ -14,7 +14,11 @@ let raiz: string;
 let casa: string;
 let estado: string;
 
-const ambiente = () => ({ ...process.env, HOME: casa, XDG_STATE_HOME: estado, SITUATION_TOKEN: SEGREDO });
+/** O ambiente do teste, sem o TASKIN_MODEL de quem roda a suite: o modelo so chega pelo --model. */
+const ambiente = () => {
+  const { TASKIN_MODEL: _, ...herdado } = process.env;
+  return { ...herdado, HOME: casa, XDG_STATE_HOME: estado, SITUATION_TOKEN: SEGREDO };
+};
 const leases = () => join(estado, 'taskin', 'leases.json');
 
 async function rodar(...args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
@@ -192,6 +196,59 @@ describe('taskin access', LENTO, () => {
     expect(duasContraUma).toBe('claude-third');
     expect(existsSync(leases())).toBe(false);
     expect(existsSync(join(raiz, '.taskin', 'runs.jsonl'))).toBe(false);
+  });
+
+  it('com --access, usa a conta que o plano fixou, mesmo havendo outra menos ocupada', async () => {
+    registrarAbertas(execucaoEmAberto('claude-third', 1));
+
+    const r = await rodar('access', 'run', 'llm-pair', '--access', 'claude-third', '--', 'node', '-e', '0');
+
+    expect(r.code).toBe(0);
+    expect(contaEscolhida(r.stderr)).toBe('claude-third');
+  });
+
+  it('a conta fixada sem liberacao, ou que nao existe, e recusada sem rodar o comando', async () => {
+    const marca = join(raiz, 'rodou');
+    const escreveMarca = `require('fs').writeFileSync(${JSON.stringify(marca)}, '')`;
+    const semLiberacao = await rodar(
+      'access',
+      'run',
+      'llm-pair',
+      '--access',
+      'claude-third',
+      '--sensitivity',
+      'sensitive',
+      '--',
+      'node',
+      '-e',
+      escreveMarca,
+    );
+    const inexistente = await rodar(
+      'access',
+      'run',
+      'llm-pair',
+      '--access',
+      'claude-z',
+      '--',
+      'node',
+      '-e',
+      escreveMarca,
+    );
+
+    expect(semLiberacao.code).toBe(1);
+    expect(semLiberacao.stderr).toContain('no-cleared-access');
+    expect(inexistente.code).toBe(1);
+    expect(inexistente.stderr).toContain('unknown-access');
+    expect(existsSync(marca)).toBe(false);
+  });
+
+  it('com --model, o comando recebe o modelo do plano em TASKIN_MODEL; sem ele, a variavel nao e posta', async () => {
+    const mostraModelo = 'console.log(process.env.TASKIN_MODEL ?? "-")';
+    const com = await rodar('access', 'run', 'llm', '--model', 'claude-opus', '--', 'node', '-e', mostraModelo);
+    const sem = await rodar('access', 'run', 'llm', '--', 'node', '-e', mostraModelo);
+
+    expect(com.stdout.trim()).toBe('claude-opus');
+    expect(sem.stdout.trim()).toBe('-');
   });
 
   it('o comando que falha tambem devolve a reserva', async () => {

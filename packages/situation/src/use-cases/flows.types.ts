@@ -34,6 +34,11 @@ export interface LeaseRequest {
   readonly kind: AccessKind;
   /** A sensibilidade do que a task mostra ao modelo. */
   readonly sensitivity: DataClass;
+  /**
+   * A conta que o plano ja escolheu para esta task. Com ela, o broker entrega
+   * aquela conta ou recusa com o motivo; sem ela, escolhe a menos ocupada.
+   */
+  readonly access?: ResourceId;
 }
 
 /**
@@ -71,6 +76,8 @@ export const LEASE_DENIAL_CODES = [
   'no-cleared-access',
   /** Todos os acessos que servem declaram capacidade e estao com todas as vagas reservadas. */
   'all-at-provider-limit',
+  /** A conta fixada no pedido nao esta a vista desta pessoa neste repositorio, ou o segredo dela nao esta na guarda. */
+  'unknown-access',
 ] as const;
 
 export type LeaseDenialCode = (typeof LEASE_DENIAL_CODES)[number];

@@ -1,5 +1,6 @@
 /**
- * `taskin access` — os acessos desta maquina: `run` escolhe uma conta, roda o
+ * `taskin access` — os acessos desta maquina: `run` escolhe uma conta (ou usa
+ * a que o plano fixou, com `--access`, e o modelo dele em `TASKIN_MODEL`), roda o
  * comando com o segredo so no ambiente dele e, se a conta declara capacidade,
  * reserva uma vaga e a devolve no fim; `status` mostra as reservas em aberto,
  * sem segredo.
@@ -17,6 +18,7 @@ import {
   type DataClass,
   type IAccessBroker,
   instant,
+  resourceId,
   taskinStateDir,
   taskRef,
 } from '@opentask/taskin-situation';
@@ -59,7 +61,12 @@ async function accessNames(broker: ReturnType<typeof openBroker>): Promise<Map<s
 interface RunOptions {
   sensitivity?: string;
   task?: string;
+  access?: string;
+  model?: string;
 }
+
+/** A variavel em que o comando recebe o modelo que o plano escolheu. */
+export const MODEL_ENV_VAR = 'TASKIN_MODEL';
 
 function exitCodeOf(code: number | null, signal: NodeJS.Signals | null): number {
   if (code !== null) return code;
@@ -101,18 +108,25 @@ async function runWithAccess(kind: string, command: string[], options: RunOption
 
   const local = openBroker(process.cwd());
   const broker: IAccessBroker = local.broker;
+  const names = await accessNames(local);
+  // O nome logico vira o id pelo inventario; um nome que nao existe segue como esta, e o broker o recusa.
+  const pinned =
+    options.access === undefined
+      ? undefined
+      : resourceId([...names].find(([, name]) => name === options.access)?.[0] ?? options.access);
   const grant = await broker.requestLease(local.person, {
     repository: local.repository,
     task: taskRef(options.task ?? 'manual'),
     kind: accessKind(kind),
     sensitivity,
+    ...(pinned === undefined ? {} : { access: pinned }),
   });
   if (grant.state === 'denied') {
     console.error(`Access denied (${grant.reason.code}): ${grant.reason.detail}`);
     process.exit(1);
   }
 
-  const name = (await accessNames(local)).get(String(grant.access)) ?? String(grant.access);
+  const name = names.get(String(grant.access)) ?? String(grant.access);
   console.error(
     grant.reserved
       ? `Reserved "${name}"${grant.shared ? ' (shared with another run)' : ''} until ${new Date(grant.expiresAt).toISOString()}.`
@@ -121,7 +135,10 @@ async function runWithAccess(kind: string, command: string[], options: RunOption
 
   let code: number;
   try {
-    code = await runChild(command, grant.env);
+    code = await runChild(
+      command,
+      options.model === undefined ? grant.env : { ...grant.env, [MODEL_ENV_VAR]: options.model },
+    );
   } finally {
     if (grant.reserved) await broker.returnLease(grant);
   }
@@ -166,6 +183,11 @@ export function registerAccessCommand(program: Command): void {
     )
     .option('--sensitivity <level>', `What the task shows the model: ${SENSITIVITIES.join(', ')}`, 'public')
     .option('--task <id>', 'The task this run is for')
+    .option(
+      '--access <name>',
+      'Use this account (its logical name), as the plan assigned it, instead of the least busy one; denied if it is not cleared or has no free slot',
+    )
+    .option('--model <model>', `The model the plan chose, passed to the command in ${MODEL_ENV_VAR}`)
     .action(async (kind: string, command: string[], options: RunOptions) => {
       await runWithAccess(kind, command, options);
     });

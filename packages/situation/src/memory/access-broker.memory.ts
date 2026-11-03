@@ -124,11 +124,23 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
       });
     }
 
-    const cleared = held.filter((h) => covers(h.access.clearance, request.sensitivity));
+    const pinned = request.access;
+    const usable = pinned === undefined ? held : held.filter((h) => h.access.id === pinned);
+    if (usable.length === 0) {
+      return this.deny(person, request, {
+        code: 'unknown-access',
+        detail: `o acesso ${pinned} nao esta a vista de ${person} em ${request.repository}`,
+      });
+    }
+
+    const cleared = usable.filter((h) => covers(h.access.clearance, request.sensitivity));
     if (cleared.length === 0) {
       return this.deny(person, request, {
         code: 'no-cleared-access',
-        detail: `nenhum acesso ${request.kind} liberado para dado ${request.sensitivity}`,
+        detail:
+          pinned === undefined
+            ? `nenhum acesso ${request.kind} liberado para dado ${request.sensitivity}`
+            : `o acesso ${pinned} nao esta liberado para dado ${request.sensitivity}`,
       });
     }
 
@@ -150,7 +162,10 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
     if (candidates.length === 0) {
       return this.deny(person, request, {
         code: 'all-at-provider-limit',
-        detail: `todos os acessos ${request.kind} declaram capacidade e estao com todas as vagas reservadas`,
+        detail:
+          pinned === undefined
+            ? `todos os acessos ${request.kind} declaram capacidade e estao com todas as vagas reservadas`
+            : `o acesso ${pinned} esta com todas as vagas reservadas`,
       });
     }
 
@@ -215,7 +230,7 @@ class MemoryAccessBroker extends MemoryPlugin<AccessBrokerEvents> implements IAc
 /**
  * O access broker em memoria. Entre as contas liberadas, escolhe a menos
  * ocupada (as execucoes em aberto no registro), e a de mais folga na janela
- * quando empatam. So a conta com capacidade declarada gera reserva.
+ * quando empatam; com a conta fixada no pedido, so ela concorre. So a conta com capacidade declarada gera reserva.
  */
 export function createMemoryAccessBroker(
   ports: AccessBrokerPorts,
