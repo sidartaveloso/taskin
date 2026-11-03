@@ -292,6 +292,71 @@ export const ACCESS_BROKER_CONTRACT_CASES: readonly PluginContractCase<IAccessBr
     },
   },
 
+  // ─── A conta fixada pelo plano ───────────────────────────────────────────
+  {
+    name: 'com a conta fixada, o pedido recebe aquela conta mesmo havendo outra menos ocupada',
+    async run(broker, ports) {
+      const a = anaHas(ports, 'conta-a');
+      anaHas(ports, 'conta-b');
+      runsOpenOn(ports, a, 3);
+
+      expect(unreserved(await broker.requestLease(ANA, { ...request(), access: a.id })).access).toBe(a.id);
+    },
+  },
+  {
+    name: 'a conta fixada com capacidade declarada recebe a reserva nela, mesmo havendo outra com mais vaga',
+    async run(broker, ports) {
+      const a = anaHas(ports, 'conta-a', { concurrencyLimit: 2 });
+      anaHas(ports, 'conta-b', { concurrencyLimit: 2 });
+      reserved(await broker.requestLease(ANA, request('public', 'task-1')));
+
+      const pinned = reserved(await broker.requestLease(ANA, { ...request('public', 'task-2'), access: a.id }));
+
+      expect(pinned.access).toBe(a.id);
+      expect(pinned.shared).toBe(true);
+    },
+  },
+  {
+    name: 'a conta fixada sem liberacao para a sensibilidade e recusada, mesmo havendo outra liberada',
+    async run(broker, ports) {
+      const a = anaHas(ports, 'conta-a');
+      anaHas(ports, 'conta-b', { clearance: 'sensitive' });
+
+      const result = denied(await broker.requestLease(ANA, { ...request('sensitive'), access: a.id }));
+
+      expect(result.reason.code).toBe('no-cleared-access');
+    },
+  },
+  {
+    name: 'a conta fixada e cheia e recusada, mesmo havendo outra com vaga',
+    async run(broker, ports) {
+      const a = anaHas(ports, 'conta-a', { concurrencyLimit: 1 });
+      anaHas(ports, 'conta-b');
+      reserved(await broker.requestLease(ANA, { ...request('public', 'task-1'), access: a.id }));
+
+      const result = denied(await broker.requestLease(ANA, { ...request('public', 'task-2'), access: a.id }));
+
+      expect(result.reason.code).toBe('all-at-provider-limit');
+    },
+  },
+  {
+    name: 'a conta fixada que nao existe para a pessoa e recusada, mesmo havendo outra do tipo, e vira evento',
+    async run(broker, ports) {
+      await broker.start();
+      const seen = recordEvents(broker, ['access-broker:lease-denied']);
+      anaHas(ports, 'conta-a');
+      const alheia = lendable('conta-do-bruno');
+      ports.catalog.add(BRUNO, REPO, alheia);
+      ports.secrets.set(BRUNO, alheia.secret, 'segredo-do-bruno');
+
+      const inexistente = denied(await broker.requestLease(ANA, { ...request(), access: resourceId('conta-z') }));
+      const deOutro = denied(await broker.requestLease(ANA, { ...request(), access: alheia.id }));
+
+      expect([inexistente.reason.code, deOutro.reason.code]).toEqual(['unknown-access', 'unknown-access']);
+      expect(seen.map((e) => e.payload.reason.code)).toEqual(['unknown-access', 'unknown-access']);
+    },
+  },
+
   // ─── Vale para todo acesso, com ou sem reserva ───────────────────────────
   {
     name: 'task sensivel so recebe acesso liberado para dado sensivel',
