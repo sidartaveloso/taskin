@@ -88,6 +88,7 @@ export async function localPlanResources(sources: LocalPlanSources): Promise<Loc
         name: a.name,
         accessKind: a.accessKind,
         clearance: a.clearance,
+        ...(a.concurrencyLimit === undefined ? {} : { concurrencyLimit: a.concurrencyLimit }),
         ...(personal ? { settings: own ?? {} } : {}),
       });
     }

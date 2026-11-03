@@ -190,6 +190,7 @@ export function buildSchedulingProblem(input: PlanProblemInput): BuiltProblem {
       models,
       remaining: tokenCount(quota === undefined ? Number.MAX_SAFE_INTEGER : Math.max(0, quota - spent)),
       windowEndsAt: instant(now + Math.round(windowMs)),
+      ...(a.concurrencyLimit === undefined ? {} : { concurrencyLimit: a.concurrencyLimit }),
     };
   });
 

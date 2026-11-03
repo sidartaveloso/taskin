@@ -1,6 +1,13 @@
-import { createMemoryScheduler, scorePlan } from '../memory/scheduler.memory';
-import type { ObjectiveWeights, Plan, SuggestedPlan } from '../system/plugins/scheduler/scheduler.types';
-import type { TaskRef } from '../use-cases/branded';
+import { createMemoryScheduler, scorePlan, violations } from '../memory/scheduler.memory';
+import type {
+  Assignment,
+  DeferredTask,
+  ObjectiveWeights,
+  Plan,
+  SchedulingProblem,
+  SuggestedPlan,
+} from '../system/plugins/scheduler/scheduler.types';
+import { instant, type TaskRef } from '../use-cases/branded';
 import { buildSchedulingProblem, type PlanProblemInput } from './build-problem';
 
 /** A versao do contrato JSON do `taskin plan`. Mudanca que quebra quem le sobe este numero. */
@@ -19,8 +26,9 @@ export interface PlanResourceLabel {
 /**
  * O plano sugerido com a versao do contrato. E conselho: nada nele foi
  * executado. `deferred` traz as tasks que nenhuma combinacao viavel acomoda,
- * com o codigo da restricao; `beyondHorizon`, as que so caberiam depois do
- * horizonte.
+ * com o codigo da restricao, e as que a conta cheia empurra para depois do
+ * horizonte (`concurrency`); `beyondHorizon`, as outras que so caberiam
+ * depois dele.
  */
 export interface PlanReport extends SuggestedPlan {
   readonly version: typeof PLAN_REPORT_VERSION;
@@ -51,8 +59,14 @@ export async function buildPlanReport(input: PlanReportInput): Promise<PlanRepor
 
   const limit = input.now + horizonHours * HOUR;
   const within = suggested.plan.assignments.filter((a) => a.at < limit);
-  const beyondHorizon = suggested.plan.assignments.filter((a) => a.at >= limit).map((a) => a.task);
   const plan: Plan = { problem, assignments: within };
+  const beyond = suggested.plan.assignments.filter((a) => a.at >= limit).map((a) => a.task);
+  const heldByAccount = beyond.filter((t) => heldByAccountCapacity(plan, t, limit));
+  const beyondHorizon = beyond.filter((t) => !heldByAccount.includes(t));
+  const deferred: DeferredTask[] = [
+    ...suggested.deferred,
+    ...heldByAccount.map((task): DeferredTask => ({ task, reason: 'concurrency' })),
+  ];
 
   const resources: Record<string, PlanResourceLabel> = {};
   for (const a of input.accesses) resources[a.id] = { name: a.name };
@@ -66,11 +80,45 @@ export async function buildPlanReport(input: PlanReportInput): Promise<PlanRepor
     weights,
     plan,
     score: scorePlan(plan, weights),
-    deferred: suggested.deferred,
+    deferred,
     beyondHorizon,
     titles: Object.fromEntries(problem.tasks.map((t) => [t.task, titleOf(input, t.task)])),
     resources,
   };
+}
+
+/**
+ * Se e a conta cheia que segura a task fora do horizonte: em algum momento
+ * dentro dele, alguma combinacao cabe no plano sem a capacidade das contas, e
+ * nenhuma cabe com ela.
+ */
+function heldByAccountCapacity(plan: Plan, task: TaskRef, limit: number): boolean {
+  const { problem } = plan;
+  const uncapped: SchedulingProblem = {
+    ...problem,
+    accesses: problem.accesses.map(({ concurrencyLimit: _, ...a }) => a),
+  };
+  const fits = (p: SchedulingProblem, assignment: Assignment) =>
+    violations({ problem: p, assignments: [...plan.assignments, assignment] }).length === 0;
+  let freed = false;
+  for (let at: number = problem.now; at < limit; at += HOUR) {
+    for (const access of problem.accesses) {
+      for (const model of access.models) {
+        for (const machine of problem.machines) {
+          const assignment: Assignment = {
+            task,
+            access: access.id,
+            model: model.name,
+            machine: machine.id,
+            at: instant(at),
+          };
+          if (fits(problem, assignment)) return false;
+          if (fits(uncapped, assignment)) freed = true;
+        }
+      }
+    }
+  }
+  return freed;
 }
 
 function titleOf(input: PlanReportInput, task: TaskRef): string {

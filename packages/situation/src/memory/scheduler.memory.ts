@@ -167,6 +167,23 @@ export function violations(plan: Plan): readonly ConstraintViolation[] {
     );
   }
 
+  const running = new Map<string, Resolved[]>();
+  for (const r of resolved) {
+    if (r.access.concurrencyLimit === undefined) continue;
+    const slot = `${r.access.id}\u0000${r.assignment.at}`;
+    running.set(slot, [...(running.get(slot) ?? []), r]);
+  }
+  for (const list of running.values()) {
+    const access = list[0]?.access;
+    const limit = access?.concurrencyLimit;
+    if (access === undefined || limit === undefined || list.length <= limit) continue;
+    add(
+      'concurrency',
+      list.map((r) => r.task.task),
+      `${list.length} execucoes em ${access.id}, que aceita ${limit}`,
+    );
+  }
+
   for (const { task, assignment } of resolved) {
     if (!task.interactive) continue;
     if (!problem.presence.some((w) => w.from <= assignment.at && assignment.at < w.to)) {
