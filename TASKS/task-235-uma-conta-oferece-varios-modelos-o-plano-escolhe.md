@@ -1,6 +1,6 @@
 # 🧩 Task 235 — Uma conta oferece varios modelos: o plano escolhe conta, modelo e maquina para cada task
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-7
