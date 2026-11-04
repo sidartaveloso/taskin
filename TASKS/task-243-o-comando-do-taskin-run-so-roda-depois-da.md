@@ -1,6 +1,6 @@
 # 🧩 Task 243 — O comando do taskin run so roda depois da aprovacao da pessoa
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: situacao-lote-9
