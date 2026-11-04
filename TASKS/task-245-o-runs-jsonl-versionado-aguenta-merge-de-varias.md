@@ -1,6 +1,6 @@
 # 🧩 Task 245 — O runs.jsonl versionado aguenta merge de varias maquinas
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: sidartaveloso
 - Group: situacao-lote-9
