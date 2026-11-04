@@ -182,6 +182,15 @@ describe('taskin plan: o problema montado do que existe', () => {
     expect(report.plan.problem.tasks[0]?.estimatedTokens).toBe(30_000);
   });
 
+  it('uma linha repetida pelo merge nao conta duas vezes na calibracao', async () => {
+    const boa = record('sonnet', 30_000);
+    const ruim = { ...record('sonnet', 90_000, false), id: 'run-ruim' };
+    const report = await plan({ runs: [boa, boa, boa, ruim] }, [task('1')]);
+    const contaB = report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === 'conta-b');
+    expect(contaB?.completionRate).toBe(0.5);
+    expect(report.plan.problem.tasks[0]?.estimatedTokens).toBe(60_000);
+  });
+
   it('duas contas do mesmo modelo dividem a taxa de conclusao: o historico e do modelo, nao da conta', async () => {
     const scheduling = { accesses: { 'conta-a': { model: 'sonnet' }, 'conta-b': { model: 'sonnet' } } };
     const report = await plan({ scheduling, runs: [record('sonnet', 10_000, false)] }, [task('1')]);

@@ -230,6 +230,39 @@ describe('run-ledger local: o historico do time e o estado da maquina', () => {
     expect((await theirs.runs(REPO)).map((r) => r.id)).toEqual([run.id]);
   });
 
+  it('depois de um merge, linha repetida, fora de ordem ou ilegivel nao quebra a leitura, e cada id conta uma vez', async () => {
+    const shared = files();
+    const ports = createFakePluginPorts();
+    const ledger = createLocalRunLedger(ports, shared);
+    const run = async (task: string) => {
+      const started = await ledger.startRun(
+        await ledger.planRun(REPO, taskRef(task), difficulty(2)),
+        resourceId('conta-a'),
+      );
+      return ledger.finishRun(started, outcome);
+    };
+    const [a, b] = [await run('task-1'), await run('task-2')];
+    const [primeira, segunda] = readFileSync(shared.history, 'utf8').trim().split('\n');
+
+    writeFileSync(shared.history, `${segunda}\n\n${primeira}\n{ meia linha\n${segunda}\n`);
+
+    const lidas = await ledger.runs(REPO);
+    expect(lidas.map((r) => r.id).sort()).toEqual([a.id, b.id].sort());
+  });
+
+  it('uma linha ilegivel no estado da maquina nao derruba as execucoes em aberto nem o consumo', async () => {
+    const shared = files();
+    const ports = createFakePluginPorts();
+    const ledger = createLocalRunLedger(ports, shared);
+    const conta = resourceId('conta-a');
+    const since = ports.clock.now();
+    const aberta = await ledger.startRun(await ledger.planRun(REPO, taskRef('task-1'), difficulty(2)), conta);
+    writeFileSync(shared.machine, `${readFileSync(shared.machine, 'utf8')}{ meia linha`);
+
+    expect((await ledger.openRuns()).map((r) => r.id)).toEqual([aberta.id]);
+    expect(await ledger.consumption(conta, since)).toBe(0);
+  });
+
   it('dois processos nao confundem a execucao um do outro: os ids nao se repetem entre eles', async () => {
     const shared = files();
     const ports = createFakePluginPorts();
