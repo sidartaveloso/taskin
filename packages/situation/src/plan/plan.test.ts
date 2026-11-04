@@ -187,7 +187,7 @@ describe('taskin plan: o problema montado do que existe', () => {
     const ruim = { ...record('sonnet', 90_000, false), id: 'run-ruim' };
     const report = await plan({ runs: [boa, boa, boa, ruim] }, [task('1')]);
     const contaB = report.plan.problem.accesses.find((a) => report.resources[a.id]?.name === 'conta-b');
-    expect(contaB?.completionRate).toBe(0.5);
+    expect(contaB?.models[0]?.completionRate).toBe(0.5);
     expect(report.plan.problem.tasks[0]?.estimatedTokens).toBe(60_000);
   });
 

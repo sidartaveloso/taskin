@@ -69,7 +69,14 @@ function readLines<T>(file: string): T[] {
   return readFileSync(file, 'utf8')
     .split('\n')
     .filter((line) => line.trim() !== '')
-    .map((line) => JSON.parse(line) as T);
+    .flatMap((line) => {
+      // Uma linha cortada no meio, ou deixada por um merge, nao derruba quem le o resto.
+      try {
+        return [JSON.parse(line) as T];
+      } catch {
+        return [];
+      }
+    });
 }
 
 function append(file: string, line: unknown): void {
@@ -155,7 +162,12 @@ export function createLocalRunLedger(
       return [...open.values()].filter((r) => now - r.startedAt <= openMaxAgeMs);
     },
     async runs(repository: RepositoryId): Promise<readonly RunRecord[]> {
-      return readLines<RunRecord>(files.history).filter((r) => r.repository === repository);
+      // O `.taskin/runs.jsonl` mescla por uniao: a mesma execucao pode vir mais de uma vez.
+      const once = new Map<string, RunRecord>();
+      for (const r of readLines<RunRecord>(files.history)) {
+        if (r.repository === repository && !once.has(r.id)) once.set(r.id, r);
+      }
+      return [...once.values()];
     },
     async consumption(access: ResourceId, since: Instant): Promise<TokenCount> {
       return tokenCount(
