@@ -8,7 +8,6 @@ import {
   type PlanTaskInput,
 } from '@opentask/taskin-situation';
 import type { Task } from '@opentask/taskin-types';
-import path from 'path';
 import { type ProbedSituation, probeLocalSituation } from './probe-situation.js';
 import { resolveTaskProvider } from './provider-factory/index.js';
 import { runLedgerFiles } from './run-ledger-files.js';
@@ -60,7 +59,7 @@ export async function openLocalPlanner(root: string, warn: (message: string) => 
         }));
 
       return buildPlanReport({
-        repository: path.basename(root),
+        repository: String(situation.repository),
         now: clock.now(),
         tasks: open,
         exclude,

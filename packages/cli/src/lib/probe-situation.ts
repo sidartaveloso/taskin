@@ -16,6 +16,7 @@ import {
 } from '@opentask/taskin-situation';
 import os from 'os';
 import path from 'path';
+import { repositoryIdentityOf, warnOnce } from './repository-identity.js';
 
 const FACT_TTL_MS = 24 * 60 * 60 * 1000;
 /** O id desta maquina no inventario local. */
@@ -40,13 +41,15 @@ export type LocalInventory = Omit<ProbedSituation, 'view'>;
 
 /** O inventario das duas camadas do repositorio em `root`, para a pessoa desta sessao, sem sondar nada. */
 export function openLocalInventory(root: string): LocalInventory {
-  const repository = repositoryId(path.basename(root));
   const clock = { now: () => instant(Date.now()) };
 
   const paths: LocalInventoryPaths = {
     repositoryConfig: path.join(root, '.taskin.json'),
     personalResources: path.join(os.homedir(), '.config', 'taskin', 'resources.json'),
   };
+  const identity = repositoryIdentityOf(root, paths.repositoryConfig, paths.personalResources);
+  warnOnce(identity.warnings);
+  const repository = repositoryId(identity.id);
   const inventory = createLocalInventory(
     { clock, secrets: createEnvSecretStore(), settings: { leaseTtlMs: 60 * 60 * 1000, factTtlMs: FACT_TTL_MS } },
     { repository, ...paths },

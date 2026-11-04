@@ -194,7 +194,7 @@ describe('taskin plan, pelo binario', LENTO, () => {
         'claude-haiku-5-5',
       ]);
       expect(parsed.plan.problem.accesses.find((a: Json) => a.id === id).remaining).toBe(10_000);
-      expect(stderr).toBe('');
+      expect(stderr).not.toMatch(/personal-layer/);
       expect(readFileSync(join(raiz, '.taskin.json'), 'utf8')).toBe(antes);
       expect(antes).not.toContain(PESSOAL);
     });

@@ -5,5 +5,6 @@ export * from './machine-probe.local';
 export * from './people.local';
 export * from './personal-layer';
 export * from './plan.local';
+export * from './repository-id';
 export * from './run-ledger.local';
 export * from './secret-store.env';
