@@ -25,6 +25,8 @@ import {
   type WorkingHours,
 } from '@opentask/taskin-situation';
 import type { Command } from 'commander';
+import { ConfigManager } from '../lib/config-manager.js';
+import { createChannelSender, providersFromConfig } from '../lib/notification/channel-sender.js';
 
 const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
@@ -53,7 +55,11 @@ function openPeople(): ILocalPeople {
 function openChannels(): ILocalChannels {
   const files = personalFiles();
   return createLocalChannels(
-    { clock, presence: { present: async () => undefined }, sender: { send: async () => false } },
+    {
+      clock,
+      presence: { present: async () => undefined },
+      sender: createChannelSender(providersFromConfig(new ConfigManager().getNotifications())),
+    },
     { personalResources: files.personalResources, state: files.notices },
   );
 }
@@ -161,6 +167,36 @@ async function prefer(channels: string[]): Promise<void> {
   console.log(`Notices reach you through ${channels.join(', then ')}.`);
 }
 
+const REASONS: Record<string, string> = {
+  'no-channel': 'you have not declared any channel (taskin channels prefer <channel...>)',
+  'all-channels-failed': 'every channel of yours refused the notice (no provider with that name, or it failed)',
+};
+
+/** O aviso desta pessoa, pelos canais dela. Nunca lanca: devolve a frase do que aconteceu. */
+export async function noticeMe(subject: string, body: string): Promise<{ delivered: boolean; text: string }> {
+  try {
+    const outcome = await openChannels().notify(me(), { subject, body });
+    if (outcome.state === 'sent') return { delivered: true, text: `Delivered through ${outcome.channel}.` };
+    if (outcome.state === 'held') return { delivered: false, text: 'You are away: the notice waits for you.' };
+    return { delivered: false, text: `Not delivered: ${REASONS[outcome.reason] ?? outcome.reason}.` };
+  } catch (failure) {
+    return { delivered: false, text: `Not delivered: ${failure instanceof Error ? failure.message : String(failure)}` };
+  }
+}
+
+async function channelTest(): Promise<void> {
+  const { delivered, text } = await noticeMe('taskin: test notice', 'If you read this, the channel works.');
+  console.log(text);
+  if (!delivered) process.exit(1);
+}
+
+async function channelFlush(): Promise<void> {
+  const sent = await openChannels().flush();
+  console.log(
+    sent.length === 0 ? 'No waiting notice could be delivered.' : `${sent.length} waiting notice(s) delivered.`,
+  );
+}
+
 async function channelStatus(options: { json?: boolean }): Promise<void> {
   const channels = openChannels();
   const person = me();
@@ -218,6 +254,20 @@ export function registerViewpointsCommand(program: Command): void {
     .description('The channels, in the order you prefer (e.g. watch taskinboard). Declaring again replaces')
     .action(async (list: string[]) => {
       await prefer(list);
+    });
+
+  channels
+    .command('test')
+    .description('Send a test notice through your channels and say which one delivered, or why none did')
+    .action(async () => {
+      await channelTest();
+    });
+
+  channels
+    .command('flush')
+    .description('Try again the notices that are waiting for you')
+    .action(async () => {
+      await channelFlush();
     });
 
   channels

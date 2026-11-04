@@ -109,4 +109,56 @@ describe('taskin channels', LENTO, () => {
   it('sem canal declarado, status diz que o aviso nao chega', async () => {
     expect((await rodar('channels', 'status')).stdout).toContain('No channel');
   });
+
+  it('test entrega pelo canal console; flush sem nada esperando diz isso', async () => {
+    await rodar('channels', 'prefer', 'console');
+    const teste = await rodar('channels', 'test');
+    expect(teste.code, teste.stderr).toBe(0);
+    expect(teste.stdout).toContain('taskin: test notice');
+    expect(teste.stdout).toContain('Delivered through console.');
+    expect((await rodar('channels', 'flush')).stdout).toContain('No waiting notice');
+  });
+
+  it('test diz por que nenhum canal entregou: sem canal, e canal sem provedor', async () => {
+    const semCanal = await rodar('channels', 'test');
+    expect(semCanal.code).toBe(1);
+    expect(semCanal.stdout).toContain('not declared any channel');
+
+    await rodar('channels', 'prefer', 'tv-da-sala');
+    const semProvedor = await rodar('channels', 'test');
+    expect(semProvedor.code).toBe(1);
+    expect(semProvedor.stdout).toContain('every channel of yours refused');
+  });
+
+  it('privacidade: webhook e token nunca aparecem no notices.json, na saida nem no repositorio', async () => {
+    const webhook = 'http://127.0.0.1:1/hook-segredo-w7k2';
+    const token = 'token-segredo-t9q4';
+    writeFileSync(
+      join(raiz, '.taskin.json'),
+      JSON.stringify({
+        version: '1.0.3',
+        provider: { type: 'fs' },
+        notifications: {
+          discord: { webhookUrl: '${HOOK_URL}', events: ['task:done'] },
+          telegram: { botToken: '${BOT_TOKEN}', chatId: '1', events: ['task:done'] },
+        },
+      }),
+    );
+    await rodar('channels', 'prefer', 'discord', 'telegram');
+    const { stdout, stderr } = await execFileAsync('node', [CLI, 'channels', 'test'], {
+      cwd: raiz,
+      env: { ...process.env, HOME: casa, XDG_STATE_HOME: estado, HOOK_URL: webhook, BOT_TOKEN: token },
+    }).catch((e: { stdout: string; stderr: string }) => e);
+    const noticesFile = join(estado, 'taskin', 'notices.json');
+    const tudo = [stdout, stderr, noRepositorio(), readFileSync(recursos(), 'utf8')];
+    try {
+      tudo.push(readFileSync(noticesFile, 'utf8'));
+    } catch {
+      // nada esperou: o arquivo nem precisa existir
+    }
+    for (const texto of tudo) {
+      expect(texto).not.toContain('hook-segredo-w7k2');
+      expect(texto).not.toContain('token-segredo-t9q4');
+    }
+  });
 });

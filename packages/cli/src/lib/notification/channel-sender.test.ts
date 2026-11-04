@@ -1,4 +1,3 @@
-import type { INotificationProvider, NotificationMessage } from '@opentask/taskin-types';
 import {
   type ChannelName,
   createMemoryChannels,
@@ -7,6 +6,7 @@ import {
   type NoticeId,
   type PersonId,
 } from '@opentask/taskin-situation';
+import type { INotificationProvider, NotificationMessage } from '@opentask/taskin-types';
 import { describe, expect, it } from 'vitest';
 import { createChannelSender } from './channel-sender.js';
 

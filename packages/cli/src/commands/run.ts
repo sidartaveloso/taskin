@@ -25,6 +25,7 @@ import type { Command } from 'commander';
 import { type LocalPlanner, openLocalPlanner } from '../lib/local-plan.js';
 import { THIS_MACHINE } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { noticeMe } from './viewpoints.js';
 
 /** O marcador do modelo de comando que vira o id da task. */
 export const TASK_PLACEHOLDER = '{task}';
@@ -139,10 +140,22 @@ async function launch(ctx: Launching, a: Assignment): Promise<void> {
   if (outcome === undefined) {
     await ledger.abandonRun(run);
     console.error(`Task ${task} ended without a result (exit ${code ?? 'none'}): the run is recorded as abandoned.`);
+    await warnMe(task, 'abandoned (no result)');
     return;
   }
   await ledger.finishRun(run, outcome);
-  console.error(`Task ${task} ended: ${outcome.completed ? 'completed' : 'not completed'}.`);
+  const ended = outcome.completed ? 'completed' : 'not completed';
+  console.error(`Task ${task} ended: ${ended}.`);
+  await warnMe(task, ended);
+}
+
+/** Avisa a pessoa pelos canais dela. Falha de aviso nunca muda a execucao nem o codigo de saida. */
+async function warnMe(task: string, ended: string): Promise<void> {
+  const { delivered, text } = await noticeMe(
+    `Task ${task} ended: ${ended}`,
+    `The run of task ${task} ended: ${ended}.`,
+  );
+  if (!delivered) console.error(`Notice for task ${task}: ${text}`);
 }
 
 async function runPlan(options: RunOptions): Promise<void> {

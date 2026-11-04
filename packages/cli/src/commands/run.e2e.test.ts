@@ -189,6 +189,24 @@ describe('taskin run', LENTO, () => {
     expect(linhas(daMaquina()).filter((l) => l.state === 'abandoned')).toHaveLength(2);
   });
 
+  it('ao fim de cada execucao avisa a pessoa pelo canal; aviso que falha nao muda o codigo de saida', async () => {
+    configurar();
+    await execFileAsync('node', [CLI, 'channels', 'prefer', 'console'], { cwd: raiz, env: ambiente() });
+
+    const avisado = await rodar('run');
+    expect(avisado.code, avisado.stderr).toBe(0);
+    expect(avisado.stdout).toContain('Task 1 ended: completed');
+    expect(avisado.stdout).toContain('Task 2 ended: completed');
+
+    rmSync(marcas, { recursive: true, force: true });
+    mkdirSync(marcas);
+    await execFileAsync('node', [CLI, 'channels', 'prefer', 'tv-da-sala'], { cwd: raiz, env: ambiente() });
+    const recusado = await rodar('run');
+    expect(recusado.code, recusado.stderr).toBe(0);
+    expect(recusado.stderr).toContain('Notice for task');
+    expect(linhas(historico())).toHaveLength(4);
+  });
+
   it('--dry-run mostra o que sairia agora, por maquina, conta e modelo, sem lancar nada', async () => {
     configurar();
 

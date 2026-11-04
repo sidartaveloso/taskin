@@ -13,15 +13,15 @@ O `taskin channels prefer` guarda os canais de cada pessoa na camada dela, mas n
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] A prova primeiro, em commit vermelho, com provedores falsos: o canal chega ao provedor do mesmo nome com o assunto, o corpo e o link; um canal sem provedor (como `tv-da-sala`) recusa, e o próximo da lista leva o aviso; o provedor que falha ou lança recusa em vez de derrubar o comando; todos recusam: `all-channels-failed`; sem canal: `no-channel`
-- [ ] `createChannelSender` em `packages/cli/src/lib/notification/`, usando as configurações de `notifications` e o `resolveEnvVars` que o `notify-helper.ts` já usa
-- [ ] `viewpoints.ts` troca o stub pelo `sender` de verdade
-- [ ] `taskin channels test`: manda um aviso de teste pelos canais da pessoa e diz qual entregou ou por que nenhum entregou
-- [ ] `taskin channels flush`: tenta de novo os avisos que esperam
-- [ ] `taskin run` avisa a pessoa ao fim de cada execução (concluída, não concluída ou abandonada), pelo `channels`. Falha de aviso nunca muda o código de saída nem o registro da execução
-- [ ] Teste de privacidade: webhook e token nunca aparecem no `notices.json`, na saída do comando nem em arquivo versionado
-- [ ] e2e com o canal `console`: `channels prefer console`, `channels test` entrega; um `taskin run` com comando de mentira avisa ao terminar
-- [ ] README da CLI e RDT (a seção dos canais)
+- [x] A prova primeiro, em commit vermelho, com provedores falsos: o canal chega ao provedor do mesmo nome com o assunto, o corpo e o link; um canal sem provedor (como `tv-da-sala`) recusa, e o próximo da lista leva o aviso; o provedor que falha ou lança recusa em vez de derrubar o comando; todos recusam: `all-channels-failed`; sem canal: `no-channel` — `channel-sender.test.ts` (6 testes), commit vermelho `RALPH: task-241 (vermelho)`
+- [x] `createChannelSender` em `packages/cli/src/lib/notification/`, usando as configurações de `notifications` e o `resolveEnvVars` que o `notify-helper.ts` já usa — `packages/cli/src/lib/notification/channel-sender.ts` (`createChannelSender`, `providersFromConfig`, usa `resolveEnvVars`)
+- [x] `viewpoints.ts` troca o stub pelo `sender` de verdade — `openChannels` em `viewpoints.ts`
+- [x] `taskin channels test`: manda um aviso de teste pelos canais da pessoa e diz qual entregou ou por que nenhum entregou — `viewpoints.e2e.test.ts`: test entrega pelo canal console / diz por que nenhum entregou
+- [x] `taskin channels flush`: tenta de novo os avisos que esperam — `viewpoints.e2e.test.ts`: flush sem nada esperando; `channelFlush` em `viewpoints.ts`
+- [x] `taskin run` avisa a pessoa ao fim de cada execução (concluída, não concluída ou abandonada), pelo `channels`. Falha de aviso nunca muda o código de saída nem o registro da execução — `run.e2e.test.ts`: ao fim de cada execucao avisa a pessoa pelo canal; aviso que falha nao muda o codigo de saida (`warnMe` em `run.ts`)
+- [x] Teste de privacidade: webhook e token nunca aparecem no `notices.json`, na saída do comando nem em arquivo versionado — `viewpoints.e2e.test.ts`: privacidade: webhook e token nunca aparecem...
+- [x] e2e com o canal `console`: `channels prefer console`, `channels test` entrega; um `taskin run` com comando de mentira avisa ao terminar — `viewpoints.e2e.test.ts` e `run.e2e.test.ts` (comando de mentira)
+- [x] README da CLI e RDT (a seção dos canais) — `packages/cli/README.md`; `docs/RDT/consciencia-situacional.md` (Os canais entregam)
 - [ ] ... O relógio — adiado: depende do app da task-113, e entra como um provedor novo
 - [ ] ... A smart TV — adiado: falta decidir como o aviso chega ao aparelho; entra como um provedor novo, sem mudar o contrato
 - [ ] ... Presença de verdade — adiado: até a task-229 decidir o que conta como presente, a porta responde `undefined`, e o aviso é enviado na hora

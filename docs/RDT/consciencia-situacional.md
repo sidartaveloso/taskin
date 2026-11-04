@@ -496,6 +496,19 @@ competência que a pessoa aceitou divulgar. Um canal novo (a TV da sala, o
 relógio) entra pelo mesmo contrato de canal, como um `sender` a mais; o
 transporte de um pedido de uma pessoa para o taskin de outra é da task-228.
 
+**Os canais entregam (task-241).** O `sender` da CLI (`createChannelSender`,
+em `lib/notification/`) liga cada canal ao provedor de notificação de mesmo
+nome: `console` sempre existe; `discord` e `telegram` existem quando
+`notifications` os configura (webhook e token resolvidos do ambiente, só em
+memória). Canal sem provedor, provedor que falha ou lança: o `sender` recusa, e
+o `channels` passa ao próximo da lista; todos recusando é `all-channels-failed`.
+O aviso leva assunto, corpo e link; webhook e token nunca entram nele, no
+`notices.json` nem na saída. `taskin channels test` manda um aviso de teste e
+diz qual canal entregou ou por que nenhum entregou; `channels flush` tenta de
+novo os que esperam; e o `taskin run` avisa a pessoa ao fim de cada execução
+(concluída, não concluída, abandonada) sem nunca mudar o código de saída nem o
+registro. Presença continua `undefined` (o aviso sai na hora) até a task-229.
+
 ## Como se implementa: contrato antes do código, em dois níveis
 
 A consciência situacional segue o método dos padrões de engenharia que o
