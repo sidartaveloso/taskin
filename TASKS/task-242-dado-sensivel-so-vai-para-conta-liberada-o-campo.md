@@ -1,6 +1,6 @@
 # 🧩 Task 242 — Dado sensivel so vai para conta liberada: o campo Sensitivity na task
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: situacao-lote-9
