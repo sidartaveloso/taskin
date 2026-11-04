@@ -97,6 +97,11 @@
       "id": "situacao-lote-7",
       "name": "Situação, lote 7: distribuir o plano entre modelos, contas e máquinas",
       "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-8": {
+      "id": "situacao-lote-8",
+      "name": "Situação, lote 8: os avisos chegam à pessoa",
+      "parentId": "g-ebwuvrd1"
     }
   }
 }

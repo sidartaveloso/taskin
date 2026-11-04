@@ -708,6 +708,7 @@ entre modelos, contas e máquinas:
 | 237 | O `taskin access run` segue a atribuição do plano | `situacao-lote-7` | 3 |
 | 238 | O `taskin run` despacha o plano nesta máquina, várias tasks ao mesmo tempo | `situacao-lote-7` | 4 |
 | 239 | Consentimento, horário e canais na camada da pessoa | `situacao-lote-7` | 3 |
+| 241 | Os canais entregam o aviso de verdade | `situacao-lote-8` | 3 |
 | 227 | O sandcastle roda uma task a pedido do `taskin run` | interativa | 4 |
 | 240 | O despacho para as outras máquinas da pessoa | interativa | 4 |
 
@@ -721,7 +722,9 @@ entre modelos, contas e máquinas:
 O lote 7 está fechado. Ele rodou sobre os commits das tasks 231 a 234, antes da
 revisão deles, e o que falta para a distribuição valer de ponta a ponta é a 227
 e a 240. A preferência de canal já mora na camada da pessoa, mas o `channels`
-ainda não tem quem entregue: nenhum canal envia o aviso, e ele fica esperando.
+ainda não tem quem entregue: nenhum canal envia o aviso. A task-241 liga os
+canais aos provedores que já existem (Discord, Telegram, console); o relógio
+depende da task-113, e a TV, de decidir como o aviso chega ao aparelho.
 
 ## Decisões em aberto
 
