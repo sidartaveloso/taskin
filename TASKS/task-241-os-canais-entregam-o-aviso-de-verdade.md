@@ -31,6 +31,10 @@ O `taskin channels prefer` guarda os canais de cada pessoa na camada dela, mas n
 Depende da task-238 (`taskin run`) e da task-239 (`channels` local).
 A menção à pessoa no Discord é da task-068: aqui o aviso só chega ao webhook configurado.
 
+### O que ficou da rodada
+- O envio real ao Discord e ao Telegram não foi exercitado: os testes usam provedores falsos e o canal `console`. Conferir com credenciais de verdade fica para a revisão.
+- Só `discord`, `telegram` e `console` têm provedor: `taskin channels prefer watch taskinboard`, o exemplo do README, grava a preferência, mas esses dois canais recusam o aviso.
+
 ### Contexto da rodada
 - Ler: `packages/situation/src/system/plugins/channels/channels.types.ts`, `packages/situation/src/local/channels.local.ts`, `packages/cli/src/lib/notification/notify-helper.ts` e `notification-manager.ts`, `packages/cli/src/lib/notification/providers/console-provider.ts`, `packages/cli/src/commands/viewpoints.ts` (`openChannels`) e `run.ts` (`launch`).
 - Não ler: o escalonador, o access broker, o `design-vue`.

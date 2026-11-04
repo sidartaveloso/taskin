@@ -437,7 +437,7 @@ pre {
       <div class="chips"><span class="chip">avisar</span></div>
       <div class="rows">
         <div class="row"><b class="p">Pessoa</b><span>Um canal da Carla, na camada dela. Quem pede uma revisão não sabe que a TV existe: o pedido chega ao lado da Carla, e o taskin dela escolhe o canal pela preferência e pela presença.</span></div>
-        <div class="row"><b class="n">Entre</b><span>Como o pedido viaja da Ana até o taskin da Carla está em aberto (task-228), e o envio para a TV ainda não existe: por enquanto, só a preferência é guardada.</span></div>
+        <div class="row"><b class="n">Entre</b><span>Como o pedido viaja da Ana até o taskin da Carla está em aberto (task-228), e o envio para a TV ainda não existe: hoje os avisos saem pelo Discord, pelo Telegram e pelo console.</span></div>
       </div>
     </article>
 
@@ -618,7 +618,7 @@ pre {
     <div class="rule"><h3>Pessoa é pedida, não usada</h3><p>Consentimento, carga, horário e presença são dela. O taskin agrupa pedidos e respeita o que ela declarou.</p></div>
     <div class="rule"><h3>Reserva só onde há capacidade</h3><p>Conta que aceita várias sessões é só escolhida. Vaga com prazo e devolução existe quando o recurso declara limite.</p></div>
   </div>
-  <p class="status-note">Pronto hoje: as duas camadas do inventário, a sondagem desta máquina, <code>taskin status</code>, <code>taskin plan</code> com vários modelos por conta, <code>taskin access run|status</code>, <code>taskin run</code> nesta máquina, o registro em duas metades e o consentimento e as preferências de canal na camada da pessoa, com <code>taskin viewpoints</code> e <code>taskin channels</code>. Falta entregar de verdade: a preferência de canal já é guardada, mas nenhum canal envia aviso ainda. A task-241 liga os canais ao Discord, ao Telegram e ao console; o relógio depende da task-113, e a TV, de decidir como o aviso chega ao aparelho. Em aberto: o sandcastle como comando de cada frente (227), o despacho para outras máquinas da pessoa (240), a percepção viva e o caminho de um pedido entre pessoas (228), os pesos e a presença (229) e o taskinboard (230).</p>
+  <p class="status-note">Pronto hoje: as duas camadas do inventário, a sondagem desta máquina, <code>taskin status</code>, <code>taskin plan</code> com vários modelos por conta, <code>taskin access run|status</code>, <code>taskin run</code> nesta máquina, o registro em duas metades e o consentimento e as preferências de canal na camada da pessoa, com <code>taskin viewpoints</code> e <code>taskin channels</code>. Os avisos já saem pelo Discord, pelo Telegram e pelo console (task-241), e o <code>taskin run</code> avisa ao fim de cada execução. O relógio depende da task-113, e a TV, de decidir como o aviso chega ao aparelho: esses dois canais do exemplo ainda não entregam. Em aberto: o sandcastle como comando de cada frente (227), o despacho para outras máquinas da pessoa (240), a percepção viva e o caminho de um pedido entre pessoas (228), os pesos e a presença (229) e o taskinboard (230).</p>
 </section>
 
 </div>
@@ -656,7 +656,7 @@ pre {
       p: 'O agente chega ao review:design e abre um pedido em vez de adivinhar. O registro de pessoas, que é versionado, diz quem aceitou divulgar a competência design: a Carla. O agente segue com a próxima task do lote enquanto espera.',
       cmd: 'ViewpointRequested → reviewer: carla, expertise: design' },
     { t: 'O aviso chega à TV da Carla', where: ['person', 'live'],
-      p: 'São 19h e a Carla está em casa. O taskin dela escolhe o canal pela preferência e pela presença: a TV da sala. A Ana nunca soube que a TV existe. Como o pedido sai da máquina da Ana e chega ao lado da Carla está em decisão na task-228, e nenhum canal envia aviso ainda (task-241): por enquanto, só a preferência dela é guardada.',
+      p: 'São 19h e a Carla está em casa. O taskin dela escolhe o canal pela preferência e pela presença: a TV da sala. A Ana nunca soube que a TV existe. Como o pedido sai da máquina da Ana e chega ao lado da Carla está em decisão na task-228, e o envio para a TV ainda não existe: hoje os avisos saem pelo Discord, pelo Telegram e pelo console (task-241).',
       cmd: 'canal: tv-da-sala (camada da Carla)' },
     { t: 'A Carla responde', where: ['git', 'machine'],
       p: 'Ela aceita e entrega a opinião. A resposta volta registrada na task, como evidência. Quanto ela levou para responder fica só com ela.',
