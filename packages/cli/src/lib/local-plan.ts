@@ -55,6 +55,7 @@ export async function openLocalPlanner(root: string, warn: (message: string) => 
           ...(t.order !== undefined && { order: t.order }),
           ...(t.difficulty !== undefined && { difficulty: t.difficulty }),
           requires: t.requires ?? [],
+          ...(t.sensitivity !== undefined && { sensitivity: t.sensitivity }),
           ...(t.description !== undefined && { description: t.description }),
         }));
 

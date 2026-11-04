@@ -180,6 +180,29 @@ export const CAPABILITIES = [
 /** A capability a task requires. @public */
 export type Capability = (typeof CAPABILITIES)[number];
 
+/**
+ * How much a task shows the model, from least to most restricted. An account
+ * only receives a task whose sensitivity its clearance covers.
+ * @public
+ */
+export const SENSITIVITIES = ['public', 'internal', 'sensitive'] as const;
+
+/** A task's sensitivity. @public */
+export type Sensitivity = (typeof SENSITIVITIES)[number];
+
+/** Runtime validator for a task's sensitivity. @public */
+export const SensitivitySchema = z.enum(SENSITIVITIES);
+
+/**
+ * Reads a sensitivity written by hand. What cannot be understood counts as the
+ * most restricted value: a typo must never open the data to more accounts.
+ * @public
+ */
+export function parseSensitivity(raw: string): Sensitivity {
+  const parsed = SensitivitySchema.safeParse(raw.trim().toLowerCase());
+  return parsed.success ? parsed.data : 'sensitive';
+}
+
 /** Pattern of a point-of-view request: `review:<competence>` (e.g. `review:design`). @public */
 export const REVIEW_REQUIREMENT_PATTERN = /^review:[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -240,6 +263,8 @@ export const TaskSchema = z.object({
   difficulty: z.number().int().min(1).max(5).optional(),
   /** What the task needs to run: closed capabilities or `review:<competence>` requests */
   requires: z.array(RequirementSchema).optional(),
+  /** How much the task shows the model. Absent: the repository default applies, never `public` by itself */
+  sensitivity: SensitivitySchema.optional(),
 });
 
 /**

@@ -33,6 +33,12 @@ const HOUR = 60 * 60 * 1000;
 export const DEFAULT_TASK_DIFFICULTY = 3;
 
 /** Uma task aberta como o provider a entrega: o corpo vem em `description`. */
+/**
+ * A sensibilidade de uma task sem o campo, num repositorio sem padrao declarado.
+ * Nunca `public`: esquecer o campo nao pode abrir o dado para qualquer conta.
+ */
+export const DEFAULT_TASK_SENSITIVITY: DataClass = 'internal';
+
 export interface PlanTaskInput {
   readonly id: string;
   readonly title: string;
@@ -40,6 +46,8 @@ export interface PlanTaskInput {
   readonly order?: number;
   readonly difficulty?: number;
   readonly requires: readonly string[];
+  /** O campo `Sensitivity` da task. Sem ele, vale o padrao do repositorio. */
+  readonly sensitivity?: DataClass;
   /** O corpo da task, onde as notas dizem "Depende da task-N". */
   readonly description?: string;
 }
@@ -74,6 +82,8 @@ export interface PlanProblemInput {
   /** O que cada acesso gastou na janela dele, pelo id, contado no estado desta maquina. */
   readonly spent: Readonly<Record<string, number>>;
   readonly settings: SchedulingSettings;
+  /** `resources.defaultSensitivity`: vale para a task sem o campo. */
+  readonly defaultSensitivity?: DataClass;
   /**
    * As tasks abertas que o plano nao atribui: as que ja rodam, ou que o
    * despacho ja tentou. Continuam abertas para quem depende delas.
@@ -165,7 +175,7 @@ export function buildSchedulingProblem(input: PlanProblemInput): BuiltProblem {
       task: taskRef(id),
       value: queue.length - index,
       estimated,
-      sensitivity: 'public',
+      sensitivity: t.sensitivity ?? input.defaultSensitivity ?? DEFAULT_TASK_SENSITIVITY,
       requirements,
       dependsOn: dependenciesOf(t.description)
         .filter((d) => d !== id && open.has(d))

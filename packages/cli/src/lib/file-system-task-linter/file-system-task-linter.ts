@@ -1,5 +1,5 @@
 import { readMetadataField } from '@opentask/taskin-file-system-provider';
-import { CAPABILITIES, isValidRequirement, TASK_STATUSES, TASK_TYPES } from '@opentask/taskin-types';
+import { CAPABILITIES, isValidRequirement, SENSITIVITIES, TASK_STATUSES, TASK_TYPES } from '@opentask/taskin-types';
 import chalk from 'chalk';
 import { readdir, readFile } from 'fs/promises';
 import { join } from 'path';
@@ -122,6 +122,13 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
     }
   }
 
+  /** `Sensitivity` accepts the closed list: a typo would count as `sensitive`, so it must be seen. */
+  private validateSensitivity(filename: string, content: string): void {
+    const raw = readMetadataField(content, 'Sensitivity', 'Sensibilidade')?.trim();
+    if (!raw || (SENSITIVITIES as readonly string[]).includes(raw.toLowerCase())) return;
+    this.addError(filename, `Invalid sensitivity "${raw}" in ${filename}. Valid: ${SENSITIVITIES.join(', ')}`, 'error');
+  }
+
   private validateContent(filename: string, content: string): void {
     const lines = content.split('\n');
 
@@ -142,6 +149,7 @@ export class FileSystemTaskLinter implements IFileSystemTaskLinter {
     });
 
     this.validateRequires(filename, content);
+    this.validateSensitivity(filename, content);
 
     const h2Sections = content.match(/^##\s+.+$/gm);
     if (!h2Sections || h2Sections.length === 0) {

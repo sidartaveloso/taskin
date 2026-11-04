@@ -8,8 +8,8 @@ import type {
   TaskPublishOptions,
   ValidationIssue,
 } from '@opentask/taskin-task-manager';
-import type { GroupId, TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
-import { parseGroupId, parseTaskId } from '@opentask/taskin-types';
+import type { GroupId, Sensitivity, TaskId, TaskStatus, TaskType, User } from '@opentask/taskin-types';
+import { parseGroupId, parseSensitivity, parseTaskId } from '@opentask/taskin-types';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fixAssignees, validateAssignees, validateSeededUsers } from './assignee-identity.js';
@@ -78,12 +78,14 @@ function parsePrioritizationFields(
   groupNameMatch: string | undefined,
   difficultyMatch: string | undefined,
   requiresMatch?: string,
+  sensitivityMatch?: string,
 ): {
   order?: number;
   groupId?: GroupId;
   groupName?: string;
   difficulty?: number;
   requires?: string[];
+  sensitivity?: Sensitivity;
 } {
   const order = priorityMatch ? Number(priorityMatch.trim()) : undefined;
   const difficulty = difficultyMatch ? Number(difficultyMatch.trim()) : undefined;
@@ -98,6 +100,7 @@ function parsePrioritizationFields(
     ...(groupNameMatch && { groupName: groupNameMatch.trim() }),
     ...(difficulty !== undefined && !Number.isNaN(difficulty) && { difficulty }),
     ...(requires && requires.length > 0 && { requires }),
+    ...(sensitivityMatch !== undefined && { sensitivity: parseSensitivity(sensitivityMatch) }),
   };
 }
 
@@ -208,6 +211,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     groupName?: string;
     difficulty?: string;
     requires?: string;
+    sensitivity?: string;
   } {
     const i18n = getI18n(detectLocale(content));
     const read = (english: string, localized: string) => readMetadataField(content, localized, english);
@@ -221,6 +225,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       groupName: read('GroupName', i18n.groupName),
       difficulty: read('Difficulty', i18n.difficulty),
       requires: read('Requires', i18n.requires),
+      sensitivity: read('Sensitivity', i18n.sensitivity),
     };
   }
 
@@ -388,6 +393,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       groupName: groupNameMatch,
       difficulty: difficultyMatch,
       requires: requiresMatch,
+      sensitivity: sensitivityMatch,
     } = this.readInlineMetadata(content);
 
     // Resolve assignee from registry
@@ -413,7 +419,14 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
       type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
       createdAt: new Date().toISOString(),
-      ...parsePrioritizationFields(priorityMatch, groupMatch, groupNameMatch, difficultyMatch, requiresMatch),
+      ...parsePrioritizationFields(
+        priorityMatch,
+        groupMatch,
+        groupNameMatch,
+        difficultyMatch,
+        requiresMatch,
+        sensitivityMatch,
+      ),
     };
 
     return task;
@@ -487,6 +500,16 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
       );
     }
 
+    // Como `requires`: ausente significa "nao mexa".
+    if (task.sensitivity) {
+      updatedContent = setInlineField(
+        updatedContent,
+        this.labelFor(updatedContent, 'Sensitivity', i18n.sensitivity),
+        task.sensitivity,
+        this.metadataStyle,
+      );
+    }
+
     // Write the updated content back to the file
     await fs.writeFile(task.filePath, updatedContent, 'utf-8');
   }
@@ -518,6 +541,7 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
         groupName: groupNameMatch,
         difficulty: difficultyMatch,
         requires: requiresMatch,
+        sensitivity: sensitivityMatch,
       } = this.readInlineMetadata(content);
 
       // Resolve assignee from registry
@@ -541,7 +565,14 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
         status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
         type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
         createdAt: new Date().toISOString(),
-        ...parsePrioritizationFields(priorityMatch, groupMatch, groupNameMatch, difficultyMatch, requiresMatch),
+        ...parsePrioritizationFields(
+          priorityMatch,
+          groupMatch,
+          groupNameMatch,
+          difficultyMatch,
+          requiresMatch,
+          sensitivityMatch,
+        ),
       };
 
       tasks.push(task);

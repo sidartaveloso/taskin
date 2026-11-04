@@ -80,6 +80,11 @@ export const DATA_CLASSES = ['public', 'internal', 'sensitive'] as const;
 export type DataClass = (typeof DATA_CLASSES)[number];
 
 /** Se um acesso com esta liberacao pode receber um dado desta sensibilidade. */
+/** O mais restrito dos dois: quem junta duas sensibilidades nunca abre o dado. */
+export function stricter(a: DataClass, b: DataClass): DataClass {
+  return DATA_CLASSES.indexOf(a) >= DATA_CLASSES.indexOf(b) ? a : b;
+}
+
 export function covers(clearance: DataClass, sensitivity: DataClass): boolean {
   return DATA_CLASSES.indexOf(clearance) >= DATA_CLASSES.indexOf(sensitivity);
 }

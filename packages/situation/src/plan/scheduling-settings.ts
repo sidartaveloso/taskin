@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { z } from 'zod';
 import type { ObjectiveWeights } from '../system/plugins/scheduler/scheduler.types';
+import { DATA_CLASSES, type DataClass } from '../use-cases/branded';
 
 /**
  * Os pesos padrao da funcao objetivo. Provisorios: a task-229 os calibra com
@@ -150,4 +151,29 @@ export function readPersonalAccessSettings(personalResources: string, person: st
     settings[name] = accessSettingsSchema.parse(entry.scheduling);
   }
   return settings;
+}
+
+export interface RepositorySensitivity {
+  /** O padrao declarado. Sem ele, `undefined`: quem planeja usa `internal`. */
+  readonly value?: DataClass;
+  readonly warning?: string;
+}
+
+/**
+ * Le `resources.defaultSensitivity` do `.taskin.json`: a sensibilidade da task
+ * sem o campo. Um valor que nao se entende vale como `sensitive`, e avisa: um
+ * erro de digitacao nunca abre o dado.
+ */
+export function readDefaultSensitivity(repositoryConfig: string): RepositorySensitivity {
+  if (!existsSync(repositoryConfig)) return {};
+  const config = JSON.parse(readFileSync(repositoryConfig, 'utf8')) as { resources?: { defaultSensitivity?: unknown } };
+  const declared = config.resources?.defaultSensitivity;
+  if (declared === undefined) return {};
+  if (typeof declared === 'string' && (DATA_CLASSES as readonly string[]).includes(declared)) {
+    return { value: declared as DataClass };
+  }
+  return {
+    value: 'sensitive',
+    warning: `resources.defaultSensitivity in .taskin.json must be one of ${DATA_CLASSES.join(', ')}: using sensitive.`,
+  };
 }

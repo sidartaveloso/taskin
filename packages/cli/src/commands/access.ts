@@ -16,15 +16,19 @@ import {
   createLocalAccessBroker,
   createLocalRunLedger,
   type DataClass,
+  DEFAULT_TASK_SENSITIVITY,
   type IAccessBroker,
   instant,
+  readDefaultSensitivity,
   resourceId,
+  stricter,
   taskinStateDir,
   taskRef,
 } from '@opentask/taskin-situation';
 import type { Command } from 'commander';
 import { openLocalInventory } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
+import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { runLedgerFiles } from '../lib/run-ledger-files.js';
 
 const SENSITIVITIES: readonly DataClass[] = ['public', 'internal', 'sensitive'];
@@ -94,19 +98,40 @@ function runChild(command: string[], env: Readonly<Record<string, string>>): Pro
   });
 }
 
+/**
+ * A sensibilidade deste acesso: a da task de `--task`, se ela declara; sem isso,
+ * o padrao do repositorio, e, sem padrao, `internal`. A flag so restringe mais o
+ * que a task declara, nunca abre. Sem conseguir ler a task, vale `sensitive`.
+ */
+async function sensitivityOf(repositoryConfig: string, options: RunOptions): Promise<DataClass> {
+  const flag = options.sensitivity as DataClass | undefined;
+  let ofTask: DataClass | undefined;
+  if (options.task !== undefined && /^\d+$/.test(options.task)) {
+    try {
+      const { provider } = await resolveTaskProvider();
+      const tasks = await provider.getAllTasks();
+      ofTask = tasks.find((t) => Number(t.id) === Number(options.task))?.sensitivity;
+    } catch {
+      ofTask = 'sensitive';
+    }
+  }
+  if (flag !== undefined) return ofTask === undefined ? flag : stricter(flag, ofTask);
+  return ofTask ?? readDefaultSensitivity(repositoryConfig).value ?? DEFAULT_TASK_SENSITIVITY;
+}
+
 async function runWithAccess(kind: string, command: string[], options: RunOptions): Promise<void> {
   requireTaskinProject();
   if (command.length === 0) {
     console.error('Nothing to run. Usage: taskin access run <kind> -- <command> [args...]');
     process.exit(1);
   }
-  const sensitivity = (options.sensitivity ?? 'public') as DataClass;
-  if (!SENSITIVITIES.includes(sensitivity)) {
+  if (options.sensitivity !== undefined && !SENSITIVITIES.includes(options.sensitivity as DataClass)) {
     console.error(`Unknown sensitivity "${options.sensitivity}". Use one of: ${SENSITIVITIES.join(', ')}`);
     process.exit(1);
   }
 
   const local = openBroker(process.cwd());
+  const sensitivity = await sensitivityOf(local.paths.repositoryConfig, options);
   const broker: IAccessBroker = local.broker;
   const names = await accessNames(local);
   // O nome logico vira o id pelo inventario; um nome que nao existe segue como esta, e o broker o recusa.
@@ -181,7 +206,10 @@ export function registerAccessCommand(program: Command): void {
     .description(
       'Pick an account of <kind>, run the command with its secret in the environment, and, if the account declares capacity (concurrencyLimit), reserve a slot until the command ends',
     )
-    .option('--sensitivity <level>', `What the task shows the model: ${SENSITIVITIES.join(', ')}`, 'public')
+    .option(
+      '--sensitivity <level>',
+      `What the task shows the model: ${SENSITIVITIES.join(', ')}. Default: the field of --task, or resources.defaultSensitivity, or internal`,
+    )
     .option('--task <id>', 'The task this run is for')
     .option(
       '--access <name>',

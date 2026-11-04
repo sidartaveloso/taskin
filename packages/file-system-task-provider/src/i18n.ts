@@ -36,6 +36,8 @@ export interface TaskFileI18n {
   difficulty: string;
   /** Field name for the task requirements */
   requires: string;
+  /** Field name for how much the task shows the model */
+  sensitivity: string;
 }
 
 /**
@@ -57,6 +59,7 @@ export const i18nConfig: Record<Locale, TaskFileI18n> = {
     groupName: 'GroupName',
     difficulty: 'Difficulty',
     requires: 'Requires',
+    sensitivity: 'Sensitivity',
   },
   'pt-BR': {
     status: 'Status',
@@ -73,6 +76,7 @@ export const i18nConfig: Record<Locale, TaskFileI18n> = {
     groupName: 'NomeGrupo',
     difficulty: 'Dificuldade',
     requires: 'Requer',
+    sensitivity: 'Sensibilidade',
   },
 };
 

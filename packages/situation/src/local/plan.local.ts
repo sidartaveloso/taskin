@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { type PlanAccessInput, type PlanMachineInput, windowMsOf } from '../plan/build-problem';
 import {
   type AccessSettings,
+  readDefaultSensitivity,
   readPersonalAccessSettings,
   readSchedulingSettings,
   type SchedulingSettings,
@@ -9,7 +10,14 @@ import {
 import type { IInventory } from '../system/plugins/inventory/inventory.types';
 import type { IRunLedger } from '../system/plugins/run-ledger/run-ledger.types';
 import type { ResourceDeclaration, SituationView } from '../use-cases/actors.types';
-import { type AccessKind, accessKind, instant, type PersonId, type RepositoryId } from '../use-cases/branded';
+import {
+  type AccessKind,
+  accessKind,
+  type DataClass,
+  instant,
+  type PersonId,
+  type RepositoryId,
+} from '../use-cases/branded';
 import type { RunRecord } from '../use-cases/flows.types';
 import type { IClockPort } from '../use-cases/ports.types';
 import type { LocalInventoryPaths } from './inventory.local';
@@ -33,6 +41,8 @@ export interface LocalPlanResources {
   /** O que cada acesso gastou na janela dele, pelo id, no estado desta maquina. */
   readonly spent: Readonly<Record<string, number>>;
   readonly settings: SchedulingSettings;
+  /** `resources.defaultSensitivity`: vale para a task sem o campo. */
+  readonly defaultSensitivity?: DataClass;
   /** Avisos para quem roda o plano (a saida local), nunca para um arquivo. */
   readonly warnings: readonly string[];
 }
@@ -68,7 +78,8 @@ export async function localPlanResources(sources: LocalPlanSources): Promise<Loc
 
   const settings = readSchedulingSettings(sources.paths.repositoryConfig);
   const personalSettings = readPersonalAccessSettings(sources.paths.personalResources, person);
-  const warnings: string[] = [];
+  const sensitivity = readDefaultSensitivity(sources.paths.repositoryConfig);
+  const warnings: string[] = sensitivity.warning === undefined ? [] : [sensitivity.warning];
 
   const accesses: PlanAccessInput[] = [];
   for (const kind of accessKinds(sources.paths)) {
@@ -108,5 +119,13 @@ export async function localPlanResources(sources: LocalPlanSources): Promise<Loc
     spent[a.id] = await sources.ledger.consumption(a.id, instant(now - windowMsOf(a, settings)));
   }
 
-  return { accesses, machines, runs: await sources.ledger.runs(repository), spent, settings, warnings };
+  return {
+    accesses,
+    machines,
+    runs: await sources.ledger.runs(repository),
+    spent,
+    settings,
+    warnings,
+    ...(sensitivity.value === undefined ? {} : { defaultSensitivity: sensitivity.value }),
+  };
 }

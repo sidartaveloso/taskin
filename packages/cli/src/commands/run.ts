@@ -73,7 +73,25 @@ function showDecision(report: PlanReport): void {
     lines.push('', 'Waiting for remote dispatch:');
     lines.push(...d.remote.map((a) => `  ${describe(report, a, true)}`));
   }
+  const deferred = deferredLines(report);
+  if (deferred.length > 0) lines.push('', ...deferred);
   process.stdout.write(`${lines.join('\n')}\n`);
+}
+
+/** Por que uma task adiada nao sai, pelo codigo que o escalonador deu. */
+const WHY_DEFERRED: Readonly<Record<string, string>> = {
+  data: 'no account here is cleared for its sensitivity (the task field Sensitivity, or resources.defaultSensitivity)',
+};
+
+function deferredLines(report: PlanReport): string[] {
+  if (report.deferred.length === 0) return [];
+  return [
+    'Deferred:',
+    ...report.deferred.map((d) => {
+      const why = WHY_DEFERRED[d.reason];
+      return `  ${`#${d.task} ${report.titles[d.task] ?? ''}`.trimEnd()} — ${d.reason}${why ? `: ${why}` : ''}`;
+    }),
+  ];
 }
 
 interface Launching {
@@ -89,8 +107,9 @@ async function launch(ctx: Launching, a: Assignment): Promise<void> {
   const report = ctx.report();
   const { problem } = report.plan;
   const estimated = problem.tasks.find((t) => t.task === a.task)?.estimated;
+  const sensitivity = problem.tasks.find((t) => t.task === a.task)?.sensitivity;
   const access = problem.accesses.find((x) => x.id === a.access);
-  if (estimated === undefined || access === undefined) return;
+  if (estimated === undefined || sensitivity === undefined || access === undefined) return;
   const { ledger, situation } = ctx.planner;
 
   const planned = await ledger.planRun(situation.repository, taskRef(String(a.task)), estimated);
@@ -112,6 +131,8 @@ async function launch(ctx: Launching, a: Assignment): Promise<void> {
         report.resources[a.access]?.name ?? String(a.access),
         '--model',
         a.model,
+        '--sensitivity',
+        sensitivity,
         '--task',
         task,
         '--',
@@ -207,6 +228,7 @@ async function runPlan(options: RunOptions): Promise<void> {
         ),
     });
     if (summary.launched.length === 0) console.error('Nothing can start on this machine now.');
+    if (last !== undefined) for (const line of deferredLines(last)) console.error(line);
     if (last !== undefined && summary.remote.length > 0) {
       const report = last;
       console.error('Waiting for remote dispatch:');
