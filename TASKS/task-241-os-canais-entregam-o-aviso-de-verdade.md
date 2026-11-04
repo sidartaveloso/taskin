@@ -1,6 +1,6 @@
 # 🧩 Task 241 — Os canais entregam o aviso de verdade
 
-- Status: pending
+- Status: in-progress
 - Type: feat
 - Assignee: sidartaveloso
 - Group: situacao-lote-8
