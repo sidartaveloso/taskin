@@ -1,4 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
@@ -83,7 +84,23 @@ async function rodar(...args: string[]): Promise<{ code: number; stdout: string;
   }
 }
 
-function configurar(modo = 'normal', recursos: Record<string, unknown> = { defaultSensitivity: 'public' }): void {
+const camadaDaPessoa = () => join(casa, '.config', 'taskin', 'resources.json');
+
+/** Grava a aprovacao do comando atual na camada da pessoa, como o `taskin run --allow` num terminal. */
+function aprovar(comando: string): void {
+  mkdirSync(join(casa, '.config', 'taskin'), { recursive: true });
+  const atual = existsSync(camadaDaPessoa()) ? JSON.parse(readFileSync(camadaDaPessoa(), 'utf8')) : {};
+  const commandSha256 = createHash('sha256').update(comando).digest('hex');
+  writeFileSync(camadaDaPessoa(), JSON.stringify({ ...atual, dispatch: { [basename(raiz)]: { commandSha256 } } }));
+}
+
+const comandoAtual = () => JSON.parse(readFileSync(join(raiz, '.taskin.json'), 'utf8')).resources.dispatch.command;
+
+function configurar(
+  modo = 'normal',
+  recursos: Record<string, unknown> = { defaultSensitivity: 'public' },
+  aprovado = true,
+): void {
   const falso = join(raiz, 'falso.cjs');
   writeFileSync(falso, FALSO);
   const conta = (name: string) => ({
@@ -113,6 +130,7 @@ function configurar(modo = 'normal', recursos: Record<string, unknown> = { defau
       },
     }),
   );
+  if (aprovado) aprovar(comandoAtual());
 }
 
 beforeEach(() => {
@@ -258,6 +276,76 @@ describe('taskin run', LENTO, () => {
     configurar('normal', {});
     const r = await rodar('run', '--dry-run');
     expect(r.stdout).toMatch(/#1 Tarefa 001 — data/);
+  });
+
+  describe('a aprovacao do comando', () => {
+    it('comando novo nao roda: mostra o comando, nao lanca nada, sai com erro e diz como aprovar', async () => {
+      configurar('normal', { defaultSensitivity: 'public' }, false);
+
+      const r = await rodar('run');
+
+      expect(r.code).toBe(1);
+      expect(r.stderr).toContain(comandoAtual());
+      expect(r.stderr).toContain('taskin run --allow');
+      expect(readdirSync(marcas)).toEqual([]);
+      expect(existsSync(daMaquina())).toBe(false);
+      expect(existsSync(historico())).toBe(false);
+    });
+
+    it('comando aprovado roda', async () => {
+      configurar('normal', { defaultSensitivity: 'public' }, false);
+      aprovar(comandoAtual());
+
+      const r = await rodar('run');
+
+      expect(r.code, r.stderr).toBe(0);
+      expect(viu('1').secret).toBe(true);
+    });
+
+    it('comando alterado volta a pedir aprovacao, e diz que mudou', async () => {
+      configurar();
+      const config = JSON.parse(readFileSync(join(raiz, '.taskin.json'), 'utf8'));
+      config.resources.dispatch.command += ' # mudou';
+      writeFileSync(join(raiz, '.taskin.json'), JSON.stringify(config));
+
+      const r = await rodar('run');
+
+      expect(r.code).toBe(1);
+      expect(r.stderr).toContain('changed');
+      expect(r.stderr).toContain('# mudou');
+      expect(readdirSync(marcas)).toEqual([]);
+    });
+
+    it('sem terminal, --allow nunca aprova: mostra o comando, sai com erro e nao grava nada', async () => {
+      configurar('normal', { defaultSensitivity: 'public' }, false);
+
+      const r = await rodar('run', '--allow');
+
+      expect(r.code).toBe(1);
+      expect(r.stderr).toContain(comandoAtual());
+      expect(r.stderr).toContain('terminal');
+      expect(existsSync(camadaDaPessoa())).toBe(false);
+      expect((await rodar('run')).code).toBe(1);
+      expect(readdirSync(marcas)).toEqual([]);
+    });
+
+    it('--dry-run nao precisa de aprovacao, porque nao lanca nada', async () => {
+      configurar('normal', { defaultSensitivity: 'public' }, false);
+      const r = await rodar('run', '--dry-run');
+      expect(r.code, r.stderr).toBe(0);
+      expect(r.stdout).toContain('Would launch now');
+    });
+
+    it('a aprovacao mora na camada da pessoa, nunca em arquivo do repositorio', async () => {
+      configurar();
+      const hash = JSON.parse(readFileSync(camadaDaPessoa(), 'utf8')).dispatch[basename(raiz)].commandSha256;
+
+      await rodar('run');
+
+      for (const arquivo of [join(raiz, '.taskin.json'), historico()]) {
+        expect(readFileSync(arquivo, 'utf8')).not.toContain(hash);
+      }
+    });
   });
 
   it('--dry-run mostra o que sairia agora, por maquina, conta e modelo, sem lancar nada', async () => {
