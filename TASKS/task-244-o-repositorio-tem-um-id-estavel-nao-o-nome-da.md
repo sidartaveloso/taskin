@@ -1,6 +1,6 @@
 # 🧩 Task 244 — O repositorio tem um id estavel, nao o nome da pasta
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: situacao-lote-9
