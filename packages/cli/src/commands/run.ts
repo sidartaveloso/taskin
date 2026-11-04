@@ -12,6 +12,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   type Assignment,
+  approveCommand,
+  type CommandApproval,
+  commandApproval,
   decideDispatch,
   dispatchPlan,
   instant,
@@ -22,6 +25,7 @@ import {
   taskRef,
 } from '@opentask/taskin-situation';
 import type { Command } from 'commander';
+import { askApproval, askInTerminal } from '../lib/dispatch-approval.js';
 import { type LocalPlanner, openLocalPlanner } from '../lib/local-plan.js';
 import { THIS_MACHINE } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
@@ -36,6 +40,7 @@ const SIGNALS: readonly NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP'];
 
 interface RunOptions {
   dryRun?: boolean;
+  allow?: boolean;
 }
 
 /** O modelo do comando em `resources.dispatch.command` do `.taskin.json`. */
@@ -179,6 +184,43 @@ async function warnMe(task: string, ended: string): Promise<void> {
   if (!delivered) console.error(`Notice for task ${task}: ${text}`);
 }
 
+/**
+ * `--allow`: mostra o comando e pergunta. Sem terminal, nunca aprova, como o
+ * `direnv allow`: o que esta rodando sozinho nao aprova o que vai receber o segredo.
+ */
+async function allowCommand(personalResources: string, repository: string, command: string): Promise<void> {
+  if (commandApproval(personalResources, repository, command) === 'approved') {
+    console.error('This command is already approved here.');
+    return;
+  }
+  console.error(`Command in resources.dispatch.command:\n\n  ${command}\n`);
+  const answer = await askApproval(Boolean(process.stdin.isTTY && process.stderr.isTTY), askInTerminal);
+  if (answer === 'approved') {
+    approveCommand(personalResources, repository, command);
+    console.error('Approved in your personal resources.json. Now run: taskin run');
+    return;
+  }
+  console.error(
+    answer === 'no-terminal'
+      ? 'Approving needs a person at a terminal: nothing was approved. Run taskin run --allow in a terminal.'
+      : 'Not approved.',
+  );
+  process.exit(1);
+}
+
+/** Sem aprovacao, nada sai: mostra o comando e diz como aprovar. */
+function requireApproval(approval: CommandApproval, command: string): void {
+  if (approval === 'approved') return;
+  const what =
+    approval === 'changed'
+      ? 'The command in resources.dispatch.command changed since you approved it.'
+      : 'This repository declares a command in resources.dispatch.command that you have not approved.';
+  console.error(
+    `${what} It runs with the secret of your accounts in its environment:\n\n  ${command}\n\nNothing was launched. To approve it, in a terminal: taskin run --allow`,
+  );
+  process.exit(1);
+}
+
 async function runPlan(options: RunOptions): Promise<void> {
   requireTaskinProject();
   const root = process.cwd();
@@ -196,6 +238,14 @@ async function runPlan(options: RunOptions): Promise<void> {
     );
     process.exit(1);
   }
+
+  const { personalResources } = planner.situation.paths;
+  const repository = String(planner.situation.repository);
+  if (options.allow) {
+    await allowCommand(personalResources, repository, command);
+    return;
+  }
+  requireApproval(commandApproval(personalResources, repository, command), command);
 
   const children = new Set<ChildProcess>();
   const stop = new AbortController();
@@ -247,6 +297,7 @@ export function registerRunCommand(program: Command): void {
       '🚀 Dispatch the plan on this machine: run the tasks assigned here in parallel, each with the account and model the plan chose, through resources.dispatch.command',
     )
     .option('--dry-run', 'Show what would be launched now, by machine, account and model, without launching anything')
+    .option('--allow', 'Show resources.dispatch.command and, in a terminal, approve it to run on your behalf')
     .action(async (options: RunOptions) => {
       await runPlan(options);
     });

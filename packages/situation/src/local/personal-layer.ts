@@ -3,10 +3,11 @@ import { dirname } from 'node:path';
 
 /**
  * As chaves do `resources.json` da pessoa que nao sao contas: o consentimento
- * para pontos de vista e os canais. As contas moram em chaves com o id da
- * dona, cada uma uma lista; estas sao objetos por pessoa.
+ * para pontos de vista, os canais e os comandos de despacho aprovados. As
+ * contas moram em chaves com o id da dona, cada uma uma lista; estas sao
+ * objetos, por pessoa ou, no `dispatch`, por repositorio.
  */
-export const PERSONAL_SECTIONS = ['viewpoints', 'channels'] as const;
+export const PERSONAL_SECTIONS = ['viewpoints', 'channels', 'dispatch'] as const;
 export type PersonalSection = (typeof PERSONAL_SECTIONS)[number];
 
 export function readJsonFile(path: string): Record<string, unknown> {

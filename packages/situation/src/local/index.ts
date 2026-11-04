@@ -1,5 +1,6 @@
 export * from './access-broker.local';
 export * from './channels.local';
+export * from './dispatch-approval';
 export * from './inventory.local';
 export * from './machine-probe.local';
 export * from './people.local';
