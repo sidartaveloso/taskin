@@ -12,15 +12,24 @@ O nome do repositório é o nome da pasta (`path.basename(root)`): clones em pas
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] A prova primeiro, em commit vermelho: ssh e https dão o mesmo id; usuário e token da URL nunca aparecem no id nem no `runs.jsonl` versionado; `resources.repository` tem prioridade; clones em pastas diferentes têm o mesmo id; sem os dois, cai na pasta e avisa
-- [ ] Um remote que não serve de id (caminho local, host sem domínio público, endereço IP) não é usado: ele levaria um dado da máquina ao arquivo versionado
-- [ ] Liberação gravada com o nome da pasta deixa de valer, e o aviso diz como refazer
-- [ ] `resources.repository` diferente do `origin` gera aviso: quem declara o id herda as liberações daquele id
-- [ ] O `taskin plan`, o `taskin run`, o `taskin access`, o `taskin status` e o `taskin list --where` usam o mesmo id
-- [ ] README da CLI, RDT e changeset
+- [x] A prova primeiro, em commit vermelho: ssh e https dão o mesmo id; usuário e token da URL nunca aparecem no id nem no `runs.jsonl` versionado; `resources.repository` tem prioridade; clones em pastas diferentes têm o mesmo id; sem os dois, cai na pasta e avisa
+  - Prova: commit `test(task-244)` vermelho; `repository-id.test.ts`; `repository-id.e2e.test.ts` (git de verdade, com worktree e cópia em outra pasta).
+- [x] Um remote que não serve de id (caminho local, host sem domínio público, endereço IP) não é usado: ele levaria um dado da máquina ao arquivo versionado
+  - Prova: `normalizeRemoteUrl`; o caso "nao serve de id" de `repository-id.test.ts`.
+- [x] Liberação gravada com o nome da pasta deixa de valer, e o aviso diz como refazer
+  - Prova: "a conta liberada pelo nome da pasta deixa de valer, e o aviso diz como refazer; liberada pelo id, vale".
+- [x] `resources.repository` diferente do `origin` gera aviso: quem declara o id herda as liberações daquele id
+  - Prova: "resources.repository tem prioridade, e diferente do origin avisa".
+- [x] O `taskin plan`, o `taskin run`, o `taskin access`, o `taskin status` e o `taskin list --where` usam o mesmo id
+  - Prova: `repositoryIdentityOf` em `probe-situation.ts`, usado por todos; `local-plan.ts` e `status.ts`; "o taskin status usa o mesmo id".
+- [x] README da CLI, RDT e changeset
+  - Prova: `packages/cli/README.md`, o RDT e o changeset.
 
 ## Notes
 Sem migração de histórico: nenhum `runs.jsonl` foi commitado.
+
+### O que ficou da rodada
+- `resources.repository` é versionado e tem prioridade: um `.taskin.json` hostil pode declarar o id de outro repositório e herdar as liberações dele. O aviso de id diferente do `origin` expõe isso, mas não impede.
 
 ### Contexto da rodada
 - Ler: `packages/cli/src/lib/probe-situation.ts`, `local-plan.ts`, `packages/cli/src/commands/status.ts`.

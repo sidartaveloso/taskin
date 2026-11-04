@@ -12,11 +12,16 @@
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] A prova primeiro, em commit vermelho: comando novo não roda; comando aprovado roda; comando alterado volta a pedir aprovação; sem terminal, nunca aprova sozinho; `--dry-run` não precisa de aprovação
-- [ ] Sem aprovação, `taskin run` mostra o comando, não lança nada, sai com erro e diz como aprovar
-- [ ] `taskin run --allow`: mostra o comando e pergunta, num terminal; grava o hash na chave `dispatch` da camada da pessoa, preservando as contas
-- [ ] A aprovação nunca vai a arquivo versionado
-- [ ] README da CLI, RDT (a frase "O comando é do repositório"), mapa e changeset
+- [x] A prova primeiro, em commit vermelho: comando novo não roda; comando aprovado roda; comando alterado volta a pedir aprovação; sem terminal, nunca aprova sozinho; `--dry-run` não precisa de aprovação
+  - Prova: commit `test(task-243)` vermelho; "a aprovacao do comando" em `run.e2e.test.ts`; `dispatch-approval.test.ts` em `packages/situation` e em `packages/cli`.
+- [x] Sem aprovação, `taskin run` mostra o comando, não lança nada, sai com erro e diz como aprovar
+  - Prova: `requireApproval` em `run.ts`; "comando novo nao roda: mostra o comando, nao lanca nada, sai com erro e diz como aprovar".
+- [x] `taskin run --allow`: mostra o comando e pergunta, num terminal; grava o hash na chave `dispatch` da camada da pessoa, preservando as contas
+  - Prova: `allowCommand` em `run.ts` e `approveCommand` em `dispatch-approval.ts`; "o arquivo guarda o hash, nao o comando, so para a dona ler, e preserva as contas"; num pseudo-terminal, conferido à mão: `--allow` pergunta, grava com modo 600, e o `taskin run` seguinte passa.
+- [x] A aprovação nunca vai a arquivo versionado
+  - Prova: "a aprovacao mora na camada da pessoa, nunca em arquivo do repositorio".
+- [x] README da CLI, RDT (a frase "O comando é do repositório"), mapa e changeset
+  - Prova: `packages/cli/README.md`, a frase do RDT, o mapa e o changeset.
 
 ## Notes
 Depende da task-244 para o id do repositório que chaveia a aprovação.

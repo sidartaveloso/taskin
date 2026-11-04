@@ -12,11 +12,16 @@ O `.taskin/runs.jsonl` é versionado, e várias máquinas acrescentam linhas no 
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] A prova primeiro, em commit vermelho: arquivo com linha repetida e fora de ordem não quebra a leitura, e a repetida não conta duas vezes na calibração; um merge real de dois ramos não conflita
-- [ ] `.gitattributes` com `.taskin/runs.jsonl merge=union`
-- [ ] `runs()` lê uma vez cada `id` e ignora linha ilegível
-- [ ] `taskin init` acrescenta o atributo, sem repetir nem apagar o que já há
-- [ ] README da CLI e RDT
+- [x] A prova primeiro, em commit vermelho: arquivo com linha repetida e fora de ordem não quebra a leitura, e a repetida não conta duas vezes na calibração; um merge real de dois ramos não conflita
+  - Prova: commit `test(task-245)` vermelho; "depois de um merge..." em `local.test.ts`; "uma linha repetida pelo merge nao conta duas vezes na calibracao" em `plan.test.ts`; `runs-merge.e2e.test.ts` (merge real com o `.gitattributes` do repositório).
+- [x] `.gitattributes` com `.taskin/runs.jsonl merge=union`
+  - Prova: `.gitattributes`.
+- [x] `runs()` lê uma vez cada `id` e ignora linha ilegível
+  - Prova: `readLines` e `runs` em `run-ledger.local.ts`.
+- [x] `taskin init` acrescenta o atributo, sem repetir nem apagar o que já há
+  - Prova: `ensureRunsMergeAttribute` em `packages/cli/src/lib/git-attributes.ts`, chamado por `init.ts`; `git-attributes.test.ts`.
+- [x] README da CLI e RDT
+  - Prova: `packages/cli/README.md` e o RDT.
 
 ## Notes
 Nada mais muda no `.taskin/runs.jsonl`.

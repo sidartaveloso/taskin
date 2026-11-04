@@ -128,6 +128,11 @@ A soma não é uma união simples. Três regras:
 2. **Um recurso pessoal só entra num repositório que a pessoa liberou.**
    - Sem essa regra, qualquer repositório clonado poderia mandar rodar código
      no desktop de quem o clonou.
+   - A liberação vale para o id do repositório, não para o nome da pasta: uma
+     pasta com o mesmo nome em outro repositório não herda nada, e liberações
+     antigas, gravadas com o nome da pasta, deixam de valer. O aviso do taskin
+     diz o que trocar em `releasedTo`. Quem declara `resources.repository` herda
+     as liberações daquele id, e por isso um id diferente do `origin` gera aviso.
    - A liberação é por repositório, no arquivo do usuário, como o "ativar" do
      [RDT da Alexa](taskin-na-alexa.md).
 3. **O repositório também restringe, não só oferece.**
@@ -160,6 +165,12 @@ O que o taskin pode usar, então:
   não os sobrescreve, porque o plano do time tem de ser reproduzível por todos
   (a concorrência das máquinas dela pode ganhar um lugar na camada da pessoa
   quando alguém precisar).
+- **A aprovação do comando de despacho** (`taskin run --allow`) nunca entra no
+  repositório: é a pessoa dizendo que aquele texto pode receber o segredo dela.
+- **O id do repositório vai ao arquivo versionado**, então um remote só serve de
+  id quando não diz nada da máquina: usuário, senha e token saem da URL, e um
+  caminho local, um host sem domínio público ou um endereço IP não servem. Nesses
+  casos vale o nome da pasta, com aviso, até alguém declarar `resources.repository`.
 - **O registro de execução** é versionado só no que serve ao time para
   calibrar (o modelo, a dificuldade estimada e a encontrada, tokens, iterações,
   conclusão, retrabalho e duração de execuções fechadas), sem a conta usada e
@@ -181,6 +192,9 @@ texto das tasks, dos RDTs e dos commits segue em português.
 | Ajustes de uma conta da pessoa | chave `scheduling` ao lado da conta, em `~/.config/taskin/resources.json` |
 | Ajustes gerais do plano (pesos, horizonte, margem de cota, tokens por dificuldade, máquinas, requisitos móveis) | `resources.scheduling` no `.taskin.json`, só |
 | Requisitos de uma task | campo `- Requires:` no cabeçalho |
+| Sensibilidade de uma task | campo `- Sensitivity: public\|internal\|sensitive` no cabeçalho; sem ele, `resources.defaultSensitivity` no `.taskin.json`; sem padrão, `internal` |
+| Id do repositório | `resources.repository` no `.taskin.json`; sem ele, o remote `origin` normalizado (`host/dono/nome`); sem os dois, o nome da pasta, com aviso |
+| Comandos de despacho aprovados | chave `dispatch` em `~/.config/taskin/resources.json`, por repositório, com o hash do comando |
 | Valores dos requisitos e das capacidades | lista fechada em inglês, no `types-ts`: `docker`, `android-sdk`, `gpu`, `interactive`, `microphone`, `visual-review`… |
 | O quadro da situação | `taskin status`, com `--format` (`text`, o padrão, `json`, `html` ou `md`) e o atalho `--json` |
 | O processo em segundo plano | `taskin daemon` (task-200); `taskin daemon status` fala só do processo |
@@ -274,10 +288,17 @@ que o plano não tenha decidido:
 - **Quando uma termina, replaneja.** As tasks abertas e o consumo são lidos de
   novo, e a próxima sai. Uma task sai no máximo uma vez por chamada: a que
   termina sem fechar fica aberta e segura quem depende dela.
-- **O comando é do repositório.** `resources.dispatch.command` no
-  `.taskin.json`, com `{task}`, roda por dentro do `taskin access run` com a
-  conta e o modelo fixados, e recebe `TASKIN_TASK`, `TASKIN_MODEL` e
-  `TASKIN_RUN_RESULT`, o arquivo onde escreve o resultado.
+- **O comando é declarado no repositório e só roda depois da aprovação da
+  pessoa.** `resources.dispatch.command` no `.taskin.json`, com `{task}`, roda
+  por dentro do `taskin access run` com a conta e o modelo fixados, e recebe
+  `TASKIN_TASK`, `TASKIN_MODEL` e `TASKIN_RUN_RESULT`, o arquivo onde escreve o
+  resultado. Como ele é versionado e recebe o segredo da conta no ambiente, quem
+  altera o arquivo decide o que recebe o token. Por isso o `taskin run` pede a
+  aprovação na primeira vez e sempre que o texto mudar, como o `direnv allow`:
+  sem ela, mostra o comando, não lança nada e sai com erro. `taskin run --allow`
+  aprova, só num terminal: sem pessoa do outro lado, nunca aprova sozinho. A
+  aprovação mora na camada da pessoa, por repositório, com o hash do comando
+  (task-243). O `--dry-run` não precisa dela, porque não lança nada.
 - **Sem resultado, a execução é abandonada.** Ela fecha só no estado da
   máquina (`IRunLedger.abandonRun`), e nada vai ao histórico do time, que só
   calibra com o que foi dito. O mesmo vale para o SIGINT, que encerra os
@@ -368,7 +389,13 @@ declarado, o consumo é fato sondado, e a projeção trabalha com margem.
   da primeira vez ele fica na máquina, e por isso compensa agrupar tasks
   parecidas onde o preparo já foi pago.
 - **Competência:** o modelo cobre a dificuldade da task.
-- **Dados:** a classificação do acesso cobre a sensibilidade da task. Não é
+- **Dados:** dado sensível só vai para um acesso considerado seguro para ele.
+  A sensibilidade vem do campo `- Sensitivity:` da task; sem ele, de
+  `resources.defaultSensitivity`; sem padrão, é `internal`, nunca `public`:
+  esquecer o campo não pode abrir o dado para qualquer conta, e um valor que não
+  se entende vale como `sensitive`. A task sem conta liberada fica adiada com o
+  código `data`, e o `taskin access run` recusa a conta que não cobre (task-242).
+  A classificação do acesso cobre a sensibilidade da task. Não é
   "só modelo local": é só acesso considerado seguro para aquele dado
   (retenção zero, contrato sem treino, auto-hospedado), declarado pela
   camada do repositório.
@@ -389,7 +416,11 @@ Nele não há conta nem horário do dia. O **estado da máquina** fica no
 diretório de estado (`$XDG_STATE_HOME/taskin`, o mesmo do `leases.json`) e vale
 para todos os repositórios da máquina: qual conta cada execução usou, o começo
 das execuções (as em aberto, com corte de 24 h) e o consumo de cada conta com
-o horário, para a janela de cota e para a ocupação das contas.
+o horário, para a janela de cota e para a ocupação das contas. Como várias
+máquinas acrescentam linhas no fim do mesmo arquivo versionado, o `.gitattributes`
+declara `.taskin/runs.jsonl merge=union`, e a leitura conta cada `id` uma vez e
+ignora linha ilegível: o que a união deixar repetido ou fora de ordem não muda a
+calibração (task-245). O `taskin init` declara o mesmo atributo nos projetos novos.
 
 **Calibração.** Uma task pequena e de resposta conhecida, rodada em broadcast
 em todos os recursos, mede latência, tokens por segundo, acerto, consumo de
@@ -722,6 +753,10 @@ entre modelos, contas e máquinas:
 | 238 | O `taskin run` despacha o plano nesta máquina, várias tasks ao mesmo tempo | `situacao-lote-7` | 4 |
 | 239 | Consentimento, horário e canais na camada da pessoa | `situacao-lote-7` | 3 |
 | 241 | Os canais entregam o aviso de verdade | `situacao-lote-8` | 3 |
+| 242 | Dado sensível só vai para conta liberada: o campo `Sensitivity` na task | `situacao-lote-9` | 3 |
+| 243 | O comando do `taskin run` só roda depois da aprovação da pessoa | `situacao-lote-9` | 3 |
+| 244 | O repositório tem um id estável, não o nome da pasta | `situacao-lote-9` | 3 |
+| 245 | O `runs.jsonl` versionado aguenta merge de várias máquinas | `situacao-lote-9` | 2 |
 | 227 | O sandcastle roda uma task a pedido do `taskin run` | interativa | 4 |
 | 240 | O despacho para as outras máquinas da pessoa | interativa | 4 |
 

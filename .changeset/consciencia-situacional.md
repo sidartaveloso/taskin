@@ -14,7 +14,12 @@ conta que declara capacidade (`concurrencyLimit`) tem reserva, com prazo e devol
 O registro de execucao tem duas metades: o historico do time, versionado e so com o que
 calibra (por modelo, sem conta e sem horario), e o estado da maquina, com a conta usada,
 o comeco das execucoes e o consumo com horario.
+Dado sensivel so vai para conta liberada: a task ganha o campo `Sensitivity`, sem ele vale
+`resources.defaultSensitivity` e, sem padrao, `internal`. O repositorio e identificado por
+`resources.repository` ou pelo remote `origin`, sem credenciais, e nao mais pela pasta.
 A CLI ganha o `taskin access run|status`, que escolhe a conta e roda o comando com o
 segredo so no ambiente dele, e o `taskin status`: a task em andamento no topo, os
 recursos e quais tasks abertas rodam nesta maquina, em `--format text|json|html|md`
-ou `--json`.
+ou `--json`. O `taskin run` despacha o plano
+nesta maquina, e o comando de `resources.dispatch.command` so roda depois da aprovacao da pessoa,
+com `taskin run --allow`. O `taskin init` declara `.taskin/runs.jsonl merge=union` no `.gitattributes`.
