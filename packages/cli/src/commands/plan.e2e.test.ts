@@ -72,6 +72,7 @@ beforeEach(() => {
             envVar: 'ANTHROPIC_API_KEY',
           },
         ],
+        defaultSensitivity: 'public',
         restrictPersonalMachines: false,
         clearances: {},
         scheduling: { accesses: { 'claude-main': { model: 'claude-opus-5-5' } } },

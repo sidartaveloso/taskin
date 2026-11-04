@@ -102,6 +102,11 @@
       "id": "situacao-lote-8",
       "name": "Situação, lote 8: os avisos chegam à pessoa",
       "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-9": {
+      "id": "situacao-lote-9",
+      "name": "Situação, lote 9: o que a revisão achou antes da mescla",
+      "parentId": "g-ebwuvrd1"
     }
   }
 }

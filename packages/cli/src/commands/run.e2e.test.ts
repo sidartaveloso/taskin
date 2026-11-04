@@ -83,7 +83,7 @@ async function rodar(...args: string[]): Promise<{ code: number; stdout: string;
   }
 }
 
-function configurar(modo = 'normal'): void {
+function configurar(modo = 'normal', recursos: Record<string, unknown> = { defaultSensitivity: 'public' }): void {
   const falso = join(raiz, 'falso.cjs');
   writeFileSync(falso, FALSO);
   const conta = (name: string) => ({
@@ -104,6 +104,7 @@ function configurar(modo = 'normal'): void {
         offers: [conta('conta-a'), conta('conta-b')],
         restrictPersonalMachines: false,
         clearances: {},
+        ...recursos,
         scheduling: {
           accesses: { 'conta-a': { model: 'modelo-a' }, 'conta-b': { model: 'modelo-b' } },
           machines: { 'this-machine': { concurrency: 2 } },
@@ -205,6 +206,58 @@ describe('taskin run', LENTO, () => {
     expect(recusado.code, recusado.stderr).toBe(0);
     expect(recusado.stderr).toContain('Notice for task');
     expect(linhas(historico())).toHaveLength(4);
+  });
+
+  it('task sem o campo, sem padrao e so com conta public: nao lanca nada e diz por que', async () => {
+    configurar('normal', {});
+
+    const r = await rodar('run');
+
+    expect(r.code, r.stderr).toBe(0);
+    expect(readdirSync(marcas)).toEqual([]);
+    expect(r.stderr).toMatch(/#1 Tarefa 001 — data/);
+    expect(r.stderr).toMatch(/#2 Tarefa 002 — data/);
+    expect(r.stderr).toContain('sensitivity');
+    expect(existsSync(daMaquina())).toBe(false);
+  });
+
+  it('task sensivel so sai para a conta liberada, e o access run recebe o valor', async () => {
+    configurar('normal', { defaultSensitivity: 'public', clearances: { 'conta-b': 'sensitive' } });
+    writeFileSync(
+      join(raiz, 'TASKS', 'task-001-primeira.md'),
+      tarefa('001').replace('- Type: feat', '- Type: feat\n- Sensitivity: sensitive'),
+    );
+
+    const seca = await rodar('run', '--dry-run');
+    expect(seca.stdout).toMatch(/#1 Tarefa 001 → conta-b/);
+
+    await rodar('run');
+    expect(viu('1').model).toBe('modelo-b');
+  });
+
+  it('o access run recusa a conta que nao cobre a sensibilidade que o run repassou', async () => {
+    configurar('normal', { defaultSensitivity: 'public', clearances: { 'conta-b': 'sensitive' } });
+    const r = await rodar(
+      'access',
+      'run',
+      'llm',
+      '--access',
+      'conta-a',
+      '--sensitivity',
+      'sensitive',
+      '--',
+      'node',
+      '-e',
+      '0',
+    );
+    expect(r.code).toBe(1);
+    expect(r.stderr).toContain('no-cleared-access');
+  });
+
+  it('--dry-run diz por que a task adiada nao sai', async () => {
+    configurar('normal', {});
+    const r = await rodar('run', '--dry-run');
+    expect(r.stdout).toMatch(/#1 Tarefa 001 — data/);
   });
 
   it('--dry-run mostra o que sairia agora, por maquina, conta e modelo, sem lancar nada', async () => {

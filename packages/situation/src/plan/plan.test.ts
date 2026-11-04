@@ -26,6 +26,10 @@ interface Fixture {
   readonly personal?: readonly { readonly name: string; readonly scheduling?: object }[];
   /** A capacidade declarada no inventario de cada conta do repositorio, pelo nome. */
   readonly limits?: Readonly<Record<string, number>>;
+  /** `resources.defaultSensitivity`. Sem dizer, `public`, para os casos que nao sao sobre isso; `null` nao declara. */
+  readonly defaultSensitivity?: string | null;
+  /** A liberacao de cada conta do repositorio, pelo nome: `resources.clearances`. */
+  readonly clearances?: Readonly<Record<string, string>>;
 }
 
 const limitOf = (fixture: Fixture, name: string) => {
@@ -47,6 +51,8 @@ function project(fixture: Fixture = {}) {
     paths.repositoryConfig,
     JSON.stringify({
       resources: {
+        ...(fixture.defaultSensitivity === null ? {} : { defaultSensitivity: fixture.defaultSensitivity ?? 'public' }),
+        clearances: fixture.clearances ?? {},
         offers: [
           machine('servidor-1', 'docker'),
           account('conta-a', { secret: secretRef('env:CONTA_A'), ...limitOf(fixture, 'conta-a') }),
@@ -340,6 +346,48 @@ describe('taskin plan: uma conta oferece varios modelos', () => {
       scheduling: { accesses: { 'conta-a': { model: 'opus', models: [{ name: 'haiku' }] } } },
     });
     expect(() => readSchedulingSettings(paths.repositoryConfig)).toThrow(/model/);
+  });
+});
+
+describe('taskin plan: dado sensivel so vai para conta liberada', () => {
+  const nameOf = (report: Awaited<ReturnType<typeof plan>>) =>
+    report.plan.assignments.map((a) => report.resources[a.access]?.name);
+
+  it('task sensivel nunca e atribuida a conta sem liberacao: fica adiada com o codigo data', async () => {
+    const report = await plan({}, [task('1', { sensitivity: 'sensitive' })]);
+    expect(report.plan.assignments).toEqual([]);
+    expect(report.deferred).toEqual([{ task: '1', reason: 'data' }]);
+  });
+
+  it('task sensivel vai so a conta liberada para ela, mesmo havendo outra mais barata', async () => {
+    const report = await plan({ clearances: { 'conta-b': 'sensitive' } }, [task('1', { sensitivity: 'sensitive' })]);
+    expect(nameOf(report)).toEqual(['conta-b']);
+  });
+
+  it('task sem o campo e repositorio sem padrao vale internal: nao vai para conta liberada so para public', async () => {
+    const report = await plan({ defaultSensitivity: null }, [task('1')]);
+    expect(report.plan.problem.tasks[0]?.sensitivity).toBe('internal');
+    expect(report.plan.assignments).toEqual([]);
+    expect(report.deferred).toEqual([{ task: '1', reason: 'data' }]);
+  });
+
+  it('task sem o campo vale o padrao do repositorio', async () => {
+    const report = await plan({ defaultSensitivity: 'sensitive', clearances: { 'conta-a': 'internal' } }, [task('1')]);
+    expect(report.plan.problem.tasks[0]?.sensitivity).toBe('sensitive');
+    expect(report.deferred).toEqual([{ task: '1', reason: 'data' }]);
+  });
+
+  it('o campo da task vence o padrao, para os dois lados', async () => {
+    const aberta = await plan({ defaultSensitivity: 'sensitive' }, [task('1', { sensitivity: 'public' })]);
+    expect(aberta.plan.assignments).toHaveLength(1);
+    const fechada = await plan({ defaultSensitivity: 'public' }, [task('1', { sensitivity: 'internal' })]);
+    expect(fechada.plan.assignments).toEqual([]);
+  });
+
+  it('um padrao que nao se entende vale como sensitive, e avisa', async () => {
+    const { report, warnings } = await planWithWarnings({ defaultSensitivity: 'publico' }, [task('1')]);
+    expect(report.plan.problem.tasks[0]?.sensitivity).toBe('sensitive');
+    expect(warnings.join()).toContain('defaultSensitivity');
   });
 });
 

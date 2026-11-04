@@ -78,6 +78,7 @@ beforeEach(() => {
             envVar: 'ANTHROPIC_API_KEY',
           },
         ],
+        defaultSensitivity: 'public',
         restrictPersonalMachines: false,
         clearances: {},
       },
@@ -249,6 +250,44 @@ describe('taskin access', LENTO, () => {
 
     expect(com.stdout.trim()).toBe('claude-opus');
     expect(sem.stdout.trim()).toBe('-');
+  });
+
+  it('sem --sensitivity vale o padrao do repositorio, e sem padrao vale internal, nunca public', async () => {
+    const config = JSON.parse(readFileSync(join(raiz, '.taskin.json'), 'utf8'));
+    delete config.resources.defaultSensitivity;
+    writeFileSync(join(raiz, '.taskin.json'), JSON.stringify(config));
+
+    const r = await rodar('access', 'run', 'llm', '--', 'node', '-e', '0');
+
+    expect(r.code).toBe(1);
+    expect(r.stderr).toContain('no-cleared-access');
+  });
+
+  it('com --task, vale a sensibilidade da task, e a flag nao a abre', async () => {
+    writeFileSync(
+      join(raiz, 'TASKS', 'task-042-segredo.md'),
+      '# Task 042 — Segredo\n\n- Status: pending\n- Type: feat\n- Assignee: Alguem\n- Sensitivity: sensitive\n\n## Description\nx\n',
+    );
+
+    const semFlag = await rodar('access', 'run', 'llm', '--task', '42', '--', 'node', '-e', '0');
+    const comFlag = await rodar(
+      'access',
+      'run',
+      'llm',
+      '--task',
+      '42',
+      '--sensitivity',
+      'public',
+      '--',
+      'node',
+      '-e',
+      '0',
+    );
+
+    expect(semFlag.code).toBe(1);
+    expect(semFlag.stderr).toContain('no-cleared-access');
+    expect(comFlag.code).toBe(1);
+    expect(comFlag.stderr).toContain('no-cleared-access');
   });
 
   it('o comando que falha tambem devolve a reserva', async () => {

@@ -23,10 +23,13 @@ import {
   NotificationResultSchema,
   NotificationTelegramConfigSchema,
   parseGroupId,
+  parseSensitivity,
   parseTaskId,
   RefactoringMetricsSchema,
   resolveMascotNoiseSettings,
   resolveShhhReactionPlan,
+  SENSITIVITIES,
+  SensitivitySchema,
   StatsPeriodSchema,
   StatsQuerySchema,
   TASK_STATUSES,
@@ -1431,6 +1434,20 @@ describe('TaskinConfigSchema - labs', () => {
     expect(LABS_FEATURES).toContain('estimate');
     expect(LabsFeatureSchema.safeParse('estimate').success).toBe(true);
     expect(LabsFeatureSchema.safeParse('nope').success).toBe(false);
+  });
+});
+
+describe('sensitivity', () => {
+  it('a task aceita os tres valores e fica sem o campo quando ele nao vem', () => {
+    expect(SENSITIVITIES).toEqual(['public', 'internal', 'sensitive']);
+    expect(SensitivitySchema.parse('internal')).toBe('internal');
+    expect(() => SensitivitySchema.parse('secreto')).toThrow();
+  });
+
+  it('o valor lido de um arquivo se normaliza, e o que nao se entende vale como sensitive', () => {
+    expect(parseSensitivity(' Internal ')).toBe('internal');
+    expect(parseSensitivity('sensitiv')).toBe('sensitive');
+    expect(parseSensitivity('')).toBe('sensitive');
   });
 });
 
