@@ -437,7 +437,7 @@ pre {
       <div class="chips"><span class="chip">avisar</span></div>
       <div class="rows">
         <div class="row"><b class="p">Pessoa</b><span>Um canal da Carla, na camada dela. Quem pede uma revisão não sabe que a TV existe: o pedido chega ao lado da Carla, e o taskin dela escolhe o canal pela preferência e pela presença.</span></div>
-        <div class="row"><b class="n">Entre</b><span>Como o pedido viaja da Ana até o taskin da Carla está em aberto (task-228). Hoje o caminho pronto é o Discord com menção (task-068).</span></div>
+        <div class="row"><b class="n">Entre</b><span>Como o pedido viaja da Ana até o taskin da Carla está em aberto (task-228), e o envio para a TV ainda não existe: a preferência é guardada, e o aviso fica esperando.</span></div>
       </div>
     </article>
 
@@ -455,7 +455,7 @@ pre {
 <section aria-labelledby="arquivos">
   <span class="eyebrow">Os arquivos</span>
   <h2 id="arquivos">O mesmo projeto, visto em cada lugar</h2>
-  <p class="muted">Exemplos no formato de hoje. Consentimento e canais da Carla ainda não têm arquivo: existem como tipos e em memória, e aparecem aqui como o RDT os descreve.</p>
+  <p class="muted">Exemplos no formato de hoje.</p>
 
   <div class="files-grid">
     <div class="panel panel-git">
@@ -514,11 +514,16 @@ pre {
                        "android-sdk"] },
     "releasedTo": ["app-loja"] }
 ] }</pre>
-      <div class="panel-head"><span class="path">camada da Carla (proposta)</span><span class="who">só no computador da Carla</span></div>
-<pre><span class="cmt">// RDT: consentimento, horario e canais</span>
-consent:  review:design, 5 por semana
-hours:    seg-sex, 09:00-18:00
-channels: [<span class="k-p">tv-da-sala</span>, taskinboard]</pre>
+      <div class="panel-head"><span class="path">~/.config/taskin/resources.json</span><span class="who">só no computador da Carla</span></div>
+<pre>{ <span class="k-p">"viewpoints"</span>: { "carla": {
+    "expertise": ["design"],
+    "weeklyLoad": 5,
+    "hours": { "weekdays": [1,2,3,4,5],
+      "fromMinute": 540, "toMinute": 1080,
+      "utcOffsetMinutes": -180 } } },
+  <span class="k-p">"channels"</span>: { "carla":
+    [<span class="k-p">"tv-da-sala"</span>, "taskinboard"] } }
+<span class="cmt">// taskin viewpoints consent · taskin channels prefer</span></pre>
       <div class="never">Se o <code>.taskin.json</code> citar <code>claude-pessoal</code>, o <code>taskin plan</code> avisa no terminal e ignora a linha.</div>
     </div>
 
@@ -588,7 +593,7 @@ channels: [<span class="k-p">tv-da-sala</span>, taskinboard]</pre>
   </div>
   <div class="dist-notes">
     <p><b>Por que assim.</b> A 43 é difícil e vai ao modelo forte; a 46 é simples e vai ao modelo local, que não gasta cota. A conta do time aceita duas sessões (<code>concurrencyLimit: 2</code>), então a 44 entra na segunda vaga quando a máquina tem fôlego. O notebook roda duas frentes porque declara capacidade para dois lotes.</p>
-    <p><b>O que já existe e o que falta.</b> O <code>taskin plan</code> já sugere conta, máquina e momento. Uma conta com vários modelos (task-235), a capacidade da conta no plano (236), o <code>access run</code> seguindo a atribuição (237), o <code>taskin run</code> lançando as frentes em paralelo (238), o sandcastle como o comando de cada frente (227) e as frentes em outras máquinas da pessoa (240) são as próximas tasks.</p>
+    <p><b>O que já existe e o que falta.</b> O <code>taskin plan</code> já escolhe conta, modelo e máquina (tasks 235 e 236), o <code>access run</code> segue a atribuição (237) e o <code>taskin run</code> lança as frentes em paralelo nesta máquina (238). Faltam o sandcastle como o comando de cada frente (227) e as frentes em outras máquinas da pessoa (240).</p>
   </div>
 </section>
 
@@ -613,7 +618,7 @@ channels: [<span class="k-p">tv-da-sala</span>, taskinboard]</pre>
     <div class="rule"><h3>Pessoa é pedida, não usada</h3><p>Consentimento, carga, horário e presença são dela. O taskin agrupa pedidos e respeita o que ela declarou.</p></div>
     <div class="rule"><h3>Reserva só onde há capacidade</h3><p>Conta que aceita várias sessões é só escolhida. Vaga com prazo e devolução existe quando o recurso declara limite.</p></div>
   </div>
-  <p class="status-note">Pronto hoje: as duas camadas do inventário, a sondagem desta máquina, <code>taskin status</code>, <code>taskin plan</code>, <code>taskin access run|status</code> e o registro em duas metades (tasks 219 a 226, 231 a 233). Próximas: vários modelos por conta (235), a capacidade da conta no plano (236), o access run seguindo o plano (237), o <code>taskin run</code> despachando em paralelo (238), consentimento e canais na camada da pessoa (239), o sandcastle como comando de cada frente (227) e o despacho para outras máquinas da pessoa (240). Decisões em aberto: a percepção viva entre máquinas (228) e os pesos e a presença (229). O taskinboard é a 230.</p>
+  <p class="status-note">Pronto hoje: as duas camadas do inventário, a sondagem desta máquina, <code>taskin status</code>, <code>taskin plan</code> com vários modelos por conta, <code>taskin access run|status</code>, <code>taskin run</code> nesta máquina, o registro em duas metades e o consentimento e as preferências de canal na camada da pessoa, com <code>taskin viewpoints</code> e <code>taskin channels</code>. Falta entregar de verdade: a preferência de canal já é guardada, mas ainda nenhum canal envia o aviso (a TV e o relógio do exemplo), que fica esperando. Em aberto: o sandcastle como comando de cada frente (227), o despacho para outras máquinas da pessoa (240), a percepção viva e o caminho de um pedido entre pessoas (228), os pesos e a presença (229) e o taskinboard (230).</p>
 </section>
 
 </div>
@@ -651,7 +656,7 @@ channels: [<span class="k-p">tv-da-sala</span>, taskinboard]</pre>
       p: 'O agente chega ao review:design e abre um pedido em vez de adivinhar. O registro de pessoas, que é versionado, diz quem aceitou divulgar a competência design: a Carla. O agente segue com a próxima task do lote enquanto espera.',
       cmd: 'ViewpointRequested → reviewer: carla, expertise: design' },
     { t: 'O aviso chega à TV da Carla', where: ['person', 'live'],
-      p: 'São 19h e a Carla está em casa. O taskin dela escolhe o canal pela preferência e pela presença: a TV da sala. A Ana nunca soube que a TV existe. Como o pedido sai da máquina da Ana e chega ao lado da Carla está em decisão na task-228; o Discord com menção já funciona.',
+      p: 'São 19h e a Carla está em casa. O taskin dela escolhe o canal pela preferência e pela presença: a TV da sala. A Ana nunca soube que a TV existe. Como o pedido sai da máquina da Ana e chega ao lado da Carla está em decisão na task-228, e nenhum canal envia o aviso ainda: a preferência dela já é guardada, e o aviso fica esperando.',
       cmd: 'canal: tv-da-sala (camada da Carla)' },
     { t: 'A Carla responde', where: ['git', 'machine'],
       p: 'Ela aceita e entrega a opinião. A resposta volta registrada na task, como evidência. Quanto ela levou para responder fica só com ela.',

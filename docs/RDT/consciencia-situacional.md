@@ -718,6 +718,11 @@ entre modelos, contas e máquinas:
   ambiente, cada chamada no seu worktree.
 - **A 240 depende da 228 e da 238.**
 
+O lote 7 está fechado. Ele rodou sobre os commits das tasks 231 a 234, antes da
+revisão deles, e o que falta para a distribuição valer de ponta a ponta é a 227
+e a 240. A preferência de canal já mora na camada da pessoa, mas o `channels`
+ainda não tem quem entregue: nenhum canal envia o aviso, e ele fica esperando.
+
 ## Decisões em aberto
 
 - **O formato do inventário**: o que a sondagem descobre sozinha e o que se
