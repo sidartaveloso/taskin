@@ -1,5 +1,6 @@
 import { execFile, execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -140,11 +141,73 @@ describe('o id do repositorio, pelo binario', LENTO, () => {
     expect(existsSync(join(raiz, '.taskin', 'runs.jsonl'))).toBe(false);
   });
 
-  it('resources.repository tem prioridade, e diferente do origin avisa', async () => {
+  it('resources.repository nomeia o historico, e nao avisa por ser diferente do origin', async () => {
     const raiz = projeto('pasta', 'git@github.com:dono/nome.git', { repository: 'time/app' });
     const r = await rodar(raiz, 'plan', '--json');
     expect(JSON.parse(r.stdout).repository).toBe('time/app');
-    expect(r.stderr).toContain(ID);
+    expect(r.stderr).toBe('');
+  });
+
+  describe('um .taskin.json que declara o id de outro repositorio', () => {
+    const COMANDO = 'pnpm exec tsx .sandcastle/main.ts --task {task}';
+    const aprovacao = () => ({ [ID]: { commandSha256: createHash('sha256').update(COMANDO).digest('hex') } });
+
+    function pessoaConfiaEm(id: string): void {
+      contaPessoal([id]);
+      const arquivo = join(casa, '.config', 'taskin', 'resources.json');
+      const atual = JSON.parse(readFileSync(arquivo, 'utf8'));
+      writeFileSync(arquivo, JSON.stringify({ ...atual, dispatch: aprovacao() }));
+    }
+
+    it('o repositorio de verdade, com a conta e o comando aprovados, roda', async () => {
+      const raiz = projeto('verdadeiro', 'git@github.com:dono/nome.git', { dispatch: { command: COMANDO } });
+      pessoaConfiaEm(ID);
+
+      expect(await contasDoPlano(raiz)).toContain('conta-pessoal');
+      expect((await rodar(raiz, 'run')).stderr).not.toContain('not approved');
+    });
+
+    it('com o mesmo texto de comando, nao herda a liberacao nem a aprovacao', async () => {
+      const raiz = projeto('isca', 'git@github.com:atacante/isca.git', {
+        repository: ID,
+        dispatch: { command: COMANDO },
+      });
+      pessoaConfiaEm(ID);
+
+      expect(await repositorioDoPlano(raiz)).toBe(ID);
+      expect(await contasDoPlano(raiz)).not.toContain('conta-pessoal');
+      const r = await rodar(raiz, 'run');
+      expect(r.code).toBe(1);
+      expect(r.stderr).toContain('not approved');
+      expect(r.stderr).toContain(COMANDO);
+    });
+
+    it('sem origin, baixado como arquivo, tambem nao herda', async () => {
+      const raiz = projeto('baixado', undefined, { repository: ID, dispatch: { command: COMANDO } });
+      pessoaConfiaEm(ID);
+
+      expect(await contasDoPlano(raiz)).not.toContain('conta-pessoal');
+      expect((await rodar(raiz, 'run')).code).toBe(1);
+    });
+  });
+
+  it('um remote de maquina privada da confianca entre clones, sem ir ao historico', async () => {
+    const a = projeto('clone-a', 'git@maquina-de-casa:repos/nome.git');
+    const b = projeto('clone-b', 'git@maquina-de-casa:repos/nome.git');
+    contaPessoal(['maquina-de-casa/repos/nome']);
+
+    expect(await contasDoPlano(a)).toContain('conta-pessoal');
+    expect(await contasDoPlano(b)).toContain('conta-pessoal');
+    expect(await repositorioDoPlano(a)).toBe('clone-a');
+  });
+
+  it('duas pastas de mesmo nome, sem origin, nao dividem a liberacao', async () => {
+    const a = projeto(join('um', 'app-loja'));
+    const b = projeto(join('dois', 'app-loja'));
+    contaPessoal([`path:${realpathSync(a)}`]);
+
+    expect(await contasDoPlano(a)).toContain('conta-pessoal');
+    expect(await contasDoPlano(b)).not.toContain('conta-pessoal');
   });
 
   it('sem os dois, cai na pasta e avisa em stderr, sem sujar o JSON', async () => {

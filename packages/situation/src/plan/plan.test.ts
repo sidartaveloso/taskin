@@ -118,6 +118,7 @@ async function planWithWarnings(fixture: Fixture, tasks: readonly PlanTaskInput[
   const resources = await localPlanResources({
     inventory,
     ledger: createLocalRunLedger({ clock }, files),
+    historyRepository: REPO,
     clock,
     person: ANA,
     repository: REPO,

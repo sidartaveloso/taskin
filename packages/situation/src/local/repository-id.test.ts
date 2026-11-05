@@ -51,70 +51,120 @@ describe('normalizeRemoteUrl', () => {
 });
 
 describe('resolveRepositoryIdentity', () => {
-  it('resources.repository tem prioridade sobre o remote', () => {
-    const identity = resolveRepositoryIdentity({
-      folder: 'pasta',
-      declared: 'time/app',
-      remote: 'git@github.com:time/app.git',
+  const LOCAL = '/casa/projetos/pasta';
+  const base = { folder: 'pasta', location: LOCAL };
+
+  it('o id do historico: resources.repository, depois o remote, depois a pasta', () => {
+    const remote = 'git@github.com:dono/nome.git';
+    expect(resolveRepositoryIdentity({ ...base, declared: 'time/app', remote }).id).toBe('time/app');
+    expect(resolveRepositoryIdentity({ ...base, remote }).id).toBe(ID);
+    expect(resolveRepositoryIdentity(base).id).toBe('pasta');
+  });
+
+  it('o id de confianca nunca vem do arquivo versionado: declarar o id de outro repositorio nao muda nada', () => {
+    const hostil = resolveRepositoryIdentity({ ...base, declared: ID, remote: 'git@github.com:atacante/isca.git' });
+    expect(hostil.id).toBe(ID);
+    expect(hostil.trustId).toBe('github.com/atacante/isca');
+  });
+
+  it('sem origin, o id declarado tambem nao da confianca: vale o caminho da pasta', () => {
+    const baixado = resolveRepositoryIdentity({ ...base, declared: ID });
+    expect(baixado.id).toBe(ID);
+    expect(baixado.trustId).toBe(`path:${LOCAL}`);
+  });
+
+  it('pastas de mesmo nome, sem origin, nao dividem confianca', () => {
+    const a = resolveRepositoryIdentity({ folder: 'app-loja', location: '/a/app-loja' });
+    const b = resolveRepositoryIdentity({ folder: 'app-loja', location: '/b/app-loja' });
+    expect(a.id).toBe(b.id);
+    expect(a.trustId).not.toBe(b.trustId);
+  });
+
+  it('com origin publico, os dois ids coincidem, e a pasta nao importa', () => {
+    const a = resolveRepositoryIdentity({
+      folder: 'pasta-a',
+      location: '/a/pasta-a',
+      remote: 'git@github.com:dono/nome.git',
     });
-    expect(identity.id).toBe('time/app');
-  });
-
-  it('o id declarado diferente do origin avisa: quem declara herda as liberacoes daquele id', () => {
-    const identity = resolveRepositoryIdentity({ folder: 'pasta', declared: 'time/app', remote: `https://${ID}.git` });
-    expect(identity.warnings.join()).toContain('time/app');
-    expect(identity.warnings.join()).toContain(ID);
-  });
-
-  it('sem declarar, vale o remote, e a pasta nao importa', () => {
-    const a = resolveRepositoryIdentity({ folder: 'pasta-a', remote: `git@github.com:dono/nome.git` });
-    const b = resolveRepositoryIdentity({ folder: 'pasta-b', remote: `https://token@github.com/dono/nome` });
-    expect([a.id, b.id]).toEqual([ID, ID]);
+    const b = resolveRepositoryIdentity({
+      folder: 'pasta-b',
+      location: '/b/pasta-b',
+      remote: 'https://token@github.com/dono/nome',
+    });
+    expect([a.id, b.id, a.trustId, b.trustId]).toEqual([ID, ID, ID, ID]);
     expect(a.warnings).toEqual([]);
   });
 
-  it('sem os dois, cai na pasta e avisa que a liberacao e o historico ficam presos a ela', () => {
-    const identity = resolveRepositoryIdentity({ folder: 'pasta' });
+  it('o id declarado diferente do origin nao avisa: so rotula o historico', () => {
+    const identity = resolveRepositoryIdentity({
+      ...base,
+      declared: 'time/app',
+      remote: 'git@github.com:dono/nome.git',
+    });
+    expect(identity.warnings).toEqual([]);
+  });
+
+  it('um remote privado nao vai ao historico, mas serve de confianca, sem credenciais', () => {
+    const identity = resolveRepositoryIdentity({
+      ...base,
+      remote: 'https://usuario:token-secreto@maquina-de-casa/dono/nome.git',
+    });
     expect(identity.id).toBe('pasta');
+    expect(identity.trustId).toBe('maquina-de-casa/dono/nome');
+    expect(JSON.stringify(identity)).not.toContain('token-secreto');
+    expect(JSON.stringify(identity)).not.toContain('usuario');
+  });
+
+  it('um remote que e caminho local nao serve de confianca: vale o caminho da pasta', () => {
+    expect(resolveRepositoryIdentity({ ...base, remote: '/srv/git/nome.git' }).trustId).toBe(`path:${LOCAL}`);
+  });
+
+  it('sem id publico, avisa que o historico fica preso a pasta', () => {
+    const identity = resolveRepositoryIdentity(base);
     expect(identity.warnings.join()).toContain('resources.repository');
     expect(identity.warnings.join()).toContain('folder');
   });
 
-  it('um remote que nao serve de id cai na pasta, e o aviso nao repete a URL', () => {
-    const identity = resolveRepositoryIdentity({ folder: 'pasta', remote: 'https://token-secreto@servidor/dono/nome' });
-    expect(identity.id).toBe('pasta');
+  it('um remote privado avisa sem repetir a URL', () => {
+    const identity = resolveRepositoryIdentity({ ...base, remote: 'https://token-secreto@servidor/dono/nome' });
     expect(identity.warnings.join()).not.toContain('token-secreto');
   });
 
   it('um id declarado que nao se entende e ignorado, com aviso, e nao entra com credencial', () => {
     const identity = resolveRepositoryIdentity({
-      folder: 'pasta',
+      ...base,
       declared: 'https://token-secreto@github.com/dono/nome',
-      remote: `git@github.com:dono/nome.git`,
+      remote: 'git@github.com:dono/nome.git',
     });
     expect(identity.id).toBe(ID);
     expect(identity.warnings.join()).toContain('resources.repository');
     expect(identity.warnings.join()).not.toContain('token-secreto');
   });
 
-  it('liberacao gravada com o nome da pasta deixa de valer, e o aviso diz como refazer', () => {
+  it('liberacao gravada com o nome da pasta deixa de valer, e o aviso diz o que trocar', () => {
     const identity = resolveRepositoryIdentity({
-      folder: 'pasta',
-      remote: `git@github.com:dono/nome.git`,
+      ...base,
+      remote: 'git@github.com:dono/nome.git',
       releasedTo: ['pasta', 'outra'],
     });
-    expect(identity.id).toBe(ID);
     expect(identity.warnings.join()).toContain('"pasta"');
     expect(identity.warnings.join()).toContain('releasedTo');
     expect(identity.warnings.join()).toContain(ID);
   });
 
-  it('liberacao que ja usa o id nao avisa', () => {
+  it('liberacao gravada com o id declarado tambem deixa de valer, e o aviso diz o que trocar', () => {
     const identity = resolveRepositoryIdentity({
-      folder: 'pasta',
-      remote: `git@github.com:dono/nome.git`,
-      releasedTo: [ID],
+      ...base,
+      declared: 'time/app',
+      remote: 'git@github.com:dono/nome.git',
+      releasedTo: ['time/app'],
     });
+    expect(identity.warnings.join()).toContain('"time/app"');
+    expect(identity.warnings.join()).toContain(ID);
+  });
+
+  it('liberacao que ja usa o id de confianca nao avisa', () => {
+    const identity = resolveRepositoryIdentity({ ...base, remote: 'git@github.com:dono/nome.git', releasedTo: [ID] });
     expect(identity.warnings).toEqual([]);
   });
 });

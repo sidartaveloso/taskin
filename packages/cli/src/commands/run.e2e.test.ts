@@ -1,6 +1,15 @@
 import { execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
@@ -84,6 +93,8 @@ async function rodar(...args: string[]): Promise<{ code: number; stdout: string;
   }
 }
 
+/** Sem origin, a confianca vale pelo caminho da pasta. */
+const idDeConfianca = () => `path:${realpathSync(raiz)}`;
 const camadaDaPessoa = () => join(casa, '.config', 'taskin', 'resources.json');
 
 /** Grava a aprovacao do comando atual na camada da pessoa, como o `taskin run --allow` num terminal. */
@@ -91,7 +102,7 @@ function aprovar(comando: string): void {
   mkdirSync(join(casa, '.config', 'taskin'), { recursive: true });
   const atual = existsSync(camadaDaPessoa()) ? JSON.parse(readFileSync(camadaDaPessoa(), 'utf8')) : {};
   const commandSha256 = createHash('sha256').update(comando).digest('hex');
-  writeFileSync(camadaDaPessoa(), JSON.stringify({ ...atual, dispatch: { [basename(raiz)]: { commandSha256 } } }));
+  writeFileSync(camadaDaPessoa(), JSON.stringify({ ...atual, dispatch: { [idDeConfianca()]: { commandSha256 } } }));
 }
 
 const comandoAtual = () => JSON.parse(readFileSync(join(raiz, '.taskin.json'), 'utf8')).resources.dispatch.command;
@@ -187,7 +198,7 @@ describe('taskin run', LENTO, () => {
         ['2', dois.model, 1002],
       ].sort(),
     );
-    for (const proibido of ['conta-a', 'conta-b', `repository:${basename(raiz)}`, 'access', 'At"']) {
+    for (const proibido of ['conta-a', 'conta-b', 'path:', realpathSync(raiz), 'access', 'At"']) {
       expect(time).not.toContain(proibido);
     }
     const maquina = linhas(daMaquina());
@@ -338,7 +349,7 @@ describe('taskin run', LENTO, () => {
 
     it('a aprovacao mora na camada da pessoa, nunca em arquivo do repositorio', async () => {
       configurar();
-      const hash = JSON.parse(readFileSync(camadaDaPessoa(), 'utf8')).dispatch[basename(raiz)].commandSha256;
+      const hash = JSON.parse(readFileSync(camadaDaPessoa(), 'utf8')).dispatch[idDeConfianca()].commandSha256;
 
       await rodar('run');
 

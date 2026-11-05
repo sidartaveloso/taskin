@@ -1,7 +1,7 @@
 import { execFile, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -91,7 +91,7 @@ afterEach(() => {
 });
 
 /** O id de uma conta do repositorio no inventario local: o mesmo em todo repositorio e processo. */
-const idDaConta = (nome: string) => `repository:${basename(raiz)}:${nome}`;
+const idDaConta = (nome: string) => `repository:path:${realpathSync(raiz)}:${nome}`;
 const execucoes = () => join(estado, 'taskin', 'runs.jsonl');
 
 /** Uma execucao que comecou e nao fechou, no estado desta maquina, na conta `nome`. */

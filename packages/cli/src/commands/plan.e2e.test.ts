@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir, userInfo } from 'node:os';
 import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
@@ -135,7 +135,7 @@ describe('taskin plan, pelo binario', LENTO, () => {
       })}\n`,
     );
     mkdirSync(join(estado, 'taskin'), { recursive: true });
-    const id = `repository:${basename(raiz)}:claude-main`;
+    const id = `repository:path:${realpathSync(raiz)}:claude-main`;
     writeFileSync(
       join(estado, 'taskin', 'runs.jsonl'),
       `${JSON.stringify({ state: 'finished', id: 'run-1', access: id, tokens: 90_000, finishedAt: Date.now() - 60_000 })}\n`,
@@ -167,7 +167,7 @@ describe('taskin plan, pelo binario', LENTO, () => {
                 secret: 'env:SITUATION_TOKEN',
                 envVar: 'ANTHROPIC_API_KEY',
               },
-              releasedTo: [basename(raiz)],
+              releasedTo: [`path:${realpathSync(raiz)}`],
               scheduling: { model: 'claude-haiku-5-5', quota: 100_000 },
             },
           ],
