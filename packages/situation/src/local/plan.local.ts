@@ -27,7 +27,10 @@ export interface LocalPlanSources {
   readonly ledger: IRunLedger;
   readonly clock: IClockPort;
   readonly person: PersonId;
+  /** O id de confianca: o que o inventario usa. */
   readonly repository: RepositoryId;
+  /** O id do historico: o que o `.taskin/runs.jsonl` usa. */
+  readonly historyRepository: RepositoryId;
   /** O quadro, ja com o que a sondagem desta maquina viu. */
   readonly view: SituationView;
   readonly paths: LocalInventoryPaths;
@@ -122,7 +125,7 @@ export async function localPlanResources(sources: LocalPlanSources): Promise<Loc
   return {
     accesses,
     machines,
-    runs: await sources.ledger.runs(repository),
+    runs: await sources.ledger.runs(sources.historyRepository),
     spent,
     settings,
     warnings,

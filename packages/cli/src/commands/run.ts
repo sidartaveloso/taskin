@@ -117,7 +117,7 @@ async function launch(ctx: Launching, a: Assignment): Promise<void> {
   if (estimated === undefined || sensitivity === undefined || access === undefined) return;
   const { ledger, situation } = ctx.planner;
 
-  const planned = await ledger.planRun(situation.repository, taskRef(String(a.task)), estimated);
+  const planned = await ledger.planRun(situation.historyRepository, taskRef(String(a.task)), estimated);
   const run: RunStarted = await ledger.startRun(planned, a.access);
   const dir = mkdtempSync(join(tmpdir(), 'taskin-run-'));
   const result = join(dir, 'result.json');

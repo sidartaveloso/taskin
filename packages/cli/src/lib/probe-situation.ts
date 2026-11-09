@@ -25,7 +25,10 @@ export const THIS_MACHINE = 'this-machine';
 export interface ProbedSituation {
   readonly inventory: IInventory;
   readonly person: PersonId;
+  /** O id de confianca: o que o inventario, as liberacoes e as aprovacoes usam. Nao vai a arquivo versionado. */
   readonly repository: RepositoryId;
+  /** O id do historico: o que o `.taskin/runs.jsonl` e os relatorios usam. */
+  readonly historyRepository: RepositoryId;
   readonly paths: LocalInventoryPaths;
   /** O quadro com esta maquina sondada. */
   readonly view: SituationView;
@@ -49,17 +52,23 @@ export function openLocalInventory(root: string): LocalInventory {
   };
   const identity = repositoryIdentityOf(root, paths.repositoryConfig, paths.personalResources);
   warnOnce(identity.warnings);
-  const repository = repositoryId(identity.id);
+  const repository = repositoryId(identity.trustId);
   const inventory = createLocalInventory(
     { clock, secrets: createEnvSecretStore(), settings: { leaseTtlMs: 60 * 60 * 1000, factTtlMs: FACT_TTL_MS } },
     { repository, ...paths },
   );
-  return { inventory, person: personId(os.userInfo().username), repository, paths };
+  return {
+    inventory,
+    person: personId(os.userInfo().username),
+    repository,
+    historyRepository: repositoryId(identity.id),
+    paths,
+  };
 }
 
 export async function probeLocalSituation(root: string): Promise<ProbedSituation> {
   const clock = { now: () => instant(Date.now()) };
-  const { inventory, person, repository, paths } = openLocalInventory(root);
+  const { inventory, person, repository, historyRepository, paths } = openLocalInventory(root);
   const view = await inventory.view(person, repository);
 
   const probed = await createLocalMachineProbe({
@@ -88,5 +97,5 @@ export async function probeLocalSituation(root: string): Promise<ProbedSituation
       ...view.resources,
     ],
   };
-  return { inventory, person, repository, paths, view: withThisMachine };
+  return { inventory, person, repository, historyRepository, paths, view: withThisMachine };
 }

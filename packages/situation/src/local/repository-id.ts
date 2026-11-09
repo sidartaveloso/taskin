@@ -1,8 +1,14 @@
 /**
- * O id de um repositorio: o que chaveia as liberacoes da camada da pessoa e o
- * historico versionado. Vem de `resources.repository`, ou do remote `origin`
- * normalizado, e so em ultimo caso do nome da pasta. Vai a arquivo versionado,
- * entao um remote so serve quando nao diz nada da maquina nem traz credencial.
+ * Um repositorio tem dois ids, porque fazem trabalhos diferentes.
+ *
+ * O do historico nomeia as linhas do `.taskin/runs.jsonl`, e vai a arquivo
+ * versionado: vem de `resources.repository` ou do remote `origin`, e so serve
+ * um remote que nao diz nada da maquina. Falsifica-lo so rotula o proprio arquivo.
+ *
+ * O de confianca decide o que a pessoa liberou e aprovou para este repositorio,
+ * e fica so na camada dela. Quem escreve o `.taskin.json` escolhe o que ele diz,
+ * entao ele nunca vem de la: vem do `origin`, que o clone nao traz do arquivo,
+ * ou do caminho da pasta.
  */
 
 const REMOTE_SCHEMES = new Set(['ssh:', 'git+ssh:', 'git:', 'http:', 'https:']);
@@ -31,29 +37,36 @@ function isPublicHost(host: string): boolean {
   return !PRIVATE_SUFFIXES.some((suffix) => host.endsWith(suffix));
 }
 
-/**
- * O remote como `host/dono/nome`, igual para ssh e https, sem usuario, senha,
- * token, porta nem `.git`. Sem id para dar (caminho local, host sem dominio
- * publico, endereco IP), `undefined`: a URL levaria um dado da maquina ao
- * arquivo versionado.
- */
-export function normalizeRemoteUrl(url: string): string | undefined {
+/** O remote como host e caminho normalizados, sem usuario, senha, token, porta nem `.git`. */
+function remoteParts(url: string): { host: string; key: string } | undefined {
   const remote = hostAndPath(url.trim());
   if (remote === undefined) return undefined;
   const host = remote.host.toLowerCase();
-  if (!isPublicHost(host)) return undefined;
+  if (!/^[a-z0-9.:[\]-]+$/.test(host)) return undefined;
   const segments = remote.path
     .toLowerCase()
     .replace(/\.git\/*$/, '')
     .split('/')
     .filter(Boolean);
   if (segments.length === 0 || !segments.every((s) => SEGMENT.test(s))) return undefined;
-  return [host, ...segments].join('/');
+  return { host, key: [host, ...segments].join('/') };
+}
+
+/**
+ * O remote como `host/dono/nome`, igual para ssh e https, para ir ao arquivo
+ * versionado. Sem id para dar (caminho local, host sem dominio publico,
+ * endereco IP), `undefined`: a URL levaria um dado da maquina ao repositorio.
+ */
+export function normalizeRemoteUrl(url: string): string | undefined {
+  const parts = remoteParts(url);
+  return parts !== undefined && isPublicHost(parts.host) ? parts.key : undefined;
 }
 
 export interface RepositoryIdentitySources {
-  /** O nome da pasta: o ultimo recurso. */
+  /** O nome da pasta: o ultimo recurso do id do historico. */
   readonly folder: string;
+  /** O caminho completo da pasta: o ultimo recurso do id de confianca. */
+  readonly location: string;
   /** `resources.repository` no `.taskin.json`, como veio. */
   readonly declared?: unknown;
   /** A URL do remote `origin`. */
@@ -63,16 +76,20 @@ export interface RepositoryIdentitySources {
 }
 
 export interface RepositoryIdentity {
+  /** O id do historico: vai ao `.taskin/runs.jsonl`, versionado. */
   readonly id: string;
+  /** O id de confianca: chaveia `releasedTo` e as aprovacoes, e fica so na camada da pessoa. */
+  readonly trustId: string;
   /** Para quem roda o comando, em stderr. Nunca repetem a URL do remote. */
   readonly warnings: readonly string[];
 }
 
-/** O id deste repositorio e o que a pessoa precisa saber sobre ele. */
+/** Os dois ids deste repositorio e o que a pessoa precisa saber sobre eles. */
 export function resolveRepositoryIdentity(sources: RepositoryIdentitySources): RepositoryIdentity {
-  const { folder, declared, remote, releasedTo = [] } = sources;
+  const { folder, location, declared, remote, releasedTo = [] } = sources;
   const warnings: string[] = [];
   const fromRemote = remote === undefined ? undefined : normalizeRemoteUrl(remote);
+  const trustFromRemote = remote === undefined ? undefined : remoteParts(remote)?.key;
 
   let fromDeclared: string | undefined;
   if (typeof declared === 'string' && DECLARED.test(declared)) fromDeclared = declared;
@@ -83,20 +100,18 @@ export function resolveRepositoryIdentity(sources: RepositoryIdentitySources): R
   }
 
   const id = fromDeclared ?? fromRemote ?? folder;
-  if (fromDeclared !== undefined && fromRemote !== undefined && fromDeclared.toLowerCase() !== fromRemote) {
-    warnings.push(
-      `resources.repository declares "${fromDeclared}", but the origin remote is "${fromRemote}". Personal releases made to "${fromDeclared}" apply here: check that you trust this .taskin.json.`,
-    );
-  }
+  const trustId = trustFromRemote ?? `path:${location}`;
+
   if (fromDeclared === undefined && fromRemote === undefined) {
     warnings.push(
-      `This repository has no id of its own: personal releases and the run history are tied to the folder name "${folder}". Declare resources.repository in .taskin.json, or add an origin remote with a public host.`,
+      `The run history of this repository is tied to the folder name "${folder}": declare resources.repository in .taskin.json, or add an origin remote with a public host.`,
     );
   }
-  if (id !== folder && releasedTo.includes(folder)) {
+  for (const stale of new Set([folder, ...(fromDeclared === undefined ? [] : [fromDeclared])])) {
+    if (stale === trustId || !releasedTo.includes(stale)) continue;
     warnings.push(
-      `Your personal resources release something to "${folder}", the name of this folder, which no longer counts: this repository is "${id}". To keep the release, replace it under releasedTo in ~/.config/taskin/resources.json.`,
+      `Your personal resources release something to "${stale}", which no longer counts: what you trust here is "${trustId}". To keep the release, replace it under releasedTo in ~/.config/taskin/resources.json.`,
     );
   }
-  return { id, warnings };
+  return { id, trustId, warnings };
 }

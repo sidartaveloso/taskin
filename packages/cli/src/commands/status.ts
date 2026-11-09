@@ -11,7 +11,7 @@ import {
   type StatusTaskInput,
 } from '@opentask/taskin-situation';
 import type { Task } from '@opentask/taskin-types';
-import { probeSituation } from '../lib/probe-situation.js';
+import { probeLocalSituation } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
@@ -51,8 +51,9 @@ async function showStatus(options: StatusOptions): Promise<void> {
     process.exit(1);
   }
 
-  const withThisMachine = await probeSituation(process.cwd());
-  const repository = String(withThisMachine.repository);
+  const situation = await probeLocalSituation(process.cwd());
+  const withThisMachine = situation.view;
+  const repository = String(situation.historyRepository);
 
   const { provider } = await resolveTaskProvider();
   const tasks: Task[] = await provider.getAllTasks();

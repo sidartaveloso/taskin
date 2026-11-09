@@ -59,7 +59,7 @@ export async function openLocalPlanner(root: string, warn: (message: string) => 
         }));
 
       return buildPlanReport({
-        repository: String(situation.repository),
+        repository: String(situation.historyRepository),
         now: clock.now(),
         tasks: open,
         exclude,

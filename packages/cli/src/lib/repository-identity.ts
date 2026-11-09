@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { type RepositoryIdentity, resolveRepositoryIdentity } from '@opentask/taskin-situation';
 
@@ -30,7 +30,7 @@ function releasesIn(personal: Record<string, unknown>): string[] {
     .flatMap((entries) => entries.flatMap((e) => e.releasedTo ?? []));
 }
 
-/** O id do repositorio em `root`: `resources.repository`, o remote `origin`, ou a pasta. */
+/** Os dois ids do repositorio em `root`: o do historico e o de confianca. */
 export function repositoryIdentityOf(
   root: string,
   repositoryConfig: string,
@@ -40,6 +40,7 @@ export function repositoryIdentityOf(
   const remote = originOf(root);
   return resolveRepositoryIdentity({
     folder: path.basename(root),
+    location: realpathSync(root),
     ...(resources?.repository !== undefined && { declared: resources.repository }),
     ...(remote !== undefined && { remote }),
     releasedTo: releasesIn(readJson(personalResources)),
