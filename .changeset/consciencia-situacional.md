@@ -15,8 +15,9 @@ O registro de execucao tem duas metades: o historico do time, versionado e so co
 calibra (por modelo, sem conta e sem horario), e o estado da maquina, com a conta usada,
 o comeco das execucoes e o consumo com horario.
 Dado sensivel so vai para conta liberada: a task ganha o campo `Sensitivity`, sem ele vale
-`resources.defaultSensitivity` e, sem padrao, `internal`. O repositorio e identificado por
-`resources.repository` ou pelo remote `origin`, sem credenciais, e nao mais pela pasta.
+`resources.defaultSensitivity` e, sem padrao, `internal`. O repositorio tem dois ids: o do
+historico vem de `resources.repository` ou do remote `origin`, sem credenciais; o de confianca,
+que decide liberacoes e aprovacoes, vem do `origin` ou do caminho da pasta, nunca do `.taskin.json`.
 A CLI ganha o `taskin access run|status`, que escolhe a conta e roda o comando com o
 segredo so no ambiente dele, e o `taskin status`: a task em andamento no topo, os
 recursos e quais tasks abertas rodam nesta maquina, em `--format text|json|html|md`

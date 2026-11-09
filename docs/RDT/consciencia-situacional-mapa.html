@@ -474,6 +474,7 @@ pre {
       "capabilities": ["docker", "gpu"] }
   ],
   <span class="k-g">"repository"</span>: "github.com/time/app-loja",
+  <span class="cmt">// so nomeia o historico; a confianca vem do origin</span>
   <span class="k-g">"defaultSensitivity"</span>: "internal",
   <span class="k-g">"dispatch"</span>: { "command": "sandcastle --task {task}" },
   <span class="cmt">// so roda depois de taskin run --allow</span>
@@ -628,7 +629,7 @@ pre {
     <div class="rule"><h3>O repositório também restringe</h3><p>Projeto de cliente pode dizer: só os servidores do time. A restrição vence a liberação.</p></div>
     <div class="rule"><h3>Dado sensível só vai para conta liberada</h3><p>A task diz a sensibilidade com <code>- Sensitivity:</code>. Sem o campo, vale o padrão do repositório ou <code>internal</code>, nunca <code>public</code>. Sem conta liberada, a task fica adiada e o taskin diz por quê.</p></div>
     <div class="rule"><h3>O comando só roda com a sua aprovação</h3><p>O comando do despacho é versionado e recebe o segredo da conta. Ele só roda depois de <code>taskin run --allow</code>, na primeira vez e sempre que o texto mudar. A aprovação fica com você.</p></div>
-    <div class="rule"><h3>O repositório tem id próprio</h3><p>Liberações e histórico valem para <code>resources.repository</code> ou para o <code>origin</code>, sem credenciais. Clones e worktrees têm o mesmo id, e uma pasta de mesmo nome não herda nada.</p></div>
+    <div class="rule"><h3>A confiança não vem do arquivo versionado</h3><p>O histórico pode ser nomeado por <code>resources.repository</code>. Liberações e aprovações valem pelo <code>origin</code>, sem credenciais, ou pelo caminho da pasta. Um <code>.taskin.json</code> que declara o id de outro repositório não herda nada.</p></div>
     <div class="rule"><h3>Pessoa é pedida, não usada</h3><p>Consentimento, carga, horário e presença são dela. O taskin agrupa pedidos e respeita o que ela declarou.</p></div>
     <div class="rule"><h3>Reserva só onde há capacidade</h3><p>Conta que aceita várias sessões é só escolhida. Vaga com prazo e devolução existe quando o recurso declara limite.</p></div>
   </div>

@@ -128,11 +128,14 @@ A soma não é uma união simples. Três regras:
 2. **Um recurso pessoal só entra num repositório que a pessoa liberou.**
    - Sem essa regra, qualquer repositório clonado poderia mandar rodar código
      no desktop de quem o clonou.
-   - A liberação vale para o id do repositório, não para o nome da pasta: uma
-     pasta com o mesmo nome em outro repositório não herda nada, e liberações
-     antigas, gravadas com o nome da pasta, deixam de valer. O aviso do taskin
-     diz o que trocar em `releasedTo`. Quem declara `resources.repository` herda
-     as liberações daquele id, e por isso um id diferente do `origin` gera aviso.
+   - A liberação vale para o id de confiança do repositório, que nunca vem do
+     arquivo versionado: é o remote `origin`, sem credenciais, ou, sem ele, o
+     caminho completo da pasta. Quem escreve o `.taskin.json` escolhe o que ele
+     diz, e o `origin` fica no `.git/config`, que o clone não traz do arquivo.
+     Assim, um `.taskin.json` que declara o id de outro repositório não herda
+     nada, e uma pasta com o mesmo nome também não (task-246). Liberações
+     antigas, gravadas com o nome da pasta ou com o id declarado, deixam de
+     valer, e o aviso do taskin diz o que trocar em `releasedTo`.
    - A liberação é por repositório, no arquivo do usuário, como o "ativar" do
      [RDT da Alexa](taskin-na-alexa.md).
 3. **O repositório também restringe, não só oferece.**
@@ -167,10 +170,15 @@ O que o taskin pode usar, então:
   quando alguém precisar).
 - **A aprovação do comando de despacho** (`taskin run --allow`) nunca entra no
   repositório: é a pessoa dizendo que aquele texto pode receber o segredo dela.
-- **O id do repositório vai ao arquivo versionado**, então um remote só serve de
-  id quando não diz nada da máquina: usuário, senha e token saem da URL, e um
-  caminho local, um host sem domínio público ou um endereço IP não servem. Nesses
-  casos vale o nome da pasta, com aviso, até alguém declarar `resources.repository`.
+- **O repositório tem dois ids.** O do histórico nomeia as linhas do
+  `.taskin/runs.jsonl` e vai ao arquivo versionado: vem de
+  `resources.repository`, ou do remote `origin`, e só serve um remote que não diz
+  nada da máquina (usuário, senha e token saem da URL; caminho local, host sem
+  domínio público ou endereço IP não servem; nesses casos vale o nome da pasta,
+  com aviso). Falsificá-lo só rotula as linhas do próprio arquivo. O de
+  confiança decide `releasedTo` e a aprovação do comando, e fica só na camada da
+  pessoa: vem do `origin`, sem credenciais e aceitando host privado, ou do
+  caminho completo da pasta, nunca do `.taskin.json` (task-246).
 - **O registro de execução** é versionado só no que serve ao time para
   calibrar (o modelo, a dificuldade estimada e a encontrada, tokens, iterações,
   conclusão, retrabalho e duração de execuções fechadas), sem a conta usada e
@@ -193,7 +201,8 @@ texto das tasks, dos RDTs e dos commits segue em português.
 | Ajustes gerais do plano (pesos, horizonte, margem de cota, tokens por dificuldade, máquinas, requisitos móveis) | `resources.scheduling` no `.taskin.json`, só |
 | Requisitos de uma task | campo `- Requires:` no cabeçalho |
 | Sensibilidade de uma task | campo `- Sensitivity: public\|internal\|sensitive` no cabeçalho; sem ele, `resources.defaultSensitivity` no `.taskin.json`; sem padrão, `internal` |
-| Id do repositório | `resources.repository` no `.taskin.json`; sem ele, o remote `origin` normalizado (`host/dono/nome`); sem os dois, o nome da pasta, com aviso |
+| Id do histórico do repositório | `resources.repository` no `.taskin.json`; sem ele, o remote `origin` normalizado (`host/dono/nome`); sem os dois, o nome da pasta, com aviso |
+| Id de confiança do repositório (liberações e aprovações) | o remote `origin` sem credenciais; sem ele, `path:` e o caminho completo da pasta; nunca o `.taskin.json` |
 | Comandos de despacho aprovados | chave `dispatch` em `~/.config/taskin/resources.json`, por repositório, com o hash do comando |
 | Valores dos requisitos e das capacidades | lista fechada em inglês, no `types-ts`: `docker`, `android-sdk`, `gpu`, `interactive`, `microphone`, `visual-review`… |
 | O quadro da situação | `taskin status`, com `--format` (`text`, o padrão, `json`, `html` ou `md`) e o atalho `--json` |
@@ -297,8 +306,14 @@ que o plano não tenha decidido:
   aprovação na primeira vez e sempre que o texto mudar, como o `direnv allow`:
   sem ela, mostra o comando, não lança nada e sai com erro. `taskin run --allow`
   aprova, só num terminal: sem pessoa do outro lado, nunca aprova sozinho. A
-  aprovação mora na camada da pessoa, por repositório, com o hash do comando
-  (task-243). O `--dry-run` não precisa dela, porque não lança nada.
+  aprovação mora na camada da pessoa, com o hash do comando, pelo id de
+  confiança do repositório (task-243, task-246): um `.taskin.json` que declara
+  o id de outro repositório e copia o mesmo texto não herda a aprovação. O
+  `--dry-run` não precisa dela, porque não lança nada. A aprovação cobre o texto
+  do comando, não o que ele executa: se o comando chama um script do próprio
+  repositório (`pnpm exec tsx .sandcastle/main.ts`), um `git pull` muda o script
+  sem pedir nada, como acontece com o que um `.envrc` chama no `direnv`.
+  Aprovar um comando assim é confiar naquele repositório.
 - **Sem resultado, a execução é abandonada.** Ela fecha só no estado da
   máquina (`IRunLedger.abandonRun`), e nada vai ao histórico do time, que só
   calibra com o que foi dito. O mesmo vale para o SIGINT, que encerra os
