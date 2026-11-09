@@ -1,6 +1,6 @@
 # 🧩 Task 246 — A confianca nao vem do arquivo versionado: o id declarado so nomeia o historico
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Group: situacao-lote-9
