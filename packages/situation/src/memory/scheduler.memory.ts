@@ -11,6 +11,7 @@ import type {
   SchedulerEvents,
   SchedulingAccess,
   SchedulingMachine,
+  SchedulingModel,
   SchedulingProblem,
   SchedulingTask,
   SuggestedPlan,
@@ -26,6 +27,7 @@ interface Resolved {
   readonly assignment: Assignment;
   readonly task: SchedulingTask;
   readonly access: SchedulingAccess;
+  readonly model: SchedulingModel;
   readonly machine: SchedulingMachine;
 }
 
@@ -41,13 +43,20 @@ function resolve(plan: Plan): { readonly resolved: Resolved[]; readonly unknown:
   for (const assignment of plan.assignments) {
     const task = problem.tasks.find((t) => t.task === assignment.task);
     const access = problem.accesses.find((a) => a.id === assignment.access);
+    const model = access?.models.find((m) => m.name === assignment.model);
     const machine = problem.machines.find((m) => m.id === assignment.machine);
-    if (task === undefined || access === undefined || machine === undefined || seen.has(assignment.task)) {
+    if (
+      task === undefined ||
+      access === undefined ||
+      model === undefined ||
+      machine === undefined ||
+      seen.has(assignment.task)
+    ) {
       unknown.push(assignment);
       continue;
     }
     seen.add(assignment.task);
-    resolved.push({ assignment, task, access, machine });
+    resolved.push({ assignment, task, access, model, machine });
   }
   return { resolved, unknown };
 }
@@ -61,10 +70,10 @@ export function scorePlan(plan: Plan, weights: ObjectiveWeights): PlanScore {
   const setupPaid = new Map<string, number>();
   const interrupted = new Map<number, Set<string>>();
 
-  for (const { assignment, task, access, machine } of resolved) {
-    value += task.value * access.completionRate;
-    money += (task.estimatedTokens / 1000) * access.costPerThousandTokens;
-    rework += task.value * (1 - access.completionRate);
+  for (const { assignment, task, model, machine } of resolved) {
+    value += task.value * model.completionRate;
+    money += (task.estimatedTokens / 1000) * model.costPerThousandTokens;
+    rework += task.value * (1 - model.completionRate);
     for (const requirement of task.requirements) {
       if (requirement.mobility !== 'movable' || machine.capabilities.includes(requirement.capability)) continue;
       const pair = `${machine.id}\u0000${requirement.capability}`;
@@ -117,9 +126,13 @@ export function violations(plan: Plan): readonly ConstraintViolation[] {
     }
   }
 
-  for (const { task, access } of resolved) {
-    if (access.competence < task.estimated) {
-      add('competence', [task.task], `${access.id} cobre ate ${access.competence}, a task e ${task.estimated}`);
+  for (const { task, access, model } of resolved) {
+    if (model.competence < task.estimated) {
+      add(
+        'competence',
+        [task.task],
+        `${model.name} em ${access.id} cobre ate ${model.competence}, a task e ${task.estimated}`,
+      );
     }
   }
 
@@ -154,6 +167,23 @@ export function violations(plan: Plan): readonly ConstraintViolation[] {
     );
   }
 
+  const running = new Map<string, Resolved[]>();
+  for (const r of resolved) {
+    if (r.access.concurrencyLimit === undefined) continue;
+    const slot = `${r.access.id}\u0000${r.assignment.at}`;
+    running.set(slot, [...(running.get(slot) ?? []), r]);
+  }
+  for (const list of running.values()) {
+    const access = list[0]?.access;
+    const limit = access?.concurrencyLimit;
+    if (access === undefined || limit === undefined || list.length <= limit) continue;
+    add(
+      'concurrency',
+      list.map((r) => r.task.task),
+      `${list.length} execucoes em ${access.id}, que aceita ${limit}`,
+    );
+  }
+
   for (const { task, assignment } of resolved) {
     if (!task.interactive) continue;
     if (!problem.presence.some((w) => w.from <= assignment.at && assignment.at < w.to)) {
@@ -183,8 +213,8 @@ function moments(problem: SchedulingProblem): Instant[] {
 }
 
 /**
- * O guloso: as tasks pela prioridade (o valor), cada uma no par acesso e
- * maquina, e no momento, que mais aumenta a nota do plano sem ferir restricao.
+ * O guloso: as tasks pela prioridade (o valor), cada uma na conta, no
+ * modelo dela, na maquina e no momento que mais aumenta a nota do plano sem ferir restricao.
  * Uma task espera as dependencias; a que nao cabe fica adiada com a restricao
  * da tentativa que menos feriu.
  */
@@ -206,16 +236,24 @@ export function suggestPlan(problem: SchedulingProblem, weights: ObjectiveWeight
     let closest: readonly ConstraintViolation[] | undefined;
     for (const at of times) {
       for (const access of problem.accesses) {
-        for (const machine of problem.machines) {
-          const assignment: Assignment = { task: task.task, access: access.id, machine: machine.id, at };
-          const candidate: Plan = { problem, assignments: [...assignments, assignment] };
-          const broken = violations(candidate);
-          if (broken.length > 0) {
-            if (closest === undefined || broken.length < closest.length) closest = broken;
-            continue;
+        for (const model of access.models) {
+          for (const machine of problem.machines) {
+            const assignment: Assignment = {
+              task: task.task,
+              access: access.id,
+              model: model.name,
+              machine: machine.id,
+              at,
+            };
+            const candidate: Plan = { problem, assignments: [...assignments, assignment] };
+            const broken = violations(candidate);
+            if (broken.length > 0) {
+              if (closest === undefined || broken.length < closest.length) closest = broken;
+              continue;
+            }
+            const total = scorePlan(candidate, weights).total;
+            if (best === undefined || total > best.total) best = { assignment, total };
           }
-          const total = scorePlan(candidate, weights).total;
-          if (best === undefined || total > best.total) best = { assignment, total };
         }
       }
     }

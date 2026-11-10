@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CreateSituation, ISituationActors, ResourceView } from './actors.types';
 import { accessKind, capability, difficulty, secretRef, taskRef, tokenCount } from './branded';
 import { createFakePorts, type FakePorts } from './fake-ports';
-import type { LeaseDenied, LeaseGranted } from './flows.types';
+import type { AccessGrant, AccessGranted, LeaseDenied, LeaseGranted } from './flows.types';
 import {
   ANA,
   account,
@@ -50,12 +50,26 @@ const HOUR = 60 * 60 * 1000;
 
 const byName = (resources: readonly ResourceView[], name: string) => resources.find((r) => r.name === name);
 
-function granted(result: LeaseGranted | LeaseDenied): LeaseGranted {
+function granted(result: AccessGrant | LeaseDenied): AccessGrant {
   expect(result.state, result.state === 'denied' ? result.reason.detail : '').toBe('granted');
-  return result as LeaseGranted;
+  return result as AccessGrant;
 }
 
-function denied(result: LeaseGranted | LeaseDenied): LeaseDenied {
+/** O acesso entregue com reserva: a conta declara capacidade. */
+function reserved(result: AccessGrant | LeaseDenied): LeaseGranted {
+  const grant = granted(result);
+  expect(grant.reserved).toBe(true);
+  return grant as LeaseGranted;
+}
+
+/** O acesso entregue sem reserva: a conta nao declara capacidade. */
+function unreserved(result: AccessGrant | LeaseDenied): AccessGranted {
+  const grant = granted(result);
+  expect(grant.reserved).toBe(false);
+  return grant as AccessGranted;
+}
+
+function denied(result: AccessGrant | LeaseDenied): LeaseDenied {
   expect(result.state).toBe('denied');
   return result as LeaseDenied;
 }
@@ -172,39 +186,84 @@ export const SITUATION_CONTRACT_CASES: readonly ContractCase[] = [
     },
   },
 
-  // ─── O emprestimo de credenciais ────────────────────────────────────────
+  // ─── O acesso a uma conta: so quem declara capacidade tem reserva ───────
   {
-    name: 'o emprestimo entrega o segredo so no ambiente da execucao',
+    name: 'o acesso entrega o segredo so no ambiente da execucao, sem reserva nem prazo, quando a conta nao declara capacidade',
     async run(sys, ports) {
       const { executors, accounts } = await oneMachineOneAccount(sys, ports);
-      const lease = granted(await executors[0]!.requestLease(leaseRequest()));
+      const grant = unreserved(await executors[0]!.requestLease(leaseRequest()));
+      expect(grant.access).toBe(accounts[0]);
+      expect(grant.env).toEqual({ CLAUDE_CODE_OAUTH_TOKEN: secretValueOf('conta-a') });
+      for (const field of ['id', 'grantedAt', 'expiresAt', 'shared']) expect(grant).not.toHaveProperty(field);
+    },
+  },
+  {
+    name: 'a conta que declara capacidade e reservada, com prazo',
+    async run(sys, ports) {
+      const { executors, accounts } = await oneMachineOneAccount(sys, ports, { concurrencyLimit: 2 });
+      const lease = reserved(await executors[0]!.requestLease(leaseRequest()));
       expect(lease.access).toBe(accounts[0]);
       expect(lease.env).toEqual({ CLAUDE_CODE_OAUTH_TOKEN: secretValueOf('conta-a') });
       expect(lease.expiresAt).toBe(ports.clock.now() + ports.settings.leaseTtlMs);
     },
   },
   {
-    name: 'duas maquinas e duas contas: cada execucao recebe uma conta, sem dividir',
+    name: 'duas maquinas e duas contas: a execucao em aberto numa conta manda a proxima para a outra',
     async run(sys, ports) {
-      const { executors } = await twoMachinesTwoAccounts(sys, ports);
-      const first = granted(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
-      const second = granted(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
+      const { executors, accounts } = await twoMachinesTwoAccounts(sys, ports);
+      const first = unreserved(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
+      await executors[0]!.startRun(await executors[0]!.planRun(REPO, taskRef('task-1'), difficulty(2)), first);
+
+      const second = unreserved(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
+      await executors[1]!.startRun(await executors[1]!.planRun(REPO, taskRef('task-2'), difficulty(2)), second);
+
       expect(first.access).not.toBe(second.access);
-      expect([first.shared, second.shared]).toEqual([false, false]);
+      expect(new Set([first.access, second.access])).toEqual(new Set(accounts));
     },
   },
   {
-    name: 'duas maquinas e uma conta: a segunda execucao divide a conta',
+    name: 'a execucao que termina libera a conta para a proxima: a menos ocupada volta a ser ela',
+    async run(sys, ports) {
+      const { executors, accounts } = await twoMachinesTwoAccounts(sys, ports);
+      const executor = executors[0]!;
+      const first = unreserved(await executor.requestLease(leaseRequest('public', 'task-1')));
+      const run = await executor.startRun(await executor.planRun(REPO, taskRef('task-1'), difficulty(2)), first);
+      const other = unreserved(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
+      expect(other.access).not.toBe(first.access);
+
+      await executor.finishRun(run, {
+        model: 'sonnet',
+        found: difficulty(2),
+        tokens: tokenCount(1_000),
+        iterations: 1,
+        completed: true,
+        reworked: false,
+      });
+
+      expect(unreserved(await executors[1]!.requestLease(leaseRequest('public', 'task-3'))).access).toBe(accounts[0]);
+    },
+  },
+  {
+    name: 'duas maquinas e uma conta sem capacidade declarada: as duas execucoes usam a conta, sem reserva',
     async run(sys, ports) {
       const { executors, accounts } = await twoMachinesOneAccount(sys, ports);
-      const first = granted(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
-      const second = granted(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
+      const first = unreserved(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
+      const second = unreserved(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
+      expect([first.access, second.access]).toEqual([accounts[0], accounts[0]]);
+    },
+  },
+  {
+    name: 'duas maquinas e uma conta com capacidade para duas: a segunda execucao divide a conta',
+    async run(sys, ports) {
+      const { executors, accounts } = await twoMachinesOneAccount(sys, ports, { concurrencyLimit: 2 });
+      const first = reserved(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
+      const second = reserved(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
       expect([first.access, second.access]).toEqual([accounts[0], accounts[0]]);
       expect([first.shared, second.shared]).toEqual([false, true]);
     },
   },
   {
-    name: 'o emprestimo prefere a conta com mais folga na janela',
+    name: 'o acesso prefere a conta com mais folga na janela',
     async run(sys, ports) {
       const { executors, accounts } = await twoMachinesTwoAccounts(sys, ports);
       const now = ports.clock.now();
@@ -217,39 +276,39 @@ export const SITUATION_CONTRACT_CASES: readonly ContractCase[] = [
       ports.usage.set(accounts[0]!, reading(800));
       ports.usage.set(accounts[1]!, reading(200));
 
-      const lease = granted(await executors[0]!.requestLease(leaseRequest()));
-      expect(lease.access).toBe(accounts[1]);
+      const grant = granted(await executors[0]!.requestLease(leaseRequest()));
+      expect(grant.access).toBe(accounts[1]);
     },
   },
   {
-    name: 'com o limite do provedor declarado e sem vaga, o pedido e negado com o motivo',
+    name: 'com a capacidade declarada e sem vaga, o pedido e negado com o motivo',
     async run(sys, ports) {
       const { executors } = await twoMachinesOneAccount(sys, ports, { concurrencyLimit: 1 });
-      granted(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
+      reserved(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
       const second = denied(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
       expect(second.reason.code).toBe('all-at-provider-limit');
     },
   },
   {
-    name: 'devolver libera a conta: a proxima execucao a recebe sem dividir',
+    name: 'devolver a reserva libera a vaga: a proxima execucao a recebe sem dividir',
     async run(sys, ports) {
-      const { executors, accounts } = await twoMachinesOneAccount(sys, ports);
-      const first = granted(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
+      const { executors, accounts } = await twoMachinesOneAccount(sys, ports, { concurrencyLimit: 1 });
+      const first = reserved(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
       expect((await executors[0]!.returnLease(first)).state).toBe('returned');
 
-      const next = granted(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
+      const next = reserved(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
       expect(next.access).toBe(accounts[0]);
       expect(next.shared).toBe(false);
     },
   },
   {
-    name: 'emprestimo vencido libera a conta sozinho, e devolver depois diz que venceu',
+    name: 'reserva vencida libera a vaga sozinha, e devolver depois diz que venceu',
     async run(sys, ports) {
-      const { executors } = await twoMachinesOneAccount(sys, ports);
-      const old = granted(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
+      const { executors } = await twoMachinesOneAccount(sys, ports, { concurrencyLimit: 1 });
+      const old = reserved(await executors[0]!.requestLease(leaseRequest('public', 'task-1')));
       ports.clock.advance(ports.settings.leaseTtlMs + 1);
 
-      const next = granted(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
+      const next = reserved(await executors[1]!.requestLease(leaseRequest('public', 'task-2')));
       expect(next.shared).toBe(false);
       expect((await executors[0]!.returnLease(old)).state).toBe('expired');
     },
@@ -283,7 +342,7 @@ export const SITUATION_CONTRACT_CASES: readonly ContractCase[] = [
     },
   },
   {
-    name: 'uma conta do repositorio so e emprestada a quem tem a credencial dela',
+    name: 'uma conta do repositorio so e entregue a quem tem a credencial dela',
     async run(sys, ports) {
       const declaration = account('conta-do-time', { secret: secretRef('op://time/conta/token') });
       await sys.team(REPO).offer(declaration);
@@ -310,6 +369,7 @@ export const SITUATION_CONTRACT_CASES: readonly ContractCase[] = [
       const started = await executor.startRun(planned, lease);
       ports.clock.advance(25 * 60 * 1000);
       const finished = await executor.finishRun(started, {
+        model: 'sonnet',
         found: difficulty(4),
         tokens: tokenCount(180_000),
         iterations: 3,
@@ -322,28 +382,49 @@ export const SITUATION_CONTRACT_CASES: readonly ContractCase[] = [
         task: 'task-7',
         estimated: 2,
         found: 4,
+        model: 'sonnet',
         tokens: 180_000,
         duration: 25 * 60 * 1000,
         access: accounts[0],
       });
-      expect(await sys.developer(ANA).runs(REPO)).toEqual([finished]);
+      expect(await sys.developer(ANA).runs(REPO)).toEqual([
+        {
+          id: finished.id,
+          repository: REPO,
+          task: 'task-7',
+          estimated: 2,
+          found: 4,
+          model: 'sonnet',
+          tokens: 180_000,
+          iterations: 3,
+          completed: true,
+          reworked: false,
+          duration: 25 * 60 * 1000,
+        },
+      ]);
     },
   },
   {
-    name: 'o registro de execucao cita o acesso pelo nome logico, nunca pelo segredo',
+    name: 'o historico de execucoes do time nao cita a conta nem horario, e nunca o segredo',
     async run(sys, ports) {
       const { executors } = await oneMachineOneAccount(sys, ports);
       const executor = executors[0]!;
       const lease = granted(await executor.requestLease(leaseRequest()));
       const started = await executor.startRun(await executor.planRun(REPO, taskRef('task-1'), difficulty(1)), lease);
       await executor.finishRun(started, {
+        model: 'sonnet',
         found: difficulty(1),
         tokens: tokenCount(1_000),
         iterations: 1,
         completed: true,
         reworked: false,
       });
-      expect(JSON.stringify(await sys.developer(ANA).runs(REPO))).not.toContain(secretValueOf('conta-a'));
+      const history = await sys.developer(ANA).runs(REPO);
+      expect(history).toHaveLength(1);
+      for (const field of ['access', 'plannedAt', 'startedAt', 'finishedAt']) {
+        expect(history[0]).not.toHaveProperty(field);
+      }
+      expect(JSON.stringify(history)).not.toContain(secretValueOf('conta-a'));
     },
   },
 

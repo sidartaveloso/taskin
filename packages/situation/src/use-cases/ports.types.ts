@@ -55,7 +55,7 @@ export interface IPresencePort {
 }
 
 export interface SituationSettings {
-  /** Quanto tempo dura um emprestimo antes de a conta voltar sozinha. */
+  /** Quanto tempo dura uma reserva antes de a vaga voltar sozinha. */
   readonly leaseTtlMs: number;
   /** Quanto tempo um fato sondado vale antes de ser marcado como expirado. */
   readonly factTtlMs: number;

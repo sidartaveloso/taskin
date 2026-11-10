@@ -3,6 +3,7 @@
 - Status: aprovada (em 2026-10-29; nada implementado, as etapas viram tasks uma a uma)
 - Data: 2026-10-29
 - Task: 213
+- Mapa: [consciencia-situacional-mapa.html](consciencia-situacional-mapa.html), a página que mostra onde mora cada recurso e cada configuração (Git, camada da pessoa, estado da máquina, percepção viva), com exemplos e uma task atravessando tudo (task-234)
 
 ## O que motivou
 
@@ -127,6 +128,14 @@ A soma não é uma união simples. Três regras:
 2. **Um recurso pessoal só entra num repositório que a pessoa liberou.**
    - Sem essa regra, qualquer repositório clonado poderia mandar rodar código
      no desktop de quem o clonou.
+   - A liberação vale para o id de confiança do repositório, que nunca vem do
+     arquivo versionado: é o remote `origin`, sem credenciais, ou, sem ele, o
+     caminho completo da pasta. Quem escreve o `.taskin.json` escolhe o que ele
+     diz, e o `origin` fica no `.git/config`, que o clone não traz do arquivo.
+     Assim, um `.taskin.json` que declara o id de outro repositório não herda
+     nada, e uma pasta com o mesmo nome também não (task-246). Liberações
+     antigas, gravadas com o nome da pasta ou com o id declarado, deixam de
+     valer, e o aviso do taskin diz o que trocar em `releasedTo`.
    - A liberação é por repositório, no arquivo do usuário, como o "ativar" do
      [RDT da Alexa](taskin-na-alexa.md).
 3. **O repositório também restringe, não só oferece.**
@@ -147,7 +156,34 @@ O que o taskin pode usar, então:
   nomes lógicos, capacidades e restrições. Nunca com endereços, hostnames ou
   credenciais.
 - **A camada da pessoa** nunca entra no repositório: nem no `.taskin.json`, nem
-  nas tasks, nem nos RDTs, nem nas mensagens de commit.
+  nas tasks, nem nos RDTs, nem nas mensagens de commit. Isso inclui o nome que
+  a pessoa deu a uma conta e os horários em que ela trabalha. Por isso os
+  ajustes de uma conta pessoal (modelo, cota, custo...) moram junto dela, na
+  camada da pessoa, e o `.taskin.json` só cita as contas do time. O
+  `taskin plan` junta as duas camadas: para uma conta da pessoa vale só o
+  que a camada dela declara, para uma conta do repositório o `.taskin.json`; se
+  o `.taskin.json` citar uma conta da camada da pessoa, o plano avisa (no
+  stderr) e ignora a linha. Os ajustes gerais (pesos, horizonte, margem de
+  cota, tokens por dificuldade, máquinas) ficam só no `.taskin.json`: a pessoa
+  não os sobrescreve, porque o plano do time tem de ser reproduzível por todos
+  (a concorrência das máquinas dela pode ganhar um lugar na camada da pessoa
+  quando alguém precisar).
+- **A aprovação do comando de despacho** (`taskin run --allow`) nunca entra no
+  repositório: é a pessoa dizendo que aquele texto pode receber o segredo dela.
+- **O repositório tem dois ids.** O do histórico nomeia as linhas do
+  `.taskin/runs.jsonl` e vai ao arquivo versionado: vem de
+  `resources.repository`, ou do remote `origin`, e só serve um remote que não diz
+  nada da máquina (usuário, senha e token saem da URL; caminho local, host sem
+  domínio público ou endereço IP não servem; nesses casos vale o nome da pasta,
+  com aviso). Falsificá-lo só rotula as linhas do próprio arquivo. O de
+  confiança decide `releasedTo` e a aprovação do comando, e fica só na camada da
+  pessoa: vem do `origin`, sem credenciais e aceitando host privado, ou do
+  caminho completo da pasta, nunca do `.taskin.json` (task-246).
+- **O registro de execução** é versionado só no que serve ao time para
+  calibrar (o modelo, a dificuldade estimada e a encontrada, tokens, iterações,
+  conclusão, retrabalho e duração de execuções fechadas), sem a conta usada e
+  sem horário do dia. A conta de cada execução, o começo delas e o consumo com
+  horário ficam no estado da máquina, fora do repositório.
 - **As tasks** falam só de requisitos, nunca do nome de um recurso concreto.
 
 ### Os nomes
@@ -160,10 +196,21 @@ texto das tasks, dos RDTs e dos commits segue em português.
 | --- | --- |
 | Camada do repositório | chave `resources` no `.taskin.json` |
 | Camada da pessoa | `~/.config/taskin/resources.json` |
+| Ajustes de uma conta do repositório (modelo, cota, custo, competência, taxa de conclusão, janela) | `resources.scheduling.accesses.<nome>` no `.taskin.json` |
+| Ajustes de uma conta da pessoa | chave `scheduling` ao lado da conta, em `~/.config/taskin/resources.json` |
+| Ajustes gerais do plano (pesos, horizonte, margem de cota, tokens por dificuldade, máquinas, requisitos móveis) | `resources.scheduling` no `.taskin.json`, só |
 | Requisitos de uma task | campo `- Requires:` no cabeçalho |
+| Sensibilidade de uma task | campo `- Sensitivity: public\|internal\|sensitive` no cabeçalho; sem ele, `resources.defaultSensitivity` no `.taskin.json`; sem padrão, `internal` |
+| Id do histórico do repositório | `resources.repository` no `.taskin.json`; sem ele, o remote `origin` normalizado (`host/dono/nome`); sem os dois, o nome da pasta, com aviso |
+| Id de confiança do repositório (liberações e aprovações) | o remote `origin` sem credenciais; sem ele, `path:` e o caminho completo da pasta; nunca o `.taskin.json` |
+| Comandos de despacho aprovados | chave `dispatch` em `~/.config/taskin/resources.json`, por repositório, com o hash do comando |
 | Valores dos requisitos e das capacidades | lista fechada em inglês, no `types-ts`: `docker`, `android-sdk`, `gpu`, `interactive`, `microphone`, `visual-review`… |
 | O quadro da situação | `taskin status`, com `--format` (`text`, o padrão, `json`, `html` ou `md`) e o atalho `--json` |
 | O processo em segundo plano | `taskin daemon` (task-200); `taskin daemon status` fala só do processo |
+| Consentimento para pontos de vista (competências, carga semanal, horário) | chave `viewpoints` em `~/.config/taskin/resources.json`, por pessoa; `taskin viewpoints consent\|withdraw\|status` (task-239) |
+| Canais preferidos de uma pessoa | chave `channels` em `~/.config/taskin/resources.json`, por pessoa; `taskin channels prefer\|status` (task-239) |
+| Pedidos de ponto de vista, convites e tempo de resposta | `viewpoints.json` no diretório de estado (`$XDG_STATE_HOME/taskin`) |
+| Avisos que esperam a pessoa voltar | `notices.json` no diretório de estado |
 
 **`taskin status` abre pela task em andamento.** Status já é um campo de toda
 task, e quem digita o comando espera ver em que está trabalhando. Por isso o
@@ -211,6 +258,66 @@ sondado expira. Sem a data, informação velha passa por informação atual.
 A compreensão começa sugerindo o como. Executar uma task em outra máquina é
 execução remota de código, então fica para uma etapa posterior e sempre com
 consentimento explícito.
+
+O despacho chega em dois passos: primeiro nesta máquina (o `taskin run`,
+task-238), depois nas outras máquinas da mesma pessoa, com consentimento por
+máquina (task-240, depois da percepção viva da task-228).
+
+### Distribuir, não escolher a conta mais ociosa
+
+O taskin não usa um modelo por vez nem põe tudo na conta mais ociosa. O
+escalonador distribui: cada task vai para a combinação de conta, modelo e
+máquina que a cobre pelo menor custo, e várias rodam ao mesmo tempo, até a
+capacidade de cada máquina (`concurrency`) e de cada conta
+(`concurrencyLimit`). Uma task difícil vai ao modelo forte, uma simples ao
+modelo barato ou ao local, e as duas correm juntas.
+
+- **Uma conta oferece vários modelos.** Conta e modelo são coisas diferentes:
+  a assinatura tem uma cota e uma janela, e os modelos dela dividem essa cota,
+  cada um com a sua competência e o seu custo (task-235).
+- **O plano decide a conta e o modelo; o acesso segue.** O `taskin access run`
+  recebe a conta e o modelo fixados pela atribuição (task-237). A conta menos
+  ocupada, pelas execuções em aberto no estado da máquina, só decide quando não
+  há plano.
+- **A capacidade é restrição do plano, não surpresa do despacho.** A conta
+  cheia entra no escalonador como a máquina cheia (task-236), e o despacho não
+  é recusado na hora.
+
+### O despacho nesta máquina
+
+O `taskin run` (task-238) é o passo que executa o plano. Ele não decide nada
+que o plano não tenha decidido:
+
+- **Lança só o que cai aqui e já pode começar.** A atribuição desta máquina
+  com momento até agora, sem dependência aberta, que não está rodando. As de
+  outras máquinas aparecem como esperando o despacho remoto (task-240).
+- **A capacidade vale no despacho também.** Nunca passa da `concurrency` da
+  máquina nem do `concurrencyLimit` da conta, contando o que já roda; o resto
+  espera o próximo plano.
+- **Quando uma termina, replaneja.** As tasks abertas e o consumo são lidos de
+  novo, e a próxima sai. Uma task sai no máximo uma vez por chamada: a que
+  termina sem fechar fica aberta e segura quem depende dela.
+- **O comando é declarado no repositório e só roda depois da aprovação da
+  pessoa.** `resources.dispatch.command` no `.taskin.json`, com `{task}`, roda
+  por dentro do `taskin access run` com a conta e o modelo fixados, e recebe
+  `TASKIN_TASK`, `TASKIN_MODEL` e `TASKIN_RUN_RESULT`, o arquivo onde escreve o
+  resultado. Como ele é versionado e recebe o segredo da conta no ambiente, quem
+  altera o arquivo decide o que recebe o token. Por isso o `taskin run` pede a
+  aprovação na primeira vez e sempre que o texto mudar, como o `direnv allow`:
+  sem ela, mostra o comando, não lança nada e sai com erro. `taskin run --allow`
+  aprova, só num terminal: sem pessoa do outro lado, nunca aprova sozinho. A
+  aprovação mora na camada da pessoa, com o hash do comando, pelo id de
+  confiança do repositório (task-243, task-246): um `.taskin.json` que declara
+  o id de outro repositório e copia o mesmo texto não herda a aprovação. O
+  `--dry-run` não precisa dela, porque não lança nada. A aprovação cobre o texto
+  do comando, não o que ele executa: se o comando chama um script do próprio
+  repositório (`pnpm exec tsx .sandcastle/main.ts`), um `git pull` muda o script
+  sem pedir nada, como acontece com o que um `.envrc` chama no `direnv`.
+  Aprovar um comando assim é confiar naquele repositório.
+- **Sem resultado, a execução é abandonada.** Ela fecha só no estado da
+  máquina (`IRunLedger.abandonRun`), e nada vai ao histórico do time, que só
+  calibra com o que foi dito. O mesmo vale para o SIGINT, que encerra os
+  filhos e devolve as reservas.
 
 ### Um processo em segundo plano só
 
@@ -297,7 +404,13 @@ declarado, o consumo é fato sondado, e a projeção trabalha com margem.
   da primeira vez ele fica na máquina, e por isso compensa agrupar tasks
   parecidas onde o preparo já foi pago.
 - **Competência:** o modelo cobre a dificuldade da task.
-- **Dados:** a classificação do acesso cobre a sensibilidade da task. Não é
+- **Dados:** dado sensível só vai para um acesso considerado seguro para ele.
+  A sensibilidade vem do campo `- Sensitivity:` da task; sem ele, de
+  `resources.defaultSensitivity`; sem padrão, é `internal`, nunca `public`:
+  esquecer o campo não pode abrir o dado para qualquer conta, e um valor que não
+  se entende vale como `sensitive`. A task sem conta liberada fica adiada com o
+  código `data`, e o `taskin access run` recusa a conta que não cobre (task-242).
+  A classificação do acesso cobre a sensibilidade da task. Não é
   "só modelo local": é só acesso considerado seguro para aquele dado
   (retenção zero, contrato sem treino, auto-hospedado), declarado pela
   camada do repositório.
@@ -306,10 +419,23 @@ declarado, o consumo é fato sondado, e a projeção trabalha com margem.
 
 **Dificuldade estimada e dificuldade encontrada.** Cada execução guarda a
 dificuldade estimada no início e, ao fechar, o que aconteceu: tokens, tempo,
-iterações, retrabalho, o modelo e o acesso usados, se concluiu e a dificuldade
-encontrada. É o laço que calibra o estimador e deixa o escalonador prever o
-consumo pelo histórico. O registro é versionado no repositório e cita recursos
-só pelo nome lógico.
+iterações, retrabalho, o modelo usado, se concluiu e a dificuldade encontrada.
+É o laço que calibra o estimador e deixa o escalonador prever o consumo pelo
+histórico. O registro tem duas metades. O **histórico do time** é versionado
+no repositório (`.taskin/runs.jsonl`) e só leva o que serve para calibrar, de
+execuções fechadas: id, repositório, task, dificuldade estimada e encontrada,
+modelo, tokens, iterações, se concluiu, se refez e a duração; a taxa de
+conclusão e os tokens por dificuldade saem dele, **por modelo** (o `model` que
+o acesso declara em `resources.scheduling.accesses`, ou o tipo do acesso).
+Nele não há conta nem horário do dia. O **estado da máquina** fica no
+diretório de estado (`$XDG_STATE_HOME/taskin`, o mesmo do `leases.json`) e vale
+para todos os repositórios da máquina: qual conta cada execução usou, o começo
+das execuções (as em aberto, com corte de 24 h) e o consumo de cada conta com
+o horário, para a janela de cota e para a ocupação das contas. Como várias
+máquinas acrescentam linhas no fim do mesmo arquivo versionado, o `.gitattributes`
+declara `.taskin/runs.jsonl merge=union`, e a leitura conta cada `id` uma vez e
+ignora linha ilegível: o que a união deixar repetido ou fora de ordem não muda a
+calibração (task-245). O `taskin init` declara o mesmo atributo nos projetos novos.
 
 **Calibração.** Uma task pequena e de resposta conhecida, rodada em broadcast
 em todos os recursos, mede latência, tokens por segundo, acerto, consumo de
@@ -317,20 +443,26 @@ cota e tempo de build e de teste de cada máquina. Os resultados entram como
 fatos sondados, com data. Calibrar gasta cota, então roda com os recursos
 ociosos ou quando um fato expira.
 
-**O empréstimo de credenciais.** Para paralelizar, a pessoa pode ter mais de
+**O acesso às contas e a reserva.** Para paralelizar, a pessoa pode ter mais de
 uma conta do mesmo tipo de acesso:
 
 - Cada conta é um acesso no inventário da pessoa, com cota e janela próprias.
   O inventário guarda a referência ao segredo (gerenciador de segredos,
   keychain, variável de ambiente), nunca o valor.
-- Quem executa (o sandcastle) pede um acesso pelo tipo. O daemon empresta a
-  conta com mais folga, lê o segredo e entrega o valor só no ambiente daquele
-  processo, sem gravar em disco. No fim, ou no prazo do empréstimo, a conta
-  volta.
-- O empréstimo espalha os lotes pelas contas livres. Sem conta livre, divide
-  a que existe: com uma conta só, as duas máquinas usam a mesma, e o custo é a
-  janela acabar mais cedo, que a projeção mostra. O único limite rígido é o do
-  provedor, quando declarado.
+- Quem executa (o sandcastle) pede um acesso pelo tipo. O taskin escolhe a
+  conta liberada para a sensibilidade do dado, com folga na cota e, entre as
+  que sobram, a menos ocupada (as execuções em aberto no registro de
+  execuções: começaram e não terminaram), lê o segredo e entrega o valor só no
+  ambiente daquele processo, sem gravar em disco.
+- Nem todo recurso precisa de reserva. Uma LLM que aceita várias sessões é só
+  escolhida e entregue: nada é gravado, não há prazo nem devolução, e duas
+  máquinas podem usar a mesma conta, com o custo de a janela acabar mais
+  cedo, que a projeção mostra. A **reserva** (a vaga ocupada, com prazo e
+  devolução) só existe quando o recurso declara capacidade: o
+  `concurrencyLimit` de uma conta, o mesmo conceito da `concurrency` das
+  máquinas do escalonador. Com a capacidade cheia o pedido é negado, com o
+  motivo; ocupar uma vaga que outra execução já ocupa marca a reserva como
+  `shared`. No fim, ou no prazo da reserva, a vaga volta.
 - Somar o consumo de uma conta dividida pede que as máquinas se vejam (a
   percepção viva). Até lá, a projeção dela vale como mínimo.
 - Quando todas as contas estão no limite, o escalonador espera a janela
@@ -357,7 +489,7 @@ Uma pessoa não é uma máquina:
 
 | | Máquina ou LLM | Pessoa |
 | --- | --- | --- |
-| Como se usa | o taskin empresta e executa | o taskin **pede**, e a pessoa pode recusar |
+| Como se usa | o taskin escolhe e executa | o taskin **pede**, e a pessoa pode recusar |
 | Custo | dinheiro, cota, tempo | **atenção**: cada pedido interrompe alguém |
 | Latência | segundos a minutos | horas a dias |
 | Disponibilidade | ligada ou desligada | horário, presença e a carga que a própria pessoa declara |
@@ -365,7 +497,7 @@ Uma pessoa não é uma máquina:
 
 **O pedido de ponto de vista.** Uma task, ou uma etapa dela, pode exigir uma
 opinião humana: `- Requires: review:design`, `review:electronics`. O pedido é
-um fluxo em typestate, como o empréstimo:
+um fluxo em typestate, como a reserva:
 `ViewpointRequested → ViewpointAccepted | ViewpointDeclined → ViewpointDelivered`,
 e vence sozinho no prazo. Leva a pergunta, o material (link, captura,
 esquemático) e o prazo; a resposta volta registrada na task, como evidência.
@@ -394,6 +526,35 @@ esquemático) e o prazo; a resposta volta registrada na task, como evidência.
 5. **Gente de fora do projeto** (um especialista convidado) só entra por
    convite explícito e só vê o material do pedido.
 
+**Onde mora cada coisa (task-239).** O `people` e o `channels` têm, além da
+versão em memória, uma versão local que passa pelas mesmas suítes de contrato
+(`createLocalPeople`, `createLocalChannels`). O que é da pessoa fica na camada
+dela: o consentimento (competências, carga semanal e horário) na chave
+`viewpoints` e os canais preferidos na chave `channels` do
+`~/.config/taskin/resources.json`, ao lado das contas, que continuam nas
+chaves com o id da dona; o inventário lê só essas listas e preserva o resto do
+arquivo. O que é da máquina e muda a cada pedido (os pedidos abertos, os
+convites, o tempo de resposta e os avisos que esperam) fica no diretório de
+estado, em `viewpoints.json` e `notices.json`, gravados só para a dona ler.
+Cada operação lê e grava sob trava, como o `leases.json`. O repositório guarda
+só o que já guardava: quem é do projeto e, no registro de pessoas, a
+competência que a pessoa aceitou divulgar. Um canal novo (a TV da sala, o
+relógio) entra pelo mesmo contrato de canal, como um `sender` a mais; o
+transporte de um pedido de uma pessoa para o taskin de outra é da task-228.
+
+**Os canais entregam (task-241).** O `sender` da CLI (`createChannelSender`,
+em `lib/notification/`) liga cada canal ao provedor de notificação de mesmo
+nome: `console` sempre existe; `discord` e `telegram` existem quando
+`notifications` os configura (webhook e token resolvidos do ambiente, só em
+memória). Canal sem provedor, provedor que falha ou lança: o `sender` recusa, e
+o `channels` passa ao próximo da lista; todos recusando é `all-channels-failed`.
+O aviso leva assunto, corpo e link; webhook e token nunca entram nele, no
+`notices.json` nem na saída. `taskin channels test` manda um aviso de teste e
+diz qual canal entregou ou por que nenhum entregou; `channels flush` tenta de
+novo os que esperam; e o `taskin run` avisa a pessoa ao fim de cada execução
+(concluída, não concluída, abandonada) sem nunca mudar o código de saída nem o
+registro. Presença continua `undefined` (o aviso sai na hora) até a task-229.
+
 ## Como se implementa: contrato antes do código, em dois níveis
 
 A consciência situacional segue o método dos padrões de engenharia que o
@@ -411,16 +572,17 @@ mesma suíte. O padrão `contractTests(create)` de
   classifica acessos) e `IExecutorActor` (quem roda a task: pede um acesso,
   registra a execução).
 - **Fluxos em typestate**, com o caminho errado sem compilar:
-  `LeaseGranted | LeaseDenied → LeaseReturned | LeaseExpired` e
-  `RunPlanned → RunStarted → RunFinished`, em que fechar exige a dificuldade
-  encontrada. O pedido de empréstimo é uma entrada, não um estado: ele já
-  volta concedido ou negado, com o motivo.
+  `LeaseGranted → LeaseReturned | LeaseExpired` (só a reserva se devolve; o
+  acesso sem reserva, `AccessGranted`, não tem o que devolver e o tipo não
+  deixa tentar) e `RunPlanned → RunStarted → RunFinished`, em que fechar exige
+  a dificuldade encontrada. O pedido de acesso é uma entrada, não um estado:
+  ele já volta concedido, com ou sem reserva, ou negado, com o motivo.
 - **Portas**: o relógio, o gerenciador de segredos, a sondagem da máquina e o
   consumo informado pelo provedor.
 - **Cenários**: uma máquina e uma conta; duas máquinas e duas contas; duas
   máquinas e uma conta; repositório que restringe as máquinas pessoais.
 - **Prova negativa** em `*.test-d.ts`, com `@ts-expect-error`: devolver um
-  empréstimo que não foi concedido; fechar uma execução sem a dificuldade
+  reserva que não foi concedida; devolver um acesso que não tem reserva; fechar uma execução sem a dificuldade
   encontrada; primitivo solto no lugar de um tipo marcado. Mandar dado
   sensível a um acesso que não o cobre depende de dados, não de tipos, e por
   isso é um caso da suíte (o pedido volta negado com o motivo).
@@ -434,7 +596,7 @@ mesma suíte. O padrão `contractTests(create)` de
 - `IPluginSituation<TEvents>`: chave (prefixo dos eventos), nome, descrição,
   versão, ciclo de vida (`start`, `stop`, `running`) e `on`/`off`.
 - Os plugins: `IInventory` (as duas camadas, liberações, restrições e fatos),
-  `IProbe` (sondagem e calibração), `IAccessBroker` (o empréstimo),
+  `IProbe` (sondagem e calibração), `IAccessBroker` (o acesso e a reserva),
   `IRunLedger` (consumo e dificuldade estimada e encontrada), `IScheduler` (a
   função objetivo e o plano sugerido), `IChannels` (aviso por presença),
   `IPeople` (competência, consentimento, disponibilidade e os pedidos de
@@ -452,7 +614,8 @@ mesma suíte. O padrão `contractTests(create)` de
 
 - **Em memória**, a primeira a ficar verde, para os testes e a simulação.
 - **Local**: inventário em `~/.config/taskin/` e na chave `resources`,
-  sondagem desta máquina, registro de execução versionado.
+  sondagem desta máquina, registro de execução em duas metades (o histórico
+  do time, versionado, e o estado da máquina).
 - **Remota**: o mesmo contrato servido pelo `taskin daemon` (task-200) às
   outras máquinas e ao taskinboard.
 - **Simulada**: provedores com janelas e limites falsos, para ensaiar o
@@ -484,8 +647,9 @@ marcado com construtor (`AccessId`, `TokenCount`, `Instant`).
 - **Como**: a combinação de recursos sugerida para uma task.
 - **Acesso**: uma credencial de LLM com dono, custo, cota, janela e
   classificação de dados.
-- **Empréstimo**: o acesso entregue a uma execução, com prazo, e devolvido no
-  fim.
+- **Reserva**: a vaga que uma execução ocupa numa conta que declara capacidade
+  (`concurrencyLimit`), com prazo, devolvida no fim. Conta sem capacidade
+  declarada só é entregue, sem reserva.
 - **Requisito fixo / requisito móvel**: o que não se leva a uma máquina e o
   que se leva, com custo de preparo.
 - **Calibração**: a mesma task pequena rodada em todos os recursos para
@@ -524,7 +688,7 @@ Cada etapa vira tasks quando a anterior fechar, não agora.
    - Entram a carga das máquinas, a cota dos modelos e a bateria.
 6. **Escalonamento.**
    - O registro de execução, com a dificuldade estimada e a encontrada.
-   - Os acessos a LLM no inventário e o empréstimo de credenciais pelo daemon.
+   - Os acessos a LLM no inventário e a escolha da conta, com reserva onde há capacidade declarada, pelo daemon.
    - A calibração em broadcast.
    - A função objetivo pura e a heurística gulosa, com o plano sugerido no
      `taskin status` e lido pelo sandcastle.
@@ -573,10 +737,11 @@ verdade:
 | 223 | O `taskin list --where` diz onde cada task roda | `situacao-lote-5` | 3 |
 | 224 | As tasks abertas trocam o nome da máquina pelo `Requires` | `situacao-lote-5` | 2 |
 | 225 | O `taskin plan`, o escalonador sobre o que existe de verdade | `situacao-lote-6` | 4 |
-| 226 | O empréstimo local e o `taskin access run` | `situacao-lote-6` | 4 |
+| 226 | O acesso local e o `taskin access run` | `situacao-lote-6` | 4 |
+| 231 | Só recurso com capacidade declarada gera reserva | `situacao-lote-6` | 4 |
 | 229 | Decidir os pesos, o horizonte, a presença e o silêncio | interativa | 2 |
 | 228 | Decidir a percepção viva | interativa | 3 |
-| 227 | O sandcastle usa o plano, o empréstimo e o registro | interativa | 4 |
+| 227 | O sandcastle usa o plano, o acesso à conta e o registro | interativa | 4 |
 | 230 | O esqueleto do taskinboard em Tauri | interativa | 4 |
 
 - **O lote 5 roda com o modelo mais barato e o lote 6 com o mais forte**, pela
@@ -589,6 +754,40 @@ verdade:
 - **A percepção viva entre máquinas só vira tasks de implementação depois da
   228,** porque depende de decidir o transporte e a autenticação.
 
+A terceira rodada leva o plano da sugestão ao despacho, distribuindo as tasks
+entre modelos, contas e máquinas:
+
+| Task | O que | Lote | Dificuldade |
+| --- | --- | --- | --- |
+| 232 | O registro de execuções em duas metades: o histórico do time e o estado da máquina | `situacao-lote-6` | 4 |
+| 233 | Os ajustes de cada conta do plano moram na camada da pessoa | `situacao-lote-6` | 3 |
+| 234 | O mapa dos recursos como página no repositório | `situacao-lote-6` | 1 |
+| 235 | Uma conta oferece vários modelos: o plano escolhe conta, modelo e máquina | `situacao-lote-7` | 4 |
+| 236 | O escalonador respeita a capacidade de cada conta | `situacao-lote-7` | 3 |
+| 237 | O `taskin access run` segue a atribuição do plano | `situacao-lote-7` | 3 |
+| 238 | O `taskin run` despacha o plano nesta máquina, várias tasks ao mesmo tempo | `situacao-lote-7` | 4 |
+| 239 | Consentimento, horário e canais na camada da pessoa | `situacao-lote-7` | 3 |
+| 241 | Os canais entregam o aviso de verdade | `situacao-lote-8` | 3 |
+| 242 | Dado sensível só vai para conta liberada: o campo `Sensitivity` na task | `situacao-lote-9` | 3 |
+| 243 | O comando do `taskin run` só roda depois da aprovação da pessoa | `situacao-lote-9` | 3 |
+| 244 | O repositório tem um id estável, não o nome da pasta | `situacao-lote-9` | 3 |
+| 245 | O `runs.jsonl` versionado aguenta merge de várias máquinas | `situacao-lote-9` | 2 |
+| 227 | O sandcastle roda uma task a pedido do `taskin run` | interativa | 4 |
+| 240 | O despacho para as outras máquinas da pessoa | interativa | 4 |
+
+- **O lote 7 roda na ordem da prioridade:** 235, 236, 237, 238 e 239. A 238
+  depende das três anteriores; a 239 é independente e pode ir noutra frente.
+- **A 227 depende da 238,** porque o sandcastle passa a ser o comando que o
+  `taskin run` chama para cada task, com a task, o modelo e o token no
+  ambiente, cada chamada no seu worktree.
+- **A 240 depende da 228 e da 238.**
+
+O lote 7 está fechado. Ele rodou sobre os commits das tasks 231 a 234, antes da
+revisão deles, e o que falta para a distribuição valer de ponta a ponta é a 227
+e a 240. O lote 8 (task-241) ligou os canais aos provedores que já existem
+(Discord, Telegram, console); o relógio depende da task-113, e a TV, de decidir
+como o aviso chega ao aparelho.
+
 ## Decisões em aberto
 
 - **O formato do inventário**: o que a sondagem descobre sozinha e o que se
@@ -600,7 +799,7 @@ verdade:
   em uso.
 - **Horário de silêncio**, e quem pode furá-lo.
 - **Os pesos λ da função objetivo e o horizonte** do escalonamento.
-- **Quais gerenciadores de segredo entram primeiro** no empréstimo.
+- **Quais gerenciadores de segredo entram primeiro** no acesso às contas.
 - **Quem classifica a sensibilidade** de uma task e de um repositório.
 - **Quais repositórios o daemon e o board atendem.** Os dois são um por
   máquina, e precisam de uma lista de repositórios, que a task-200 ainda não
@@ -626,5 +825,7 @@ verdade:
 - `INotificationProvider` e `NOTIFICATION_PROVIDERS` em
   `packages/types-ts/src/taskin.schemas.ts`.
 - `EstimatorRouter.probe()` em `packages/difficulty-estimator`.
+- [consciencia-situacional-mapa.html](consciencia-situacional-mapa.html): o
+  mapa de onde mora cada recurso, com exemplos.
 - [superficies-derivam-do-mesmo-contrato.md](superficies-derivam-do-mesmo-contrato.md):
   qualquer canal novo que receba comandos entra pelo mesmo contrato.

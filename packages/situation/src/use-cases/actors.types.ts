@@ -14,6 +14,7 @@ import type {
   ViewpointId,
 } from './branded';
 import type {
+  AccessGrant,
   LeaseDenied,
   LeaseExpired,
   LeaseGranted,
@@ -22,6 +23,7 @@ import type {
   RunFinished,
   RunOutcome,
   RunPlanned,
+  RunRecord,
   RunStarted,
   ViewpointAccepted,
   ViewpointAsk,
@@ -47,15 +49,16 @@ export interface AccessDeclaration {
   readonly kind: 'access';
   readonly name: string;
   readonly accessKind: AccessKind;
-  /** Onde o segredo esta. O valor e lido na guarda de cada pessoa, no emprestimo. */
+  /** Onde o segredo esta. O valor e lido na guarda de cada pessoa, ao entregar o acesso. */
   readonly secret: SecretRef;
   /** A variavel de ambiente que recebe o segredo na execucao. */
   readonly envVar: string;
   /** O dado que o acesso esta liberado a receber. Padrao: `public`. */
   readonly clearance?: DataClass;
   /**
-   * Quantas execucoes o provedor aceita ao mesmo tempo nesta conta. Sem ele,
-   * nao ha limite rigido: a conta e dividida quando falta conta livre.
+   * A capacidade da conta: quantas execucoes o provedor aceita ao mesmo tempo.
+   * So com ela a conta e reservada (uma vaga por execucao, com prazo). Sem ela
+   * nao ha reserva: a conta aceita quantas execucoes vierem.
    */
   readonly concurrencyLimit?: number;
 }
@@ -159,8 +162,11 @@ export interface IDeveloperActor {
   release(resource: ResourceId, repository: RepositoryId): Promise<void>;
   /** O quadro: as duas camadas somadas, com o que esta disponivel e por que nao. */
   situation(repository: RepositoryId): Promise<SituationView>;
-  /** As execucoes fechadas no repositorio, com a dificuldade estimada e a encontrada. */
-  runs(repository: RepositoryId): Promise<readonly RunFinished[]>;
+  /**
+   * As execucoes fechadas no repositorio, com a dificuldade estimada e a
+   * encontrada e o modelo: o historico do time, sem a conta e sem horario.
+   */
+  runs(repository: RepositoryId): Promise<readonly RunRecord[]>;
   /** Aceita receber pedidos de ponto de vista, nos termos que ela mesma da. Declarar de novo substitui. */
   consentToViewpoints(consent: ViewpointConsent): Promise<void>;
   /** Para de receber pedidos novos. */
@@ -182,10 +188,10 @@ export interface IReviewerActor {
 
 /** Quem roda a task (o sandcastle, um agente), por uma pessoa, numa maquina. */
 export interface IExecutorActor {
-  requestLease(request: LeaseRequest): Promise<LeaseGranted | LeaseDenied>;
+  requestLease(request: LeaseRequest): Promise<AccessGrant | LeaseDenied>;
   returnLease(lease: LeaseGranted): Promise<LeaseReturned | LeaseExpired>;
   planRun(repository: RepositoryId, task: TaskRef, estimated: Difficulty): Promise<RunPlanned>;
-  startRun(run: RunPlanned, lease: LeaseGranted): Promise<RunStarted>;
+  startRun(run: RunPlanned, access: AccessGrant): Promise<RunStarted>;
   finishRun(run: RunStarted, outcome: RunOutcome): Promise<RunFinished>;
   /**
    * Pede um ponto de vista humano pela competencia, numa execucao que ainda nao

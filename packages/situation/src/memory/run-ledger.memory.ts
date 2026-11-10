@@ -11,27 +11,55 @@ import {
   type TokenCount,
   tokenCount,
 } from '../use-cases/branded';
-import type { RunFinished, RunOutcome, RunPlanned, RunStarted, ViewpointDelivered } from '../use-cases/flows.types';
+import type {
+  OpenRun,
+  RunAbandoned,
+  RunFinished,
+  RunOutcome,
+  RunPlanned,
+  RunRecord,
+  RunStarted,
+  ViewpointDelivered,
+} from '../use-cases/flows.types';
 import { MemoryPlugin } from './plugin.memory';
+
+/** O que o time sabe de uma execucao fechada: sem a conta e sem horario. */
+export function toRunRecord(run: RunFinished): RunRecord {
+  return {
+    id: run.id,
+    repository: run.repository,
+    task: run.task,
+    estimated: run.estimated,
+    found: run.found,
+    model: run.model,
+    tokens: run.tokens,
+    iterations: run.iterations,
+    completed: run.completed,
+    reworked: run.reworked,
+    duration: run.duration,
+  };
+}
 
 class MemoryRunLedger extends MemoryPlugin<RunLedgerEvents> implements IRunLedger {
   readonly key = pluginKey('run-ledger');
   readonly name = 'Run ledger';
   readonly description = 'Estimated and found difficulty, consumption, and the viewpoints of each run';
 
-  private sequence = 0;
+  private readonly open = new Map<string, OpenRun>();
   private readonly finished: RunFinished[] = [];
   private readonly recorded = new Map<string, ViewpointDelivered>();
 
-  constructor(ports: RunLedgerPorts) {
+  constructor(
+    ports: RunLedgerPorts,
+    private readonly newId: () => string,
+  ) {
     super(ports.clock);
   }
 
   async planRun(repository: RepositoryId, task: TaskRef, estimated: Difficulty): Promise<RunPlanned> {
-    this.sequence += 1;
     const { state, ...fact }: RunPlanned = {
       state: 'planned',
-      id: runId(`run-${this.sequence}`),
+      id: runId(this.newId()),
       repository,
       task,
       estimated,
@@ -45,7 +73,9 @@ class MemoryRunLedger extends MemoryPlugin<RunLedgerEvents> implements IRunLedge
     const { state: _, ...planned } = run;
     const fact = { ...planned, access, startedAt: this.clock.now() };
     this.emit('run-ledger:run-started', fact);
-    return { state: 'started', ...fact };
+    const started: RunStarted = { state: 'started', ...fact };
+    this.open.set(started.id, { id: started.id, access: started.access, startedAt: started.startedAt });
+    return started;
   }
 
   async finishRun(run: RunStarted, outcome: RunOutcome): Promise<RunFinished> {
@@ -53,13 +83,26 @@ class MemoryRunLedger extends MemoryPlugin<RunLedgerEvents> implements IRunLedge
     const finishedAt = this.clock.now();
     const fact = { ...started, ...outcome, finishedAt, duration: durationMs(finishedAt - run.startedAt) };
     const finished: RunFinished = { state: 'finished', ...fact };
+    this.open.delete(run.id);
     this.finished.push(finished);
     this.emit('run-ledger:run-finished', fact);
     return finished;
   }
 
-  async runs(repository: RepositoryId): Promise<readonly RunFinished[]> {
-    return this.finished.filter((r) => r.repository === repository);
+  async abandonRun(run: RunStarted): Promise<RunAbandoned> {
+    const { state: _, ...started } = run;
+    const fact = { ...started, abandonedAt: this.clock.now() };
+    this.open.delete(run.id);
+    this.emit('run-ledger:run-abandoned', fact);
+    return { state: 'abandoned', ...fact };
+  }
+
+  async openRuns(): Promise<readonly OpenRun[]> {
+    return [...this.open.values()];
+  }
+
+  async runs(repository: RepositoryId): Promise<readonly RunRecord[]> {
+    return this.finished.filter((r) => r.repository === repository).map(toRunRecord);
   }
 
   async consumption(access: ResourceId, since: Instant): Promise<TokenCount> {
@@ -81,7 +124,12 @@ class MemoryRunLedger extends MemoryPlugin<RunLedgerEvents> implements IRunLedge
   }
 }
 
-/** O registro de execucao em memoria. So o relogio vem de fora. */
-export function createMemoryRunLedger(ports: RunLedgerPorts): IRunLedger {
-  return new MemoryRunLedger(ports);
+/**
+ * O registro de execucao em memoria. So o relogio vem de fora. `newId` da o id
+ * de cada execucao planejada; o padrao conta de 1 em 1, o que basta num
+ * processo so.
+ */
+export function createMemoryRunLedger(ports: RunLedgerPorts, newId?: () => string): IRunLedger {
+  let sequence = 0;
+  return new MemoryRunLedger(ports, newId ?? (() => `run-${++sequence}`));
 }

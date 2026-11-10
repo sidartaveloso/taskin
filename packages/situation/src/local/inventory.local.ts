@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { MemoryInventory } from '../memory/inventory.memory';
+import { MemoryInventory, type NewResource } from '../memory/inventory.memory';
 import type { IInventory, InventoryPorts } from '../system/plugins/inventory/inventory.types';
 import type { ResourceDeclaration } from '../use-cases/actors.types';
 import type { DataClass, PersonId, RepositoryId, ResourceId } from '../use-cases/branded';
@@ -55,6 +55,17 @@ class LocalInventory extends MemoryInventory {
   private readonly offered = new Map<ResourceId, ResourceDeclaration>();
   private readonly loaded: Promise<void>;
 
+  /**
+   * O id de uma conta ou maquina e o mesmo em todo processo e em todo
+   * repositorio da maquina: quem guarda o consumo e as execucoes por conta
+   * (o estado da maquina) precisa reencontrar a conta pelo id. A da camada da
+   * pessoa leva a dona e o nome; a do repositorio, o repositorio e o nome.
+   */
+  protected override idFor(resource: NewResource, sequence: number): string {
+    const scope = resource.layer === 'personal' ? `personal:${resource.owner}` : `repository:${resource.repository}`;
+    return `${scope}:${resource.declaration.name}`;
+  }
+
   constructor(
     ports: InventoryPorts,
     private readonly options: LocalInventoryOptions,
@@ -66,7 +77,10 @@ class LocalInventory extends MemoryInventory {
       restrictPersonalMachines: stored?.restrictPersonalMachines ?? false,
       clearances: { ...stored?.clearances },
     };
-    this.personalLayer = readJson(options.personalResources) as PersonalLayer;
+    // So as listas sao contas: `viewpoints` e `channels` sao do people e do channels.
+    this.personalLayer = Object.fromEntries(
+      Object.entries(readJson(options.personalResources)).filter(([, value]) => Array.isArray(value)),
+    ) as PersonalLayer;
     this.loaded = this.replay();
   }
 
@@ -91,11 +105,16 @@ class LocalInventory extends MemoryInventory {
 
   private saveRepository(): void {
     const config = readJson(this.options.repositoryConfig);
-    writeJson(this.options.repositoryConfig, { ...config, resources: this.repositoryLayer });
+    const resources = config.resources as Record<string, unknown> | undefined;
+    writeJson(this.options.repositoryConfig, { ...config, resources: { ...resources, ...this.repositoryLayer } });
   }
 
+  /** Regrava as contas e preserva o resto da camada da pessoa, como o consentimento e os canais. */
   private savePersonal(): void {
-    writeJson(this.options.personalResources, this.personalLayer);
+    const others = Object.entries(readJson(this.options.personalResources)).filter(
+      ([, value]) => !Array.isArray(value),
+    );
+    writeJson(this.options.personalResources, { ...Object.fromEntries(others), ...this.personalLayer });
   }
 
   override async declare(owner: PersonId, declaration: ResourceDeclaration): Promise<ResourceId> {

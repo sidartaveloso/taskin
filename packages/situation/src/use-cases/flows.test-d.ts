@@ -12,6 +12,7 @@ import {
   type ViewpointId,
 } from './branded';
 import type {
+  AccessGranted,
   LeaseDenied,
   LeaseExpired,
   LeaseGranted,
@@ -34,6 +35,7 @@ import type {
  */
 
 declare const executor: IExecutorActor;
+declare const accessGranted: AccessGranted;
 declare const leaseDenied: LeaseDenied;
 declare const leaseReturned: LeaseReturned;
 declare const leaseExpired: LeaseExpired;
@@ -50,24 +52,31 @@ declare const viewpointDelivered: ViewpointDelivered;
 declare const viewpointExpired: ViewpointExpired;
 
 export async function forbiddenPaths(): Promise<void> {
-  // ─── emprestimo ─────────────────────────────────────────────────────────
+  // ─── acesso e reserva ───────────────────────────────────────────────────
 
-  // @ts-expect-error devolver um emprestimo que foi negado
+  // @ts-expect-error devolver um acesso que nao tem reserva: nao ha vaga ocupada
+  await executor.returnLease(accessGranted);
+
+  // o acesso sem reserva comeca uma execucao como qualquer outro
+  await executor.startRun(planned, accessGranted);
+
+  // @ts-expect-error devolver uma reserva que foi negada
   await executor.returnLease(leaseDenied);
 
-  // @ts-expect-error devolver duas vezes: o devolvido nao e mais um emprestimo
+  // @ts-expect-error devolver duas vezes: a devolvida nao e mais uma reserva
   await executor.returnLease(leaseReturned);
 
   // @ts-expect-error devolver o que ja venceu
   await executor.returnLease(leaseExpired);
 
-  // @ts-expect-error comecar uma execucao com um emprestimo negado
+  // @ts-expect-error comecar uma execucao com um acesso negado
   await executor.startRun(planned, leaseDenied);
 
   // ─── execucao ───────────────────────────────────────────────────────────
 
   // @ts-expect-error fechar uma execucao que nem comecou
   await executor.finishRun(planned, {
+    model: 'sonnet',
     found: difficulty(1),
     tokens: tokenCount(1),
     iterations: 1,
@@ -107,7 +116,7 @@ export async function forbiddenPaths(): Promise<void> {
   // @ts-expect-error competencia como texto cru, sem o construtor
   await executor.requestViewpoint(planned, { ...viewpointAsk, expertise: 'design' });
 
-  // @ts-expect-error um pedido de emprestimo no lugar de um ponto de vista
+  // @ts-expect-error um pedido de acesso no lugar de um ponto de vista
   const notAViewpoint: ViewpointId = leaseGranted.id;
 
   void [viewpointAccepted, notAViewpoint];

@@ -47,21 +47,25 @@ export function nextWorkingInstant(hours: WorkingHours, now: Instant): Instant {
   return instant(today + 9 * DAY - offset);
 }
 
-interface Stored {
+/** Um pedido e o estado em que ele esta. */
+export interface StoredViewpoint {
   readonly requested: ViewpointRequested;
   state: ViewpointState;
 }
 
-class MemoryPeople extends MemoryPlugin<PeopleEvents> implements IPeople {
+type Stored = StoredViewpoint;
+
+/** As pessoas em memoria; a versao local estende esta e guarda o estado em arquivo. */
+export class MemoryPeople extends MemoryPlugin<PeopleEvents> implements IPeople {
   readonly key = pluginKey('people');
   readonly name = 'People';
   readonly description = 'Expertise, consent, availability and viewpoint requests';
 
-  private sequence = 0;
-  private readonly consents = new Map<PersonId, ViewpointConsent>();
-  private readonly invited = new Map<RepositoryId, PersonId[]>();
-  private readonly viewpoints = new Map<ViewpointId, Stored>();
-  private readonly responses = new Map<PersonId, ResponseTime[]>();
+  protected sequence = 0;
+  protected readonly consents = new Map<PersonId, ViewpointConsent>();
+  protected readonly invited = new Map<RepositoryId, PersonId[]>();
+  protected readonly viewpoints = new Map<ViewpointId, Stored>();
+  protected readonly responses = new Map<PersonId, ResponseTime[]>();
 
   constructor(private readonly ports: PeoplePorts) {
     super(ports.clock);
@@ -84,6 +88,11 @@ class MemoryPeople extends MemoryPlugin<PeopleEvents> implements IPeople {
   }
 
   async experts(repository: RepositoryId, expertise: Expertise): Promise<readonly PersonId[]> {
+    return this.consenting(repository, expertise);
+  }
+
+  /** O mesmo que `experts`, sem passar pelo metodo publico que a versao local envolve. */
+  private async consenting(repository: RepositoryId, expertise: Expertise): Promise<readonly PersonId[]> {
     const members = (await this.ports.people.members(repository)).map((m) => m.id);
     const reachable = [...new Set([...members, ...(this.invited.get(repository) ?? [])])];
     return reachable.filter((person) => this.consents.get(person)?.expertise.includes(expertise) ?? false);
@@ -115,7 +124,7 @@ class MemoryPeople extends MemoryPlugin<PeopleEvents> implements IPeople {
 
   async requestViewpoint(origin: ViewpointOrigin, ask: ViewpointAsk): Promise<ViewpointRequested | ViewpointDenied> {
     this.sweep();
-    const experts = await this.experts(origin.repository, ask.expertise);
+    const experts = await this.consenting(origin.repository, ask.expertise);
     if (experts.length === 0) {
       return this.deny(origin, ask.expertise, {
         code: 'no-consenting-expert',

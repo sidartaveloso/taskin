@@ -1,9 +1,10 @@
-import type { AccessKind, PersonId, RepositoryId } from '../use-cases/branded';
+import { type AccessKind, type PersonId, type RepositoryId, type ResourceId, runId } from '../use-cases/branded';
 import { createFakePorts, DEFAULT_TEST_SETTINGS, type FakePorts } from '../use-cases/fake-ports';
+import type { OpenRun } from '../use-cases/flows.types';
 import type { SituationSettings } from '../use-cases/ports.types';
 import { type EnvelopeOf, type EventHandler, eventId } from './envelope';
 import { pluginKey, pluginVersion } from './plugin.types';
-import type { IAccessCatalogPort, LendableAccess } from './plugins/access-broker/access-broker.types';
+import type { IAccessCatalogPort, IOpenRunsPort, LendableAccess } from './plugins/access-broker/access-broker.types';
 import type { ChannelName, IChannelSenderPort, Notice } from './plugins/channels/channels.types';
 import type { IEventSourcePort } from './plugins/flows/flows.types';
 import type {
@@ -58,6 +59,28 @@ export class FakeAccessCatalog implements IAccessCatalogPort {
   }
 }
 
+/** As execucoes em aberto de mentira: o que o registro de execucoes diria ao access broker. */
+export class FakeOpenRuns implements IOpenRunsPort {
+  private readonly open: OpenRun[] = [];
+  private sequence = 0;
+
+  /** Comeca `count` execucoes (uma, por padrao) na conta, sem terminar nenhuma. */
+  begin(access: ResourceId, startedAt: OpenRun['startedAt'], count = 1): void {
+    for (let i = 0; i < count; i += 1) {
+      this.sequence += 1;
+      this.open.push({
+        id: runId(`open-${this.sequence}`),
+        access,
+        startedAt,
+      });
+    }
+  }
+
+  async openRuns(): Promise<readonly OpenRun[]> {
+    return [...this.open];
+  }
+}
+
 /** O mapa de eventos de mentira que a suite do `flows` escuta. */
 export type DemoEvents = {
   readonly 'demo:thing-happened': { readonly count: number };
@@ -98,6 +121,7 @@ export type FakeSystemPorts = FakePorts & {
 /** As portas de um plugin sozinho, sem o sistema: o que viria de outro plugin vem de mentira. */
 export type FakePluginPorts = FakeSystemPorts & {
   readonly catalog: FakeAccessCatalog;
+  readonly runs: FakeOpenRuns;
   readonly events: FakeEventSource;
 };
 
@@ -110,5 +134,10 @@ export function createFakeSystemPorts(settings: SituationSettings = DEFAULT_TEST
 }
 
 export function createFakePluginPorts(settings: SituationSettings = DEFAULT_TEST_SETTINGS): FakePluginPorts {
-  return { ...createFakeSystemPorts(settings), catalog: new FakeAccessCatalog(), events: new FakeEventSource() };
+  return {
+    ...createFakeSystemPorts(settings),
+    catalog: new FakeAccessCatalog(),
+    runs: new FakeOpenRuns(),
+    events: new FakeEventSource(),
+  };
 }

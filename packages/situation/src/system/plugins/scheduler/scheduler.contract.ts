@@ -36,9 +36,7 @@ const SUBSCRIPTION: SchedulingAccess = {
   id: resourceId('assinatura'),
   kind: accessKind('claude-code'),
   clearance: 'internal',
-  competence: difficulty(5),
-  completionRate: 0.9,
-  costPerThousandTokens: 0,
+  models: [{ name: 'forte', competence: difficulty(5), completionRate: 0.9, costPerThousandTokens: 0 }],
   remaining: tokenCount(100_000),
   windowEndsAt: instant(NOW + 5 * HOUR),
 };
@@ -47,11 +45,21 @@ const PAID_API: SchedulingAccess = {
   id: resourceId('api-paga'),
   kind: accessKind('openrouter'),
   clearance: 'public',
-  competence: difficulty(3),
-  completionRate: 0.8,
-  costPerThousandTokens: 3,
+  models: [{ name: 'api', competence: difficulty(3), completionRate: 0.8, costPerThousandTokens: 3 }],
   remaining: tokenCount(1_000_000),
   windowEndsAt: instant(NOW + 24 * HOUR),
+};
+
+/** Uma assinatura com dois modelos: um forte e caro, um rapido e barato, dividindo a cota. */
+const STRONG = { name: 'forte', competence: difficulty(5), completionRate: 0.9, costPerThousandTokens: 2 } as const;
+const FAST = { name: 'rapido', competence: difficulty(2), completionRate: 0.9, costPerThousandTokens: 0.5 } as const;
+const TWO_MODELS: SchedulingAccess = {
+  id: resourceId('assinatura-dupla'),
+  kind: accessKind('claude-code'),
+  clearance: 'internal',
+  models: [STRONG, FAST],
+  remaining: tokenCount(100_000),
+  windowEndsAt: instant(NOW + 5 * HOUR),
 };
 
 const NOTEBOOK: SchedulingMachine = { id: resourceId('notebook'), capabilities: [], concurrency: 1 };
@@ -86,8 +94,14 @@ function problem(tasks: readonly SchedulingTask[], overrides: Partial<Scheduling
   };
 }
 
-function assign(name: string, access: SchedulingAccess, machine: SchedulingMachine, at: Instant = NOW): Assignment {
-  return { task: taskRef(name), access: access.id, machine: machine.id, at };
+function assign(
+  name: string,
+  access: SchedulingAccess,
+  machine: SchedulingMachine,
+  at: Instant = NOW,
+  model: string = access.models[0]?.name ?? '',
+): Assignment {
+  return { task: taskRef(name), access: access.id, model, machine: machine.id, at };
 }
 
 const plan = (p: SchedulingProblem, ...assignments: Assignment[]): Plan => ({ problem: p, assignments });
@@ -250,6 +264,32 @@ export const SCHEDULER_CONTRACT_CASES: readonly PluginContractCase<IScheduler>[]
     },
   },
   {
+    name: 'uma conta nao roda ao mesmo tempo mais execucoes do que aceita',
+    async run(scheduler) {
+      const single: SchedulingAccess = { ...SUBSCRIPTION, concurrencyLimit: 1 };
+      const p = problem([task('task-1'), task('task-2')], { accesses: [single, PAID_API] });
+
+      const over = plan(p, assign('task-1', single, DESKTOP), assign('task-2', single, DESKTOP));
+      const violation = scheduler.violations(over);
+
+      expect(violation.map((v) => v.code)).toEqual(['concurrency']);
+      expect([...(violation[0]?.tasks ?? [])].sort()).toEqual(['task-1', 'task-2']);
+      expect(
+        codes(scheduler, plan(p, assign('task-1', single, DESKTOP), assign('task-2', single, DESKTOP, LATER))),
+      ).toEqual([]);
+    },
+  },
+  {
+    name: 'conta sem capacidade declarada nao limita as execucoes sobrepostas',
+    async run(scheduler) {
+      const p = problem([task('task-1'), task('task-2')]);
+
+      expect(
+        codes(scheduler, plan(p, assign('task-1', SUBSCRIPTION, DESKTOP), assign('task-2', SUBSCRIPTION, DESKTOP))),
+      ).toEqual([]);
+    },
+  },
+  {
     name: 'task interativa so roda num momento com a pessoa presente',
     async run(scheduler) {
       const p = problem([task('task-1', { interactive: true })]);
@@ -265,11 +305,15 @@ export const SCHEDULER_CONTRACT_CASES: readonly PluginContractCase<IScheduler>[]
       const ghost: Assignment = {
         task: taskRef('task-1'),
         access: resourceId('fantasma'),
+        model: 'forte',
         machine: NOTEBOOK.id,
         at: NOW,
       };
 
       expect(codes(scheduler, plan(p, ghost))).toEqual(['unknown-reference']);
+      expect(codes(scheduler, plan(p, assign('task-1', SUBSCRIPTION, DESKTOP, NOW, 'nao-oferecido')))).toEqual([
+        'unknown-reference',
+      ]);
       expect(
         codes(
           scheduler,
@@ -343,12 +387,121 @@ export const SCHEDULER_CONTRACT_CASES: readonly PluginContractCase<IScheduler>[]
     name: 'o dinheiro pesa: sem diferenca de resto, vai pelo acesso que nao custa',
     async run(scheduler) {
       const p = problem([task('task-1')], {
-        accesses: [PAID_API, { ...SUBSCRIPTION, completionRate: PAID_API.completionRate }],
+        accesses: [PAID_API, { ...SUBSCRIPTION, models: [{ ...SUBSCRIPTION.models[0]!, completionRate: 0.8 }] }],
       });
 
       const suggested = await scheduler.suggest(p, WEIGHTS);
 
       expect(suggested.plan.assignments.map((a) => a.access)).toEqual([SUBSCRIPTION.id]);
+    },
+  },
+
+  // ─── Uma conta, varios modelos ──────────────────────────────────────────
+  {
+    name: 'a nota de uma atribuicao usa a taxa de conclusao e o custo do modelo dela',
+    async run(scheduler) {
+      const p = problem([task('task-1')], { accesses: [TWO_MODELS] });
+
+      const strong = scheduler.scorePlan(plan(p, assign('task-1', TWO_MODELS, DESKTOP, NOW, STRONG.name)), WEIGHTS);
+      const fast = scheduler.scorePlan(plan(p, assign('task-1', TWO_MODELS, DESKTOP, NOW, FAST.name)), WEIGHTS);
+
+      expect(strong.terms.money).toBeCloseTo(4);
+      expect(fast.terms.money).toBeCloseTo(1);
+    },
+  },
+  {
+    name: 'a competencia e a do modelo: o rapido nao cobre a task dificil, o forte da mesma conta cobre',
+    async run(scheduler) {
+      const p = problem([task('task-1', { estimated: difficulty(4) })], { accesses: [TWO_MODELS] });
+
+      expect(codes(scheduler, plan(p, assign('task-1', TWO_MODELS, DESKTOP, NOW, FAST.name)))).toEqual(['competence']);
+      expect(codes(scheduler, plan(p, assign('task-1', TWO_MODELS, DESKTOP, NOW, STRONG.name)))).toEqual([]);
+    },
+  },
+  {
+    name: 'a cota e da conta: a soma dos tokens dos modelos dela nao passa do que resta',
+    async run(scheduler) {
+      const p = problem(
+        [
+          task('task-1', { estimated: difficulty(4), estimatedTokens: tokenCount(60_000) }),
+          task('task-2', { estimatedTokens: tokenCount(31_000) }),
+        ],
+        { accesses: [TWO_MODELS] },
+      );
+
+      const over = plan(
+        p,
+        assign('task-1', TWO_MODELS, DESKTOP, NOW, STRONG.name),
+        assign('task-2', TWO_MODELS, DESKTOP, NOW, FAST.name),
+      );
+      const violation = scheduler.violations(over);
+
+      expect(violation.map((v) => v.code)).toEqual(['quota']);
+      expect([...(violation[0]?.tasks ?? [])].sort()).toEqual(['task-1', 'task-2']);
+    },
+  },
+  {
+    name: 'uma conta com dois modelos: cada task vai ao modelo que a cobre pelo menor custo, e a atribuicao diz qual',
+    async run(scheduler) {
+      const p = problem([task('task-1', { estimated: difficulty(4) }), task('task-2', { estimated: difficulty(2) })], {
+        accesses: [TWO_MODELS],
+      });
+
+      const suggested = await scheduler.suggest(p, WEIGHTS);
+
+      expect(scheduler.violations(suggested.plan)).toEqual([]);
+      const byTask = Object.fromEntries(suggested.plan.assignments.map((a) => [a.task, [a.access, a.model]]));
+      expect(byTask).toEqual({
+        'task-1': [TWO_MODELS.id, STRONG.name],
+        'task-2': [TWO_MODELS.id, FAST.name],
+      });
+    },
+  },
+  {
+    name: 'com cota da conta para uma so, os dois modelos nao a dividem alem do que resta',
+    async run(scheduler) {
+      const big = tokenCount(80_000);
+      const p = problem(
+        [
+          task('task-1', { value: 9, estimated: difficulty(4), estimatedTokens: big }),
+          task('task-2', { value: 3, estimated: difficulty(2), estimatedTokens: big }),
+        ],
+        { accesses: [TWO_MODELS] },
+      );
+
+      const suggested = await scheduler.suggest(p, WEIGHTS);
+
+      expect(suggested.plan.assignments.map((a) => [a.task, a.model])).toEqual([['task-1', STRONG.name]]);
+      expect(suggested.deferred).toEqual([{ task: 'task-2', reason: 'quota' }]);
+    },
+  },
+  {
+    name: 'com a conta cheia, a segunda task vai a outra conta ou a outro momento',
+    async run(scheduler) {
+      const single: SchedulingAccess = { ...SUBSCRIPTION, concurrencyLimit: 1 };
+      const tasks = [task('task-1', { value: 9 }), task('task-2', { value: 3 })];
+      const p = problem(tasks, { accesses: [single] });
+
+      const suggested = await scheduler.suggest(p, ZERO);
+
+      expect(scheduler.violations(suggested.plan)).toEqual([]);
+      expect(suggested.deferred).toEqual([]);
+      const at = Object.fromEntries(suggested.plan.assignments.map((a) => [a.task, a.at]));
+      expect(at['task-1']).toBe(NOW);
+      expect(at['task-2']).toBeGreaterThan(NOW);
+    },
+  },
+  {
+    name: 'a conta cheia que segura a task interativa a adia por concurrency',
+    async run(scheduler) {
+      const single: SchedulingAccess = { ...SUBSCRIPTION, concurrencyLimit: 1 };
+      const tasks = [task('task-1', { value: 9, interactive: true }), task('task-2', { value: 3, interactive: true })];
+      const p = problem(tasks, { accesses: [single] });
+
+      const suggested = await scheduler.suggest(p, ZERO);
+
+      expect(suggested.plan.assignments.map((a) => a.task)).toEqual(['task-1']);
+      expect(suggested.deferred).toEqual([{ task: 'task-2', reason: 'concurrency' }]);
     },
   },
 ];

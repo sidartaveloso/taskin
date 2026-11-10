@@ -21,6 +21,9 @@ type ProbeState =
   | { readonly state: 'probed'; readonly facts: ProbedFacts }
   | { readonly state: 'unreachable'; readonly observedAt: number };
 
+/** O que identifica um recurso novo, antes de ter id. */
+export type NewResource = Pick<StoredResource, 'declaration' | 'layer' | 'owner' | 'repository'>;
+
 interface StoredResource {
   readonly id: ResourceId;
   readonly declaration: ResourceDeclaration;
@@ -64,9 +67,20 @@ export class MemoryInventory extends MemoryPlugin<InventoryEvents> implements II
     super(ports.clock);
   }
 
+  /**
+   * O id de um recurso novo. O padrao conta de 1 em 1, o que basta num
+   * processo so; quem guarda estado fora do processo sobrescreve com um id
+   * que se repita a cada vez que o recurso e lido.
+   */
+  protected idFor(_resource: NewResource, sequence: number): string {
+    return `resource-${sequence}`;
+  }
+
   private store(resource: Omit<StoredResource, 'id' | 'releasedTo'>): StoredResource {
     this.sequence += 1;
-    const stored: StoredResource = { ...resource, id: resourceId(`resource-${this.sequence}`), releasedTo: new Set() };
+    let id = resourceId(this.idFor(resource, this.sequence));
+    if (this.resources.has(id)) id = resourceId(`${id}#${this.sequence}`);
+    const stored: StoredResource = { ...resource, id, releasedTo: new Set() };
     this.resources.set(stored.id, stored);
     return stored;
   }

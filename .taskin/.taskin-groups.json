@@ -85,12 +85,27 @@
     },
     "situacao-lote-6": {
       "id": "situacao-lote-6",
-      "name": "Situação, lote 6: o plano e o empréstimo de verdade",
+      "name": "Situação, lote 6: o plano e a reserva de credenciais de verdade",
       "parentId": "g-ebwuvrd1"
     },
     "situacao-interativas": {
       "id": "situacao-interativas",
       "name": "Situação: interativas, fora do sandcastle",
+      "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-7": {
+      "id": "situacao-lote-7",
+      "name": "Situação, lote 7: distribuir o plano entre modelos, contas e máquinas",
+      "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-8": {
+      "id": "situacao-lote-8",
+      "name": "Situação, lote 8: os avisos chegam à pessoa",
+      "parentId": "g-ebwuvrd1"
+    },
+    "situacao-lote-9": {
+      "id": "situacao-lote-9",
+      "name": "Situação, lote 9: o que a revisão achou antes da mescla",
       "parentId": "g-ebwuvrd1"
     }
   }

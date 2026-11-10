@@ -14,7 +14,7 @@ As decisões que faltam para a etapa 3 do RDT (percepção viva): como as máqui
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
 - [ ] Transporte entre máquinas: a rede privada que a pessoa já tem (sem descoberta por mDNS), com o daemon de cada máquina escutando só nela; ou um relé, como o da Alexa. Decidido e escrito no RDT, com o motivo
 - [ ] Autenticação entre máquinas da mesma pessoa: chave por máquina, pareamento por código, ou o que o transporte já garante. Decidido e escrito no RDT
-- [ ] O que cada máquina anuncia no batimento (capacidades sondadas, carga, consumo das contas emprestadas, presença) e a frequência; nada que o RDT proíbe versionar sai da máquina sem necessidade
+- [ ] O que cada máquina anuncia no batimento (capacidades sondadas, carga, consumo das contas em uso, presença) e a frequência; nada que o RDT proíbe versionar sai da máquina sem necessidade
 - [ ] Quais repositórios o daemon atende: um registro no arquivo do usuário, preenchido por um comando rodado dentro do repositório (proposta: `taskin daemon add` e `remove`), ou outro caminho. Decidido e escrito no RDT
 - [ ] As tasks de implementação registradas, num lote novo, prontas para o sandcastle
 

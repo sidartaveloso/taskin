@@ -8,28 +8,38 @@ import type {
   TaskRef,
 } from '../../../use-cases/branded';
 import type {
+  AccessGrant,
   LeaseDenied,
   LeaseExpired,
   LeaseGranted,
   LeaseRequest,
   LeaseReturned,
+  OpenRun,
 } from '../../../use-cases/flows.types';
 import type { SituationPorts } from '../../../use-cases/ports.types';
 import type { IPluginSituation, PluginKey } from '../../plugin.types';
 
 /**
- * O emprestimo de credenciais: quem executa pede um acesso pelo tipo, e recebe
- * a conta com mais folga, com o segredo so no ambiente daquela execucao.
+ * O access broker: quem executa pede um acesso pelo tipo, e recebe a conta
+ * liberada para a sensibilidade do dado, com folga na cota e, entre as que
+ * sobram, a menos ocupada, com o segredo so no ambiente daquela execucao.
+ *
+ * So o acesso que declara capacidade (`concurrencyLimit`) tem reserva: ocupa
+ * uma vaga, com prazo e devolucao. Sem capacidade declarada nada e gravado.
  */
 export interface IAccessBroker extends IPluginSituation<AccessBrokerEvents> {
   readonly key: PluginKey<'access-broker'>;
-  requestLease(person: PersonId, request: LeaseRequest): Promise<LeaseGranted | LeaseDenied>;
+  requestLease(person: PersonId, request: LeaseRequest): Promise<AccessGrant | LeaseDenied>;
+  /** Devolve a vaga de uma reserva. Um acesso sem reserva nao tem o que devolver, e o tipo nao deixa tentar. */
   returnLease(lease: LeaseGranted): Promise<LeaseReturned | LeaseExpired>;
-  /** Os emprestimos em curso, sem o segredo. Os vencidos ja nao aparecem. */
+  /** As reservas em curso, sem o segredo. As vencidas ja nao aparecem. */
   leases(): Promise<readonly ActiveLease[]>;
 }
 
-/** Um acesso que pode ser emprestado: o que o inventario sabe dele, sem o segredo. */
+/**
+ * Um acesso que o broker pode entregar: o que o inventario sabe dele, sem o
+ * segredo. Com `concurrencyLimit` ele e reservado; sem, e so entregue.
+ */
 export interface LendableAccess {
   readonly id: ResourceId;
   readonly name: string;
@@ -45,8 +55,17 @@ export interface IAccessCatalogPort {
   accesses(person: PersonId, repository: RepositoryId, kind: AccessKind): Promise<readonly LendableAccess[]>;
 }
 
+/**
+ * De onde vem a ocupacao de cada conta: as execucoes que comecaram e nao
+ * terminaram. No sistema, quem responde e o registro de execucoes.
+ */
+export interface IOpenRunsPort {
+  openRuns(): Promise<readonly OpenRun[]>;
+}
+
 export type AccessBrokerPorts = Pick<SituationPorts, 'clock' | 'secrets' | 'usage' | 'settings'> & {
   readonly catalog: IAccessCatalogPort;
+  readonly runs: IOpenRunsPort;
 };
 
 export type ActiveLease = Omit<LeaseGranted, 'env'> & {
@@ -55,7 +74,7 @@ export type ActiveLease = Omit<LeaseGranted, 'env'> & {
   readonly task: TaskRef;
 };
 
-/** Os eventos nunca levam o ambiente do emprestimo: o segredo vive so no `LeaseGranted`. */
+/** Os eventos nunca levam o ambiente da reserva: o segredo vive so no `LeaseGranted`. */
 export type AccessBrokerEvents = {
   readonly 'access-broker:lease-granted': Omit<ActiveLease, 'state'>;
   readonly 'access-broker:lease-denied': {
