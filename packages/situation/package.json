@@ -1,6 +1,6 @@
 {
   "name": "@opentask/taskin-situation",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Situational awareness for Taskin: the resources at hand, the constraints, and how to run each task",
   "type": "module",
   "motivation": "Knowing which machines, LLM accesses, libraries, channels and sensors are available, and against what limits, is what decides how each task should run. Today that knowledge lives only in hand-written prose.",
