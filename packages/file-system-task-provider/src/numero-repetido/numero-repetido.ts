@@ -117,10 +117,15 @@ function padraoDaReferencia(arquivo: string): RegExp {
   return padraoDoNome(stem);
 }
 
-/** Os arquivos versionados, de todo o repositorio; sem Git, os de `TASKS/`. */
+/*
+ * Os arquivos do projeto, de todo o repositorio: os versionados e os ainda nao
+ * versionados que o `.gitignore` nao exclui — uma task nova, fora do git, que
+ * cita a renumerada ficaria com o link quebrado (task-248). O que o git ignora
+ * (`node_modules`, `dist`) fica de fora. Sem Git, os de `TASKS/`.
+ */
 async function arquivosParaAjustar(raiz: string, tasksDir: string): Promise<string[]> {
   if (isGitWorkTree(raiz)) {
-    const saida = saidaDoGit(raiz, ['ls-files', '-z', '--', ':/']) ?? '';
+    const saida = saidaDoGit(raiz, ['ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', ':/']) ?? '';
     return saida
       .split('\0')
       .filter(Boolean)

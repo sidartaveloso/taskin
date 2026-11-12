@@ -217,7 +217,6 @@ describe('renumerarRepetidos', () => {
     mkdirSync(join(raiz, 'docs'));
     writeFileSync(join(raiz, 'README.md'), `Ver TASKS/${B} e [a outra](TASKS/${A}).\n`);
     writeFileSync(join(raiz, 'docs', 'guia.md'), `[fechar](../TASKS/${B})\n`);
-    writeFileSync(join(raiz, 'nao-versionado.md'), `TASKS/${B}\n`);
     git('add', 'TASKS', 'README.md', 'docs');
     commitarEm('2026-02-01T10:00:00', 'B e as referencias');
 
@@ -226,11 +225,70 @@ describe('renumerarRepetidos', () => {
     const novo = 'task-028-fechar-portas.md';
     expect(readFileSync(join(raiz, 'README.md'), 'utf-8')).toBe(`Ver TASKS/${novo} e [a outra](TASKS/${A}).\n`);
     expect(readFileSync(join(raiz, 'docs', 'guia.md'), 'utf-8')).toBe(`[fechar](../TASKS/${novo})\n`);
-    expect(readFileSync(join(raiz, 'nao-versionado.md'), 'utf-8')).toBe(`TASKS/${B}\n`);
     expect(resultado.referenciasAjustadas).toEqual([
       { arquivo: join(raiz, 'README.md'), quantas: 1 },
       { arquivo: join(raiz, 'docs', 'guia.md'), quantas: 1 },
     ]);
+  });
+
+  it('ajusta tambem os nao versionados que o git nao ignora; os ignorados ficam como estao', async () => {
+    iniciarGit();
+    escrever(A, '027', 'Abrir portas');
+    writeFileSync(join(raiz, '.gitignore'), 'ignorado.md\n');
+    git('add', '.');
+    commitarEm('2026-01-01T10:00:00', 'A');
+    escrever(B, '027', 'Fechar portas');
+    git('add', '.');
+    commitarEm('2026-02-01T10:00:00', 'B');
+    // Uma task nova, ainda fora do git, que depende da que vai ser renumerada.
+    escrever('task-028-outra.md', '028', 'Outra');
+    writeFileSync(join(tasks, 'task-028-outra.md'), `Depende de [fechar](${B}).\n`, { flag: 'a' });
+    writeFileSync(join(raiz, 'nao-versionado.md'), `TASKS/${B}\n`);
+    writeFileSync(join(raiz, 'ignorado.md'), `TASKS/${B}\n`);
+
+    const resultado = await renumerarRepetidos(raiz, tasks, lidas());
+
+    const novo = 'task-029-fechar-portas.md';
+    expect(readFileSync(join(tasks, 'task-028-outra.md'), 'utf-8')).toContain(`Depende de [fechar](${novo}).`);
+    expect(readFileSync(join(raiz, 'nao-versionado.md'), 'utf-8')).toBe(`TASKS/${novo}\n`);
+    expect(readFileSync(join(raiz, 'ignorado.md'), 'utf-8')).toBe(`TASKS/${B}\n`);
+    expect(resultado.referenciasAjustadas.map((r) => r.arquivo).sort()).toEqual(
+      [join(raiz, 'nao-versionado.md'), join(tasks, 'task-028-outra.md')].sort(),
+    );
+  });
+
+  it('dentro do git, a task ainda nao versionada muda por mv puro, sem rename no indice', async () => {
+    iniciarGit();
+    escrever(A, '027', 'Abrir portas');
+    git('add', '.');
+    commitarEm('2026-01-01T10:00:00', 'A');
+    escrever(B, '027', 'Fechar portas');
+
+    const resultado = await renumerarRepetidos(raiz, tasks, lidas());
+
+    const novo = 'task-028-fechar-portas.md';
+    expect(resultado.renumerados).toEqual([
+      { de: join(tasks, B), para: join(tasks, novo), numeroAntigo: '027', numeroNovo: '028', viaGit: false },
+    ]);
+    expect(git('status', '--porcelain')).toBe(`?? TASKS/${novo}\n`);
+    expect(readFileSync(join(tasks, novo), 'utf-8')).toMatch(/^# 🧩 Task 028 — Fechar portas$/m);
+  });
+
+  it('sem git: mv puro, com o titulo e as referencias em TASKS/ ajustados', async () => {
+    escrever(A, '027', 'Abrir portas');
+    escrever(B, '027', 'Fechar portas');
+    escrever('task-026-antes.md', '026', 'Antes');
+    writeFileSync(join(tasks, 'task-026-antes.md'), `Ver [fechar](${B}).\n`, { flag: 'a' });
+    utimesSync(join(tasks, A), new Date('2026-01-01'), new Date('2026-01-01'));
+    utimesSync(join(tasks, B), new Date('2026-03-01'), new Date('2026-03-01'));
+
+    const resultado = await renumerarRepetidos(raiz, tasks, lidas());
+
+    const novo = 'task-028-fechar-portas.md';
+    expect(resultado.renumerados.map((r) => r.viaGit)).toEqual([false]);
+    expect(existsSync(join(tasks, B))).toBe(false);
+    expect(readFileSync(join(tasks, novo), 'utf-8')).toMatch(/^# 🧩 Task 028 — Fechar portas$/m);
+    expect(readFileSync(join(tasks, 'task-026-antes.md'), 'utf-8')).toContain(`Ver [fechar](${novo}).`);
   });
 
   it('a mencao solta ao numero nao muda, e sai listada com arquivo e linha', async () => {
