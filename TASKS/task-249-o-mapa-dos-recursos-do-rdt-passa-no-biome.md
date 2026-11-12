@@ -1,6 +1,6 @@
 # 🧩 Task 249 — O mapa dos recursos do RDT passa no biome: elementos semanticos no lugar dos roles
 
-- Status: in-progress
+- Status: in-review
 - Type: fix
 - Assignee: sidartaveloso
 
