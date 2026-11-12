@@ -135,7 +135,7 @@ Grupo `taskin-na-alexa`, um subgrupo por etapa, em ordem de prioridade:
 | 197 | Vinculação de conta e `taskin alexa entrar` | 4 |
 | 198 | O protocolo entre o serviço e a máquina | 3 |
 | 199 | O serviço repassa e responde com a máquina desligada | 4 |
-| 200 | O taskin em segundo plano | 3 |
+| 200 | O taskin em segundo plano (saiu do grupo: virou peça comum, sem Alexa; a conexão foi para a 198) | 3 |
 | 201 | Privacidade e termos de uso | 2 |
 | 202 | Beta fechado | 2 |
 | 203 | Certificação, publicação e documentação | 3 |

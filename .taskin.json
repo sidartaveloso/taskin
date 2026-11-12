@@ -30,5 +30,8 @@
       "events": ["task:start", "task:done"]
     }
   },
-  "labs": ["estimate"]
+  "labs": ["estimate"],
+  "resources": {
+    "defaultSensitivity": "public"
+  }
 }

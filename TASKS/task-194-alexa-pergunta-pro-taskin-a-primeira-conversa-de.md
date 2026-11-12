@@ -6,6 +6,7 @@
 - Group: alexa-etapa-1
 - Priority: 8000
 - Difficulty: 3
+- Requires: interactive, microphone
 
 ## Description
 Servir a skill a partir do Mac por HTTPS, conversar com o Echo usando as cinco ações num repositório de teste, guardar a evidência e decidir no RDT se a etapa 2 começa.
@@ -25,6 +26,6 @@ Servir a skill a partir do Mac por HTTPS, conversar com o Echo usando as cinco a
 Fecha a etapa 1. Depende das tasks 186 a 193.
 
 ### Onde executar
-Manual, no Mac, com o Echo. Não é task para o sandcastle.
+Manual e interativo, com um Echo. Não é task para o sandcastle.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).

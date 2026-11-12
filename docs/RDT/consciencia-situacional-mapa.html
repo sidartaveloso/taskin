@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; } [hidden] { display: none; }</style>
+<!-- A pagina do artefato "Mapa dos recursos do taskin" (task-234): o mapa de onde mora cada recurso. Abre direto no navegador. -->
+<title>Mapa dos recursos do taskin</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: uma faixa por lugar onde a configuracao mora (git, pessoa, maquina, entre maquinas), e cada recurso pintado pela cor do lugar */
+:root {
+  --bg: #f3f5f2;
+  --surface: #ffffff;
+  --ink: #1b2420;
+  --muted: #5b6862;
+  --line: #d3dbd6;
+  --git: #146b5e;      /* versionado, do time */
+  --git-soft: #dcefe9;
+  --person: #a8640f;   /* camada da pessoa */
+  --person-soft: #f6ead6;
+  --machine: #5a4f9a;  /* estado desta maquina */
+  --machine-soft: #e7e4f5;
+  --live: #b23a5b;     /* entre as maquinas da pessoa, ainda por decidir */
+  --live-soft: #f7e1e7;
+  --code-bg: #eef2ef;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121715; --surface: #1a211e; --ink: #e6ece8; --muted: #9aa8a1; --line: #2e3833;
+    --git: #5cc7b2; --git-soft: #18322c; --person: #e3a24c; --person-soft: #33271a;
+    --machine: #a99ef0; --machine-soft: #25223a; --live: #ee7f9c; --live-soft: #3a1f27; --code-bg: #161c19;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121715; --surface: #1a211e; --ink: #e6ece8; --muted: #9aa8a1; --line: #2e3833;
+  --git: #5cc7b2; --git-soft: #18322c; --person: #e3a24c; --person-soft: #33271a;
+  --machine: #a99ef0; --machine-soft: #25223a; --live: #ee7f9c; --live-soft: #3a1f27; --code-bg: #161c19;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 15px; line-height: 1.55;
+}
+.wrap {
+  max-width: 1120px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 72px;
+  display: grid; gap: 56px;
+}
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2rem, 5vw, 3.3rem); font-weight: 800; line-height: 1.02; }
+h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+.muted { color: var(--muted); }
+.eyebrow { font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+section { display: grid; gap: 20px; min-width: 0; }
+.lede { font-size: 1.08rem; }
+
+/* ── cabecalho ── */
+header { display: grid; gap: 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 6px 0 0; padding: 0; list-style: none; }
+.key { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+.swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+.sw-git { background: var(--git); }
+.sw-person { background: var(--person); }
+.sw-machine { background: var(--machine); }
+.sw-live { background: repeating-linear-gradient(45deg, var(--live) 0 3px, transparent 3px 6px); border: 1px solid var(--live); }
+
+/* ── o mapa ── */
+.map { display: grid; gap: 14px; }
+.band {
+  border: 2px solid var(--git); background: var(--git-soft);
+  border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px;
+}
+.band-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.band-head h3 { color: var(--git); }
+.files { display: flex; flex-wrap: wrap; gap: 8px; }
+.file {
+  font-family: var(--mono); font-size: 0.8rem; padding: 4px 8px; border-radius: 5px;
+  background: var(--surface); border: 1px solid var(--line);
+}
+.flow {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;
+  text-align: center; font-family: var(--mono); font-size: 0.76rem; color: var(--muted);
+}
+.flow span { display: block; border-left: 2px dotted var(--git); height: 22px; width: 0; margin: 0 auto 4px; }
+.people { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.person {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 10px;
+  padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0;
+}
+.person-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.person-head h3 { font-size: 1.15rem; }
+.role { font-size: 0.82rem; color: var(--muted); }
+.layer { border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; }
+.layer-person { background: var(--person-soft); border-left: 4px solid var(--person); }
+.layer-machine { background: var(--machine-soft); border-left: 4px solid var(--machine); }
+.layer-title { font-family: var(--mono); font-size: 0.74rem; }
+.layer-person .layer-title { color: var(--person); }
+.layer-machine .layer-title { color: var(--machine); }
+.layer ul { margin: 0; padding-left: 18px; display: grid; gap: 2px; font-size: 0.88rem; }
+.live {
+  border: 2px dashed var(--live); background: var(--live-soft); border-radius: 10px;
+  padding: 12px 16px; display: grid; gap: 6px;
+}
+.live h3 { color: var(--live); }
+
+/* ── catalogo ── */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.filters button {
+  font: inherit; font-size: 0.86rem; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+}
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.filters button:focus-visible, .step:focus-visible { outline: 3px solid var(--git); outline-offset: 2px; }
+.catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.res {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 16px; display: grid; gap: 10px; align-content: start; min-width: 0;
+  border-top: 5px solid var(--where, var(--line));
+  transition: opacity .2s ease;
+}
+.res[data-where="git"] { --where: var(--git); }
+.res[data-where="person"] { --where: var(--person); }
+.res[data-where="mixed"] { --where: var(--git); box-shadow: inset 0 5px 0 -0px var(--git), inset 0 0 0 0 transparent; border-top-color: var(--person); }
+.res.dim { opacity: 0.28; }
+.res-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.owner { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-size: 0.72rem; font-family: var(--mono); padding: 2px 7px; border-radius: 4px;
+  border: 1px solid var(--line); color: var(--ink); background: var(--bg);
+}
+.rows { display: grid; gap: 6px; font-size: 0.87rem; }
+.row { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; }
+.row b { font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; padding-top: 2px; }
+.row .g { color: var(--git); }
+.row .p { color: var(--person); }
+.row .m { color: var(--machine); }
+.row .n { color: var(--live); }
+
+/* ── arquivos lado a lado ── */
+.files-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.panel { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); display: grid; align-content: start; min-width: 0; }
+.panel-head { padding: 10px 14px; display: grid; gap: 2px; }
+.panel-git .panel-head { background: var(--git-soft); border-bottom: 2px solid var(--git); }
+.panel-person .panel-head { background: var(--person-soft); border-bottom: 2px solid var(--person); }
+.panel-machine .panel-head { background: var(--machine-soft); border-bottom: 2px solid var(--machine); }
+.panel-head .path { font-family: var(--mono); font-size: 0.8rem; font-weight: 600; }
+.panel-head .who { font-size: 0.8rem; color: var(--muted); }
+pre {
+  margin: 0; padding: 12px 14px; background: var(--code-bg); overflow-x: auto;
+  font-family: var(--mono); font-size: 0.74rem; line-height: 1.55; color: var(--ink);
+}
+.panel pre + .panel-head { border-top: 1px solid var(--line); }
+.cmt { color: var(--muted); }
+.k-g { color: var(--git); font-weight: 600; }
+.k-p { color: var(--person); font-weight: 600; }
+.k-m { color: var(--machine); font-weight: 600; }
+.never {
+  padding: 10px 14px; font-size: 0.82rem; border-top: 1px dashed var(--line); color: var(--muted);
+}
+
+/* ── jornada ── */
+.journey { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; counter-reset: s; }
+.step {
+  width: 100%; text-align: left; font: inherit; font-size: 0.9rem; cursor: pointer;
+  display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: baseline;
+  padding: 8px 10px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--ink);
+}
+.step .n { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+.step[aria-selected="true"] { background: var(--surface); border-color: var(--line); }
+.step[aria-selected="true"] .n { color: var(--git); font-weight: 600; }
+.detail {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px;
+  display: grid; gap: 12px; min-width: 0; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px);
+}
+.detail .where { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; color: var(--surface); }
+.tag-git { background: var(--git); }
+.tag-person { background: var(--person); }
+.tag-machine { background: var(--machine); }
+.tag-live { background: var(--live); }
+.detail p { font-size: 0.95rem; }
+.detail .cmd { font-family: var(--mono); font-size: 0.8rem; background: var(--code-bg); padding: 8px 10px; border-radius: 6px; overflow-x: auto; white-space: pre; }
+
+/* ── frentes ── */
+.lanes-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+/* Uma tabela de verdade: o border-spacing faz o papel do gap, e as bordas externas dele somam ao padding */
+.lanes-scroll { padding: 6px 8px; }
+.lanes { width: 100%; min-width: 744px; table-layout: fixed; border-collapse: separate; border-spacing: 6px; }
+.lanes th, .lanes td { padding: 0; text-align: left; vertical-align: top; font-weight: 400; }
+.lanes td { height: 1px; }
+.lane-axis th { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.lane-axis th:first-child { width: 240px; }
+.lane-name { font-size: 0.82rem; }
+.lanes th.lane-name { padding: 6px 0; }
+.ln-p, .ln-g, .ln-n { font-weight: 600; }
+.ln-p { color: var(--person); }
+.ln-g { color: var(--git); }
+.ln-n { color: var(--live); }
+.blk { height: 100%; border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-weight: 600; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+.blk i { font-style: normal; font-weight: 400; font-family: var(--mono); font-size: 0.7rem; opacity: .8; }
+.blk-p { background: var(--person-soft); border: 1px solid var(--person); color: var(--ink); }
+.blk-g { background: var(--git-soft); border: 1px solid var(--git); color: var(--ink); }
+.blk-wait { background: var(--live-soft); border: 1px dashed var(--live); color: var(--ink); font-weight: 400; }
+.dist-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.dist-notes p { font-size: 0.92rem; }
+
+/* ── regras ── */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px; }
+.rule { border-left: 3px solid var(--ink); padding: 4px 0 4px 14px; display: grid; gap: 6px; }
+.rule p { font-size: 0.9rem; }
+.status-note { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+
+@media (max-width: 820px) {
+  .people, .files-grid, .flow { grid-template-columns: minmax(0, 1fr); }
+  .flow { display: none; }
+  .journey { grid-template-columns: minmax(0, 1fr); }
+  .detail { position: static; }
+}
+@media (prefers-reduced-motion: reduce) { .res { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">taskin · consciência situacional</span>
+  <h1>Onde mora cada recurso, e quem enxerga o quê</h1>
+  <p class="lede">Um projeto, três pessoas, várias máquinas e aparelhos. O que é do time viaja pelo Git. O que é de cada pessoa fica no computador dela. O que cada máquina sabe de si fica nela. E o que as máquinas de uma pessoa contam umas às outras ainda está sendo decidido.</p>
+  <ul class="legend" aria-label="Legenda das cores">
+    <li class="key"><span class="swatch sw-git"></span>Git: versionado, do time</li>
+    <li class="key"><span class="swatch sw-person"></span>Camada da pessoa: <code>~/.config/taskin/</code></li>
+    <li class="key"><span class="swatch sw-machine"></span>Estado da máquina: <code>~/.local/state/taskin/</code></li>
+    <li class="key"><span class="swatch sw-live"></span>Percepção viva entre máquinas (task-228, em aberto)</li>
+  </ul>
+</header>
+
+<!-- ───────────── O MAPA ───────────── -->
+<section aria-labelledby="mapa">
+  <span class="eyebrow">O exemplo</span>
+  <h2 id="mapa">O repositório <code>app-loja</code> e três taskins rodando</h2>
+  <p class="muted">Ana e Bruno programam, Carla é designer. Cada um tem o próprio taskin, rodando no próprio computador, sobre o mesmo repositório.</p>
+
+  <div class="map">
+    <div class="band">
+      <div class="band-head">
+        <h3>Repositório no Git (todos fazem pull e push)</h3>
+        <span class="eyebrow">pode ser público</span>
+      </div>
+      <div class="files">
+        <span class="file">.taskin.json → resources</span>
+        <span class="file">.gitattributes → merge=union</span>
+        <span class="file">.taskin/runs.jsonl</span>
+        <span class="file">.taskin/.taskin-users.json</span>
+        <span class="file">TASKS/*.md → - Requires:</span>
+      </div>
+      <p style="font-size:.9rem">Contas e servidores <b>do time</b>, por nome lógico. Restrições e classificação de dados. Ajustes gerais do plano. Histórico de execuções por <b>modelo</b>, sem conta e sem horário. Quem é do projeto e a competência que cada um aceitou divulgar.</p>
+    </div>
+
+    <div class="flow" aria-hidden="true">
+      <div><span></span>lê o time, libera o que é seu</div>
+      <div><span></span>lê o time, libera o que é seu</div>
+      <div><span></span>lê o time, responde pedidos</div>
+    </div>
+
+    <div class="people">
+      <article class="person">
+        <div class="person-head"><h3>Ana</h3><span class="role">programadora</span></div>
+        <div class="layer layer-person">
+          <span class="layer-title">~/.config/taskin/resources.json</span>
+          <ul>
+            <li>conta pessoal de IA, com modelo e cota ao lado</li>
+            <li>notebook (docker, android-sdk)</li>
+            <li>smartphone Android: avisa por push</li>
+            <li>smartwatch: avisa e percebe (no pulso)</li>
+            <li>liberados para <code>app-loja</code></li>
+          </ul>
+        </div>
+        <div class="layer layer-machine">
+          <span class="layer-title">~/.local/state/taskin/</span>
+          <ul>
+            <li><code>leases.json</code>: vagas reservadas agora</li>
+            <li><code>runs.jsonl</code>: qual conta cada execução usou, quando começou, quanto gastou</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="person">
+        <div class="person-head"><h3>Bruno</h3><span class="role">programador</span></div>
+        <div class="layer layer-person">
+          <span class="layer-title">~/.config/taskin/resources.json</span>
+          <ul>
+            <li>desktop com GPU</li>
+            <li>sem conta pessoal: usa a do time</li>
+            <li>o desktop está liberado só para outro repositório</li>
+          </ul>
+        </div>
+        <div class="layer layer-machine">
+          <span class="layer-title">~/.local/state/taskin/</span>
+          <ul>
+            <li>o consumo da conta do time, visto desta máquina</li>
+            <li>as execuções em aberto aqui</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="person">
+        <div class="person-head"><h3>Carla</h3><span class="role">designer</span></div>
+        <div class="layer layer-person">
+          <span class="layer-title">camada da Carla</span>
+          <ul>
+            <li>aceita pedidos de <code>review:design</code></li>
+            <li>até 5 por semana, dias úteis, 9h às 18h</li>
+            <li>canais: TV da sala à noite, taskinboard no trabalho</li>
+            <li>presença: notebook ocioso ou não</li>
+          </ul>
+        </div>
+        <div class="layer layer-machine">
+          <span class="layer-title">~/.local/state/taskin/</span>
+          <ul>
+            <li>os pedidos que chegaram e quanto ela levou para responder (só ela vê)</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+
+    <div class="live">
+      <h3>Entre as máquinas de uma mesma pessoa</h3>
+      <p style="font-size:.9rem">O <code>taskin daemon</code> (task-200) de cada máquina anuncia que está ligada e o que oferece, pela rede privada que a pessoa já tem. É assim que o notebook da Ana saberia que o desktop dela está livre. O transporte, a autenticação e o que entra no anúncio ainda estão em decisão na task-228. Nada disso passa pelo Git.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── CATALOGO ───────────── -->
+<section aria-labelledby="catalogo">
+  <span class="eyebrow">Os recursos</span>
+  <h2 id="catalogo">Cada recurso, os papéis dele e onde ele é configurado</h2>
+  <p class="muted">Um recurso é guardado uma vez só, com todos os papéis que cumpre: <b>onde</b> roda, <b>quem</b> executa, <b>com o quê</b>, por onde <b>avisar</b>, como <b>perceber</b> a pessoa.</p>
+  <fieldset class="filters" aria-label="Filtrar por dono">
+    <button type="button" id="f-all" data-f="all" aria-pressed="true">Todos</button>
+    <button type="button" id="f-time" data-f="time" aria-pressed="false">Do time</button>
+    <button type="button" id="f-ana" data-f="ana" aria-pressed="false">Ana</button>
+    <button type="button" id="f-bruno" data-f="bruno" aria-pressed="false">Bruno</button>
+    <button type="button" id="f-carla" data-f="carla" aria-pressed="false">Carla</button>
+  </fieldset>
+
+  <div class="catalog" id="catalog">
+    <article class="res" data-where="git" data-owner="time">
+      <div class="res-head"><h3>Conta de IA do time</h3><span class="owner">do time</span></div>
+      <div class="chips"><span class="chip">quem</span><span class="chip">concurrencyLimit: 2</span></div>
+      <div class="rows">
+        <div class="row"><b class="g">Git</b><span>Oferecida em <code>.taskin.json</code> com nome lógico, tipo e a <em>referência</em> do segredo (<code>env:CLAUDE_TIME</code>). Modelo, cota e custo em <code>scheduling.accesses</code>.</span></div>
+        <div class="row"><b class="p">Pessoa</b><span>O valor do segredo, na variável de ambiente de cada pessoa. Quem não tem o valor vê a conta como indisponível.</span></div>
+        <div class="row"><b class="m">Máquina</b><span>Declara capacidade, então cada execução <b>reserva</b> uma vaga em <code>leases.json</code>, com prazo, e devolve no fim.</span></div>
+      </div>
+    </article>
+
+    <article class="res" data-where="person" data-owner="ana">
+      <div class="res-head"><h3>Conta de IA pessoal da Ana</h3><span class="owner">Ana</span></div>
+      <div class="chips"><span class="chip">quem</span><span class="chip">sem limite declarado</span></div>
+      <div class="rows">
+        <div class="row"><b class="p">Pessoa</b><span>Declarada em <code>resources.json</code>, liberada para <code>app-loja</code>, com <code>scheduling</code> ao lado: modelo, cota, janela. O nome que ela deu à conta nunca vai ao repositório.</span></div>
+        <div class="row"><b class="m">Máquina</b><span>Sem capacidade declarada, não há reserva: é só escolhida e usada. O consumo com horário fica em <code>runs.jsonl</code> desta máquina, para a janela de cota.</span></div>
+        <div class="row"><b class="g">Git</b><span>Só o modelo e os tokens de cada execução, no histórico do time. Nada que diga qual conta era.</span></div>
+      </div>
+    </article>
+
+    <article class="res" data-where="git" data-owner="time">
+      <div class="res-head"><h3>Servidor de build</h3><span class="owner">do time</span></div>
+      <div class="chips"><span class="chip">onde</span><span class="chip">docker</span><span class="chip">gpu</span></div>
+      <div class="rows">
+        <div class="row"><b class="g">Git</b><span>Oferecido por nome lógico e capacidades. Se o projeto é de cliente, <code>restrictPersonalMachines</code> faz só os servidores do time valerem.</span></div>
+        <div class="row"><b class="p">Pessoa</b><span>Endereço e credencial de acesso, se e quando houver execução remota.</span></div>
+      </div>
+    </article>
+
+    <article class="res" data-where="person" data-owner="ana">
+      <div class="res-head"><h3>Notebook da Ana</h3><span class="owner">Ana</span></div>
+      <div class="chips"><span class="chip">onde</span><span class="chip">avisar</span><span class="chip">perceber</span></div>
+      <div class="rows">
+        <div class="row"><b class="p">Pessoa</b><span>Declarado na camada dela e liberado por repositório. Um repositório que ela clona não manda rodar nada nele sem essa liberação.</span></div>
+        <div class="row"><b class="m">Máquina</b><span>A sondagem diz o que ele tem agora (docker, android-sdk), com data. Fato velho expira.</span></div>
+        <div class="row"><b class="n">Entre</b><span>Anuncia às outras máquinas da Ana que está ligado (task-228).</span></div>
+      </div>
+    </article>
+
+    <article class="res" data-where="person" data-owner="ana">
+      <div class="res-head"><h3>Smartphone Android da Ana</h3><span class="owner">Ana</span></div>
+      <div class="chips"><span class="chip">avisar</span><span class="chip">onde</span></div>
+      <div class="rows">
+        <div class="row"><b class="p">Pessoa</b><span>Canal de aviso por push. Como aparelho de teste, entra pelas capacidades que declara, na camada dela.</span></div>
+        <div class="row"><b class="g">Git</b><span>Nada sobre o aparelho. A task só pede o requisito, como <code>android-sdk</code>.</span></div>
+      </div>
+    </article>
+
+    <article class="res" data-where="person" data-owner="ana">
+      <div class="res-head"><h3>Smartwatch da Ana</h3><span class="owner">Ana</span></div>
+      <div class="chips"><span class="chip">avisar</span><span class="chip">perceber</span></div>
+      <div class="rows">
+        <div class="row"><b class="p">Pessoa</b><span>Canal preferido quando ela não está no computador. Relógio no pulso conta como presença.</span></div>
+        <div class="row"><b class="m">Máquina</b><span>Se ela está presente e onde fica só aqui, nunca no repositório.</span></div>
+      </div>
+    </article>
+
+    <article class="res" data-where="person" data-owner="bruno">
+      <div class="res-head"><h3>Desktop com GPU do Bruno</h3><span class="owner">Bruno</span></div>
+      <div class="chips"><span class="chip">onde</span><span class="chip">gpu</span></div>
+      <div class="rows">
+        <div class="row"><b class="p">Pessoa</b><span>Liberado só para outro repositório. No quadro da Ana ele nem aparece: recurso pessoal não é de outra pessoa.</span></div>
+        <div class="row"><b class="g">Git</b><span>A task de <code>app-loja</code> que precisa de <code>gpu</code> vai para o servidor do time.</span></div>
+      </div>
+    </article>
+
+    <article class="res" data-where="mixed" data-owner="carla">
+      <div class="res-head"><h3>Carla, designer</h3><span class="owner">Carla</span></div>
+      <div class="chips"><span class="chip">quem</span><span class="chip">review:design</span></div>
+      <div class="rows">
+        <div class="row"><b class="g">Git</b><span>Está no registro de pessoas, com a competência que aceitou divulgar: <code>design</code>.</span></div>
+        <div class="row"><b class="p">Pessoa</b><span>Consentimento, carga semanal, horário e presença. O taskin <b>pede</b>, e ela pode recusar.</span></div>
+        <div class="row"><b class="m">Máquina</b><span>Quanto ela leva para responder serve para planejar e é visto só por ela, nunca como ranking.</span></div>
+      </div>
+    </article>
+
+    <article class="res" data-where="person" data-owner="carla">
+      <div class="res-head"><h3>Smart TV da Carla</h3><span class="owner">Carla</span></div>
+      <div class="chips"><span class="chip">avisar</span></div>
+      <div class="rows">
+        <div class="row"><b class="p">Pessoa</b><span>Um canal da Carla, na camada dela. Quem pede uma revisão não sabe que a TV existe: o pedido chega ao lado da Carla, e o taskin dela escolhe o canal pela preferência e pela presença.</span></div>
+        <div class="row"><b class="n">Entre</b><span>Como o pedido viaja da Ana até o taskin da Carla está em aberto (task-228), e o envio para a TV ainda não existe: hoje os avisos saem pelo Discord, pelo Telegram e pelo console.</span></div>
+      </div>
+    </article>
+
+    <article class="res" data-where="person" data-owner="ana">
+      <div class="res-head"><h3>taskinboard</h3><span class="owner">cada pessoa</span></div>
+      <div class="chips"><span class="chip">avisar</span><span class="chip">perceber</span></div>
+      <div class="rows">
+        <div class="row"><b class="m">Máquina</b><span>O quadro da situação na tela (task-230). O tempo ocioso do sistema diz se a pessoa está no computador.</span></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ───────────── ARQUIVOS ───────────── -->
+<section aria-labelledby="arquivos">
+  <span class="eyebrow">Os arquivos</span>
+  <h2 id="arquivos">O mesmo projeto, visto em cada lugar</h2>
+  <p class="muted">Exemplos no formato de hoje.</p>
+
+  <div class="files-grid">
+    <div class="panel panel-git">
+      <div class="panel-head"><span class="path">app-loja/.taskin.json</span><span class="who">versionado · igual para os três</span></div>
+<pre><span class="cmt">// so o time, so nomes logicos</span>
+"resources": {
+  "offers": [
+    { "kind": "access", "name": <span class="k-g">"conta-do-time"</span>,
+      "accessKind": "llm",
+      "secret": "env:CLAUDE_TIME",
+      "envVar": "ANTHROPIC_API_KEY",
+      "concurrencyLimit": 2 },
+    { "kind": "machine",
+      "name": <span class="k-g">"servidor-de-build"</span>,
+      "capabilities": ["docker", "gpu"] }
+  ],
+  <span class="k-g">"repository"</span>: "github.com/time/app-loja",
+  <span class="cmt">// so nomeia o historico; a confianca vem do origin</span>
+  <span class="k-g">"defaultSensitivity"</span>: "internal",
+  <span class="k-g">"dispatch"</span>: { "command": "sandcastle --task {task}" },
+  <span class="cmt">// so roda depois de taskin run --allow</span>
+  "restrictPersonalMachines": false,
+  "clearances": { "conta-do-time": "internal" },
+  "scheduling": {
+    "horizonHours": 24,
+    "accesses": {
+      <span class="k-g">"conta-do-time"</span>: { "model": "opus",
+        "quota": 2000000 }
+    },
+    "machines": { "servidor-de-build":
+      { "concurrency": 2 } }
+  }
+}</pre>
+      <div class="panel-head"><span class="path">app-loja/.taskin/runs.jsonl</span><span class="who">histórico do time</span></div>
+<pre>{"id":"run-7f3a","task":"42",
+ "estimated":3,"found":4,
+ "model":"opus","tokens":180000,
+ "iterations":3,"completed":true,
+ "reworked":false,"duration":1500000}
+<span class="cmt">// sem conta, sem horario do dia</span></pre>
+      <div class="panel-head"><span class="path">TASKS/task-042-…md</span><span class="who">a task pede, não aponta</span></div>
+<pre>- Requires: android-sdk, review:design
+- Sensitivity: internal
+<span class="cmt">// sem o campo: defaultSensitivity, ou internal</span></pre>
+    </div>
+
+    <div class="panel panel-person">
+      <div class="panel-head"><span class="path">~/.config/taskin/resources.json</span><span class="who">só no computador da Ana</span></div>
+<pre>{ "ana": [
+  { "declaration": {
+      "kind": "access",
+      "name": <span class="k-p">"claude-pessoal"</span>,
+      "accessKind": "llm",
+      "secret": "env:CLAUDE_PESSOAL",
+      "envVar": "ANTHROPIC_API_KEY",
+      "clearance": "internal" },
+    "releasedTo": ["github.com/time/app-loja"],
+    <span class="k-p">"scheduling"</span>: { "model": "sonnet",
+      "quota": 500000, "windowHours": 5 } },
+  { "declaration": {
+      "kind": "machine",
+      "name": <span class="k-p">"notebook"</span>,
+      "capabilities": ["docker",
+                       "android-sdk"] },
+    "releasedTo": ["github.com/time/app-loja"] }
+],
+  <span class="k-p">"dispatch"</span>: { "github.com/time/app-loja":
+    { "commandSha256": "9f2c…" } } }
+<span class="cmt">// taskin run --allow: o hash do comando aprovado</span></pre>
+      <div class="panel-head"><span class="path">~/.config/taskin/resources.json</span><span class="who">só no computador da Carla</span></div>
+<pre>{ <span class="k-p">"viewpoints"</span>: { "carla": {
+    "expertise": ["design"],
+    "weeklyLoad": 5,
+    "hours": { "weekdays": [1,2,3,4,5],
+      "fromMinute": 540, "toMinute": 1080,
+      "utcOffsetMinutes": -180 } } },
+  <span class="k-p">"channels"</span>: { "carla":
+    [<span class="k-p">"tv-da-sala"</span>, "taskinboard"] } }
+<span class="cmt">// taskin viewpoints consent · taskin channels prefer</span></pre>
+      <div class="never">Se o <code>.taskin.json</code> citar <code>claude-pessoal</code>, o <code>taskin plan</code> avisa no terminal e ignora a linha.</div>
+    </div>
+
+    <div class="panel panel-machine">
+      <div class="panel-head"><span class="path">~/.local/state/taskin/leases.json</span><span class="who">esta máquina · todos os repositórios</span></div>
+<pre>{ "sequence": 12,
+  "active": [
+    { "id": "lease-12",
+      "access": <span class="k-m">"repository:github.com/time/app-loja:conta-do-time"</span>,
+      "task": "42",
+      "expiresAt": 1793721010000,
+      "shared": false } ] }
+<span class="cmt">// so contas com concurrencyLimit</span></pre>
+      <div class="panel-head"><span class="path">~/.local/state/taskin/runs.jsonl</span><span class="who">esta máquina · todos os repositórios</span></div>
+<pre>{"state":"started","id":"run-7f3a",
+ "access":<span class="k-m">"personal:ana:claude-pessoal"</span>,
+ "startedAt":1793717410000}
+{"state":"finished","id":"run-7f3a",
+ "access":<span class="k-m">"personal:ana:claude-pessoal"</span>,
+ "tokens":180000,
+ "finishedAt":1793718910000}</pre>
+      <div class="never">Começou e não terminou = execução em aberto (some depois de 24 h). É daqui que sai a conta menos ocupada e o consumo da janela de cota.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── DISTRIBUICAO ───────────── -->
+<section aria-labelledby="frentes">
+  <span class="eyebrow">Um plano, várias frentes</span>
+  <h2 id="frentes">O taskin não usa um modelo por vez</h2>
+  <p class="muted">O escalonador não procura a conta mais ociosa e põe tudo nela. Ele distribui: cada task vai para a combinação de conta, modelo e máquina que a cobre pelo menor custo, e várias rodam ao mesmo tempo, até a capacidade de cada máquina e de cada conta. Uma conta pode oferecer mais de um modelo. Exemplo da manhã da Ana, em blocos de uma hora:</p>
+  <div class="lanes-scroll">
+    <table class="lanes" aria-label="Plano da manhã por frente de execução">
+      <thead>
+        <tr class="lane-axis">
+          <th scope="col">frente: máquina · conta · modelo</th>
+          <th scope="col">9h</th><th scope="col">10h</th><th scope="col">11h</th><th scope="col">12h</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row" class="lane-name">notebook · <b class="ln-p">conta pessoal</b> · sonnet</th>
+          <td><span class="blk blk-p">42 checkout <i>dif 3</i></span></td>
+          <td colspan="2"><span class="blk blk-p">45 testes da tela <i>dif 2</i></span></td>
+          <td></td>
+        </tr>
+        <tr>
+          <th scope="row" class="lane-name">notebook · <b class="ln-p">modelo local</b> · sem custo</th>
+          <td><span class="blk blk-p">46 docs <i>dif 1</i></span></td>
+          <td></td>
+          <td><span class="blk blk-p">49 changelog <i>dif 1</i></span></td>
+          <td></td>
+        </tr>
+        <tr>
+          <th scope="row" class="lane-name">servidor de build · <b class="ln-g">conta do time</b> · opus</th>
+          <td colspan="3"><span class="blk blk-g">43 pagamento <i>dif 5</i></span></td>
+          <td></td>
+        </tr>
+        <tr>
+          <th scope="row" class="lane-name">servidor de build · <b class="ln-g">conta do time</b> · sonnet <em>(2ª vaga)</em></th>
+          <td></td>
+          <td colspan="2"><span class="blk blk-g">44 api de frete <i>dif 3</i></span></td>
+          <td></td>
+        </tr>
+        <tr>
+          <th scope="row" class="lane-name"><b class="ln-n">esperando</b></th>
+          <td colspan="4"><span class="blk blk-wait">47 precisa de gpu: o desktop do Bruno não é liberado para este repositório · 48 é interativa: espera a Ana na frente do computador</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="dist-notes">
+    <p><b>Por que assim.</b> A 43 é difícil e vai ao modelo forte; a 46 é simples e vai ao modelo local, que não gasta cota. A conta do time aceita duas sessões (<code>concurrencyLimit: 2</code>), então a 44 entra na segunda vaga quando a máquina tem fôlego. O notebook roda duas frentes porque declara capacidade para dois lotes.</p>
+    <p><b>O que já existe e o que falta.</b> O <code>taskin plan</code> já escolhe conta, modelo e máquina (tasks 235 e 236), o <code>access run</code> segue a atribuição (237) e o <code>taskin run</code> lança as frentes em paralelo nesta máquina (238). Faltam o sandcastle como o comando de cada frente (227) e as frentes em outras máquinas da pessoa (240).</p>
+  </div>
+</section>
+
+<!-- ───────────── JORNADA ───────────── -->
+<section aria-labelledby="jornada">
+  <span class="eyebrow">Uma task atravessando tudo</span>
+  <h2 id="jornada">A task 42, a tela de checkout, do pedido à revisão</h2>
+  <div class="journey">
+    <div class="steps" role="tablist" aria-label="Passos da task 42" aria-orientation="vertical" id="steps"></div>
+    <div class="detail" role="tabpanel" id="detail" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ───────────── REGRAS ───────────── -->
+<section aria-labelledby="regras">
+  <span class="eyebrow">As regras por trás do mapa</span>
+  <h2 id="regras">Oito regras que decidem onde cada coisa fica</h2>
+  <div class="rules">
+    <div class="rule"><h3>O repositório oferece, o acesso é de cada um</h3><p>O Git diz que a conta do time existe. O segredo vem do ambiente de cada pessoa, nunca do arquivo.</p></div>
+    <div class="rule"><h3>Recurso pessoal só entra onde foi liberado</h3><p>Clonar um repositório não dá a ele o notebook de ninguém. A liberação é por repositório, no arquivo da pessoa.</p></div>
+    <div class="rule"><h3>O repositório também restringe</h3><p>Projeto de cliente pode dizer: só os servidores do time. A restrição vence a liberação.</p></div>
+    <div class="rule"><h3>Dado sensível só vai para conta liberada</h3><p>A task diz a sensibilidade com <code>- Sensitivity:</code>. Sem o campo, vale o padrão do repositório ou <code>internal</code>, nunca <code>public</code>. Sem conta liberada, a task fica adiada e o taskin diz por quê.</p></div>
+    <div class="rule"><h3>O comando só roda com a sua aprovação</h3><p>O comando do despacho é versionado e recebe o segredo da conta. Ele só roda depois de <code>taskin run --allow</code>, na primeira vez e sempre que o texto mudar. A aprovação fica com você.</p></div>
+    <div class="rule"><h3>A confiança não vem do arquivo versionado</h3><p>O histórico pode ser nomeado por <code>resources.repository</code>. Liberações e aprovações valem pelo <code>origin</code>, sem credenciais, ou pelo caminho da pasta. Um <code>.taskin.json</code> que declara o id de outro repositório não herda nada.</p></div>
+    <div class="rule"><h3>Pessoa é pedida, não usada</h3><p>Consentimento, carga, horário e presença são dela. O taskin agrupa pedidos e respeita o que ela declarou.</p></div>
+    <div class="rule"><h3>Reserva só onde há capacidade</h3><p>Conta que aceita várias sessões é só escolhida. Vaga com prazo e devolução existe quando o recurso declara limite.</p></div>
+  </div>
+  <p class="status-note">Pronto hoje: as duas camadas do inventário, a sondagem desta máquina, <code>taskin status</code>, <code>taskin plan</code> com vários modelos por conta, <code>taskin access run|status</code>, <code>taskin run</code> nesta máquina, o registro em duas metades e o consentimento e as preferências de canal na camada da pessoa, com <code>taskin viewpoints</code> e <code>taskin channels</code>. Os avisos já saem pelo Discord, pelo Telegram e pelo console (task-241), e o <code>taskin run</code> avisa ao fim de cada execução. O relógio depende da task-113, e a TV, de decidir como o aviso chega ao aparelho: esses dois canais do exemplo ainda não entregam. Em aberto: o sandcastle como comando de cada frente (227), o despacho para outras máquinas da pessoa (240), a percepção viva e o caminho de um pedido entre pessoas (228), os pesos e a presença (229) e o taskinboard (230).</p>
+</section>
+
+</div>
+
+<script>
+(() => {
+  // filtro do catalogo
+  const buttons = document.querySelectorAll('.filters button');
+  const cards = document.querySelectorAll('#catalog .res');
+  buttons.forEach((b) => {
+    b.addEventListener('click', () => {
+      const f = b.getAttribute('data-f');
+      buttons.forEach((x) => {
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      cards.forEach((c) => {
+        c.classList.toggle('dim', f !== 'all' && c.getAttribute('data-owner') !== f);
+      });
+    });
+  });
+
+  // jornada
+  const steps = [
+    { t: 'A task pede requisitos', where: ['git'],
+      p: 'Bruno cria a task 42 e escreve o que ela precisa, não onde roda. O arquivo vai para o Git, e os três taskins passam a ver a task depois do pull.',
+      cmd: '- Requires: android-sdk, review:design' },
+    { t: 'O plano soma as camadas da Ana', where: ['git', 'person', 'machine'],
+      p: 'No computador da Ana, o taskin junta o que o time oferece com o que ela liberou: servidor de build, notebook, conta do time e a conta pessoal. A taxa de conclusão vem do histórico do time por modelo; o consumo da janela, do estado desta máquina. Os ajustes da conta pessoal vêm do arquivo dela.',
+      cmd: 'taskin plan' },
+    { t: 'O plano distribui, o acesso segue', where: ['person', 'machine'],
+      p: 'O plano pôs a task 42 na conta pessoal da Ana, com o modelo rápido, no notebook. Ao mesmo tempo, a task 43, mais difícil, vai para a conta do time com o modelo forte no servidor de build. O taskin run lança as duas, cada uma com a conta e o modelo fixados (tasks 237 e 238). A conta pessoal não declara limite, então nada é reservado; a do time reserva uma vaga em leases.json. A conta menos ocupada só decide quando não há plano. O comando de cada task é o de resources.dispatch.command, que a Ana aprovou antes com taskin run --allow; se o texto mudar, nada sai até ela aprovar de novo.',
+      cmd: 'taskin run   →   access run --access claude-pessoal --model sonnet -- …' },
+    { t: 'A execução começa', where: ['machine'],
+      p: 'O começo é gravado no runs.jsonl desta máquina, com a conta e o horário. Outro processo da Ana, em qualquer repositório, agora vê essa conta como mais ocupada.',
+      cmd: '{"state":"started","access":"personal:ana:claude-pessoal",…}' },
+    { t: 'A etapa pede um olhar de design', where: ['git', 'live'],
+      p: 'O agente chega ao review:design e abre um pedido em vez de adivinhar. O registro de pessoas, que é versionado, diz quem aceitou divulgar a competência design: a Carla. O agente segue com a próxima task do lote enquanto espera.',
+      cmd: 'ViewpointRequested → reviewer: carla, expertise: design' },
+    { t: 'O aviso chega à TV da Carla', where: ['person', 'live'],
+      p: 'São 19h e a Carla está em casa. O taskin dela escolhe o canal pela preferência e pela presença: a TV da sala. A Ana nunca soube que a TV existe. Como o pedido sai da máquina da Ana e chega ao lado da Carla está em decisão na task-228, e o envio para a TV ainda não existe: hoje os avisos saem pelo Discord, pelo Telegram e pelo console (task-241).',
+      cmd: 'canal: tv-da-sala (camada da Carla)' },
+    { t: 'A Carla responde', where: ['git', 'machine'],
+      p: 'Ela aceita e entrega a opinião. A resposta volta registrada na task, como evidência. Quanto ela levou para responder fica só com ela.',
+      cmd: 'ViewpointAccepted → ViewpointDelivered' },
+    { t: 'O lote termina e a Ana está longe', where: ['person', 'machine'],
+      p: 'O notebook está ocioso e o relógio está no pulso da Ana. O aviso de que a task 42 terminou vai para o smartwatch dela, não para a tela vazia.',
+      cmd: 'canal: smartwatch (presença: no pulso)' },
+    { t: 'O histórico do time aprende', where: ['git', 'machine'],
+      p: 'Ao fechar, o consumo com horário fica nesta máquina, e o Git ganha uma linha só com o que calibra: modelo, dificuldade estimada e encontrada, tokens, iterações, duração. Depois do push, o plano do Bruno estima melhor as tasks de dificuldade 3 no modelo sonnet, sem saber de quem era a conta.',
+      cmd: '{"model":"sonnet","estimated":3,"found":4,"tokens":180000,…}' }
+  ];
+  const labels = { git: ['tag-git', 'Git'], person: ['tag-person', 'camada da pessoa'], machine: ['tag-machine', 'estado da máquina'], live: ['tag-live', 'entre máquinas'] };
+  const list = document.getElementById('steps');
+  const detail = document.getElementById('detail');
+
+  const show = (i) => {
+    const s = steps[i];
+    list.querySelectorAll('.step').forEach((el, j) => {
+      el.setAttribute('aria-selected', String(j === i));
+      el.tabIndex = j === i ? 0 : -1;
+    });
+    detail.innerHTML = '';
+    detail.setAttribute('aria-labelledby', `step-${i + 1}`);
+    const where = document.createElement('div');
+    where.className = 'where';
+    s.where.forEach((w) => {
+      const tag = document.createElement('span');
+      tag.className = `tag ${labels[w][0]}`;
+      tag.textContent = labels[w][1];
+      where.appendChild(tag);
+    });
+    const h = document.createElement('h3');
+    h.textContent = `${i + 1}. ${s.t}`;
+    const p = document.createElement('p');
+    p.textContent = s.p;
+    const c = document.createElement('div');
+    c.className = 'cmd';
+    c.textContent = s.cmd;
+    detail.append(where, h, p, c);
+  };
+
+  // As abas sao filhas diretas do tablist: um li no meio quebraria o papel de tab
+  steps.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'step';
+    b.id = `step-${i + 1}`;
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-controls', 'detail');
+    b.innerHTML = `<span class="n">${String(i + 1).padStart(2, '0')}</span><span></span>`;
+    b.lastChild.textContent = s.t;
+    b.addEventListener('click', () => {
+      show(i);
+    });
+    b.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      const n = (i + (e.key === 'ArrowDown' ? 1 : steps.length - 1)) % steps.length;
+      show(n);
+      document.getElementById(`step-${n + 1}`).focus();
+    });
+    list.appendChild(b);
+  });
+  show(0);
+})();
+</script>
+</body>
+</html>

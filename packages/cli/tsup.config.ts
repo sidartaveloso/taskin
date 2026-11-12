@@ -33,6 +33,7 @@ export default defineConfig({
     '@opentask/taskin-difficulty-estimator',
     '@opentask/taskin-file-system-provider',
     '@opentask/taskin-git-utils',
+    '@opentask/taskin-situation',
     '@opentask/taskin-task-manager',
     '@opentask/taskin-task-provider-pinia',
     '@opentask/taskin-task-server-mcp',

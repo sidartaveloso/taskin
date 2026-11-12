@@ -6,6 +6,7 @@
 - Group: movimentos-do-mascote
 - Priority: 14300
 - Difficulty: 4
+- Requires: interactive
 
 ## Description
 As acoes das tasks deste grupo so ganham sentido ligadas aos eventos do produto: comemorar quando uma task termina, preparar-se quando comeca, esbarrar numa bloqueada, apontar nos gestos da priorizacao, ouvir com o microfone, pular no mapa. Hoje o mascote vive na landing e no app do mascote, e nenhuma superficie entrega esses eventos a ele. Esta task decide onde e como, e liga. Fica fora dos lotes do sandcastle ate as decisoes estarem tomadas.
@@ -31,4 +32,4 @@ pnpm --filter @opentask/taskin-design-vue test
 ```
 
 ### Onde executar
-No Mac, interativo: comeca por decisoes de produto, que nao se tomam dentro do container. Depois de decidido, a ligacao pode virar tasks menores para o sandcastle.
+Interativo: começa por decisões de produto, que não se tomam dentro do container. Depois de decidido, a ligação pode virar tasks menores para o sandcastle.

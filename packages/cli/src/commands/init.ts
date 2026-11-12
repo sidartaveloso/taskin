@@ -8,6 +8,7 @@ import { existsSync, readdirSync, writeFileSync } from 'fs';
 import inquirer from 'inquirer';
 import { join } from 'path';
 import { colors, error, info, printHeader, success } from '../lib/colors.js';
+import { ensureRunsMergeAttribute, RUNS_MERGE_ATTRIBUTE } from '../lib/git-attributes.js';
 import { ensureProviderInstalled, isProviderInstalled } from '../lib/provider-installer/index.js';
 import { getAllProviders, getProviderById, type ProviderInfo } from '../lib/provider-registry/index.js';
 import { defineCommand } from './define-command/index.js';
@@ -140,6 +141,9 @@ async function initializeTaskin(options: InitOptions): Promise<void> {
   info('Creating configuration file...');
   writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf-8');
   success(`Created ${colors.highlight('.taskin.json')}`);
+  if (ensureRunsMergeAttribute(cwd)) {
+    success(`Declared ${colors.highlight(RUNS_MERGE_ATTRIBUTE)} in ${colors.highlight('.gitattributes')}`);
+  }
 
   // Propose creating first user
   if (process.env.CI !== 'true' && selectedProvider.id === 'fs') {

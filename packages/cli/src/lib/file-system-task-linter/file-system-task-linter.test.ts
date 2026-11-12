@@ -30,6 +30,66 @@ describe('FileSystemTaskLinter', () => {
     vi.restoreAllMocks();
   });
 
+  describe('Requires', () => {
+    let dir: string;
+    beforeEach(() => {
+      dir = mkdtempSync(join(tmpdir(), 'lint-requires-'));
+    });
+    afterEach(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+    const withRequires = (line: string) => TAREFA_VALIDA.replace('- Type: feat', `- Type: feat\n${line}`);
+
+    it('accepts capabilities and review:<competence>', async () => {
+      writeFileSync(join(dir, 'task-001-a.md'), withRequires('- Requires: docker, review:design'));
+      const result = await linter.lintDirectory(dir);
+      expect(result.errors).toHaveLength(0);
+      expect(result.warnings).toHaveLength(0);
+    });
+
+    it('errors on an unknown value, citing the task and the accepted values', async () => {
+      writeFileSync(join(dir, 'task-001-a.md'), withRequires('- Requires: dockr'));
+      const result = await linter.lintDirectory(dir);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]?.message).toContain('"dockr"');
+      expect(result.errors[0]?.message).toContain('task-001-a.md');
+      expect(result.errors[0]?.message).toContain('android-sdk');
+    });
+
+    it('warns on a repeated value', async () => {
+      writeFileSync(join(dir, 'task-001-a.md'), withRequires('- Requires: gpu, gpu'));
+      const result = await linter.lintDirectory(dir);
+      expect(result.errors).toHaveLength(0);
+      expect(result.warnings.map((w) => w.message).join()).toContain('Duplicate requirement "gpu"');
+    });
+  });
+
+  describe('Sensitivity', () => {
+    let dir: string;
+    beforeEach(() => {
+      dir = mkdtempSync(join(tmpdir(), 'lint-sensitivity-'));
+    });
+    afterEach(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+    const withSensitivity = (line: string) => TAREFA_VALIDA.replace('- Type: feat', `- Type: feat\n${line}`);
+
+    it('accepts public, internal and sensitive', async () => {
+      writeFileSync(join(dir, 'task-001-a.md'), withSensitivity('- Sensitivity: sensitive'));
+      const result = await linter.lintDirectory(dir);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('errors on an unknown value, citing the task and the accepted values', async () => {
+      writeFileSync(join(dir, 'task-001-a.md'), withSensitivity('- Sensitivity: sensitiv'));
+      const result = await linter.lintDirectory(dir);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]?.message).toContain('"sensitiv"');
+      expect(result.errors[0]?.message).toContain('task-001-a.md');
+      expect(result.errors[0]?.message).toContain('public, internal, sensitive');
+    });
+  });
+
   describe('validateMetadata', () => {
     it('should return no errors for valid metadata', () => {
       const metadata = {

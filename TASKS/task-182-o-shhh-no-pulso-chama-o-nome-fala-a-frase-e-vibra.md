@@ -6,6 +6,7 @@
 - Group: taskin-no-pulso
 - Priority: 6700
 - Difficulty: 2
+- Requires: android-sdk, jdk21, docker
 
 ## Description
 Quando o detector dispara, o mascote faz o shhh: humor e boca, voz pelo TextToSpeech dizendo o nome e a frase, e vibracao quando o som estiver desligado, seguindo o plano de resolveShhhReactionPlan portado para Kotlin com os casos compartilhados.
@@ -34,6 +35,6 @@ pnpm --filter @opentask/taskin-mascote-wear wear:lint
 ```
 
 ### Onde executar
-`maquina-linux` (rede privada): e a maquina com JDK 21 (asdf, Temurin), Android SDK em `~/Android/Sdk` (plataforma 36, build-tools 36, emulador e a imagem Wear OS 36 no AVD `taskin_wear`, redondo 454x454) e Docker nativo. O Mac nao tem Android SDK. Abrir um shell interativo (o `.bashrc` so exporta `ANDROID_HOME` e o PATH do SDK em shell interativo).
+Uma máquina Linux com Docker nativo, JDK 21 e Android SDK (plataforma 36, build-tools 36, emulador com imagem Wear OS 36 num AVD redondo 454x454). Abrir um shell interativo (o `.bashrc` só exporta `ANDROID_HOME` e o PATH do SDK em shell interativo).
 
 Fechar a task so com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).

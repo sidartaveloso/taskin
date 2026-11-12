@@ -164,6 +164,63 @@ export const UserSchema = z.object({
 });
 
 /**
+ * Closed list of capabilities a task may require of the machine that runs it.
+ * @public
+ */
+export const CAPABILITIES = [
+  'docker',
+  'android-sdk',
+  'jdk21',
+  'gpu',
+  'interactive',
+  'microphone',
+  'visual-review',
+] as const;
+
+/** A capability a task requires. @public */
+export type Capability = (typeof CAPABILITIES)[number];
+
+/**
+ * How much a task shows the model, from least to most restricted. An account
+ * only receives a task whose sensitivity its clearance covers.
+ * @public
+ */
+export const SENSITIVITIES = ['public', 'internal', 'sensitive'] as const;
+
+/** A task's sensitivity. @public */
+export type Sensitivity = (typeof SENSITIVITIES)[number];
+
+/** Runtime validator for a task's sensitivity. @public */
+export const SensitivitySchema = z.enum(SENSITIVITIES);
+
+/**
+ * Reads a sensitivity written by hand. What cannot be understood counts as the
+ * most restricted value: a typo must never open the data to more accounts.
+ * @public
+ */
+export function parseSensitivity(raw: string): Sensitivity {
+  const parsed = SensitivitySchema.safeParse(raw.trim().toLowerCase());
+  return parsed.success ? parsed.data : 'sensitive';
+}
+
+/** Pattern of a point-of-view request: `review:<competence>` (e.g. `review:design`). @public */
+export const REVIEW_REQUIREMENT_PATTERN = /^review:[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * Whether a value is accepted in a task's `Requires` field: a closed capability
+ * or a `review:<competence>` request.
+ * @public
+ */
+export function isValidRequirement(value: string): boolean {
+  return (CAPABILITIES as readonly string[]).includes(value) || REVIEW_REQUIREMENT_PATTERN.test(value);
+}
+
+/** One entry of a task's `requires`. @public */
+export const RequirementSchema = z.string().refine(isValidRequirement, {
+  message: `Invalid requirement. Valid: ${CAPABILITIES.join(', ')} or review:<competence>`,
+});
+
+/**
  * Runtime validator for task objects.
  * Use this to parse and validate task data from external sources (API, database, forms).
  *
@@ -204,6 +261,10 @@ export const TaskSchema = z.object({
   groupId: GroupIdSchema.optional(),
   /** Perceived difficulty from 1 (trivial) to 5 (very hard) */
   difficulty: z.number().int().min(1).max(5).optional(),
+  /** What the task needs to run: closed capabilities or `review:<competence>` requests */
+  requires: z.array(RequirementSchema).optional(),
+  /** How much the task shows the model. Absent: the repository default applies, never `public` by itself */
+  sensitivity: SensitivitySchema.optional(),
 });
 
 /**

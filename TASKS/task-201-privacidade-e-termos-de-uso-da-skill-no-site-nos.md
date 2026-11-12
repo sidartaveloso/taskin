@@ -6,6 +6,7 @@
 - Group: alexa-etapa-3
 - Priority: 8700
 - Difficulty: 2
+- Requires: interactive
 
 ## Description
 As páginas que a Amazon exige para publicar, dizendo o que passa pela nuvem da OpenTask e da Amazon, o que não é guardado e como sair.
@@ -21,6 +22,6 @@ As páginas que a Amazon exige para publicar, dizendo o que passa pela nuvem da 
 Depende da task-199: o texto descreve o que o serviço realmente faz.
 
 ### Onde executar
-Escrita no Mac e revisão com o usuário. Não é task para o sandcastle.
+Escrita interativa e revisão com o usuário. Não é task para o sandcastle.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).

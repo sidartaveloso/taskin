@@ -1,5 +1,7 @@
 import type { Command } from 'commander';
+import { registerAccessCommand } from './access.js';
 import { configCommand } from './config.js';
+import { registerDaemonCommand } from './daemon.js';
 import { dashboardCommand } from './dashboard.js';
 import { difficultyCommand } from './difficulty.js';
 import { estimateCommand } from './estimate.js';
@@ -14,12 +16,16 @@ import { mcpServerCommand } from './mcp-server.js';
 import { createCommand } from './new.js';
 import { notifyCommand } from './notify.js';
 import { pauseCommand } from './pause.js';
+import { planCommand } from './plan.js';
 import { prioritizeCommand } from './prioritize.js';
 import { priorityCommand } from './priority.js';
 import { reviewCommand } from './review.js';
+import { registerRunCommand } from './run.js';
 import { startCommand } from './start.js';
 import { statsCommand } from './stats.js';
+import { statusCommand } from './status.js';
 import { registerUserCommand } from './user.js';
+import { registerViewpointsCommand } from './viewpoints.js';
 
 /**
  * Registra todos os comandos no programa.
@@ -36,6 +42,8 @@ export function registerCommands(program: Command): void {
   pauseCommand(program);
   reviewCommand(program);
   finishCommand(program);
+  statusCommand(program);
+  planCommand(program);
   statsCommand(program);
   configCommand(program);
   registerExportCommand(program);
@@ -48,6 +56,10 @@ export function registerCommands(program: Command): void {
   dashboardCommand(program);
   mcpInstallCommand(program);
   mcpServerCommand(program);
+  registerDaemonCommand(program);
   notifyCommand(program);
   registerUserCommand(program);
+  registerAccessCommand(program);
+  registerRunCommand(program);
+  registerViewpointsCommand(program);
 }

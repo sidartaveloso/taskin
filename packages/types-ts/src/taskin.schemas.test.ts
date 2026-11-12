@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AutomationConfigSchema,
+  CAPABILITIES,
   CodeMetricsSchema,
   CommitSizeSchema,
   ContributionMetricsSchema,
@@ -8,6 +9,7 @@ import {
   EngagementMetricsSchema,
   GitCommitSchema,
   GroupSchema,
+  isValidRequirement,
   LABS_FEATURES,
   LabsFeatureSchema,
   MascotConfigSchema,
@@ -21,10 +23,13 @@ import {
   NotificationResultSchema,
   NotificationTelegramConfigSchema,
   parseGroupId,
+  parseSensitivity,
   parseTaskId,
   RefactoringMetricsSchema,
   resolveMascotNoiseSettings,
   resolveShhhReactionPlan,
+  SENSITIVITIES,
+  SensitivitySchema,
   StatsPeriodSchema,
   StatsQuerySchema,
   TASK_STATUSES,
@@ -32,6 +37,7 @@ import {
   TaskIdSchema,
   TaskinConfigSchema,
   TaskSchema,
+  TaskSchema as TaskSchemaForRequires,
   TaskStatsSchema,
   TaskStatusSchema,
   TaskTypeSchema,
@@ -1428,5 +1434,53 @@ describe('TaskinConfigSchema - labs', () => {
     expect(LABS_FEATURES).toContain('estimate');
     expect(LabsFeatureSchema.safeParse('estimate').success).toBe(true);
     expect(LabsFeatureSchema.safeParse('nope').success).toBe(false);
+  });
+});
+
+describe('sensitivity', () => {
+  it('a task aceita os tres valores e fica sem o campo quando ele nao vem', () => {
+    expect(SENSITIVITIES).toEqual(['public', 'internal', 'sensitive']);
+    expect(SensitivitySchema.parse('internal')).toBe('internal');
+    expect(() => SensitivitySchema.parse('secreto')).toThrow();
+  });
+
+  it('o valor lido de um arquivo se normaliza, e o que nao se entende vale como sensitive', () => {
+    expect(parseSensitivity(' Internal ')).toBe('internal');
+    expect(parseSensitivity('sensitiv')).toBe('sensitive');
+    expect(parseSensitivity('')).toBe('sensitive');
+  });
+});
+
+describe('requires', () => {
+  const base = { id: '001', title: 't', status: 'pending', type: 'feat', createdAt: '2026-01-01T00:00:00Z' };
+
+  it('lists the closed capabilities', () => {
+    expect(CAPABILITIES).toEqual([
+      'docker',
+      'android-sdk',
+      'jdk21',
+      'gpu',
+      'interactive',
+      'microphone',
+      'visual-review',
+    ]);
+  });
+
+  it('accepts capabilities and review:<competence>', () => {
+    expect(isValidRequirement('docker')).toBe(true);
+    expect(isValidRequirement('review:design')).toBe(true);
+    expect(isValidRequirement('review:electronics')).toBe(true);
+  });
+
+  it('rejects unknown values', () => {
+    expect(isValidRequirement('dockr')).toBe(false);
+    expect(isValidRequirement('review:')).toBe(false);
+    expect(isValidRequirement('review:Design')).toBe(false);
+  });
+
+  it('validates requires on the TaskSchema, optional', () => {
+    expect(TaskSchemaForRequires.safeParse(base).success).toBe(true);
+    expect(TaskSchemaForRequires.safeParse({ ...base, requires: ['docker', 'review:design'] }).success).toBe(true);
+    expect(TaskSchemaForRequires.safeParse({ ...base, requires: ['nope'] }).success).toBe(false);
   });
 });

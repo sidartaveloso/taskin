@@ -6,6 +6,7 @@
 - Group: alexa-etapa-1
 - Priority: 7200
 - Difficulty: 2
+- Requires: interactive, microphone
 
 ## Description
 Criar a skill customizada em pt-BR, ver a skill responder no Echo, guardar pedidos reais da Alexa como exemplos e registrar quais ferramentas de teste da Amazon funcionam em pt-BR.
@@ -24,6 +25,6 @@ Criar a skill customizada em pt-BR, ver a skill responder no Echo, guardar pedid
 Primeira task do grupo `taskin-na-alexa`. A decisão inteira está em `docs/RDT/taskin-na-alexa.md`.
 
 ### Onde executar
-Manual, no Mac, com o Echo por perto: precisa da conta da Amazon e de alguém falando. Não é task para o sandcastle.
+Manual e interativo, com um Echo por perto: precisa da conta da Amazon e de alguém falando. Não é task para o sandcastle.
 
 Fechar a task só com o checklist marcado e, ao lado de cada item, o que o comprova (nome do teste, comando, arquivo).

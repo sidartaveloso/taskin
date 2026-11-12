@@ -88,6 +88,7 @@
     "@opentask/taskin-difficulty-estimator": "workspace:*",
     "@opentask/taskin-file-system-provider": "workspace:*",
     "@opentask/taskin-git-utils": "workspace:*",
+    "@opentask/taskin-situation": "workspace:*",
     "@opentask/taskin-task-manager": "workspace:*",
     "@opentask/taskin-task-server-mcp": "workspace:*",
     "@opentask/taskin-task-server-ws": "workspace:*",
