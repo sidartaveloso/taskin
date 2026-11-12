@@ -1,6 +1,6 @@
 # 🧩 Task 248 — O lint --fix deixa link quebrado em arquivo nao versionado ao renumerar task repetida
 
-- Status: in-progress
+- Status: in-review
 - Type: fix
 - Assignee: sidartaveloso
 
