@@ -1,5 +1,13 @@
 # @opentask/taskin
 
+## 3.0.18
+
+### Patch Changes
+
+- Updated dependencies [0faeaaa]
+- Updated dependencies [dc83ef8]
+  - taskin@5.2.0
+
 ## 3.0.17
 
 ### Patch Changes
