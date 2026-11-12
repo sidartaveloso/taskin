@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>body { margin: 0; } [hidden] { display: none !important; }</style>
+<style>body { margin: 0; } [hidden] { display: none; }</style>
 <!-- A pagina do artefato "Mapa dos recursos do taskin" (task-234): o mapa de onde mora cada recurso. Abre direto no navegador. -->
 <title>Mapa dos recursos do taskin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -71,7 +71,7 @@ section { display: grid; gap: 20px; min-width: 0; }
 
 /* ── cabecalho ── */
 header { display: grid; gap: 16px; }
-.legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 6px 0 0; padding: 0; list-style: none; }
 .key { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; }
 .swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; }
 .sw-git { background: var(--git); }
@@ -119,7 +119,7 @@ header { display: grid; gap: 16px; }
 .live h3 { color: var(--live); }
 
 /* ── catalogo ── */
-.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
 .filters button {
   font: inherit; font-size: 0.86rem; padding: 6px 12px; border-radius: 999px; cursor: pointer;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
@@ -200,15 +200,20 @@ pre {
 
 /* ── frentes ── */
 .lanes-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-.lanes { min-width: 760px; display: grid; gap: 6px; padding: 12px 14px; }
-.lane-row { display: grid; grid-template-columns: 240px repeat(4, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
-.lane-axis span { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
-.lane-name { font-size: 0.82rem; padding: 6px 0; }
-.lane-name .p, .lane-name .g, .lane-name .n { font-weight: 600; }
-.lane-name .p { color: var(--person); }
-.lane-name .g { color: var(--git); }
-.lane-name .n { color: var(--live); }
-.blk { border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-weight: 600; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+/* Uma tabela de verdade: o border-spacing faz o papel do gap, e as bordas externas dele somam ao padding */
+.lanes-scroll { padding: 6px 8px; }
+.lanes { width: 100%; min-width: 744px; table-layout: fixed; border-collapse: separate; border-spacing: 6px; }
+.lanes th, .lanes td { padding: 0; text-align: left; vertical-align: top; font-weight: 400; }
+.lanes td { height: 1px; }
+.lane-axis th { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.lane-axis th:first-child { width: 240px; }
+.lane-name { font-size: 0.82rem; }
+.lanes th.lane-name { padding: 6px 0; }
+.ln-p, .ln-g, .ln-n { font-weight: 600; }
+.ln-p { color: var(--person); }
+.ln-g { color: var(--git); }
+.ln-n { color: var(--live); }
+.blk { height: 100%; border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-weight: 600; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
 .blk i { font-style: normal; font-weight: 400; font-family: var(--mono); font-size: 0.7rem; opacity: .8; }
 .blk-p { background: var(--person-soft); border: 1px solid var(--person); color: var(--ink); }
 .blk-g { background: var(--git-soft); border: 1px solid var(--git); color: var(--ink); }
@@ -239,12 +244,12 @@ pre {
   <span class="eyebrow">taskin · consciência situacional</span>
   <h1>Onde mora cada recurso, e quem enxerga o quê</h1>
   <p class="lede">Um projeto, três pessoas, várias máquinas e aparelhos. O que é do time viaja pelo Git. O que é de cada pessoa fica no computador dela. O que cada máquina sabe de si fica nela. E o que as máquinas de uma pessoa contam umas às outras ainda está sendo decidido.</p>
-  <div class="legend" aria-label="Legenda das cores">
-    <span class="key"><span class="swatch sw-git"></span>Git: versionado, do time</span>
-    <span class="key"><span class="swatch sw-person"></span>Camada da pessoa: <code>~/.config/taskin/</code></span>
-    <span class="key"><span class="swatch sw-machine"></span>Estado da máquina: <code>~/.local/state/taskin/</code></span>
-    <span class="key"><span class="swatch sw-live"></span>Percepção viva entre máquinas (task-228, em aberto)</span>
-  </div>
+  <ul class="legend" aria-label="Legenda das cores">
+    <li class="key"><span class="swatch sw-git"></span>Git: versionado, do time</li>
+    <li class="key"><span class="swatch sw-person"></span>Camada da pessoa: <code>~/.config/taskin/</code></li>
+    <li class="key"><span class="swatch sw-machine"></span>Estado da máquina: <code>~/.local/state/taskin/</code></li>
+    <li class="key"><span class="swatch sw-live"></span>Percepção viva entre máquinas (task-228, em aberto)</li>
+  </ul>
 </header>
 
 <!-- ───────────── O MAPA ───────────── -->
@@ -348,13 +353,13 @@ pre {
   <span class="eyebrow">Os recursos</span>
   <h2 id="catalogo">Cada recurso, os papéis dele e onde ele é configurado</h2>
   <p class="muted">Um recurso é guardado uma vez só, com todos os papéis que cumpre: <b>onde</b> roda, <b>quem</b> executa, <b>com o quê</b>, por onde <b>avisar</b>, como <b>perceber</b> a pessoa.</p>
-  <div class="filters" role="group" aria-label="Filtrar por dono">
+  <fieldset class="filters" aria-label="Filtrar por dono">
     <button type="button" id="f-all" data-f="all" aria-pressed="true">Todos</button>
     <button type="button" id="f-time" data-f="time" aria-pressed="false">Do time</button>
     <button type="button" id="f-ana" data-f="ana" aria-pressed="false">Ana</button>
     <button type="button" id="f-bruno" data-f="bruno" aria-pressed="false">Bruno</button>
     <button type="button" id="f-carla" data-f="carla" aria-pressed="false">Carla</button>
-  </div>
+  </fieldset>
 
   <div class="catalog" id="catalog">
     <article class="res" data-where="git" data-owner="time">
@@ -568,40 +573,44 @@ pre {
   <h2 id="frentes">O taskin não usa um modelo por vez</h2>
   <p class="muted">O escalonador não procura a conta mais ociosa e põe tudo nela. Ele distribui: cada task vai para a combinação de conta, modelo e máquina que a cobre pelo menor custo, e várias rodam ao mesmo tempo, até a capacidade de cada máquina e de cada conta. Uma conta pode oferecer mais de um modelo. Exemplo da manhã da Ana, em blocos de uma hora:</p>
   <div class="lanes-scroll">
-    <div class="lanes" role="table" aria-label="Plano da manhã por frente de execução">
-      <div class="lane-row lane-axis" role="row">
-        <span role="columnheader">frente: máquina · conta · modelo</span>
-        <span role="columnheader">9h</span><span role="columnheader">10h</span><span role="columnheader">11h</span><span role="columnheader">12h</span>
-      </div>
-      <div class="lane-row" role="row">
-        <span class="lane-name" role="rowheader">notebook · <b class="p">conta pessoal</b> · sonnet</span>
-        <span class="blk blk-p" role="cell" style="grid-column: span 1">42 checkout <i>dif 3</i></span>
-        <span class="blk blk-p" role="cell" style="grid-column: span 2">45 testes da tela <i>dif 2</i></span>
-        <span role="cell"></span>
-      </div>
-      <div class="lane-row" role="row">
-        <span class="lane-name" role="rowheader">notebook · <b class="p">modelo local</b> · sem custo</span>
-        <span class="blk blk-p" role="cell">46 docs <i>dif 1</i></span>
-        <span role="cell"></span>
-        <span class="blk blk-p" role="cell">49 changelog <i>dif 1</i></span>
-        <span role="cell"></span>
-      </div>
-      <div class="lane-row" role="row">
-        <span class="lane-name" role="rowheader">servidor de build · <b class="g">conta do time</b> · opus</span>
-        <span class="blk blk-g" role="cell" style="grid-column: span 3">43 pagamento <i>dif 5</i></span>
-        <span role="cell"></span>
-      </div>
-      <div class="lane-row" role="row">
-        <span class="lane-name" role="rowheader">servidor de build · <b class="g">conta do time</b> · sonnet <em>(2ª vaga)</em></span>
-        <span role="cell"></span>
-        <span class="blk blk-g" role="cell" style="grid-column: span 2">44 api de frete <i>dif 3</i></span>
-        <span role="cell"></span>
-      </div>
-      <div class="lane-row" role="row">
-        <span class="lane-name" role="rowheader"><b class="n">esperando</b></span>
-        <span class="blk blk-wait" role="cell" style="grid-column: span 4">47 precisa de gpu: o desktop do Bruno não é liberado para este repositório · 48 é interativa: espera a Ana na frente do computador</span>
-      </div>
-    </div>
+    <table class="lanes" aria-label="Plano da manhã por frente de execução">
+      <thead>
+        <tr class="lane-axis">
+          <th scope="col">frente: máquina · conta · modelo</th>
+          <th scope="col">9h</th><th scope="col">10h</th><th scope="col">11h</th><th scope="col">12h</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row" class="lane-name">notebook · <b class="ln-p">conta pessoal</b> · sonnet</th>
+          <td><span class="blk blk-p">42 checkout <i>dif 3</i></span></td>
+          <td colspan="2"><span class="blk blk-p">45 testes da tela <i>dif 2</i></span></td>
+          <td></td>
+        </tr>
+        <tr>
+          <th scope="row" class="lane-name">notebook · <b class="ln-p">modelo local</b> · sem custo</th>
+          <td><span class="blk blk-p">46 docs <i>dif 1</i></span></td>
+          <td></td>
+          <td><span class="blk blk-p">49 changelog <i>dif 1</i></span></td>
+          <td></td>
+        </tr>
+        <tr>
+          <th scope="row" class="lane-name">servidor de build · <b class="ln-g">conta do time</b> · opus</th>
+          <td colspan="3"><span class="blk blk-g">43 pagamento <i>dif 5</i></span></td>
+          <td></td>
+        </tr>
+        <tr>
+          <th scope="row" class="lane-name">servidor de build · <b class="ln-g">conta do time</b> · sonnet <em>(2ª vaga)</em></th>
+          <td></td>
+          <td colspan="2"><span class="blk blk-g">44 api de frete <i>dif 3</i></span></td>
+          <td></td>
+        </tr>
+        <tr>
+          <th scope="row" class="lane-name"><b class="ln-n">esperando</b></th>
+          <td colspan="4"><span class="blk blk-wait">47 precisa de gpu: o desktop do Bruno não é liberado para este repositório · 48 é interativa: espera a Ana na frente do computador</span></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
   <div class="dist-notes">
     <p><b>Por que assim.</b> A 43 é difícil e vai ao modelo forte; a 46 é simples e vai ao modelo local, que não gasta cota. A conta do time aceita duas sessões (<code>concurrencyLimit: 2</code>), então a 44 entra na segunda vaga quando a máquina tem fôlego. O notebook roda duas frentes porque declara capacidade para dois lotes.</p>
@@ -614,7 +623,7 @@ pre {
   <span class="eyebrow">Uma task atravessando tudo</span>
   <h2 id="jornada">A task 42, a tela de checkout, do pedido à revisão</h2>
   <div class="journey">
-    <ol class="steps" role="tablist" aria-label="Passos da task 42" id="steps"></ol>
+    <div class="steps" role="tablist" aria-label="Passos da task 42" aria-orientation="vertical" id="steps"></div>
     <div class="detail" role="tabpanel" id="detail" aria-live="polite"></div>
   </div>
 </section>
@@ -639,22 +648,24 @@ pre {
 </div>
 
 <script>
-(function () {
+(() => {
   // filtro do catalogo
-  var buttons = document.querySelectorAll('.filters button');
-  var cards = document.querySelectorAll('#catalog .res');
-  buttons.forEach(function (b) {
-    b.addEventListener('click', function () {
-      var f = b.getAttribute('data-f');
-      buttons.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
-      cards.forEach(function (c) {
+  const buttons = document.querySelectorAll('.filters button');
+  const cards = document.querySelectorAll('#catalog .res');
+  buttons.forEach((b) => {
+    b.addEventListener('click', () => {
+      const f = b.getAttribute('data-f');
+      buttons.forEach((x) => {
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      cards.forEach((c) => {
         c.classList.toggle('dim', f !== 'all' && c.getAttribute('data-owner') !== f);
       });
     });
   });
 
   // jornada
-  var steps = [
+  const steps = [
     { t: 'A task pede requisitos', where: ['git'],
       p: 'Bruno cria a task 42 e escreve o que ela precisa, não onde roda. O arquivo vai para o Git, e os três taskins passam a ver a task depois do pull.',
       cmd: '- Requires: android-sdk, review:design' },
@@ -683,56 +694,57 @@ pre {
       p: 'Ao fechar, o consumo com horário fica nesta máquina, e o Git ganha uma linha só com o que calibra: modelo, dificuldade estimada e encontrada, tokens, iterações, duração. Depois do push, o plano do Bruno estima melhor as tasks de dificuldade 3 no modelo sonnet, sem saber de quem era a conta.',
       cmd: '{"model":"sonnet","estimated":3,"found":4,"tokens":180000,…}' }
   ];
-  var labels = { git: ['tag-git', 'Git'], person: ['tag-person', 'camada da pessoa'], machine: ['tag-machine', 'estado da máquina'], live: ['tag-live', 'entre máquinas'] };
-  var list = document.getElementById('steps');
-  var detail = document.getElementById('detail');
+  const labels = { git: ['tag-git', 'Git'], person: ['tag-person', 'camada da pessoa'], machine: ['tag-machine', 'estado da máquina'], live: ['tag-live', 'entre máquinas'] };
+  const list = document.getElementById('steps');
+  const detail = document.getElementById('detail');
 
-  function show(i) {
-    var s = steps[i];
-    list.querySelectorAll('.step').forEach(function (el, j) {
+  const show = (i) => {
+    const s = steps[i];
+    list.querySelectorAll('.step').forEach((el, j) => {
       el.setAttribute('aria-selected', String(j === i));
       el.tabIndex = j === i ? 0 : -1;
     });
     detail.innerHTML = '';
-    var where = document.createElement('div');
+    detail.setAttribute('aria-labelledby', `step-${i + 1}`);
+    const where = document.createElement('div');
     where.className = 'where';
-    s.where.forEach(function (w) {
-      var tag = document.createElement('span');
-      tag.className = 'tag ' + labels[w][0];
+    s.where.forEach((w) => {
+      const tag = document.createElement('span');
+      tag.className = `tag ${labels[w][0]}`;
       tag.textContent = labels[w][1];
       where.appendChild(tag);
     });
-    var h = document.createElement('h3');
-    h.textContent = (i + 1) + '. ' + s.t;
-    var p = document.createElement('p');
+    const h = document.createElement('h3');
+    h.textContent = `${i + 1}. ${s.t}`;
+    const p = document.createElement('p');
     p.textContent = s.p;
-    var c = document.createElement('div');
+    const c = document.createElement('div');
     c.className = 'cmd';
     c.textContent = s.cmd;
     detail.append(where, h, p, c);
-  }
+  };
 
-  steps.forEach(function (s, i) {
-    var li = document.createElement('li');
-    var b = document.createElement('button');
+  // As abas sao filhas diretas do tablist: um li no meio quebraria o papel de tab
+  steps.forEach((s, i) => {
+    const b = document.createElement('button');
     b.type = 'button';
     b.className = 'step';
-    b.id = 'step-' + (i + 1);
+    b.id = `step-${i + 1}`;
     b.setAttribute('role', 'tab');
     b.setAttribute('aria-controls', 'detail');
-    b.innerHTML = '<span class="n">' + String(i + 1).padStart(2, '0') + '</span><span></span>';
+    b.innerHTML = `<span class="n">${String(i + 1).padStart(2, '0')}</span><span></span>`;
     b.lastChild.textContent = s.t;
-    b.addEventListener('click', function () { show(i); });
-    b.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        var n = (i + (e.key === 'ArrowDown' ? 1 : steps.length - 1)) % steps.length;
-        show(n);
-        document.getElementById('step-' + (n + 1)).focus();
-      }
+    b.addEventListener('click', () => {
+      show(i);
     });
-    li.appendChild(b);
-    list.appendChild(li);
+    b.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      const n = (i + (e.key === 'ArrowDown' ? 1 : steps.length - 1)) % steps.length;
+      show(n);
+      document.getElementById(`step-${n + 1}`).focus();
+    });
+    list.appendChild(b);
   });
   show(0);
 })();
