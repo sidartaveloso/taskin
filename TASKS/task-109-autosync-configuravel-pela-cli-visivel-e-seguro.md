@@ -17,6 +17,8 @@ O autoSync nao funciona e nao da para ver nem configurar: o taskin init grava au
 - [ ] `pushAfterCreate` publica o commit da task na `defaultBranch`, e nao `git push origin <defaultBranch>` da branch local homonima (commit via worktree ou `commitTaskStatusChangeOnBranch`, que `start`/`finish` ja usam)
 - [ ] `GitService.push` deixa de engolir o erro (`catch { return false }`): sem a mensagem, `isNonFastForwardError` nunca casa e o retry nunca acontece (`packages/git-utils/src/git-service.ts`)
 - [ ] Conferir `finish` e o `squashTaskFileOnDone`, que fazem `checkout` de branch, sob a mesma pergunta: o que acontece com a branch em que o usuario esta
+- [ ] O `new` so diz "Task committed and pushed to remote" quando o commit da task esta no remoto; hoje a mensagem sai sempre que o `autoSync` esta ativo
+- [ ] A numeracao enxerga tambem as tasks de branches locais ainda nao publicadas (ou reserva o numero no remoto ao criar): ler so `origin/<defaultBranch>` nao basta
 
 ### Configuracao e visibilidade
 - [ ] `taskin config --default-branch <branch> --origin-branch <branch> --auto-sync on|off`
@@ -36,3 +38,5 @@ O autoSync nao funciona e nao da para ver nem configurar: o taskin init grava au
 **Por que nao basta configurar.** Com `defaultBranch: develop`, rodar `taskin new` no `main` faria `git rebase origin/develop` no `main` e depois `git push origin develop` da `develop` local — publicando o que estivesse nela, e nao a task nova.
 
 **`hookConfig.baseBranch` nao entra aqui.** So substitui `{{baseBranch}}` nos hooks do `taskin review`; nao participa do sync.
+
+**Ocorrencia de 2026-11-12, com o taskin 5.0.0 publicado.** Num projeto em `autopilot`, com `autoSync: true` e `defaultBranch: develop`, o `taskin new` rodou numa branch de feature criada da `develop`. Fez o commit da task nessa branch e rodou `git push origin develop`; como a `develop` local estava igual a remota, o push nao enviou nada, retornou sucesso, e a CLI imprimiu "Task committed and pushed to remote". A task nunca chegou ao remoto. Depois, numa segunda branch criada da mesma `develop`, o `new` deu a task nova o mesmo numero da anterior, que so existia na primeira branch, sem push. Neste repositorio aconteceu o mesmo por outro caminho: o checkout principal, numa branch de revisao atrasada em relacao a `develop`, criou uma task 231 que ja existia na `develop` (renumerada para 250).
