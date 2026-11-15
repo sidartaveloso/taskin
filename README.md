@@ -277,6 +277,15 @@ The remote `defaultBranch` is the shared status board: anyone running `taskin li
 - **`hooks.review.post` with `git push origin HEAD`** publishes the *work* branch, not the status. It is still the way to push the work for review; status publication no longer depends on it.
 - **The squash on `done`** (`originBranch`) still checks out the `originBranch`, so from a worktree it needs that branch not to be open in another checkout.
 
+### Tasks from other worktrees
+
+`taskin list` and `taskin new` also read the tasks this machine already has outside the current worktree. Implemented in [TASKS/task-251](./TASKS/task-251-o-list-e-o-new-enxergam-as-tasks-das-outras.md).
+
+- **Sources, in precedence order:** the worktree that has the `defaultBranch` open (its folder, so a task not yet committed counts), the local `defaultBranch`, `origin/<defaultBranch>` as of the last fetch (read with `ls-tree`/`cat-file`), then the other worktrees. Without a configured `defaultBranch`, it is detected from local refs.
+- **No network by default.** Only with `autoSync` and a `defaultBranch` does `list` run `git fetch origin <defaultBranch>` first; a failed fetch is a warning, and the listing goes on with what is local.
+- **`list`** adds the tasks that exist only elsewhere, marked `⇠ <source>` (and `source` in `--json`). When the same task says something else in another source, or one number belongs to two different files, it warns instead of choosing (on stderr with `--json`).
+- **`new`** numbers past the highest id across all sources, so two worktrees do not create the same number.
+
 ## 📦 Packages
 
 ### Core Packages

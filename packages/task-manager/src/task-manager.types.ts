@@ -14,6 +14,12 @@ export interface CreateTaskOptions {
   description?: string;
   /** Optional assignee user ID or name */
   assignee?: string;
+  /**
+   * Ids already taken outside what the provider reads, such as tasks in other
+   * local worktrees or in the default branch. A provider that numbers by
+   * `max + 1` numbers past them; one whose store assigns the id ignores them.
+   */
+  reservedTaskIds?: readonly string[];
 }
 
 /**

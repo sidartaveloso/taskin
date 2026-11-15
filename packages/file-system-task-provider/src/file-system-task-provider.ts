@@ -521,64 +521,83 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
     const tasks: TaskFile[] = [];
 
     for (const file of taskFiles) {
-      // `task-foo.md` passa pelo filtro acima mas nao tem id: nao e uma task.
-      // Antes virava uma task fantasma de id 'unknown' — e duas delas colidiam.
-      const taskId = extractTaskIdFromFileName(file);
-      if (!taskId) continue;
-
       const filePath = path.join(this.tasksDirectory, file);
       const content = await fs.readFile(filePath, 'utf-8');
-
-      // Extract title from first heading
-      const title = content.match(TITLE_PATTERN)?.[1]?.trim() ?? 'Untitled';
-
-      const {
-        status: statusMatch,
-        type: typeMatch,
-        assignee: assigneeMatch,
-        priority: priorityMatch,
-        group: groupMatch,
-        groupName: groupNameMatch,
-        difficulty: difficultyMatch,
-        requires: requiresMatch,
-        sensitivity: sensitivityMatch,
-      } = this.readInlineMetadata(content);
-
-      // Resolve assignee from registry
-      let assignee: User | undefined;
-      if (assigneeMatch) {
-        const assigneeValue = assigneeMatch.trim();
-        assignee = this.userRegistry.resolveUser(assigneeValue);
-        if (!assignee) {
-          assignee = this.userRegistry.createTemporaryUser(assigneeValue);
-        }
-      }
-
-      const task: TaskFile = {
-        id: parseTaskId(taskId),
-        title,
-        content,
-        // See findTask: keeps `description` usable by Task-only consumers.
-        description: content,
-        filePath,
-        assignee,
-        status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
-        type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
-        createdAt: new Date().toISOString(),
-        ...parsePrioritizationFields(
-          priorityMatch,
-          groupMatch,
-          groupNameMatch,
-          difficultyMatch,
-          requiresMatch,
-          sensitivityMatch,
-        ),
-      };
-
-      tasks.push(task);
+      const task = this.parseTaskFile(file, content, filePath);
+      if (task) tasks.push(task);
     }
 
     return tasks;
+  }
+
+  /** The tasks folder this provider reads, as an absolute path. */
+  getTasksDirectory(): string {
+    return path.resolve(this.tasksDirectory);
+  }
+
+  /**
+   * Reads a task file's content with the same rules as `getAllTasks`.
+   *
+   * Exists for content that does not come from this folder: another worktree
+   * or a git ref (task-251). `undefined` when the name carries no id.
+   */
+  parseTaskFile(
+    file: string,
+    content: string,
+    filePath: string = path.join(this.tasksDirectory, file),
+  ): TaskFile | undefined {
+    // `task-foo.md` passa pelo filtro do getAllTasks mas nao tem id: nao e uma task.
+    // Antes virava uma task fantasma de id 'unknown' — e duas delas colidiam.
+    const taskId = extractTaskIdFromFileName(file);
+    if (!taskId) return undefined;
+
+    // Extract title from first heading
+    const title = content.match(TITLE_PATTERN)?.[1]?.trim() ?? 'Untitled';
+
+    const {
+      status: statusMatch,
+      type: typeMatch,
+      assignee: assigneeMatch,
+      priority: priorityMatch,
+      group: groupMatch,
+      groupName: groupNameMatch,
+      difficulty: difficultyMatch,
+      requires: requiresMatch,
+      sensitivity: sensitivityMatch,
+    } = this.readInlineMetadata(content);
+
+    // Resolve assignee from registry
+    let assignee: User | undefined;
+    if (assigneeMatch) {
+      const assigneeValue = assigneeMatch.trim();
+      assignee = this.userRegistry.resolveUser(assigneeValue);
+      if (!assignee) {
+        assignee = this.userRegistry.createTemporaryUser(assigneeValue);
+      }
+    }
+
+    const task: TaskFile = {
+      id: parseTaskId(taskId),
+      title,
+      content,
+      // See findTask: keeps `description` usable by Task-only consumers.
+      description: content,
+      filePath,
+      assignee,
+      status: (statusMatch ? statusMatch.trim().toLowerCase() : 'pending') as TaskStatus,
+      type: (typeMatch ? typeMatch.trim().toLowerCase() : 'feat') as TaskType,
+      createdAt: new Date().toISOString(),
+      ...parsePrioritizationFields(
+        priorityMatch,
+        groupMatch,
+        groupNameMatch,
+        difficultyMatch,
+        requiresMatch,
+        sensitivityMatch,
+      ),
+    };
+
+    return task;
   }
 
   private registryIdOrAsTyped(nameOrId: string): string {
@@ -599,9 +618,10 @@ export class FileSystemTaskProvider implements ITaskProvider<TaskFile> {
 
     const i18n = getI18n(detectedLocale);
 
-    const taskNumbers = allTasks
-      .map((task) => {
-        const digits = task.id.match(/^(\d+)$/)?.[1];
+    // Os ids reservados vem de outras worktrees e da branch padrao (task-251).
+    const taskNumbers = [...allTasks.map((task) => task.id), ...(options.reservedTaskIds ?? [])]
+      .map((id) => {
+        const digits = id.match(/^(\d+)$/)?.[1];
         return digits ? parseInt(digits, 10) : 0;
       })
       .filter((num) => !Number.isNaN(num));

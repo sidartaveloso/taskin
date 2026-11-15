@@ -15,7 +15,9 @@ import {
 } from '@opentask/taskin-task-manager';
 import type { ListTasksOptions, Task, TaskStatus, TaskType } from '@opentask/taskin-types';
 import path from 'path';
-import { colors, printHeader } from '../lib/colors.js';
+import { colors, printHeader, warning } from '../lib/colors.js';
+import { ConfigManager } from '../lib/config-manager.js';
+import { mergeOtherTasks, readOtherTasks, sourceLabel } from '../lib/other-task-sources/index.js';
 import { probeSituation } from '../lib/probe-situation.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
@@ -126,6 +128,22 @@ function textoDeOnde(lugar: TaskPlacement | undefined): string {
   return lugar.runsHere ? `✓ ${colors.success('aqui')}` : `✗ ${colors.error(`falta ${lugar.missing.join(', ')}`)}`;
 }
 
+/**
+ * A branch padrao e se vale ir a rede: so com autoSync e `defaultBranch`.
+ * Um projeto sem configuracao legivel segue sem rede, com a branch detectada.
+ */
+function sincronia(projectRoot: string): { defaultBranch?: string; fetch: boolean } {
+  try {
+    const behavior = new ConfigManager(projectRoot).getAutomationBehavior();
+    return {
+      ...(behavior.defaultBranch && { defaultBranch: behavior.defaultBranch }),
+      fetch: behavior.autoSync === true && !!behavior.defaultBranch,
+    };
+  } catch {
+    return { fetch: false };
+  }
+}
+
 async function listTasks(filter: string | undefined, options: ListTasksOptions): Promise<void> {
   // Check if project is initialized
   requireTaskinProject();
@@ -142,10 +160,22 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
   }
 
   // Find TASKS directory
-  const { provider: taskProvider } = await resolveTaskProvider();
+  const { provider: taskProvider, projectRoot } = await resolveTaskProvider();
 
-  // Get all tasks
-  const tasks = await taskProvider.getAllTasks();
+  /*
+   * As tasks desta worktree, mais as que so existem nas outras worktrees e nas
+   * refs locais da branch padrao (task-251). Sem autoSync nada vai a rede.
+   * Avisos vao para o stderr no `--json`, para nao quebrar o `JSON.parse`.
+   */
+  const localTasks = await taskProvider.getAllTasks();
+  const outras = await readOtherTasks(taskProvider, { cwd: process.cwd(), ...sincronia(projectRoot) });
+  const combinadas = mergeOtherTasks(localTasks, outras.tasks);
+  for (const aviso of [...outras.warnings, ...combinadas.notices]) {
+    if (comoJson) console.error(aviso);
+    else warning(aviso);
+  }
+  const origem = new Map(combinadas.extra.map((e) => [String(e.task.id), sourceLabel(e.source)]));
+  const tasks = [...localTasks, ...combinadas.extra.map((e) => e.task)];
 
   if (tasks.length === 0 && !comoJson) {
     console.log(colors.warning('No tasks found in TASKS/ directory'));
@@ -168,7 +198,10 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
    * `list` nao toca a maquina.
    */
   const onde = options.where === true ? await ondeRodam(filteredTasks) : undefined;
-  const resumir = (t: Task) => ({ ...summarizeTask(t), ...onde?.get(String(t.id)) });
+  const resumir = (t: Task) => {
+    const fonte = origem.get(String(t.id));
+    return { ...summarizeTask(t), ...onde?.get(String(t.id)), ...(fonte !== undefined && { source: fonte }) };
+  };
 
   if (comoJson) {
     /*
@@ -213,9 +246,9 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
 
   if (emArvore) {
     const { nomes, pais } = await dadosDosGrupos(taskProvider);
-    imprimirNos(agruparTarefas(filteredTasks, nomes, totaisPorGrupo(tasks), pais), 0, onde);
+    imprimirNos(agruparTarefas(filteredTasks, nomes, totaisPorGrupo(tasks), pais), 0, onde, origem);
   } else {
-    for (const task of filteredTasks) imprimirTarefa(task, 0, onde);
+    for (const task of filteredTasks) imprimirTarefa(task, 0, onde, origem);
   }
 
   console.log();
@@ -238,20 +271,31 @@ async function listTasks(filter: string | undefined, options: ListTasksOptions):
   console.log();
 }
 
-function imprimirTarefa(task: Task, nivel: number, onde?: Map<string, TaskPlacement>): void {
+function imprimirTarefa(
+  task: Task,
+  nivel: number,
+  onde?: Map<string, TaskPlacement>,
+  origem?: Map<string, string>,
+): void {
   const statusColor = getStatusColor(task.status);
   const typeColor = getTypeColor(task.type);
+  const fonte = origem?.get(String(task.id));
 
   console.log(
-    `${'  '.repeat(nivel)}${colors.info(task.id.padEnd(15))} ${statusColor(task.status.padEnd(15))} ${typeColor(task.type.padEnd(12))} ${colors.secondary((task.assignee?.name || 'unassigned').padEnd(15))} ${colors.normal(task.title)}${onde ? `  ${textoDeOnde(onde.get(String(task.id)))}` : ''}`,
+    `${'  '.repeat(nivel)}${colors.info(task.id.padEnd(15))} ${statusColor(task.status.padEnd(15))} ${typeColor(task.type.padEnd(12))} ${colors.secondary((task.assignee?.name || 'unassigned').padEnd(15))} ${colors.normal(task.title)}${fonte ? colors.secondary(`  ⇠ ${fonte}`) : ''}${onde ? `  ${textoDeOnde(onde.get(String(task.id)))}` : ''}`,
   );
 }
 
 /** Os nos na ordem da fila; um grupo vira cabecalho, e o que tem dentro desce um nivel. */
-function imprimirNos(nos: readonly NoDaListagem[], nivel: number, onde?: Map<string, TaskPlacement>): void {
+function imprimirNos(
+  nos: readonly NoDaListagem[],
+  nivel: number,
+  onde?: Map<string, TaskPlacement>,
+  origem?: Map<string, string>,
+): void {
   for (const no of nos) {
     if (no.kind === 'task') {
-      imprimirTarefa(no.task, nivel, onde);
+      imprimirTarefa(no.task, nivel, onde, origem);
       continue;
     }
 
@@ -259,7 +303,7 @@ function imprimirNos(nos: readonly NoDaListagem[], nivel: number, onde?: Map<str
     console.log(
       `${'  '.repeat(nivel)}${colors.highlight(`\u25B8 ${no.groupName ?? no.groupId} (${no.groupId})`)}${escondidas}`,
     );
-    imprimirNos(no.items, nivel + 1, onde);
+    imprimirNos(no.items, nivel + 1, onde, origem);
   }
 }
 
