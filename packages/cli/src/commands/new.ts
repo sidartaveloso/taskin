@@ -11,6 +11,7 @@ import path from 'path';
 import { resolveCiSkipTag } from '../lib/ci-skip-tag/index.js';
 import { colors, error, info, printHeader, success, warning } from '../lib/colors.js';
 import { ConfigManager } from '../lib/config-manager.js';
+import { readOtherTasks } from '../lib/other-task-sources/index.js';
 import { requireTaskinProject } from '../lib/project-check.js';
 import { resolveTaskProvider } from '../lib/provider-factory/index.js';
 import { defineCommand } from './define-command/index.js';
@@ -231,11 +232,25 @@ export async function createTask(options: CreateTaskOptions, gitService?: IGitSe
    * arquivos e semantica de sistema de arquivos, e num provider remoto o id vem
    * do proprio store (o numero da issue). O comando so consome o que voltou.
    */
+  /*
+   * Os ids das outras worktrees e das refs locais da branch padrao entram na
+   * conta, para duas worktrees nao criarem o mesmo numero (task-251). O fetch
+   * do autoSync ja aconteceu no syncBeforeCreate; aqui nada vai a rede.
+   */
+  const outras = await readOtherTasks(taskProvider, {
+    cwd: process.cwd(),
+    ...(behavior.defaultBranch && { defaultBranch: behavior.defaultBranch }),
+    fetch: false,
+  });
+  for (const aviso of outras.warnings) warning(aviso);
+  const reservedTaskIds = outras.tasks.map((t) => String(t.task.id));
+
   let created: Awaited<ReturnType<typeof taskProvider.createTask>>;
   try {
     created = await taskProvider.createTask({
       title: options.title,
       type: taskType,
+      ...(reservedTaskIds.length > 0 && { reservedTaskIds }),
       ...(options.description && { description: options.description }),
       ...(options.user && { assignee: options.user }),
     });
