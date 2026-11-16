@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { afterAll, describe, expect, it } from 'vitest';
 import { verificarCargaEsm, versaoNaoPublicada } from './verificador-de-carga-esm';
@@ -43,7 +43,9 @@ async function criarRepo(pacotes: PacoteDeTeste[], ignorados: string[] = []): Pr
  * publicada — que pode nao ser o do fonte de hoje.
  */
 async function publicar(pacote: PacoteDeTeste): Promise<string> {
-  const pasta = await mkdtemp(join(tmpdir(), 'publicado-no-registry-'));
+  // `realpath` porque no macOS o tmpdir e um link: sem ele, o pnpm ve o destino
+  // fora da pasta e devolve caminho absoluto — e o teste so quebraria no Linux.
+  const pasta = await realpath(await mkdtemp(join(tmpdir(), 'publicado-no-registry-')));
   criados.push(pasta);
   await writeFile(join(pasta, 'package.json'), JSON.stringify({ version: '1.0.0', ...pacote.manifesto }));
   for (const [relativo, conteudo] of Object.entries(pacote.arquivos)) {
@@ -51,7 +53,8 @@ async function publicar(pacote: PacoteDeTeste): Promise<string> {
     await writeFile(join(pasta, relativo), conteudo);
   }
   const { stdout } = await executar('pnpm', ['pack', '--pack-destination', pasta, '--json'], { cwd: pasta });
-  return (JSON.parse(stdout.slice(stdout.indexOf('{'))) as { filename: string }).filename;
+  // Com o destino igual a pasta do pacote, o pnpm devolve so o nome do arquivo.
+  return resolve(pasta, (JSON.parse(stdout.slice(stdout.indexOf('{'))) as { filename: string }).filename);
 }
 
 /** Um registry de mentira: so conhece os `nome@versao` que o teste publicou. */
