@@ -4,17 +4,24 @@ import { mkdir, mkdtemp, readdir, realpath, rm, symlink, writeFile } from 'node:
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
-import { extrairIgnorados, extrairManifesto, lerJson } from '../listador-de-pacotes/manifesto';
-import type { FormaDeCarga, ItemDeCarga, RelatorioDeCarga } from './verificador-de-carga-esm.types';
+import { extrairIgnorados, extrairManifesto, extrairVersao, lerJson } from '../listador-de-pacotes/manifesto';
+import type {
+  BuscarPublicado,
+  FormaDeCarga,
+  ItemDeCarga,
+  OpcoesDeCarga,
+  OrigemDoPacote,
+  RelatorioDeCarga,
+} from './verificador-de-carga-esm.types';
 
 const executar = promisify(execFile);
 
 /** Tempo para um pacote carregar; um CLI que espera stdin nao segura o release. */
 const PRAZO_DE_CARGA_MS = 30_000;
 
-type Alvo = { nome: string; pasta: string };
+type Alvo = { nome: string; versao: string | undefined; pasta: string };
 
-type Instalado = { alvo: Alvo; pasta: string; manifesto: Record<string, unknown> };
+type Instalado = { alvo: Alvo; origem: OrigemDoPacote; pasta: string; manifesto: Record<string, unknown> };
 
 function ehObjeto(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
@@ -30,9 +37,10 @@ async function listarAlvos(raizDoRepo: string): Promise<Alvo[]> {
   for (const pasta of pastas) {
     if (!pasta.isDirectory()) continue;
     const caminho = join(raizDoRepo, 'packages', pasta.name);
-    const manifesto = extrairManifesto(await lerJson(join(caminho, 'package.json')).catch(() => undefined));
+    const json = await lerJson(join(caminho, 'package.json')).catch(() => undefined);
+    const manifesto = extrairManifesto(json);
     if (!manifesto || manifesto.privado || ignorados.has(manifesto.nome)) continue;
-    alvos.push({ nome: manifesto.nome, pasta: caminho });
+    alvos.push({ nome: manifesto.nome, versao: extrairVersao(json), pasta: caminho });
   }
   return alvos.sort((a, b) => a.nome.localeCompare(b.nome));
 }
@@ -52,12 +60,66 @@ async function empacotar(alvo: Alvo, destino: string): Promise<string> {
   }
 }
 
-async function instalar(alvo: Alvo, tarball: string, consumidor: string): Promise<Instalado> {
+/**
+ * `npm pack nome@versao` baixa do registry o tarball como foi publicado. O npm
+ * responde `E404` para o pacote que nao existe e `ETARGET` para a versao que
+ * nao existe; qualquer outra falha (rede, credencial) nao e "nao publicado".
+ */
+export function versaoNaoPublicada(saidaDeErro: string): boolean {
+  return /\b(E404|ETARGET)\b/.test(saidaDeErro);
+}
+
+/**
+ * O que o `changeset publish` faz antes de publicar: pergunta ao registry se a
+ * versao ja existe. Se existe, ele nao publica de novo — e e esse tarball, e nao
+ * o local, que todo consumidor vai instalar.
+ *
+ * Falha fechado: sem conseguir perguntar ao registry, a verificacao nao tem
+ * como saber de onde o pacote vem, e nao finge que sabe.
+ */
+export const buscarNoRegistry: BuscarPublicado = async ({ nome, versao }, destino) => {
+  try {
+    const { stdout } = await executar('npm', ['pack', `${nome}@${versao}`, '--pack-destination', destino, '--json']);
+    const [{ filename }] = JSON.parse(stdout.slice(stdout.indexOf('['))) as [{ filename: string }];
+    // O npm devolve `escopo-nome-1.0.0.tgz`; em versoes antigas, com a `/` do escopo.
+    return join(destino, filename.replace(/^@/, '').replace('/', '-'));
+  } catch (erro) {
+    const { stderr, message } = erro as { stderr?: string; message?: string };
+    if (versaoNaoPublicada(`${stderr ?? ''}${message ?? ''}`)) return undefined;
+    throw new Error(
+      `nao foi possivel consultar ${nome}@${versao} no registry: ${(stderr ?? message ?? String(erro)).trim().split('\n')[0]}`,
+    );
+  }
+};
+
+/**
+ * Do registry, quando a versao ja esta publicada; do `pnpm pack` local, quando
+ * nao esta ou quando ninguem perguntou ao registry.
+ */
+async function obterTarball(
+  alvo: Alvo,
+  destino: string,
+  buscarPublicado: BuscarPublicado | undefined,
+): Promise<{ tarball: string; origem: OrigemDoPacote }> {
+  const publicado =
+    buscarPublicado && alvo.versao
+      ? await buscarPublicado({ nome: alvo.nome, versao: alvo.versao }, destino)
+      : undefined;
+  return publicado
+    ? { tarball: publicado, origem: 'registry' }
+    : { tarball: await empacotar(alvo, destino), origem: 'tarball_local' };
+}
+
+async function instalar(
+  alvo: Alvo,
+  { tarball, origem }: { tarball: string; origem: OrigemDoPacote },
+  consumidor: string,
+): Promise<Instalado> {
   const pasta = join(consumidor, 'node_modules', alvo.nome);
   await mkdir(pasta, { recursive: true });
   await executar('tar', ['-xzf', tarball, '-C', pasta, '--strip-components=1']);
   const manifesto = await lerJson(join(pasta, 'package.json'));
-  return { alvo, pasta, manifesto: ehObjeto(manifesto) ? manifesto : {} };
+  return { alvo, origem, pasta, manifesto: ehObjeto(manifesto) ? manifesto : {} };
 }
 
 function dependenciasDeclaradas(manifesto: Record<string, unknown>): string[] {
@@ -135,11 +197,12 @@ async function carregar(instalado: Instalado, consumidor: string): Promise<ItemD
   return Promise.all(
     formasDeCarga(instalado).map(async ({ forma, argumentos }): Promise<ItemDeCarga> => {
       const pacote = instalado.alvo.nome;
+      const { origem } = instalado;
       try {
         await executar(process.execPath, argumentos, { cwd: consumidor, timeout: PRAZO_DE_CARGA_MS });
-        return { tipo: 'ok', pacote, forma };
+        return { tipo: 'ok', pacote, origem, forma };
       } catch (erro) {
-        return { tipo: 'falha', pacote, forma, erro: resumirErro(erro, consumidor) };
+        return { tipo: 'falha', pacote, origem, forma, erro: resumirErro(erro, consumidor) };
       }
     }),
   );
@@ -158,8 +221,15 @@ async function carregar(instalado: Instalado, consumidor: string): Promise<ItemD
  * juntos num consumidor isolado, fora do workspace, e cada um e carregado pelo
  * nome, com `node --input-type=module -e "await import('<pacote>')"`, ou pelo
  * bin com `--version`. Exige os `dist` construidos.
+ *
+ * O `taskin@5.2.0` saiu importando `CAPABILITIES` de `@opentask/taskin-types` e
+ * fixando a `2.7.0`, publicada antes de o nome existir: o fonte do pacote mudou
+ * e a versao nao subiu. Com os tarballs locais lado a lado, a carga passava — o
+ * `taskin-types` daqui tinha o export. Por isso, com `buscarPublicado`, o pacote
+ * cuja versao ja esta no registry vem do registry: e o que o `changeset publish`
+ * deixa la, e o que o consumidor instala.
  */
-export async function verificarCargaEsm(raizDoRepo: string): Promise<RelatorioDeCarga> {
+export async function verificarCargaEsm(raizDoRepo: string, opcoes: OpcoesDeCarga = {}): Promise<RelatorioDeCarga> {
   const alvos = await listarAlvos(raizDoRepo);
   const temporaria = await realpath(await mkdtemp(join(tmpdir(), 'carga-esm-')));
   try {
@@ -170,13 +240,19 @@ export async function verificarCargaEsm(raizDoRepo: string): Promise<RelatorioDe
     const internos = new Set(alvos.map((alvo) => alvo.nome));
     const instalados: Instalado[] = [];
     for (const alvo of alvos) {
-      const instalado = await instalar(alvo, await empacotar(alvo, temporaria), consumidor);
+      const instalado = await instalar(alvo, await obterTarball(alvo, temporaria, opcoes.buscarPublicado), consumidor);
       await ligarDependenciasExternas(instalado, internos, raizDoRepo);
       instalados.push(instalado);
     }
 
     const itens = (await Promise.all(instalados.map((instalado) => carregar(instalado, consumidor)))).flat();
-    return { itens, falhas: itens.filter((item) => item.tipo === 'falha').length };
+    return {
+      itens,
+      falhas: itens.filter((item) => item.tipo === 'falha').length,
+      doRegistry: instalados
+        .filter((instalado) => instalado.origem === 'registry')
+        .map((instalado) => `${instalado.alvo.nome}@${instalado.alvo.versao}`),
+    };
   } finally {
     await rm(temporaria, { recursive: true, force: true });
   }

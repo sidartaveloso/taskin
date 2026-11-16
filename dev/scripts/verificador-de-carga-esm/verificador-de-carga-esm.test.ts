@@ -1,8 +1,13 @@
+import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { promisify } from 'node:util';
 import { afterAll, describe, expect, it } from 'vitest';
-import { verificarCargaEsm } from './verificador-de-carga-esm';
+import { verificarCargaEsm, versaoNaoPublicada } from './verificador-de-carga-esm';
+import type { BuscarPublicado } from './verificador-de-carga-esm.types';
+
+const executar = promisify(execFile);
 
 type PacoteDeTeste = {
   manifesto: Record<string, unknown>;
@@ -33,6 +38,27 @@ async function criarRepo(pacotes: PacoteDeTeste[], ignorados: string[] = []): Pr
   return raiz;
 }
 
+/**
+ * O tarball de uma versao que ja esta no registry, com o conteudo de quando foi
+ * publicada — que pode nao ser o do fonte de hoje.
+ */
+async function publicar(pacote: PacoteDeTeste): Promise<string> {
+  const pasta = await mkdtemp(join(tmpdir(), 'publicado-no-registry-'));
+  criados.push(pasta);
+  await writeFile(join(pasta, 'package.json'), JSON.stringify({ version: '1.0.0', ...pacote.manifesto }));
+  for (const [relativo, conteudo] of Object.entries(pacote.arquivos)) {
+    await mkdir(dirname(join(pasta, relativo)), { recursive: true });
+    await writeFile(join(pasta, relativo), conteudo);
+  }
+  const { stdout } = await executar('pnpm', ['pack', '--pack-destination', pasta, '--json'], { cwd: pasta });
+  return (JSON.parse(stdout.slice(stdout.indexOf('{'))) as { filename: string }).filename;
+}
+
+/** Um registry de mentira: so conhece os `nome@versao` que o teste publicou. */
+function registryCom(publicados: Record<string, string>): BuscarPublicado {
+  return async ({ nome, versao }) => publicados[`${nome}@${versao}`];
+}
+
 function biblioteca(
   nome: string,
   arquivos: Record<string, string>,
@@ -60,8 +86,9 @@ describe('verificarCargaEsm', () => {
       ]);
 
       await expect(verificarCargaEsm(raiz)).resolves.toEqual({
-        itens: [{ tipo: 'ok', pacote: '@escopo/alfa', forma: { tipo: 'import' } }],
+        itens: [{ tipo: 'ok', pacote: '@escopo/alfa', origem: 'tarball_local', forma: { tipo: 'import' } }],
         falhas: 0,
+        doRegistry: [],
       });
     },
     PRAZO,
@@ -182,8 +209,9 @@ describe('verificarCargaEsm', () => {
       ]);
 
       await expect(verificarCargaEsm(raiz)).resolves.toEqual({
-        itens: [{ tipo: 'ok', pacote: '@escopo/cli', forma: { tipo: 'bin', bin: 'meu-cli' } }],
+        itens: [{ tipo: 'ok', pacote: '@escopo/cli', origem: 'tarball_local', forma: { tipo: 'bin', bin: 'meu-cli' } }],
         falhas: 0,
+        doRegistry: [],
       });
     },
     PRAZO,
@@ -208,4 +236,96 @@ describe('verificarCargaEsm', () => {
     },
     PRAZO,
   );
+
+  describe('com o que ja esta no registry', () => {
+    const tiposDeHoje = biblioteca('@escopo/tipos', {
+      'dist/index.js': 'export const CAPACIDADES = [];\nexport const antigo = 1;\n',
+    });
+    const cli: PacoteDeTeste = {
+      manifesto: {
+        name: '@escopo/cli',
+        type: 'module',
+        bin: { 'meu-cli': 'bin/cli.js' },
+        files: ['bin'],
+        dependencies: { '@escopo/tipos': '1.0.0' },
+      },
+      arquivos: {
+        'bin/cli.js':
+          "import { CAPACIDADES } from '@escopo/tipos';\nprocess.exit(Array.isArray(CAPACIDADES) ? 0 : 1);\n",
+      },
+    };
+
+    it(
+      'instala do registry o pacote interno cuja versao ja foi publicada — o defeito do taskin 5.2.0',
+      async () => {
+        // O fonte ganhou um export e a versao nao subiu: o registry tem a 1.0.0 de antes.
+        const raiz = await criarRepo([tiposDeHoje, cli]);
+        const publicado = await publicar(
+          biblioteca('@escopo/tipos', { 'dist/index.js': 'export const antigo = 1;\n' }),
+        );
+
+        const relatorio = await verificarCargaEsm(raiz, {
+          buscarPublicado: registryCom({ '@escopo/tipos@1.0.0': publicado }),
+        });
+
+        expect(relatorio).toEqual({
+          itens: [
+            {
+              tipo: 'falha',
+              pacote: '@escopo/cli',
+              origem: 'tarball_local',
+              forma: { tipo: 'bin', bin: 'meu-cli' },
+              erro: expect.stringMatching(/'@escopo\/tipos' does not provide an export named 'CAPACIDADES'/),
+            },
+            { tipo: 'ok', pacote: '@escopo/tipos', origem: 'registry', forma: { tipo: 'import' } },
+          ],
+          falhas: 1,
+          doRegistry: ['@escopo/tipos@1.0.0'],
+        });
+      },
+      PRAZO,
+    );
+
+    it(
+      'continua no tarball local o pacote cuja versao ainda nao foi publicada',
+      async () => {
+        const raiz = await criarRepo([tiposDeHoje, cli]);
+
+        await expect(verificarCargaEsm(raiz, { buscarPublicado: registryCom({}) })).resolves.toMatchObject({
+          falhas: 0,
+          doRegistry: [],
+        });
+      },
+      PRAZO,
+    );
+
+    it(
+      'passa quando o publicado e o mesmo de hoje: versao que nao mudou nao precisa subir',
+      async () => {
+        const raiz = await criarRepo([tiposDeHoje, cli]);
+        const publicado = await publicar(tiposDeHoje);
+
+        await expect(
+          verificarCargaEsm(raiz, { buscarPublicado: registryCom({ '@escopo/tipos@1.0.0': publicado }) }),
+        ).resolves.toMatchObject({ falhas: 0, doRegistry: ['@escopo/tipos@1.0.0'] });
+      },
+      PRAZO,
+    );
+  });
+});
+
+describe('versaoNaoPublicada', () => {
+  it('reconhece o pacote e a versao que o registry nao tem', () => {
+    expect(versaoNaoPublicada('npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/x')).toBe(
+      true,
+    );
+    expect(
+      versaoNaoPublicada('npm error code ETARGET\nnpm error notarget No matching version found for x@9.9.9.'),
+    ).toBe(true);
+  });
+
+  it('nao confunde falha de rede ou de credencial com versao nao publicada', () => {
+    expect(versaoNaoPublicada('npm error code ENOTFOUND\nnpm error network request to registry failed')).toBe(false);
+    expect(versaoNaoPublicada('npm error code E401\nnpm error Unable to authenticate')).toBe(false);
+  });
 });
