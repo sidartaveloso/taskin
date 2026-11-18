@@ -408,12 +408,17 @@ describe('inventory local: os ajustes da conta na camada da pessoa', () => {
   });
 });
 
+/** O id que o ledger local da a cada run: `run-${randomUUID()}`. */
+const ID_DO_RUN = /"id":"run-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"/g;
+
 /**
  * O runs.jsonl versionado nao leva horario do dia: um numero de dez digitos ou
- * mais passa por timestamp.
+ * mais passa por timestamp. O id do run sai da busca, porque e um UUID
+ * aleatorio e as vezes tem dez digitos seguidos (task-255). So sai o id nesse
+ * formato exato: um id que carregue outra coisa continua sendo conferido.
  */
 function semHorarioDoDia(linhas: string[]): void {
-  expect(linhas.join('\n')).not.toMatch(/\d{10,}/);
+  expect(linhas.join('\n').replaceAll(ID_DO_RUN, '"id":"run-<uuid>"')).not.toMatch(/\d{10,}/);
 }
 
 describe('privacidade', () => {
@@ -469,12 +474,23 @@ describe('privacidade', () => {
    * task-255: o id do run e `run-${randomUUID()}`, e o ultimo grupo do UUID tem
    * doze caracteres hexadecimais — as vezes dez deles seguidos sao digitos. Este
    * id derrubou a publicacao da 5.3.2 (execucao 44412712144 do release.yml).
-   * `it.fails` enquanto o defeito existir: o conferidor toma o id por horario.
    */
-  it.fails('o id aleatorio do run com dez digitos seguidos nao passa por horario do dia', () => {
+  it('o id aleatorio do run com dez digitos seguidos nao passa por horario do dia', () => {
     const linha = JSON.stringify({ id: 'run-6b951399-90cd-4472-b100-1264133312da', repository: 'repo-a' });
 
     semHorarioDoDia([linha]);
+  });
+
+  it('um horario gravado na linha continua reprovado, ao lado do id do run', () => {
+    const linha = JSON.stringify({ id: 'run-6b951399-90cd-4472-b100-1264133312da', startedAt: 1_763_503_200_000 });
+
+    expect(() => semHorarioDoDia([linha])).toThrow();
+  });
+
+  it('um id fora do formato do ledger continua conferido: o horario nele e reprovado', () => {
+    const linha = JSON.stringify({ id: 'run-1763503200000', repository: 'repo-a' });
+
+    expect(() => semHorarioDoDia([linha])).toThrow();
   });
 });
 
