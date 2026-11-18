@@ -1,6 +1,6 @@
 # 🧩 Task 254 — A publicação do status duplica a task renomeada na branch
 
-- Status: in-progress
+- Status: done
 - Type: fix
 - Assignee: sidartaveloso
 - Difficulty: 2
