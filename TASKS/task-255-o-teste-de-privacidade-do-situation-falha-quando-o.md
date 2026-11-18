@@ -1,6 +1,6 @@
 # 🧩 Task 255 — O teste de privacidade do situation falha quando o id aleatório do run tem dez dígitos seguidos
 
-- Status: in-progress
+- Status: done
 - Type: test
 - Assignee: sidartaveloso
 
