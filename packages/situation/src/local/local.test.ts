@@ -408,6 +408,14 @@ describe('inventory local: os ajustes da conta na camada da pessoa', () => {
   });
 });
 
+/**
+ * O runs.jsonl versionado nao leva horario do dia: um numero de dez digitos ou
+ * mais passa por timestamp.
+ */
+function semHorarioDoDia(linhas: string[]): void {
+  expect(linhas.join('\n')).not.toMatch(/\d{10,}/);
+}
+
 describe('privacidade', () => {
   it('runs.jsonl versionado nao leva conta da camada da pessoa nem horario do dia, e a camada do repositorio nao leva endereco, hostname nem segredo', async () => {
     const dir = tempDir();
@@ -449,12 +457,24 @@ describe('privacidade', () => {
       expect(lines.join('\n')).not.toContain(access.name);
       expect(lines.join('\n')).not.toContain(String(access.id));
     }
-    expect(lines.join('\n')).not.toMatch(/\d{10,}/);
+    semHorarioDoDia(lines);
     expect(written).not.toContain(SECRET);
     expect(written).not.toMatch(/\d{1,3}(\.\d{1,3}){3}/);
     expect(written).not.toMatch(/https?:\/\//);
     expect(written).not.toContain(hostname());
     expect(readFileSync(machineState, 'utf8')).not.toContain(SECRET);
+  });
+
+  /**
+   * task-255: o id do run e `run-${randomUUID()}`, e o ultimo grupo do UUID tem
+   * doze caracteres hexadecimais — as vezes dez deles seguidos sao digitos. Este
+   * id derrubou a publicacao da 5.3.2 (execucao 44412712144 do release.yml).
+   * `it.fails` enquanto o defeito existir: o conferidor toma o id por horario.
+   */
+  it.fails('o id aleatorio do run com dez digitos seguidos nao passa por horario do dia', () => {
+    const linha = JSON.stringify({ id: 'run-6b951399-90cd-4472-b100-1264133312da', repository: 'repo-a' });
+
+    semHorarioDoDia([linha]);
   });
 });
 
