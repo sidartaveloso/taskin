@@ -32,6 +32,17 @@ interface WorkingTreeChange {
   deleted: boolean;
 }
 
+interface FileOnDisk {
+  path: string;
+  absolute: string;
+  mode: '100644' | '100755';
+}
+
+interface IndexEntry {
+  oid: string;
+  path: string;
+}
+
 /** `addFiles` recebe varios caminhos separados por espaco (`a b`). */
 function splitPathspecs(pattern: string): string[] {
   return pattern.split(/\s+/).filter(Boolean);
@@ -127,13 +138,14 @@ export class GitService implements IGitService {
   }
 
   /** Roda o git sem shell: nada na mensagem ou no caminho e interpretado. */
-  private git(args: string[], env?: NodeJS.ProcessEnv): string {
+  private git(args: string[], env?: NodeJS.ProcessEnv, input?: string): string {
     return execFileSync('git', args, {
       cwd: this.cwd,
       encoding: 'utf8',
       stdio: 'pipe',
       maxBuffer: 64 * 1024 * 1024,
       env: env ? { ...process.env, ...env } : undefined,
+      input,
     });
   }
 
@@ -353,39 +365,24 @@ export class GitService implements IGitService {
 
   /**
    * Monta, num indice temporario, a arvore de `base` com os arquivos da task
-   * como estao no disco, e devolve o commit sobre `base`. O indice, a arvore e
-   * o HEAD de quem chamou nao sao tocados.
+   * como estao no disco, e devolve o commit sobre `base`. Se a task tem outro
+   * nome na base, ele sai: a task nao fica em dobro. O indice, a arvore e o
+   * HEAD de quem chamou nao sao tocados.
    */
   private buildTaskStatusCommit(taskId: string, base: string, message: string): string {
     const root = this.git(['rev-parse', '--show-toplevel']).trim();
-    const files = this.git([
-      'ls-files',
-      '-z',
-      '--full-name',
-      '--cached',
-      '--others',
-      '--exclude-standard',
-      '--',
-      `:(top)TASKS/task-${taskId}-*.md`,
-      `:(top)TASKS/assets/task-${taskId}/`,
-    ])
-      .split('\0')
-      .filter((path) => path.length > 0);
+    const taskFilePathspec = `:(top)TASKS/task-${taskId}-*.md`;
+    const taskFiles = this.filesOnDisk(root, taskFilePathspec);
+    const assetFiles = this.filesOnDisk(root, `:(top)TASKS/assets/task-${taskId}/`);
 
     const scratch = mkdtempSync(join(tmpdir(), 'taskin-publish-'));
     try {
       const env = { GIT_INDEX_FILE: join(scratch, 'index') };
       this.git(['read-tree', base], env);
-      for (const path of [...new Set(files)]) {
-        const absolute = join(root, path);
-        let mode: string;
-        try {
-          mode = statSync(absolute).mode & 0o111 ? '100755' : '100644';
-        } catch {
-          continue;
-        }
-        const blob = this.git(['hash-object', '-w', '--', absolute]).trim();
-        this.git(['update-index', '--add', '--cacheinfo', `${mode},${blob},${path}`], env);
+      if (taskFiles.length > 0) this.dropOtherNamesOfTask(base, taskFilePathspec, taskFiles, env);
+      for (const file of [...taskFiles, ...assetFiles]) {
+        const blob = this.git(['hash-object', '-w', '--', file.absolute]).trim();
+        this.git(['update-index', '--add', '--cacheinfo', `${file.mode},${blob},${file.path}`], env);
       }
       const tree = this.git(['write-tree'], env).trim();
       if (tree === this.git(['rev-parse', `${base}^{tree}`]).trim()) throw new NothingToPublish();
@@ -394,6 +391,83 @@ export class GitService implements IGitService {
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
+  }
+
+  private filesOnDisk(root: string, pathspec: string): FileOnDisk[] {
+    const paths = this.git([
+      'ls-files',
+      '-z',
+      '--full-name',
+      '--cached',
+      '--others',
+      '--exclude-standard',
+      '--',
+      pathspec,
+    ])
+      .split('\0')
+      .filter((path) => path.length > 0);
+
+    return [...new Set(paths)].flatMap((path) => {
+      const absolute = join(root, path);
+      try {
+        return [{ path, absolute, mode: statSync(absolute).mode & 0o111 ? '100755' : '100644' }];
+      } catch {
+        return [];
+      }
+    });
+  }
+
+  /**
+   * Tira do indice os nomes da task que a base tem e o disco nao. Fica o que a
+   * base criou depois que a branch saiu dela: e outra task com o mesmo numero,
+   * nao um nome antigo desta.
+   */
+  private dropOtherNamesOfTask(base: string, pathspec: string, taskFiles: FileOnDisk[], env: NodeJS.ProcessEnv): void {
+    const namesOnDisk = new Set(taskFiles.map((file) => file.path));
+    const otherNames = this.indexEntries(pathspec, env).filter((entry) => !namesOnDisk.has(entry.path));
+    if (otherNames.length === 0) return;
+
+    const createdSinceFork = this.pathsCreatedSinceFork(base, pathspec);
+    if (!createdSinceFork) return;
+
+    const removals = otherNames
+      .filter((entry) => !createdSinceFork.has(entry.path))
+      .map((entry) => `0 ${entry.oid}\t${entry.path}\0`)
+      .join('');
+    if (removals) this.git(['update-index', '-z', '--index-info'], env, removals);
+  }
+
+  private indexEntries(pathspec: string, env: NodeJS.ProcessEnv): IndexEntry[] {
+    return this.git(['ls-files', '-z', '--stage', '--full-name', '--', pathspec], env)
+      .split('\0')
+      .filter((entry) => entry.length > 0)
+      .map((entry) => {
+        const tab = entry.indexOf('\t');
+        return { oid: entry.slice(0, tab).split(' ')[1] ?? '', path: entry.slice(tab + 1) };
+      });
+  }
+
+  /** `undefined` quando nao ha ponto em comum entre o HEAD e a base. */
+  private pathsCreatedSinceFork(base: string, pathspec: string): Set<string> | undefined {
+    let fork: string;
+    try {
+      fork = this.git(['merge-base', 'HEAD', base]).trim();
+    } catch {
+      return undefined;
+    }
+    const created = this.git([
+      'diff-tree',
+      '-r',
+      '-z',
+      '--name-only',
+      '--find-renames',
+      '--diff-filter=A',
+      fork,
+      base,
+      '--',
+      pathspec,
+    ]);
+    return new Set(created.split('\0').filter((path) => path.length > 0));
   }
 
   async hasUncommittedChanges(): Promise<boolean> {
