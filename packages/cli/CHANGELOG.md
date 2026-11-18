@@ -1,5 +1,18 @@
 # taskin
 
+## 5.3.1
+
+### Patch Changes
+
+- Updated dependencies [ed03dd3]
+  - @opentask/taskin-types@2.8.0
+  - @opentask/taskin-difficulty-estimator@0.1.2
+  - @opentask/taskin-file-system-provider@3.6.1
+  - @opentask/taskin-git-utils@3.3.1
+  - @opentask/taskin-task-manager@4.2.1
+  - @opentask/taskin-task-server-mcp@0.6.5
+  - @opentask/taskin-task-server-ws@0.4.3
+
 ## 5.3.0
 
 ### Minor Changes

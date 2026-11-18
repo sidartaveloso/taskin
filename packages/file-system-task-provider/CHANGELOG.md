@@ -1,5 +1,14 @@
 # @opentask/taskin-file-system-provider
 
+## 3.6.1
+
+### Patch Changes
+
+- Updated dependencies [ed03dd3]
+  - @opentask/taskin-types@2.8.0
+  - @opentask/taskin-git-utils@3.3.1
+  - @opentask/taskin-task-manager@4.2.1
+
 ## 3.6.0
 
 ### Minor Changes
