@@ -8,9 +8,11 @@ export interface IClienteNpm {
 }
 
 /**
- * Interativo herda o stdin do terminal: o npm pergunta o 2FA e o usuario
- * responde. Nao interativo captura tudo e nunca pergunta — num runner e a
- * diferenca entre falhar com mensagem e pendurar num prompt que ninguem ve.
+ * Interativo da ao npm o terminal inteiro (stdin, stdout e stderr): ele
+ * pergunta o 2FA, ou o conduz pelo navegador, e o usuario responde. Com a saida
+ * num pipe o npm nao conduz o 2FA pelo navegador e falha com EOTP. Nao
+ * interativo captura tudo e nunca pergunta — num runner e a diferenca entre
+ * falhar com mensagem e pendurar num prompt que ninguem ve.
  */
 export type ModoDeExecucao = { tipo: 'interativo' } | { tipo: 'nao-interativo' };
 
