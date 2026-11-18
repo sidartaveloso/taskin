@@ -1,5 +1,12 @@
 # @opentask/taskin-file-system-provider
 
+## 3.6.2
+
+### Patch Changes
+
+- Updated dependencies [3577233]
+  - @opentask/taskin-git-utils@3.3.2
+
 ## 3.6.1
 
 ### Patch Changes
