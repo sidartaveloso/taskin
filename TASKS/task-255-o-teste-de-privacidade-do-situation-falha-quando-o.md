@@ -20,9 +20,23 @@ O que a asserção quer pegar continua valendo: o `runs.jsonl` não pode levar h
 
 ## Tasks
 <!-- [x] feito · [ ] em aberto · [ ] ... — adiado: <razão> para o que se decidiu não fazer -->
-- [ ] Teste vermelho determinístico: com um id de run que tenha dez dígitos seguidos, a asserção atual reprova
-- [ ] A asserção deixa de olhar o id do run e continua reprovando um horário de verdade gravado na linha
-- [ ] `pnpm --filter @opentask/taskin-situation test` verde
+- [x] O teste que comprova o bug, com `it.fails`: o conferidor recebe uma linha com o id que derrubou a publicação e reprova sem defeito nenhum
+- [x] A correção: o conferidor deixa o id do run fora da busca, e o `it.fails` vira `it`
+- [x] Um horário gravado na linha e um id fora do formato do ledger continuam reprovados
+- [x] `pnpm lint`, `pnpm typecheck` e `pnpm test` verdes
 
 ## Notes
 Achado no release da 5.3.2 (task-254). Sem changeset: só o teste muda.
+
+**Feito (18/11/2026), em TDD, como Sidarta pediu para bug: "tem que ter o teste que comprova esse bug. O teste com it fails, para depois também fazer a correção."**
+
+1. `222677ed` — **a prova.** O conferidor da asserção vira a função `semHorarioDoDia`, no próprio `local.test.ts`, e o teste novo roda com o id `run-6b951399-90cd-4472-b100-1264133312da`, o que derrubou a publicação. Marcado `it.fails`: passa enquanto o defeito existe, e o CI fica verde. Sem o `.fails`, ele falha com a mesma mensagem do CI (`expected '{"id":"run-6b951399-…' not to match /\d{10,}/`).
+2. `11b6f294` — **a correção.** O id no formato exato do ledger local (`"id":"run-<uuid>"`) sai da busca; o resto da linha continua conferido. O `it.fails` vira `it`, e entram dois casos que travam o que a asserção existe para pegar: um horário gravado ao lado do id e um id fora do formato que carrega horário. Os dois reprovam.
+
+Só o teste muda; nenhum código publicado. Sem changeset.
+
+**Evidência:**
+
+- simulação de 100 mil execuções com duas linhas de `runs.jsonl` de ids aleatórios: o conferidor antigo reprovava 3,08% delas; o novo, nenhuma;
+- `pnpm lint`, `pnpm typecheck` e `pnpm test` (48 tarefas do turbo e os 137 testes dos scripts de dev): código 0.
+
