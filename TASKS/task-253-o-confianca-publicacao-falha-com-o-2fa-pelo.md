@@ -1,6 +1,6 @@
 # 🧩 Task 253 — O confianca:publicacao falha com o 2FA pelo navegador: a saida do npm vai por um pipe
 
-- Status: pending
+- Status: in-progress
 - Type: fix
 - Assignee: sidartaveloso
 - Difficulty: 2
