@@ -9,7 +9,8 @@ import { GitService } from './git-service';
  * Task-254: o commit de status publicado leva a task como a branch a ve. Se o
  * arquivo da task tem outro nome na branch (o `lint --fix` renomeia por
  * `git mv` os nomes longos), a `defaultBranch` fica com um arquivo so da task,
- * o da branch, e nao com os dois.
+ * o da branch, e nao com os dois. Sai da base so o nome que a branch conheceu:
+ * uma task de mesmo numero criada na base depois, por outra pessoa, fica.
  */
 
 function git(cwd: string, ...args: string[]): string {
@@ -24,6 +25,7 @@ function configure(dir: string): void {
 const OLD_NAME = 'TASKS/task-007-nome-longo.md';
 const NEW_NAME = 'TASKS/task-007-nome.md';
 const NEIGHBOR = 'TASKS/task-008-vizinha.md';
+const COLLIDING_TASK = 'TASKS/task-007-outra.md';
 const ASSETS = 'TASKS/assets/task-007';
 
 function taskContent(status: string): string {
@@ -118,6 +120,32 @@ describe('GitService.publishTaskStatusChange - arquivo da task renomeado na bran
     expect(result.published).toBe(false);
     expect(git(remote, 'rev-parse', 'develop')).toBe(before);
     expect(publishedPaths('TASKS/task-007-')).toEqual([OLD_NAME]);
+  });
+
+  it('a duplicata que uma publicacao anterior deixou na defaultBranch se desfaz', async () => {
+    writeFileSync(join(main, NEW_NAME), taskContent('in-progress'));
+    git(main, 'add', NEW_NAME);
+    pushToDevelop('docs(TASKS): task-007 - status publicado com o nome novo');
+    git(worktree, 'mv', OLD_NAME, NEW_NAME);
+    writeFileSync(join(worktree, NEW_NAME), taskContent('in-review'));
+
+    const result = await publish('in-review');
+
+    expect(result).toEqual({ published: true });
+    expect(publishedPaths('TASKS/task-007-')).toEqual([NEW_NAME]);
+  });
+
+  it('outra task com o mesmo numero, criada na defaultBranch depois que a branch saiu dela, continua la', async () => {
+    writeFileSync(join(main, COLLIDING_TASK), '# Task 007 — outra\n\n- Status: pending\n');
+    git(main, 'add', COLLIDING_TASK);
+    pushToDevelop('docs(TASKS): task-007 - outra task com o mesmo numero');
+    writeFileSync(join(worktree, OLD_NAME), taskContent('in-progress'));
+
+    const result = await publish('in-progress');
+
+    expect(result).toEqual({ published: true });
+    expect(publishedPaths('TASKS/task-007-')).toEqual([OLD_NAME, COLLIDING_TASK]);
+    expect(git(remote, 'show', `develop:${COLLIDING_TASK}`)).toContain('outra');
   });
 
   it('os assets da task que a defaultBranch tem e a branch nao continuam publicados', async () => {
