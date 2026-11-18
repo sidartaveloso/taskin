@@ -1,4 +1,7 @@
 import { execFile, spawn } from 'node:child_process';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { promisify } from 'node:util';
 import type {
   AlvoDeConfianca,
@@ -97,29 +100,34 @@ export class ClienteNpm implements IClienteNpm {
   }
 
   /**
-   * stdin fica herdado para o usuario responder o 2FA; stdout e stderr sao
-   * espelhados no terminal e acumulados ao mesmo tempo. Sem guardar o texto nao
-   * da para distinguir um 409 (ja configurado) de uma falha de verdade, e sem
-   * espelhar o prompt do npm ninguem veria a pergunta.
+   * O npm recebe o terminal inteiro. So com stdin e stdout de terminal ele
+   * conduz o 2FA pelo navegador ("Authenticate your account at ... Press
+   * ENTER"); com a saida num pipe, desiste na hora com EOTP. Foi assim que os 15
+   * pacotes do taskin falharam no release de 18/11/2026 (task-253).
+   *
+   * O texto que distingue um 409 (ja configurado) de uma falha de verdade sai do
+   * log de depuracao do npm, gravado com `--logs-dir` numa pasta temporaria e
+   * apagado no fim.
    */
-  private herdandoTerminal(argumentos: string[]): Promise<{ codigo: number; saida: string }> {
-    return new Promise((resolve, reject) => {
-      const processo = spawn(this.binario, argumentos, { stdio: ['inherit', 'pipe', 'pipe'] });
-      let saida = '';
-
-      const espelhar = (fluxo: NodeJS.ReadableStream | null, destino: NodeJS.WriteStream) => {
-        fluxo?.on('data', (pedaco: Buffer) => {
-          saida += pedaco.toString();
-          destino.write(pedaco);
-        });
-      };
-      espelhar(processo.stdout, process.stdout);
-      espelhar(processo.stderr, process.stderr);
-
-      processo.on('error', reject);
-      processo.on('close', (codigo) => resolve({ codigo: codigo ?? 1, saida }));
-    });
+  private async herdandoTerminal(argumentos: string[]): Promise<{ codigo: number; saida: string }> {
+    const pastaDeLogs = await mkdtemp(join(tmpdir(), 'npm-logs-'));
+    try {
+      const codigo = await new Promise<number>((resolve, reject) => {
+        const processo = spawn(this.binario, [...argumentos, `--logs-dir=${pastaDeLogs}`], { stdio: 'inherit' });
+        processo.on('error', reject);
+        processo.on('close', (codigoDeSaida) => resolve(codigoDeSaida ?? 1));
+      });
+      return { codigo, saida: await lerLogsDoNpm(pastaDeLogs) };
+    } finally {
+      await rm(pastaDeLogs, { recursive: true, force: true });
+    }
   }
+}
+
+async function lerLogsDoNpm(pasta: string): Promise<string> {
+  const logs = (await readdir(pasta)).filter((nome) => nome.endsWith('.log')).sort();
+  const textos = await Promise.all(logs.map((nome) => readFile(join(pasta, nome), 'utf8')));
+  return textos.join('\n');
 }
 
 function classificarFalha(saida: string, motivo: string): ResultadoDeConfianca {
